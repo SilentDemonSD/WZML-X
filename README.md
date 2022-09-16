@@ -64,7 +64,7 @@ This program is free software: you can redistribute it and/or modify it under th
 as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of 
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details at 
-< https://github.com/5MysterySD/Tele-LeechX/blob/h-code/LICENSE >.
+< https://github.com/weebzone/WZML/blob/update/LICENSE >.
 
 You should have received a copy of the GNU General Public License along with this program.
 ```
@@ -80,6 +80,6 @@ You should have received a copy of the GNU General Public License along with thi
 * [`Ajay Choudhary`](https://github.com/ajay0916) For suggestion & fixing
 * [`Arshsisodiya`](https://github.com/arshsisodiya/helios-mirror) For there Bot_Pm and log feature
 * [`ToxyTech`](https://github.com/dipeshpatil123) For Task Limit
-* [`MysterySD`](https://github.com/5MysterySD) Me 🧐 For Help
+* [`MysterySD`](https://github.com/5MysterySD) For Help
 
 </details>
