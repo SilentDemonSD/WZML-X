@@ -1,0 +1,17 @@
+config.env
+Thumbnails/*
+drive_folder
+cookies.txt
+*auth_token.txt
+*.pyc
+data*
+.vscode
+.idea
+*.json
+*.pickle
+.netrc
+log.txt
+authorized_chats.txt
+sudo_users.txt
+accounts/*
+
