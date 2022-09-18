@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from psutil import disk_usage, cpu_percent, swap_memory, cpu_count, virtual_memory, net_io_counters, boot_time
 from time import time
 from sys import executable
-from telegram import ParseMode, InlineKeyboardMarkup
+from telegram import ParseMode
 from telegram.ext import CommandHandler
 import requests
 import pytz
@@ -252,7 +252,7 @@ def start(update, context):
     else:
         buttons.buildbutton(f"{START_BTN1_NAME}", f"{START_BTN1_URL}")
         buttons.buildbutton(f"{START_BTN2_NAME}", f"{START_BTN2_URL}")
-    reply_markup = InlineKeyboardMarkup(buttons.build_menu(2))
+    reply_markup = buttons.build_menu(2)
     if CustomFilters.authorized_user(update) or CustomFilters.authorized_chat(update):
         start_string = f'''This bot can mirror all your links to Google Drive!
 Type /{BotCommands.HelpCommand} to get a list of available commands
@@ -449,7 +449,7 @@ def bot_help(update, context):
     else:
         button.buildbutton("User", f"https://graph.org/{help_user}")
         button.buildbutton("Admin", f"https://graph.org/{help_admin}")
-    sendMarkup(help_string, context.bot, update.message, InlineKeyboardMarkup(button.build_menu(2)))
+    sendMarkup(help_string, context.bot, update.message, button.build_menu(2))
 
        
 

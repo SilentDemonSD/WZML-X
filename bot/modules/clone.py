@@ -16,7 +16,7 @@ from bot import *
 from bot.helper.ext_utils.bot_utils import *
 from bot.helper.mirror_utils.download_utils.direct_link_generator import *
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
-from telegram import InlineKeyboardMarkup, ParseMode
+from telegram import ParseMode
 from bot.helper.telegram_helper.button_build import ButtonMaker
 
 def _clone(message, bot):
@@ -66,7 +66,7 @@ def _clone(message, bot):
                 chat_u = CHANNEL_USERNAME.replace("@", "")
                 buttons.buildbutton("👉🏻 CHANNEL LINK 👈🏻", f"https://t.me/{chat_u}")
                 help_msg = f"Dᴇᴀʀ {uname},\nYᴏᴜ ɴᴇᴇᴅ ᴛᴏ ᴊᴏɪɴ ᴍʏ Cʜᴀɴɴᴇʟ ᴛᴏ ᴜsᴇ Bᴏᴛ \n\nCʟɪᴄᴋ ᴏɴ ᴛʜᴇ ʙᴇʟᴏᴡ Bᴜᴛᴛᴏɴ ᴛᴏ ᴊᴏɪɴ ᴍʏ Cʜᴀɴɴᴇʟ."
-                reply_message = sendMarkup(help_msg, bot, message, InlineKeyboardMarkup(buttons.build_menu(2)))
+                reply_message = sendMarkup(help_msg, bot, message, buttons.build_menu(2))
                 Thread(target=auto_delete_message, args=(bot, message, reply_message)).start()
                 return reply_message
         except Exception:
@@ -86,7 +86,7 @@ def _clone(message, bot):
             buttons.buildbutton("Click Here to Start Me", f"{botstart}")
             startwarn = f"Dear {uname},\n\n<b>I found that you haven't started me in PM (Private Chat) yet.</b>\n\n" \
                         f"From now on i will give link and leeched files in PM and log channel only"
-            message = sendMarkup(startwarn, bot, message, InlineKeyboardMarkup(buttons.build_menu(2)))
+            message = sendMarkup(startwarn, bot, message, buttons.build_menu(2))
             return
 
 
@@ -187,9 +187,9 @@ def _clone(message, bot):
                     botstart = f"http://t.me/{b_uname}"
                     buttons.buildbutton("View links in PM", f"{botstart}")
                     if PICS:
-                        sendPhoto(msg + botpm, bot, message, random.choice(PICS), InlineKeyboardMarkup(buttons.build_menu(2)))
+                        sendPhoto(msg + botpm, bot, message, random.choice(PICS), buttons.build_menu(2))
                     else:
-                        sendMarkup(msg + botpm, bot, message, InlineKeyboardMarkup(buttons.build_menu(2)))
+                        sendMarkup(msg + botpm, bot, message, buttons.build_menu(2))
                 else:
                     if EMOJI_THEME is True:
                         cc = f'\n<b>╰👤 #Clone_By: </b>{tag}\n\n'
@@ -231,9 +231,9 @@ def _clone(message, bot):
                             botstart = f"http://t.me/{b_uname}"
                             buttons.buildbutton("View links in PM", f"{botstart}")
                             if PICS:
-                                sendPhoto(msg + botpm, bot, message, random.choice(PICS), InlineKeyboardMarkup(buttons.build_menu(2)))
+                                sendPhoto(msg + botpm, bot, message, random.choice(PICS), buttons.build_menu(2))
                             else:
-                                sendMarkup(msg + botpm, bot, message, InlineKeyboardMarkup(buttons.build_menu(2)))
+                                sendMarkup(msg + botpm, bot, message, buttons.build_menu(2))
                         else:
                             if EMOJI_THEME is True:
                                 cc = f'\n<b>╰👤 #Clone_By: </b>{tag}\n\n'

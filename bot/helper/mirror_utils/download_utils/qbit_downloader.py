@@ -1,7 +1,6 @@
 from os import path as ospath, listdir
 from time import sleep, time
 from re import search as re_search
-from telegram import InlineKeyboardMarkup
 
 from bot import TELEGRAPH_STYLE, download_dict, download_dict_lock, BASE_URL, get_client, TORRENT_DIRECT_LIMIT, ZIP_UNZIP_LIMIT, STOP_DUPLICATE, TORRENT_TIMEOUT, LOGGER, STORAGE_THRESHOLD, LEECH_LIMIT
 from bot.helper.mirror_utils.status_utils.qbit_download_status import QbDownloadStatus

@@ -6,7 +6,6 @@ from html import escape
 from psutil import virtual_memory, cpu_percent, disk_usage
 from requests import head as rhead
 from urllib.request import urlopen
-from telegram import InlineKeyboardMarkup
 
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot import FINISHED_PROGRESS_STR, UN_FINISHED_PROGRESS_STR, download_dict, download_dict_lock, STATUS_LIMIT, botStartTime, DOWNLOAD_DIR, WEB_PINCODE, BASE_URL, EMOJI_THEME, TOTAL_TASKS_LIMIT, USER_TASKS_LIMIT, LEECH_LIMIT, MEGA_LIMIT, CREDIT_NAME, TORRENT_DIRECT_LIMIT, ZIP_UNZIP_LIMIT
@@ -131,7 +130,7 @@ def bt_selection_buttons(id_: str):
     else:
         buttons.buildbutton("Select Files", f"{BASE_URL}/app/files/{id_}?pin_code={pincode}")
     buttons.sbutton("Done Selecting", f"btsel done {gid} {id_}")
-    return InlineKeyboardMarkup(buttons.build_menu(2))
+    return buttons.build_menu(2)
 
 
 def get_user_task(user_id):
@@ -279,7 +278,7 @@ def get_readable_message():
         buttons.sbutton("Refresh", "status refresh")
         buttons.sbutton("Statistics", str(THREE))
         buttons.sbutton("Close", "status close")
-        sbutton = InlineKeyboardMarkup(buttons.build_menu(3))
+        sbutton = buttons.build_menu(3)
         
         if STATUS_LIMIT is not None and tasks > STATUS_LIMIT:
             msg += f"<b>Tasks:</b> {tasks}\n"
@@ -296,7 +295,7 @@ def get_readable_message():
                 buttons.sbutton("Next", "status nex")
                 buttons.sbutton("Refresh", "status refresh")
                 buttons.sbutton("Close", "status close")
-            button = InlineKeyboardMarkup(buttons.build_menu(3))
+            button = buttons.build_menu(3)
             return msg + bmsg, button
         return msg + bmsg, sbutton
 
@@ -442,13 +441,10 @@ def bot_sys_stats():
                 num_split += 1
     stats = f"""
 CPU : {cpu}% | RAM : {mem}%
-
 DL : {num_active} | UP : {num_upload} | SPLIT : {num_split}
 ZIP : {num_archi} | UNZIP : {num_extract} | TOTAL : {tasks}
-
 Limits : T/D : {TORRENT_DIRECT_LIMIT}GB | Z/U : {ZIP_UNZIP_LIMIT}GB
                     L : {LEECH_LIMIT}GB | M : {MEGA_LIMIT}GB
-
 Made with ❤️ by {CREDIT_NAME}
 """
     return stats

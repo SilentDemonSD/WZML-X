@@ -13,7 +13,6 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError, Error as GCError
 from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
-from telegram import InlineKeyboardMarkup
 from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type, RetryError
 from bot.helper.ext_utils.html_helper import hmtl_content
 
@@ -448,7 +447,7 @@ class GoogleDriveHelper:
             else:
                 msg = f"Error.\n{err}"
             return msg, ""
-        return msg, InlineKeyboardMarkup(buttons.build_menu(2))
+        return msg, buttons.build_menu(2)
 
     def __cloneFolder(self, name, local_path, folder_id, parent_id):
         LOGGER.info(f"Syncing: {local_path}")
@@ -688,7 +687,7 @@ class GoogleDriveHelper:
             buttons = ButtonMaker()
             buttons.buildbutton("🔎 VIEW", f"https://graph.org/{path[0]}")
 
-            return msg, InlineKeyboardMarkup(buttons.build_menu(1))
+            return msg, buttons.build_menu(1)
 
         else:
 

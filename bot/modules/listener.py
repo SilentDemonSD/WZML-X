@@ -12,7 +12,7 @@ from os import path as ospath, remove as osremove, listdir, walk
 from subprocess import Popen
 from html import escape
 from threading import Thread
-from telegram import InlineKeyboardMarkup, ParseMode, InlineKeyboardButton
+from telegram import ParseMode, InlineKeyboardButton
 
 from bot import NAME_FONT, bot, Interval, INDEX_URL, BUTTON_FOUR_NAME, BUTTON_FOUR_URL, BUTTON_FIVE_NAME, BUTTON_FIVE_URL, \
                 BUTTON_SIX_NAME, BUTTON_SIX_URL, VIEW_LINK, aria2, dispatcher, DOWNLOAD_DIR, \
@@ -320,9 +320,9 @@ class MirrorLeechListener:
             buttons.buildbutton("View links in PM", f"{botstart}")
 
             if PICS:
-                sendPhoto(msg + botpm, self.bot, self.message, random.choice(PICS), InlineKeyboardMarkup(buttons.build_menu(2)))
+                sendPhoto(msg + botpm, self.bot, self.message, random.choice(PICS), buttons.build_menu(2))
             else:
-                sendMarkup(msg + botpm, self.bot, self.message, InlineKeyboardMarkup(buttons.build_menu(2)))
+                sendMarkup(msg + botpm, self.bot, self.message, buttons.build_menu(2))
             try:
                 self.message.delete()
             except Exception as e:
@@ -405,9 +405,9 @@ class MirrorLeechListener:
 
             if not files:
                 if PICS:
-                    uploadmsg = sendPhoto(msg, self.bot, self.message, random.choice(PICS), InlineKeyboardMarkup(buttons.build_menu(2)))
+                    uploadmsg = sendPhoto(msg, self.bot, self.message, random.choice(PICS), buttons.build_menu(2))
                 else:
-                    uploadmsg = sendMarkup(msg, self.bot, self.message, InlineKeyboardMarkup(buttons.build_menu(2)))
+                    uploadmsg = sendMarkup(msg, self.bot, self.message, buttons.build_menu(2))
             else:
                 fmsg = ''
                 for index, (link, name) in enumerate(files.items(), start=1):
@@ -416,18 +416,18 @@ class MirrorLeechListener:
                         sleep(1.5)
                         if FORCE_BOT_PM is False:
                             if PICS:
-                                uploadmsg = sendPhoto(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, random.choice(PICS), InlineKeyboardMarkup(buttons.build_menu(2)))
+                                uploadmsg = sendPhoto(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, random.choice(PICS), buttons.build_menu(2))
                             else:
-                                uploadmsg = sendMarkup(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, InlineKeyboardMarkup(buttons.build_menu(2)))
+                                uploadmsg = sendMarkup(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, buttons.build_menu(2))
                             Thread(target=auto_delete_upload_message, args=(bot, self.message, uploadmsg)).start()
                         fmsg = ''
                 if fmsg != '':
                     sleep(1.5)
                     if FORCE_BOT_PM is False:
                         if PICS:
-                            uploadmsg = sendPhoto(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, random.choice(PICS), InlineKeyboardMarkup(buttons.build_menu(2)))
+                            uploadmsg = sendPhoto(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, random.choice(PICS), buttons.build_menu(2))
                         else:
-                            uploadmsg = sendMarkup(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, InlineKeyboardMarkup(buttons.build_menu(2)))
+                            uploadmsg = sendMarkup(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, buttons.build_menu(2))
                         Thread(target=auto_delete_upload_message, args=(bot, self.message, uploadmsg)).start()
                 if LEECH_LOG_INDEXING is True:
                     for i in LEECH_LOG:
@@ -436,12 +436,12 @@ class MirrorLeechListener:
                             indexmsg += f"{index}. <a href='{link}'>{name}</a>\n"
                             if len(indexmsg.encode() + msg.encode()) > 4000:
                                 bot.sendMessage(chat_id=i, text=msg + indexmsg,
-                                                reply_markup=InlineKeyboardMarkup(buttons.build_menu(2)),
+                                                reply_markup=buttons.build_menu(2),
                                                 parse_mode=ParseMode.HTML)
                                 indexmsg = ''
                         if indexmsg != '':
                                 bot.sendMessage(chat_id=i, text=msg + indexmsg,
-                                                reply_markup=InlineKeyboardMarkup(buttons.build_menu(2)),
+                                                reply_markup=buttons.build_menu(2),
                                                 parse_mode=ParseMode.HTML)
                 else:
                     pass
@@ -545,23 +545,23 @@ class MirrorLeechListener:
 
             if FORCE_BOT_PM is False or self.message.chat.type == 'private':
                 if PICS:
-                    uploadmsg = sendPhoto(msg + pmwarn + logwarn + warnmsg, self.bot, self.message, random.choice(PICS), InlineKeyboardMarkup(buttons.build_menu(2)))
+                    uploadmsg = sendPhoto(msg + pmwarn + logwarn + warnmsg, self.bot, self.message, random.choice(PICS), buttons.build_menu(2))
                 else:
-                    uploadmsg = sendMarkup(msg + pmwarn + logwarn + warnmsg, self.bot, self.message, InlineKeyboardMarkup(buttons.build_menu(2)))
+                    uploadmsg = sendMarkup(msg + pmwarn + logwarn + warnmsg, self.bot, self.message, buttons.build_menu(2))
                 Thread(target=auto_delete_upload_message, args=(bot, self.message, uploadmsg)).start()
             
             if MIRROR_LOGS:	
                 try:	
                     for chatid in MIRROR_LOGS:	
                         bot.sendMessage(chat_id=chatid, text=msg,	
-                                        reply_markup=InlineKeyboardMarkup(buttons.build_menu(2)),	
+                                        reply_markup=buttons.build_menu(2),	
                                         parse_mode=ParseMode.HTML)	
                 except Exception as e:	
                     LOGGER.warning(e)	
             if BOT_PM and self.message.chat.type != 'private':	
                 try:	
                     bot.sendMessage(chat_id=self.user_id, text=msg,	
-                                    reply_markup=InlineKeyboardMarkup(buttons.build_menu(2)),	
+                                    reply_markup=buttons.build_menu(2),	
                                     parse_mode=ParseMode.HTML)	
                 except Exception as e:	
                     LOGGER.warning(e)	
