@@ -533,7 +533,7 @@ def main():
                 PICS.append(o)
 
     if WALLFLARE_SEARCH:
-        url="https://www.wallpaperflare.com/search?wallpaper={WALLFLARE_SEARCH}&width=1280&height=720&page={}"
+        url= f"https://www.wallpaperflare.com/search?wallpaper={WALLFLARE_SEARCH}&width=1280&height=720&"+"page={}"
         links = []
         for page in range(1,20):
             print(url.format(page))
