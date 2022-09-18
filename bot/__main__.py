@@ -1,8 +1,7 @@
 import random
-from bs4 import*
+from bs4 import BeautifulSoup
 from signal import signal, SIGINT
 from requests import get as rget
-import requests as rq
 from urllib.parse import quote as q
 from random import choice
 from os import path as ospath, remove as osremove, execl as osexecl
@@ -188,35 +187,13 @@ def stats(update, context):
 
 
     if SHOW_LIMITS_IN_STATS is True:
-        if TORRENT_DIRECT_LIMIT is None:
-            torrent_direct = 'No Limit Set'
-        else:
-            torrent_direct = f'{TORRENT_DIRECT_LIMIT}GB/Link'
-        if CLONE_LIMIT is None:
-            clone_limit = 'No Limit Set'
-        else:
-            clone_limit = f'{CLONE_LIMIT}GB/Link'
-        if MEGA_LIMIT is None:
-            mega_limit = 'No Limit Set'
-        else:
-            mega_limit = f'{MEGA_LIMIT}GB/Link'
-        if LEECH_LIMIT is None:
-            leech_limit = 'No Limit Set'
-        else:
-            leech_limit = f'{LEECH_LIMIT}GB/Link'
-        if ZIP_UNZIP_LIMIT is None:
-            zip_unzip = 'No Limit Set'
-        else:
-            zip_unzip = f'{ZIP_UNZIP_LIMIT}GB/Link'
-        if TOTAL_TASKS_LIMIT is None:
-            total_task = 'No Limit Set'
-        else:
-            total_task = f'{TOTAL_TASKS_LIMIT} Total Tasks/Time'
-        if USER_TASKS_LIMIT is None:
-            user_task = 'No Limit Set'
-        else:
-            user_task = f'{USER_TASKS_LIMIT} Tasks/user'
-
+        torrent_direct = 'No Limit Set' if TORRENT_DIRECT_LIMIT is None else f'{TORRENT_DIRECT_LIMIT}GB/Link'
+        clone_limit = 'No Limit Set' if CLONE_LIMIT is None else f'{CLONE_LIMIT}GB/Link'
+        mega_limit = 'No Limit Set' if MEGA_LIMIT is None else f'{MEGA_LIMIT}GB/Link'
+        leech_limit = 'No Limit Set' if LEECH_LIMIT is None else f'{LEECH_LIMIT}GB/Link'
+        zip_unzip = 'No Limit Set' if ZIP_UNZIP_LIMIT is None else f'{ZIP_UNZIP_LIMIT}GB/Link'
+        total_task = 'No Limit Set' if TOTAL_TASKS_LIMIT is None else f'{TOTAL_TASKS_LIMIT} Total Tasks/Time'
+        user_task = 'No Limit Set' if USER_TASKS_LIMIT is None else f'{USER_TASKS_LIMIT} Tasks/user'
 
         if EMOJI_THEME is True: 
             stats += f'<b>╭─《 ⚠️ BOT LIMITS ⚠️ 》</b>\n'\
@@ -270,6 +247,7 @@ Type /{BotCommands.HelpCommand} to get a list of available commands
         else:
             sendMarkup(text, context.bot, update.message, reply_markup)
 
+
 def restart(update, context):
     cmd = update.effective_message.text.split(' ', 1)
     dynoRestart = False
@@ -316,7 +294,6 @@ def restart(update, context):
         osexecl(executable, executable, "-m", "bot")
 
 
-
 def ping(update, context):
     if EMOJI_THEME is True:
         start_time = int(round(time() * 1000))
@@ -328,7 +305,6 @@ def ping(update, context):
         reply = sendMessage("Starting_Ping ", context.bot, update.message)
         end_time = int(round(time() * 1000))
         editMessage(f'{end_time - start_time} ms ', reply)
-
 
 def log(update, context):
     sendLogFile(context.bot, update.message)
@@ -443,6 +419,7 @@ help_admin = telegraph.create_page(
     title=f"{TITLE_NAME} Help",
     content=help_string_telegraph_admin)["path"]
 
+
 def bot_help(update, context):
     button = ButtonMaker()
     if EMOJI_THEME is True:
@@ -452,8 +429,6 @@ def bot_help(update, context):
         button.buildbutton("User", f"https://graph.org/{help_user}")
         button.buildbutton("Admin", f"https://graph.org/{help_admin}")
     sendMarkup(help_string, context.bot, update.message, button.build_menu(2))
-
-       
 
 
 if SET_BOT_COMMANDS:
@@ -506,24 +481,18 @@ if SET_BOT_COMMANDS:
 
 
 def main():
+
     if WALLCRAFT_CATEGORY:
-        url1= f"https://wallpaperscraft.com/catalog/{WALLCRAFT_CATEGORY}/1280x720/"+"page{}"
-        links = []
         for page in range(1,20):
-            print(url1.format(page))
-            r2 = rq.get(url1.format(page))
+            r2 = rget(f"https://wallpaperscraft.com/catalog/{WALLCRAFT_CATEGORY}/1280x720/page{page}")
             soup2 = BeautifulSoup(r2.text, "html.parser")
             x = soup2.select('img[src^="https://images.wallpaperscraft.com/image/single"]')
             for img in x:
-              links.append(img['src'])
-        for o in links:
-            PICS.append(o.replace("300x168", "1280x720"))
+              PICS.append((img['src']).replace("300x168", "1280x720"))
 
     if WALLTIP_SEARCH:
-        url= f"https://www.wallpapertip.com/s/{WALLTIP_SEARCH}/"+"{}/"
         for page in range(1,3):
-            print(url.format(page))
-            r2 = rq.get(url.format(page))
+            r2 = rget(f"https://www.wallpapertip.com/s/{WALLTIP_SEARCH}/{page}")
             soup2 = BeautifulSoup(r2.text, "html.parser")
             divTag = soup2.select('#flex_grid div.item')
             aTag = [x.find('a') for x in divTag]
@@ -533,17 +502,15 @@ def main():
                 PICS.append(o)
 
     if WALLFLARE_SEARCH:
-        url= f"https://www.wallpaperflare.com/search?wallpaper={WALLFLARE_SEARCH}&width=1280&height=720&"+"page={}"
-        links = []
-        for page in range(1,20):
-            print(url.format(page))
-            r2 = rq.get(url.format(page))
-            soup2 = BeautifulSoup(r2.text, "html.parser")
-            x = soup2.select('img[data-src^="https://c4.wallpaperflare.com/wallpaper"]')  
-            for img in x:
-              links.append(img['data-src'])
-        for o in links:
-            PICS.append(o)
+        try:
+            for page in range(1,20):
+                r2 = rget(f"https://www.wallpaperflare.com/search?wallpaper={WALLFLARE_SEARCH}&width=1280&height=720&page={page}")
+                soup2 = BeautifulSoup(r2.text, "html.parser")
+                x = soup2.select('img[data-src^="https://c4.wallpaperflare.com/wallpaper"]')  
+                for img in x:
+                    PICS.append(img['data-src'])
+        except Exception as err:
+            LOGGER.info(f"WallFlare Error: {err}")
 
     if PIXABAY_API_KEY:
         try:
@@ -557,6 +524,7 @@ def main():
                 PICS.append(largeImageURL)
         except Exception as err:
             LOGGER.info(f"Pixabay API Error: {err}")
+
     if SET_BOT_COMMANDS:
         bot.set_my_commands(botcmds)
     start_cleanup()
