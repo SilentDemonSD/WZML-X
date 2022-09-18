@@ -1,6 +1,8 @@
 import random
+from bs4 import*
 from signal import signal, SIGINT
 from requests import get as rget
+import requests as rq
 from urllib.parse import quote as q
 from random import choice
 from os import path as ospath, remove as osremove, execl as osexecl
@@ -17,7 +19,7 @@ from bot import bot, dispatcher, updater, botStartTime, TIMEZONE, IGNORE_PENDING
                     DB_URI, alive, app, main_loop, HEROKU_API_KEY, HEROKU_APP_NAME, SET_BOT_COMMANDS, AUTHORIZED_CHATS, EMOJI_THEME, \
                     START_BTN1_NAME, START_BTN1_URL, START_BTN2_NAME, START_BTN2_URL, CREDIT_NAME, TITLE_NAME, PICS, FINISHED_PROGRESS_STR, UN_FINISHED_PROGRESS_STR, \
                     SHOW_LIMITS_IN_STATS, LEECH_LIMIT, TORRENT_DIRECT_LIMIT, CLONE_LIMIT, MEGA_LIMIT, ZIP_UNZIP_LIMIT, TOTAL_TASKS_LIMIT, USER_TASKS_LIMIT, \
-                    PIXABAY_API_KEY, PIXABAY_CATEGORY, PIXABAY_SEARCH
+                    PIXABAY_API_KEY, PIXABAY_CATEGORY, PIXABAY_SEARCH, WALLCRAFT_CATEGORY, WALLTIP_SEARCH, WALLFLARE_SEARCH
 from .helper.ext_utils.fs_utils import start_cleanup, clean_all, exit_clean_up
 from .helper.ext_utils.telegraph_helper import telegraph
 from .helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time
@@ -504,6 +506,45 @@ if SET_BOT_COMMANDS:
 
 
 def main():
+    if WALLCRAFT_CATEGORY:
+        url1= f"https://wallpaperscraft.com/catalog/{WALLCRAFT_CATEGORY}/1280x720/"+"page{}"
+        links = []
+        for page in range(1,20):
+            print(url1.format(page))
+            r2 = rq.get(url1.format(page))
+            soup2 = BeautifulSoup(r2.text, "html.parser")
+            x = soup2.select('img[src^="https://images.wallpaperscraft.com/image/single"]')
+            for img in x:
+              links.append(img['src'])
+        for o in links:
+            PICS.append(o.replace("300x168", "1280x720"))
+
+    if WALLTIP_SEARCH:
+        url= f"https://www.wallpapertip.com/s/{WALLTIP_SEARCH}/"+"{}/"
+        for page in range(1,3):
+            print(url.format(page))
+            r2 = rq.get(url.format(page))
+            soup2 = BeautifulSoup(r2.text, "html.parser")
+            divTag = soup2.select('#flex_grid div.item')
+            aTag = [x.find('a') for x in divTag]
+            imgsrc = [x.find('img') for x in aTag]
+            scrList =  [img['data-original'] for img in imgsrc]
+            for o in scrList:
+                PICS.append(o)
+
+    if WALLFLARE_SEARCH:
+        url="https://www.wallpaperflare.com/search?wallpaper={WALLFLARE_SEARCH}&width=1280&height=720&page={}"
+        links = []
+        for page in range(1,20):
+            print(url.format(page))
+            r2 = rq.get(url.format(page))
+            soup2 = BeautifulSoup(r2.text, "html.parser")
+            x = soup2.select('img[data-src^="https://c4.wallpaperflare.com/wallpaper"]')  
+            for img in x:
+              links.append(img['data-src'])
+        for o in links:
+            PICS.append(o)
+
     if PIXABAY_API_KEY:
         try:
             PIXABAY_ENDPOINT = f"https://pixabay.com/api/?key={PIXABAY_API_KEY}&image_type=all&orientation=horizontal&min_width=1280&min_height=720&per_page=200&safesearch=true&editors_choice=true"
