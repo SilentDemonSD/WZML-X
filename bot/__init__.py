@@ -852,6 +852,24 @@ try:
         raise KeyError
 except:
     PIXABAY_SEARCH = None
+try:
+    WALLFLARE_SEARCH = getConfig('WALLFLARE_SEARCH')
+    if len(WALLFLARE_SEARCH) == 0:
+        raise KeyError
+except:
+    WALLFLARE_SEARCH = None
+try:
+    WALLTIP_SEARCH = getConfig('WALLTIP_SEARCH')
+    if len(WALLTIP_SEARCH) == 0:
+        raise KeyError
+except:
+    WALLTIP_SEARCH = None
+try:
+    WALLCRAFT_CATEGORY = getConfig('WALLCRAFT_CATEGORY')
+    if len(WALLCRAFT_CATEGORY) == 0:
+        raise KeyError
+except:
+    WALLCRAFT_CATEGORY = None
 PICS = (environ.get('PICS', '')).split()
 
 updater = tgUpdater(token=BOT_TOKEN, request_kwargs={'read_timeout': 20, 'connect_timeout': 15})
