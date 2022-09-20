@@ -74,7 +74,7 @@ class MirrorLeechListener:
         with download_dict_lock:
             download = download_dict[self.uid]
             name = str(download.name()).replace('/', '')
-            gid = download.gid()						
+            gid = download.gid()
         LOGGER.info(f"Download completed: {name}")
         if name == "None" or self.isQbit or not ospath.exists(f"{self.dir}/{name}"):
             name = listdir(f"{self.dir}")[-1]

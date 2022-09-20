@@ -275,7 +275,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
             Thread(target=add_gd_download, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener, is_gdtot, is_unified, is_udrive, name)).start()
     elif is_mega_link(link):
         Thread(target=add_mega_download, args=(link, f'{DOWNLOAD_DIR}{listener.uid}/', listener, name)).start()
-    elif isQbit:
+    elif isQbit and (is_magnet(link) or ospath.exists(link)):
         Thread(target=QbDownloader(listener).add_qb_torrent, args=(link, f'{DOWNLOAD_DIR}{listener.uid}',
                                                                    ratio, seed_time)).start()
     else:
@@ -290,7 +290,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
         else:
             auth = ''
         Thread(target=add_aria2c_download, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener, name,
-		                                         auth, ratio, seed_time)).start()
+                                                 auth, ratio, seed_time)).start()
 
     if multi > 1:
         sleep(4)
@@ -302,7 +302,6 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
         multi -= 1
         sleep(4)
         Thread(target=_mirror_leech, args=(bot, nextmsg, isZip, extract, isQbit, isLeech)).start()
-
 
 
 
