@@ -19,6 +19,7 @@ lk21
 lxml
 mediainfo
 pillow
+megasdkrestclient
 psutil
 psycopg2-binary
 pybase64
