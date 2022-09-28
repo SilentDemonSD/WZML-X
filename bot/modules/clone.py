@@ -8,6 +8,7 @@ from time import sleep
 from pyrogram import enums
 
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
+from bot.helper.ext_utils.timegap import timegap_check
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, deleteMessage, delete_all_messages, update_all_messages, sendStatusMessage, auto_delete_upload_message, auto_delete_message, sendFile, sendPhoto
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -92,11 +93,17 @@ def _clone(message, bot):
 
     total_task = len(download_dict)
     user_id = message.from_user.id
-    if user_id != OWNER_ID and user_id not in SUDO_USERS:
+    if user_id != OWNER_ID and user_id not in SUDO_USERS and user_id not in PAID_USERS:
             if TOTAL_TASKS_LIMIT == total_task:
                 return sendMessage(f"<b>Bᴏᴛ Tᴏᴛᴀʟ Tᴀsᴋ Lɪᴍɪᴛ : {TOTAL_TASKS_LIMIT}\nTᴀsᴋs Pʀᴏᴄᴇssɪɴɢ : {total_task}\n#total limit exceed </b>", bot ,message)
             if USER_TASKS_LIMIT == get_user_task(user_id):
                 return sendMessage(f"<b>Bᴏᴛ Usᴇʀ Tᴀsᴋ Lɪᴍɪᴛ : {USER_TASKS_LIMIT} \nYᴏᴜʀ Tᴀsᴋs : {get_user_task(user_id)}\n#user limit exceed</b>", bot ,message)
+
+    if user_id != OWNER_ID and user_id not in SUDO_USERS and user_id not in PAID_USERS:
+        time_gap = timegap_check(message)
+        if time_gap:
+            return
+        TIME_GAP_STORE[message.from_user.id] = time()
 
     args = message.text.split()
     reply_to = message.reply_to_message
@@ -157,7 +164,7 @@ def _clone(message, bot):
                     cap = f"File/Folder is already available in Drive. Here are the search results:\n\n{cap}"
                     sendFile(bot, message, f_name, cap)
                     return
-        if CLONE_LIMIT is not None:
+        if CLONE_LIMIT is not None and user_id != OWNER_ID and user_id not in SUDO_USERS and user_id not in PAID_USERS:
             LOGGER.info('Checking File/Folder Size...')
             if size > CLONE_LIMIT * 1024**3:
                 msg2 = f'Failed, Clone limit is {CLONE_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(size)}.'

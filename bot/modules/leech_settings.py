@@ -1,9 +1,10 @@
 from os import remove as osremove, path as ospath, mkdir
+from sys import prefix
 from threading import Thread
 from PIL import Image
 from telegram.ext import CommandHandler, CallbackQueryHandler
 
-from bot import AS_DOC_USERS, AS_MEDIA_USERS, dispatcher, AS_DOCUMENT, DB_URI
+from bot import AS_DOC_USERS, AS_MEDIA_USERS, dispatcher, AS_DOCUMENT, DB_URI, PRE_DICT, LEECH_DICT, PAID_USERS, CAP_DICT
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, sendPhoto
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -16,6 +17,9 @@ def getleechinfo(from_user):
     name = from_user.full_name
     buttons = button_build.ButtonMaker()
     thumbpath = f"Thumbnails/{user_id}.jpg"
+    prefix = PRE_DICT.get(user_id, "")
+    caption = CAP_DICT.get(user_id, "")
+    dumpid = LEECH_DICT.get(user_id, "")
     if (
         user_id in AS_DOC_USERS
         or user_id not in AS_MEDIA_USERS
@@ -26,6 +30,28 @@ def getleechinfo(from_user):
     else:
         ltype = "MEDIA"
         buttons.sbutton("Send As Document", f"leechset {user_id} doc")
+
+    if (user_id in PRE_DICT):
+        prefix = prefix
+    else:
+        prefix = "Not Exists"
+
+    if (user_id in CAP_DICT):
+        caption = caption
+    else:
+        caption = "Not Exists"
+
+    if (user_id in LEECH_DICT):
+        dumpid = dumpid
+    else:
+        dumpid = "Not Exists"
+        
+    if user_id in PAID_USERS:
+        uplan = "Paid User"
+    else:
+        uplan = "Normal User"
+
+
 
     if ospath.exists(thumbpath):
         thumbmsg = "Exists"
@@ -39,7 +65,11 @@ def getleechinfo(from_user):
 
     text = f"<u>Leech Settings for <a href='tg://user?id={user_id}'>{name}</a></u>\n"\
            f"Leech Type <b>{ltype}</b>\n"\
-           f"Custom Thumbnail <b>{thumbmsg}</b>"
+           f"Custom Thumbnail <b>{thumbmsg}</b>"\
+           f"PreName : <b>{prefix}</b>\n"\
+           f"Caption : <b>{caption}</b>\n"\
+           f"DumpID : <b>{dumpid}</b>\n"\
+           f"User Plan : <b>{uplan}</b>\n"
     return text, button
 
 def editLeechType(message, query):
@@ -75,6 +105,7 @@ def setLeechType(update, context):
             DbManger().user_media(user_id)
         query.answer(text="Your File Will Deliver As Media!", show_alert=True)
         editLeechType(message, query)
+
     elif data[2] == "thumb":
         path = f"Thumbnails/{user_id}.jpg"
         if ospath.lexists(path):

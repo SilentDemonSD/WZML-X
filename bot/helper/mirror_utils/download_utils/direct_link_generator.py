@@ -14,7 +14,7 @@ from requests import get as rget, head as rhead, post as rpost, Session as rsess
 from re import findall as re_findall, sub as re_sub, match as re_match, search as re_search
 import requests
 import re
-from time import sleep
+from time import sleep, time
 from base64 import b64decode
 from urllib.parse import urlparse, unquote, parse_qs
 from json import loads as jsonloads
@@ -124,6 +124,7 @@ def zippy_share(url: str) -> str:
                     raise DirectDownloadLinkException("ERROR: Failed to Get Direct Link")
     dl_url = f"{base_url}/{uri1}/{int(mtk)}/{uri2}"
     return dl_url
+
 
 def yandex_disk(url: str) -> str:
     """ Yandex.Disk direct link generator

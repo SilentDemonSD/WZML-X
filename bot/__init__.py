@@ -31,9 +31,14 @@ basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
 LOGGER = getLogger(__name__)
 
 
+
 def getConfig(name: str):
     return environ[name]
 
+PRE_DICT = {}
+CAP_DICT = {}
+LEECH_DICT = {}
+TIME_GAP_STORE = {}
 
 load_dotenv('config.env', override=True)
 
@@ -115,7 +120,7 @@ EXTENSION_FILTER = set(['.aria2'])
 LEECH_LOG = set()	
 MIRROR_LOGS = set()
 LINK_LOGS = set()
-
+LOG_LEECH = set()
 
 try:
     BOT_TOKEN = getConfig('BOT_TOKEN')
@@ -129,7 +134,7 @@ try:
     TELEGRAM_API = getConfig('TELEGRAM_API')
     TELEGRAM_HASH = getConfig('TELEGRAM_HASH')
 except:
-    log.error("One or more env variables missing! Exiting now")
+    log_error("One or more env variables missing! Exiting now")
     exit(1)
 
 
@@ -146,6 +151,18 @@ try:
     for _id in aid:
         SUDO_USERS.add(int(_id.strip()))
 except:
+    pass
+if len(aid) != 0:
+    aid = aid.split()
+    PAID_USERS = {int(_id.strip()) for _id in aid}
+else:
+    PAID_USERS = set()
+try:
+    aid = getConfig("LOG_LEECH")
+    aid = aid.split(" ")
+    for _id in aid:
+        LOG_LEECH.add(int(_id))
+except:	
     pass
 try:
     fx = getConfig('EXTENSION_FILTER')
@@ -176,7 +193,6 @@ try:
         LINK_LOGS.add(int(_id))
 except:
     pass
-
 
 try:
     AUTO_DELETE_UPLOAD_MESSAGE_DURATION = int(getConfig('AUTO_DELETE_UPLOAD_MESSAGE_DURATION'))
@@ -263,6 +279,7 @@ except:
     USER_SESSION_STRING = None
     premium_session = None
 LOGGER.info(f"TG_SPLIT_SIZE: {TG_SPLIT_SIZE}")
+
 try:
     STATUS_LIMIT = getConfig('STATUS_LIMIT')
     if len(STATUS_LIMIT) == 0:
@@ -298,12 +315,6 @@ try:
 except:
     SEARCH_LIMIT = 0
 try:
-    RSS_COMMAND = getConfig('RSS_COMMAND')
-    if len(RSS_COMMAND) == 0:
-        raise KeyError
-except:
-    RSS_COMMAND = None
-try:
     CMD_INDEX = getConfig('CMD_INDEX')
     if len(CMD_INDEX) == 0:
         raise KeyError
@@ -314,6 +325,13 @@ try:
     SHOW_LIMITS_IN_STATS = SHOW_LIMITS_IN_STATS.lower() == 'true'
 except KeyError:
     SHOW_LIMITS_IN_STATS = False
+try:
+    TORRENT_TIMEOUT = getConfig('TORRENT_TIMEOUT')
+    if len(TORRENT_TIMEOUT) == 0:
+        raise KeyError
+    TORRENT_TIMEOUT = int(TORRENT_TIMEOUT)
+except:
+    TORRENT_TIMEOUT = None
 try:
     TORRENT_DIRECT_LIMIT = getConfig('TORRENT_DIRECT_LIMIT')
     if len(TORRENT_DIRECT_LIMIT) == 0:
@@ -371,15 +389,32 @@ try:
 except:
     ZIP_UNZIP_LIMIT = None
 try:
+    TIME_GAP = getConfig('TIME_GAP')
+    if len(TIME_GAP) == 0:
+        raise KeyError
+    TIME_GAP = int(TIME_GAP)
+except:
+    TIME_GAP = 600
+try:
+    PAID_SERVICE = getConfig('PAID_SERVICE')
+    PAID_SERVICE = PAID_SERVICE.lower() == 'true'
+except KeyError:
+    PAID_SERVICE = False
+
+
+try:
+    RSS_COMMAND = getConfig('RSS_COMMAND')
+    if len(RSS_COMMAND) == 0:
+        raise KeyError
+except:
+    RSS_COMMAND = None
+try:
     RSS_CHAT_ID = getConfig('RSS_CHAT_ID')
     if len(RSS_CHAT_ID) == 0:
         raise KeyError
     RSS_CHAT_ID = int(RSS_CHAT_ID)
 except:
     RSS_CHAT_ID = None
-
-
-
 try:
     RSS_USER_SESSION_STRING = getConfig('RSS_USER_SESSION_STRING')
     if len(RSS_USER_SESSION_STRING) == 0:
@@ -395,14 +430,25 @@ try:
     RSS_DELAY = int(RSS_DELAY)
 except:
     RSS_DELAY = 900
-try:
-    TORRENT_TIMEOUT = getConfig('TORRENT_TIMEOUT')
-    if len(TORRENT_TIMEOUT) == 0:
-        raise KeyError
-    TORRENT_TIMEOUT = int(TORRENT_TIMEOUT)
-except:
-    TORRENT_TIMEOUT = None
 
+
+try:
+    START_BTN1_NAME = getConfig('START_BTN1_NAME')
+    START_BTN1_URL = getConfig('START_BTN1_URL')
+    if len(START_BTN1_NAME) == 0 or len(START_BTN1_URL) == 0:
+        raise KeyError
+except:
+    START_BTN1_NAME = 'Master'
+    START_BTN1_URL = 'https://t.me/krn_adhikari'
+
+try:
+    START_BTN2_NAME = getConfig('START_BTN2_NAME')
+    START_BTN2_URL = getConfig('START_BTN2_URL')
+    if len(START_BTN2_NAME) == 0 or len(START_BTN2_URL) == 0:
+        raise KeyError
+except:
+    START_BTN2_NAME = 'Support Group'
+    START_BTN2_URL = 'https://t.me/WeebZone_updates'
 try:
     BUTTON_FOUR_NAME = getConfig('BUTTON_FOUR_NAME')
     BUTTON_FOUR_URL = getConfig('BUTTON_FOUR_URL')
@@ -609,19 +655,26 @@ try:
     LEECH_LOG_INDEXING = LEECH_LOG_INDEXING.lower() == 'true'	
 except KeyError:	
     LEECH_LOG_INDEXING = False
+
 try:
     AUTHOR_NAME = getConfig('AUTHOR_NAME')
     if len(AUTHOR_NAME) == 0:
         AUTHOR_NAME = 'Karan'
 except KeyError:
     AUTHOR_NAME = 'Karan'
-
 try:
     AUTHOR_URL = getConfig('AUTHOR_URL')
     if len(AUTHOR_URL) == 0:
         AUTHOR_URL = 'https://t.me/WeebZone_updates'
 except KeyError:
     AUTHOR_URL = 'https://t.me/WeebZone_updates'
+try:
+    TITLE_NAME = getConfig('TITLE_NAME')
+    if len(TITLE_NAME) == 0:
+        TITLE_NAME = 'WeebZone'
+except KeyError:
+    TITLE_NAME = 'WeebZone'
+
 try:
     GD_INFO = getConfig('GD_INFO')
     if len(GD_INFO) == 0:
@@ -633,29 +686,8 @@ try:
     DISABLE_DRIVE_LINK = DISABLE_DRIVE_LINK.lower() == 'true'
 except KeyError:
     DISABLE_DRIVE_LINK = False
-try:
-    TITLE_NAME = getConfig('TITLE_NAME')
-    if len(TITLE_NAME) == 0:
-        TITLE_NAME = 'WeebZone'
-except KeyError:
-    TITLE_NAME = 'WeebZone'
-try:
-    START_BTN1_NAME = getConfig('START_BTN1_NAME')
-    START_BTN1_URL = getConfig('START_BTN1_URL')
-    if len(START_BTN1_NAME) == 0 or len(START_BTN1_URL) == 0:
-        raise KeyError
-except:
-    START_BTN1_NAME = 'Master'
-    START_BTN1_URL = 'https://t.me/krn_adhikari'
 
-try:
-    START_BTN2_NAME = getConfig('START_BTN2_NAME')
-    START_BTN2_URL = getConfig('START_BTN2_URL')
-    if len(START_BTN2_NAME) == 0 or len(START_BTN2_URL) == 0:
-        raise KeyError
-except:
-    START_BTN2_NAME = 'Support Group'
-    START_BTN2_URL = 'https://t.me/WeebZone_updates'
+
 try:
     CREDIT_NAME = getConfig('CREDIT_NAME')
     if len(CREDIT_NAME) == 0:
@@ -674,6 +706,7 @@ try:
         CAPTION_FONT = 'code'
 except KeyError:
     CAPTION_FONT = 'code'
+
 try:
     FINISHED_PROGRESS_STR = getConfig('FINISHED_PROGRESS_STR') 
     UN_FINISHED_PROGRESS_STR = getConfig('UN_FINISHED_PROGRESS_STR')

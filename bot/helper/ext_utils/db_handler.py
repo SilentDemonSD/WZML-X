@@ -1,7 +1,7 @@
 from os import path as ospath, makedirs
 from psycopg2 import connect, DatabaseError
 
-from bot import DB_URI, AUTHORIZED_CHATS, SUDO_USERS, AS_DOC_USERS, AS_MEDIA_USERS, rss_dict, LOGGER, botname, LEECH_LOG
+from bot import DB_URI, AUTHORIZED_CHATS, SUDO_USERS, AS_DOC_USERS, AS_MEDIA_USERS, rss_dict, LOGGER, botname, LEECH_LOG, PRE_DICT, LEECH_DICT, PAID_USERS, CAP_DICT
 
 class DbManger:
     def __init__(self):
@@ -29,10 +29,12 @@ class DbManger:
                  auth boolean DEFAULT FALSE,
                  media boolean DEFAULT FALSE,
                  doc boolean DEFAULT FALSE,
+                 pre text DEFAULT NULL,
+                 cap text DEFAULT NULL,
+                 dump text DEFAULT NULL,
+                 paid boolean DEFAULT FALSE,
                  thumb bytea DEFAULT NULL,
-                 leechlog boolean DEFAULT FALSE
-              )
-              """
+                 leechlog boolean DEFAULT FALSE)"""
         self.cur.execute(sql)
         sql = """CREATE TABLE IF NOT EXISTS rss (
                  name text,
@@ -62,13 +64,21 @@ class DbManger:
                     AS_MEDIA_USERS.add(row[0])
                 elif row[4]:
                     AS_DOC_USERS.add(row[0])
+                if row[5]:
+                    PRE_DICT[row[0]] = row[5]
+                if row[6]:
+                    CAP_DICT[row[0]] = row[6]
+                if row[7]:
+                    LEECH_DICT[row[0]] = row[7]
+                if row[8] and row[0] not in PAID_USERS:
+                    PAID_USERS.add(row[0])
                 path = f"Thumbnails/{row[0]}.jpg"
-                if row[5] is not None and not ospath.exists(path):
+                if row[9] is not None and not ospath.exists(path):
                     if not ospath.exists('Thumbnails'):
                         makedirs('Thumbnails')
                     with open(path, 'wb+') as f:
-                        f.write(row[5])
-                if row[6] and row[0] not in LEECH_LOG:
+                        f.write(row[9])
+                if row[10] and row[0] not in LEECH_LOG:
                     LEECH_LOG.add(row[0])
             LOGGER.info("Users data has been imported from Database")
         # Rss Data
@@ -151,6 +161,64 @@ class DbManger:
         self.cur.execute(sql)
         self.conn.commit()
         self.disconnect()
+
+    def user_pre(self, user_id: int, user_pre):
+        if self.err:
+            return
+        elif not self.user_check(user_id):
+            sql = 'INSERT INTO users (pre, uid) VALUES (%s, %s)'
+        else:
+            sql = 'UPDATE users SET pre = %s WHERE uid = %s'
+        self.cur.execute(sql, (user_pre, user_id))
+        self.conn.commit()
+        self.disconnect()
+
+
+    def user_cap(self, user_id: int, user_cap):
+        if self.err:
+            return
+        elif not self.user_check(user_id):
+            sql = 'INSERT INTO users (cap, uid) VALUES (%s, %s)'
+        else:
+            sql = 'UPDATE users SET cap = %s WHERE uid = %s'
+        self.cur.execute(sql, (user_cap, user_id))
+        self.conn.commit()
+        self.disconnect()  
+
+
+    def user_dump(self, user_id: int, user_dump):
+        if self.err:
+            return
+        elif not self.user_check(user_id):
+            sql = 'INSERT INTO users (dump, uid) VALUES (%s, %s)'
+        else:
+            sql = 'UPDATE users SET dump = %s WHERE uid = %s'
+        self.cur.execute(sql, (user_dump, user_id))
+        self.conn.commit()
+        self.disconnect()
+
+    def user_addpaid(self, user_id: int):
+        if self.err:
+            return "Error in DB connection, check log for details"
+        elif not self.user_check(user_id):
+            sql = 'INSERT INTO users (uid, paid) VALUES ({}, TRUE)'.format(user_id)
+        else:
+            sql = 'UPDATE users SET paid = TRUE WHERE uid = {}'.format(user_id)
+        self.cur.execute(sql)
+        self.conn.commit()
+        self.disconnect()
+        return 'Successfully Promoted as Paid Member'
+
+    def user_rmpaid(self, user_id: int):
+        if self.err:
+            return "Error in DB connection, check log for details"
+        elif self.user_check(user_id):
+            sql = 'UPDATE users SET paid = FALSE WHERE uid = {}'.format(user_id)
+            self.cur.execute(sql)
+            self.conn.commit()
+            self.disconnect()
+            return 'Successfully removed from Paid Membership'
+
 
     def user_save_thumb(self, user_id: int, path):
         if self.err:

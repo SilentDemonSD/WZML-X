@@ -19,7 +19,7 @@ from bot import NAME_FONT, bot, Interval, INDEX_URL, BUTTON_FOUR_NAME, BUTTON_FO
                 download_dict, download_dict_lock, TG_SPLIT_SIZE, LOGGER, DB_URI, INCOMPLETE_TASK_NOTIFIER, \
                 LEECH_LOG, BOT_PM, MIRROR_LOGS, SOURCE_LINK, AUTO_DELETE_UPLOAD_MESSAGE_DURATION, \
                 MIRROR_ENABLED, LEECH_ENABLED, WATCH_ENABLED, CLONE_ENABLED, LINK_LOGS, EMOJI_THEME, \
-                MIRROR_LOG_URL, LEECH_LOG_URL, TITLE_NAME, LEECH_LOG_INDEXING, PICS, NAME_FONT, FORCE_BOT_PM, DISABLE_DRIVE_LINK
+                MIRROR_LOG_URL, LEECH_LOG_URL, TITLE_NAME, LEECH_LOG_INDEXING, PICS, NAME_FONT, FORCE_BOT_PM, DISABLE_DRIVE_LINK, PRE_DICT
 from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_gdtot_link, is_mega_link, is_gdrive_link, get_content_type, get_readable_time
 from bot.helper.ext_utils.fs_utils import get_base_name, get_path_size, split_file, clean_download, clean_target
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException, NotSupportedExtractionArchive
@@ -235,12 +235,21 @@ class MirrorLeechListener:
         mesg = self.message.text.split('\n')
         message_args = mesg[0].split(' ', maxsplit=1)
         reply_to = self.message.reply_to_message
+        prefix = PRE_DICT.get(self.message.from_user.id, "")
+        PRENAME_X = prefix
+        file_ = escape(name)
+        if PRENAME_X != 0:
+          if file_.startswith('www'): 
+            file_ = ' '.join(file_.split()[1:])
+            file_ = f"{PRENAME_X}"+ file_.strip('-').strip('_')
+        else:
+          file_ = f"{file_}"
         if EMOJI_THEME is True:
-            slmsg = f"🗂️ Name: <{NAME_FONT}>{escape(name)}</{NAME_FONT}>\n\n"
+            slmsg = f"🗂️ Name: <{NAME_FONT}>{file_}</{NAME_FONT}>\n\n"
             slmsg += f"📐 Size: {size}\n"
             slmsg += f"👥 Added by: {self.tag} | <code>{self.user_id}</code>\n\n"
         else:
-            slmsg = f"Name: <{NAME_FONT}>{escape(name)}</{NAME_FONT}>\n\n"
+            slmsg = f"Name: <{NAME_FONT}>{file_}</{NAME_FONT}>\n\n"
             slmsg += f"Size: {size}\n"
             slmsg += f"Added by: {self.tag} | <code>{self.user_id}</code>\n\n"
         if LINK_LOGS:
@@ -310,9 +319,9 @@ class MirrorLeechListener:
 
         if BOT_PM and FORCE_BOT_PM and not self.isPrivate:
             if EMOJI_THEME is True:
-                msg = f"<b>🗂️ Name: </b><{NAME_FONT}>{escape(name)}</{NAME_FONT}>\n"
+                msg = f"<b>🗂️ Name: </b><{NAME_FONT}>{file_}</{NAME_FONT}>\n"
             else:
-                msg = f"<b>Name: </b><{NAME_FONT}>{escape(name)}</{NAME_FONT}>\n"
+                msg = f"<b>Name: </b><{NAME_FONT}>{file_}</{NAME_FONT}>\n"
             botpm = f"<b>\nHey {self.tag}!, I have sent your stuff in PM.</b>\n"
             buttons = ButtonMaker()
             b_uname = bot.get_me().username
@@ -333,9 +342,9 @@ class MirrorLeechListener:
                 reply_to.delete()
 
         if EMOJI_THEME is True:
-            msg = f"<b>╭🗂️ Name: </b><{NAME_FONT}>{escape(name)}</{NAME_FONT}>\n<b>├📐 Size: </b>{size}"
+            msg = f"<b>╭🗂️ Name: </b><{NAME_FONT}>{file_}</{NAME_FONT}>\n<b>├📐 Size: </b>{size}"
         else:
-            msg = f"<b>╭ Name: </b><{NAME_FONT}>{escape(name)}</{NAME_FONT}>\n<b>├ Size: </b>{size}"
+            msg = f"<b>╭ Name: </b><{NAME_FONT}>{file_}</{NAME_FONT}>\n<b>├ Size: </b>{size}"
 
 
         if self.isLeech:

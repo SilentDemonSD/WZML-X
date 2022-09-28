@@ -5,7 +5,8 @@ from threading import Event
 from mega import (MegaApi, MegaListener, MegaRequest, MegaTransfer, MegaError)
 
 
-from bot import LOGGER, MEGA_API_KEY, TELEGRAPH_STYLE, download_dict, download_dict_lock, MEGA_LIMIT, STOP_DUPLICATE, ZIP_UNZIP_LIMIT, STORAGE_THRESHOLD, LEECH_LIMIT, MEGA_EMAIL_ID, MEGA_PASSWORD
+from bot import LOGGER, MEGA_API_KEY, TELEGRAPH_STYLE, download_dict, download_dict_lock, MEGA_LIMIT, STOP_DUPLICATE, ZIP_UNZIP_LIMIT, STORAGE_THRESHOLD, LEECH_LIMIT, MEGA_EMAIL_ID, MEGA_PASSWORD, \
+                OWNER_ID, SUDO_USERS, PAID_USERS
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, sendStatusMessage, sendStatusMessage, sendFile
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, setInterval, get_mega_link_type
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
@@ -175,18 +176,12 @@ def add_mega_download(mega_link: str, path: str, listener, name: str):
                 if cap:
                     cap = f"File/Folder is already available in Drive. Here are the search results:\n\n{cap}"
                     sendFile(listener.bot, listener.message, f_name, cap)
-
-
-            # cap, f_name = GoogleDriveHelper().drive_list(mname, True)
-            # if cap:
-            #     cap = f"File/Folder is already available in Drive. Here are the search results:\n\n{cap}"
-            #     sendFile(listener.bot, listener.message, f_name, cap)
                 api.removeListener(mega_listener)
                 if folder_api is not None:
                     folder_api.removeListener(mega_listener)
                 return
-    
-    if any([STORAGE_THRESHOLD, ZIP_UNZIP_LIMIT, MEGA_LIMIT, LEECH_LIMIT]):
+    user_id = listener.message.from_user.id
+    if any([STORAGE_THRESHOLD, ZIP_UNZIP_LIMIT, MEGA_LIMIT, LEECH_LIMIT]) and user_id != OWNER_ID and user_id not in SUDO_USERS and user_id not in PAID_USERS:
         size = api.getSize(node)
         arch = any([listener.isZip, listener.isLeech, listener.extract])
         if STORAGE_THRESHOLD is not None:
