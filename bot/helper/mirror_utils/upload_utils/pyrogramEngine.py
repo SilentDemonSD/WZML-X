@@ -102,7 +102,7 @@ class TgUploader:
         else:
             cap_mono = f"<{CAPTION_FONT}>{file_}</{CAPTION_FONT}>"
             cap = f"\n\n{CAPTION_X}\n\n"
-        if CUSTOM_FILENAME is not None and PRENAME_X is 0 or prefix is "":
+        if CUSTOM_FILENAME is not None and PRENAME_X == 0 or prefix == "":
             cap_mono = f"<{CAPTION_FONT}>{CUSTOM_FILENAME} {file_}</{CAPTION_FONT}>"
             cap = f"\n\n{CAPTION_X}\n\n"
             file_ = f"{CUSTOM_FILENAME} {file_}"

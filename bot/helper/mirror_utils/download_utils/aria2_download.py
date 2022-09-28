@@ -1,7 +1,7 @@
 from time import sleep, time
 from os import remove, path as ospath
 from bot import LEECH_LIMIT, TELEGRAPH_STYLE, aria2, download_dict_lock, download_dict, STOP_DUPLICATE, BASE_URL, TORRENT_DIRECT_LIMIT, ZIP_UNZIP_LIMIT, LEECH_LIMIT, LOGGER, STORAGE_THRESHOLD, \
-                OWNER_ID, SUDO_USERS, PAID_USERS 
+                OWNER_ID, SUDO_USERS, PAID_USERS, PAID_SERVICE 
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.ext_utils.bot_utils import is_magnet, getDownloadByGid, new_thread, bt_selection_buttons, get_readable_file_size
 from bot.helper.mirror_utils.status_utils.aria_download_status import AriaDownloadStatus
@@ -68,28 +68,51 @@ def __onDownloadStarted(api, gid):
                             sendFile(listener.bot, listener.message, f_name, cap)
                             return
             user_id = listener.message.from_user.id
-            if any([ZIP_UNZIP_LIMIT, LEECH_LIMIT, TORRENT_DIRECT_LIMIT, STORAGE_THRESHOLD]) and user_id != OWNER_ID and user_id not in SUDO_USERS and user_id not in PAID_USERS:
+            if any([ZIP_UNZIP_LIMIT, LEECH_LIMIT, TORRENT_DIRECT_LIMIT, STORAGE_THRESHOLD]) and user_id != OWNER_ID and user_id not in SUDO_USERS:
                 sleep(1)
                 limit = None
                 size = download.total_length
                 arch = any([listener.isZip, listener.isLeech, listener.extract])
-                if STORAGE_THRESHOLD is not None:
-                    acpt = check_storage_threshold(size, arch, True)
-                    # True if files allocated, if allocation disabled remove True arg
-                    if not acpt:
-                        msg = f'You must leave {STORAGE_THRESHOLD}GB free storage.'
-                        msg += f'\nYour File/Folder size is {get_readable_file_size(size)}'
-                        listener.onDownloadError(msg)
-                        return api.remove([download], force=True, files=True)
-                if ZIP_UNZIP_LIMIT is not None and arch:
-                    mssg = f'Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB'
-                    limit = ZIP_UNZIP_LIMIT
-                if LEECH_LIMIT is not None and arch:
-                    mssg = f'Leech limit is {LEECH_LIMIT}GB'
-                    limit = LEECH_LIMIT
-                elif TORRENT_DIRECT_LIMIT is not None:
-                    mssg = f'Torrent/Direct limit is {TORRENT_DIRECT_LIMIT}GB'
-                    limit = TORRENT_DIRECT_LIMIT
+                if PAID_SERVICE is True and user_id not in PAID_USERS:
+                    if STORAGE_THRESHOLD is not None:
+                        acpt = check_storage_threshold(size, arch, True)
+                        # True if files allocated, if allocation disabled remove True arg
+                        if not acpt:
+                            msg = f'You must leave {STORAGE_THRESHOLD}GB free storage.'
+                            msg += f'\nYour File/Folder size is {get_readable_file_size(size)}'
+                            msg += f'\n#Buy Paid Service'
+                            listener.onDownloadError(msg)
+                            return api.remove([download], force=True, files=True)
+                    if ZIP_UNZIP_LIMIT is not None and arch:
+                        mssg = f'Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB'
+                        mssg += f'\n#Buy Paid Service'
+                        limit = ZIP_UNZIP_LIMIT
+                    if LEECH_LIMIT is not None and arch:
+                        mssg = f'Leech limit is {LEECH_LIMIT}GB'
+                        mssg += f'\n#Buy Paid Service'
+                        limit = LEECH_LIMIT
+                    elif TORRENT_DIRECT_LIMIT is not None:
+                        mssg = f'Torrent/Direct limit is {TORRENT_DIRECT_LIMIT}GB'
+                        mssg += f'\n#Buy Paid Service'
+                        limit = TORRENT_DIRECT_LIMIT
+                else:
+                    if STORAGE_THRESHOLD is not None:
+                        acpt = check_storage_threshold(size, arch, True)
+                        # True if files allocated, if allocation disabled remove True arg
+                        if not acpt:
+                            msg = f'You must leave {STORAGE_THRESHOLD}GB free storage.'
+                            msg += f'\nYour File/Folder size is {get_readable_file_size(size)}'
+                            listener.onDownloadError(msg)
+                            return api.remove([download], force=True, files=True)
+                    if ZIP_UNZIP_LIMIT is not None and arch:
+                        mssg = f'Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB'
+                        limit = ZIP_UNZIP_LIMIT
+                    if LEECH_LIMIT is not None and arch:
+                        mssg = f'Leech limit is {LEECH_LIMIT}GB'
+                        limit = LEECH_LIMIT
+                    elif TORRENT_DIRECT_LIMIT is not None:
+                        mssg = f'Torrent/Direct limit is {TORRENT_DIRECT_LIMIT}GB'
+                        limit = TORRENT_DIRECT_LIMIT
                 if limit is not None:
                     LOGGER.info('Checking File/Folder Size...')
                     if size > limit * 1024**3:

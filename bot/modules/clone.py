@@ -1,6 +1,7 @@
 import random
 from random import choice
 from random import SystemRandom
+from re import T
 from string import ascii_letters, digits
 from telegram.ext import CommandHandler
 from threading import Thread
@@ -93,17 +94,29 @@ def _clone(message, bot):
 
     total_task = len(download_dict)
     user_id = message.from_user.id
-    if user_id != OWNER_ID and user_id not in SUDO_USERS and user_id not in PAID_USERS:
+    if user_id != OWNER_ID and user_id not in SUDO_USERS:
+        if PAID_SERVICE is True and user_id not in PAID_USERS:
+            if TOTAL_TASKS_LIMIT == total_task:
+                return sendMessage(f"<b>Bᴏᴛ Tᴏᴛᴀʟ Tᴀsᴋ Lɪᴍɪᴛ : {TOTAL_TASKS_LIMIT}\nTᴀsᴋs Pʀᴏᴄᴇssɪɴɢ : {total_task}\n#total limit exceed </b>\n#Buy Paid Service", bot ,message)
+            if USER_TASKS_LIMIT == get_user_task(user_id):
+                return sendMessage(f"<b>Bᴏᴛ Usᴇʀ Tᴀsᴋ Lɪᴍɪᴛ : {USER_TASKS_LIMIT} \nYᴏᴜʀ Tᴀsᴋs : {get_user_task(user_id)}\n#user limit exceed</b>\n#Buy Paid Service", bot ,message)
+        else:
             if TOTAL_TASKS_LIMIT == total_task:
                 return sendMessage(f"<b>Bᴏᴛ Tᴏᴛᴀʟ Tᴀsᴋ Lɪᴍɪᴛ : {TOTAL_TASKS_LIMIT}\nTᴀsᴋs Pʀᴏᴄᴇssɪɴɢ : {total_task}\n#total limit exceed </b>", bot ,message)
             if USER_TASKS_LIMIT == get_user_task(user_id):
                 return sendMessage(f"<b>Bᴏᴛ Usᴇʀ Tᴀsᴋ Lɪᴍɪᴛ : {USER_TASKS_LIMIT} \nYᴏᴜʀ Tᴀsᴋs : {get_user_task(user_id)}\n#user limit exceed</b>", bot ,message)
 
-    if user_id != OWNER_ID and user_id not in SUDO_USERS and user_id not in PAID_USERS:
-        time_gap = timegap_check(message)
-        if time_gap:
-            return
-        TIME_GAP_STORE[message.from_user.id] = time()
+    if user_id != OWNER_ID and user_id not in SUDO_USERS:
+        if PAID_SERVICE is True and user_id not in PAID_USERS:
+            time_gap = timegap_check(message)
+            if time_gap:
+                return
+            TIME_GAP_STORE[message.from_user.id] = time()
+        else:
+            time_gap = timegap_check(message)
+            if time_gap:
+                return
+            TIME_GAP_STORE[message.from_user.id] = time()
 
     args = message.text.split()
     reply_to = message.reply_to_message
