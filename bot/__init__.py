@@ -152,11 +152,13 @@ try:
         SUDO_USERS.add(int(_id.strip()))
 except:
     pass
-if len(aid) != 0:
+try:
+    aid = getConfig('PAID_USERS')
     aid = aid.split()
-    PAID_USERS = {int(_id.strip()) for _id in aid}
-else:
-    PAID_USERS = set()
+    for _id in aid:
+        PAID_USERS.add(int(_id.strip()))
+except:
+    pass
 try:
     aid = getConfig("LOG_LEECH")
     aid = aid.split(" ")
