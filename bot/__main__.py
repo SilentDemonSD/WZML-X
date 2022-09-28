@@ -243,15 +243,9 @@ help_string_telegraph_user = f'''
 <br><br>
 • <b>/{BotCommands.PreNameCommand}</b>: Set Prename to leech files
 <br><br>
-• <b>/{BotCommands.DelPreNameCommand}</b>: Delete Prename for leech files
-<br><br>
 • <b>/{BotCommands.CaptionCommand}</b>: Set Caption for leech files
 <br><br>
-• <b>/{BotCommands.DelCaptionCommand}</b>: Delete Caption for leech files
-<br><br>
 • <b>/{BotCommands.UserLogCommand}</b>: Add Dump Channel for leech files. make sure bot should an admin in dump channel.
-<br><br>
-• <b>/{BotCommands.DelUserLogCommand}</b>: Delete Dump Channel for leech files.
 <br><br>
 • <b>/{BotCommands.LeechSetCommand}</b>: Leech settings
 <br><br>

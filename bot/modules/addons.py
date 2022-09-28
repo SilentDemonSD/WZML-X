@@ -56,27 +56,6 @@ def prename_set(update, context):
             editMessage(f"<b>{u_men} Prename for the Leech file is Set now🚀</b>\n\n<b>Your Prename Text: </b>{txt}", lm)
 
 
-def del_prename(update, context):
-    user_id_ = update.message.from_user.id 
-    u_men = update.message.from_user.first_name
-    if PAID_SERVICE is True:
-        if user_id_ in PAID_USERS and OWNER_ID:
-            prefix_ = ""
-            PRE_DICT[user_id_] = prefix_
-            if DB_URI != "":
-                DbManger().user_pre(user_id_, prefix_)
-            sendMessage(f"<b>{u_men} Prename is successfully deleted.</b>", context.bot, update.message)
-        else:
-            sendMessage(f"Buy Paid Service to use Feature.", context.bot, update.message)
-    else:
-        prefix_ = ""
-        PRE_DICT[user_id_] = prefix_
-        if DB_URI != "":
-            DbManger().user_pre(user_id_, prefix_)
-        sendMessage(f"<b>{u_men} Prename is successfully deleted.</b>", context.bot, update.message)
-
-
-
 def caption_set(update, context):
     user_id_ = update.message.from_user.id 
     u_men = update.message.from_user.first_name
@@ -121,27 +100,6 @@ def caption_set(update, context):
                 DbManger().user_cap(user_id_, caption_)
                 LOGGER.info(f"User : {user_id_} Caption is Saved in DB")
             editMessage(f"<b>{u_men} Caption for the Leech file is Set now🌋</b>\n\n<b>Your Caption Text: </b>{txt}", lm)
-
-
-def del_caption(update, context):
-    user_id_ = update.message.from_user.id 
-    u_men = update.message.from_user.first_name
-    if PAID_SERVICE is True:
-        if user_id_ in PAID_USERS and OWNER_ID:
-            caption_ = ""
-            CAP_DICT[user_id_] = caption_
-            if DB_URI != "":
-                DbManger().user_cap(user_id_, caption_)
-            sendMessage(f"<b>{u_men} Caption is successfully deleted🗻.</b>", context.bot, update.message)
-        else:
-            sendMessage(f"Buy Paid Service to use Feature.", context.bot, update.message)
-    else:
-        caption_ = ""
-        CAP_DICT[user_id_] = caption_
-        if DB_URI != "":
-            DbManger().user_cap(user_id_, caption_)
-        sendMessage(f"<b>{u_men} Caption is successfully deleted🗻.</b>", context.bot, update.message)
-
 
 
 def userlog_set(update, context):
@@ -189,41 +147,14 @@ def userlog_set(update, context):
                 LOGGER.info(f"User : {user_id_} LeechLog ID Saved in DB")
             editMessage(f"<b>{u_men} your Channel ID Saved...🛸</b>", lm)
 
-def del_userlog(update, context):
-    user_id_ = update.message.from_user.id 
-    u_men = update.message.from_user.first_name
-    if PAID_SERVICE is True:
-        if user_id_ in PAID_USERS and OWNER_ID:
-            dumpid_ = ""
-            LEECH_DICT[user_id_] = dumpid_
-            if DB_URI != "":
-                DbManger().user_dump(user_id_, dumpid_)
-            sendMessage(f"Dump Channel ID Deleted for {u_men}💣", context.bot, update.message)
-        else:
-            sendMessage(f"Buy Paid Service to use Feature.", context.bot, update.message)
-    else:
-        dumpid_ = ""
-        LEECH_DICT[user_id_] = dumpid_
-        if DB_URI != "":
-            DbManger().user_dump(user_id_, dumpid_)
-        sendMessage(f"Dump Channel ID Deleted for {u_men}💣", context.bot, update.message)
 
 prename_set_handler = CommandHandler(BotCommands.PreNameCommand, prename_set,
                                        filters=(CustomFilters.authorized_chat | CustomFilters.authorized_user), run_async=True)
-del_prename_handler = CommandHandler(BotCommands.DelPreNameCommand, del_prename,
-                                       filters=(CustomFilters.authorized_chat | CustomFilters.authorized_user), run_async=True)
 caption_set_handler = CommandHandler(BotCommands.CaptionCommand, caption_set,
-                                       filters=(CustomFilters.authorized_chat | CustomFilters.authorized_user), run_async=True)
-del_caption_handler = CommandHandler(BotCommands.DelCaptionCommand, del_caption,
                                        filters=(CustomFilters.authorized_chat | CustomFilters.authorized_user), run_async=True)
 userlog_set_handler = CommandHandler(BotCommands.UserLogCommand, userlog_set,
                                        filters=(CustomFilters.authorized_chat | CustomFilters.authorized_user), run_async=True) 
-del_userlog_handler = CommandHandler(BotCommands.DelUserLogCommand, del_userlog,
-                                       filters=(CustomFilters.authorized_chat | CustomFilters.authorized_user), run_async=True)
 
 dispatcher.add_handler(prename_set_handler)
-dispatcher.add_handler(del_prename_handler)
 dispatcher.add_handler(caption_set_handler)
-dispatcher.add_handler(del_caption_handler)
 dispatcher.add_handler(userlog_set_handler)
-dispatcher.add_handler(del_userlog_handler)

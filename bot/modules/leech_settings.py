@@ -17,9 +17,9 @@ def getleechinfo(from_user):
     name = from_user.full_name
     buttons = button_build.ButtonMaker()
     thumbpath = f"Thumbnails/{user_id}.jpg"
-    prefix = PRE_DICT.get(user_id, "")
-    caption = CAP_DICT.get(user_id, "")
-    dumpid = LEECH_DICT.get(user_id, "")
+    prefix = PRE_DICT.get(user_id, "Not Exists")
+    caption = CAP_DICT.get(user_id, "Not Exists")
+    dumpid = LEECH_DICT.get(user_id, "Not Exists")
     if (
         user_id in AS_DOC_USERS
         or user_id not in AS_MEDIA_USERS
@@ -30,28 +30,8 @@ def getleechinfo(from_user):
     else:
         ltype = "MEDIA"
         buttons.sbutton("Send As Document", f"leechset {user_id} doc")
-
-    if (user_id in PRE_DICT):
-        prefix = prefix
-    else:
-        prefix = "Not Exists"
-
-    if (user_id in CAP_DICT):
-        caption = caption
-    else:
-        caption = "Not Exists"
-
-    if (user_id in LEECH_DICT):
-        dumpid = dumpid
-    else:
-        dumpid = "Not Exists"
         
-    if user_id in PAID_USERS:
-        uplan = "Paid User"
-    else:
-        uplan = "Normal User"
-
-
+    uplan = "Paid User" if user_id in PAID_USERS else "Normal User"
 
     if ospath.exists(thumbpath):
         thumbmsg = "Exists"
@@ -60,16 +40,24 @@ def getleechinfo(from_user):
     else:
         thumbmsg = "Not Exists"
 
+    if prefix != "Not Exists":
+        buttons.sbutton("Delete Prename", f"leechset {user_id} prename")
+
+    if caption != "Not Exists": 
+        buttons.sbutton("Delete Caption", f"leechset {user_id} cap")
+
+    if dumpid != "Not Exists":
+        buttons.sbutton("Delete DumpID", f"leechset {user_id} dump")
 
     button = buttons.build_menu(2)
 
-    text = f"<u>Leech Settings for <a href='tg://user?id={user_id}'>{name}</a></u>\n"\
-           f"Leech Type <b>{ltype}</b>\n"\
-           f"Custom Thumbnail <b>{thumbmsg}</b>"\
-           f"PreName : <b>{prefix}</b>\n"\
-           f"Caption : <b>{caption}</b>\n"\
-           f"DumpID : <b>{dumpid}</b>\n"\
-           f"User Plan : <b>{uplan}</b>\n"
+    text = f'''<u>Leech Settings for <a href='tg://user?id={user_id}'>{name}</a></u>
+Leech Type <b>{ltype}</b>
+Custom Thumbnail <b>{thumbmsg}</b>
+PreName : <b>{prefix}</b>
+Caption : <b>{caption}</b>
+DumpID : <b>{dumpid}</b>
+User Plan : <b>{uplan}</b>'''
     return text, button
 
 def editLeechType(message, query):
@@ -123,6 +111,24 @@ def setLeechType(update, context):
             delo = sendPhoto(text=msg, bot=context.bot, message=message, photo=open(path, 'rb'))
             Thread(args=(context.bot, update.message, delo)).start()
         else: query.answer(text="Send new settings command.")
+    elif data[2] == "prename":
+        PRE_DICT.pop(user_id)
+        if DB_URI: 
+            DbManger().user_pre(user_id, None)
+        query.answer(text="Your Prename is Successfully Deleted!", show_alert=True)
+        editLeechType(message, query)
+    elif data[2] == "cap":
+        CAP_DICT.pop(user_id)
+        if DB_URI:
+            DbManger().user_cap(user_id, None)
+        query.answer(text="Your Caption is Successfully Deleted!", show_alert=True)
+        editLeechType(message, query)
+    elif data[2] == "dump":
+        LEECH_DICT.pop(user_id)
+        if DB_URI:
+            DbManger().user_dump(user_id, None)
+        query.answer(text="Your Dump ID is Successfully Deleted!", show_alert=True)
+        editLeechType(message, query)
     else:
         query.answer()
         try:
