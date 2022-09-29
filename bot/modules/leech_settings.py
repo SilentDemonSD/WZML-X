@@ -114,7 +114,7 @@ def setLeechType(update, context):
     elif data[2] == "prename":
         PRE_DICT.pop(user_id)
         if DB_URI: 
-            DbManger().user_pre(user_id, None)
+            DbManger().user_pre(user_id, '')
         query.answer(text="Your Prename is Successfully Deleted!", show_alert=True)
         editLeechType(message, query)
     elif data[2] == "cap":
