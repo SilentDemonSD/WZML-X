@@ -52,6 +52,7 @@ def getleechinfo(from_user):
     button = buttons.build_menu(2)
 
     text = f'''<u>Leech Settings for <a href='tg://user?id={user_id}'>{name}</a></u>
+    
 Leech Type <b>{ltype}</b>
 Custom Thumbnail <b>{thumbmsg}</b>
 PreName : <b>{prefix}</b>

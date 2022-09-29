@@ -82,7 +82,7 @@ class TgUploader:
         PRENAME_X = prefix
         caption = CAP_DICT.get(self.__listener.message.from_user.id, "")
         CAPTION_X = caption
-        if PRENAME_X != 0:
+        if len(PRENAME_X) != 0:
             if file_.startswith('www'):
                 file_ = ' '.join(file_.split()[1:])
                 file__ = file_.strip('-').strip('_')
@@ -99,9 +99,9 @@ class TgUploader:
                 osrename(up_path, new_path)
                 up_path = new_path
         else:
-                cap_mono = f"<{CAPTION_FONT}>{file_}</{CAPTION_FONT}>"
-                cap = f"\n\n{CAPTION_X}\n\n"
-        # if CUSTOM_FILENAME is not None and PRENAME_X == 0 or prefix == "":
+            cap_mono = f"<{CAPTION_FONT}>{file_}</{CAPTION_FONT}>"
+            cap = f"\n\n{CAPTION_X}\n\n"
+        # if CUSTOM_FILENAME is not None and prefix == '':
         #     cap_mono = f"<{CAPTION_FONT}>{CUSTOM_FILENAME} {file_}</{CAPTION_FONT}>"
         #     cap = f"\n\n{CAPTION_X}\n\n"
         #     file_ = f"{CUSTOM_FILENAME} {file_}"

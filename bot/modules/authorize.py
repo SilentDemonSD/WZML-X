@@ -196,7 +196,7 @@ def sendAuthChats(update, context):
 def sendPaidDetails(update, context):
     paid = ''
     paid += '\n'.join(f"<code>{uid}</code>" for uid in PAID_USERS)
-    sendMessage(f'<b><u>Paid Users:</u></b>\n{paid}', context.bot, update.message)
+    sendMessage(f'<b><u>Paid Users🤑 :</u></b>\n{paid}', context.bot, update.message)
 
 send_auth_handler = CommandHandler(command=BotCommands.AuthorizedUsersCommand, callback=sendAuthChats,
                                     filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)

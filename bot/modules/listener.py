@@ -238,10 +238,12 @@ class MirrorLeechListener:
         prefix = PRE_DICT.get(self.message.from_user.id, "")
         PRENAME_X = prefix
         file_ = escape(name)
-        if PRENAME_X != 0:
-          if file_.startswith('www'): 
-            file_ = ' '.join(file_.split()[1:])
-            file_ = f"{PRENAME_X}"+ file_.strip('-').strip('_')
+        if len(PRENAME_X) != 0:
+            if file_.startswith('www'): 
+                file_ = ' '.join(file_.split()[1:])
+                file_ = f"{PRENAME_X}"+ file_.strip('-').strip('_')
+            else:
+                file_ = f"{PRENAME_X} {file_}"
         else:
           file_ = f"{file_}"
         if EMOJI_THEME is True:
