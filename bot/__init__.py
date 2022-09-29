@@ -542,12 +542,12 @@ try:
     EQUAL_SPLITS = EQUAL_SPLITS.lower() == 'true'
 except:
     EQUAL_SPLITS = False
-try:
-    CUSTOM_FILENAME = getConfig('CUSTOM_FILENAME')
-    if len(CUSTOM_FILENAME) == 0:
-        raise KeyError
-except:
-    CUSTOM_FILENAME = None
+# try:
+#     CUSTOM_FILENAME = getConfig('CUSTOM_FILENAME')
+#     if len(CUSTOM_FILENAME) == 0:
+#         raise KeyError
+# except:
+#     CUSTOM_FILENAME = None
 try:
     MIRROR_ENABLED = getConfig("MIRROR_ENABLED")
     MIRROR_ENABLED = MIRROR_ENABLED.lower() == "true"

@@ -4,8 +4,8 @@ from time import time, sleep
 from pyrogram.errors import FloodWait, RPCError
 from PIL import Image
 from threading import RLock
-from bot import AS_DOCUMENT, AS_DOC_USERS, AS_MEDIA_USERS, CUSTOM_FILENAME, \
-                 EXTENSION_FILTER, app, LEECH_LOG, BOT_PM, tgBotMaxFileSize, premium_session, CAPTION_FONT, PRE_DICT, LEECH_DICT, LOG_LEECH, CAP_DICT
+from bot import AS_DOCUMENT, AS_DOC_USERS, AS_MEDIA_USERS, EXTENSION_FILTER, \
+                app, LEECH_LOG, BOT_PM, tgBotMaxFileSize, premium_session, CAPTION_FONT, PRE_DICT, LEECH_DICT, LOG_LEECH, CAP_DICT
 from bot.helper.ext_utils.fs_utils import take_ss, get_media_info, get_media_streams, get_path_size, clean_unwanted
 from bot.helper.ext_utils.bot_utils import get_readable_file_size
 from pyrogram.types import Message
@@ -34,7 +34,6 @@ class TgUploader:
         self.__size = size
         self.__user_settings()
         self.__leech_log = LEECH_LOG.copy()  # copy then pop to keep the original var as it is
-        # self.__log_leech = LOG_LEECH.copy()
         self.__app = app
         self.__user_id = listener.message.from_user.id
         self.isPrivate = listener.message.chat.type in ['private', 'group']
@@ -102,16 +101,16 @@ class TgUploader:
         else:
             cap_mono = f"<{CAPTION_FONT}>{file_}</{CAPTION_FONT}>"
             cap = f"\n\n{CAPTION_X}\n\n"
-        if CUSTOM_FILENAME is not None and PRENAME_X == 0 or prefix == "":
-            cap_mono = f"<{CAPTION_FONT}>{CUSTOM_FILENAME} {file_}</{CAPTION_FONT}>"
-            cap = f"\n\n{CAPTION_X}\n\n"
-            file_ = f"{CUSTOM_FILENAME} {file_}"
-            new_path = ospath.join(dirpath, file_)
-            osrename(up_path, new_path)
-            up_path = new_path
-        else:
-            cap_mono = f"<{CAPTION_FONT}>{file_}</{CAPTION_FONT}>"
-            cap = f"\n\n{CAPTION_X}\n\n"
+        # if CUSTOM_FILENAME is not None and PRENAME_X == 0 or prefix == "":
+        #     cap_mono = f"<{CAPTION_FONT}>{CUSTOM_FILENAME} {file_}</{CAPTION_FONT}>"
+        #     cap = f"\n\n{CAPTION_X}\n\n"
+        #     file_ = f"{CUSTOM_FILENAME} {file_}"
+        #     new_path = ospath.join(dirpath, file_)
+        #     osrename(up_path, new_path)
+        #     up_path = new_path
+        # else:
+        #     cap_mono = f"<{CAPTION_FONT}>{file_}</{CAPTION_FONT}>"
+        #     cap = f"\n\n{CAPTION_X}\n\n"
         dumpid = LEECH_DICT.get(self.__listener.message.from_user.id, "")
         if len(dumpid) != 0:
             if fsize > 2097152000:
