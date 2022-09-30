@@ -85,16 +85,16 @@ class TgUploader:
         if len(PRENAME_X) != 0:
             if file_.startswith('www'):
                 file_ = ' '.join(file_.split()[1:])
-                file__ = file_.strip('-').strip('_')
-                cap_mono = f"<{CAPTION_FONT}>{PRENAME_X} {file__}</{CAPTION_FONT}>"
+                file_ = f"{PRENAME_X}" + file_.strip('-').strip('_')
+                cap_mono = f"<{CAPTION_FONT}>{file_}</{CAPTION_FONT}>"
                 cap = f"\n\n{CAPTION_X}\n\n"
                 new_path = ospath.join(dirpath, file_)
                 osrename(up_path, new_path)
                 up_path = new_path
             else:
-                cap_mono = f"<{CAPTION_FONT}>{PRENAME_X} {file_}</{CAPTION_FONT}>"
+                file_ = f"{PRENAME_X}" + " " + file_.strip('-').strip('_')
+                cap_mono = f"<{CAPTION_FONT}>{file_}</{CAPTION_FONT}>"
                 cap = f"\n\n{CAPTION_X}\n\n"
-                file_ = f"{PRENAME_X} {file_}"
                 new_path = ospath.join(dirpath, file_)
                 osrename(up_path, new_path)
                 up_path = new_path
