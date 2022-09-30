@@ -53,15 +53,15 @@ class MirrorStatus:
         STATUS_SEEDING = "Seed"
 
 class EngineStatus:
-    STATUS_ARIA = "Aria2c v1.35.0"
-    STATUS_GD = "Google Api v2.51.0"
-    STATUS_MEGA = "MegaSDK v3.12.0"
-    STATUS_QB = "qBittorrent v4.3.9"
-    STATUS_TG = "Pyrogram v2.0.27"
-    STATUS_YT = "YT-dlp v22.5.18"
-    STATUS_EXT = "Extract | pExtract"
-    STATUS_SPLIT = "FFmpeg v2.9.1"
-    STATUS_ZIP = "p7zip v16.02"
+    STATUS_ARIA = "Aria2c📶"
+    STATUS_GD = "Google Api♻️"
+    STATUS_MEGA = "MegaSDK⭕️"
+    STATUS_QB = "qBittorrent🦠"
+    STATUS_TG = "Pyrogram💥"
+    STATUS_YT = "YT-dlp🌟"
+    STATUS_EXT = "Extract | pExtract⚔️"
+    STATUS_SPLIT = "FFmpeg✂️"
+    STATUS_ZIP = "p7zip🛠"
 
     
 SIZE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
@@ -140,6 +140,19 @@ def get_user_task(user_id):
         userid = task.message.from_user.id
         if userid == user_id: user_task += 1
     return user_task
+
+def timeformatter(milliseconds: int) -> str:
+    seconds, milliseconds = divmod(int(milliseconds), 1000)
+    minutes, seconds = divmod(seconds, 60)
+    hours, minutes = divmod(minutes, 60)
+    days, hours = divmod(hours, 24)
+    tmp = ((str(days) + " days, ") if days else "") + \
+        ((str(hours) + " hours, ") if hours else "") + \
+        ((str(minutes) + " min, ") if minutes else "") + \
+        ((str(seconds) + " sec, ") if seconds else "") + \
+        ((str(milliseconds) + " millisec, ") if milliseconds else "")
+    return tmp[:-2]
+
 
 def get_progress_bar_string(status):
     completed = status.processed_bytes() / 8

@@ -1,6 +1,6 @@
 from telegram.ext import MessageFilter
 from telegram import Message
-from bot import AUTHORIZED_CHATS, SUDO_USERS, OWNER_ID
+from bot import AUTHORIZED_CHATS, SUDO_USERS, OWNER_ID, PAID_USERS
 
 
 class CustomFilters:
@@ -28,6 +28,13 @@ class CustomFilters:
             return message.from_user.id in SUDO_USERS
 
     sudo_user = __SudoUser()
+
+    class __PaidUser(MessageFilter):
+        def filter(self, message: Message):
+            id = message.from_user.id
+            return id in PAID_USERS or id == OWNER_ID
+
+    paid_user = __PaidUser()
 
     @staticmethod
     def _owner_query(user_id):

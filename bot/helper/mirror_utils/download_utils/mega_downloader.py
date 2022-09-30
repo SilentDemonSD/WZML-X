@@ -1,7 +1,8 @@
 from threading import Lock
 from pathlib import Path
 
-from bot import LOGGER, TELEGRAPH_STYLE, download_dict, download_dict_lock, MEGA_LIMIT, STOP_DUPLICATE, ZIP_UNZIP_LIMIT, STORAGE_THRESHOLD, LEECH_LIMIT
+from bot import LOGGER, TELEGRAPH_STYLE, download_dict, download_dict_lock, MEGA_LIMIT, STOP_DUPLICATE, ZIP_UNZIP_LIMIT, STORAGE_THRESHOLD, LEECH_LIMIT, \
+                OWNER_ID, SUDO_USERS, PAID_USERS, PAID_SERVICE
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, sendStatusMessage, sendStatusMessage, sendFile
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, setInterval
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
@@ -128,24 +129,47 @@ class MegaDownloader:
                         cap = f"File/Folder is already available in Drive. Here are the search results:\n\n{cap}"
                         sendFile(self.__listener.bot, self.__listener.message, f_name, cap)
                         return
-        if any([STORAGE_THRESHOLD, ZIP_UNZIP_LIMIT, MEGA_LIMIT, LEECH_LIMIT]):
+        user_id = self.__listener.message.from_user.id
+        if any([STORAGE_THRESHOLD, ZIP_UNZIP_LIMIT, MEGA_LIMIT, LEECH_LIMIT]) and user_id != OWNER_ID and user_id not in SUDO_USERS:
             arch = any([self.__listener.isZip, self.__listener.extract])
-            if STORAGE_THRESHOLD is not None:
-                acpt = check_storage_threshold(file_size, arch)
-                if not acpt:
-                    msg = f'You must leave {STORAGE_THRESHOLD}GB free storage.'
-                    msg += f'\nYour File/Folder size is {get_readable_file_size(file_size)}'
-                    return sendMessage(msg, self.__listener.bot, self.__listener.message)
-            limit = None
-            if ZIP_UNZIP_LIMIT is not None and arch:
-                msg3 = f'Failed, Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(file_size)}.'
-                limit = ZIP_UNZIP_LIMIT
-            if LEECH_LIMIT is not None and self.__listener.isLeech:
-                msg3 = f'Failed, Leech limit is {LEECH_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(file_size)}.'
-                limit = LEECH_LIMIT
-            elif MEGA_LIMIT is not None:
-                msg3 = f'Failed, Mega limit is {MEGA_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(file_size)}.'
-                limit = MEGA_LIMIT
+            if PAID_SERVICE is True and user_id not in PAID_USERS:
+                if STORAGE_THRESHOLD is not None:
+                    acpt = check_storage_threshold(file_size, arch)
+                    if not acpt:
+                        msg = f'You must leave {STORAGE_THRESHOLD}GB free storage.'
+                        msg += f'\nYour File/Folder size is {get_readable_file_size(file_size)}'
+                        msg += f'\n#Buy Paid Service'
+                        return sendMessage(msg, self.__listener.bot, self.__listener.message)
+                limit = None
+                if ZIP_UNZIP_LIMIT is not None and arch:
+                    msg3 = f'Failed, Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(file_size)}.'
+                    msg3 += f'\n#Buy Paid Service'
+                    limit = ZIP_UNZIP_LIMIT
+                if LEECH_LIMIT is not None and self.__listener.isLeech:
+                    msg3 = f'Failed, Leech limit is {LEECH_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(file_size)}.'
+                    msg3 += f'\n#Buy Paid Service'
+                    limit = LEECH_LIMIT
+                elif MEGA_LIMIT is not None:
+                    msg3 = f'Failed, Mega limit is {MEGA_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(file_size)}.'
+                    msg3 += f'\n#Buy Paid Service'
+                    limit = MEGA_LIMIT
+            else:
+                if STORAGE_THRESHOLD is not None:
+                    acpt = check_storage_threshold(file_size, arch)
+                    if not acpt:
+                        msg = f'You must leave {STORAGE_THRESHOLD}GB free storage.'
+                        msg += f'\nYour File/Folder size is {get_readable_file_size(file_size)}'
+                        return sendMessage(msg, self.__listener.bot, self.__listener.message)
+                limit = None
+                if ZIP_UNZIP_LIMIT is not None and arch:
+                    msg3 = f'Failed, Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(file_size)}.'
+                    limit = ZIP_UNZIP_LIMIT
+                if LEECH_LIMIT is not None and self.__listener.isLeech:
+                    msg3 = f'Failed, Leech limit is {LEECH_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(file_size)}.'
+                    limit = LEECH_LIMIT
+                elif MEGA_LIMIT is not None:
+                    msg3 = f'Failed, Mega limit is {MEGA_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(file_size)}.'
+                    limit = MEGA_LIMIT
             if limit is not None:
                 LOGGER.info('Checking File/Folder Size...')
                 if file_size > limit * 1024**3:

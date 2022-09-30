@@ -12,6 +12,7 @@ from telegram import ParseMode, InlineKeyboardButton
 
 from bot import *
 from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_gdtot_link, is_mega_link, is_gdrive_link, is_unified_link, is_udrive_link, get_content_type, get_readable_time, get_user_task
+from bot.helper.ext_utils.timegap import timegap_check
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException, NotSupportedExtractionArchive
 from bot.helper.ext_utils.shortenurl import short_url
 from bot.helper.mirror_utils.download_utils.aria2_download import add_aria2c_download
@@ -69,11 +70,23 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
 
     total_task = len(download_dict)
     user_id = message.from_user.id
-    if user_id != OWNER_ID and user_id not in SUDO_USERS:
+    if user_id != OWNER_ID and user_id not in SUDO_USERS and user_id not in PAID_USERS:
+        if PAID_SERVICE is True:
+            if TOTAL_TASKS_LIMIT == total_task:
+                return sendMessage(f"<b>Bot Total Task Limit : {TOTAL_TASKS_LIMIT}\nTasks Processing : {total_task}\n#total limit exceed </b>\n#Buy Paid Service", bot ,message)
+            if USER_TASKS_LIMIT == get_user_task(user_id):
+                return sendMessage(f"<b>Bot Total Task Limit : {USER_TASKS_LIMIT} \nYour Tasks : {get_user_task(user_id)}\n#user limit exceed</b>\n#Buy Paid Service", bot ,message)
+        else:
             if TOTAL_TASKS_LIMIT == total_task:
                 return sendMessage(f"<b>Bot Total Task Limit : {TOTAL_TASKS_LIMIT}\nTasks Processing : {total_task}\n#total limit exceed </b>", bot ,message)
             if USER_TASKS_LIMIT == get_user_task(user_id):
                 return sendMessage(f"<b>Bot Total Task Limit : {USER_TASKS_LIMIT} \nYour Tasks : {get_user_task(user_id)}\n#user limit exceed</b>", bot ,message)
+
+    if user_id != OWNER_ID and user_id not in SUDO_USERS and user_id not in PAID_USERS:
+        time_gap = timegap_check(message)
+        if time_gap:
+            return
+        TIME_GAP_STORE[message.from_user.id] = time()
 
     mesg = message.text.split('\n')
     message_args = mesg[0].split(maxsplit=1)

@@ -14,7 +14,7 @@ from requests import get as rget, head as rhead, post as rpost, Session as rsess
 from re import findall as re_findall, sub as re_sub, match as re_match, search as re_search
 import requests
 import re
-from time import sleep
+from time import sleep, time
 from base64 import b64decode
 from urllib.parse import urlparse, unquote, parse_qs
 from json import loads as jsonloads

@@ -1,4 +1,4 @@
-from bot import AUTHORIZED_CHATS, SUDO_USERS, dispatcher, DB_URI, LEECH_LOG
+from bot import AUTHORIZED_CHATS, SUDO_USERS, dispatcher, DB_URI, LEECH_LOG, PAID_USERS
 from bot.helper.telegram_helper.message_utils import sendMessage
 from telegram.ext import CommandHandler
 from bot.helper.telegram_helper.filters import CustomFilters
@@ -152,6 +152,41 @@ def rmleechlog(update, context):
             msg = 'Chat does not exist in leech logs!'
     sendMessage(msg, context.bot, update.message)
 
+def addPaid(update, context):
+    user_id = ""
+    reply_message = update.message.reply_to_message
+    if len(context.args) == 1:
+        user_id = int(context.args[0])
+    elif reply_message:
+        user_id = reply_message.from_user.id
+    if user_id:
+        if user_id in PAID_USERS:
+            msg = 'Already a Paid User!'
+        elif DB_URI is not None:
+            msg = DbManger().user_addpaid(user_id)
+            PAID_USERS.add(user_id)
+        else:
+            PAID_USERS.add(user_id)
+            msg = 'Promoted as Paid User'
+    else:
+        msg = "Give ID or Reply To message of whom you want to Promote as Paid User"
+    sendMessage(msg, context.bot, update.message)
+
+def removePaid(update, context):
+    user_id = ""
+    reply_message = update.message.reply_to_message
+    if len(context.args) == 1:
+        user_id = int(context.args[0])
+    elif reply_message:
+        user_id = reply_message.from_user.id
+    if user_id and user_id in PAID_USERS:
+        msg = DbManger().user_rmpaid(user_id) if DB_URI is not None else 'Removed from Paid Subscription'
+        PAID_USERS.remove(user_id)
+    else:
+        msg = "Give ID or Reply To message of whom you want to remove from Paid User"
+    sendMessage(msg, context.bot, update.message)
+
+
 def sendAuthChats(update, context):
     user = sudo = leechlog = ''
     user += '\n'.join(f"<code>{uid}</code>" for uid in AUTHORIZED_CHATS)
@@ -159,8 +194,15 @@ def sendAuthChats(update, context):
     leechlog += '\n'.join(f"<code>{uid}</code>" for uid in LEECH_LOG)
     sendMessage(f'<b><u>Authorized Chats💬 :</u></b>\n{user}\n<b><u>Sudo Users👤 :</u></b>\n{sudo}\n<b><u>Leech Log:</u></b>\n{leechlog}', context.bot, update.message)
 
+def sendPaidDetails(update, context):
+    paid = ''
+    paid += '\n'.join(f"<code>{uid}</code>" for uid in PAID_USERS)
+    sendMessage(f'<b><u>Paid Users🤑  :</u></b>\n{paid}', context.bot, update.message)
+
 
 send_auth_handler = CommandHandler(command=BotCommands.AuthorizedUsersCommand, callback=sendAuthChats,
+                                    filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
+pdetails_handler = CommandHandler(command=BotCommands.PaidUsersCommand, callback=sendPaidDetails,
                                     filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
 authorize_handler = CommandHandler(command=BotCommands.AuthorizeCommand, callback=authorize,
                                     filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
@@ -174,12 +216,18 @@ addleechlog_handler = CommandHandler(command=BotCommands.AddleechlogCommand, cal
                                     filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
 rmleechlog_handler = CommandHandler(command=BotCommands.RmleechlogCommand, callback=rmleechlog,
                                     filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
-
+addpaid_handler = CommandHandler(command=BotCommands.AddPaidCommand, callback=addPaid,
+                                    filters=CustomFilters.owner_filter, run_async=True)
+removepaid_handler = CommandHandler(command=BotCommands.RmPaidCommand, callback=removePaid,
+                                    filters=CustomFilters.owner_filter, run_async=True)
 
 dispatcher.add_handler(send_auth_handler)
+dispatcher.add_handler(pdetails_handler)
 dispatcher.add_handler(authorize_handler)
 dispatcher.add_handler(unauthorize_handler)
 dispatcher.add_handler(addsudo_handler)
 dispatcher.add_handler(removesudo_handler)
 dispatcher.add_handler(addleechlog_handler)
 dispatcher.add_handler(rmleechlog_handler)
+dispatcher.add_handler(addpaid_handler)
+dispatcher.add_handler(removepaid_handler)

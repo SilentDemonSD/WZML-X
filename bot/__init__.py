@@ -61,6 +61,11 @@ except:
     HEROKU_APP_NAME = None
     HEROKU_API_KEY = None
 
+PRE_DICT = {}
+CAP_DICT = {}
+LEECH_DICT = {}
+TIME_GAP_STORE = {}
+
 load_dotenv('config.env', override=True)
 
 try:
@@ -143,12 +148,14 @@ rss_dict = {}
 
 AUTHORIZED_CHATS = set()
 SUDO_USERS = set()
+PAID_USERS = set()
 AS_DOC_USERS = set()
 AS_MEDIA_USERS = set()
 EXTENSION_FILTER = set(['.aria2'])
 LEECH_LOG = set()	
 MIRROR_LOGS = set()
 LINK_LOGS = set()
+LOG_LEECH = set()
 
 
 try:
@@ -163,7 +170,7 @@ try:
     TELEGRAM_API = getConfig('TELEGRAM_API')
     TELEGRAM_HASH = getConfig('TELEGRAM_HASH')
 except:
-    log.error("One or more env variables missing! Exiting now")
+    log_error("One or more env variables missing! Exiting now")
     exit(1)
 
 
@@ -180,6 +187,20 @@ try:
     for _id in aid:
         SUDO_USERS.add(int(_id.strip()))
 except:
+    pass
+try:
+    aid = getConfig('PAID_USERS')
+    aid = aid.split()
+    for _id in aid:
+        PAID_USERS.add(int(_id.strip()))
+except:
+    pass
+try:
+    aid = getConfig("LOG_LEECH")
+    aid = aid.split(" ")
+    for _id in aid:
+        LOG_LEECH.add(int(_id))
+except:	
     pass
 try:
     fx = getConfig('EXTENSION_FILTER')
@@ -344,6 +365,18 @@ try:
     SEARCH_LIMIT = int(SEARCH_LIMIT)
 except:
     SEARCH_LIMIT = 0
+try:
+    TIME_GAP = getConfig('TIME_GAP')
+    if len(TIME_GAP) == 0:
+        raise KeyError
+    TIME_GAP = int(TIME_GAP)
+except:
+    TIME_GAP = 600
+try:
+    PAID_SERVICE = getConfig('PAID_SERVICE')
+    PAID_SERVICE = PAID_SERVICE.lower() == 'true'
+except KeyError:
+    PAID_SERVICE = False
 try:
     RSS_COMMAND = getConfig('RSS_COMMAND')
     if len(RSS_COMMAND) == 0:
@@ -524,12 +557,12 @@ try:
     EQUAL_SPLITS = EQUAL_SPLITS.lower() == 'true'
 except:
     EQUAL_SPLITS = False
-try:
-    CUSTOM_FILENAME = getConfig('CUSTOM_FILENAME')
-    if len(CUSTOM_FILENAME) == 0:
-        raise KeyError
-except:
-    CUSTOM_FILENAME = None
+# try:
+#     CUSTOM_FILENAME = getConfig('CUSTOM_FILENAME')
+#     if len(CUSTOM_FILENAME) == 0:
+#         raise KeyError
+# except:
+#     CUSTOM_FILENAME = None
 try:
     MIRROR_ENABLED = getConfig("MIRROR_ENABLED")
     MIRROR_ENABLED = MIRROR_ENABLED.lower() == "true"

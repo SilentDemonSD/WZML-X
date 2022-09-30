@@ -358,6 +358,12 @@ help_string_telegraph_user = f'''
 <br><br>
 • <b>/{BotCommands.LeechZipWatchCommand}</b> [yt-dlp supported link]: Leech yt-dlp supported link as zip
 <br><br>
+• <b>/{BotCommands.PreNameCommand}</b>: Set Prename to leech files
+<br><br>
+• <b>/{BotCommands.CaptionCommand}</b>: Set Caption for leech files
+<br><br>
+• <b>/{BotCommands.UserLogCommand}</b>: Add Dump Channel for leech files. make sure bot should an admin in dump channel.
+<br><br>
 • <b>/{BotCommands.LeechSetCommand}</b>: Leech settings
 <br><br>
 • <b>/{BotCommands.SetThumbCommand}</b>: Reply photo to set it as Thumbnail
@@ -412,6 +418,14 @@ help_string_telegraph_admin = f'''
 <br><br>
 • <b>/{BotCommands.RestartCommand}</b>: Restart and update the bot
 <br><br>
+• <b>/{BotCommands.PaidUsersCommand}</b>: Show Paid users (Only Owner & Sudo)
+<br><br>
+• <b>/{BotCommands.AddPaidCommand}</b>: Authorize Paid users (Only Owner)
+<br><br>
+• <b>/{BotCommands.RmPaidCommand}</b>: Unauthorize Paid users (Only Owner)
+<br><br>
+• <b>/{BotCommands.RestartCommand}</b>: Restart and update the bot (Only Owner & Sudo)
+<br><br>
 • <b>/{BotCommands.LogCommand}</b>: Get a log file of the bot. Handy for getting crash reports
 '''
 
@@ -450,6 +464,9 @@ if SET_BOT_COMMANDS:
         (f'{BotCommands.QbUnzipLeechCommand}','Leech torrent and extract using qb'),
         (f'{BotCommands.LeechWatchCommand}','Leech yt-dlp supported link'),
         (f'{BotCommands.LeechZipWatchCommand}','Leech yt-dlp supported link as zip'),
+        (f'{BotCommands.PreNameCommand}','Set Prename for Leech Files'),
+        (f'{BotCommands.CaptionCommand}','Set Caption for Leech Files'),
+        (f'{BotCommands.UserLogCommand}','Set Dump Channel for Leech Files'),
         (f'{BotCommands.CountCommand}','Count file/folder of Drive'),
         (f'{BotCommands.DeleteCommand}','Delete file/folder from Drive'),
         (f'{BotCommands.CancelMirror}','Cancel a task'),
@@ -469,13 +486,6 @@ if SET_BOT_COMMANDS:
         (f'{BotCommands.RestartCommand}','Restart the bot'),
         (f'{BotCommands.LogCommand}','Get the bot Log'),
         (f'{BotCommands.HelpCommand}','Get detailed help'),
-        (f'{BotCommands.AuthorizedUsersCommand}','Authorized Users/Chats'),
-        (f'{BotCommands.AuthorizeCommand}','Authorize user/chat'),
-        (f'{BotCommands.UnAuthorizeCommand}','UnAuthorize user/chat'),
-        (f'{BotCommands.AddSudoCommand}','Add Sudo'),
-        (f'{BotCommands.RmSudoCommand}','Remove Sudo'),
-        (f'{BotCommands.AddleechlogCommand}','Add Leech Log Channel'),
-        (f'{BotCommands.RmleechlogCommand}','Remove Leech Log Channel'),
         (f'{BotCommands.SleepCommand}','Sleep Bot')
     ]
 
