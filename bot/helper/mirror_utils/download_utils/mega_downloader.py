@@ -130,9 +130,9 @@ class MegaDownloader:
                         sendFile(self.__listener.bot, self.__listener.message, f_name, cap)
                         return
         user_id = self.__listener.message.from_user.id
-        if any([STORAGE_THRESHOLD, ZIP_UNZIP_LIMIT, MEGA_LIMIT, LEECH_LIMIT]) and user_id != OWNER_ID and user_id not in SUDO_USERS:
+        if any([STORAGE_THRESHOLD, ZIP_UNZIP_LIMIT, MEGA_LIMIT, LEECH_LIMIT]) and user_id != OWNER_ID and user_id not in SUDO_USERS and user_id not in PAID_USERS:
             arch = any([self.__listener.isZip, self.__listener.extract])
-            if PAID_SERVICE is True and user_id not in PAID_USERS:
+            if PAID_SERVICE is True:
                 if STORAGE_THRESHOLD is not None:
                     acpt = check_storage_threshold(file_size, arch)
                     if not acpt:
