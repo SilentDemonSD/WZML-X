@@ -68,12 +68,12 @@ def __onDownloadStarted(api, gid):
                             sendFile(listener.bot, listener.message, f_name, cap)
                             return
             user_id = listener.message.from_user.id
-            if any([ZIP_UNZIP_LIMIT, LEECH_LIMIT, TORRENT_DIRECT_LIMIT, STORAGE_THRESHOLD]) and user_id != OWNER_ID and user_id not in SUDO_USERS:
+            if any([ZIP_UNZIP_LIMIT, LEECH_LIMIT, TORRENT_DIRECT_LIMIT, STORAGE_THRESHOLD]) and user_id != OWNER_ID and user_id not in SUDO_USERS and user_id not in PAID_USERS:
                 sleep(1)
                 limit = None
                 size = download.total_length
                 arch = any([listener.isZip, listener.isLeech, listener.extract])
-                if PAID_SERVICE is True and user_id not in PAID_USERS:
+                if PAID_SERVICE is True:
                     if STORAGE_THRESHOLD is not None:
                         acpt = check_storage_threshold(size, arch, True)
                         # True if files allocated, if allocation disabled remove True arg
