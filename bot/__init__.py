@@ -204,6 +204,13 @@ except KeyError as e:
     LOGGER.warning("AUTO_DELETE_UPLOAD_MESSAGE_DURATION var missing!")
     pass
 
+try:
+    TIME_GAP = int(getConfig('TIME_GAP'))
+except KeyError as e:
+    TIME_GAP = -1
+    pass
+
+
 LOGGER.info("Generating SESSION_STRING")
 app = Client(name='pyrogram', api_id=int(TELEGRAM_API), api_hash=TELEGRAM_HASH, bot_token=BOT_TOKEN, parse_mode=enums.ParseMode.HTML, no_updates=True)
 
@@ -391,13 +398,6 @@ try:
     ZIP_UNZIP_LIMIT = float(ZIP_UNZIP_LIMIT)
 except:
     ZIP_UNZIP_LIMIT = None
-try:
-    TIME_GAP = getConfig('TIME_GAP')
-    if len(TIME_GAP) == 0:
-        raise KeyError
-    TIME_GAP = int(TIME_GAP)
-except:
-    TIME_GAP = 600
 try:
     PAID_SERVICE = getConfig('PAID_SERVICE')
     PAID_SERVICE = PAID_SERVICE.lower() == 'true'
