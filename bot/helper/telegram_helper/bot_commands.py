@@ -42,6 +42,7 @@ class _BotCommands:
         self.CountCommand = getCommand('COUNT_COMMAND', f'count{CMD_INDEX}')
         self.WatchCommand =  getCommand('WATCH_COMMAND', f'watch{CMD_INDEX}')
         self.ZipWatchCommand = getCommand('ZIPWATCH_COMMAND', f'zipwatch{CMD_INDEX}')
+        self.ScrapeCommand = getCommand('SCRAPE_COMMAND', f'scrape{CMD_INDEX}')
         self.QbMirrorCommand = getCommand('QBMIRROR_COMMAND', f'qbmirror{CMD_INDEX}')
         self.QbUnzipMirrorCommand = getCommand('QBUNZIP_COMMAND', f'qbunzipmirror{CMD_INDEX}')
         self.QbZipMirrorCommand = getCommand('QBZIP_COMMAND', f'qbzipmirror{CMD_INDEX}')
