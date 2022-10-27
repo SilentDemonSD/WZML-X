@@ -119,7 +119,7 @@ def scrapper(update, context):
             sendMessage(txt, context.bot, update.message)
 
 def htpmovies(link):
-    download = get(link, stream=True, allow_redirects=False) 
+    download = rget(link, stream=True, allow_redirects=False) 
     xurl =download.headers["location"]   
     client = cloudscraper.create_scraper(allow_brotli=False)
     param = xurl.split("/")[-1]
