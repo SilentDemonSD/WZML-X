@@ -1,6 +1,6 @@
 from re import match as rematch, findall, sub as resub
 from time import sleep
-from cloudscraper import create_scraper
+import cloudscraper
 from urllib.parse import urlparse
 from requests import get as rget
 from bs4 import BeautifulSoup, NavigableString, Tag
