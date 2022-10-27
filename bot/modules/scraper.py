@@ -1,6 +1,6 @@
 from re import match as rematch, findall, sub as resub
 from time import sleep
-from cloudscraper import create_scraper
+import cloudscraper
 from urllib.parse import urlparse
 from requests import get as rget
 from bs4 import BeautifulSoup, NavigableString, Tag
@@ -119,31 +119,23 @@ def scrapper(update, context):
             sendMessage(txt, context.bot, update.message)
 
 def htpmovies(link):
-    download = rget(link.replace("exit", "go"), stream=True, allow_redirects=False) 
-    xurl =download.headers["location"]
-    client = create_scraper(allow_brotli=False)
-    p = urlparse(xurl)
-    final_url = f'{p.scheme}://{p.netloc}/links/go'
-    res = client.head(xurl)
-    header_loc = res.headers['location']
+    download = rget(link, stream=True, allow_redirects=False) 
+    xurl =download.headers["location"]   
+    client = cloudscraper.create_scraper(allow_brotli=False)
     param = xurl.split("/")[-1]
-    req_url = f'{p.scheme}://{p.netloc}/{param}'
-    p = urlparse(header_loc)
-    ref_url = f'{p.scheme}://{p.netloc}/'
-    h = { 'referer': ref_url }
-    res = client.get(req_url, headers=h, allow_redirects=False)
-    bs4 = BeautifulSoup(res.content, 'html.parser')
-    inputs = bs4.find_all('input')
+    DOMAIN = "https://go.kinemaster.cc"
+    final_url = f"{DOMAIN}/{param}"
+    resp = client.get(final_url)
+    soup = BeautifulSoup(resp.content, "html.parser")    
+    try: inputs = soup.find(id="go-link").find_all(name="input")
+    except: return "Incorrect Link"
     data = { input.get('name'): input.get('value') for input in inputs }
-    heads = {
-        'referer': ref_url,
-        'x-requested-with': 'XMLHttpRequest',
-    }
+    h = { "x-requested-with": "XMLHttpRequest" }
     sleep(10)
-    res = client.post(final_url, headers=heads, data=data)
+    r = client.post(f"{DOMAIN}/links/go", data=data, headers=h)
     try:
-        return res.json()['url'].replace('\/','/')
-    except: return 'Something went wrong :('
+        return r.json()['url']
+    except: return "Something went wrong :("
         
 srp_handler = CommandHandler(BotCommands.ScrapeCommand, scrapper,
 
