@@ -70,12 +70,7 @@ def scrapper(update, context):
             links.append(a['href'])
         for o in links:
             url = f"https://htpmovies.lol"+o
-            purl = htpmovies(url)
-            res = rget(purl)
-            soup = BeautifulSoup(res.content, "html.parser")
-            title = soup.title.get_text()
-            reftxt = resub(r'www\S+', '', title)
-            prsd += f'{reftxt} {purl}\n\n'
+            prsd += htpmovies(url) + '\n\n'
             if len(prsd) > 4000:
                 deleteMessage(context.bot, sent)
                 sendMessage(prsd, context.bot, update.message)
@@ -145,9 +140,14 @@ def htpmovies(link):
     h = { "x-requested-with": "XMLHttpRequest" }
     sleep(10)
     r = client.post(f"{DOMAIN}/links/go", data=data, headers=h)
+    p = get(r.json()['url'])
+    soup = BeautifulSoup(p.text, "html.parser")
+    title = soup.title.get_text()
+    reftxt = re.sub(r'www\S+', '', title)
+    final = r.json()['url']
     try:
-        return r.json()['url']
-    except: return "Something went Wrong :("
+        return f'{reftxt}  {final}\n\n'
+    except: return "Something went wrong :("
         
 srp_handler = CommandHandler(BotCommands.ScrapeCommand, scrapper,
 
