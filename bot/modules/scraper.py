@@ -1,6 +1,6 @@
 from re import match as rematch, findall, sub as resub
-from time import sleep
-import cloudscraper
+from asyncio import sleep
+from cloudscraper import create_scraper
 from urllib.parse import urlparse
 from requests import get as rget
 from bs4 import BeautifulSoup, NavigableString, Tag
@@ -60,7 +60,7 @@ def scrapper(update, context):
         prsd = htpmovies(link)
         editMessage(prsd, sent)
     elif "htpmovies" in link:
-        sent = sendMessage('Running scrape. Wait about some secs.', context.bot, update.message)
+        sent = sendMessage('Running Scrape. Wait about some secs...', context.bot, update.message)
         prsd = ""
         links = []
         res = rget(link)
@@ -84,6 +84,7 @@ def scrapper(update, context):
             deleteMessage(context.bot, sent)
             sendMessage(prsd, context.bot, update.message)
     elif "cinevood" in link:
+        sent = sendMessage('Running Scrape. Wait about some secs...', context.bot, update.message)
         prsd = ""
         links = []
         res = rget(link)
@@ -98,9 +99,11 @@ def scrapper(update, context):
             reftxt = resub(r'Kolop \| ', '', title)
             prsd += f'{reftxt} {o}\n\n'
             if len(prsd) > 4000:
+                deleteMessage(context.bot, sent)
                 sendMessage(prsd, context.bot, update.message)
                 prsd = ""
         if prsd != "":
+            deleteMessage(context.bot, sent)
             sendMessage(prsd, context.bot, update.message)
     elif "atishmkv" in link:
         prsd = ""
@@ -130,7 +133,7 @@ def scrapper(update, context):
 def htpmovies(link):
     download = rget(link, stream=True, allow_redirects=False) 
     xurl =download.headers["location"]   
-    client = cloudscraper.create_scraper(allow_brotli=False)
+    client = create_scraper(allow_brotli=False)
     param = xurl.split("/")[-1]
     DOMAIN = "https://go.kinemaster.cc"
     final_url = f"{DOMAIN}/{param}"
@@ -144,7 +147,7 @@ def htpmovies(link):
     r = client.post(f"{DOMAIN}/links/go", data=data, headers=h)
     try:
         return r.json()['url']
-    except: return "Something went wrong :("
+    except: return "Something went Wrong :("
         
 srp_handler = CommandHandler(BotCommands.ScrapeCommand, scrapper,
 
