@@ -70,7 +70,12 @@ def scrapper(update, context):
             links.append(a['href'])
         for o in links:
             url = f"https://htpmovies.lol"+o
-            prsd += htpmovies(url) + '\n\n'
+            purl = htpmovies(url)
+            res = rget(purl)
+            soup = BeautifulSoup(res.content, "html.parser")
+            title = soup.title.get_text()
+            reftxt = resub(r'www\S+', '', title)
+            prsd += f'{reftxt} {purl}\n\n'
             if len(prsd) > 4000:
                 deleteMessage(context.bot, sent)
                 sendMessage(prsd, context.bot, update.message)
@@ -87,7 +92,11 @@ def scrapper(update, context):
         for a in x:
             links.append(a['href'])
         for o in links:
-            prsd += o + '\n\n'
+            res = rget(o)
+            soup = BeautifulSoup(res.content, "html.parser")
+            title = soup.title.get_text()
+            reftxt = resub(r'Kolop \| ', '', title)
+            prsd += f'{reftxt} {o}\n\n'
             if len(prsd) > 4000:
                 sendMessage(prsd, context.bot, update.message)
                 prsd = ""
