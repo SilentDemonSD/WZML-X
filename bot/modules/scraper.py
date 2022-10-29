@@ -91,7 +91,7 @@ def scrapper(update, context):
             soup = BeautifulSoup(res.content, "html.parser")
             title = soup.title.get_text()
             reftxt = resub(r'Kolop \| ', '', title)
-            prsd += f'{reftxt} {o}\n\n'
+            prsd += f'{reftxt}\n{o}\n\n'
             if len(prsd) > 4000:
                 sendMessage(prsd, context.bot, update.message)
                 prsd = ""
@@ -141,10 +141,10 @@ def htpmovies(link):
     p = rget(final)
     soup = BeautifulSoup(p.text, "html.parser")
     title = soup.title.get_text()
-    reftxt = resub(r'www\S+', '', title)
+    reftxt = resub(r'www\S+ \- ', '', title)
     
     try:
-        return f'{reftxt} {final}'
+        return f'{reftxt}\n{final}'
     except: return "Something went wrong :("
         
 srp_handler = CommandHandler(BotCommands.ScrapeCommand, scrapper,
