@@ -3,6 +3,7 @@ from re import match as rematch, findall, sub as resub
 from time import sleep
 from urllib.parse import urlparse
 from requests import get as rget
+from requests import head
 from bs4 import BeautifulSoup, NavigableString, Tag
 
 from telegram import Message
@@ -124,10 +125,12 @@ def scrapper(update, context):
             sendMessage(txt, context.bot, update.message)
 
 def htpmovies(link):
-    download = rget(link, stream=True, allow_redirects=False) 
-    xurl =download.headers["location"]   
+    if link.startswith("https://htpmovies.lol/"):
+        r = head(link, allow_redirects=True)
+        url = r.url  
     client = cloudscraper.create_scraper(allow_brotli=False)
-    param = xurl.split("/")[-1]
+    j = url.split('?token=')[-1]
+    param = j.replace('&m=1','')
     DOMAIN = "https://go.kinemaster.cc"
     final_url = f"{DOMAIN}/{param}"
     resp = client.get(final_url)
