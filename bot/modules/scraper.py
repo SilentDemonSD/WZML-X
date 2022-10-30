@@ -89,7 +89,7 @@ def scrapper(update, context):
         for o in links:
             res = rget(o)
             soup = BeautifulSoup(res.content, "html.parser")
-            title = soup.title.get_text()
+            title = soup.title.string
             reftxt = resub(r'Kolop \| ', '', title)
             prsd += f'{reftxt}\n{o}\n\n'
             if len(prsd) > 4000:
