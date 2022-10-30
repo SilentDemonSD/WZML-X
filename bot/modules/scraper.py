@@ -1,5 +1,6 @@
 import cloudscraper
 from re import match as rematch, findall, sub as resub
+from asyncio import sleep as asleep
 from time import sleep
 from urllib.parse import urlparse
 from requests import get as rget, head as rhead
@@ -68,17 +69,16 @@ def scrapper(update, context):
         x = soup.select('a[href^="/exit.php?url="]')
         for a in x:
             links.append(a['href'])
-        for o in links:
+            prsd += f"Total Links Found : {len(links)}\n\n"
+            editMessage(prsd, sent)
+        for pg, o in enumerate(links,  start=1):
             url = f"https://htpmovies.lol"+o
-            prsd += htpmovies(url) + '\n\n'
+            prsd += f"{pg}. {htpmovies(url)}\n\n"
+            editMessage(prsd, sent)
+            asleep(5)
             if len(prsd) > 4000:
-                deleteMessage(context.bot, sent)
-                sendMessage(prsd, context.bot, update.message)
+                sent = sendMessage("Scrapping...", context.bot, update.message)
                 prsd = ""
-        if prsd != "":
-            try: deleteMessage(context.bot, sent)
-            except: pass
-            sendMessage(prsd, context.bot, update.message)
     elif "cinevood" in link:
         prsd = ""
         links = []
@@ -150,7 +150,7 @@ def htpmovies(link):
     reftxt = resub(r'www\S+ \- ', '', li[0])
     
     try:
-        return f'{reftxt}\n{li[2]}\nLink : {final}'
+        return f'{reftxt}\n    {li[2]}\n    Link : {final}'
     except: return "Something went Wrong !!"
         
 srp_handler = CommandHandler(BotCommands.ScrapeCommand, scrapper,
