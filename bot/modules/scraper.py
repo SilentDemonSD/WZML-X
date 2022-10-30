@@ -2,8 +2,7 @@ import cloudscraper
 from re import match as rematch, findall, sub as resub
 from time import sleep
 from urllib.parse import urlparse
-from requests import get as rget
-from requests import head
+from requests import get as rget, head as rhead
 from bs4 import BeautifulSoup, NavigableString, Tag
 
 from telegram import Message
@@ -126,7 +125,7 @@ def scrapper(update, context):
 
 def htpmovies(link):
     if link.startswith("https://htpmovies.lol/"):
-        r = head(link, allow_redirects=True)
+        r = rhead(link, allow_redirects=True)
         url = r.url  
     client = cloudscraper.create_scraper(allow_brotli=False)
     j = url.split('?token=')[-1]
@@ -142,21 +141,16 @@ def htpmovies(link):
     sleep(10)
     r = client.post(f"{DOMAIN}/links/go", data=data, headers=h)
     final = r.json()['url']
-    try:
-        p = rget(final)
-        soup = BeautifulSoup(p.content, "html.parser")
-        title = soup.title.get_text()
-    except AttributeError:
-        sleep(1.5)
-        p = rget(final)
-        soup = BeautifulSoup(p.content, "html.parser")
-        title = soup.title.string
-    except Exception:
-        title = ""
-    reftxt = resub(r'www\S+ \- ', '', title)
+    p = rget(final)
+    soup = BeautifulSoup(p.content, "html.parser")
+    ss = soup.select("li.list-group-item")
+    li = []
+    for item in ss:
+        li.append(item.string)
+    reftxt = resub(r'www\S+ \- ', '', li[0])
     
     try:
-        return f'{reftxt}\n{final}'
+        return f'{reftxt}\n{li[2]}\nLink : {final}'
     except: return "Something went Wrong !!"
         
 srp_handler = CommandHandler(BotCommands.ScrapeCommand, scrapper,
