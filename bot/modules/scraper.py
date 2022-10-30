@@ -70,7 +70,7 @@ def scrapper(update, context):
         for a in x:
             links.append(a['href'])
             prsd += f"Total Links Found : {len(links)}\n\n"
-            editMessage(prsd, sent)
+        editMessage(prsd, sent)
         for pg, o in enumerate(links,  start=1):
             url = f"https://htpmovies.lol"+o
             prsd += f"{pg}. {htpmovies(url)}\n\n"
