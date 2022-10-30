@@ -1,6 +1,6 @@
+import cloudscraper
 from re import match as rematch, findall, sub as resub
 from time import sleep
-import cloudscraper
 from urllib.parse import urlparse
 from requests import get as rget
 from bs4 import BeautifulSoup, NavigableString, Tag
@@ -76,7 +76,8 @@ def scrapper(update, context):
                 sendMessage(prsd, context.bot, update.message)
                 prsd = ""
         if prsd != "":
-            deleteMessage(context.bot, sent)
+            try: deleteMessage(context.bot, sent)
+            except: pass
             sendMessage(prsd, context.bot, update.message)
     elif "cinevood" in link:
         prsd = ""
@@ -138,14 +139,22 @@ def htpmovies(link):
     sleep(10)
     r = client.post(f"{DOMAIN}/links/go", data=data, headers=h)
     final = r.json()['url']
-    p = rget(final)
-    soup = BeautifulSoup(p.text, "html.parser")
-    title = soup.title.get_text()
+    try:
+        p = rget(final)
+        soup = BeautifulSoup(p.content, "html.parser")
+        title = soup.title.get_text()
+    except AttributeError:
+        sleep(1.5)
+        p = rget(final)
+        soup = BeautifulSoup(p.content, "html.parser")
+        title = soup.title.string
+    except Exception:
+        title = ""
     reftxt = resub(r'www\S+ \- ', '', title)
     
     try:
         return f'{reftxt}\n{final}'
-    except: return "Something went wrong :("
+    except: return "Something went Wrong !!"
         
 srp_handler = CommandHandler(BotCommands.ScrapeCommand, scrapper,
 
