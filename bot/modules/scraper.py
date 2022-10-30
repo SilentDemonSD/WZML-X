@@ -58,7 +58,7 @@ def scrapper(update, context):
             sendMessage(gd_txt, context.bot, update.message)
     elif "htpmovies" in link and "/exit.php" in link:
         sent = sendMessage('Running scrape. Wait about some secs.', context.bot, update.message)
-        prsd = htpmovies(link)
+        prsd = "    " + htpmovies(link)
         editMessage(prsd, sent)
     elif "htpmovies" in link:
         sent = sendMessage('Running scrape. Wait about some secs.', context.bot, update.message)
@@ -69,7 +69,7 @@ def scrapper(update, context):
         x = soup.select('a[href^="/exit.php?url="]')
         for a in x:
             links.append(a['href'])
-            prsd += f"Total Links Found : {len(links)}\n\n"
+            prsd = f"Total Links Found : {len(links)}\n\n"
         editMessage(prsd, sent)
         for pg, o in enumerate(links,  start=1):
             url = f"https://htpmovies.lol"+o
