@@ -68,7 +68,7 @@ def scrapper(update, context):
         soup = BeautifulSoup(res.text, 'html.parser')
         x = soup.select('a[href^="/exit.php?url="]')
         y = soup.select('h5')
-        z = unquote(link.split('/')[-2]).split('-')[0] if url.endswith('/') else unquote(link.split('/')[-1]).split('-')[0]
+        z = unquote(link.split('/')[-2]).split('-')[0] if link.endswith('/') else unquote(link.split('/')[-1]).split('-')[0]
 
         for a in x:
             links.append(a['href'])
