@@ -67,17 +67,21 @@ def scrapper(update, context):
         res = rget(link)
         soup = BeautifulSoup(res.text, 'html.parser')
         x = soup.select('a[href^="/exit.php?url="]')
+        y = soup.select('h5')
+        z = unquote(link.split('/')[-2]).split('-')[0] if url.endswith('/') else unquote(link.split('/')[-1]).split('-')[0]
+
         for a in x:
             links.append(a['href'])
             prsd = f"Total Links Found : {len(links)}\n\n"
         editMessage(prsd, sent)
-        for pg, o in enumerate(links,  start=1):
-            url = f"https://htpmovies.lol"+o
-            prsd += f"{pg}. {htpmovies(url)}\n\n"
+        for end, b in zip(links, y):
+            if str(b.string).lower().startswith(z.lower()):
+                url = f"https://htpmovies.lol"+end
+            prsd += f"{b.string}\n{htpmovies(url)}\n\n"
             editMessage(prsd, sent)
             asleep(5)
             if len(prsd) > 4000:
-                sent = sendMessage("Scrapping...", context.bot, update.message)
+                sent = sendMessage("Scrapping More...", context.bot, update.message)
                 prsd = ""
     elif "cinevood" in link:
         prsd = ""
@@ -124,13 +128,12 @@ def scrapper(update, context):
             sendMessage(txt, context.bot, update.message)
 
 def htpmovies(link):
-    if link.startswith("https://htpmovies.lol/"):
-        r = rhead(link, allow_redirects=True)
-        url = r.url  
     client = cloudscraper.create_scraper(allow_brotli=False)
-    j = url.split('?token=')[-1]
-    param = j.replace('&m=1','')
-    DOMAIN = "https://go.kinemaster.cc"
+    r = client.get(url, allow_redirects=True).text
+    j = r.split('("')[-1]
+    url = j.split('")')[0]
+    param = url.split("/")[-1]
+    DOMAIN = "https://go.theforyou.in"
     final_url = f"{DOMAIN}/{param}"
     resp = client.get(final_url)
     soup = BeautifulSoup(resp.content, "html.parser")    
@@ -140,27 +143,8 @@ def htpmovies(link):
     h = { "x-requested-with": "XMLHttpRequest" }
     sleep(10)
     r = client.post(f"{DOMAIN}/links/go", data=data, headers=h)
-    final = r.json()['url']
-    p = rget(final)
-    soup = BeautifulSoup(p.content, "html.parser")
-    ss = soup.select("li.list-group-item")
-    li = []
-    for item in ss:
-        li.append(item.string)
-    try: reftxt = resub(r'www\S+ \- ', '', li[0])
-    except IndexError:
-        LOGGER.info(p.text)
-        asleep(5)
-        p = rget(final)
-        soup = BeautifulSoup(p.content, "html.parser")
-        ss = soup.select("li.list-group-item")
-        li = []
-        for item in ss:
-            li.append(item.string)
-        reftxt = resub(r'www\S+ \- ', '', li[0])
-    
     try:
-        return f'{reftxt}\n    {li[2]}\n    Link : {final}'
+        return r.json()['url']
     except: return "Something went Wrong !!"
         
 srp_handler = CommandHandler(BotCommands.ScrapeCommand, scrapper,
