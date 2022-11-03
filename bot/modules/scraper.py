@@ -2,7 +2,7 @@ import cloudscraper
 from re import match as rematch, findall, sub as resub
 from asyncio import sleep as asleep
 from time import sleep
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote
 from requests import get as rget, head as rhead
 from bs4 import BeautifulSoup, NavigableString, Tag
 
