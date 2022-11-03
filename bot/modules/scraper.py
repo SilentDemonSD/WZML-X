@@ -74,9 +74,11 @@ def scrapper(update, context):
             links.append(a['href'])
             prsd = f"Total Links Found : {len(links)}\n\n"
         editMessage(prsd, sent)
-        for end, b in zip(links, y):
+        msdcnt = -1
+        for b in y:
             if str(b.string).lower().startswith(z.lower()):
-                url = f"https://htpmovies.lol"+end
+                msdcnt += 1
+                url = f"https://htpmovies.lol"+links[msdcnt]
                 prsd += f"{b.string}\n{htpmovies(url)}\n\n"
                 editMessage(prsd, sent)
                 asleep(5)
@@ -132,7 +134,7 @@ def htpmovies(link):
     r = client.get(link, allow_redirects=True).text
     j = r.split('("')[-1]
     url = j.split('")')[0]
-    param = link.split("/")[-1]
+    param = url.split("/")[-1]
     DOMAIN = "https://go.theforyou.in"
     final_url = f"{DOMAIN}/{param}"
     resp = client.get(final_url)
