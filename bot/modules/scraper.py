@@ -77,12 +77,12 @@ def scrapper(update, context):
         for end, b in zip(links, y):
             if str(b.string).lower().startswith(z.lower()):
                 url = f"https://htpmovies.lol"+end
-            prsd += f"{b.string}\n{htpmovies(url)}\n\n"
-            editMessage(prsd, sent)
-            asleep(5)
-            if len(prsd) > 4000:
-                sent = sendMessage("Scrapping More...", context.bot, update.message)
-                prsd = ""
+                prsd += f"{b.string}\n{htpmovies(url)}\n\n"
+                editMessage(prsd, sent)
+                asleep(5)
+                if len(prsd) > 4000:
+                    sent = sendMessage("Scrapping More...", context.bot, update.message)
+                    prsd = ""
     elif "cinevood" in link:
         prsd = ""
         links = []
