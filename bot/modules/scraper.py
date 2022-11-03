@@ -75,15 +75,15 @@ def scrapper(update, context):
             prsd = f"Total Links Found : {len(links)}\n\n"
         editMessage(prsd, sent)
         msdcnt = -1
-        for b in y:
+        for pg, b in enumerate(y, start=1):
             if str(b.string).lower().startswith(z.lower()):
                 msdcnt += 1
                 url = f"https://htpmovies.lol"+links[msdcnt]
-                prsd += f"{b.string}\n{htpmovies(url)}\n\n"
+                prsd += f"{pg}. <b>{b.string}</b>\n{htpmovies(url)}\n\n"
                 editMessage(prsd, sent)
                 asleep(5)
                 if len(prsd) > 4000:
-                    sent = sendMessage("Scrapping More...", context.bot, update.message)
+                    sent = sendMessage("<i>Scrapping More...</i>", context.bot, update.message)
                     prsd = ""
     elif "cinevood" in link:
         prsd = ""
