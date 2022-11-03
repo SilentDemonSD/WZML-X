@@ -58,7 +58,7 @@ def scrapper(update, context):
             sendMessage(gd_txt, context.bot, update.message)
     elif "htpmovies" in link and "/exit.php" in link:
         sent = sendMessage('Running scrape. Wait about some secs.', context.bot, update.message)
-        prsd = "    " + htpmovies(link)
+        prsd = htpmovies(link)
         editMessage(prsd, sent)
     elif "htpmovies" in link:
         sent = sendMessage('Running scrape. Wait about some secs.', context.bot, update.message)
@@ -75,11 +75,11 @@ def scrapper(update, context):
             prsd = f"Total Links Found : {len(links)}\n\n"
         editMessage(prsd, sent)
         msdcnt = -1
-        for pg, b in enumerate(y, start=1):
+        for b in y:
             if str(b.string).lower().startswith(z.lower()):
                 msdcnt += 1
                 url = f"https://htpmovies.lol"+links[msdcnt]
-                prsd += f"{pg}. <b>{b.string}</b>\n{htpmovies(url)}\n\n"
+                prsd += f"{msdcnt+1}. <b>{b.string}</b>\n{htpmovies(url)}\n\n"
                 editMessage(prsd, sent)
                 asleep(5)
                 if len(prsd) > 4000:
