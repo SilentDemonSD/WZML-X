@@ -129,10 +129,10 @@ def scrapper(update, context):
 
 def htpmovies(link):
     client = cloudscraper.create_scraper(allow_brotli=False)
-    r = client.get(url, allow_redirects=True).text
+    r = client.get(link, allow_redirects=True).text
     j = r.split('("')[-1]
     url = j.split('")')[0]
-    param = url.split("/")[-1]
+    param = link.split("/")[-1]
     DOMAIN = "https://go.theforyou.in"
     final_url = f"{DOMAIN}/{param}"
     resp = client.get(final_url)
