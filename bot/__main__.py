@@ -243,6 +243,10 @@ help_string_telegraph_user = f'''
 <br><br>
 • <b>/{BotCommands.PreNameCommand}</b>: Set Prename to leech files
 <br><br>
+• <b>/{BotCommands.SufNameCommand}</b>: Set Suffix to leech files
+<br><br>
+• <b>/{BotCommands.RemnameCommand}</b>: Remove Specific Words from filename
+<br><br>
 • <b>/{BotCommands.CaptionCommand}</b>: Set Caption for leech files
 <br><br>
 • <b>/{BotCommands.UserLogCommand}</b>: Add Dump Channel for leech files. make sure bot should an admin in dump channel.
@@ -344,7 +348,9 @@ if SET_BOT_COMMANDS:
         (f'{BotCommands.LeechWatchCommand}','Leech yt-dlp supported link'),
         (f'{BotCommands.LeechZipWatchCommand}','Leech yt-dlp supported link as zip'),
         (f'{BotCommands.PreNameCommand}','Set Prename for Leech Files'),
+        (f'{BotCommands.SufNameCommand}','Set Suffix for Leech Files'),
         (f'{BotCommands.CaptionCommand}','Set Caption for Leech Files'),
+        (f'{BotCommands.RemnameCommand}','Remove Specific words from filename'),
         (f'{BotCommands.UserLogCommand}','Set Dump Channel for Leech Files'),
         (f'{BotCommands.ScrapeCommand}','Scrape Links from Website'),
         (f'{BotCommands.CountCommand}','Count file/folder of Drive'),
