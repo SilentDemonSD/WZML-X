@@ -1,4 +1,6 @@
 import cloudscraper
+import re
+from re import S
 from re import match as rematch, findall, sub as resub
 from asyncio import sleep as asleep
 from time import sleep
