@@ -45,12 +45,20 @@ def scrapper(update, context):
                 continue
             next2_s = next_s.nextSibling
             if next2_s and isinstance(next2_s,Tag) and next2_s.name == 'br':
-              text = str(next_s).strip()
-              if text:
-                  result = resub(r'(?m)^\(https://i.*', '', next_s)
-                  star = resub(r'(?m)^\*.*', ' ', result)
-                  extra = resub(r'(?m)^\(https://e.*', ' ', star)
-                  gd_txt += ', '.join(findall(r'(?m)^.*https://new1.gdtot.cfd/file/[0-9][^.]*', next_s)) + "\n\n"
+              if str(next_s).strip():
+                 List = next_s.split()
+                 if re.match(r'^(480p|720p|1080p)(.+)? Links:\Z', next_s):
+                    gd_txt += (next_s.replace('Links:', "GDToT Links :")+'\n')
+                 for s in List:
+                      ns = re.sub(r'\(|\)', '', s)
+                      if re.match(r'https?://.+\.gdtot\.\S+', ns):
+                         r = rget(ns)
+                         soup = BeautifulSoup(r.content, "html.parser")
+                         title = soup.title
+                         gd_txt += (f"{(title.text).replace('GDToT | ' , '')}\n{ns}\n\n")
+                      elif re.match(r'https?://pastetot\.\S+', ns):
+                         nxt = re.sub(r'\(|\)|(https?://pastetot\.\S+)', '', next_s)
+                         gd_txt += (f"{nxt}\n{ns}")
             if len(gd_txt) > 4000:
                 sendMessage(gd_txt, context.bot, update.message)
                 gd_txt = ""
