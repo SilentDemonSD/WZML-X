@@ -60,7 +60,7 @@ def scrapper(update, context):
                          gd_txt += (f"{(title.text).replace('GDToT | ' , '')}\n{ns}\n\n")
                       elif re.match(r'https?://pastetot\.\S+', ns):
                          nxt = re.sub(r'\(|\)|(https?://pastetot\.\S+)', '', next_s)
-                         gd_txt += (f"{nxt}\n{ns}")
+                         gd_txt += (f"\n{nxt}\n{ns}")
             if len(gd_txt) > 4000:
                 sendMessage(gd_txt, context.bot, update.message)
                 gd_txt = ""
