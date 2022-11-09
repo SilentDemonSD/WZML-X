@@ -132,7 +132,7 @@ def remname_set(update, context):
             sendMessage(f"Buy Paid Service to Use this Remname Feature.", context.bot, update.message)
             return
     if (BotCommands.RemnameCommand in update.message.text) and (len(update.message.text.split(' ')) == 1):
-        sendMessage(f'<b>Set Remname Like👇 \n/{BotCommands.RemnameCommand} text, seperated with '|'</b>', context.bot, update.message)
+        sendMessage(f'<b>Set Remname Like👇 \n/{BotCommands.RemnameCommand} text, seperated with | </b>', context.bot, update.message)
     else:
         lm = sendMessage(f"<b>Please Wait....Processing🤖</b>", context.bot, update.message)
         pre_send = update.message.text.split(" ", maxsplit=1)
