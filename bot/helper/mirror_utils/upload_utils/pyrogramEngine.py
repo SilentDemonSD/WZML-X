@@ -7,7 +7,8 @@ from pyrogram.errors import FloodWait, RPCError
 from PIL import Image
 from threading import RLock
 from bot import AS_DOCUMENT, AS_DOC_USERS, AS_MEDIA_USERS, EXTENSION_FILTER, \
-                app, LEECH_LOG, BOT_PM, tgBotMaxFileSize, premium_session, CAPTION_FONT, PRE_DICT, LEECH_DICT, LOG_LEECH, CAP_DICT, REM_DICT, SUF_DICT
+                app, LEECH_LOG, BOT_PM, tgBotMaxFileSize, premium_session, CAPTION_FONT, \
+                PRE_DICT, LEECH_DICT, LOG_LEECH, CAP_DICT, REM_DICT, SUF_DICT, CFONT_DICT
 from bot.helper.ext_utils.fs_utils import take_ss, get_media_info, get_media_streams, get_path_size, clean_unwanted
 from bot.helper.ext_utils.bot_utils import get_readable_file_size
 from pyrogram.types import Message
@@ -82,6 +83,7 @@ class TgUploader:
         CAPTION = CAP_DICT.get(self.__listener.message.from_user.id, "")
         REMNAME = REM_DICT.get(self.__listener.message.from_user.id, "")
         SUFFIX = SUF_DICT.get(self.__listener.message.from_user.id, "")
+        FSTYLE = CFONT_DICT.get(self.__listener.message.from_user.id, "")
 
         #MysteryStyle
         if file_.startswith('www'):
@@ -117,6 +119,7 @@ class TgUploader:
             new_path = ospath.join(dirpath, file_)
             osrename(up_path, new_path)
             up_path = new_path
+        cfont = CAPTION_FONT if not FSTYLE else FSTYLE
         if CAPTION:
             slit = CAPTION.split("|")
             cap_mono = slit[0].format(
@@ -133,7 +136,7 @@ class TgUploader:
                     elif len(args) == 1:
                         cap_mono = cap_mono.replace(args[0], '')
         else:
-            cap_mono = f"<{CAPTION_FONT}>{file_}</{CAPTION_FONT}>"
+            cap_mono = f"<{cfont}>{file_}</{cfont}>"
 
         dumpid = LEECH_DICT.get(self.__listener.message.from_user.id, "")
         if len(dumpid) != 0:
