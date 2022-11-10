@@ -137,7 +137,7 @@ def setCapFont(update, context):
     elif data[2] == "font":
         editMessage(f"<u>Change your Font Style from below:</u>\n\n• Current Style : {CFONT_DICT.get(user_id_, ['<code>Code</code>'])[0]}", message, btns)
     elif data[2] == "Spoiler":
-        CFONT_DICT[user_id_] = ["<spoiler>Spoiler</spoiler>", "spoiler"]
+        CFONT_DICT[user_id_] = ["<tg-spoiler>Spoiler</tg-spoiler>", "tg-spoiler"]
         query.answer(text="Font Style changed to Spoiler!", show_alert=True)
         editMessage(f"<u>Change your Font Style from below:</u>\n\n• Current Style : {CFONT_DICT.get(user_id_, ['<code>Code</code>'])[0]}", message, btns)
     elif data[2] == "Italics":
