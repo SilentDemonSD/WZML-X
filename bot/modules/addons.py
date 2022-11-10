@@ -81,14 +81,14 @@ def caption_set(update, context):
         hlp_me = "<b>Send text with format along with command line:</b>\n"
         hlp_me += "<code>/cmd</code> {text} |previousname:newname:times (optional)\n\n"
         hlp_me += f"<b>Example:</b> {BotCommands.CaptionCommand}" + "{filename}\n"
-        hlp_me += '&lt;b&gt;Fork WZML Here : &lt;a href="link"&gt;Click Here &lt;/a&gt; &lt;/b&gt;|Fork:Star|Here:Now:1|WZML\n\n'
+        hlp_me += '&lt;b&gt;Fork WZML Here : &lt;a href="link"&gt;Click Here&lt;/a&gt;&lt;/b&gt;|Fork:Star|Here:Now:1|WZML\n\n'
         hlp_me += "Output : Hi there.txt\nStar Now : Click Here\n\n"
         hlp_me += "<b>Explanation :</b> Here, Fork changed to Star, Here changed to Now, only 1 time and WZML is removed.\n\n"
         hlp_me += "<b>Custom Fillings:</b>\n"
         hlp_me += "{filename} - Filename of the File <i>(Note: This name already would be Changed if you set prefix or remname or suffix)</i>\n"
         hlp_me += "{size} - Size of the File\n\n"
         hlp_me += '''<b>Filter Notes:</b>
-1. All HTML tags are Supported for Caption, you can set Hyperlink by using <a> anchor tag.
+1. All HTML tags are Supported for Caption, you can set Hyperlink by using &lt;a&gt; anchor tag.
 
 2. All Spaces are sensitive, if you give space unnecessarily, it will not work.
 
