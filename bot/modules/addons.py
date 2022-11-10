@@ -133,7 +133,7 @@ def setCapFont(update, context):
     if user_id != int(data[1]):
         query.answer(text="Not Yours!", show_alert=True)
     elif data[2] == "font":
-        editMessage(f"<u>Change your Font Style from below:</u>\n\n• Current Style : {CFONT_DICT.get(user_id, "code")}", message, btns)
+        editMessage(f"<u>Change your Font Style from below:</u>\n\n• Current Style : {CFONT_DICT.get(user_id, 'code')}", message, btns)
     elif data[2] == "b":
         CFONT_DICT[user_id] = "b"
         query.answer(text="Changed to Bold!", show_alert=True)
