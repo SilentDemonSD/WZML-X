@@ -81,7 +81,7 @@ def caption_set(update, context):
         hlp_me = "<b>Send text with format along with command line:</b>\n"
         hlp_me += "<code>/cmd</code> {text} |previousname:newname:times (optional)\n\n"
         hlp_me += f"<b>Example:</b> {BotCommands.CaptionCommand}" + "{filename}\n"
-        hlp_me += '&lt;b&gt;Fork WZML Here : &lt;a href="link"&gt;Click Here&lt;/a&gt;&lt;/b&gt;|Fork:Star|Here:Now:1|WZML\n\n'
+        hlp_me += '&lt;b&gt;Fork WZML Here : &lt;a href="link"&gt;Click Here &lt;/a&gt; &lt;/b&gt;|Fork:Star|Here:Now:1|WZML\n\n'
         hlp_me += "Output : Hi there.txt\nStar Now : Click Here\n\n"
         hlp_me += "<b>Explanation :</b> Here, Fork changed to Star, Here changed to Now, only 1 time and WZML is removed.\n\n"
         hlp_me += "<b>Custom Fillings:</b>\n"
