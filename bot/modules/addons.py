@@ -75,7 +75,7 @@ def caption_set(update, context):
         if not (user_id_ in PAID_USERS) and user_id_ != OWNER_ID:
             sendMessage(f"Buy Paid Service to Use this Caption Feature.", context.bot, update.message)
             return
-    buttons.sbutton("🛠 Change Font Style", f"capfont {user_id_}")
+    buttons.sbutton("🛠 Change Font Style", f"capfont {user_id_} font")
     button = buttons.build_menu(2)
     if (BotCommands.CaptionCommand in update.message.text) and (len(update.message.text.split(' ')) == 1):
         hlp_me = "<b>Send text with format along with command line:</b>\n"
@@ -115,6 +115,17 @@ def caption_set(update, context):
             LOGGER.info(f"User : {user_id_} Caption is Saved in DB")
         editMessage(f"<b><u>{u_men} Caption for the Leech file is Set Successfully</u></b>\n\n<b>• Caption Text: </b>{txt}", lm, button)
 
+
+def setCapFont(update, context):
+    query = update.callback_query
+    message = query.message
+    user_id = query.from_user.id
+    data = query.data
+    data = data.split()
+    if user_id != int(data[1]):
+        query.answer(text="Not Yours!", show_alert=True)
+    elif data[2] == "font":
+        
 
 def userlog_set(update, context):
     user_id_ = update.message.from_user.id 
