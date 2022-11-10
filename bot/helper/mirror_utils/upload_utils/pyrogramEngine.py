@@ -83,7 +83,7 @@ class TgUploader:
         CAPTION = CAP_DICT.get(self.__listener.message.from_user.id, "")
         REMNAME = REM_DICT.get(self.__listener.message.from_user.id, "")
         SUFFIX = SUF_DICT.get(self.__listener.message.from_user.id, "")
-        FSTYLE = CFONT_DICT.get(self.__listener.message.from_user.id, "")
+        FSTYLE = CFONT_DICT.get(self.__listener.message.from_user.id, ["", ""])[1]
 
         #MysteryStyle
         if file_.startswith('www'):
