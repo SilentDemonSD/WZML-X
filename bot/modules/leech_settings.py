@@ -41,20 +41,14 @@ def getleechinfo(from_user):
         buttons.sbutton("Show Thumbnail", f"leechset {user_id} showthumb")
     else:
         thumbmsg = "Not Exists"
-
     if prefix != "Not Exists":
         buttons.sbutton("Delete Prename", f"leechset {user_id} prename")
-
     if suffix != "Not Exists":
         buttons.sbutton("Delete Suffix", f"leechset {user_id} suffix")
-
-
     if caption != "Not Exists": 
         buttons.sbutton("Delete Caption", f"leechset {user_id} cap")
-
     if dumpid != "Not Exists":
         buttons.sbutton("Delete DumpID", f"leechset {user_id} dump")
-
     if remname != "Not Exists": 
         buttons.sbutton("Delete Remname", f"leechset {user_id} rem")
 
@@ -62,14 +56,14 @@ def getleechinfo(from_user):
 
     text = f'''<u>Leech Settings for <a href='tg://user?id={user_id}'>{name}</a></u>
     
-Leech Type <b>{ltype}</b>
-Custom Thumbnail <b>{thumbmsg}</b>
-PreName : <b>{prefix}</b>
-Suffix : <b>{suffix}</b>
-Caption : <b>{caption}</b>
-Remname : <b>{remname}</b>
-DumpID : <b>{dumpid}</b>
-User Plan : <b>{uplan}</b>'''
+• Leech Type : <b>{ltype}</b>
+• Custom Thumbnail : <b>{thumbmsg}</b>
+• Prefix : <b>{prefix}</b>
+• Suffix : <b>{suffix}</b>
+• Caption : <b>{caption}</b>
+• Remname : <b>{remname}</b>
+• DumpID : <b>{dumpid}</b>
+• User Plan : <b>{uplan}</b>'''
     return text, button
 
 def editLeechType(message, query):
