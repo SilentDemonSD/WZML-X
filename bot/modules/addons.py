@@ -75,12 +75,12 @@ def caption_set(update, context):
         if not (user_id_ in PAID_USERS) and user_id_ != OWNER_ID:
             sendMessage(f"Buy Paid Service to Use this Caption Feature.", context.bot, update.message)
             return
-    buttons.sbutton("Change Font", f"capfont {user_id_}")
+    buttons.sbutton("🛠 Change Font Style", f"capfont {user_id_}")
     button = buttons.build_menu(2)
     if (BotCommands.CaptionCommand in update.message.text) and (len(update.message.text.split(' ')) == 1):
         hlp_me = "<b>Send text with format along with command line:</b>\n"
         hlp_me += "<code>/cmd</code> {text} |previousname:newname:times (optional)\n\n"
-        hlp_me += f"<b>Example:</b> {BotCommands.CaptionCommand}" + "{filename}\n"
+        hlp_me += f"<b>Example:</b> /{BotCommands.CaptionCommand} " + "{filename}\n"
         hlp_me += '&lt;b&gt;Fork WZML Here : &lt;a href="link"&gt;Click Here&lt;/a&gt;&lt;/b&gt;|Fork:Star|Here:Now:1|WZML\n\n'
         hlp_me += "Output : Hi there.txt\nStar Now : Click Here\n\n"
         hlp_me += "<b>Explanation :</b> Here, Fork changed to Star, Here changed to Now, only 1 time and WZML is removed.\n\n"
@@ -99,7 +99,7 @@ def caption_set(update, context):
 5. For New Line, Just Press Simple Enter on your Keyboard.'''
         sendMarkup(hlp_me, context.bot, update.message, button)
     else:
-        lm = sendMarkup(f"<b>Please Wait....Processing🤖</b>", context.bot, update.message, button)
+        lm = sendMessage(f"<b>Please Wait....Processing🤖</b>", context.bot, update.message)
         pre_send = update.message.text.split(" ", maxsplit=1)
         reply_to = update.message.reply_to_message
         if len(pre_send) > 1:
@@ -113,7 +113,7 @@ def caption_set(update, context):
         if DB_URI:
             DbManger().user_cap(user_id_, caption_)
             LOGGER.info(f"User : {user_id_} Caption is Saved in DB")
-        editMessage(f"<b>{u_men} Caption for the Leech file is Set now🌋</b>\n\n<b>Your Caption Text: </b>{txt}", lm)
+        editMessage(f"<b><u>{u_men} Caption for the Leech file is Set Successfully</u></b>\n\n<b>• Caption Text: </b>{txt}", lm, button)
 
 
 def userlog_set(update, context):
@@ -183,9 +183,11 @@ userlog_set_handler = CommandHandler(BotCommands.UserLogCommand, userlog_set,
                                        filters=(CustomFilters.authorized_chat | CustomFilters.authorized_user), run_async=True)
 remname_set_handler = CommandHandler(BotCommands.RemnameCommand, remname_set,
                                        filters=(CustomFilters.authorized_chat | CustomFilters.authorized_user), run_async=True) 
+cap_font_handler = CallbackQueryHandler(setCapFont, pattern="capfont", run_async=True)
 
 dispatcher.add_handler(prefix_set_handler)
 dispatcher.add_handler(suffix_set_handler)
 dispatcher.add_handler(caption_set_handler)
 dispatcher.add_handler(userlog_set_handler)
 dispatcher.add_handler(remname_set_handler)
+dispatcher.add_handler(cap_font_handler)
