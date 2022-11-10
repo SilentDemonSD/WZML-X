@@ -133,7 +133,16 @@ def setCapFont(update, context):
     btns = buttons.build_menu(2)
     if user_id_ != int(data[1]):
         query.answer(text="Not Yours!", show_alert=True)
+        return
     elif data[2] == "font":
+        editMessage(f"<u>Change your Font Style from below:</u>\n\n• Current Style : {CFONT_DICT.get(user_id_, ['<code>Code</code>'])[0]}", message, btns)
+    elif data[2] == "Spoiler":
+        CFONT_DICT[user_id_] = ["<spoiler>Spoiler</spoiler>", "spoiler"]
+        query.answer(text="Font Style changed to Spoiler!", show_alert=True)
+        editMessage(f"<u>Change your Font Style from below:</u>\n\n• Current Style : {CFONT_DICT.get(user_id_, ['<code>Code</code>'])[0]}", message, btns)
+    elif data[2] == "Italics":
+        CFONT_DICT[user_id_] = ["<i>Italics</i>", "i"]
+        query.answer(text="Font Style changed to Italics!", show_alert=True)
         editMessage(f"<u>Change your Font Style from below:</u>\n\n• Current Style : {CFONT_DICT.get(user_id_, ['<code>Code</code>'])[0]}", message, btns)
     elif data[2] == "Bold":
         CFONT_DICT[user_id_] = ["<b>Bold</b>", "b"]
