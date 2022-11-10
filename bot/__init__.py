@@ -41,6 +41,7 @@ CAP_DICT = {}
 LEECH_DICT = {}
 REM_DICT = {}
 TIME_GAP_STORE = {}
+CFONT_DICT = {}
 
 load_dotenv('config.env', override=True)
 
