@@ -119,7 +119,7 @@ def caption_set(update, context):
 def setCapFont(update, context):
     query = update.callback_query
     message = query.message
-    user_id = query.from_user.id
+    user_id_ = query.from_user.id
     data = query.data
     data = data.split()
     buttons = ButtonMaker()
@@ -130,12 +130,12 @@ def setCapFont(update, context):
     buttons.sbutton("Underline", f"capfont {user_id_} u")
     buttons.sbutton("Bold", f"capfont {user_id_} b")
     btns = buttons.build_menu(2)
-    if user_id != int(data[1]):
+    if user_id_ != int(data[1]):
         query.answer(text="Not Yours!", show_alert=True)
     elif data[2] == "font":
-        editMessage(f"<u>Change your Font Style from below:</u>\n\n• Current Style : {CFONT_DICT.get(user_id, 'code')}", message, btns)
+        editMessage(f"<u>Change your Font Style from below:</u>\n\n• Current Style : {CFONT_DICT.get(user_id_, 'code')}", message, btns)
     elif data[2] == "b":
-        CFONT_DICT[user_id] = "b"
+        CFONT_DICT[user_id_] = "b"
         query.answer(text="Changed to Bold!", show_alert=True)
 
 def userlog_set(update, context):
