@@ -123,20 +123,23 @@ def setCapFont(update, context):
     data = query.data
     data = data.split()
     buttons = ButtonMaker()
-    buttons.sbutton("Spoiler", f"capfont {user_id_} sp")
-    buttons.sbutton("Italics", f"capfont {user_id_} i")
-    buttons.sbutton("Monospace", f"capfont {user_id_} code")
-    buttons.sbutton("Strike", f"capfont {user_id_} s")
-    buttons.sbutton("Underline", f"capfont {user_id_} u")
-    buttons.sbutton("Bold", f"capfont {user_id_} b")
+    buttons.sbutton("Spoiler", f"capfont {user_id_} Spoiler")
+    buttons.sbutton("Italics", f"capfont {user_id_} Italics")
+    buttons.sbutton("Monospace", f"capfont {user_id_} Code")
+    buttons.sbutton("Strike", f"capfont {user_id_} Strike")
+    buttons.sbutton("Underline", f"capfont {user_id_} Underline")
+    buttons.sbutton("Bold", f"capfont {user_id_} Bold")
+    buttons.sbutton("Regular", f"capfont {user_id_} Regular")
     btns = buttons.build_menu(2)
     if user_id_ != int(data[1]):
         query.answer(text="Not Yours!", show_alert=True)
     elif data[2] == "font":
-        editMessage(f"<u>Change your Font Style from below:</u>\n\n• Current Style : {CFONT_DICT.get(user_id_, 'code')}", message, btns)
-    elif data[2] == "b":
-        CFONT_DICT[user_id_] = "b"
-        query.answer(text="Changed to Bold!", show_alert=True)
+        editMessage(f"<u>Change your Font Style from below:</u>\n\n• Current Style : {CFONT_DICT.get(user_id_, '<code>Code</code>')}", message, btns)
+    elif data[2] == "Bold":
+        CFONT_DICT[user_id_] = "<b>Bold</b>"
+        query.answer(text="Font Style changed to Bold!", show_alert=True)
+        editMessage(f"<u>Change your Font Style from below:</u>\n\n• Current Style : {CFONT_DICT.get(user_id_, '<code>Code</code>')}", message, btns)
+
 
 def userlog_set(update, context):
     user_id_ = update.message.from_user.id 
