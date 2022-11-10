@@ -50,17 +50,17 @@ def scrapper(update, context):
               if str(next_s).strip():
                  List = next_s.split()
                  if re.match(r'^(480p|720p|1080p)(.+)? Links:\Z', next_s):
-                    gd_txt += (next_s.replace('Links:', "GDToT Links :")+'\n')
+                    gd_txt += f'<b>{next_s.replace('Links:', "GDToT Links :")}</b>\n\n'
                  for s in List:
                       ns = re.sub(r'\(|\)', '', s)
                       if re.match(r'https?://.+\.gdtot\.\S+', ns):
                          r = rget(ns)
                          soup = BeautifulSoup(r.content, "html.parser")
                          title = soup.title
-                         gd_txt += (f"{(title.text).replace('GDToT | ' , '')}\n{ns}\n\n")
+                         gd_txt += f"<code>{(title.text).replace('GDToT | ' , '')}</code>\n{ns}\n\n"
                       elif re.match(r'https?://pastetot\.\S+', ns):
                          nxt = re.sub(r'\(|\)|(https?://pastetot\.\S+)', '', next_s)
-                         gd_txt += (f"\n{nxt}\n{ns}")
+                         gd_txt += f"\n<code>{nxt}</code>\n{ns}\n"
             if len(gd_txt) > 4000:
                 sendMessage(gd_txt, context.bot, update.message)
                 gd_txt = ""
