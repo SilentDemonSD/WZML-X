@@ -10,7 +10,7 @@ from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.db_handler import DbManger
 
 
-def prename_set(update, context):
+def prefix_set(update, context):
     user_id_ = update.message.from_user.id 
     u_men = update.message.from_user.first_name
 
@@ -66,19 +66,40 @@ def suffix_set(update, context):
         editMessage(f"<b>{u_men} Suffix for the Leech file is Set now🚀</b>\n\n<b>Your Suffix Text: </b>{txt}", lm)
 
 
-
 def caption_set(update, context):
     user_id_ = update.message.from_user.id 
     u_men = update.message.from_user.first_name
+    buttons = ButtonMaker()
 
     if PAID_SERVICE is True:
         if not (user_id_ in PAID_USERS) and user_id_ != OWNER_ID:
             sendMessage(f"Buy Paid Service to Use this Caption Feature.", context.bot, update.message)
             return
+    buttons.sbutton("Change Font", f"capfont {user_id_}")
+    button = buttons.build_menu(2)
     if (BotCommands.CaptionCommand in update.message.text) and (len(update.message.text.split(' ')) == 1):
-        sendMessage(f'<b>Set Caption Like👇 \n/{BotCommands.CaptionCommand} text</b>', context.bot, update.message)
+        hlp_me = "<b>Send text with format along with command line:</b>\n"
+        hlp_me += "<code>/cmd</code> {text} |previousname:newname:times (optional)\n\n"
+        hlp_me += f"<b>Example:</b> {BotCommands.CaptionCommand}" + "{filename}\n"
+        hlp_me += "&lt;b&gt;Fork WZML Here : &lt;a href="link"&gt;Click Here&lt;/a&gt;&lt;/b&gt;|Fork:Star|Here:Now:1|WZML\n\n"
+        hlp_me += "Output : Hi there.txt\nStar Now : Click Here\n\n"
+        hlp_me += "<b>Explanation :</b> Here, Fork changed to Star, Here changed to Now, only 1 time and WZML is removed.\n\n"
+        hlp_me += "<b>Custom Fillings:</b>\n"
+        hlp_me += "{filename} - Filename of the File <i>(Note: This name already would be Changed if you set prefix or remname or suffix)</i>\n"
+        hlp_me += "{size} - Size of the File\n\n"
+        hlp_me = '''<b>Filter Notes:</b>
+1. All HTML tags are Supported for Caption, you can set Hyperlink by using <a> anchor tag.
+
+2. All Spaces are sensitive, if you give space unnecessarily, it will not work.
+
+3. Use | for different changes, you can use as many times you need. If you keep single word or letter, it will be Removed and you can Change Specific Work or letter by : separator respectively. (optional)
+
+4. For Changing, A work or Letter in a Limited no. of Times, use again : separator to specify no. of times to remove. (optional)
+
+5. For New Line, Just Press Simple Enter on your Keyboard.'''
+        sendMarkup(hlp_me, context.bot, update.message, button)
     else:
-        lm = sendMessage(f"<b>Please Wait....Processing🤖</b>", context.bot, update.message)
+        lm = sendMarkup(f"<b>Please Wait....Processing🤖</b>", context.bot, update.message, button)
         pre_send = update.message.text.split(" ", maxsplit=1)
         reply_to = update.message.reply_to_message
         if len(pre_send) > 1:
@@ -152,7 +173,7 @@ def remname_set(update, context):
 
 
 
-prename_set_handler = CommandHandler(BotCommands.PreNameCommand, prename_set,
+prefix_set_handler = CommandHandler(BotCommands.PreNameCommand, prefix_set,
                                        filters=(CustomFilters.authorized_chat | CustomFilters.authorized_user), run_async=True)
 suffix_set_handler = CommandHandler(BotCommands.SufNameCommand, suffix_set,
                                        filters=(CustomFilters.authorized_chat | CustomFilters.authorized_user), run_async=True)
@@ -163,7 +184,7 @@ userlog_set_handler = CommandHandler(BotCommands.UserLogCommand, userlog_set,
 remname_set_handler = CommandHandler(BotCommands.RemnameCommand, remname_set,
                                        filters=(CustomFilters.authorized_chat | CustomFilters.authorized_user), run_async=True) 
 
-dispatcher.add_handler(prename_set_handler)
+dispatcher.add_handler(prefix_set_handler)
 dispatcher.add_handler(suffix_set_handler)
 dispatcher.add_handler(caption_set_handler)
 dispatcher.add_handler(userlog_set_handler)
