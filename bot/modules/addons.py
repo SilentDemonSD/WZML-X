@@ -87,7 +87,7 @@ def caption_set(update, context):
         hlp_me += "<b>Custom Fillings:</b>\n"
         hlp_me += "{filename} - Filename of the File <i>(Note: This name already would be Changed if you set prefix or remname or suffix)</i>\n"
         hlp_me += "{size} - Size of the File\n\n"
-        hlp_me = '''<b>Filter Notes:</b>
+        hlp_me += '''<b>Filter Notes:</b>
 1. All HTML tags are Supported for Caption, you can set Hyperlink by using <a> anchor tag.
 
 2. All Spaces are sensitive, if you give space unnecessarily, it will not work.
