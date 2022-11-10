@@ -8,6 +8,7 @@ from bot.helper.telegram_helper.filters import CustomFilters
 from bot import dispatcher, botStartTime
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.message_utils import auto_delete_message, sendMessage, deleteMessage, sendPhoto, editMessage
+from bot.helper.ext_utils.bot_utils import get_readable_file_size
 
 def speedtest(update, context):
     speed = sendMessage("Running Speed Test. Wait about some secs.", context.bot, update.message)
@@ -33,8 +34,8 @@ def speedtest(update, context):
 ├ <b>Country:</b> <code>{result['server']['country']}, {result['server']['cc']}</code>
 ├ <b>Sponsor:</b> <code>{result['server']['sponsor']}</code>
 ├ <b>Latency:</b> <code>{result['server']['latency']}</code>
-├ <b>Latitude:</b> <code>{result['server']['lat']}</code>
-╰  <b>Longitude:</b> <code>{result['server']['lon']}</code>
+├ <b>Latitude:</b> <code>{get_readable_file_size(result['server']['lat'])}</code>
+╰  <b>Longitude:</b> <code>{get_readable_file_size(result['server']['lon'])}</code>
 
 ╭─《 👤 CLIENT DETAILS 》
 ├ <b>IP Address:</b> <code>{result['client']['ip']}</code>
