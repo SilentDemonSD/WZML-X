@@ -50,7 +50,7 @@ def scrapper(update, context):
               if str(next_s).strip():
                  List = next_s.split()
                  if re.match(r'^(480p|720p|1080p)(.+)? Links:\Z', next_s):
-                    gd_txt += f'<b>{next_s.replace('Links:', "GDToT Links :")}</b>\n\n'
+                    gd_txt += f'<b>{next_s.replace("Links:", "GDToT Links :")}</b>\n\n'
                  for s in List:
                       ns = re.sub(r'\(|\)', '', s)
                       if re.match(r'https?://.+\.gdtot\.\S+', ns):
