@@ -2,7 +2,7 @@ from pyrogram import enums
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, ConversationHandler
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-from bot import LOGGER, DB_URI, OWNER_ID, PRE_DICT, LEECH_DICT, dispatcher, PAID_USERS, CAP_DICT, PAID_SERVICE, REM_DICT, SUF_DICT
+from bot import LOGGER, DB_URI, OWNER_ID, PRE_DICT, LEECH_DICT, dispatcher, PAID_USERS, CAP_DICT, PAID_SERVICE, REM_DICT, SUF_DICT, CFONT_DICT
 from bot.helper.telegram_helper.message_utils import *
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -122,10 +122,21 @@ def setCapFont(update, context):
     user_id = query.from_user.id
     data = query.data
     data = data.split()
+    buttons = ButtonMaker()
+    buttons.sbutton("Spoiler", f"capfont {user_id_} sp")
+    buttons.sbutton("Italics", f"capfont {user_id_} i")
+    buttons.sbutton("Monospace", f"capfont {user_id_} code")
+    buttons.sbutton("Strike", f"capfont {user_id_} s")
+    buttons.sbutton("Underline", f"capfont {user_id_} u")
+    buttons.sbutton("Bold", f"capfont {user_id_} b")
+    btns = buttons.build_menu(2)
     if user_id != int(data[1]):
         query.answer(text="Not Yours!", show_alert=True)
     elif data[2] == "font":
-        
+        editMessage(f"<u>Change your Font Style from below:</u>\n\n• Current Style : {CFONT_DICT.get(user_id, "code")}", message, btns)
+    elif data[2] == "b":
+        CFONT_DICT[user_id] = "b"
+        query.answer(text="Changed to Bold!", show_alert=True)
 
 def userlog_set(update, context):
     user_id_ = update.message.from_user.id 
