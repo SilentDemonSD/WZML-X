@@ -1,5 +1,5 @@
 from threading import Thread
-import time
+from time import time
 from charset_normalizer import logging
 from speedtest import Speedtest
 from bot.helper.ext_utils.bot_utils import get_readable_time
@@ -19,23 +19,23 @@ def speedtest(update, context):
     test.results.share()
     result = test.results.dict()
     path = (result['share'])
-    currentTime = get_readable_time(time.time() - botStartTime)
+    currentTime = get_readable_time(time() - botStartTime)
     string_speed = f'''
 ╭─《 🚀 SPEEDTEST INFO 》
 ├ <b>Upload:</b> <code>{speed_convert(result['upload'], False)}</code>
 ├ <b>Download:</b>  <code>{speed_convert(result['download'], False)}</code>
 ├ <b>Ping:</b> <code>{result['ping']} ms</code>
 ├ <b>Time:</b> <code>{result['timestamp']}</code>
-├ <b>Data Sent:</b> <code>{result['bytes_sent']}</code>
-╰ <b>Data Received:</b> <code>{result['bytes_received']}</code>
+├ <b>Data Sent:</b> <code>{get_readable_file_size(int(result['bytes_sent']))}</code>
+╰ <b>Data Received:</b> <code>{get_readable_file_size(int(result['bytes_received']))}</code>
 
 ╭─《 🌐 SPEEDTEST SERVER 》
 ├ <b>Name:</b> <code>{result['server']['name']}</code>
 ├ <b>Country:</b> <code>{result['server']['country']}, {result['server']['cc']}</code>
 ├ <b>Sponsor:</b> <code>{result['server']['sponsor']}</code>
 ├ <b>Latency:</b> <code>{result['server']['latency']}</code>
-├ <b>Latitude:</b> <code>{get_readable_file_size(result['server']['lat'])}</code>
-╰  <b>Longitude:</b> <code>{get_readable_file_size(result['server']['lon'])}</code>
+├ <b>Latitude:</b> <code>{result['server']['lat']}</code>
+╰ <b>Longitude:</b> <code>{result['server']['lon']}</code>
 
 ╭─《 👤 CLIENT DETAILS 》
 ├ <b>IP Address:</b> <code>{result['client']['ip']}</code>
