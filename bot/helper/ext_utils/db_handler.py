@@ -37,7 +37,7 @@ class DbManger:
                  paid boolean DEFAULT FALSE,
                  thumb bytea DEFAULT NULL,
                  leechlog boolean DEFAULT FALSE,
-                 cfont text DEFAULT NULL
+                 cfont text ARRAY
                  )"""
         self.cur.execute(sql)
         sql = """CREATE TABLE IF NOT EXISTS rss (
