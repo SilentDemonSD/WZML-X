@@ -2,7 +2,7 @@ from pyrogram import enums
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, ConversationHandler
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-from bot import bot, LOGGER, DB_URI, OWNER_ID, PRE_DICT, LEECH_DICT, dispatcher, PAID_USERS, CAP_DICT, PAID_SERVICE, REM_DICT, SUF_DICT, CFONT_DICT
+from bot import app, LOGGER, DB_URI, OWNER_ID, PRE_DICT, LEECH_DICT, dispatcher, PAID_USERS, CAP_DICT, PAID_SERVICE, REM_DICT, SUF_DICT, CFONT_DICT
 from bot.helper.telegram_helper.message_utils import *
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -232,11 +232,11 @@ def userlog_set(update, context):
     dumpid_ = int(dumpid_.strip())
     try:
         nlm = editMessage("<i>Checking Your Channel Interaction ...</i> ♻️", lm)
-        bot.sendMessage(chat_id=dumpid_, text=f'''╭─《 WZML DUMP CHANNEL 》
+        app.send_message(chat_id=dumpid_, text=f'''╭─《 WZML DUMP CHANNEL 》
 │
 ├🆔 <b>Dump ID :</b> <code>{dumpid_}</code>
 │
-╰📂 <i>From Now On, The Bot will Send you Files in this Channel !!</i>''', parse_mode="HTML")
+╰📂 <i>From Now On, The Bot will Send you Files in this Channel !!</i>''')
     except Exception as err:
         editMessage(f"<i>Make Sure You have Added the Bot as Admin with Post Permission, Retry Again.</i>\n\nError : {err}", lm)
         return
