@@ -22,6 +22,7 @@ def getleechinfo(from_user):
     caption = CAP_DICT.get(user_id, "Not Exists")
     dumpid = LEECH_DICT.get(user_id, "Not Exists")
     remname = REM_DICT.get(user_id, "Not Exists")
+    cfont = CFONT_DICT.get(user_id, "Not Exists")
     if (
         user_id in AS_DOC_USERS
         or user_id not in AS_MEDIA_USERS
@@ -51,6 +52,8 @@ def getleechinfo(from_user):
         buttons.sbutton("Delete DumpID", f"leechset {user_id} dump")
     if remname != "Not Exists": 
         buttons.sbutton("Delete Remname", f"leechset {user_id} rem")
+    if cfont != "Not Exists": 
+        buttons.sbutton("Delete CapFont", f"leechset {user_id} cfont")
 
     button = buttons.build_menu(2)
 
@@ -61,6 +64,7 @@ def getleechinfo(from_user):
 • Prefix : <b>{prefix}</b>
 • Suffix : <b>{suffix}</b>
 • Caption : <b>{caption}</b>
+• CapFont : <b>{cfont}</b>
 • Remname : <b>{remname}</b>
 • DumpID : <b>{dumpid}</b>
 • User Plan : <b>{uplan}</b>'''
@@ -146,6 +150,12 @@ def setLeechType(update, context):
         if DB_URI:
             DbManger().user_dump(user_id, None)
         query.answer(text="Your Dump ID is Successfully Deleted!", show_alert=True)
+        editLeechType(message, query)
+    elif data[2] == "cfont":
+        CFONT_DICT.pop(user_id)
+        if DB_URI:
+            DbManger().user_cfont(user_id, None)
+        query.answer(text="Your CapFont is Successfully Deleted!", show_alert=True)
         editLeechType(message, query)
     else:
         query.answer()
