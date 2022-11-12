@@ -238,6 +238,7 @@ class MirrorLeechListener:
         PREFIX = PRE_DICT.get(self.message.from_user.id, "")
         REMNAME = REM_DICT.get(self.message.from_user.id, "")
         SUFFIX = SUF_DICT.get(self.message.from_user.id, "")
+        file_ = escape(name)
 
         #MysteryStyle ~ Tele-LeechX
         if file_.startswith('www'):
