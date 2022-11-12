@@ -89,9 +89,11 @@ class TgUploader:
         if file_.startswith('www'):
             file_ = ' '.join(file_.split()[1:])
         if REMNAME:
+            if not REMNAME.startswith('|'):
+                REMNAME = f"|{REMNAME}"
             slit = REMNAME.split("|")
             __newFileName = file_
-            for rep in range(0, len(slit)-1):
+            for rep in range(1, len(slit)):
                 args = slit[rep].split(":")
                 if len(args) == 3:
                     __newFileName = __newFileName.replace(args[0], args[1], int(args[2]))
@@ -116,7 +118,6 @@ class TgUploader:
                     + f"{SUFFIX}.{fileDict[-1]}"
                             )
             file_ = _newExtFileName
-            LOGGER.info("Suffix : "+file_)
         if PRENAME or REMNAME or SUFFIX:
             new_path = ospath.join(dirpath, file_)
             osrename(up_path, new_path)
