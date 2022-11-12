@@ -1,6 +1,4 @@
 from random import choice
-from PIL import Image
-from urllib.request import urlretrieve
 from time import sleep, time
 from telegram import InlineKeyboardMarkup
 from telegram.message import Message
@@ -123,19 +121,15 @@ def deleteMessage(bot, message: Message):
         LOGGER.error(str(e))
 
 def sendLogFile(bot, message: Message):
-    urlretrieve("https://te.legra.ph/file/3325f4053e8d68eab07b5.jpg", 'downloads/3325f4053e8d68eab07b5.jpg')
-    Image.open('downloads/3325f4053e8d68eab07b5.jpg').convert("RGB").save('Thumbnails/weeb.jpg', "JPEG")
-    remove('downloads/3325f4053e8d68eab07b5.jpg')
-    #with open('log.txt', 'rb') as f:
     app.send_document(document='log.txt', thumb='Thumbnails/weeb.jpg',
                           reply_to_message_id=message.message_id,
-                          chat_id=message.chat_id)
+                          chat_id=message.chat_id, caption='log.txt')
 
 def sendFile(bot, message: Message, name: str, caption=""):
     try:
-        with open(name, 'rb') as f:
-            bot.sendDocument(document=f, filename=f.name, reply_to_message_id=message.message_id,
-                             caption=caption, parse_mode='HTML',chat_id=message.chat_id)
+        app.send_document(document=name, reply_to_message_id=message.message_id,
+                             caption=caption, parse_mode='HTML',chat_id=message.chat_id,
+                             thumb='Thumbnails/weeb.jpg')
         remove(name)
         return
     except RetryAfter as r:
