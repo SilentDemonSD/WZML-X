@@ -113,7 +113,7 @@ def caption_set(update, context):
         if DB_URI:
             DbManger().user_cap(user_id_, caption_)
             LOGGER.info(f"User : {user_id_} Caption is Saved in DB")
-        editMessage(f"<b><u>{u_men} Caption for the Leech file is Set Successfully</u></b>\n\n<b>• Caption Text: </b>{txt}", lm, button)
+        editMessage(f"<b><u>{u_men}'s Caption is Set Successfully :</u></b>\n\n<b>• Caption Text: </b>{txt}", lm, button)
 
 
 def setCapFont(update, context):
@@ -150,7 +150,31 @@ def setCapFont(update, context):
         if DB_URI:
             DbManger().user_cfont(user_id_, eVal)
             LOGGER.info(f"User : {user_id_} Font Style Saved in DB")
-        query.answer(text="Font Style changed to It]]palics!", show_alert=True)
+        query.answer(text="Font Style changed to Italics!", show_alert=True)
+        editMessage(f"<u>Change your Font Style from below:</u>\n\n• Current Style : {CFONT_DICT.get(user_id_, ['<code>Code</code>'])[0]}", message, btns)
+    elif data[2] == "Code":
+        eVal = ["<code>Code</code>", "code"]
+        CFONT_DICT[user_id_] = eVal
+        if DB_URI:
+            DbManger().user_cfont(user_id_, eVal)
+            LOGGER.info(f"User : {user_id_} Font Style Saved in DB")
+        query.answer(text="Font Style changed to Monospace!", show_alert=True)
+        editMessage(f"<u>Change your Font Style from below:</u>\n\n• Current Style : {CFONT_DICT.get(user_id_, ['<code>Code</code>'])[0]}", message, btns)
+    elif data[2] == "Strike":
+        eVal = ["<s>Strike</s>", "s"]
+        CFONT_DICT[user_id_] = eVal
+        if DB_URI:
+            DbManger().user_cfont(user_id_, eVal)
+            LOGGER.info(f"User : {user_id_} Font Style Saved in DB")
+        query.answer(text="Font Style changed to Strike!", show_alert=True)
+        editMessage(f"<u>Change your Font Style from below:</u>\n\n• Current Style : {CFONT_DICT.get(user_id_, ['<code>Code</code>'])[0]}", message, btns)
+    elif data[2] == "Underline":
+        eVal = ["<u>Underline</u>", "u"]
+        CFONT_DICT[user_id_] = eVal
+        if DB_URI:
+            DbManger().user_cfont(user_id_, eVal)
+            LOGGER.info(f"User : {user_id_} Font Style Saved in DB")
+        query.answer(text="Font Style changed to Underline!", show_alert=True)
         editMessage(f"<u>Change your Font Style from below:</u>\n\n• Current Style : {CFONT_DICT.get(user_id_, ['<code>Code</code>'])[0]}", message, btns)
     elif data[2] == "Bold":
         eVal = ["<b>Bold</b>", "b"]
@@ -159,6 +183,14 @@ def setCapFont(update, context):
             DbManger().user_cfont(user_id_, eVal)
             LOGGER.info(f"User : {user_id_} Font Style Saved in DB")
         query.answer(text="Font Style changed to Bold!", show_alert=True)
+        editMessage(f"<u>Change your Font Style from below:</u>\n\n• Current Style : {CFONT_DICT.get(user_id_, ['<code>Code</code>'])[0]}", message, btns)
+    elif data[2] == "Regular":
+        eVal = ["Regular", ""]
+        CFONT_DICT[user_id_] = eVal
+        if DB_URI:
+            DbManger().user_cfont(user_id_, eVal)
+            LOGGER.info(f"User : {user_id_} Font Style Saved in DB")
+        query.answer(text="Font Style changed to Regular!", show_alert=True)
         editMessage(f"<u>Change your Font Style from below:</u>\n\n• Current Style : {CFONT_DICT.get(user_id_, ['<code>Code</code>'])[0]}", message, btns)
 
 
