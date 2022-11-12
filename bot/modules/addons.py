@@ -20,7 +20,7 @@ def prefix_set(update, context):
             return
     if (BotCommands.PreNameCommand in update.message.text) and (len(update.message.text.split(' ')) == 1):
         help_msg = "<b>Send prefix after command:</b>"
-        help_msg += f"\n<code>/{BotCommands.PreNameCommand}" + " {prefix}" + "</code>"
+        help_msg += f"\n<code>/{BotCommands.PreNameCommand}" + " {prefix}" + "</code>\n"
         help_msg += "\n<b>By Replying to Message (Including Prefix):</b>"
         help_msg += f"\n<code>/{BotCommands.PreNameCommand}" + " {message}" + "</code>"
         sendMessage(help_msg, context.bot, update.message)
@@ -52,7 +52,7 @@ def suffix_set(update, context):
             return
     if (BotCommands.SufNameCommand in update.message.text) and (len(update.message.text.split(' ')) == 1):
         help_msg = "<b>Send suffix after command:</b>"
-        help_msg += f"\n<code>/{BotCommands.SufNameCommand}" + " {suffix}" + "</code>"
+        help_msg += f"\n<code>/{BotCommands.SufNameCommand}" + " {suffix}" + "</code>\n"
         help_msg += "\n<b>By Replying to Message (Including Suffix):</b>"
         help_msg += f"\n<code>/{BotCommands.SufNameCommand}" + " {message}" + "</code>"
         sendMessage(help_msg, context.bot, update.message)
@@ -212,7 +212,7 @@ def userlog_set(update, context):
             return
     if (BotCommands.UserLogCommand in update.message.text) and (len(update.message.text.split(' ')) == 1):
         help_msg = "<b>Send channel id after command:</b>"
-        help_msg += f"\n<code>/{BotCommands.UserLogCommand}" + " -100xxxxxxx" + "</code>"
+        help_msg += f"\n<code>/{BotCommands.UserLogCommand}" + " -100xxxxxxx" + "</code>\n"
         help_msg += "\n<b>By Replying to Message (Including Channel ID):</b>"
         help_msg += f"\n<code>/{BotCommands.UserLogCommand}" + " {message}" + "</code>"
         sendMessage(help_msg, context.bot, update.message)
@@ -256,7 +256,20 @@ def remname_set(update, context):
             sendMessage(f"Buy Paid Service to Use this Remname Feature.", context.bot, update.message)
             return
     if (BotCommands.RemnameCommand in update.message.text) and (len(update.message.text.split(' ')) == 1):
-        sendMessage(f'<b>Set Remname Like👇 \n/{BotCommands.RemnameCommand} text, seperated with | </b>', context.bot, update.message)
+        hlp_me = "<b>Send text with format along with command line:</b>\n"
+        hlp_me += "<code>/cmd</code> previousname:newname:times|previousname:newname:times\n\n"
+        hlp_me += f"<b>Example:</b> /{BotCommands.RemnameCommand} " + "Fork:Star|Here:Now:1|WZML\n\n"
+        hlp_me += "Output : Star Now : Click Here.txt\n\n"
+        hlp_me += "<b>Explanation :</b> Here, Fork changed to Star, Here changed to Now, only 1 time and WZML is removed.\n\n"
+        hlp_me += '''<b>Filter Notes:</b>
+1. All Spaces are sensitive, if you give space unnecessarily, it will not work.
+
+2. Use | for different changes, you can use as many times you need. If you keep single word or letter, it will be Removed and you can Change Specific Work or letter by : separator respectively. (optional)
+
+3. For Changing, A work or Letter in a Limited no. of Times, use again : separator to specify no. of times to remove. (optional)
+
+4. Filename is Changed according to your Remname, so No need to change in Caption, again for filename.''' 
+        sendMessage(hlp_me, context.bot, update.message)
     else:
         lm = sendMessage(f"<b>Please Wait....Processing🤖</b>", context.bot, update.message)
         pre_send = update.message.text.split(" ", maxsplit=1)
@@ -272,7 +285,7 @@ def remname_set(update, context):
         if DB_URI:
             DbManger().user_rem(user_id_, remname_)
             LOGGER.info(f"User : {user_id_} Remname is Saved in DB")
-        editMessage(f"<b>{u_men} Remname for the Leech file is Set now🌋</b>\n\n<b>Your Remname Text: </b>{txt}", lm)
+        editMessage(f"<b><a href='tg://user?id={user_id_}'>{u_men}</a>'s Remname is Set Successfully :</b>\n\n<b>• Remname Text: </b>{txt}", lm)
 
 
 
