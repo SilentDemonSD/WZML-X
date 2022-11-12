@@ -3,6 +3,7 @@ from time import sleep, time
 from telegram import InlineKeyboardMarkup
 from telegram.message import Message
 from telegram.error import RetryAfter
+from pyrogram import enums
 from pyrogram.errors import FloodWait
 from os import remove
 
@@ -128,13 +129,13 @@ def sendLogFile(bot, message: Message):
 def sendFile(bot, message: Message, name: str, caption=""):
     try:
         app.send_document(document=name, reply_to_message_id=message.message_id,
-                             caption=caption, parse_mode='HTML',chat_id=message.chat_id,
+                             caption=caption, parse_mode=enums.ParseMode.HTML, chat_id=message.chat_id,
                              thumb='Thumbnails/weeb.jpg')
         remove(name)
         return
-    except RetryAfter as r:
+    except FloodWait as r:
         LOGGER.warning(str(r))
-        sleep(r.retry_after * 1.5)
+        sleep(r.value * 1.5)
         return sendFile(bot, message, name, caption)
     except Exception as e:
         LOGGER.error(str(e))
