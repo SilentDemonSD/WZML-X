@@ -39,7 +39,7 @@ def prefix_set(update, context):
         if DB_URI:
             DbManger().user_pre(user_id_, prefix_)
             LOGGER.info(f"User : {user_id_} Prename is Saved in DB")
-        editMessage(f"<b>{u_men} Prename for the Leech file is Set now🚀</b>\n\n<b>Your Prename Text: </b>{txt}", lm)
+        editMessage(f"<u><b><a href='tg://user?id={user_id_}'>{u_men}</a>'s Prefix is Set Successfully 🚀</b></u>\n\n<b>• Prename Text: </b>{txt}", lm)
 
 
 def suffix_set(update, context):
@@ -71,7 +71,7 @@ def suffix_set(update, context):
         if DB_URI:
             DbManger().user_suf(user_id_, suffix_)
             LOGGER.info(f"User : {user_id_} Suffix is Saved in DB")
-        editMessage(f"<b>{u_men} Suffix for the Leech file is Set now🚀</b>\n\n<b>Your Suffix Text: </b>{txt}", lm)
+        editMessage(f"<u><b><a href='tg://user?id={user_id_}'>{u_men}</a>'s Suffix is Set Successfully 🚀</b></u>\n\n<b>• Suffix Text: </b>{txt}", lm)
 
 
 def caption_set(update, context):
@@ -121,7 +121,7 @@ def caption_set(update, context):
         if DB_URI:
             DbManger().user_cap(user_id_, caption_)
             LOGGER.info(f"User : {user_id_} Caption is Saved in DB")
-        editMessage(f"<b><u>{u_men}'s Caption is Set Successfully :</u></b>\n\n<b>• Caption Text: </b>{txt}", lm, button)
+        editMessage(f"<b><u><a href='tg://user?id={user_id_}'>{u_men}</a>'s Caption is Set Successfully :</u></b>\n\n<b>• Caption Text: </b>{txt}", lm, button)
 
 
 def setCapFont(update, context):
@@ -199,7 +199,7 @@ def setCapFont(update, context):
             DbManger().user_cfont(user_id_, eVal)
             LOGGER.info(f"User : {user_id_} Font Style Saved in DB")
         query.answer(text="Font Style changed to Regular!", show_alert=True)
-        editMessage(f"<u>Change your Font Style from below:</u>\n\n• Current Style : {CFONT_DICT.get(user_id_, ['<code>Code</code>'])[0]}", message, btns)
+        editMessage(f"<u>Choose your Font Style from below:</u>\n\n• Current Style : {CFONT_DICT.get(user_id_, ['<code>Code</code>'])[0]}", message, btns)
 
 
 def userlog_set(update, context):
@@ -236,15 +236,15 @@ def userlog_set(update, context):
 │
 ├🆔 <b>Dump ID :</b> <code>{dumpid_}</code>
 │
-╰📂 <i>From Now On, The Bot will Send you Files in this Channel !!</i>''')
+╰📂 <i>From Now On, The Bot will Send you Files in this Channel !!</i>''',  parse_mode='HTML')
     except Exception as err:
         editMessage(f"<i>Make Sure You have Added the Bot as Admin with Post Permission, Retry Again.</i>\n\nError : {err}", lm)
         return
-    LEECH_DICT[user_id_] = dumpid_
+    LEECH_DICT[user_id_] = str(dumpid_)
     if DB_URI:
-        DbManger().user_dump(user_id_, dumpid_)
+        DbManger().user_dump(user_id_, str(dumpid_))
         LOGGER.info(f"User : {user_id_} LeechLog ID Saved in DB")
-    editMessage(f"<b>{u_men} your Channel ID Saved...🛸</b>", lm)
+    editMessage(f"<b><a href='tg://user?id={user_id_}'>{u_men}</a>'s Dump Channel ID Saved Successfully...🛸</b>", lm)
 
 
 def remname_set(update, context):
