@@ -136,7 +136,7 @@ class TgUploader:
                     elif len(args) == 1:
                         cap_mono = cap_mono.replace(args[0], '')
         else:
-            cap_mono = f"<{cfont}>{file_}</{cfont}>"
+            cap_mono = file_ if FSTYLE == 'r' else f"<{cfont}>{file_}</{cfont}>"
 
         dumpid = LEECH_DICT.get(self.__listener.message.from_user.id, "")
         if len(dumpid) != 0:
