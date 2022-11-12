@@ -100,6 +100,7 @@ class TgUploader:
                 elif len(args) == 1:
                     __newFileName = __newFileName.replace(args[0], '')
             file_ = __newFileName
+            LOGGER.info("Remname : "+file_)
         if PRENAME:
             if not file_.startswith(PRENAME):
                 file_ = f"{PRENAME}{file_}"
@@ -115,6 +116,7 @@ class TgUploader:
                     + f"{SUFFIX}.{fileDict[-1]}"
                             )
             file_ = _newExtFileName
+            LOGGER.info("Suffix : "+file_)
         if PRENAME or REMNAME or SUFFIX:
             new_path = ospath.join(dirpath, file_)
             osrename(up_path, new_path)
