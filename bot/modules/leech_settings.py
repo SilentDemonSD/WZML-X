@@ -23,7 +23,7 @@ def getleechinfo(from_user):
     caption = CAP_DICT.get(user_id, "Not Exists")
     dumpid = LEECH_DICT.get(user_id, "Not Exists")
     remname = REM_DICT.get(user_id, "Not Exists")
-    cfont = CFONT_DICT.get(user_id, "Not Exists")
+    cfont = CFONT_DICT.get(user_id, ["Not Exists"])[0]
     if (
         user_id in AS_DOC_USERS
         or user_id not in AS_MEDIA_USERS
