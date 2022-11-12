@@ -215,7 +215,7 @@ def userlog_set(update, context):
         help_msg += f"\n<code>/{BotCommands.UserLogCommand}" + " -100xxxxxxx" + "</code>"
         help_msg += "\n<b>By Replying to Message (Including Channel ID):</b>"
         help_msg += f"\n<code>/{BotCommands.UserLogCommand}" + " {message}" + "</code>"
-        sendMessage(f'Send Your Backup Channel ID alone with command like \n\n{BotCommands.UserLogCommand} -100xxxxxxx', context.bot, update.message)
+        sendMessage(help_msg, context.bot, update.message)
         return
     lm = sendMessage("Checking your Channel ID... 🛃", context.bot, update.message)          
     pre_send = update.message.text.split(" ", maxsplit=1)
@@ -234,9 +234,9 @@ def userlog_set(update, context):
         editMessage("<i>Checking Your Channel Interaction ...</i> ♻️", lm)
         sendMessage(f'''╭─《 WZML DUMP CHANNEL 》
 │
-├  🆔 <b>Dump ID :</b> <code>{user_log_}</code>
+├🆔 <b>Dump ID :</b> <code>{dumpid_}</code>
 │
-╰  📂 <i>From Now On, The Bot will Send you Files in this Channel !!</i>''', context.bot, dumpid_)
+╰📂 <i>From Now On, The Bot will Send you Files in this Channel !!</i>''', context.bot, dumpid_)
     except Exception as err:
         editMessage(f"<i>Make Sure You have Added the Bot as Admin with Post Permission, Retry Again.</i>\n\nError : {err}", lm)
         return
