@@ -19,7 +19,11 @@ def prefix_set(update, context):
             sendMessage(f"Buy Paid Service to Use this Prename Feature.", context.bot, update.message)
             return
     if (BotCommands.PreNameCommand in update.message.text) and (len(update.message.text.split(' ')) == 1):
-        sendMessage(f'<b>Set Prename Like👇 \n/{BotCommands.PreNameCommand} channelName</b>', context.bot, update.message)
+        help_msg = "<b>Send prefix after command:</b>"
+        help_msg += f"\n<code>/{BotCommands.PreNameCommand}" + " {prefix}" + "</code>"
+        help_msg += "\n<b>By Replying to Message (Including Prefix):</b>"
+        help_msg += f"\n<code>/{BotCommands.PreNameCommand}" + " {message}" + "</code>"
+        sendMessage(help_msg, context.bot, update.message)
     else:
         lm = sendMessage(f"<b>Please Wait....Processing🤖</b>", context.bot, update.message)
         pre_send = update.message.text.split(" ", maxsplit=1)
@@ -47,7 +51,11 @@ def suffix_set(update, context):
             sendMessage(f"Buy Paid Service to Use this Suffix Feature.", context.bot, update.message)
             return
     if (BotCommands.SufNameCommand in update.message.text) and (len(update.message.text.split(' ')) == 1):
-        sendMessage(f'<b>Set Suffix Like👇 \n/{BotCommands.SufNameCommand} channelName</b>', context.bot, update.message)
+        help_msg = "<b>Send suffix after command:</b>"
+        help_msg += f"\n<code>/{BotCommands.SufNameCommand}" + " {suffix}" + "</code>"
+        help_msg += "\n<b>By Replying to Message (Including Suffix):</b>"
+        help_msg += f"\n<code>/{BotCommands.SufNameCommand}" + " {message}" + "</code>"
+        sendMessage(help_msg, context.bot, update.message)
     else:
         lm = sendMessage(f"<b>Please Wait....Processing🤖</b>", context.bot, update.message)
         pre_send = update.message.text.split(" ", maxsplit=1)
@@ -203,18 +211,35 @@ def userlog_set(update, context):
             sendMessage(f"Buy Paid Service to Use this Dump Feature.", context.bot, update.message)
             return
     if (BotCommands.UserLogCommand in update.message.text) and (len(update.message.text.split(' ')) == 1):
+        help_msg = "<b>Send channel id after command:</b>"
+        help_msg += f"\n<code>/{BotCommands.UserLogCommand}" + " -100xxxxxxx" + "</code>"
+        help_msg += "\n<b>By Replying to Message (Including Channel ID):</b>"
+        help_msg += f"\n<code>/{BotCommands.UserLogCommand}" + " {message}" + "</code>"
         sendMessage(f'Send Your Backup Channel ID alone with command like \n\n{BotCommands.UserLogCommand} -100xxxxxxx', context.bot, update.message)
+        return
+    lm = sendMessage("Checking your Channel ID... 🛃", context.bot, update.message)          
+    pre_send = update.message.text.split(" ", maxsplit=1)
+    reply_to = update.message.reply_to_message
+    if len(pre_send) > 1:
+        dumpid_ = pre_send[1]
+    elif reply_to is not None:
+        dumpid_ = reply_to.text
     else:
-        lm = sendMessage("Please wait...🤖", context.bot, update.message)          
-        pre_send = update.message.text.split(" ", maxsplit=1)
-        reply_to = update.message.reply_to_message
-        if len(pre_send) > 1:
-            txt = pre_send[1]
-        elif reply_to is not None:
-            txt = reply_to.text
-        else:
-            txt = ""
-        dumpid_ = txt
+        dumpid_ = ""
+    if not dumpid_.startswith('-100'):
+        editMessage("<i><b>Your Channel ID Should Start with</b> -100xxxxxxxx, <u>Retry Again</u> !!</i>", lm)
+        return
+    dumpid_ = int(dumpid_.strip())
+    try:
+        editMessage("<i>Checking Your Channel Interaction ...</i> ♻️", lm)
+        sendMessage(f'''╭─《 WZML DUMP CHANNEL 》
+│
+├  🆔 <b>Dump ID :</b> <code>{user_log_}</code>
+│
+╰  📂 <i>From Now On, The Bot will Send you Files in this Channel !!</i>''', context.bot, dumpid_)
+    except Exception as err:
+        editMessage(f"<i>Make Sure You have Added the Bot as Admin with Post Permission, Retry Again.</i>\n\nError : {err}", lm)
+        return
         LEECH_DICT[user_id_] = dumpid_
         if DB_URI:
             DbManger().user_dump(user_id_, dumpid_)
