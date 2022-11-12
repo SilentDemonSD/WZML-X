@@ -143,9 +143,8 @@ def setCapFont(update, context):
         query.answer(text="Not Yours!", show_alert=True)
         return
     elif data[2] == "font":
-        LOGGER.info(CFONT_DICT.get(user_id_, [f'{CAPTION_FONT} (Default)', '']))
-        LOGGER.info(CFONT_DICT.get(user_id_, list((f'{CAPTION_FONT} (Default)', '')))[0])
-        editMessage("<u>Change your Font Style from below:</u>\n\n• Current Style : " + CFONT_DICT.get(user_id_, list((f'{CAPTION_FONT} (Default)', '')))[0], message, btns)
+        FONT_SPELL = {'b':'<b>Bold</b>', 'i':'<i>Italics</i>', 'code':'<code>Monospace</code>', 's':'<s>Strike</s>', 'u':'<u>Underline</u>', 'tg-spoiler':'<tg-spoiler>Spoiler</tg-spoiler>'}
+        editMessage("<u>Change your Font Style from below:</u>\n\n• Current Style : " + CFONT_DICT.get(user_id_, [f'{FONT_SPELL[str(CAPTION_FONT)]} (Default)'])[0], message, btns)
     elif data[2] == "Spoiler":
         eVal = ["<tg-spoiler>Spoiler</tg-spoiler>", "tg-spoiler"]
         CFONT_DICT[user_id_] = eVal
@@ -163,7 +162,7 @@ def setCapFont(update, context):
         query.answer(text="Font Style changed to Italics!", show_alert=True)
         editMessage("<u>Change your Font Style from below:</u>\n\n• Current Style : "+ CFONT_DICT.get(user_id_)[0], message, btns)
     elif data[2] == "Code":
-        eVal = ["<code>Code</code>", "code"]
+        eVal = ["<code>Monospace</code>", "code"]
         CFONT_DICT[user_id_] = eVal
         if DB_URI:
             DbManger().user_cfont(user_id_, eVal)
