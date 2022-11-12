@@ -10,7 +10,7 @@ from os import remove
 
 from bot import AUTO_DELETE_MESSAGE_DURATION, LOGGER, status_reply_dict, status_reply_dict_lock, \
                 Interval, DOWNLOAD_STATUS_UPDATE_INTERVAL, RSS_CHAT_ID, bot, rss_session, \
-                AUTO_DELETE_UPLOAD_MESSAGE_DURATION, PICS
+                AUTO_DELETE_UPLOAD_MESSAGE_DURATION, PICS, app
 from bot.helper.ext_utils.bot_utils import get_readable_message, setInterval
 
 
@@ -126,8 +126,8 @@ def sendLogFile(bot, message: Message):
     urlretrieve("https://te.legra.ph/file/3325f4053e8d68eab07b5.jpg", 'downloads/3325f4053e8d68eab07b5.jpg')
     Image.open('downloads/3325f4053e8d68eab07b5.jpg').convert("RGB").save('Thumbnails/weeb.jpg', "JPEG")
     remove('downloads/3325f4053e8d68eab07b5.jpg')
-    with open('log.txt', 'rb') as f:
-        bot.sendDocument(document=f, filename=f.name, thumb='Thumbnails/weeb.jpg',
+    #with open('log.txt', 'rb') as f:
+    app.send_document(document='log.txt', filename='log.txt', thumb='Thumbnails/weeb.jpg',
                           reply_to_message_id=message.message_id,
                           chat_id=message.chat_id)
 
