@@ -24,7 +24,7 @@ class _BotCommands:
         self.PaidUsersCommand = getCommand('PAID_COMMAND', f'paid{CMD_INDEX}')
         self.AddPaidCommand = getCommand('ADDPAID_COMMAND', f'addpaid{CMD_INDEX}')
         self.RmPaidCommand = getCommand('RMPAID_COMMAND', f'rmpaid{CMD_INDEX}')
-        self.PreNameCommand = getCommand('PRENAME_COMMAND', f'prename{CMD_INDEX}')
+        self.PreNameCommand = getCommand('PRENAME_COMMAND', f'prefix{CMD_INDEX}')
         self.SufNameCommand = getCommand('SUFFIX_COMMAND', f'suffix{CMD_INDEX}')
         self.CaptionCommand = getCommand('CAPTION_COMMAND', f'caption{CMD_INDEX}')
         self.UserLogCommand = getCommand('DUMPID_COMMAND', f'dumpid{CMD_INDEX}')
