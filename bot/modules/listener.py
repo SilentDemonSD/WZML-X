@@ -235,17 +235,44 @@ class MirrorLeechListener:
         mesg = self.message.text.split('\n')
         message_args = mesg[0].split(' ', maxsplit=1)
         reply_to = self.message.reply_to_message
-        prefix = PRE_DICT.get(self.message.from_user.id, "")
-        PRENAME_X = prefix
-        file_ = escape(name)
-        if len(PRENAME_X) != 0:
-            if file_.startswith('www'): 
-                file_ = ' '.join(file_.split()[1:])
-                file_ = f"{PRENAME_X}"+ file_.strip('-').strip('_')
-            else:
-                file_ = f"{PRENAME_X} {file_}"
-        else:
-          file_ = f"{file_}"
+        PRENAME = PRE_DICT.get(self.message.from_user.id, "")
+        REMNAME = REM_DICT.get(self.message.from_user.id, "")
+        SUFFIX = SUF_DICT.get(self.message.from_user.id, "")
+
+        #MysteryStyle ~ Tele-LeechX
+        if file_.startswith('www'):
+            file_ = ' '.join(file_.split()[1:])
+        if REMNAME:
+            if not REMNAME.startswith('|'):
+                REMNAME = f"|{REMNAME}"
+            slit = REMNAME.split("|")
+            __newFileName = file_
+            for rep in range(1, len(slit)):
+                args = slit[rep].split(":")
+                if len(args) == 3:
+                    __newFileName = __newFileName.replace(args[0], args[1], int(args[2]))
+                elif len(args) == 2:
+                    __newFileName = __newFileName.replace(args[0], args[1])
+                elif len(args) == 1:
+                    __newFileName = __newFileName.replace(args[0], '')
+            file_ = __newFileName
+            LOGGER.info("Remname : "+file_)
+        if PRENAME:
+            if not file_.startswith(PRENAME):
+                file_ = f"{PRENAME}{file_}"
+        if SUFFIX:
+            sufLen = len(SUFFIX)
+            fileDict = file_.split('.')
+            _extIn = 1 + len(fileDict[-1])
+            _extOutName = '.'.join(fileDict[:-1]).replace('.', ' ').replace('-', ' ')
+            _newExtFileName = f"{_extOutName}{SUFFIX}.{fileDict[-1]}"
+            if len(_extOutName) > (64 - (sufLen + _extIn)):
+                _newExtFileName = (
+                    _extOutName[: 64 - (sufLen + _extIn)]
+                    + f"{SUFFIX}.{fileDict[-1]}"
+                            )
+            file_ = _newExtFileName
+
         if EMOJI_THEME is True:
             slmsg = f"🗂️ Name: <{NAME_FONT}>{file_}</{NAME_FONT}>\n\n"
             slmsg += f"📐 Size: {size}\n"
