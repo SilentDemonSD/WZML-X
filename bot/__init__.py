@@ -3,7 +3,7 @@ from PIL import Image
 from os import environ, remove
 from logging import getLogger, FileHandler, StreamHandler, INFO, basicConfig, error as log_error, info as log_info, warning as log_warning
 from socket import setdefaulttimeout
-from url.request import urlretrieve
+from urllib.request import urlretrieve
 from faulthandler import enable as faulthandler_enable
 from telegram.ext import Updater as tgUpdater
 from qbittorrentapi import Client as qbClient
