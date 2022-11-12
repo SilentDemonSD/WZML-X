@@ -231,7 +231,7 @@ def userlog_set(update, context):
         return
     dumpid_ = int(dumpid_.strip())
     try:
-        nlm = editMessage("<i>Checking Your Channel Interaction ...</i> ♻️", lm)
+        editMessage("<i>Checking Your Channel Interaction ...</i> ♻️", lm)
         bot.sendMessage(chat_id=dumpid_, text=f'''╭─《 WZML DUMP CHANNEL 》
 │
 ├🆔 <b>Dump ID :</b> <code>{dumpid_}</code>
@@ -244,7 +244,7 @@ def userlog_set(update, context):
     if DB_URI:
         DbManger().user_dump(user_id_, dumpid_)
         LOGGER.info(f"User : {user_id_} LeechLog ID Saved in DB")
-    editMessage(f"<b>{u_men} your Channel ID Saved...🛸</b>", nlm)
+    editMessage(f"<b>{u_men} your Channel ID Saved...🛸</b>", lm)
 
 
 def remname_set(update, context):
