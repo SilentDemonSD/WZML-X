@@ -2,7 +2,7 @@ from pyrogram import enums
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, ConversationHandler
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-from bot import app, LOGGER, DB_URI, OWNER_ID, PRE_DICT, LEECH_DICT, dispatcher, PAID_USERS, CAP_DICT, PAID_SERVICE, REM_DICT, SUF_DICT, CFONT_DICT
+from bot import bot, LOGGER, DB_URI, OWNER_ID, PRE_DICT, LEECH_DICT, dispatcher, PAID_USERS, CAP_DICT, PAID_SERVICE, REM_DICT, SUF_DICT, CFONT_DICT
 from bot.helper.telegram_helper.message_utils import *
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -232,7 +232,7 @@ def userlog_set(update, context):
     dumpid_ = int(dumpid_.strip())
     try:
         nlm = editMessage("<i>Checking Your Channel Interaction ...</i> ♻️", lm)
-        app.send_message(chat_id=dumpid_, text=f'''╭─《 WZML DUMP CHANNEL 》
+        bot.sendMessage(chat_id=dumpid_, text=f'''╭─《 WZML DUMP CHANNEL 》
 │
 ├🆔 <b>Dump ID :</b> <code>{dumpid_}</code>
 │
@@ -240,11 +240,11 @@ def userlog_set(update, context):
     except Exception as err:
         editMessage(f"<i>Make Sure You have Added the Bot as Admin with Post Permission, Retry Again.</i>\n\nError : {err}", lm)
         return
-        LEECH_DICT[user_id_] = dumpid_
-        if DB_URI:
-            DbManger().user_dump(user_id_, dumpid_)
-            LOGGER.info(f"User : {user_id_} LeechLog ID Saved in DB")
-        editMessage(f"<b>{u_men} your Channel ID Saved...🛸</b>", nlm)
+    LEECH_DICT[user_id_] = dumpid_
+    if DB_URI:
+        DbManger().user_dump(user_id_, dumpid_)
+        LOGGER.info(f"User : {user_id_} LeechLog ID Saved in DB")
+    editMessage(f"<b>{u_men} your Channel ID Saved...🛸</b>", nlm)
 
 
 def remname_set(update, context):
