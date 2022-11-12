@@ -143,6 +143,8 @@ def setCapFont(update, context):
         query.answer(text="Not Yours!", show_alert=True)
         return
     elif data[2] == "font":
+        LOGGER.info(CFONT_DICT.get(user_id_, [f'{CAPTION_FONT} (Default)', '']))
+        LOGGER.info(CFONT_DICT.get(user_id_, list(f'{CAPTION_FONT} (Default)', ''))[0])
         editMessage("<u>Change your Font Style from below:</u>\n\n• Current Style : " + CFONT_DICT.get(user_id_, [f'{CAPTION_FONT} (Default)', ''])[0], message, btns)
     elif data[2] == "Spoiler":
         eVal = ["<tg-spoiler>Spoiler</tg-spoiler>", "tg-spoiler"]
