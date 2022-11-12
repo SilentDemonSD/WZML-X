@@ -185,7 +185,7 @@ def setCapFont(update, context):
         query.answer(text="Font Style changed to Bold!", show_alert=True)
         editMessage(f"<u>Change your Font Style from below:</u>\n\n• Current Style : {CFONT_DICT.get(user_id_, ['<code>Code</code>'])[0]}", message, btns)
     elif data[2] == "Regular":
-        eVal = ["Regular", ""]
+        eVal = ["Regular", "r"]
         CFONT_DICT[user_id_] = eVal
         if DB_URI:
             DbManger().user_cfont(user_id_, eVal)
