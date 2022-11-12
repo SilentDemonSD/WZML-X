@@ -137,15 +137,27 @@ def setCapFont(update, context):
     elif data[2] == "font":
         editMessage(f"<u>Change your Font Style from below:</u>\n\n• Current Style : {CFONT_DICT.get(user_id_, ['<code>Code</code>'])[0]}", message, btns)
     elif data[2] == "Spoiler":
-        CFONT_DICT[user_id_] = ["<tg-spoiler>Spoiler</tg-spoiler>", "tg-spoiler"]
+        eVal = ["<tg-spoiler>Spoiler</tg-spoiler>", "tg-spoiler"]
+        CFONT_DICT[user_id_] = eVal
+        if DB_URI:
+            DbManger().user_cfont(user_id_, eVal)
+            LOGGER.info(f"User : {user_id_} Font Style Saved in DB")
         query.answer(text="Font Style changed to Spoiler!", show_alert=True)
         editMessage(f"<u>Change your Font Style from below:</u>\n\n• Current Style : {CFONT_DICT.get(user_id_, ['<code>Code</code>'])[0]}", message, btns)
     elif data[2] == "Italics":
-        CFONT_DICT[user_id_] = ["<i>Italics</i>", "i"]
-        query.answer(text="Font Style changed to Italics!", show_alert=True)
+        eVal = ["<i>Italics</i>", "i"]
+        CFONT_DICT[user_id_] = eVal
+        if DB_URI:
+            DbManger().user_cfont(user_id_, eVal)
+            LOGGER.info(f"User : {user_id_} Font Style Saved in DB")
+        query.answer(text="Font Style changed to It]]palics!", show_alert=True)
         editMessage(f"<u>Change your Font Style from below:</u>\n\n• Current Style : {CFONT_DICT.get(user_id_, ['<code>Code</code>'])[0]}", message, btns)
     elif data[2] == "Bold":
-        CFONT_DICT[user_id_] = ["<b>Bold</b>", "b"]
+        eVal = ["<b>Bold</b>", "b"]
+        CFONT_DICT[user_id_] = eVal
+        if DB_URI:
+            DbManger().user_cfont(user_id_, eVal)
+            LOGGER.info(f"User : {user_id_} Font Style Saved in DB")
         query.answer(text="Font Style changed to Bold!", show_alert=True)
         editMessage(f"<u>Change your Font Style from below:</u>\n\n• Current Style : {CFONT_DICT.get(user_id_, ['<code>Code</code>'])[0]}", message, btns)
 
