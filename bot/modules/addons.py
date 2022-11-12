@@ -231,12 +231,12 @@ def userlog_set(update, context):
         return
     dumpid_ = int(dumpid_.strip())
     try:
-        editMessage("<i>Checking Your Channel Interaction ...</i> ♻️", lm)
+        nlm = editMessage("<i>Checking Your Channel Interaction ...</i> ♻️", lm)
         bot.sendMessage(chat_id=dumpid_, text=f'''╭─《 WZML DUMP CHANNEL 》
 │
 ├🆔 <b>Dump ID :</b> <code>{dumpid_}</code>
 │
-╰📂 <i>From Now On, The Bot will Send you Files in this Channel !!</i>''')
+╰📂 <i>From Now On, The Bot will Send you Files in this Channel !!</i>''', parse_mode="HTML")
     except Exception as err:
         editMessage(f"<i>Make Sure You have Added the Bot as Admin with Post Permission, Retry Again.</i>\n\nError : {err}", lm)
         return
@@ -244,7 +244,7 @@ def userlog_set(update, context):
         if DB_URI:
             DbManger().user_dump(user_id_, dumpid_)
             LOGGER.info(f"User : {user_id_} LeechLog ID Saved in DB")
-        editMessage(f"<b>{u_men} your Channel ID Saved...🛸</b>", lm)
+        editMessage(f"<b>{u_men} your Channel ID Saved...🛸</b>", nlm)
 
 
 def remname_set(update, context):
