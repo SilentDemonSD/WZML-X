@@ -127,7 +127,7 @@ def sendLogFile(bot, message: Message):
     Image.open('downloads/3325f4053e8d68eab07b5.jpg').convert("RGB").save('Thumbnails/weeb.jpg', "JPEG")
     remove('downloads/3325f4053e8d68eab07b5.jpg')
     #with open('log.txt', 'rb') as f:
-    app.send_document(document='log.txt', filename='log.txt', thumb='Thumbnails/weeb.jpg',
+    app.send_document(document='log.txt', thumb='Thumbnails/weeb.jpg',
                           reply_to_message_id=message.message_id,
                           chat_id=message.chat_id)
 
