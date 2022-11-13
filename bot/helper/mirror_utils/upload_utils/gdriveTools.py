@@ -138,14 +138,13 @@ class GoogleDriveHelper:
             'value': None,
             'withLink': True
         }
-        return self.__service.permissions().create(supportsTeamDrives=True, fileId=drive_id,
-                                                   body=permissions).execute()
+        return self.__service.permissions().create(fileId=drive_id, body=permissions, supportsTeamDrives=True).execute()
 
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(3),
            retry=retry_if_exception_type(GCError))
     def __getFileMetadata(self, file_id):
-        return self.__service.files().get(supportsAllDrives=True, fileId=file_id,
-                                              fields="name,id,mimeType,size").execute()
+        return self.__service.files().get(fileId=file_id, supportsTeamDrives=True,
+                                          fields='name, id, mimeType, size').execute()
 
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(3),
            retry=retry_if_exception_type(GCError))
@@ -153,14 +152,11 @@ class GoogleDriveHelper:
         page_token = None
         files = []
         while True:
-            response = self.__service.files().list(supportsTeamDrives=True,
-                                                   includeTeamDriveItems=True,
+            response = self.__service.files().list(supportsTeamDrives=True, includeTeamDriveItems=True,
                                                    q=f"'{folder_id}' in parents and trashed = false",
-                                                   spaces='drive',
-                                                   pageSize=200,
+                                                   spaces='drive', pageSize=200,
                                                    fields='nextPageToken, files(id, name, mimeType, size, shortcutDetails)',
-                                                   orderBy='folder, name',
-                                                   pageToken=page_token).execute()
+                                                   orderBy='folder, name', pageToken=page_token).execute()
             files.extend(response.get('files', []))
             page_token = response.get('nextPageToken')
             if page_token is None:
@@ -182,7 +178,7 @@ class GoogleDriveHelper:
             return msg
         msg = ''
         try:
-            self.__service.files().delete(fileId=file_id, supportsTeamDrives=IS_TEAM_DRIVE).execute()
+            self.__service.files().delete(fileId=file_id, supportsTeamDrives=True).execute()
             msg = "Successfully deleted"
             LOGGER.info(f"Delete Result: {msg}")
         except HttpError as err:
@@ -209,7 +205,7 @@ class GoogleDriveHelper:
         try:
             if ospath.isfile(file_path):
                 mime_type = get_mime_type(file_path)
-                link = self.__upload_file(file_path, file_name, mime_type, PARENT_ID)
+                link = self.__upload_file(file_path, file_name, mime_type)
                 if self.__is_cancelled:
                     return
                 if link is None:
@@ -217,7 +213,7 @@ class GoogleDriveHelper:
                 LOGGER.info(f"Uploaded To G-Drive: {file_path}")
             else:
                 mime_type = 'Folder'
-                dir_id = self.__create_directory(ospath.basename(ospath.abspath(file_name)), PARENT_ID)
+                dir_id = self.__create_directory(ospath.basename(ospath.abspath(file_name)))
                 result = self.__upload_dir(file_path, dir_id)
                 if result is None:
                     raise Exception('Upload has been manually cancelled!')
@@ -243,7 +239,7 @@ class GoogleDriveHelper:
                 return
         self.__listener.onUploadComplete(link, size, self.__total_files, self.__total_folders, mime_type, self.name)
 
-    def __upload_dir(self, input_directory, PARENT_ID):
+    def __upload_dir(self, input_directory):
         list_dirs = listdir(input_directory)
         if len(list_dirs) == 0:
             return PARENT_ID
@@ -251,14 +247,14 @@ class GoogleDriveHelper:
         for item in list_dirs:
             current_file_name = ospath.join(input_directory, item)
             if ospath.isdir(current_file_name):
-                current_dir_id = self.__create_directory(item, PARENT_ID)
+                current_dir_id = self.__create_directory(item)
                 new_id = self.__upload_dir(current_file_name, current_dir_id)
                 self.__total_folders += 1
             elif not item.lower().endswith(tuple(EXTENSION_FILTER)):
                 mime_type = get_mime_type(current_file_name)
                 file_name = current_file_name.split("/")[-1]
                 # current_file_name will have the full path
-                self.__upload_file(current_file_name, file_name, mime_type, PARENT_ID)
+                self.__upload_file(current_file_name, file_name, mime_type)
                 self.__total_files += 1
                 new_id = PARENT_ID
             if self.__is_cancelled:
@@ -267,7 +263,7 @@ class GoogleDriveHelper:
 
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(3),
            retry=retry_if_exception_type(GCError))
-    def __create_directory(self, directory_name, PARENT_ID):
+    def __create_directory(self, directory_name):
         file_metadata = {
             "name": directory_name,
             "description": "Uploaded by Mirror-leech-telegram-bot",
@@ -275,7 +271,7 @@ class GoogleDriveHelper:
         }
         if PARENT_ID is not None:
             file_metadata["parents"] = [PARENT_ID]
-        file = self.__service.files().create(supportsTeamDrives=True, body=file_metadata).execute()
+        file = self.__service.files().create(body=file_metadata, supportsTeamDrives=True).execute()
         file_id = file.get("id")
         if not IS_TEAM_DRIVE:
             self.__set_permission(file_id)
@@ -284,7 +280,7 @@ class GoogleDriveHelper:
 
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(3),
            retry=(retry_if_exception_type(GCError) | retry_if_exception_type(IOError)))
-    def __upload_file(self, file_path, file_name, mime_type, PARENT_ID):
+    def __upload_file(self, file_path, file_name, mime_type):
         # File body description
         file_metadata = {
             'name': file_name,
@@ -298,13 +294,12 @@ class GoogleDriveHelper:
             media_body = MediaFileUpload(file_path,
                                          mimetype=mime_type,
                                          resumable=False)
-            response = self.__service.files().create(supportsTeamDrives=True,
-                                                     body=file_metadata, media_body=media_body).execute()
+            response = self.__service.files().create(body=file_metadata, media_body=media_body,
+                                                     supportsTeamDrives=True).execute()
             if not IS_TEAM_DRIVE:
                 self.__set_permission(response['id'])
 
-            drive_file = self.__service.files().get(supportsTeamDrives=True,
-                                                    fileId=response['id']).execute()
+            drive_file = self.__service.files().get(fileId=response['id'], supportsTeamDrives=True).execute()
             download_url = self.__G_DRIVE_BASE_DOWNLOAD_URL.format(drive_file.get('id'))
             return download_url
         media_body = MediaFileUpload(file_path,
@@ -313,8 +308,7 @@ class GoogleDriveHelper:
                                      chunksize=50 * 1024 * 1024)
 
         # Insert a file
-        drive_file = self.__service.files().create(supportsTeamDrives=True,
-                                                   body=file_metadata, media_body=media_body)
+        drive_file = self.__service.files().create(body=file_metadata, media_body=media_body, supportsTeamDrives=True)
         response = None
         while response is None:
             if self.__is_cancelled:
@@ -332,7 +326,7 @@ class GoogleDriveHelper:
                     if USE_SERVICE_ACCOUNTS:
                         self.__switchServiceAccount()
                         LOGGER.info(f"Got: {reason}, Trying Again.")
-                        return self.__upload_file(file_path, file_name, mime_type, PARENT_ID)
+                        return self.__upload_file(file_path, file_name, mime_type)
                     else:
                         LOGGER.error(f"Got: {reason}")
                         raise err
@@ -348,7 +342,7 @@ class GoogleDriveHelper:
         if not IS_TEAM_DRIVE:
             self.__set_permission(response['id'])
         # Define file instance and get url for download
-        drive_file = self.__service.files().get(supportsTeamDrives=True, fileId=response['id']).execute()
+        drive_file = self.__service.files().get(fileId=response['id'], supportsTeamDrives=True).execute()
         download_url = self.__G_DRIVE_BASE_DOWNLOAD_URL.format(drive_file.get('id'))
         return download_url
 
@@ -369,7 +363,7 @@ class GoogleDriveHelper:
             meta = self.__getFileMetadata(file_id)
             mime_type = meta.get("mimeType")
             if mime_type == self.__G_DRIVE_DIR_MIME_TYPE:
-                dir_id = self.__create_directory(meta.get('name'), PARENT_ID)
+                dir_id = self.__create_directory(meta.get('name'))
                 self.__cloneFolder(meta.get('name'), meta.get('name'), meta.get('id'), dir_id)
                 durl = self.__G_DRIVE_DIR_BASE_DOWNLOAD_URL.format(dir_id)
                 if self.__is_cancelled:
@@ -397,7 +391,7 @@ class GoogleDriveHelper:
                     url = short_url(url)
                     buttons.buildbutton("⚡ Index Link", url)
             else:
-                file = self.__copyFile(meta.get('id'), PARENT_ID)
+                file = self.__copyFile(meta.get('id'))
                 if EMOJI_THEME is True:
                     msg += f'<b>╭🗂️ Name: </b><code>{file.get("name")}</code>'
                 else:
@@ -449,7 +443,7 @@ class GoogleDriveHelper:
             return msg, ""
         return msg, buttons.build_menu(2)
 
-    def __cloneFolder(self, name, local_path, folder_id, PARENT_ID):
+    def __cloneFolder(self, name, local_path, folder_id):
         LOGGER.info(f"Syncing: {local_path}")
         files = self.__getFilesByFolderId(folder_id)
         if len(files) == 0:
@@ -458,25 +452,21 @@ class GoogleDriveHelper:
             if file.get('mimeType') == self.__G_DRIVE_DIR_MIME_TYPE:
                 self.__total_folders += 1
                 file_path = ospath.join(local_path, file.get('name'))
-                current_dir_id = self.__create_directory(file.get('name'), PARENT_ID)
+                current_dir_id = self.__create_directory(file.get('name'))
                 self.__cloneFolder(file.get('name'), file_path, file.get('id'), current_dir_id)
             elif not file.get('name').lower().endswith(tuple(EXTENSION_FILTER)):
                 self.__total_files += 1
                 self.transferred_size += int(file.get('size', 0))
-                self.__copyFile(file.get('id'), PARENT_ID)
+                self.__copyFile(file.get('id'))
             if self.__is_cancelled:
                 break
 
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(3),
            retry=retry_if_exception_type(GCError))
-    def __copyFile(self, file_id, dest_id):
-        body = {'parents': [dest_id]}
+    def __copyFile(self, file_id):
+        body = {'parents': [PARENT_ID]}
         try:
-            return (
-                self.__service.files()
-                .copy(supportsAllDrives=True, fileId=file_id, body=body)
-                .execute()
-            )
+            return self.__service.files().copy(fileId=file_id, body=body, supportsTeamDrives=True).execute()
         except HttpError as err:
             if err.resp.get('content-type', '').startswith('application/json'):
                 reason = jsnloads(err.content).get('error').get('errors')[0].get('reason')
@@ -503,25 +493,22 @@ class GoogleDriveHelper:
 
     def __get_recursive_list(self, file, rootid):
         rtnlist = []
-        if not rootid:
-            rootid = file.get('teamDriveId')
+        #if not rootid:
+        #    rootid = file.get('teamDriveId')
         if rootid == "root":
-            rootid = self.__service.files().get(fileId = 'root', fields="id").execute().get('id')
+            rootid = self.__service.files().get(fileId='root', fields='id').execute().get('id')
         x = file.get("name")
         y = file.get("id")
         while(y != rootid):
             rtnlist.append(x)
-            file = self.__service.files().get(
-                                            fileId=file.get("parents")[0],
-                                            supportsAllDrives=True,
-                                            fields='id, name, parents'
-                                            ).execute()
+            file = self.__service.files().get(fileId=file.get("parents")[0], supportsTeamDrives=True,
+                                              fields='id, name, parents').execute()
             x = file.get("name")
             y = file.get("id")
         rtnlist.reverse()
         return rtnlist
 
-    def __drive_query(self, PARENT_ID, fileName, stopDup, isRecursive, itemType):
+    def __drive_query(self, dir_id, fileName, stopDup, isRecursive, itemType):
         try:
             if isRecursive:
                 if stopDup:
@@ -538,37 +525,21 @@ class GoogleDriveHelper:
                     elif itemType == "folders":
                         query += "mimeType = 'application/vnd.google-apps.folder' and "
                 query += "trashed = false"
-                if PARENT_ID == "root":
-                    return (
-                        self.__service.files()
-                        .list(q=f"{query} and 'me' in owners",
-                            pageSize=200,
-                            spaces='drive',
-                            fields='files(id, name, mimeType, size, parents)',
-                            orderBy='folder, name asc'
-                        )
-                        .execute()
-                    )
+                if dir_id == "root":
+                    return self.__service.files().list(q=f"{query} and 'me' in owners",
+                                                       pageSize=200 ,spaces='drive',
+                                                       fields='files(id, name, mimeType, size, parents)',
+                                                       orderBy='folder, name asc').execute()
                 else:
-                    return (
-                        self.__service.files()
-                        .list(supportsTeamDrives=True,
-                            includeTeamDriveItems=True,
-                            teamDriveId=PARENT_ID,
-                            q=query,
-                            corpora='drive',
-                            spaces='drive',
-                            pageSize=200,
-                            fields='files(id, name, mimeType, size, teamDriveId, parents)',
-                            orderBy='folder, name asc'
-                        )
-                        .execute()
-                    )
+                    return self.__service.files().list(supportsTeamDrives=True, includeTeamDriveItems=True,
+                                                       driveId=dir_id, q=query, spaces='drive', pageSize=200,
+                                                       fields='files(id, name, mimeType, size, teamDriveId, parents)',
+                                                       orderBy='folder, name asc').execute()
             else:
                 if stopDup:
-                    query = f"'{PARENT_ID}' in parents and name = '{fileName}' and "
+                    query = f"'{dir_id}' in parents and name = '{fileName}' and "
                 else:
-                    query = f"'{PARENT_ID}' in parents and "
+                    query = f"'{dir_id}' in parents and "
                     fileName = fileName.split()
                     for name in fileName:
                         if name != '':
@@ -578,19 +549,10 @@ class GoogleDriveHelper:
                     elif itemType == "folders":
                         query += "mimeType = 'application/vnd.google-apps.folder' and "
                 query += "trashed = false"
-                return (
-                    self.__service.files()
-                    .list(
-                        supportsTeamDrives=True,
-                        includeTeamDriveItems=True,
-                        q=query,
-                        spaces='drive',
-                        pageSize=200,
-                        fields='files(id, name, mimeType, size)',
-                        orderBy='folder, name asc',
-                    )
-                    .execute()
-                )
+                return self.__service.files().list(supportsTeamDrives=True, includeTeamDriveItems=True,
+                                                   q=query, spaces='drive', pageSize=200,
+                                                   fields='files(id, name, mimeType, size)',
+                                                   orderBy='folder, name asc').execute()
         except Exception as err:
             err = str(err).replace('>', '').replace('<', '')
             LOGGER.error(err)
@@ -598,7 +560,6 @@ class GoogleDriveHelper:
 
     def drive_list(self, fileName, stopDup=False, noMulti=False, isRecursive=True, itemType=""):
         if TELEGRAPH_STYLE is True:
-
             msg = ""
             fileName = self.__escapes(str(fileName))
             contents_count = 0
@@ -609,9 +570,9 @@ class GoogleDriveHelper:
                 token_service = self.__alt_authorize()
                 if token_service is not None:
                     self.__service = token_service
-            for index, PARENT_ID in enumerate(DRIVES_IDS):
-                isRecur = False if isRecursive and len(PARENT_ID) > 23 else isRecursive
-                response = self.__drive_query(PARENT_ID, fileName, stopDup, isRecur, itemType)
+            for index, dir_id in enumerate(DRIVES_IDS):
+                isRecur = False if isRecursive and len(dir_id) > 23 else isRecursive
+                response = self.__drive_query(dir_id, fileName, stopDup, isRecur, itemType)
                 if not response["files"]:
                     if noMulti:
                         break
@@ -631,7 +592,7 @@ class GoogleDriveHelper:
                         msg += f"<b><a href={furl}>Drive Link</a></b>"
                         if INDEX_URLS[index] is not None:
                             if isRecur:
-                                url_path = "/".join([rquote(n, safe='') for n in self.__get_recursive_list(file, PARENT_ID)])
+                                url_path = "/".join([rquote(n, safe='') for n in self.__get_recursive_list(file, dir_id)])
                             else:
                                 url_path = rquote(f'{file.get("name")}', safe='')
                             url = f'{INDEX_URLS[index]}/{url_path}/'
@@ -648,7 +609,7 @@ class GoogleDriveHelper:
                         msg += f"<b><a href={furl}>Drive Link</a></b>"
                         if INDEX_URLS[index] is not None:
                             if isRecur:
-                                url_path = "/".join(rquote(n, safe='') for n in self.__get_recursive_list(file, PARENT_ID))
+                                url_path = "/".join(rquote(n, safe='') for n in self.__get_recursive_list(file, dir_id))
 
                             else:
                                 url_path = rquote(f'{file.get("name")}')
@@ -699,9 +660,9 @@ class GoogleDriveHelper:
                 token_service = self.__alt_authorize()
                 if token_service is not None:
                     self.__service = token_service
-            for index, PARENT_ID in enumerate(DRIVES_IDS):
-                isRecur = False if isRecursive and len(PARENT_ID) > 23 else isRecursive
-                response = self.__drive_query(PARENT_ID, fileName, stopDup, isRecur, itemType)
+            for index, dir_id in enumerate(DRIVES_IDS):
+                isRecur = False if isRecursive and len(dir_id) > 23 else isRecursive
+                response = self.__drive_query(dir_id, fileName, stopDup, isRecur, itemType)
                 if not response["files"]:
                     if noMulti:
                         break
@@ -724,7 +685,7 @@ class GoogleDriveHelper:
                               f'<span> <a class="forhover" href="{furl}">Drive Link</a></span>'
                         if INDEX_URLS[index] is not None:
                             if isRecur:
-                                url_path = "/".join([rquote(n, safe='') for n in self.__get_recursive_list(file, PARENT_ID)])
+                                url_path = "/".join([rquote(n, safe='') for n in self.__get_recursive_list(file, dir_id)])
                             else:
                                 url_path = rquote(f'{file.get("name")}', safe='')
                             url = f'{INDEX_URLS[index]}/{url_path}/'
@@ -745,7 +706,7 @@ class GoogleDriveHelper:
                               f'<span> <a class="forhover" href="{furl}">Drive Link</a></span>'
                         if INDEX_URLS[index] is not None:
                             if isRecur:
-                                url_path = "/".join(rquote(n, safe='') for n in self.__get_recursive_list(file, PARENT_ID))
+                                url_path = "/".join(rquote(n, safe='') for n in self.__get_recursive_list(file, dir_id))
                             else:
                                 url_path = rquote(f'{file.get("name")}')
                             url = f'{INDEX_URLS[index]}/{url_path}'
@@ -943,7 +904,7 @@ class GoogleDriveHelper:
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(3),
            retry=(retry_if_exception_type(GCError) | retry_if_exception_type(IOError)))
     def __download_file(self, file_id, path, filename, mime_type):
-        request = self.__service.files().get_media(fileId=file_id)
+        request = self.__service.files().get_media(fileId=file_id, supportsTeamDrives=True)
         filename = filename.replace('/', '')
         if len(filename.encode()) > 255:
             ext = ospath.splitext(filename)[1]

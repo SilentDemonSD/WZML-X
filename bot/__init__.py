@@ -61,7 +61,14 @@ SERVER_PORT = environ.get('SERVER_PORT', '')
 if len(SERVER_PORT) == 0:
     SERVER_PORT = 80
 
-Popen(f"gunicorn web.wserver:app --bind 0.0.0.0:{SERVER_PORT}", shell=True)
+BASE_URL = environ.get('BASE_URL_OF_BOT', '').rstrip("/")
+if len(BASE_URL) == 0:
+    log_warning('BASE_URL_OF_BOT not provided!')
+    BASE_URL = None
+
+if BASE_URL is not None:
+    Popen(f"gunicorn web.wserver:app --bind 0.0.0.0:{SERVER_PORT}", shell=True)
+
 srun(["qbittorrent-nox", "-d", "--profile=."])
 if not ospath.exists('.netrc'):
     srun(["touch", ".netrc"])
@@ -76,9 +83,7 @@ QbInterval = []
 DRIVES_NAMES = []
 DRIVES_IDS = []
 INDEX_URLS = []
-
-AS_DOC_USERS = set()
-AS_MEDIA_USERS = set()
+user_data = {}
 EXTENSION_FILTER = {'.aria2'}
 
 try:
@@ -88,13 +93,7 @@ try:
 except:
     pass
 
-aria2 = ariaAPI(
-    ariaClient(
-        host="http://localhost",
-        port=6800,
-        secret="",
-    )
-)
+aria2 = ariaAPI(ariaClient(host="http://localhost", port=6800, secret=""))
 
 def get_client():
     return qbClient(host="localhost", port=8090, VERIFY_WEBUI_CERTIFICATE=False, REQUESTS_ARGS={'timeout': (30, 60)})
@@ -182,51 +181,44 @@ except:
 aid = environ.get('AUTHORIZED_CHATS', '')
 if len(aid) != 0:
     aid = aid.split()
-    AUTHORIZED_CHATS = {int(_id.strip()) for _id in aid}
-else:
-    AUTHORIZED_CHATS = set()
+    for id_ in aid:
+        user_data[id_.strip()] = {'is_auth': True}
 
 aid = environ.get('SUDO_USERS', '')
 if len(aid) != 0:
     aid = aid.split()
-    SUDO_USERS = {int(_id.strip()) for _id in aid}
-else:
-    SUDO_USERS = set()
+    for id_ in aid:
+        user_data[id_.strip()] = {'is_sudo': True}
 
 aid = environ.get('PAID_USERS', '')
 if len(aid) != 0:
     aid = aid.split()
-    PAID_USERS = {int(_id.strip()) for _id in aid}
-else:
-    PAID_USERS = set()
+    for id_ in aid:
+        user_data[id_.strip()] = {'is_paid': True}
 
 aid = environ.get('LOG_LEECH', '')
 if len(aid) != 0:
     aid = aid.split()
-    LOG_LEECH = {int(_id.strip()) for _id in aid}
-else:
-    LOG_LEECH = set()
+    for id_ in aid:
+        user_data[id_.strip()] = {'is_log_leech': True}
 
 aid = environ.get('LEECH_LOG', '')
 if len(aid) != 0:
     aid = aid.split()
-    LEECH_LOG = {int(_id.strip()) for _id in aid}
-else:
-    LEECH_LOG = set()
+    for id_ in aid:
+        user_data[id_.strip()] = {'is_leech_log': True}
 
 aid = environ.get('MIRROR_LOGS', '')
 if len(aid) != 0:
     aid = aid.split()
-    MIRROR_LOGS = {int(_id.strip()) for _id in aid}
-else:
-    MIRROR_LOGS = set()
+    for id_ in aid:
+        user_data[id_.strip()] = {'is_mirror_log': True}
 
 aid = environ.get('LINK_LOGS', '')
 if len(aid) != 0:
     aid = aid.split()
-    LINK_LOGS = {int(_id.strip()) for _id in aid}
-else:
-    LINK_LOGS = set()
+    for id_ in aid:
+        user_data[id_.strip()] = {'is_link_log': True}
 
 fx = environ.get('EXTENSION_FILTER', '')
 if len(fx) > 0:
@@ -372,12 +364,6 @@ RSS_CHAT_ID = None if len(RSS_CHAT_ID) == 0 else int(RSS_CHAT_ID)
 
 RSS_DELAY = environ.get('RSS_DELAY', '')
 RSS_DELAY = 900 if len(RSS_DELAY) == 0 else int(RSS_DELAY)
-
-
-BASE_URL = environ.get('BASE_URL_OF_BOT', '').rstrip("/")
-if len(BASE_URL) == 0:
-    log_warning('BASE_URL_OF_BOT not provided!')
-    BASE_URL = None
 
 SEARCH_PLUGINS = environ.get('SEARCH_PLUGINS', '')
 if len(SEARCH_PLUGINS) == 0:

@@ -8,6 +8,7 @@ bencode.py
 bencoding
 cfscrape
 cloudscraper
+dnspython
 feedparser
 flask
 gc-python-utils
@@ -20,8 +21,8 @@ lxml
 mediainfo
 pillow
 psutil
-psycopg2-binary
 pybase64
+pymongo
 pyrogram
 python-dotenv
 python-magic

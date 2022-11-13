@@ -318,10 +318,10 @@ def select_format(update, context):
         query.message.delete()
     del listener_dict[task_id]
 
-def _auto_cancel(msg, msg_id):
+def _auto_cancel(msg, task_id):
     sleep(120)
     try:
-        del listener_dict[msg_id]
+        del listener_dict[task_id]
         editMessage('Timed out! Task has been cancelled.', msg)
     except:
         pass
