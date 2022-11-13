@@ -5,7 +5,7 @@ from PIL import Image
 from telegram.ext import CommandHandler, CallbackQueryHandler
 
 from bot import user_data, dispatcher, AS_DOCUMENT, DB_URI, PRE_DICT, LEECH_DICT, \
-                PAID_USERS, CAP_DICT, REM_DICT, SUF_DICT, CFONT_DICT
+                 CAP_DICT, REM_DICT, SUF_DICT, CFONT_DICT
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, sendPhoto
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
