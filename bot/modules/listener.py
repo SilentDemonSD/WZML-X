@@ -1,6 +1,5 @@
 from requests import utils as rutils
 from subprocess import run as srun
-import random
 from random import choice
 from pathlib import PurePath
 from telegram.ext import CommandHandler
@@ -19,7 +18,8 @@ from bot import NAME_FONT, bot, Interval, INDEX_URL, BUTTON_FOUR_NAME, BUTTON_FO
                 download_dict, download_dict_lock, TG_SPLIT_SIZE, LOGGER, DB_URI, INCOMPLETE_TASK_NOTIFIER, \
                 LEECH_LOG, BOT_PM, MIRROR_LOGS, SOURCE_LINK, AUTO_DELETE_UPLOAD_MESSAGE_DURATION, \
                 MIRROR_ENABLED, LEECH_ENABLED, WATCH_ENABLED, CLONE_ENABLED, LINK_LOGS, EMOJI_THEME, \
-                MIRROR_LOG_URL, LEECH_LOG_URL, TITLE_NAME, LEECH_LOG_INDEXING, PICS, NAME_FONT, FORCE_BOT_PM, DISABLE_DRIVE_LINK, PRE_DICT
+                MIRROR_LOG_URL, LEECH_LOG_URL, TITLE_NAME, LEECH_LOG_INDEXING, PICS, NAME_FONT, FORCE_BOT_PM, DISABLE_DRIVE_LINK, \
+                PRE_DICT, REM_DICT, SUF_DICT
 from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_gdtot_link, is_mega_link, is_gdrive_link, get_content_type, get_readable_time
 from bot.helper.ext_utils.fs_utils import get_base_name, get_path_size, split_file, clean_download, clean_target
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException, NotSupportedExtractionArchive
@@ -235,17 +235,45 @@ class MirrorLeechListener:
         mesg = self.message.text.split('\n')
         message_args = mesg[0].split(' ', maxsplit=1)
         reply_to = self.message.reply_to_message
-        prefix = PRE_DICT.get(self.message.from_user.id, "")
-        PRENAME_X = prefix
+        PREFIX = PRE_DICT.get(self.message.from_user.id, "")
+        REMNAME = REM_DICT.get(self.message.from_user.id, "")
+        SUFFIX = SUF_DICT.get(self.message.from_user.id, "")
         file_ = escape(name)
-        if len(PRENAME_X) != 0:
-            if file_.startswith('www'): 
-                file_ = ' '.join(file_.split()[1:])
-                file_ = f"{PRENAME_X}"+ file_.strip('-').strip('_')
-            else:
-                file_ = f"{PRENAME_X} {file_}"
-        else:
-          file_ = f"{file_}"
+
+        #MysteryStyle ~ Tele-LeechX
+        if file_.startswith('www'):
+            file_ = ' '.join(file_.split()[1:])
+        if REMNAME:
+            if not REMNAME.startswith('|'):
+                REMNAME = f"|{REMNAME}"
+            slit = REMNAME.split("|")
+            __newFileName = file_
+            for rep in range(1, len(slit)):
+                args = slit[rep].split(":")
+                if len(args) == 3:
+                    __newFileName = __newFileName.replace(args[0], args[1], int(args[2]))
+                elif len(args) == 2:
+                    __newFileName = __newFileName.replace(args[0], args[1])
+                elif len(args) == 1:
+                    __newFileName = __newFileName.replace(args[0], '')
+            file_ = __newFileName
+            LOGGER.info("Remname : "+file_)
+        if PREFIX:
+            if not file_.startswith(PREFIX):
+                file_ = f"{PREFIX}{file_}"
+        if SUFFIX:
+            sufLen = len(SUFFIX)
+            fileDict = file_.split('.')
+            _extIn = 1 + len(fileDict[-1])
+            _extOutName = '.'.join(fileDict[:-1]).replace('.', ' ').replace('-', ' ')
+            _newExtFileName = f"{_extOutName}{SUFFIX}.{fileDict[-1]}"
+            if len(_extOutName) > (64 - (sufLen + _extIn)):
+                _newExtFileName = (
+                    _extOutName[: 64 - (sufLen + _extIn)]
+                    + f"{SUFFIX}.{fileDict[-1]}"
+                            )
+            file_ = _newExtFileName
+
         if EMOJI_THEME is True:
             slmsg = f"🗂️ Name: <{NAME_FONT}>{file_}</{NAME_FONT}>\n\n"
             slmsg += f"📐 Size: {size}\n"
@@ -331,7 +359,7 @@ class MirrorLeechListener:
             buttons.buildbutton("View links in PM", f"{botstart}")
 
             if PICS:
-                sendPhoto(msg + botpm, self.bot, self.message, random.choice(PICS), buttons.build_menu(2))
+                sendPhoto(msg + botpm, self.bot, self.message, choice(PICS), buttons.build_menu(2))
             else:
                 sendMarkup(msg + botpm, self.bot, self.message, buttons.build_menu(2))
             try:
@@ -416,7 +444,7 @@ class MirrorLeechListener:
 
             if not files:
                 if PICS:
-                    uploadmsg = sendPhoto(msg, self.bot, self.message, random.choice(PICS), buttons.build_menu(2))
+                    uploadmsg = sendPhoto(msg, self.bot, self.message, choice(PICS), buttons.build_menu(2))
                 else:
                     uploadmsg = sendMarkup(msg, self.bot, self.message, buttons.build_menu(2))
             else:
@@ -427,7 +455,7 @@ class MirrorLeechListener:
                         sleep(1.5)
                         if FORCE_BOT_PM is False:
                             if PICS:
-                                uploadmsg = sendPhoto(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, random.choice(PICS), buttons.build_menu(2))
+                                uploadmsg = sendPhoto(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, choice(PICS), buttons.build_menu(2))
                             else:
                                 uploadmsg = sendMarkup(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, buttons.build_menu(2))
                             Thread(target=auto_delete_upload_message, args=(bot, self.message, uploadmsg)).start()
@@ -436,7 +464,7 @@ class MirrorLeechListener:
                     sleep(1.5)
                     if FORCE_BOT_PM is False:
                         if PICS:
-                            uploadmsg = sendPhoto(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, random.choice(PICS), buttons.build_menu(2))
+                            uploadmsg = sendPhoto(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, choice(PICS), buttons.build_menu(2))
                         else:
                             uploadmsg = sendMarkup(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, buttons.build_menu(2))
                         Thread(target=auto_delete_upload_message, args=(bot, self.message, uploadmsg)).start()
@@ -556,7 +584,7 @@ class MirrorLeechListener:
 
             if FORCE_BOT_PM is False or self.message.chat.type == 'private':
                 if PICS:
-                    uploadmsg = sendPhoto(msg + pmwarn + logwarn + warnmsg, self.bot, self.message, random.choice(PICS), buttons.build_menu(2))
+                    uploadmsg = sendPhoto(msg + pmwarn + logwarn + warnmsg, self.bot, self.message, choice(PICS), buttons.build_menu(2))
                 else:
                     uploadmsg = sendMarkup(msg + pmwarn + logwarn + warnmsg, self.bot, self.message, buttons.build_menu(2))
                 Thread(target=auto_delete_upload_message, args=(bot, self.message, uploadmsg)).start()

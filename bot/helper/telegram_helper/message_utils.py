@@ -3,12 +3,13 @@ from time import sleep, time
 from telegram import InlineKeyboardMarkup
 from telegram.message import Message
 from telegram.error import RetryAfter
+from pyrogram import enums
 from pyrogram.errors import FloodWait
 from os import remove
 
 from bot import AUTO_DELETE_MESSAGE_DURATION, LOGGER, status_reply_dict, status_reply_dict_lock, \
                 Interval, DOWNLOAD_STATUS_UPDATE_INTERVAL, RSS_CHAT_ID, bot, rss_session, \
-                AUTO_DELETE_UPLOAD_MESSAGE_DURATION, PICS
+                AUTO_DELETE_UPLOAD_MESSAGE_DURATION, PICS, app
 from bot.helper.ext_utils.bot_utils import get_readable_message, setInterval
 
 
@@ -121,21 +122,20 @@ def deleteMessage(bot, message: Message):
         LOGGER.error(str(e))
 
 def sendLogFile(bot, message: Message):
-    with open('log.txt', 'rb') as f:
-        bot.sendDocument(document=f, filename=f.name,
+    app.send_document(document='log.txt', thumb='Thumbnails/weeb.jpg',
                           reply_to_message_id=message.message_id,
-                          chat_id=message.chat_id)
+                          chat_id=message.chat_id, caption='log.txt')
 
 def sendFile(bot, message: Message, name: str, caption=""):
     try:
-        with open(name, 'rb') as f:
-            bot.sendDocument(document=f, filename=f.name, reply_to_message_id=message.message_id,
-                             caption=caption, parse_mode='HTML',chat_id=message.chat_id)
+        app.send_document(document=name, reply_to_message_id=message.message_id,
+                             caption=caption, parse_mode=enums.ParseMode.HTML, chat_id=message.chat_id,
+                             thumb='Thumbnails/weeb.jpg')
         remove(name)
         return
-    except RetryAfter as r:
+    except FloodWait as r:
         LOGGER.warning(str(r))
-        sleep(r.retry_after * 1.5)
+        sleep(r.value * 1.5)
         return sendFile(bot, message, name, caption)
     except Exception as e:
         LOGGER.error(str(e))

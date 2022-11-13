@@ -4,7 +4,8 @@ from threading import Thread
 from PIL import Image
 from telegram.ext import CommandHandler, CallbackQueryHandler
 
-from bot import AS_DOC_USERS, AS_MEDIA_USERS, dispatcher, AS_DOCUMENT, DB_URI, PRE_DICT, LEECH_DICT, PAID_USERS, CAP_DICT, REM_DICT, SUF_DICT
+from bot import AS_DOC_USERS, AS_MEDIA_USERS, dispatcher, AS_DOCUMENT, DB_URI, PRE_DICT, LEECH_DICT, \
+                PAID_USERS, CAP_DICT, REM_DICT, SUF_DICT, CFONT_DICT
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, sendPhoto
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -22,6 +23,7 @@ def getleechinfo(from_user):
     caption = CAP_DICT.get(user_id, "Not Exists")
     dumpid = LEECH_DICT.get(user_id, "Not Exists")
     remname = REM_DICT.get(user_id, "Not Exists")
+    cfont = CFONT_DICT.get(user_id, ["Not Exists"])[0]
     if (
         user_id in AS_DOC_USERS
         or user_id not in AS_MEDIA_USERS
@@ -41,35 +43,32 @@ def getleechinfo(from_user):
         buttons.sbutton("Show Thumbnail", f"leechset {user_id} showthumb")
     else:
         thumbmsg = "Not Exists"
-
     if prefix != "Not Exists":
         buttons.sbutton("Delete Prename", f"leechset {user_id} prename")
-
     if suffix != "Not Exists":
         buttons.sbutton("Delete Suffix", f"leechset {user_id} suffix")
-
-
     if caption != "Not Exists": 
         buttons.sbutton("Delete Caption", f"leechset {user_id} cap")
-
     if dumpid != "Not Exists":
         buttons.sbutton("Delete DumpID", f"leechset {user_id} dump")
-
     if remname != "Not Exists": 
         buttons.sbutton("Delete Remname", f"leechset {user_id} rem")
+    if cfont != "Not Exists": 
+        buttons.sbutton("Delete CapFont", f"leechset {user_id} cfont")
 
     button = buttons.build_menu(2)
 
     text = f'''<u>Leech Settings for <a href='tg://user?id={user_id}'>{name}</a></u>
     
-Leech Type <b>{ltype}</b>
-Custom Thumbnail <b>{thumbmsg}</b>
-PreName : <b>{prefix}</b>
-Suffix : <b>{suffix}</b>
-Caption : <b>{caption}</b>
-Remname : <b>{remname}</b>
-DumpID : <b>{dumpid}</b>
-User Plan : <b>{uplan}</b>'''
+• Leech Type : <b>{ltype}</b>
+• Custom Thumbnail : <b>{thumbmsg}</b>
+• Prefix : <b>{prefix}</b>
+• Suffix : <b>{suffix}</b>
+• Caption : <b>{caption}</b>
+• CapFont : <b>{cfont}</b>
+• Remname : <b>{remname}</b>
+• DumpID : <b>{dumpid}</b>
+• User Plan : <b>{uplan}</b>'''
     return text, button
 
 def editLeechType(message, query):
@@ -152,6 +151,12 @@ def setLeechType(update, context):
         if DB_URI:
             DbManger().user_dump(user_id, None)
         query.answer(text="Your Dump ID is Successfully Deleted!", show_alert=True)
+        editLeechType(message, query)
+    elif data[2] == "cfont":
+        CFONT_DICT.pop(user_id)
+        if DB_URI:
+            DbManger().user_cfont(user_id, None)
+        query.answer(text="Your CapFont is Successfully Deleted!", show_alert=True)
         editLeechType(message, query)
     else:
         query.answer()

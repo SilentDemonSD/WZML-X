@@ -1,7 +1,7 @@
 from os import path as ospath, makedirs
 from psycopg2 import connect, DatabaseError
 
-from bot import DB_URI, AUTHORIZED_CHATS, SUDO_USERS, AS_DOC_USERS, AS_MEDIA_USERS, rss_dict, LOGGER, botname, LEECH_LOG, PRE_DICT, LEECH_DICT, PAID_USERS, CAP_DICT, REM_DICT, SUF_DICT
+from bot import DB_URI, AUTHORIZED_CHATS, SUDO_USERS, AS_DOC_USERS, AS_MEDIA_USERS, rss_dict, LOGGER, botname, LEECH_LOG, PRE_DICT, LEECH_DICT, PAID_USERS, CAP_DICT, REM_DICT, SUF_DICT, CFONT_DICT
 
 class DbManger:
     def __init__(self):
@@ -36,7 +36,8 @@ class DbManger:
                  dump text DEFAULT NULL,
                  paid boolean DEFAULT FALSE,
                  thumb bytea DEFAULT NULL,
-                 leechlog boolean DEFAULT FALSE
+                 leechlog boolean DEFAULT FALSE,
+                 cfont text ARRAY
                  )"""
         self.cur.execute(sql)
         sql = """CREATE TABLE IF NOT EXISTS rss (
@@ -87,6 +88,10 @@ class DbManger:
                         f.write(row[11])
                 if row[12] and row[0] not in LEECH_LOG:
                     LEECH_LOG.add(row[0])
+                if row[13]:
+                    CFONT_DICT[row[0]] = row[13]
+
+
 
             LOGGER.info("Users data has been imported from Database")
         # Rss Data
@@ -182,6 +187,19 @@ class DbManger:
         self.disconnect()
         
 
+    def user_cfont(self, user_id: int, user_cfont):
+        if self.err:
+            return
+        elif not self.user_check(user_id):
+            sql = 'INSERT INTO users (cfont, uid) VALUES (%s, %s)'
+        else:
+            sql = 'UPDATE users SET cfont = %s WHERE uid = %s'
+        self.cur.execute(sql, (user_cfont, user_id))
+        self.conn.commit()
+        self.disconnect()
+
+        
+        
     def user_suf(self, user_id: int, user_suf):
         if self.err:
             return
