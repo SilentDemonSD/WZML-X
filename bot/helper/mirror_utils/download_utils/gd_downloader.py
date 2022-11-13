@@ -1,7 +1,7 @@
 from random import SystemRandom
 from string import ascii_letters, digits
 from bot import TELEGRAPH_STYLE, download_dict, download_dict_lock, ZIP_UNZIP_LIMIT, LOGGER, STOP_DUPLICATE, STORAGE_THRESHOLD, TORRENT_DIRECT_LIMIT, LEECH_LIMIT, \
-                OWNER_ID, SUDO_USERS, PAID_USERS, PAID_SERVICE
+                OWNER_ID, PAID_SERVICE
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.mirror_utils.status_utils.gd_download_status import GdDownloadStatus
 from bot.helper.telegram_helper.message_utils import sendMessage, sendStatusMessage, sendMarkup, sendFile
