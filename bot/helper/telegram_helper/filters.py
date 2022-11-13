@@ -12,7 +12,7 @@ class CustomFilters:
 
     class __AuthorizedUserFilter(MessageFilter):
         def filter(self, message: Message):
-            id = message.from_user.id
+            uid = message.from_user.id
             return uid == OWNER_ID or uid in user_data and (user_data[uid].get('is_auth') or user_data[uid].get('is_sudo'))
 
     authorized_user = __AuthorizedUserFilter()
@@ -34,7 +34,7 @@ class CustomFilters:
     class __PaidUser(MessageFilter):
         def filter(self, message: Message):
             uid = message.from_user.id
-            uid = message.chat.id
+           
             return uid in user_data and user_data[uid].get('is_paid')
 
     paid_user = __PaidUser()
