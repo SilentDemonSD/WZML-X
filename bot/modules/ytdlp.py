@@ -175,7 +175,6 @@ def _ytdl(bot, message, isZip=False, isLeech=False):
         bmsg = sendMarkup('Choose Playlist Videos Quality:', bot, message, YTBUTTONS)
     else:
         formats = result.get('formats')
-        formats_dict = {}
         if formats is not None:
             for frmt in formats:
                 if frmt.get('tbr'):
