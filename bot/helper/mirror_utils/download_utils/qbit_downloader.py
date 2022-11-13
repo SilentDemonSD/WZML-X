@@ -298,21 +298,22 @@ def __stop_duplicate(client, tor):
                 if TELEGRAPH_STYLE is True:
                     qbmsg, button = GoogleDriveHelper().drive_list(qbname, True)
                     if qbmsg:
-                        __onDownloadError("File/Folder is already available in Drive.")
-                        sendMarkup("Here are the search results:", self.__listener.bot, self.__listener.message, button)
+                        __onDownloadError("File/Folder is already available in Drive.", client, tor)
+                        sendMarkup("Here are the search results:", listener.bot, listener.message, button)
                 else:
                     cap, f_name = GoogleDriveHelper().drive_list(qbname, True)
                     if cap:
-                        __onDownloadError("File/Folder is already available in Drive.")
+                        __onDownloadError("File/Folder is already available in Drive.", client, tor)
                         cap = f"Here are the search results:\n\n{cap}"
-                        sendFile(self.__listener.bot, self.__listener.message, f_name, cap)
+                        sendFile(listener.bot, listener.message, f_name, cap)
+                        return
 
-                cap, f_name = GoogleDriveHelper().drive_list(qbname, True)
-                if cap:
-                    __onDownloadError("File/Folder is already available in Drive.", client, tor)
-                    cap = f"Here are the search results:\n\n{cap}"
-                    sendFile(listener.bot, listener.message, f_name, cap)
-                    return
+ 
+              
+                 
+
+
+
     except:
         pass
 
