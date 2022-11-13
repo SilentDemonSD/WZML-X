@@ -472,13 +472,7 @@ def main():
         msg = f"😎Restarted successfully❗\n📅DATE: {date}\n⌚TIME: {time}\n🌐TIMEZONE: {TIMEZONE}\n"
         bot.edit_message_text(msg, chat_id, msg_id)
         osremove(".restartmsg")
-    elif not notifier_dict and AUTHORIZED_CHATS:
-        text = f"😎Bot Restarted❗ \n📅DATE: {date} \n⌚TIME: {time} \n🌐TIMEZONE: {TIMEZONE}"
-        for id_ in AUTHORIZED_CHATS:
-            try:
-                bot.sendMessage(chat_id=id_, text=text, parse_mode=ParseMode.HTML)
-            except Exception as e:
-                LOGGER.error(e)
+
 
 
     start_handler = CommandHandler(BotCommands.StartCommand, start, run_async=True)
