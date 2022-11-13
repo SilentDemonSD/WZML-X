@@ -80,6 +80,7 @@ def add_qb_torrent(link, path, listener, ratio, seed_time):
         with download_dict_lock:
             download_dict[listener.uid] = QbDownloadStatus(listener, ext_hash)
         with qb_download_lock:
+            STALLED_TIME[ext_hash] = time()
             if not QbInterval:
                 periodic = setInterval(3, __qb_listener)
                 QbInterval.append(periodic)
@@ -325,10 +326,14 @@ def __onDownloadComplete(client, tor):
     listener.onDownloadComplete()
     if listener.seed:
         with download_dict_lock:
-            if listener.uid not in download_dict:
-                client.torrents_delete(torrent_hashes=tor.hash, delete_files=True)
-                return
-            download_dict[listener.uid] = QbDownloadStatus(listener, tor.hash, True)
+            if listener.uid in download_dict:
+                removed = False
+                download_dict[listener.uid] = QbDownloadStatus(listener, tor.hash, True)
+            else:
+                removed = True
+        if removed:
+            __remove_torrent(client, tor.hash)
+            return
         with qb_download_lock:
             SEEDING.add(tor.hash)
         update_all_messages()
@@ -351,7 +356,7 @@ def __qb_listener():
                         Thread(target=__onDownloadError, args=("Dead Torrent!", client, tor_info)).start()
                 elif tor_info.state == "downloading":
                     STALLED_TIME[tor_info.hash] = time()
-                    if tor_info.hash not in STOP_DUP_CHECK and STOP_DUPLICATE:
+                    if STOP_DUPLICATE and tor_info.hash not in STOP_DUP_CHECK:
                         STOP_DUP_CHECK.add(tor_info.hash)
                         __stop_duplicate(client, tor_info)
                 elif tor_info.state == "stalledDL":
@@ -368,17 +373,11 @@ def __qb_listener():
                     client.torrents_recheck(torrent_hashes=tor_info.hash)
                 elif tor_info.state == "error":
                     Thread(target=__onDownloadError, args=("No enough space for this torrent on device", client, tor_info)).start()
-                elif (tor_info.completion_on != 0 or tor_info.state.lower().endswith("up") or tor_info.state == "uploading") and tor_info.hash not in UPLOADED:
+                elif (tor_info.completion_on != 0 or tor_info.state.endswith("UP") or tor_info.state == "uploading") \
+                       and tor_info.hash not in UPLOADED and tor_info.state not in ['checkingUP', 'checkingDL']:
                     UPLOADED.add(tor_info.hash)
                     __onDownloadComplete(client, tor_info)
-                elif tor_info.state == 'pausedUP' and tor_info.hash in SEEDING:
+                elif tor_info.state in ['pausedUP', 'pausedDL'] and tor_info.hash in SEEDING:
                     __onSeedFinish(client, tor_info)
-                elif tor_info.state == 'pausedDL' and tor_info.completion_on != 0:
-                    # recheck torrent incase one of seed limits reached
-                    # sometimes it stuck on pausedDL from maxRatioAction but it should be pausedUP
-                    if tor_info.hash not in RECHECKED:
-                        LOGGER.error(f"Recheck on complete manually! PausedDL. Hash: {tor_info.hash}")
-                        client.torrents_recheck(torrent_hashes=tor_info.hash)
-                        RECHECKED.add(tor_info.hash)
         except Exception as e:
             LOGGER.error(str(e))

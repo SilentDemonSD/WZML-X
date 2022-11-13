@@ -119,7 +119,7 @@ def deleteMessage(bot, message: Message):
         bot.deleteMessage(chat_id=message.chat.id,
                            message_id=message.message_id)
     except Exception as e:
-        LOGGER.error(str(e))
+        pass
 
 def sendLogFile(bot, message: Message):
     app.send_document(document='log.txt', thumb='Thumbnails/weeb.jpg',
