@@ -269,28 +269,31 @@ TG_SPLIT_SIZE = environ.get('TG_SPLIT_SIZE', '')
 if len(TG_SPLIT_SIZE) == 0 or int(TG_SPLIT_SIZE) > tgBotMaxFileSize:
     TG_SPLIT_SIZE = tgBotMaxFileSize
 
-USER_SESSION_STRING = environ.get('USER_SESSION_STRING', '')
-if len(USER_SESSION_STRING) == 0:
-   USER_SESSION_STRING = None
-premium_session = Client(name='premium_session', api_id=(TELEGRAM_API), api_hash=TELEGRAM_HASH, session_string=USER_SESSION_STRING, parse_mode=enums.ParseMode.HTML, no_updates=True)
-if not premium_session:
-   LOGGER.error("Cannot initialized User Session. Please regenerate USER_SESSION_STRING")
-else:
-   premium_session.start()
-   if (premium_session.get_me()).is_premium:
-      if not LEECH_LOG:
-         LOGGER.error("You must set LEECH_LOG for uploads. Eiting now.")
-         try: premium_session.send_message(OWNER_ID, "You must set LEECH_LOG for uploads, Exiting Now...")
-         except Exception as e: LOGGER.exception(e)
-         premium_session.stop()
-         app.stop()
-         exit(1)
-      TG_SPLIT_SIZE = 4194304000
-      LOGGER.info("Telegram Premium detected! Leech limit is 4GB now.")
-   elif (not DB_URI) or (not RSS_CHAT_ID):
-      premium_session.stop()
-      LOGGER.info(f"Not using rss. if you want to use fill RSS_CHAT_ID and DB_URI variables.")
-   premium_session = None
+try:
+    USER_SESSION_STRING = getConfig('USER_SESSION_STRING')
+    if len(USER_SESSION_STRING) == 0:
+        raise KeyError
+    premium_session = Client(name='premium_session', api_id=int(TELEGRAM_API), api_hash=TELEGRAM_HASH, session_string=USER_SESSION_STRING, parse_mode=enums.ParseMode.HTML, no_updates=True)
+    if not premium_session:
+        LOGGER.error("Cannot initialized User Session. Please regenerate USER_SESSION_STRING")
+    else:
+        premium_session.start()
+        if (premium_session.get_me()).is_premium:
+            if not LEECH_LOG:
+                LOGGER.error("You must set LEECH_LOG for uploads. Eiting now.")
+                try: premium_session.send_message(OWNER_ID, "You must set LEECH_LOG for uploads, Exiting Now...")
+                except Exception as e: LOGGER.exception(e)
+                premium_session.stop()
+                app.stop()
+                exit(1)
+            TG_SPLIT_SIZE = 4194304000
+            LOGGER.info("Telegram Premium detected! Leech limit is 4GB now.")
+        elif (not DB_URI) or (not RSS_CHAT_ID):
+            premium_session.stop()
+            LOGGER.info(f"Not using rss. if you want to use fill RSS_CHAT_ID and DB_URI variables.")
+except:
+    USER_SESSION_STRING = None
+    premium_session = None
 LOGGER.info(f"TG_SPLIT_SIZE: {TG_SPLIT_SIZE}")
 
 STATUS_LIMIT = environ.get('STATUS_LIMIT', '')
