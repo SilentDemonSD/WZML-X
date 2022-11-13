@@ -16,8 +16,8 @@ class QbDownloadStatus:
 
     def __init__(self, listener, hash_, seeding=False):
         self.__client = get_client()
-        self.__hash = hash_
         self.__listener = listener
+        self.__hash = hash_
         self.__info = get_download(self.__client, self.__hash)
         self.seeding = seeding
         self.message = listener.message
@@ -47,7 +47,6 @@ class QbDownloadStatus:
         return f"{get_readable_file_size(self.__info.dlspeed)}/s"
 
     def name(self):
-        self.__update()
         if self.__info.state in ["metaDL", "checkingResumeData"]:
             return f"[METADATA]{self.__info.name}"
         else:
@@ -60,6 +59,7 @@ class QbDownloadStatus:
         return get_readable_time(self.__info.eta)
 
     def status(self):
+        self.__update()
         download = self.__info.state
         if download in ["queuedDL", "queuedUP"]:
             return MirrorStatus.STATUS_WAITING
@@ -82,6 +82,7 @@ class QbDownloadStatus:
         return f"{get_readable_file_size(self.__info.uploaded)}"
 
     def upload_speed(self):
+        self.__update()
         return f"{get_readable_file_size(self.__info.upspeed)}/s"
 
     def ratio(self):
@@ -95,6 +96,9 @@ class QbDownloadStatus:
 
     def gid(self):
         return self.__hash[:12]
+
+    def hash(self):
+        return self.__hash
 
     def client(self):
         return self.__client
