@@ -265,11 +265,11 @@ if len(DB_URI) == 0:
 
 tgBotMaxFileSize = 2097151000
 
-TG_SPLIT_SIZE = getConfig('TG_SPLIT_SIZE')
+TG_SPLIT_SIZE = environ.get('TG_SPLIT_SIZE', '')
 if len(TG_SPLIT_SIZE) == 0 or int(TG_SPLIT_SIZE) > tgBotMaxFileSize:
     TG_SPLIT_SIZE = tgBotMaxFileSize
 
-USER_SESSION_STRING = getConfig('USER_SESSION_STRING')
+USER_SESSION_STRING = environ.get('USER_SESSION_STRING', '')
 if len(USER_SESSION_STRING) == 0:
     premium_session = Client(name='premium_session', api_id=(TELEGRAM_API), api_hash=TELEGRAM_HASH, session_string=USER_SESSION_STRING, parse_mode=enums.ParseMode.HTML, no_updates=True)
     if not premium_session:
