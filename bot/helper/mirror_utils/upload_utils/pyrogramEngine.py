@@ -7,8 +7,8 @@ from pyrogram.errors import FloodWait, RPCError
 from PIL import Image
 from threading import RLock
 from bot import AS_DOCUMENT, user_data, EXTENSION_FILTER, \
-                app, LEECH_LOG, BOT_PM, tgBotMaxFileSize, premium_session, CAPTION_FONT, \
-                PRE_DICT, LEECH_DICT, LOG_LEECH, CAP_DICT, REM_DICT, SUF_DICT, CFONT_DICT
+                app, BOT_PM, tgBotMaxFileSize, premium_session, CAPTION_FONT, \
+                PRE_DICT, LEECH_DICT, CAP_DICT, REM_DICT, SUF_DICT, CFONT_DICT
 from bot.helper.ext_utils.fs_utils import take_ss, get_media_info, get_media_streams, get_path_size, clean_unwanted
 from bot.helper.ext_utils.bot_utils import get_readable_file_size
 from pyrogram.types import Message
