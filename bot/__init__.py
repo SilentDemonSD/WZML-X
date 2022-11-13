@@ -522,7 +522,7 @@ LEECH_LOG_URL = environ.get('LEECH_LOG_URL', '')
 if len(LEECH_LOG_URL) == 0:
     LEECH_LOG_URL = None
 
-TIME_GAP = int(environ.get('TIME_GAP', ''))
+TIME_GAP = environ.get('TIME_GAP', '')
 if len(TIME_GAP) == 0:
     TIME_GAP = -1
 
