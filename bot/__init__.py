@@ -44,6 +44,8 @@ LEECH_DICT = {}
 REM_DICT = {}
 TIME_GAP_STORE = {}
 CFONT_DICT = {}
+ANI_TEMP = {}
+IMDB_TEMP = {}
 
 load_dotenv('config.env', override=True)
 
