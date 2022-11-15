@@ -899,7 +899,7 @@ except:
 PICS = (environ.get('PICS', '')).split()
 
 try:
-    DEF_ANI_TEMP = getConfig('DEF_ANI_TEMP')
+    DEF_ANI_TEMP = getConfig('ANIME_TEMPLATE')
     if len(DEF_ANI_TEMP) == 0:
         raise KeyError
 except:
