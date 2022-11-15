@@ -38,8 +38,8 @@ class DbManger:
                  thumb bytea DEFAULT NULL,
                  leechlog boolean DEFAULT FALSE,
                  cfont text ARRAY,
-                 anilist text ARRAY,
-                 imdblist text ARRAY
+                 anilist text DEFAULT NULL,
+                 imdblist text DEFAULT NULL
                  )"""
         self.cur.execute(sql)
         sql = """CREATE TABLE IF NOT EXISTS rss (
