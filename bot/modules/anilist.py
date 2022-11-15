@@ -224,16 +224,17 @@ query ($id: Int,$search: String) {
 
 url = 'https://graphql.anilist.co'
 
-def anilist(update: Update, context: CallbackContext, aniid=None):
-    user_id = update.message.from_user.id
+def anilist(update: Update, context: CallbackContext, aniid=None, u_id=None):
     if not aniid:
         message = update.effective_message
+        user_id = update.message.from_user.id
         squery = (message.text).split(' ', 1)
         if len(squery) == 1:
             sendMessage("<i>Provide AniList ID / Anime Name / MyAnimeList ID</i>", context.bot, update.message)
             return
         vars = {'search' : squery[1]}
     else:
+        user_id = u_id
         vars = {'id' : aniid}
     animeResp = rpost(url, json={'query': ANIME_GRAPHQL_QUERY, 'variables': vars}).json()['data'].get('Media', None)
     if animeResp:
@@ -348,7 +349,7 @@ def setAnimeButtons(update, context):
         msg += "\n\n".join(f"""• <a href="{x['node']['siteUrl']}">{x['node']['name']['full']}</a> ({x['node']['name']['native']})\n<b>Role :</b> {x['role'].capitalize()}""" for x in (animeResp['characters']['edges'])[:8])
         message.edit_caption(caption=msg, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(btn))
     elif data[2] == "home":
-        msg, btns = anilist(update, context.bot, siteid)
+        msg, btns = anilist(update, context.bot, siteid, data[1])
         message.edit_caption(caption=msg, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(btns))
 
 #### -----
