@@ -323,10 +323,10 @@ def setAnimeButtons(update, context):
         msg = "<b>Tags :</b>\n\n"
         msg += "\n".join(f"""<a href="https://anilist.co/search/anime?genres={q(x['name'])}">{x['name']}</a> {x['rank']}%""" for x in aniTag['tags'])
         btn = [
-            [InlineKeyboardButton("⌫ Back", callback_data = f"home {siteid}")]
+            [InlineKeyboardButton("⌫ Back", callback_data = f"anime {data[1]} home {siteid}")]
         ]
         LOGGER.info(msg)
-        message.edit_caption(caption=msg, reply_markup=InlineKeyboardMarkup(btn))
+        message.edit_caption(caption=msg, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(btn))
 
 
 #### -----
