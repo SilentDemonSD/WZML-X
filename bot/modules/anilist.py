@@ -226,6 +226,7 @@ url = 'https://graphql.anilist.co'
 
 def anilist(update: Update, context: CallbackContext, aniid=None):
     message = update.effective_message
+    user_id = update.message.from_user.id
     if not aniid:
         squery = (message.text).split(' ', 1)
         if len(squery) == 1:
@@ -286,11 +287,11 @@ def anilist(update: Update, context: CallbackContext, aniid=None):
         title_img = f"https://img.anili.st/media/{siteid}"
         buttons = [
             [InlineKeyboardButton("AniList Info 🎬", url=siteurl)],
-            [InlineKeyboardButton("Reviews 📑", callback_data=f"reviews {siteid}"),
-            InlineKeyboardButton("Tags 🎯", callback_data=f"tags {siteid}"),
-            InlineKeyboardButton("Relations 🧬", callback_data=f"relations {siteid}")],
-            [InlineKeyboardButton("Streaming Sites 📊", callback_data=f"stream {siteid}"),
-            InlineKeyboardButton("Characters 👥️️", callback_data=f"characters {siteid}")]
+            [InlineKeyboardButton("Reviews 📑", callback_data=f"anime {user_id} rev {siteid}"),
+            InlineKeyboardButton("Tags 🎯", callback_data=f"anime {user_id} tags {siteid}"),
+            InlineKeyboardButton("Relations 🧬", callback_data=f"anime {user_id} rel {siteid}")],
+            [InlineKeyboardButton("Streaming Sites 📊", callback_data=f"anime {user_id} sts {siteid}"),
+            InlineKeyboardButton("Characters 👥️️", callback_data=f"anime {user_id} cha {siteid}")]
         ]
         if trailer:
             buttons[0].insert(1, InlineKeyboardButton("Trailer 🎞", url=trailer))
@@ -298,7 +299,7 @@ def anilist(update: Update, context: CallbackContext, aniid=None):
         if not aniListTemp:
             aniListTemp = DEF_ANI_TEMP
         try:
-            template = aniListTemp.format(**locals())
+            template = aniListTemp.format(**locals()).replace('<br>', '')
         except Exception as e:
             template = ""
             LOGGER.error("AniList Error:"+e)
@@ -307,7 +308,26 @@ def anilist(update: Update, context: CallbackContext, aniid=None):
         else:
             try: message.reply_photo(photo = title_img, caption = template, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(buttons))
             except: message.reply_photo(photo = 'https://te.legra.ph/file/8a5155c0fc61cc2b9728c.jpg', caption = template, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(buttons))
-    
+  
+def setAnimeButtons(update, context):
+    query = update.callback_query
+    message = query.message
+    user_id = query.from_user.id
+    data = query.data
+    data = data.split()
+    siteid = data[3]
+    if user_id != int(data[1]):
+        query.answer(text="Not Yours!", show_alert=True)
+    elif data[2] == "tags":
+        aniTag = rpost(url, json={'query': ANIME_GRAPHQL_QUERY, 'variables': {'id' : siteid}}).json()['data'].get('Media', None)
+        msg = "<b>Tags :</b>\n\n"
+        msg += "\n".join(f"""<a href="https://anilist.co/search/anime?genres={q(x['name'])}">{x['name']}</a> {x['rank']}%""" for x in aniTag['tags'])
+        btn = [
+            [InlineKeyboardButton("⌫ Back", callback_data = f"home {siteid}")]
+        ]
+        await message.edit_caption(caption=msg, reply_markup=InlineKeyboardMarkup(btn))
+
+
 #### -----
 
 def character(update: Update, _):
@@ -389,8 +409,10 @@ MANGA_HANDLER = CommandHandler("manga", manga,
                                         filters=anifilters | CustomFilters.authorized_user, run_async=True)
 WEEBHELP_HANDLER = CommandHandler("weebhelp", weebhelp,
                                         filters=anifilters | CustomFilters.authorized_user, run_async=True)
+anibut_handler = CallbackQueryHandler(setAnimeButtons, pattern="anime", run_async=True)
 
 dispatcher.add_handler(ANIME_HANDLER)
 dispatcher.add_handler(CHARACTER_HANDLER)
 dispatcher.add_handler(MANGA_HANDLER)
 dispatcher.add_handler(WEEBHELP_HANDLER)
+dispatcher.add_handler(anibut_handler)
