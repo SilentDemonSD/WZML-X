@@ -302,6 +302,7 @@ def anilist(update: Update, context: CallbackContext, aniid=None):
         except Exception as e:
             template = ""
             LOGGER.error("AniList Error:"+e)
+        LOGGER.info(template)
         if aniid:
             return template, buttons
         else:
