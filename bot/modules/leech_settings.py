@@ -5,7 +5,7 @@ from PIL import Image
 from telegram.ext import CommandHandler, CallbackQueryHandler
 
 from bot import AS_DOC_USERS, AS_MEDIA_USERS, dispatcher, AS_DOCUMENT, DB_URI, PRE_DICT, LEECH_DICT, \
-                PAID_USERS, CAP_DICT, REM_DICT, SUF_DICT, CFONT_DICT
+                PAID_USERS, CAP_DICT, REM_DICT, SUF_DICT, CFONT_DICT, IMDB_TEMP, ANI_TEMP
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, sendPhoto
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -24,6 +24,9 @@ def getleechinfo(from_user):
     dumpid = LEECH_DICT.get(user_id, "Not Exists")
     remname = REM_DICT.get(user_id, "Not Exists")
     cfont = CFONT_DICT.get(user_id, ["Not Exists"])[0]
+    imdb = IMDB_TEMP.get(user_id, "Not Exists")
+    anilist = ANI_TEMP.get(user_id, "Not Exists")
+
     if (
         user_id in AS_DOC_USERS
         or user_id not in AS_MEDIA_USERS
@@ -55,6 +58,13 @@ def getleechinfo(from_user):
         buttons.sbutton("Delete Remname", f"leechset {user_id} rem")
     if cfont != "Not Exists": 
         buttons.sbutton("Delete CapFont", f"leechset {user_id} cfont")
+    if imdb != "Not Exists":
+        buttons.sbutton("Delete IMDB", f"leechset {user_id} imdb")
+        buttons.sbutton("Show IMDB Template", f"leechset {user_id} showimdb")
+    if anilist != "Not Exists":
+        buttons.sbutton("Delete AniList", f"leechset {user_id} anilist")
+        buttons.sbutton("Show AniList Template", f"leechset {user_id} showanilist")
+
 
     button = buttons.build_menu(2)
 
@@ -67,6 +77,8 @@ def getleechinfo(from_user):
 • Caption : <b>{caption}</b>
 • CapFont : <b>{cfont}</b>
 • Remname : <b>{remname}</b>
+• IMDB : <b>{"Exists" if imdb}</b>
+• AniList : <b>{"Exists" if anilist}</b>
 • DumpID : <b>{dumpid}</b>
 • User Plan : <b>{uplan}</b>'''
     return text, button
@@ -158,6 +170,32 @@ def setLeechType(update, context):
             DbManger().user_cfont(user_id, None)
         query.answer(text="Your CapFont is Successfully Deleted!", show_alert=True)
         editLeechType(message, query)
+    elif data[2] == "imdb":
+        IMDB_TEMP.pop(user_id)
+        if DB_URI:
+            DbManger().user_imdblist(user_id, None)
+        query.answer(text="Your IMDB Template is Successfully Deleted!", show_alert=True)
+        editLeechType(message, query)
+    elif data[2] == "anilist":
+        ANI_TEMP.pop(user_id)
+        if DB_URI:
+            DbManger().user_anilist(user_id, None)
+        query.answer(text="Your AniList Template is Successfully Deleted!", show_alert=True)
+        editLeechType(message, query)
+    elif data[2] == "showimdb":
+        imdb = IMDB_TEMP.get(user_id, '')
+        if imdb:
+            msg = f"IMDB Template for: {query.from_user.mention_html()} (<code>{str(user_id)}</code>)\n\n{imdb}"
+            im = sendMessage(msg, context.bot, message)
+            Thread(args=(context.bot, update.message, im)).start()
+        else: query.answer(text="Send new settings command. 🙃")
+    elif data[2] == "showanilist":
+        anilist = ANI_TEMP.get(user_id, '')
+        if anilist:
+            msg = f"AniList Template for: {query.from_user.mention_html()} (<code>{str(user_id)}</code>)\n\n{anilist}"
+            ani = sendMessage(msg, context.bot, message)
+            Thread(args=(context.bot, update.message, ani)).start()
+        else: query.answer(text="Send new settings command. 🙃")
     else:
         query.answer()
         try:
