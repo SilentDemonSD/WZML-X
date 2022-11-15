@@ -225,9 +225,9 @@ query ($id: Int,$search: String) {
 url = 'https://graphql.anilist.co'
 
 def anilist(update: Update, context: CallbackContext, aniid=None):
-    message = update.effective_message
     user_id = update.message.from_user.id
     if not aniid:
+        message = update.effective_message
         squery = (message.text).split(' ', 1)
         if len(squery) == 1:
             sendMessage("<i>Provide AniList ID / Anime Name / MyAnimeList ID</i>", context.bot, update.message)
