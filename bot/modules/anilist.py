@@ -348,7 +348,7 @@ def setAnimeButtons(update, context):
         msg += "\n\n".join(f"""• <a href="{x['node']['siteUrl']}">{x['node']['name']['full']}</a> ({x['node']['name']['native']})\n<b>Role :</b> {x['role'].capitalize()}""" for x in (animeResp['characters']['edges'])[:8])
         message.edit_caption(caption=msg, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(btn))
     elif data[2] == "home":
-        msg, btns = anilist(update, context, siteid)
+        msg, btns = anilist(update.message, context.bot, siteid)
         message.edit_caption(caption=msg, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(btns))
 
 #### -----
