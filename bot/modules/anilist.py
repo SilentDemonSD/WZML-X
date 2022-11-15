@@ -11,7 +11,7 @@ from telegram.ext import run_async, CallbackContext, CommandHandler
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, sendPhoto
 from bot.helper.ext_utils.bot_utils import get_readable_time
-from bot import dispatcher, IMAGE_URL, ANILIST_ENABLED, ANI_TEMP, DEF_ANI_TEMP
+from bot import LOGGER, dispatcher, IMAGE_URL, ANILIST_ENABLED, ANI_TEMP, DEF_ANI_TEMP
 
 GENRES_EMOJI = {"Action": "👊", "Adventure": choice(['🪂', '🧗‍♀']), "Comedy": "🤣", "Drama": " 🎭", "Ecchi": choice(['💋', '🥵']), "Fantasy": choice(['🧞', '🧞‍♂', '🧞‍♀','🌗']), "Hentai": "🔞", "Horror": "☠", "Mahou Shoujo": "☯", "Mecha": "🤖", "Music": "🎸", "Mystery": "🔮", "Psychological": "♟", "Romance": "💞", "Sci-Fi": "🛸", "Slice of Life": choice(['☘','🍁']), "Sports": "⚽️", "Supernatural": "🫧", "Thriller": choice(['🥶', '🔪','🤯'])}
 
