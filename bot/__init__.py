@@ -1,6 +1,6 @@
 import re
 from PIL import Image
-from os import environ, remove
+from os import environ, remove, path as ospath, mkdir
 from logging import getLogger, FileHandler, StreamHandler, INFO, basicConfig, error as log_error, info as log_info, warning as log_warning
 from socket import setdefaulttimeout
 from urllib.request import urlretrieve
@@ -149,12 +149,16 @@ try:
     TGH_THUMB = getConfig('TGH_THUMB')
     if len(TGH_THUMB) == 0:
         raise KeyError
-    photo_dir = 'downloads/' + TGH_THUMB.split('/')[-1]
-    urlretrieve(TGH_THUMB, photo_dir)
-    Image.open(photo_dir).convert("RGB").save('Thumbnails/weeb.jpg', "JPEG")
-    remove(photo_dir)
 except:
-    TGH_THUMB = ''
+    TGH_THUMB = 'https://te.legra.ph/file/3325f4053e8d68eab07b5.jpg'
+
+path = "Thumbnails/"
+if not ospath.isdir(path):
+    mkdir(path)
+photo_dir = path + TGH_THUMB.split('/')[-1]
+urlretrieve(TGH_THUMB, photo_dir)
+Image.open(photo_dir).convert("RGB").save('Thumbnails/weeb.jpg', "JPEG")
+remove(photo_dir)
 
 try:
     aid = getConfig('AUTHORIZED_CHATS')
@@ -893,6 +897,26 @@ try:
 except:
     WALLCRAFT_CATEGORY = None
 PICS = (environ.get('PICS', '')).split()
+
+try:
+    DEF_ANI_TEMP = getConfig('DEF_ANI_TEMP')
+    if len(DEF_ANI_TEMP) == 0:
+        raise KeyError
+except:
+    DEF_ANI_TEMP = """<b>{ro_title}</b>({na_title})
+<b>Format</b>: <code>{format}</code>
+<b>Status</b>: <code>{status}</code>
+<b>Start Date</b>: <code>{startdate}</code>
+<b>End Date</b>: <code>{enddate}</code>
+<b>Season</b>: <code>{season}</code>
+<b>Country</b>: {country}
+<b>Episodes</b>: <code>{episodes}</code>
+<b>Duration</b>: <code>{duration}</code>
+<b>Average Score</b>: <code>{avgscore}</code>
+<b>Genres</b>: {genres}
+<b>Hashtag</b>: {hashtag}
+<b>Studios</b>: {studios}
+<b>Description</b>: <i>{description}</i>"""
 
 updater = tgUpdater(token=BOT_TOKEN, request_kwargs={'read_timeout': 20, 'connect_timeout': 15})
 bot = updater.bot
