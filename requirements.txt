@@ -15,6 +15,7 @@ google-api-python-client
 google-auth-httplib2
 google-auth-oauthlib
 gunicorn
+imdbpy
 lk21
 lxml
 mediainfo
@@ -22,6 +23,7 @@ pillow
 psutil
 psycopg2-binary
 pybase64
+pycountry
 pyrogram
 python-dotenv
 python-magic
