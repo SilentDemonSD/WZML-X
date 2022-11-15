@@ -1,6 +1,7 @@
 from logging import FileHandler, StreamHandler, INFO, basicConfig, error as log_error, info as log_info
 from os import path as ospath, environ
-from subprocess import run as srun
+from subprocess import run as srun, call as scall
+from pkg_resources import working_set
 from requests import get as rget
 from dotenv import load_dotenv
 
@@ -30,6 +31,10 @@ except:
 
 load_dotenv('config.env', override=True)
 
+if environ.get('UPDATE_PACKAGES', 'False').lower() == 'true':
+    packages = [dist.project_name for dist in working_set]
+    scall("pip install --upgrade " + ' '.join(packages), shell=True)
+
 UPSTREAM_REPO = environ.get('UPSTREAM_REPO')
 UPSTREAM_BRANCH = environ.get('UPSTREAM_BRANCH')
 try:
@@ -57,6 +62,6 @@ if UPSTREAM_REPO is not None:
                      && git reset --hard origin/{UPSTREAM_BRANCH} -q"], shell=True)
 
     if update.returncode == 0:
-        log_info('Successfully updated with latest commit from UPSTREAM_REPO')
+        log_info(f'Successfully updated with latest commit from {UPSTREAM_REPO}')
     else:
-        log_error('Something went wrong while updating, check UPSTREAM_REPO if valid or not!')
+        log_error(f'Something went wrong while updating, check {UPSTREAM_REPO} if valid or not!')
