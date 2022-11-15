@@ -305,7 +305,8 @@ def anilist(update: Update, context: CallbackContext, aniid=None):
         if aniid:
             return template, buttons
         else:
-            update.effective_message.reply_photo(photo = (title_img or 'https://te.legra.ph/file/8a5155c0fc61cc2b9728c.jpg'), caption = template, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(buttons))
+            try: message.reply_photo(photo = title_img, caption = template, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(buttons))
+            except: message.reply_photo(photo = 'https://te.legra.ph/file/8a5155c0fc61cc2b9728c.jpg', caption = template, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(buttons))
     
 #### -----
 
