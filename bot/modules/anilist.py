@@ -296,7 +296,7 @@ def anilist(update: Update, context: CallbackContext, aniid=None, u_id=None):
         ]
         if trailer:
             buttons[0].insert(1, InlineKeyboardButton("Trailer 🎞", url=trailer))
-        aniListTemp = ANI_TEMP.get(int(message.from_user.id), "")
+        aniListTemp = ANI_TEMP.get(int(user_id), "")
         if not aniListTemp:
             aniListTemp = DEF_ANI_TEMP
         try:
