@@ -62,7 +62,7 @@ query ($id: Int, $idMal: Int, $search: String) {
     type
     format
     status(version: 2)
-    description(asHtml: true)
+    description(asHtml: false)
     startDate {
       year
       month
@@ -302,7 +302,6 @@ def anilist(update: Update, context: CallbackContext, aniid=None):
         except Exception as e:
             template = ""
             LOGGER.error("AniList Error:"+e)
-        LOGGER.info(template)
         if aniid:
             return template, buttons
         else:
