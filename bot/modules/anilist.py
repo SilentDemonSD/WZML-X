@@ -325,6 +325,7 @@ def setAnimeButtons(update, context):
         btn = [
             [InlineKeyboardButton("⌫ Back", callback_data = f"home {siteid}")]
         ]
+        LOGGER.info(msg)
         message.edit_caption(caption=msg, reply_markup=InlineKeyboardMarkup(btn))
 
 
