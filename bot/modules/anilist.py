@@ -325,7 +325,7 @@ def setAnimeButtons(update, context):
         btn = [
             [InlineKeyboardButton("⌫ Back", callback_data = f"home {siteid}")]
         ]
-        await message.edit_caption(caption=msg, reply_markup=InlineKeyboardMarkup(btn))
+        message.edit_caption(caption=msg, reply_markup=InlineKeyboardMarkup(btn))
 
 
 #### -----
