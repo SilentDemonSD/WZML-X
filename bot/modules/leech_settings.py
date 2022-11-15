@@ -26,7 +26,7 @@ def getleechinfo(from_user):
     cfont = CFONT_DICT.get(user_id, ["Not Exists"])[0]
     imdb = IMDB_TEMP.get(user_id, "Not Exists")
     anilist = ANI_TEMP.get(user_id, "Not Exists")
-
+    imdbval, anival = "", ""
     if (
         user_id in AS_DOC_USERS
         or user_id not in AS_MEDIA_USERS
@@ -61,9 +61,11 @@ def getleechinfo(from_user):
     if imdb != "Not Exists":
         buttons.sbutton("Delete IMDB", f"leechset {user_id} imdb")
         buttons.sbutton("Show IMDB Template", f"leechset {user_id} showimdb")
+        imdbval = "Exists"
     if anilist != "Not Exists":
         buttons.sbutton("Delete AniList", f"leechset {user_id} anilist")
         buttons.sbutton("Show AniList Template", f"leechset {user_id} showanilist")
+        anival = "Exists"
 
 
     button = buttons.build_menu(2)
@@ -77,8 +79,8 @@ def getleechinfo(from_user):
 • Caption : <b>{caption}</b>
 • CapFont : <b>{cfont}</b>
 • Remname : <b>{remname}</b>
-• IMDB : <b>{"Exists" if imdb}</b>
-• AniList : <b>{"Exists" if anilist}</b>
+• IMDB : <b>{imdbval if imdbval else imdb}</b>
+• AniList : <b>{anival if anival else anilist}</b>
 • DumpID : <b>{dumpid}</b>
 • User Plan : <b>{uplan}</b>'''
     return text, button
