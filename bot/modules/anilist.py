@@ -1,13 +1,11 @@
 import datetime
-import html
-import textwrap
 
-import bs4
 import requests
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ParseMode
 from telegram.ext import run_async, CallbackContext, CommandHandler
 from bot.helper.telegram_helper.filters import CustomFilters
-from bot import dispatcher, IMAGE_URL, ANILIST_ENABLED
+from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, sendPhoto
+from bot import dispatcher, IMAGE_URL, ANILIST_ENABLED, ANI_TEMP
 
 def shorten(description, info = 'anilist.co'):
     msg = "" 
@@ -17,22 +15,6 @@ def shorten(description, info = 'anilist.co'):
     else:
           msg += f"\n*Description*:_{description}_"
     return msg
-
-
-#time formatter from uniborg
-def t(milliseconds: int) -> str:
-    """Inputs time in milliseconds, to get beautified time,
-    as string"""
-    seconds, milliseconds = divmod(int(milliseconds), 1000)
-    minutes, seconds = divmod(seconds, 60)
-    hours, minutes = divmod(minutes, 60)
-    days, hours = divmod(hours, 24)
-    tmp = ((str(days) + " Days, ") if days else "") + \
-        ((str(hours) + " Hours, ") if hours else "") + \
-        ((str(minutes) + " Minutes, ") if minutes else "") + \
-        ((str(seconds) + " Seconds, ") if seconds else "") + \
-        ((str(milliseconds) + " ms, ") if milliseconds else "")
-    return tmp[:-2]
     
 airing_query = '''
     query ($id: Int,$search: String) { 
@@ -188,6 +170,8 @@ def anime(update: Update, context: CallbackContext):
                 msg += f" [〽️]({image})"
             update.effective_message.reply_text(msg, parse_mode=ParseMode.MARKDOWN, reply_markup=InlineKeyboardMarkup(buttons))
 
+#### -----
+
 def character(update: Update, _):
     message = update.effective_message
     search = message.text.split(' ', 1)
@@ -245,32 +229,28 @@ def manga(update: Update, _):
                 update.effective_message.reply_text(msg, parse_mode=ParseMode.MARKDOWN, reply_markup=InlineKeyboardMarkup(buttons))
         else: update.effective_message.reply_text(msg, parse_mode=ParseMode.MARKDOWN, reply_markup=InlineKeyboardMarkup(buttons))
 
+#### -----
+
 def weebhelp(update, context):
     help_string = '''
-• `/anime`*:* search anime
-• `/character`*:* search character
-• `/manga`*:* search manga
-'''
-    update.effective_message.reply_photo(IMAGE_URL, help_string, parse_mode=ParseMode.MARKDOWN)
+<u><b>🔍 Anime Help Guide</b></u>
 
-if ANILIST_ENABLED:
-    ANIME_HANDLER = CommandHandler("anime", anime,
-                                        filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
-    CHARACTER_HANDLER = CommandHandler("character", character,
-                                        filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
-    MANGA_HANDLER = CommandHandler("manga", manga,
-                                        filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
-    WEEBHELP_HANDLER = CommandHandler("weebhelp", weebhelp,
-                                        filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
-else:
-    ANIME_HANDLER = CommandHandler("anime", anime,
-                                        filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
-    CHARACTER_HANDLER = CommandHandler("character", character,
-                                        filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
-    MANGA_HANDLER = CommandHandler("manga", manga,
-                                        filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
-    WEEBHELP_HANDLER = CommandHandler("weebhelp", weebhelp,
-                                        filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
+• <code>/anime</code> : <i>[search AniList]</i>
+• <code>/character</code> : <i>[search AniList Character]</i>
+• <code>/manga</code> : <i>[search manga]</i>
+'''
+    sendPhoto(help_string, context.bot, update.message, IMAGE_URL)
+
+anifilters = CustomFilters.authorized_chat if ANILIST_ENABLED else CustomFilters.owner_filter
+
+ANIME_HANDLER = CommandHandler("anime", anime,
+                                        filters=anifilters | CustomFilters.authorized_user, run_async=True)
+CHARACTER_HANDLER = CommandHandler("character", character,
+                                        filters=anifilters | CustomFilters.authorized_user, run_async=True)
+MANGA_HANDLER = CommandHandler("manga", manga,
+                                        filters=anifilters | CustomFilters.authorized_user, run_async=True)
+WEEBHELP_HANDLER = CommandHandler("weebhelp", weebhelp,
+                                        filters=anifilters | CustomFilters.authorized_user, run_async=True)
 
 dispatcher.add_handler(ANIME_HANDLER)
 dispatcher.add_handler(CHARACTER_HANDLER)
