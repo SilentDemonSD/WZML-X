@@ -39,7 +39,7 @@ def scrapper(update, context):
     except TypeError: return sendMessage('Not a Valid Link.', context.bot, update)
     links = []
     if "sharespark" in link:
-        gd_txt = ""
+        #gd_txt = ""
         res = rget("?action=printpage;".join(link.split('?')))
         soup = BeautifulSoup(res.text, 'html.parser')
         for br in soup.findAll('br'):
@@ -50,23 +50,24 @@ def scrapper(update, context):
             if next2_s and isinstance(next2_s,Tag) and next2_s.name == 'br':
               if str(next_s).strip():
                  List = next_s.split()
-                 if re.match(r'^(480p|720p|1080p)(.+)? Links:\Z', next_s):
-                    gd_txt += f'<b>{next_s.replace("Links:", "GDToT Links :")}</b>\n\n'
+                 #if re.match(r'^(480p|720p|1080p)(.+)? Links:\Z', next_s):
+                 #   gd_txt += f'<b>{next_s.replace("Links:", "GDToT Links :")}</b>\n\n'
                  for s in List:
                       ns = re.sub(r'\(|\)', '', s)
                       if re.match(r'https?://.+\.gdtot\.\S+', ns):
                          r = rget(ns)
                          soup = BeautifulSoup(r.content, "html.parser")
                          title = soup.title
-                         gd_txt += f"<code>{(title.text).replace('GDToT | ' , '')}</code>\n{ns}\n\n"
-                      elif re.match(r'https?://pastetot\.\S+', ns):
-                         nxt = re.sub(r'\(|\)|(https?://pastetot\.\S+)', '', next_s)
-                         gd_txt += f"\n<code>{nxt}</code>\n{ns}\n"
-            if len(gd_txt) > 4000:
-                sendMessage(gd_txt, context.bot, update.message)
-                gd_txt = ""
-        if gd_txt != "":
-            sendMessage(gd_txt, context.bot, update.message)
+                         gd_txt = f"<code>{(title.text).replace('GDToT | ' , '')}</code>\n{ns}\n\n"
+                         sendMessage(gd_txt, context.bot, update.message)
+                      #elif re.match(r'https?://pastetot\.\S+', ns):
+                      #   nxt = re.sub(r'\(|\)|(https?://pastetot\.\S+)', '', next_s)
+                      #   gd_txt += f"\n<code>{nxt}</code>\n{ns}\n"
+            #if len(gd_txt) > 4000:
+            #    sendMessage(gd_txt, context.bot, update.message)
+            #    gd_txt = ""
+        #if gd_txt != "":
+            #sendMessage(gd_txt, context.bot, update.message)
     elif "htpmovies" in link and "/exit.php" in link:
         sent = sendMessage('Running scrape. Wait about some secs.', context.bot, update.message)
         prsd = htpmovies(link)
