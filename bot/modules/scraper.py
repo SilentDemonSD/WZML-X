@@ -1,4 +1,5 @@
 import cloudscraper
+import requests
 import re
 from re import S
 from re import match as rematch, findall, sub as resub
