@@ -58,7 +58,7 @@ def scrapper(update, context):
                          r = rget(ns)
                          soup = BeautifulSoup(r.content, "html.parser")
                          title = soup.title
-                         gd_txt = f"<code>{(title.text).replace('GDToT | ' , '')}</code>\n{ns}\n\n"
+                         gd_txt = f"\clone {ns}\n<code>{(title.text).replace('GDToT | ' , '')}</code>\n\n"
                          sendMessage(gd_txt, context.bot, update.message)
                       #elif re.match(r'https?://pastetot\.\S+', ns):
                       #   nxt = re.sub(r'\(|\)|(https?://pastetot\.\S+)', '', next_s)
@@ -108,7 +108,7 @@ def scrapper(update, context):
              t = client.get(c).text
              soupt = BeautifulSoup(t, "html.parser")
              title = soupt.title
-             gd_txt = f"<code>{(title.text).replace('GDToT | ' , '')}</code>\n{c}\n\n"
+             gd_txt = f"\clone {c}\n<code>{(title.text).replace('GDToT | ' , '')}</code>\n\n"
              sendMessage(gd_txt, context.bot, update.message)
     elif "cinevood" in link:
         prsd = ""
