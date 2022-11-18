@@ -95,7 +95,7 @@ def scrapper(update, context):
                 if len(prsd) > 4000:
                     sent = sendMessage("<i>Scrapping More...</i>", context.bot, update.message)
                     prsd = ""
-    elif "telguflix" in link:
+    elif "teluguflix" in link:
         client = requests.session()
         r = client.get(link).text
         y = r.split('id="download"')[-1]
