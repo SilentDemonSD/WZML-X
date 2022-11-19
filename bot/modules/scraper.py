@@ -99,16 +99,15 @@ def scrapper(update, context):
     elif "teluguflix" in link:
         client = requests.session()
         r = client.get(link).text
-        y = r.split('id="download"')[-1]
-        f = y.split("</ul>") [0]
-        soup = BeautifulSoup (f, "html.parser")
+        soup = BeautifulSoup (r, "html.parser")
         for a in soup.find_all("a"):
              c = a.get("href")
-             t = client.get(c).text
-             soupt = BeautifulSoup(t, "html.parser")
-             title = soupt.title
-             gd_txt = f"<code>{(title.text).replace('GDToT | ' , '')}</code>\n{c}\n\n"
-             sendMessage(gd_txt, context.bot, update.message)
+             if "gdtot" in c:
+                  t = client.get(c).text
+                  soupt = BeautifulSoup(t, "html.parser")
+                  title = soupt.title
+                  gd_txt = f"<code>{(title.text).replace('GDToT | ' , '')}</code>\n{c}\n\n"
+                  sendMessage(gd_txt, context.bot, update.message)
     elif "cinevood" in link:
         prsd = ""
         links = []
