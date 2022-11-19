@@ -345,8 +345,7 @@ USER_TASKS_LIMIT = None if len(USER_TASKS_LIMIT) == 0 else int(USER_TASKS_LIMIT)
 
 
 RSS_USER_SESSION_STRING = getenv('RSS_USER_SESSION_STRING', '')
-if len(RSS_USER_SESSION_STRING) != 0:
-    rss_session = Client(name='rss_session', api_id=(TELEGRAM_API), api_hash=TELEGRAM_HASH, session_string=RSS_USER_SESSION_STRING, parse_mode=enums.ParseMode.HTML, no_updates=True)
+rss_session = Client(name='rss_session', api_id=(TELEGRAM_API), api_hash=TELEGRAM_HASH, session_string=RSS_USER_SESSION_STRING, parse_mode=enums.ParseMode.HTML, no_updates=True) if len(RSS_USER_SESSION_STRING) != 0 else None
 
 RSS_COMMAND = getenv('RSS_COMMAND', '')
 if len(RSS_COMMAND) == 0:
