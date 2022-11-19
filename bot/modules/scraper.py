@@ -104,10 +104,31 @@ def scrapper(update, context):
              c = a.get("href")
              if "gdtot" in c:
                   t = client.get(c).text
-                  soupt = BeautifulSoup(t, "html.parser")
-                  title = soupt.title
-                  gd_txt = f"<code>{(title.text).replace('GDToT | ' , '')}</code>\n{c}\n\n"
-                  sendMessage(gd_txt, context.bot, update.message)
+                  if "2160p" in t:
+                      soupt = BeautifulSoup(t, "html.parser")
+                      title = soupt.title
+                      gd_txt = f"<code>{(title.text).replace('GDToT | ' , '')}</code>\n{c}\n\n"
+                      sendMessage(gd_txt, context.bot, update.message)
+                  elif "1080p" in t:
+                      soupt = BeautifulSoup(t, "html.parser")
+                      title = soupt.title
+                      gd_txt = f"<code>{(title.text).replace('GDToT | ' , '')}</code>\n{c}\n\n"
+                      sendMessage(gd_txt, context.bot, update.message)
+                  elif "720p" in t:
+                      soupt = BeautifulSoup(t, "html.parser")
+                      title = soupt.title
+                      gd_txt = f"<code>{(title.text).replace('GDToT | ' , '')}</code>\n{c}\n\n"
+                      sendMessage(gd_txt, context.bot, update.message)
+                  elif "540p" in t:
+                      soupt = BeautifulSoup(t, "html.parser")
+                      title = soupt.title
+                      gd_txt = f"<code>{(title.text).replace('GDToT | ' , '')}</code>\n{c}\n\n"
+                      sendMessage(gd_txt, context.bot, update.message)
+                  elif "480p" in t:
+                      soupt = BeautifulSoup(t, "html.parser")
+                      title = soupt.title
+                      gd_txt = f"<code>{(title.text).replace('GDToT | ' , '')}</code>\n{c}\n\n"
+                      sendMessage(gd_txt, context.bot, update.message)
     elif "cinevood" in link:
         prsd = ""
         links = []
