@@ -2,7 +2,8 @@ from pyrogram import enums
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, ConversationHandler
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-from bot import bot, LOGGER, DB_URI, OWNER_ID, PRE_DICT, LEECH_DICT, dispatcher, PAID_USERS, CAP_DICT, PAID_SERVICE, REM_DICT, SUF_DICT, CFONT_DICT, CAPTION_FONT
+from bot import bot, LOGGER, DB_URI, OWNER_ID, PRE_DICT, LEECH_DICT, dispatcher, PAID_USERS, \
+                CAP_DICT, PAID_SERVICE, REM_DICT, SUF_DICT, CFONT_DICT, CAPTION_FONT, ANI_TEMP
 from bot.helper.telegram_helper.message_utils import *
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -289,6 +290,37 @@ def remname_set(update, context):
         editMessage(f"<b><a href='tg://user?id={user_id_}'>{u_men}</a>'s Remname is Set Successfully :</b>\n\n<b>• Remname Text: </b>{txt}", lm)
 
 
+def anilist_set(update, context):
+    user_id_ = update.message.from_user.id 
+    u_men = update.message.from_user.first_name
+
+    if PAID_SERVICE is True:
+        if not (user_id_ in PAID_USERS) and user_id_ != OWNER_ID:
+            sendMessage(f"Buy Paid Service to Use this Prename Feature.", context.bot, update.message)
+            return
+    if (BotCommands.PreNameCommand in update.message.text) and (len(update.message.text.split(' ')) == 1):
+        help_msg = "<b>Send AniList Template after command:</b>"
+        help_msg += f"\n<code>/{BotCommands.AniListCommand}" + " {prefix}" + "</code>\n"
+        help_msg += "\n<b>By Replying to Message (Including Prefix):</b>"
+        help_msg += f"\n<code>/{BotCommands.AniListCommand}" + " {message}" + "</code>"
+        sendMessage(help_msg, context.bot, update.message)
+    else:
+        lm = sendMessage(f"<b>Please Wait....Processing Input</b>", context.bot, update.message)
+        pre_send = update.message.text.split(" ", maxsplit=1)
+        reply_to = update.message.reply_to_message
+        if len(pre_send) > 1:
+            txt = pre_send[1]
+        elif reply_to is not None:
+            txt = reply_to.text
+        else:
+            txt = ""
+        anitemp_ = txt
+        ANI_TEMP[user_id_] = anitemp_
+        if DB_URI:
+            DbManger().user_anilist(user_id_, anitemp_)
+            LOGGER.info(f"User : {user_id_} AniList Template is Saved in DB")
+        editMessage(f"<u><b><a href='tg://user?id={user_id_}'>{u_men}</a>'s AniList Template is Set Successfully 🚀</b></u>\n\n<b>• AniList Template: </b>{txt}", lm)
+
 
 prefix_set_handler = CommandHandler(BotCommands.PreNameCommand, prefix_set,
                                        filters=(CustomFilters.authorized_chat | CustomFilters.authorized_user), run_async=True)
@@ -300,6 +332,8 @@ userlog_set_handler = CommandHandler(BotCommands.UserLogCommand, userlog_set,
                                        filters=(CustomFilters.authorized_chat | CustomFilters.authorized_user), run_async=True)
 remname_set_handler = CommandHandler(BotCommands.RemnameCommand, remname_set,
                                        filters=(CustomFilters.authorized_chat | CustomFilters.authorized_user), run_async=True) 
+anilist_set_handler = CommandHandler(BotCommands.AniListCommand, anilist_set,
+                                       filters=(CustomFilters.authorized_chat | CustomFilters.authorized_user), run_async=True) 
 cap_font_handler = CallbackQueryHandler(setCapFont, pattern="capfont", run_async=True)
 
 dispatcher.add_handler(prefix_set_handler)
@@ -307,4 +341,5 @@ dispatcher.add_handler(suffix_set_handler)
 dispatcher.add_handler(caption_set_handler)
 dispatcher.add_handler(userlog_set_handler)
 dispatcher.add_handler(remname_set_handler)
+dispatcher.add_handler(anilist_set_handler)
 dispatcher.add_handler(cap_font_handler)
