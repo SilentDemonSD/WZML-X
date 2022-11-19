@@ -71,6 +71,7 @@ class _BotCommands:
         self.WayBackCommand = getCommand('WAYBACK_COMMAND', f'wayback{CMD_INDEX}')
         self.AddleechlogCommand = getCommand('ADDLEECHLOG_CMD', f'addleechlog{CMD_INDEX}')
         self.RmleechlogCommand = getCommand('RMLEECHLOG_CMD', f'rmleechlog{CMD_INDEX}')
+        self.AniListCommand = getCommand('ANILIST_CMD', f'anitemp{CMD_INDEX}')
         self.EvalCommand = f'eval{CMD_INDEX}'
         self.ExecCommand = f'exec{CMD_INDEX}'
         self.ClearLocalsCommand = f'clearlocals{CMD_INDEX}'
