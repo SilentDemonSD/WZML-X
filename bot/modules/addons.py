@@ -298,7 +298,7 @@ def anilist_set(update, context):
         if not (user_id_ in PAID_USERS) and user_id_ != OWNER_ID:
             sendMessage(f"Buy Paid Service to Use this Prename Feature.", context.bot, update.message)
             return
-    if (BotCommands.PreNameCommand in update.message.text) and (len(update.message.text.split(' ')) == 1):
+    if (BotCommands.AniListCommand in update.message.text) and (len(update.message.text.split(' ')) == 1):
         help_msg = "<b>Send AniList Template after command:</b>"
         help_msg += f"\n<code>/{BotCommands.AniListCommand}" + " {prefix}" + "</code>\n"
         help_msg += "\n<b>By Replying to Message (Including Prefix):</b>"
