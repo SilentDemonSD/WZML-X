@@ -77,6 +77,7 @@ def add_qb_torrent(link, path, listener, ratio, seed_time):
         ext_hash = tor_info.hash
         with download_dict_lock:
             download_dict[listener.uid] = QbDownloadStatus(listener, ext_hash)
+            LOGGER.info(download_dict)
         with qb_download_lock:
             STALLED_TIME[ext_hash] = time()
             if not QbInterval:
@@ -310,7 +311,10 @@ def __stop_duplicate(client, tor):
 @new_thread
 def __check_limits(client, tor):
     download = getDownloadByGid(tor.hash[:12])
-    listener = download.listener()
+    try:
+        listener = download.listener()
+        LOGGER.info(listener)
+    except: return
     size = tor.size
     arch = any([listener.isZip, listener.extract])
     user_id = listener.message.from_user.id
