@@ -14,10 +14,9 @@ from bot import TELEGRAPH_STYLE, download_dict, download_dict_lock, BASE_URL, ge
 from bot.helper.mirror_utils.status_utils.qbit_download_status import QbDownloadStatus
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, deleteMessage, sendStatusMessage, update_all_messages, sendFile
-from bot.helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time, setInterval, bt_selection_buttons
-from bot.helper.ext_utils.fs_utils import clean_unwanted, get_base_name, check_storage_threshold, getDownloadByGid, new_thread
+from bot.helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time, setInterval, bt_selection_buttons, getDownloadByGid, new_thread
+from bot.helper.ext_utils.fs_utils import clean_unwanted, get_base_name, check_storage_threshold
 from bot.helper.telegram_helper import button_build
-
 
 qb_download_lock = Lock()
 STALLED_TIME = {}
@@ -130,237 +129,6 @@ def __remove_torrent(client, hash_):
             UPLOADED.remove(hash_)
         if hash_ in SEEDING:
             SEEDING.remove(hash_)
-
-
-def __onDownloadError(err, client, tor):
-    LOGGER.info(f"Cancelling Download: {tor.name}")
-    client.torrents_pause(torrent_hashes=tor.hash)
-    sleep(0.3)
-    download = getDownloadByGid(tor.hash[:12])
-    try:
-        listener = download.listener()
-        listener.onDownloadError(err)
-    except:
-        pass
-    __remove_torrent(client, tor.hash)
-
-
-@new_thread
-def __onSeedFinish(client, tor):
-    LOGGER.info(f"Cancelling Seed: {tor.name}")
-    download = getDownloadByGid(tor.hash[:12])
-    try:
-        listener = download.listener()
-        listener.onUploadError(f"Seeding stopped with Ratio: {round(tor.ratio, 3)} and Time: {get_readable_time(tor.seeding_time)}")
-    except:
-        pass
-    __remove_torrent(client, tor.hash)
-
-@new_thread
-def __stop_duplicate(client, tor):
-    download = getDownloadByGid(tor.hash[:12])
-    try:
-        listener = download.listener()
-        if not listener.select and not listener.isLeech:
-            LOGGER.info('Checking File/Folder if already in Drive')
-            qbname = tor.content_path.rsplit('/', 1)[-1].rsplit('.!qB', 1)[0]
-            if listener.isZip:
-                qbname = f"{qbname}.zip"
-            elif listener.extract:
-                try:
-                    qbname = get_base_name(qbname)
-                except:
-                    qbname = None
-            if qbname is not None:
-                cap, f_name = GoogleDriveHelper().drive_list(qbname, True)
-                if cap:
-                    __onDownloadError("File/Folder is already available in Drive.", client, tor)
-                    cap = f"Here are the search results:\n\n{cap}"
-                    sendFile(listener.bot, listener.message, f_name, cap)
-                    return
-    except:
-        pass
-
-# @new_thread
-# def __check_limits(client, tor):
-#     download = getDownloadByGid(tor.hash[:12])
-#     try:
-#         listener = download.listener()
-#         if not SIZECHECKED:
-#             size = tor_info.size
-#             arch = any([listener.isZip, listener.extract])
-#             user_id = listener.message.from_user.id
-#             if any([ZIP_UNZIP_LIMIT, LEECH_LIMIT, TORRENT_DIRECT_LIMIT, STORAGE_THRESHOLD]) and user_id != OWNER_ID and user_id not in SUDO_USERS and user_id not in PAID_USERS:
-#                 if PAID_SERVICE is True:
-#                     if STORAGE_THRESHOLD is not None:
-#                         acpt = check_storage_threshold(size, arch)
-#                         if not acpt:
-#                             msg = f'You must leave {STORAGE_THRESHOLD}GB free storage.'
-#                             msg += f'\nYour File/Folder size is {get_readable_file_size(size)}'
-#                             msg += f'\n#Buy Paid Service'
-#                             onDownloadError(msg)
-#                             return
-#                     limit = None
-#                     if ZIP_UNZIP_LIMIT is not None and arch:
-#                         mssg = f'Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB'
-#                         mssg += f'\n#Buy Paid Service'
-#                         limit = ZIP_UNZIP_LIMIT
-#                     if LEECH_LIMIT is not None and listener.isLeech:
-#                         mssg = f'Leech limit is {LEECH_LIMIT}GB'
-#                         mssg += f'\n#Buy Paid Service'
-#                         limit = LEECH_LIMIT
-#                     elif TORRENT_DIRECT_LIMIT is not None:
-#                         mssg = f'Torrent limit is {TORRENT_DIRECT_LIMIT}GB'
-#                         mssg += f'\n#Buy Paid Service'
-#                         limit = TORRENT_DIRECT_LIMIT
-#                 else:
-#                     if STORAGE_THRESHOLD is not None:
-#                         acpt = check_storage_threshold(size, arch)
-#                         if not acpt:
-#                             msg = f'You must leave {STORAGE_THRESHOLD}GB free storage.'
-#                             msg += f'\nYour File/Folder size is {get_readable_file_size(size)}'
-#                             onDownloadError(msg)
-#                             return
-#                     limit = None
-#                     if ZIP_UNZIP_LIMIT is not None and arch:
-#                         mssg = f'Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB'
-#                         limit = ZIP_UNZIP_LIMIT
-#                     if LEECH_LIMIT is not None and listener.isLeech:
-#                         mssg = f'Leech limit is {LEECH_LIMIT}GB'
-#                         limit = LEECH_LIMIT
-#                     elif TORRENT_DIRECT_LIMIT is not None:
-#                         mssg = f'Torrent limit is {TORRENT_DIRECT_LIMIT}GB'
-#                         limit = TORRENT_DIRECT_LIMIT
-#                 if limit is not None:
-#                     LOGGER.info('Checking File/Folder Size...')
-#                     if size > limit * 1024**3:
-#                         fmsg = f"{mssg}.\nYour File/Folder size is {get_readable_file_size(size)}"
-#                         onDownloadError(fmsg)
-#             SIZECHECKED = True
-#     except:
-#         pass
-
-@new_thread
-def __onDownloadComplete(client, tor):
-    download = getDownloadByGid(tor.hash[:12])
-    try:
-        listener = download.listener()
-    except:
-        return
-    if not listener.seed:
-        client.torrents_pause(torrent_hashes=tor.hash)
-    if listener.select:
-        clean_unwanted(tor.content_path.rsplit('/', 1)[0])
-    listener.onDownloadComplete()
-    if listener.seed:
-        with download_dict_lock:
-            if listener.uid in download_dict:
-                removed = False
-                download_dict[listener.uid] = QbDownloadStatus(listener, tor.hash, True)
-            else:
-                removed = True
-        if removed:
-            __remove_torrent(client, tor.hash)
-            return
-        with qb_download_lock:
-            SEEDING.add(tor.hash)
-        update_all_messages()
-        LOGGER.info(f"Seeding started: {tor.name} - Hash: {tor.hash}")
-    else:
-        __remove_torrent(client, tor.hash)
-
-
-def __qb_listener():
-    client = get_client()
-    with qb_download_lock:
-        if len(client.torrents_info()) == 0:
-            QbInterval[0].cancel()
-            QbInterval.clear()
-            return
-        try:
-            for tor_info in client.torrents_info():
-                if tor_info.state == "metaDL":
-                    STALLED_TIME[tor_info.hash] = time()
-                    if TORRENT_TIMEOUT is not None and time() - tor_info.added_on >= TORRENT_TIMEOUT:
-                        Thread(target=__onDownloadError, args=("Dead Torrent!", client, tor_info)).start()
-                elif tor_info.state == "downloading":
-                    STALLED_TIME[tor_info.hash] = time()
-                    listener = download.listener()
-                    if not SIZECHECKED:
-                        size = tor_info.size
-                        arch = any([listener.isZip, listener.extract])
-                        user_id = listener.message.from_user.id
-                        if any([ZIP_UNZIP_LIMIT, LEECH_LIMIT, TORRENT_DIRECT_LIMIT, STORAGE_THRESHOLD]) and user_id != OWNER_ID and user_id not in SUDO_USERS and user_id not in PAID_USERS:
-                            if PAID_SERVICE is True:
-                                if STORAGE_THRESHOLD is not None:
-                                    acpt = check_storage_threshold(size, arch)
-                                    if not acpt:
-                                        msg = f'You must leave {STORAGE_THRESHOLD}GB free storage.'
-                                        msg += f'\nYour File/Folder size is {get_readable_file_size(size)}'
-                                        msg += f'\n#Buy Paid Service'
-                                        onDownloadError(msg)
-                                        return
-                                limit = None
-                                if ZIP_UNZIP_LIMIT is not None and arch:
-                                    mssg = f'Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB'
-                                    mssg += f'\n#Buy Paid Service'
-                                    limit = ZIP_UNZIP_LIMIT
-                                if LEECH_LIMIT is not None and listener.isLeech:
-                                    mssg = f'Leech limit is {LEECH_LIMIT}GB'
-                                    mssg += f'\n#Buy Paid Service'
-                                    limit = LEECH_LIMIT
-                                elif TORRENT_DIRECT_LIMIT is not None:
-                                    mssg = f'Torrent limit is {TORRENT_DIRECT_LIMIT}GB'
-                                    mssg += f'\n#Buy Paid Service'
-                                    limit = TORRENT_DIRECT_LIMIT
-                            else:
-                                if STORAGE_THRESHOLD is not None:
-                                    acpt = check_storage_threshold(size, arch)
-                                    if not acpt:
-                                        msg = f'You must leave {STORAGE_THRESHOLD}GB free storage.'
-                                        msg += f'\nYour File/Folder size is {get_readable_file_size(size)}'
-                                        onDownloadError(msg)
-                                        return
-                                limit = None
-                                if ZIP_UNZIP_LIMIT is not None and arch:
-                                    mssg = f'Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB'
-                                    limit = ZIP_UNZIP_LIMIT
-                                if LEECH_LIMIT is not None and listener.isLeech:
-                                    mssg = f'Leech limit is {LEECH_LIMIT}GB'
-                                    limit = LEECH_LIMIT
-                                elif TORRENT_DIRECT_LIMIT is not None:
-                                    mssg = f'Torrent limit is {TORRENT_DIRECT_LIMIT}GB'
-                                    limit = TORRENT_DIRECT_LIMIT
-                            if limit is not None:
-                                LOGGER.info('Checking File/Folder Size...')
-                                if size > limit * 1024**3:
-                                    fmsg = f"{mssg}.\nYour File/Folder size is {get_readable_file_size(size)}"
-                                    onDownloadError(fmsg)
-                    if STOP_DUPLICATE and tor_info.hash not in STOP_DUP_CHECK:
-                        STOP_DUP_CHECK.add(tor_info.hash)
-                        __stop_duplicate(client, tor_info)
-                elif tor_info.state == "stalledDL":
-                    if tor_info.hash not in RECHECKED and 0.99989999999999999 < tor_info.progress < 1:
-                        msg = f"Force recheck - Name: {tor_info.name} Hash: "
-                        msg += f"{tor_info.hash} Downloaded Bytes: {tor_info.downloaded} "
-                        msg += f"Size: {tor_info.size} Total Size: {tor_info.total_size}"
-                        LOGGER.error(msg)
-                        client.torrents_recheck(torrent_hashes=tor_info.hash)
-                        RECHECKED.add(tor_info.hash)
-                    elif TORRENT_TIMEOUT is not None and time() - STALLED_TIME[tor_info.hash] >= TORRENT_TIMEOUT:
-                        Thread(target=__onDownloadError, args=("Dead Torrent!", client, tor_info)).start()
-                elif tor_info.state == "missingFiles":
-                    client.torrents_recheck(torrent_hashes=tor_info.hash)
-                elif tor_info.state == "error":
-                    Thread(target=__onDownloadError, args=("No enough space for this torrent on device", client, tor_info)).start()
-                elif (tor_info.completion_on != 0 or tor_info.state.endswith("UP") or tor_info.state == "uploading") \
-                      and tor_info.hash not in UPLOADED and tor_info.state not in ['checkingUP', 'checkingDL']:
-                    UPLOADED.add(tor_info.hash)
-                    __onDownloadComplete(client, tor_info)
-                elif tor_info.state in ['pausedUP', 'pausedDL'] and tor_info.hash in SEEDING:
-                    __onSeedFinish(client, tor_info)
-        except Exception as e:
-            LOGGER.error(str(e))
 
     # def __qb_listener(self):
     #     try:
@@ -490,3 +258,129 @@ def __qb_listener():
     #             self.client.torrents_recheck(torrent_hashes=self.ext_hash)
     #     except Exception as e:
     #         LOGGER.error(str(e))
+
+def __onDownloadError(err, client, tor):
+    LOGGER.info(f"Cancelling Download: {tor.name}")
+    client.torrents_pause(torrent_hashes=tor.hash)
+    sleep(0.3)
+    download = getDownloadByGid(tor.hash[:12])
+    try:
+        listener = download.listener()
+        listener.onDownloadError(err)
+    except:
+        pass
+    __remove_torrent(client, tor.hash)
+
+@new_thread
+def __onSeedFinish(client, tor):
+    LOGGER.info(f"Cancelling Seed: {tor.name}")
+    download = getDownloadByGid(tor.hash[:12])
+    try:
+        listener = download.listener()
+        listener.onUploadError(f"Seeding stopped with Ratio: {round(tor.ratio, 3)} and Time: {get_readable_time(tor.seeding_time)}")
+    except:
+        pass
+    __remove_torrent(client, tor.hash)
+
+@new_thread
+def __stop_duplicate(client, tor):
+    download = getDownloadByGid(tor.hash[:12])
+    try:
+        listener = download.listener()
+        if not listener.select and not listener.isLeech:
+            LOGGER.info('Checking File/Folder if already in Drive')
+            qbname = tor.content_path.rsplit('/', 1)[-1].rsplit('.!qB', 1)[0]
+            if listener.isZip:
+                qbname = f"{qbname}.zip"
+            elif listener.extract:
+                try:
+                    qbname = get_base_name(qbname)
+                except:
+                    qbname = None
+            if qbname is not None:
+
+                if TELEGRAPH_STYLE is True:
+                    qbmsg, button = GoogleDriveHelper().drive_list(qbname, True)
+                    if qbmsg:
+                        __onDownloadError("File/Folder is already available in Drive.", client, tor)
+                        sendMarkup("Here are the search results:", listener.bot, listener.message, button)
+                else:
+                    cap, f_name = GoogleDriveHelper().drive_list(qbname, True)
+                    if cap:
+                        __onDownloadError("File/Folder is already available in Drive.", client, tor)
+                        cap = f"Here are the search results:\n\n{cap}"
+                        sendFile(listener.bot, listener.message, f_name, cap)
+                        return
+    except:
+        pass
+
+
+@new_thread
+def __onDownloadComplete(client, tor):
+    download = getDownloadByGid(tor.hash[:12])
+    try:
+        listener = download.listener()
+    except:
+        return
+    if not listener.seed:
+        client.torrents_pause(torrent_hashes=tor.hash)
+    if listener.select:
+        clean_unwanted(tor.content_path.rsplit('/', 1)[0])
+    listener.onDownloadComplete()
+    if listener.seed:
+        with download_dict_lock:
+            if listener.uid in download_dict:
+                removed = False
+                download_dict[listener.uid] = QbDownloadStatus(listener, tor.hash, True)
+            else:
+                removed = True
+        if removed:
+            __remove_torrent(client, tor.hash)
+            return
+        with qb_download_lock:
+            SEEDING.add(tor.hash)
+        update_all_messages()
+        LOGGER.info(f"Seeding started: {tor.name} - Hash: {tor.hash}")
+    else:
+        __remove_torrent(client, tor.hash)
+
+def __qb_listener():
+    client = get_client()
+    with qb_download_lock:
+        if len(client.torrents_info()) == 0:
+            QbInterval[0].cancel()
+            QbInterval.clear()
+            return
+        try:
+            for tor_info in client.torrents_info():
+                if tor_info.state == "metaDL":
+                    STALLED_TIME[tor_info.hash] = time()
+                    if TORRENT_TIMEOUT is not None and time() - tor_info.added_on >= TORRENT_TIMEOUT:
+                        Thread(target=__onDownloadError, args=("Dead Torrent!", client, tor_info)).start()
+                elif tor_info.state == "downloading":
+                    STALLED_TIME[tor_info.hash] = time()
+                    if STOP_DUPLICATE and tor_info.hash not in STOP_DUP_CHECK:
+                        STOP_DUP_CHECK.add(tor_info.hash)
+                        __stop_duplicate(client, tor_info)
+                elif tor_info.state == "stalledDL":
+                    if tor_info.hash not in RECHECKED and 0.99989999999999999 < tor_info.progress < 1:
+                        msg = f"Force recheck - Name: {tor_info.name} Hash: "
+                        msg += f"{tor_info.hash} Downloaded Bytes: {tor_info.downloaded} "
+                        msg += f"Size: {tor_info.size} Total Size: {tor_info.total_size}"
+                        LOGGER.error(msg)
+                        client.torrents_recheck(torrent_hashes=tor_info.hash)
+                        RECHECKED.add(tor_info.hash)
+                    elif TORRENT_TIMEOUT is not None and time() - STALLED_TIME[tor_info.hash] >= TORRENT_TIMEOUT:
+                        Thread(target=__onDownloadError, args=("Dead Torrent!", client, tor_info)).start()
+                elif tor_info.state == "missingFiles":
+                    client.torrents_recheck(torrent_hashes=tor_info.hash)
+                elif tor_info.state == "error":
+                    Thread(target=__onDownloadError, args=("No enough space for this torrent on device", client, tor_info)).start()
+                elif (tor_info.completion_on != 0 or tor_info.state.endswith("UP") or tor_info.state == "uploading") \
+                       and tor_info.hash not in UPLOADED and tor_info.state not in ['checkingUP', 'checkingDL']:
+                    UPLOADED.add(tor_info.hash)
+                    __onDownloadComplete(client, tor_info)
+                elif tor_info.state in ['pausedUP', 'pausedDL'] and tor_info.hash in SEEDING:
+                    __onSeedFinish(client, tor_info)
+        except Exception as e:
+            LOGGER.error(str(e))

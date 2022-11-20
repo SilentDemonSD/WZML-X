@@ -24,11 +24,7 @@ def getleechinfo(from_user):
     dumpid = LEECH_DICT.get(user_id, "Not Exists")
     remname = REM_DICT.get(user_id, "Not Exists")
     cfont = CFONT_DICT.get(user_id, ["Not Exists"])[0]
-    if (
-        user_id in AS_DOC_USERS
-        or user_id not in AS_MEDIA_USERS
-        and AS_DOCUMENT
-    ):
+    if user_id in AS_DOC_USERS or user_id not in AS_MEDIA_USERS and AS_DOCUMENT:
         ltype = "DOCUMENT"
         buttons.sbutton("Send As Media", f"leechset {user_id} med")
     else:
@@ -56,6 +52,7 @@ def getleechinfo(from_user):
     if cfont != "Not Exists": 
         buttons.sbutton("Delete CapFont", f"leechset {user_id} cfont")
 
+    buttons.sbutton("Close", f"leechset {user_id} close")
     button = buttons.build_menu(2)
 
     text = f'''<u>Leech Settings for <a href='tg://user?id={user_id}'>{name}</a></u>
