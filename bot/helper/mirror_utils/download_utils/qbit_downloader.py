@@ -360,7 +360,7 @@ def __qb_listener():
                 elif tor_info.state == "downloading":
                     STALLED_TIME[tor_info.hash] = time()
                     listener = download.listener()
-                    if not SIZECHECKED:
+                    if tor_info.hash not in SIZECHECKED:
                         size = tor_info.size
                         arch = any([listener.isZip, listener.extract])
                         user_id = listener.message.from_user.id
