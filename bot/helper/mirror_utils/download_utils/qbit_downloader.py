@@ -340,7 +340,7 @@ def __check_limits(client, tor):
                     LOGGER.info('Checking File/Folder Size...')
                     if size > limit * 1024**3:
                         fmsg = f"{mssg}.\nYour File/Folder size is {get_readable_file_size(size)}"
-                        __onDownloadError(fmsg)
+                        __onDownloadError(fmsg, client, tor)
 
 @new_thread
 def __onDownloadComplete(client, tor):
