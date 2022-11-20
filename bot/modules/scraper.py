@@ -102,7 +102,7 @@ def scrapper(update, context):
         soup = BeautifulSoup (r, "html.parser")
         for a in soup.find_all("a"):
              c = a.get("href")
-             if "gdtot" in c:
+             if c and "gdtot" in c:
                   t = client.get(c).text
                   soupt = BeautifulSoup(t, "html.parser")
                   title = soupt.title
