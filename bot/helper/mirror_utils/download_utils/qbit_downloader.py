@@ -322,7 +322,7 @@ def __check_limits(client, tor):
                 msg += f'\nYour File/Folder size is {get_readable_file_size(size)}'
                 if PAID_SERVICE is True:
                     msg += f'\n#Buy Paid Service'
-                __onDownloadError(msg)
+                __onDownloadError(msg, client, tor)
                 return
                 limit = None
                 if ZIP_UNZIP_LIMIT is not None and arch:
