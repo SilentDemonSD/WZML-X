@@ -21,7 +21,6 @@ from bot.helper.telegram_helper import button_build
 qb_download_lock = Lock()
 STALLED_TIME = {}
 STOP_DUP_CHECK = set()
-SIZECHECKED = set()
 RECHECKED = set()
 UPLOADED = set()
 SEEDING = set()
@@ -46,10 +45,13 @@ def add_qb_torrent(link, path, listener, ratio, seed_time):
             ext_hash = __get_hash_magnet(link)
         else:
             ext_hash = __get_hash_file(link)
+        if ext_hash is None or len(ext_hash) < 30:
+            sendMessage("Not a torrent! Qbittorrent only for torrents!", listener.bot, listener.message)
+            return
         tor_info = client.torrents_info(torrent_hashes=ext_hash)
         if len(tor_info) > 0:
             sendMessage("This Torrent already added!", listener.bot, listener.message)
-            return client.auth_log_out()
+            return
         if link.startswith('magnet:'):
             op = client.torrents_add(link, save_path=path, ratio_limit=ratio, seeding_time_limit=seed_time)
         else:
@@ -62,20 +64,15 @@ def add_qb_torrent(link, path, listener, ratio, seed_time):
                     tor_info = client.torrents_info(torrent_hashes=ext_hash)
                     if len(tor_info) > 0:
                         break
-                    elif time() - ADD_TIME >= 30:
-                        msg = "Not a torrent. If it's a torrent then report!"
-                        client.torrents_delete(torrent_hashes=ext_hash, delete_files=True)
+                    elif time() - ADD_TIME >= 60:
+                        msg = "Not added, maybe it will took time and u should remove it manually using eval!"
                         sendMessage(msg, listener.bot, listener.message)
-                        if not link.startswith('magnet:'):
-                            remove(link)
-                        return client.auth_log_out()
-            if not link.startswith('magnet:'):
-                remove(link)
+                        __remove_torrent(client, ext_hash)
+                        return
         else:
             sendMessage("This is an unsupported/invalid link.", listener.bot, listener.message)
-            if not link.startswith('magnet:'):
-                remove(link)
-            return client.auth_log_out()
+            __remove_torrent(client, ext_hash)
+            return
         tor_info = tor_info[0]
         ext_hash = tor_info.hash
         with download_dict_lock:
@@ -83,7 +80,7 @@ def add_qb_torrent(link, path, listener, ratio, seed_time):
         with qb_download_lock:
             STALLED_TIME[ext_hash] = time()
             if not QbInterval:
-                periodic = setInterval(3, __qb_listener)
+                periodic = setInterval(5, __qb_listener)
                 QbInterval.append(periodic)
         listener.onDownloadStart()
         LOGGER.info(f"QbitDownload started: {tor_info.name} - Hash: {ext_hash}")
@@ -111,18 +108,19 @@ def add_qb_torrent(link, path, listener, ratio, seed_time):
             sendStatusMessage(listener.message, listener.bot)
     except Exception as e:
         sendMessage(str(e), listener.bot, listener.message)
+    finally:
+        if not link.startswith('magnet:'):
+            remove(link)
         client.auth_log_out()
 
 
 def __remove_torrent(client, hash_):
+    client.torrents_delete(torrent_hashes=hash_, delete_files=True)
     with qb_download_lock:
-        client.torrents_delete(torrent_hashes=hash_, delete_files=True)
         if hash_ in STALLED_TIME:
             del STALLED_TIME[hash_]
         if hash_ in STOP_DUP_CHECK:
             STOP_DUP_CHECK.remove(hash_)
-        if hash_ in SIZECHECKED:
-            SIZECHECKED.remove(hash_) 
         if hash_ in RECHECKED:
             RECHECKED.remove(hash_)
         if hash_ in UPLOADED:
@@ -298,22 +296,51 @@ def __stop_duplicate(client, tor):
                 except:
                     qbname = None
             if qbname is not None:
-
-                if TELEGRAPH_STYLE is True:
-                    qbmsg, button = GoogleDriveHelper().drive_list(qbname, True)
-                    if qbmsg:
-                        __onDownloadError("File/Folder is already available in Drive.", client, tor)
+                qbmsg, button = GoogleDriveHelper().drive_list(qbname, True)
+                if qbmsg:
+                    __onDownloadError("File/Folder is already available in Drive.", client, tor)
+                    if TELEGRAPH_STYLE is True:
                         sendMarkup("Here are the search results:", listener.bot, listener.message, button)
-                else:
-                    cap, f_name = GoogleDriveHelper().drive_list(qbname, True)
-                    if cap:
-                        __onDownloadError("File/Folder is already available in Drive.", client, tor)
-                        cap = f"Here are the search results:\n\n{cap}"
-                        sendFile(listener.bot, listener.message, f_name, cap)
+                    else:
+                        sendFile(listener.bot, listener.message, button, f"Here are the search results:\n\n{qbmsg}")
                         return
     except:
         pass
 
+@new_thread
+def __check_limits(client, tor):
+    download = getDownloadByGid(tor.hash[:12])
+    listener = download.listener()
+    size = tor.size
+    arch = any([listener.isZip, listener.extract])
+    user_id = listener.message.from_user.id
+    if any([ZIP_UNZIP_LIMIT, LEECH_LIMIT, TORRENT_DIRECT_LIMIT, STORAGE_THRESHOLD]) and user_id != OWNER_ID and user_id not in SUDO_USERS and user_id not in PAID_USERS:
+        if STORAGE_THRESHOLD is not None:
+            acpt = check_storage_threshold(size, arch)
+            if not acpt:
+                msg = f'You must leave {STORAGE_THRESHOLD}GB free storage.'
+                msg += f'\nYour File/Folder size is {get_readable_file_size(size)}'
+                if PAID_SERVICE is True:
+                    msg += f'\n#Buy Paid Service'
+                __onDownloadError(msg)
+                return
+                limit = None
+                if ZIP_UNZIP_LIMIT is not None and arch:
+                    mssg = f'Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB'
+                    limit = ZIP_UNZIP_LIMIT
+                if LEECH_LIMIT is not None and listener.isLeech:
+                    mssg = f'Leech limit is {LEECH_LIMIT}GB'
+                    limit = LEECH_LIMIT
+                elif TORRENT_DIRECT_LIMIT is not None:
+                    mssg = f'Torrent limit is {TORRENT_DIRECT_LIMIT}GB'
+                    limit = TORRENT_DIRECT_LIMIT
+                if PAID_SERVICE is True:
+                    mssg += f'\n#Buy Paid Service'
+                if limit is not None:
+                    LOGGER.info('Checking File/Folder Size...')
+                    if size > limit * 1024**3:
+                        fmsg = f"{mssg}.\nYour File/Folder size is {get_readable_file_size(size)}"
+                        __onDownloadError(fmsg)
 
 @new_thread
 def __onDownloadComplete(client, tor):
@@ -325,7 +352,7 @@ def __onDownloadComplete(client, tor):
     if not listener.seed:
         client.torrents_pause(torrent_hashes=tor.hash)
     if listener.select:
-        clean_unwanted(tor.content_path.rsplit('/', 1)[0])
+        clean_unwanted(listener.dir)
     listener.onDownloadComplete()
     if listener.seed:
         with download_dict_lock:
@@ -359,60 +386,10 @@ def __qb_listener():
                         Thread(target=__onDownloadError, args=("Dead Torrent!", client, tor_info)).start()
                 elif tor_info.state == "downloading":
                     STALLED_TIME[tor_info.hash] = time()
-                    listener = download.listener()
-                    if tor_info.hash not in SIZECHECKED:
-                        size = tor_info.size
-                        arch = any([listener.isZip, listener.extract])
-                        user_id = listener.message.from_user.id
-                        if any([ZIP_UNZIP_LIMIT, LEECH_LIMIT, TORRENT_DIRECT_LIMIT, STORAGE_THRESHOLD]) and user_id != OWNER_ID and user_id not in SUDO_USERS and user_id not in PAID_USERS:
-                            if limit is not None:
-                                LOGGER.info('Checking File/Folder Size...')
-                                if size > limit * 1024**3:
-                                    fmsg = f"{mssg}.\nYour File/Folder size is {get_readable_file_size(size)}"
-                                    onDownloadError(fmsg)
-                            if PAID_SERVICE is True:
-                                if STORAGE_THRESHOLD is not None:
-                                    acpt = check_storage_threshold(size, arch)
-                                    if not acpt:
-                                        msg = f'You must leave {STORAGE_THRESHOLD}GB free storage.'
-                                        msg += f'\nYour File/Folder size is {get_readable_file_size(size)}'
-                                        msg += f'\n#Buy Paid Service'
-                                        onDownloadError(msg)
-                                        return
-                                limit = None
-                                if ZIP_UNZIP_LIMIT is not None and arch:
-                                    mssg = f'Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB'
-                                    mssg += f'\n#Buy Paid Service'
-                                    limit = ZIP_UNZIP_LIMIT
-                                if LEECH_LIMIT is not None and listener.isLeech:
-                                    mssg = f'Leech limit is {LEECH_LIMIT}GB'
-                                    mssg += f'\n#Buy Paid Service'
-                                    limit = LEECH_LIMIT
-                                elif TORRENT_DIRECT_LIMIT is not None:
-                                    mssg = f'Torrent limit is {TORRENT_DIRECT_LIMIT}GB'
-                                    mssg += f'\n#Buy Paid Service'
-                                    limit = TORRENT_DIRECT_LIMIT
-                            else:
-                                if STORAGE_THRESHOLD is not None:
-                                    acpt = check_storage_threshold(size, arch)
-                                    if not acpt:
-                                        msg = f'You must leave {STORAGE_THRESHOLD}GB free storage.'
-                                        msg += f'\nYour File/Folder size is {get_readable_file_size(size)}'
-                                        onDownloadError(msg)
-                                        return
-                                limit = None
-                                if ZIP_UNZIP_LIMIT is not None and arch:
-                                    mssg = f'Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB'
-                                    limit = ZIP_UNZIP_LIMIT
-                                if LEECH_LIMIT is not None and listener.isLeech:
-                                    mssg = f'Leech limit is {LEECH_LIMIT}GB'
-                                    limit = LEECH_LIMIT
-                                elif TORRENT_DIRECT_LIMIT is not None:
-                                    mssg = f'Torrent limit is {TORRENT_DIRECT_LIMIT}GB'
-                                    limit = TORRENT_DIRECT_LIMIT
                     if STOP_DUPLICATE and tor_info.hash not in STOP_DUP_CHECK:
                         STOP_DUP_CHECK.add(tor_info.hash)
                         __stop_duplicate(client, tor_info)
+                    __check_limits(client, tor_info)
                 elif tor_info.state == "stalledDL":
                     if tor_info.hash not in RECHECKED and 0.99989999999999999 < tor_info.progress < 1:
                         msg = f"Force recheck - Name: {tor_info.name} Hash: "
@@ -432,6 +409,7 @@ def __qb_listener():
                     UPLOADED.add(tor_info.hash)
                     __onDownloadComplete(client, tor_info)
                 elif tor_info.state in ['pausedUP', 'pausedDL'] and tor_info.hash in SEEDING:
+                    SEEDING.remove(tor_info.hash)
                     __onSeedFinish(client, tor_info)
         except Exception as e:
             LOGGER.error(str(e))
