@@ -365,6 +365,11 @@ def __qb_listener():
                         arch = any([listener.isZip, listener.extract])
                         user_id = listener.message.from_user.id
                         if any([ZIP_UNZIP_LIMIT, LEECH_LIMIT, TORRENT_DIRECT_LIMIT, STORAGE_THRESHOLD]) and user_id != OWNER_ID and user_id not in SUDO_USERS and user_id not in PAID_USERS:
+                            if limit is not None:
+                                LOGGER.info('Checking File/Folder Size...')
+                                if size > limit * 1024**3:
+                                    fmsg = f"{mssg}.\nYour File/Folder size is {get_readable_file_size(size)}"
+                                    onDownloadError(fmsg)
                             if PAID_SERVICE is True:
                                 if STORAGE_THRESHOLD is not None:
                                     acpt = check_storage_threshold(size, arch)
@@ -405,11 +410,6 @@ def __qb_listener():
                                 elif TORRENT_DIRECT_LIMIT is not None:
                                     mssg = f'Torrent limit is {TORRENT_DIRECT_LIMIT}GB'
                                     limit = TORRENT_DIRECT_LIMIT
-                            if limit is not None:
-                                LOGGER.info('Checking File/Folder Size...')
-                                if size > limit * 1024**3:
-                                    fmsg = f"{mssg}.\nYour File/Folder size is {get_readable_file_size(size)}"
-                                    onDownloadError(fmsg)
                     if STOP_DUPLICATE and tor_info.hash not in STOP_DUP_CHECK:
                         STOP_DUP_CHECK.add(tor_info.hash)
                         __stop_duplicate(client, tor_info)
