@@ -147,12 +147,16 @@ try:
     TGH_THUMB = getConfig('TGH_THUMB')
     if len(TGH_THUMB) == 0:
         raise KeyError
-    photo_dir = 'downloads/' + TGH_THUMB.split('/')[-1]
-    urlretrieve(TGH_THUMB, photo_dir)
-    Image.open(photo_dir).convert("RGB").save('Thumbnails/weeb.jpg', "JPEG")
-    remove(photo_dir)
 except:
-    TGH_THUMB = ''
+    TGH_THUMB = 'https://te.legra.ph/file/3325f4053e8d68eab07b5.jpg'
+
+path = "Thumbnails/"
+if not ospath.isdir(path):
+    mkdir(path)
+photo_dir = path + TGH_THUMB.split('/')[-1]
+urlretrieve(TGH_THUMB, photo_dir)
+Image.open(photo_dir).convert("RGB").save('Thumbnails/weeb.jpg', "JPEG")
+remove(photo_dir)
 
 try:
     aid = getConfig('AUTHORIZED_CHATS')
