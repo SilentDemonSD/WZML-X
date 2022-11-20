@@ -296,22 +296,51 @@ def __stop_duplicate(client, tor):
                 except:
                     qbname = None
             if qbname is not None:
-
-                if TELEGRAPH_STYLE is True:
-                    qbmsg, button = GoogleDriveHelper().drive_list(qbname, True)
-                    if qbmsg:
-                        __onDownloadError("File/Folder is already available in Drive.", client, tor)
+                qbmsg, button = GoogleDriveHelper().drive_list(qbname, True)
+                if qbmsg:
+                    __onDownloadError("File/Folder is already available in Drive.", client, tor)
+                    if TELEGRAPH_STYLE is True:
                         sendMarkup("Here are the search results:", listener.bot, listener.message, button)
-                else:
-                    cap, f_name = GoogleDriveHelper().drive_list(qbname, True)
-                    if cap:
-                        __onDownloadError("File/Folder is already available in Drive.", client, tor)
-                        cap = f"Here are the search results:\n\n{cap}"
-                        sendFile(listener.bot, listener.message, f_name, cap)
+                    else:
+                        sendFile(listener.bot, listener.message, button, f"Here are the search results:\n\n{qbmsg}")
                         return
     except:
         pass
 
+@new_thread
+def __check_limits(client, tor):
+    download = getDownloadByGid(tor.hash[:12])
+    listener = download.listener()
+    size = tor.size
+    arch = any([listener.isZip, listener.extract])
+    user_id = listener.message.from_user.id
+    if any([ZIP_UNZIP_LIMIT, LEECH_LIMIT, TORRENT_DIRECT_LIMIT, STORAGE_THRESHOLD]) and user_id != OWNER_ID and user_id not in SUDO_USERS and user_id not in PAID_USERS:
+        if STORAGE_THRESHOLD is not None:
+            acpt = check_storage_threshold(size, arch)
+            if not acpt:
+                msg = f'You must leave {STORAGE_THRESHOLD}GB free storage.'
+                msg += f'\nYour File/Folder size is {get_readable_file_size(size)}'
+                if PAID_SERVICE is True:
+                    msg += f'\n#Buy Paid Service'
+                __onDownloadError(msg)
+                return
+                limit = None
+                if ZIP_UNZIP_LIMIT is not None and arch:
+                    mssg = f'Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB'
+                    limit = ZIP_UNZIP_LIMIT
+                if LEECH_LIMIT is not None and listener.isLeech:
+                    mssg = f'Leech limit is {LEECH_LIMIT}GB'
+                    limit = LEECH_LIMIT
+                elif TORRENT_DIRECT_LIMIT is not None:
+                    mssg = f'Torrent limit is {TORRENT_DIRECT_LIMIT}GB'
+                    limit = TORRENT_DIRECT_LIMIT
+                if PAID_SERVICE is True:
+                    mssg += f'\n#Buy Paid Service'
+                if limit is not None:
+                    LOGGER.info('Checking File/Folder Size...')
+                    if size > limit * 1024**3:
+                        fmsg = f"{mssg}.\nYour File/Folder size is {get_readable_file_size(size)}"
+                        __onDownloadError(fmsg)
 
 @new_thread
 def __onDownloadComplete(client, tor):
@@ -360,6 +389,7 @@ def __qb_listener():
                     if STOP_DUPLICATE and tor_info.hash not in STOP_DUP_CHECK:
                         STOP_DUP_CHECK.add(tor_info.hash)
                         __stop_duplicate(client, tor_info)
+                    __check_limits(client, tor_info)
                 elif tor_info.state == "stalledDL":
                     if tor_info.hash not in RECHECKED and 0.99989999999999999 < tor_info.progress < 1:
                         msg = f"Force recheck - Name: {tor_info.name} Hash: "
