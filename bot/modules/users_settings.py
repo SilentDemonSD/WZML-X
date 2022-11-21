@@ -4,8 +4,7 @@ from threading import Thread
 from PIL import Image
 from telegram.ext import CommandHandler, CallbackQueryHandler
 
-from bot import user_data, dispatcher, AS_DOCUMENT, DB_URI, PRE_DICT, LEECH_DICT, \
-                 CAP_DICT, REM_DICT, SUF_DICT, CFONT_DICT
+from bot import user_data, dispatcher, AS_DOCUMENT, DB_URI, LEECH_DICT, CAP_DICT, REM_DICT, SUF_DICT, CFONT_DICT
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, sendPhoto
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -19,7 +18,7 @@ def getleechinfo(from_user):
     name = from_user.full_name
     buttons = button_build.ButtonMaker()
     thumbpath = f"Thumbnails/{user_id}.jpg"
-    prefix = PRE_DICT.get(user_id, "Not Exists")
+    prefix = user_data[user_id]['prefix'] if user_id in user_data and user_data[user_id].get('prefix') else "Not Exists"
     suffix = SUF_DICT.get(user_id, "Not Exists")
     caption = CAP_DICT.get(user_id, "Not Exists")
     dumpid = LEECH_DICT.get(user_id, "Not Exists")
@@ -33,7 +32,7 @@ def getleechinfo(from_user):
         ltype = "MEDIA"
         buttons.sbutton("Send As Document", f"leechset {user_id} doc")
         
-    uplan = "Paid User" if user_id in PAID_USERS else "Normal User"
+    uplan = "Paid User" if user_data[user_id].get('is_paid') else "Normal User"
 
     if ospath.exists(thumbpath):
         thumbmsg = "Exists"
@@ -42,7 +41,7 @@ def getleechinfo(from_user):
     else:
         thumbmsg = "Not Exists"
     if prefix != "Not Exists":
-        buttons.sbutton("Delete Prename", f"leechset {user_id} prename")
+        buttons.sbutton("Delete Prename", f"leechset {user_id} prefix")
     if suffix != "Not Exists":
         buttons.sbutton("Delete Suffix", f"leechset {user_id} suffix")
     if caption != "Not Exists": 
@@ -122,11 +121,11 @@ def setLeechType(update, context):
             delo = sendPhoto(text=msg, bot=context.bot, message=message, photo=open(path, 'rb'))
             Thread(args=(context.bot, update.message, delo)).start()
         else: query.answer(text="Send new settings command.")
-    elif data[2] == "prename":
-        PRE_DICT.pop(user_id)
+    elif data[2] == "prefix":
+        update_user_ldata(user_id, 'prefix', False)
         if DB_URI: 
-            DbManger().user_pre(user_id, '')
-        query.answer(text="Your Prename is Successfully Deleted!", show_alert=True)
+            DbManger().update_user_data(user_id)
+        query.answer(text="Your Prefix is Successfully Deleted!", show_alert=True)
         editLeechType(message, query)
     elif data[2] == "suffix":
         SUF_DICT.pop(user_id)
