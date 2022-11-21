@@ -1,11 +1,6 @@
-import datetime
-import html
-import textwrap
-
-import bs4
 import requests
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ParseMode
-from telegram.ext import run_async, CallbackContext, CommandHandler
+from telegram.ext import CallbackContext, CommandHandler
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot import dispatcher, IMAGE_URL, ANILIST_ENABLED
 

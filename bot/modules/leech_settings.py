@@ -1,5 +1,4 @@
 from os import remove as osremove, path as ospath, mkdir
-from sys import prefix
 from threading import Thread
 from PIL import Image
 from telegram.ext import CommandHandler, CallbackQueryHandler

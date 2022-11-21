@@ -1,20 +1,15 @@
 from base64 import b64encode
-from pyrogram import enums
-from re import match as re_match, search as re_search, split as re_split
+from re import match as re_match, split as re_split
 from time import sleep, time
-from os import path as ospath, remove as osremove, listdir, walk
-from shutil import rmtree
+from os import path as ospath
 from threading import Thread
-from subprocess import run as srun
-from pathlib import PurePath
 from telegram.ext import CommandHandler
-from telegram import ParseMode, InlineKeyboardButton
-
-from bot import *
-from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_gdtot_link, is_mega_link, is_gdrive_link, is_unified_link, is_udrive_link, get_content_type, get_readable_time, get_user_task
+from requests import get as rget
+from bot import LOGGER, FSUB, FSUB_CHANNEL_ID, CHANNEL_USERNAME, BOT_PM, download_dict, PAID_SERVICE, OWNER_ID, SUDO_USERS, PAID_USERS, \
+    TOTAL_TASKS_LIMIT, USER_TASKS_LIMIT, TIME_GAP_STORE, DOWNLOAD_DIR, MIRROR_ENABLED, LEECH_ENABLED, dispatcher
+from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_gdtot_link, is_mega_link, is_gdrive_link, is_unified_link, is_udrive_link, get_content_type, get_user_task
 from bot.helper.ext_utils.timegap import timegap_check
-from bot.helper.ext_utils.exceptions import DirectDownloadLinkException, NotSupportedExtractionArchive
-from bot.helper.ext_utils.shortenurl import short_url
+from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from bot.helper.mirror_utils.download_utils.aria2_download import add_aria2c_download
 from bot.helper.mirror_utils.download_utils.gd_downloader import add_gd_download
 from bot.helper.mirror_utils.download_utils.qbit_downloader import QbDownloader
@@ -23,8 +18,7 @@ from bot.helper.mirror_utils.download_utils.direct_link_generator import direct_
 from bot.helper.mirror_utils.download_utils.telegram_downloader import TelegramDownloadHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, delete_all_messages, update_all_messages, auto_delete_upload_message, auto_delete_message
-from bot.helper.ext_utils.telegraph_helper import telegraph
+from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, auto_delete_message
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from .listener import MirrorLeechListener
 

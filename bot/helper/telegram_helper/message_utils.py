@@ -3,13 +3,14 @@ from time import sleep, time
 from telegram import InlineKeyboardMarkup
 from telegram.message import Message
 from telegram.error import RetryAfter
-from pyrogram import enums
+from pyrogram import enums, Client  
 from pyrogram.errors import FloodWait
 from os import remove
+from asyncio import sleep as asleep
 
 from bot import AUTO_DELETE_MESSAGE_DURATION, LOGGER, status_reply_dict, status_reply_dict_lock, \
                 Interval, DOWNLOAD_STATUS_UPDATE_INTERVAL, RSS_CHAT_ID, bot, rss_session, \
-                AUTO_DELETE_UPLOAD_MESSAGE_DURATION, PICS, app
+                AUTO_DELETE_UPLOAD_MESSAGE_DURATION, PICS, app, TELEGRAM_API, TELEGRAM_HASH, USER_STRING_SESSION
 from bot.helper.ext_utils.bot_utils import get_readable_message, setInterval
 
 

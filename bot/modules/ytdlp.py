@@ -1,19 +1,16 @@
 from threading import Thread
-from pyrogram import enums
 from telegram.ext import CommandHandler, CallbackQueryHandler
-from pyrogram import enums
-from time import sleep
 from re import split as re_split
-
-from bot import *
-from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, auto_delete_upload_message, auto_delete_message
+from time import sleep, time
+from bot import LOGGER, FSUB, FSUB_CHANNEL_ID, CHANNEL_USERNAME, BOT_PM, download_dict, OWNER_ID, SUDO_USERS, PAID_SERVICE, PAID_USERS, \
+    USER_TASKS_LIMIT, TOTAL_TASKS_LIMIT, TIME_GAP_STORE, DOWNLOAD_DIR, WATCH_ENABLED, dispatcher
+from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, auto_delete_message
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, is_url, get_user_task
 from bot.helper.ext_utils.timegap import timegap_check
 from bot.helper.mirror_utils.download_utils.yt_dlp_download_helper import YoutubeDLHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.button_build import ButtonMaker
-from telegram import ParseMode, InlineKeyboardButton
 from .listener import MirrorLeechListener
 
 listener_dict = {}

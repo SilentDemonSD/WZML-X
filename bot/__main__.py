@@ -3,22 +3,20 @@ from bs4 import BeautifulSoup
 from signal import signal, SIGINT
 from requests import get as rget
 from urllib.parse import quote as q
-from random import choice
 from os import path as ospath, remove as osremove, execl as osexecl
 from subprocess import run as srun, check_output
-from datetime import datetime, timedelta
-from psutil import disk_usage, cpu_percent, swap_memory, cpu_count, virtual_memory, net_io_counters, boot_time
+from datetime import datetime
+from psutil import disk_usage, cpu_percent, virtual_memory, net_io_counters, boot_time, cpu_count, swap_memory
 from time import time
 from sys import executable
 from telegram import ParseMode
 from telegram.ext import CommandHandler
-import requests
 import pytz
 from bot import bot, dispatcher, updater, botStartTime, TIMEZONE, IGNORE_PENDING_REQUESTS, LOGGER, Interval, INCOMPLETE_TASK_NOTIFIER, \
                     DB_URI, app, main_loop, SET_BOT_COMMANDS, AUTHORIZED_CHATS, EMOJI_THEME, \
-                    START_BTN1_NAME, START_BTN1_URL, START_BTN2_NAME, START_BTN2_URL, CREDIT_NAME, TITLE_NAME, PICS, FINISHED_PROGRESS_STR, UN_FINISHED_PROGRESS_STR, \
+                    START_BTN1_NAME, START_BTN1_URL, START_BTN2_NAME, START_BTN2_URL, TITLE_NAME, PICS, \
                     SHOW_LIMITS_IN_STATS, LEECH_LIMIT, TORRENT_DIRECT_LIMIT, CLONE_LIMIT, MEGA_LIMIT, ZIP_UNZIP_LIMIT, TOTAL_TASKS_LIMIT, USER_TASKS_LIMIT, \
-                    PIXABAY_API_KEY, PIXABAY_CATEGORY, PIXABAY_SEARCH, WALLCRAFT_CATEGORY, WALLTIP_SEARCH, WALLFLARE_SEARCH
+                    PIXABAY_API_KEY, PIXABAY_CATEGORY, PIXABAY_SEARCH, WALLCRAFT_CATEGORY, WALLTIP_SEARCH, WALLFLARE_SEARCH, FINISHED_PROGRESS_STR, UN_FINISHED_PROGRESS_STR
 from .helper.ext_utils.fs_utils import start_cleanup, clean_all, exit_clean_up
 from .helper.ext_utils.telegraph_helper import telegraph
 from .helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time
@@ -27,7 +25,6 @@ from .helper.telegram_helper.bot_commands import BotCommands
 from .helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, sendLogFile, sendPhoto
 from .helper.telegram_helper.filters import CustomFilters
 from .helper.telegram_helper.button_build import ButtonMaker
-from bot.modules.wayback import getRandomUserAgent
 from .modules import authorize, list, cancel_mirror, mirror_status, mirror_leech, clone, ytdlp, shell, eval, \
                     delete, count, leech_settings, search, rss, wayback, speedtest, anilist, bt_select, mediainfo, hash, addons, scraper
 from datetime import datetime

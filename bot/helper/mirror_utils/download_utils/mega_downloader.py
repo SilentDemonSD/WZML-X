@@ -8,7 +8,7 @@ from mega import (MegaApi, MegaListener, MegaRequest, MegaTransfer, MegaError)
 from bot import LOGGER, MEGA_API_KEY, TELEGRAPH_STYLE, download_dict, download_dict_lock, MEGA_LIMIT, STOP_DUPLICATE, ZIP_UNZIP_LIMIT, STORAGE_THRESHOLD, LEECH_LIMIT, MEGA_EMAIL_ID, MEGA_PASSWORD, \
                 OWNER_ID, SUDO_USERS, PAID_USERS, PAID_SERVICE
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, sendStatusMessage, sendStatusMessage, sendFile
-from bot.helper.ext_utils.bot_utils import get_readable_file_size, setInterval, get_mega_link_type
+from bot.helper.ext_utils.bot_utils import get_readable_file_size, get_mega_link_type
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.ext_utils.fs_utils import get_base_name, check_storage_threshold
 from bot.helper.mirror_utils.status_utils.mega_download_status import MegaDownloadStatus

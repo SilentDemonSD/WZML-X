@@ -4,9 +4,7 @@ from bencoding import bencode, bdecode
 from time import sleep, time
 from re import search as re_search
 from os import remove
-from os import path as ospath, listdir
 from time import sleep, time
-from re import search as re_search
 
 from bot import TELEGRAPH_STYLE, download_dict, download_dict_lock, BASE_URL, get_client, TORRENT_DIRECT_LIMIT, ZIP_UNZIP_LIMIT, STOP_DUPLICATE, TORRENT_TIMEOUT, LOGGER, STORAGE_THRESHOLD, LEECH_LIMIT, \
                 OWNER_ID, SUDO_USERS, PAID_USERS, PAID_SERVICE
@@ -15,8 +13,6 @@ from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, deleteMessage, sendStatusMessage, update_all_messages, sendFile
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time, setInterval, bt_selection_buttons
 from bot.helper.ext_utils.fs_utils import clean_unwanted, get_base_name, check_storage_threshold
-from bot.helper.telegram_helper import button_build
-
 
 class QbDownloader:
     POLLING_INTERVAL = 3
