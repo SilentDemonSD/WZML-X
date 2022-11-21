@@ -1,6 +1,4 @@
-import re
 from PIL import Image
-from os import environ, remove, path as ospath, mkdir
 from logging import getLogger, FileHandler, StreamHandler, INFO, basicConfig, error as log_error, info as log_info, warning as log_warning
 from socket import setdefaulttimeout
 from urllib.request import urlretrieve
@@ -8,7 +6,7 @@ from faulthandler import enable as faulthandler_enable
 from telegram.ext import Updater as tgUpdater
 from qbittorrentapi import Client as qbClient
 from aria2p import API as ariaAPI, Client as ariaClient
-from os import remove as osremove, path as ospath, environ
+from os import remove as osremove, path as ospath, environ, mkdir
 from requests import get as rget
 from json import loads as jsonloads
 from subprocess import Popen, run as srun, check_output
@@ -156,7 +154,7 @@ if not ospath.isdir(path):
 photo_dir = path + TGH_THUMB.split('/')[-1]
 urlretrieve(TGH_THUMB, photo_dir)
 Image.open(photo_dir).convert("RGB").save('Thumbnails/weeb.jpg', "JPEG")
-remove(photo_dir)
+osremove(photo_dir)
 
 try:
     aid = getConfig('AUTHORIZED_CHATS')
