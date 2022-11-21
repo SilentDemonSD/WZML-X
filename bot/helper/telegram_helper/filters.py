@@ -26,7 +26,7 @@ class CustomFilters:
 
     class __SudoUser(MessageFilter):
         def filter(self, message: Message):
-            uid = message.chat.id
+            uid = message.from_user.id
             return uid in user_data and user_data[uid].get('is_sudo')
 
     sudo_user = __SudoUser()
