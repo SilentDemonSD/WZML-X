@@ -124,37 +124,37 @@ def setLeechType(update, context):
     elif data[2] == "prefix":
         update_user_ldata(user_id, 'prefix', False)
         if DB_URI: 
-            DbManger().update_prefix(user_id)
+            DbManger().update_userval(user_id, 'prefix')
         query.answer(text="Your Prefix is Successfully Deleted!", show_alert=True)
         editLeechType(message, query)
     elif data[2] == "suffix":
         update_user_ldata(user_id, 'suffix', False)
         if DB_URI: 
-            DbManger().update_suffix(user_id)
+            DbManger().update_userval(user_id, 'suffix')
         query.answer(text="Your Suffix is Successfully Deleted!", show_alert=True)
         editLeechType(message, query)
     elif data[2] == "cap":
         update_user_ldata(user_id, 'caption', False)
         if DB_URI: 
-            DbManger().update_caption(user_id)
+            DbManger().update_userval(user_id, 'caption')
         query.answer(text="Your Caption is Successfully Deleted!", show_alert=True)
         editLeechType(message, query)
     elif data[2] == "rem":
         update_user_ldata(user_id, 'remname', False)
         if DB_URI: 
-            DbManger().update_remname(user_id)
+            DbManger().update_userval(user_id, 'remname')
         query.answer(text="Your Remname is Successfully Deleted!", show_alert=True)
         editLeechType(message, query)
     elif data[2] == "ulog":
         update_user_ldata(user_id, 'userlog', False)
         if DB_URI: 
-            DbManger().update_userlog(user_id)
+            DbManger().update_userval(user_id, 'userlog')
         query.answer(text="Your UserLog is Successfully Deleted!", show_alert=True)
         editLeechType(message, query)
     elif data[2] == "cfont":
         update_user_ldata(user_id, 'cfont', False)
         if DB_URI: 
-            DbManger().update_cfont(user_id)
+            DbManger().update_userval(user_id, 'cfont')
         query.answer(text="Your Caption Font is Successfully Deleted!", show_alert=True)
         editLeechType(message, query)
     else:
