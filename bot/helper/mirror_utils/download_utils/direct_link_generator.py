@@ -114,33 +114,25 @@ def rock(url: str) -> str:
     soup = BeautifulSoup(resp.content, "html.parser")
     
     try: inputs = soup.find(id="go-link").find_all(name="input")
-    except: return "Incorrect Link"
-    
+    except: return "Incorrect Link"    
     data = { input.get('name'): input.get('value') for input in inputs }
-
-    h = { "x-requested-with": "XMLHttpRequest" }
-    
-    time.sleep(10)
+    h = { "x-requested-with": "XMLHttpRequest" } 
+    sleep(10)
     r = client.post(f"{DOMAIN}/links/go", data=data, headers=h)
     try:
         return r.json()['url']
     except: return "Something went wrong :("
 
 def try2link(url):
-    client = create_scraper()
-    
-    url = url[:-1] if url[-1] == '/' else url
-    
+    client = create_scraper()    
+    url = url[:-1] if url[-1] == '/' else url    
     params = (('d', int(time.time()) + (60 * 4)),)
-    r = client.get(url, params=params, headers= {'Referer': 'https://newforex.online/'})
-    
+    r = client.get(url, params=params, headers= {'Referer': 'https://newforex.online/'})   
     soup = BeautifulSoup(r.text, 'html.parser')
     inputs = soup.find_all("input")
     data = { input.get('name'): input.get('value') for input in inputs }
-    time.sleep(7)
-    
-    headers = {'Host': 'try2link.com', 'X-Requested-With': 'XMLHttpRequest', 'Origin': 'https://try2link.com', 'Referer': url}
-    
+    sleep(7)    
+    headers = {'Host': 'try2link.com', 'X-Requested-With': 'XMLHttpRequest', 'Origin': 'https://try2link.com', 'Referer': url}    
     bypassed_url = client.post('https://try2link.com/links/go', headers=headers,data=data)
     return bypassed_url.json()["url"]
 
@@ -154,7 +146,7 @@ def ez4(url):
     inputs = soup.find_all("input")   
     data = { input.get('name'): input.get('value') for input in inputs }
     h = { "x-requested-with": "XMLHttpRequest" }   
-    time.sleep(8)
+    sleep(8)
     r = client.post(f"{DOMAIN}/links/go", data=data, headers=h)
     try:
         return r.json()['url']
