@@ -35,7 +35,7 @@ def prefix_set(update, context):
         else:
             txt = ""
         prefix_ = txt
-        update_user_ldata(user_id, 'prefix', prefix_)
+        update_user_ldata(user_id_, 'prefix', prefix_)
         if DB_URI:
             DbManger().user_prefix(user_id_, prefix_)
             LOGGER.info(f"User : {user_id_} Prefix is Saved in DB")
