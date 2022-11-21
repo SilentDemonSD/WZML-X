@@ -1,5 +1,3 @@
-
-
 from random import random, choice
 
 from cfscrape import create_scraper

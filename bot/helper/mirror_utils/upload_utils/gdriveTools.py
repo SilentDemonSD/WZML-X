@@ -1,4 +1,3 @@
-from asyncio import exceptions
 from logging import getLogger, ERROR
 from time import time
 from pickle import load as pload

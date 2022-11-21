@@ -1,28 +1,23 @@
 from requests import utils as rutils
-from subprocess import run as srun
 from random import choice
-from pathlib import PurePath
-from telegram.ext import CommandHandler
-from re import match as re_match, search as re_search, split as re_split
+from re import search as re_search
 from time import sleep, time
-from base64 import b64encode
-from shutil import rmtree
 from os import path as ospath, remove as osremove, listdir, walk
 from subprocess import Popen
 from html import escape
 from threading import Thread
-from telegram import ParseMode, InlineKeyboardButton
+from telegram import ParseMode
 
 from bot import NAME_FONT, bot, Interval, INDEX_URL, BUTTON_FOUR_NAME, BUTTON_FOUR_URL, BUTTON_FIVE_NAME, BUTTON_FIVE_URL, \
                 BUTTON_SIX_NAME, BUTTON_SIX_URL, VIEW_LINK, aria2, dispatcher, DOWNLOAD_DIR, \
                 download_dict, download_dict_lock, TG_SPLIT_SIZE, LOGGER, DB_URI, INCOMPLETE_TASK_NOTIFIER, \
                 LEECH_LOG, BOT_PM, MIRROR_LOGS, SOURCE_LINK, AUTO_DELETE_UPLOAD_MESSAGE_DURATION, \
-                MIRROR_ENABLED, LEECH_ENABLED, WATCH_ENABLED, CLONE_ENABLED, LINK_LOGS, EMOJI_THEME, \
+                LINK_LOGS, EMOJI_THEME, \
                 MIRROR_LOG_URL, LEECH_LOG_URL, TITLE_NAME, LEECH_LOG_INDEXING, PICS, NAME_FONT, FORCE_BOT_PM, DISABLE_DRIVE_LINK, \
                 PRE_DICT, REM_DICT, SUF_DICT
-from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_gdtot_link, is_mega_link, is_gdrive_link, get_content_type, get_readable_time
+from bot.helper.ext_utils.bot_utils import is_url, is_magnet, get_readable_time
 from bot.helper.ext_utils.fs_utils import get_base_name, get_path_size, split_file, clean_download, clean_target
-from bot.helper.ext_utils.exceptions import DirectDownloadLinkException, NotSupportedExtractionArchive
+from bot.helper.ext_utils.exceptions import NotSupportedExtractionArchive
 from bot.helper.mirror_utils.status_utils.extract_status import ExtractStatus
 from bot.helper.mirror_utils.status_utils.zip_status import ZipStatus
 from bot.helper.mirror_utils.status_utils.split_status import SplitStatus

@@ -3,13 +3,14 @@ from time import sleep, time
 from telegram import InlineKeyboardMarkup
 from telegram.message import Message
 from telegram.error import RetryAfter
-from pyrogram import enums
+from pyrogram import enums, Client  
 from pyrogram.errors import FloodWait
 from os import remove
+from asyncio import sleep as asleep
 
 from bot import AUTO_DELETE_MESSAGE_DURATION, LOGGER, status_reply_dict, status_reply_dict_lock, \
                 Interval, DOWNLOAD_STATUS_UPDATE_INTERVAL, RSS_CHAT_ID, bot, rss_session, \
-                AUTO_DELETE_UPLOAD_MESSAGE_DURATION, PICS, app
+                AUTO_DELETE_UPLOAD_MESSAGE_DURATION, PICS, app, TELEGRAM_API, TELEGRAM_HASH, USER_SESSION_STRING
 from bot.helper.ext_utils.bot_utils import get_readable_message, setInterval
 
 
@@ -90,7 +91,7 @@ def sendRss(text: str, bot):
 
 
 async def sendRss_pyro(text: str):
-    rss_session = Client(name='rss_session', api_id=int(TELEGRAM_API), api_hash=TELEGRAM_HASH, session_string=USER_STRING_SESSION, parse_mode=enums.ParseMode.HTML)
+    rss_session = Client(name='rss_session', api_id=int(TELEGRAM_API), api_hash=TELEGRAM_HASH, session_string=USER_SESSION_STRING, parse_mode=enums.ParseMode.HTML)
     await rss_session.start()
     try:
         return await rss_session.send_message(RSS_CHAT_ID, text, disable_web_page_preview=True)

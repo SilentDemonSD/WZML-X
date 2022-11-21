@@ -12,11 +12,10 @@ import math
 
 from requests import get as rget, head as rhead, post as rpost, Session as rsession
 from re import findall as re_findall, sub as re_sub, match as re_match, search as re_search
-import requests
 import re
-from time import sleep, time
+from time import sleep
 from base64 import b64decode
-from urllib.parse import urlparse, unquote, parse_qs
+from urllib.parse import urlparse, unquote
 from json import loads as jsonloads
 from lk21 import Bypass
 from lxml import etree
@@ -24,12 +23,10 @@ from cfscrape import create_scraper
 import cloudscraper
 from bs4 import BeautifulSoup
 from base64 import standard_b64encode
-from selenium import webdriver
-from selenium.webdriver.common.by import By
 
 from bot import LOGGER, UPTOBOX_TOKEN, CRYPT, UNIFIED_EMAIL, UNIFIED_PASS, HUBDRIVE_CRYPT, KATDRIVE_CRYPT, DRIVEFIRE_CRYPT
 from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.ext_utils.bot_utils import *
+from bot.helper.ext_utils.bot_utils import is_gdtot_link, is_unified_link, is_udrive_link
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 
 fmed_list = ['fembed.net', 'fembed.com', 'femax20.com', 'fcdn.stream', 'feurl.com', 'layarkacaxxi.icu',

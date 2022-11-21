@@ -1,5 +1,3 @@
-import re
-import os
 from logging import getLogger, ERROR
 from os import remove as osremove, walk, path as ospath, rename as osrename
 from time import time, sleep
@@ -9,9 +7,8 @@ from threading import RLock
 from bot import AS_DOCUMENT, AS_DOC_USERS, AS_MEDIA_USERS, EXTENSION_FILTER, \
                 app, LEECH_LOG, BOT_PM, tgBotMaxFileSize, premium_session, CAPTION_FONT, \
                 PRE_DICT, LEECH_DICT, LOG_LEECH, CAP_DICT, REM_DICT, SUF_DICT, CFONT_DICT
-from bot.helper.ext_utils.fs_utils import take_ss, get_media_info, get_media_streams, get_path_size, clean_unwanted
+from bot.helper.ext_utils.fs_utils import take_ss, get_media_info, get_media_streams, clean_unwanted
 from bot.helper.ext_utils.bot_utils import get_readable_file_size
-from pyrogram.types import Message
 
 LOGGER = getLogger(__name__)
 getLogger("pyrogram").setLevel(ERROR)

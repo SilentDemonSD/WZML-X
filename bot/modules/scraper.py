@@ -1,20 +1,19 @@
 import cloudscraper
 import requests
 import re
-from re import S
-from re import match as rematch, findall, sub as resub
+from re import match as rematch, sub as resub
 from asyncio import sleep as asleep
 from time import sleep
-from urllib.parse import urlparse, unquote
-from requests import get as rget, head as rhead
+from urllib.parse import unquote
+from requests import get as rget
 from bs4 import BeautifulSoup, NavigableString, Tag
 
 from telegram import Message
 from telegram.ext import CommandHandler
-from bot import LOGGER, dispatcher, PAID_SERVICE, PAID_USERS, OWNER_ID
+from bot import dispatcher, PAID_SERVICE, PAID_USERS, OWNER_ID
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage
+from bot.helper.telegram_helper.message_utils import sendMessage, editMessage
 
 def scrapper(update, context):
     user_id_ = update.message.from_user.id

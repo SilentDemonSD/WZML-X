@@ -3,7 +3,7 @@ from time import time, sleep
 from threading import Thread
 from telegram.ext import CommandHandler, CallbackQueryHandler
 
-from bot import dispatcher, status_reply_dict, status_reply_dict_lock, \
+from bot import dispatcher, status_reply_dict_lock, \
                 download_dict, download_dict_lock, botStartTime, DOWNLOAD_DIR, \
                 OWNER_ID, Interval, DOWNLOAD_STATUS_UPDATE_INTERVAL, PICS
 from bot.helper.telegram_helper.message_utils import sendMessage, deleteMessage, auto_delete_message, sendStatusMessage, update_all_messages, delete_all_messages, editMessage, editCaption 
