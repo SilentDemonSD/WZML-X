@@ -7,8 +7,7 @@ from pyrogram.errors import FloodWait, RPCError
 from PIL import Image
 from threading import RLock
 from bot import AS_DOCUMENT, user_data, EXTENSION_FILTER, \
-                app, BOT_PM, tgBotMaxFileSize, premium_session, CAPTION_FONT, \
-                PRE_DICT, LEECH_DICT, CAP_DICT, REM_DICT, SUF_DICT, CFONT_DICT
+                app, BOT_PM, tgBotMaxFileSize, premium_session, CAPTION_FONT
 from bot.helper.ext_utils.fs_utils import take_ss, get_media_info, get_media_streams, get_path_size, clean_unwanted
 from bot.helper.ext_utils.bot_utils import get_readable_file_size
 from pyrogram.types import Message
@@ -77,13 +76,14 @@ class TgUploader:
 
     def __upload_file(self, up_path, file_, dirpath):
         fsize = ospath.getsize(up_path)
+        user_id_ = self.__listener.message.from_user.id
         # Initial Values >>>>
         client = premium_session if fsize > 2097152000 else app
-        PRENAME = PRE_DICT.get(self.__listener.message.from_user.id, "")
-        CAPTION = CAP_DICT.get(self.__listener.message.from_user.id, "")
-        REMNAME = REM_DICT.get(self.__listener.message.from_user.id, "")
-        SUFFIX = SUF_DICT.get(self.__listener.message.from_user.id, "")
-        FSTYLE = CFONT_DICT.get(self.__listener.message.from_user.id, ["", ""])[1]
+        PREFIX = user_data[user_id_].get('prefix') if user_id_ in user_data and user_data[user_id_].get('prefix') else ''
+        CAPTION = user_data[user_id_].get('caption') if user_id_ in user_data and user_data[user_id_].get('caption') else ''
+        REMNAME = user_data[user_id_].get('remname') if user_id_ in user_data and user_data[user_id_].get('remname') else ''
+        SUFFIX = user_data[user_id_].get('suffix') if user_id_ in user_data and user_data[user_id_].get('suffix') else ''
+        FSTYLE = user_data[user_id_].get('cfont')[1] if user_id_ in user_data and user_data[user_id_].get('cfont') else ''
 
         #MysteryStyle
         if file_.startswith('www'):
@@ -103,9 +103,9 @@ class TgUploader:
                     __newFileName = __newFileName.replace(args[0], '')
             file_ = __newFileName
             LOGGER.info("Remname : "+file_)
-        if PRENAME:
-            if not file_.startswith(PRENAME):
-                file_ = f"{PRENAME}{file_}"
+        if PREFIX:
+            if not file_.startswith(PREFIX):
+                file_ = f"{PREFIX}{file_}"
         if SUFFIX:
             sufLen = len(SUFFIX)
             fileDict = file_.split('.')
@@ -141,7 +141,7 @@ class TgUploader:
         else:
             cap_mono = file_ if FSTYLE == 'r' else f"<{cfont}>{file_}</{cfont}>"
 
-        dumpid = LEECH_DICT.get(self.__listener.message.from_user.id, "")
+        dumpid = user_data[user_id_].get('userlog') if user_id_ in user_data and user_data[user_id_].get('userlog') else ''
         if len(dumpid) != 0:
             LEECH_X = int(dumpid)
         else:
