@@ -37,7 +37,7 @@ def prefix_set(update, context):
         prefix_ = txt
         update_user_ldata(user_id_, 'prefix', prefix_)
         if DB_URI:
-            DbManger().user_prefix(user_id_, prefix_)
+            DbManger().update_prefix(user_id_, prefix_)
             LOGGER.info(f"User : {user_id_} Prefix is Saved in DB")
         editMessage(f"<u><b><a href='tg://user?id={user_id_}'>{u_men}</a>'s Prefix is Set Successfully</b></u>\n\n<b>• Prefix Text: </b>{txt}", lm)
 
