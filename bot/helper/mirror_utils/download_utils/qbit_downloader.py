@@ -199,22 +199,22 @@ def __check_limits(client, tor):
                 __onDownloadError(msg)
                 return
                 limit = None
-                if ZIP_UNZIP_LIMIT is not None and arch:
-                    mssg = f'Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB'
-                    limit = ZIP_UNZIP_LIMIT
-                if LEECH_LIMIT is not None and listener.isLeech:
-                    mssg = f'Leech limit is {LEECH_LIMIT}GB'
-                    limit = LEECH_LIMIT
-                elif TORRENT_DIRECT_LIMIT is not None:
-                    mssg = f'Torrent limit is {TORRENT_DIRECT_LIMIT}GB'
-                    limit = TORRENT_DIRECT_LIMIT
-                if PAID_SERVICE is True:
-                    mssg += f'\n#Buy Paid Service'
-                if limit is not None:
-                    LOGGER.info('Checking File/Folder Size...')
-                    if size > limit * 1024**3:
-                        fmsg = f"{mssg}.\nYour File/Folder size is {get_readable_file_size(size)}"
-                        __onDownloadError(fmsg)
+        if ZIP_UNZIP_LIMIT is not None and arch:
+            mssg = f'Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB'
+            limit = ZIP_UNZIP_LIMIT
+        if LEECH_LIMIT is not None and listener.isLeech:
+            mssg = f'Leech limit is {LEECH_LIMIT}GB'
+            limit = LEECH_LIMIT
+        elif TORRENT_DIRECT_LIMIT is not None:
+            mssg = f'Torrent limit is {TORRENT_DIRECT_LIMIT}GB'
+            limit = TORRENT_DIRECT_LIMIT
+        if PAID_SERVICE is True:
+            mssg += f'\n#Buy Paid Service'
+        if limit is not None:
+            LOGGER.info('Checking File/Folder Size...')
+            if size > limit * 1024**3:
+                fmsg = f"{mssg}.\nYour File/Folder size is {get_readable_file_size(size)}"
+                __onDownloadError(fmsg)
 
 @new_thread
 def __onDownloadComplete(client, tor):
