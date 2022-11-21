@@ -2,7 +2,7 @@ from pyrogram import enums
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, ConversationHandler
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-from bot import bot, user_data, LOGGER, DB_URI, OWNER_ID, LEECH_DICT, dispatcher, CAP_DICT, PAID_SERVICE, REM_DICT, SUF_DICT, CFONT_DICT, CAPTION_FONT
+from bot import bot, user_data, LOGGER, DB_URI, OWNER_ID, dispatcher, PAID_SERVICE, CFONT_DICT, CAPTION_FONT
 from bot.helper.telegram_helper.message_utils import *
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -47,7 +47,7 @@ def suffix_set(update, context):
     u_men = update.message.from_user.first_name
 
     if PAID_SERVICE is True:
-        if not (user_id_ in PAID_USERS) and user_id_ != OWNER_ID:
+        if not user_data[user_id].get('is_paid') and user_id_ != OWNER_ID:
             sendMessage(f"Buy Paid Service to Use this Suffix Feature.", context.bot, update.message)
             return
     if (BotCommands.SufNameCommand in update.message.text) and (len(update.message.text.split(' ')) == 1):
@@ -67,9 +67,9 @@ def suffix_set(update, context):
         else:
             txt = ""
         suffix_ = txt
-        SUF_DICT[user_id_] = suffix_
+        update_user_ldata(user_id_, 'suffix', suffix_)
         if DB_URI:
-            DbManger().user_suf(user_id_, suffix_)
+            DbManger().update_suffix(user_id_, suffix_)
             LOGGER.info(f"User : {user_id_} Suffix is Saved in DB")
         editMessage(f"<u><b><a href='tg://user?id={user_id_}'>{u_men}</a>'s Suffix is Set Successfully 🚀</b></u>\n\n<b>• Suffix Text: </b>{txt}", lm)
 
@@ -80,7 +80,7 @@ def caption_set(update, context):
     buttons = ButtonMaker()
 
     if PAID_SERVICE is True:
-        if not (user_id_ in PAID_USERS) and user_id_ != OWNER_ID:
+        if not user_data[user_id].get('is_paid') and user_id_ != OWNER_ID:
             sendMessage(f"Buy Paid Service to Use this Caption Feature.", context.bot, update.message)
             return
     buttons.sbutton("🛠 Change Font Style", f"capfont {user_id_} font")
@@ -117,9 +117,9 @@ def caption_set(update, context):
         else:
             txt = ""
         caption_ = txt
-        CAP_DICT[user_id_] = caption_
+        update_user_ldata(user_id_, 'caption', caption_)
         if DB_URI:
-            DbManger().user_cap(user_id_, caption_)
+            DbManger().update_caption(user_id_, caption_)
             LOGGER.info(f"User : {user_id_} Caption is Saved in DB")
         editMessage(f"<b><u><a href='tg://user?id={user_id_}'>{u_men}</a>'s Caption is Set Successfully :</u></b>\n\n<b>• Caption Text: </b>{txt}", lm, button)
 
@@ -208,7 +208,7 @@ def userlog_set(update, context):
     u_men = update.message.from_user.first_name
 
     if PAID_SERVICE is True:
-        if not (user_id_ in PAID_USERS) and user_id_ != OWNER_ID:
+        if not user_data[user_id].get('is_paid') and user_id_ != OWNER_ID:
             sendMessage(f"Buy Paid Service to Use this Dump Feature.", context.bot, update.message)
             return
     if (BotCommands.UserLogCommand in update.message.text) and (len(update.message.text.split(' ')) == 1):
@@ -235,15 +235,15 @@ def userlog_set(update, context):
         editMessage("<i>Checking Your Channel Interaction ...</i> ♻️", lm)
         bot.sendMessage(chat_id=dumpid_, text=f'''╭─《 WZML DUMP CHANNEL 》
 │
-├🆔 <b>Dump ID :</b> <code>{dumpid_}</code>
+├🆔 <b>UserLog ID :</b> <code>{dumpid_}</code>
 │
 ╰📂 <i>From Now On, The Bot will Send you Files in this Channel !!</i>''',  parse_mode='HTML')
     except Exception as err:
         editMessage(f"<i>Make Sure You have Added the Bot as Admin with Post Permission, Retry Again.</i>\n\nError : {err}", lm)
         return
-    LEECH_DICT[user_id_] = str(dumpid_)
+    update_user_ldata(user_id_, 'userlog', str(dumpid_))
     if DB_URI:
-        DbManger().user_dump(user_id_, str(dumpid_))
+        DbManger().update_userlog(user_id_, str(dumpid_))
         LOGGER.info(f"User : {user_id_} LeechLog ID Saved in DB")
     editMessage(f"<b><a href='tg://user?id={user_id_}'>{u_men}</a>'s Dump Channel ID Saved Successfully...🛸</b>", lm)
 
@@ -253,7 +253,7 @@ def remname_set(update, context):
     u_men = update.message.from_user.first_name
 
     if PAID_SERVICE is True:
-        if not (user_id_ in PAID_USERS) and user_id_ != OWNER_ID:
+        if not user_data[user_id].get('is_paid') and user_id_ != OWNER_ID:
             sendMessage(f"Buy Paid Service to Use this Remname Feature.", context.bot, update.message)
             return
     if (BotCommands.RemnameCommand in update.message.text) and (len(update.message.text.split(' ')) == 1):
@@ -282,9 +282,9 @@ def remname_set(update, context):
         else:
             txt = ""
         remname_ = txt
-        REM_DICT[user_id_] = remname_
+        update_user_ldata(user_id_, 'remname', remname_)
         if DB_URI:
-            DbManger().user_rem(user_id_, remname_)
+            DbManger().update_remname(user_id_, remname_)
             LOGGER.info(f"User : {user_id_} Remname is Saved in DB")
         editMessage(f"<b><a href='tg://user?id={user_id_}'>{u_men}</a>'s Remname is Set Successfully :</b>\n\n<b>• Remname Text: </b>{txt}", lm)
 
