@@ -147,57 +147,57 @@ def setCapFont(update, context):
         editMessage("<u>Change your Font Style from below:</u>\n\n• Current Style : " + CFONT_DICT.get(user_id_, [f'{FONT_SPELL[str(CAPTION_FONT)]} (Default)'])[0], message, btns)
     elif data[2] == "Spoiler":
         eVal = ["<tg-spoiler>Spoiler</tg-spoiler>", "tg-spoiler"]
-        CFONT_DICT[user_id_] = eVal
+        update_user_ldata(user_id_, 'cfont', eVal)
         if DB_URI:
-            DbManger().user_cfont(user_id_, eVal)
+            DbManger().update_cfont(user_id_, eVal)
             LOGGER.info(f"User : {user_id_} Font Style Saved in DB")
         query.answer(text="Font Style changed to Spoiler!", show_alert=True)
         editMessage("<u>Change your Font Style from below:</u>\n\n• Current Style : "+ CFONT_DICT.get(user_id_)[0], message, btns)
     elif data[2] == "Italics":
         eVal = ["<i>Italics</i>", "i"]
-        CFONT_DICT[user_id_] = eVal
+        update_user_ldata(user_id_, 'cfont', eVal)
         if DB_URI:
-            DbManger().user_cfont(user_id_, eVal)
+            DbManger().update_cfont(user_id_, eVal)
             LOGGER.info(f"User : {user_id_} Font Style Saved in DB")
         query.answer(text="Font Style changed to Italics!", show_alert=True)
         editMessage("<u>Change your Font Style from below:</u>\n\n• Current Style : "+ CFONT_DICT.get(user_id_)[0], message, btns)
     elif data[2] == "Code":
         eVal = ["<code>Monospace</code>", "code"]
-        CFONT_DICT[user_id_] = eVal
+        update_user_ldata(user_id_, 'cfont', eVal)
         if DB_URI:
-            DbManger().user_cfont(user_id_, eVal)
+            DbManger().update_cfont(user_id_, eVal)
             LOGGER.info(f"User : {user_id_} Font Style Saved in DB")
         query.answer(text="Font Style changed to Monospace!", show_alert=True)
         editMessage("<u>Change your Font Style from below:</u>\n\n• Current Style : "+ CFONT_DICT.get(user_id_)[0], message, btns)
     elif data[2] == "Strike":
         eVal = ["<s>Strike</s>", "s"]
-        CFONT_DICT[user_id_] = eVal
+        update_user_ldata(user_id_, 'cfont', eVal)
         if DB_URI:
-            DbManger().user_cfont(user_id_, eVal)
+            DbManger().update_cfont(user_id_, eVal)
             LOGGER.info(f"User : {user_id_} Font Style Saved in DB")
         query.answer(text="Font Style changed to Strike!", show_alert=True)
         editMessage("<u>Change your Font Style from below:</u>\n\n• Current Style : "+ CFONT_DICT.get(user_id_)[0], message, btns)
     elif data[2] == "Underline":
         eVal = ["<u>Underline</u>", "u"]
-        CFONT_DICT[user_id_] = eVal
+        update_user_ldata(user_id_, 'cfont', eVal)
         if DB_URI:
-            DbManger().user_cfont(user_id_, eVal)
+            DbManger().update_cfont(user_id_, eVal)
             LOGGER.info(f"User : {user_id_} Font Style Saved in DB")
         query.answer(text="Font Style changed to Underline!", show_alert=True)
         editMessage("<u>Change your Font Style from below:</u>\n\n• Current Style : "+ CFONT_DICT.get(user_id_)[0], message, btns)
     elif data[2] == "Bold":
         eVal = ["<b>Bold</b>", "b"]
-        CFONT_DICT[user_id_] = eVal
+        update_user_ldata(user_id_, 'cfont', eVal)
         if DB_URI:
-            DbManger().user_cfont(user_id_, eVal)
+            DbManger().update_cfont(user_id_, eVal)
             LOGGER.info(f"User : {user_id_} Font Style Saved in DB")
         query.answer(text="Font Style changed to Bold!", show_alert=True)
         editMessage("<u>Change your Font Style from below:</u>\n\n• Current Style : "+ CFONT_DICT.get(user_id_)[0], message, btns)
     elif data[2] == "Regular":
         eVal = ["Regular", "r"]
-        CFONT_DICT[user_id_] = eVal
+        update_user_ldata(user_id_, 'cfont', eVal)
         if DB_URI:
-            DbManger().user_cfont(user_id_, eVal)
+            DbManger().update_cfont(user_id_, eVal)
             LOGGER.info(f"User : {user_id_} Font Style Saved in DB")
         query.answer(text="Font Style changed to Regular!", show_alert=True)
         editMessage("<u>Change your Font Style from below:</u>\n\n• Current Style : "+ CFONT_DICT.get(user_id_)[0], message, btns)
