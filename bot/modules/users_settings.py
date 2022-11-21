@@ -32,7 +32,7 @@ def getleechinfo(from_user):
         ltype = "MEDIA"
         buttons.sbutton("Send As Document", f"leechset {user_id} doc")
         
-    uplan = "Paid User" if user_data[user_id].get('is_paid') else "Normal User"
+    uplan = "Paid User" if user_id in user_data and (user_data[user_id].get('is_paid')) else "Normal User"
 
     if ospath.exists(thumbpath):
         thumbmsg = "Exists"
