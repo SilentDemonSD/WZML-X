@@ -21,53 +21,6 @@ class DbManger:
             LOGGER.error(f"Error in DB connection: {e}")
             self.__err = True
 
-
-
-    #     try:
-    #         self.conn = connect(DB_URI)
-    #         self.cur = self.conn.cursor()
-    #     except DatabaseError as error:
-    #         LOGGER.error(f"Error in DB connection: {error}")
-    #         self.err = True
-
-    # def disconnect(self):
-    #     self.cur.close()
-    #     self.conn.close()
-
-    # def db_init(self):
-    #     if self.err:
-    #         return
-    #     sql = """CREATE TABLE IF NOT EXISTS users (
-    #              uid bigint,
-    #              sudo boolean DEFAULT FALSE,
-    #              auth boolean DEFAULT FALSE,
-    #              media boolean DEFAULT FALSE,
-    #              doc boolean DEFAULT FALSE,
-    #              pre text DEFAULT NULL,
-    #              suf text DEFAULT NULL,
-    #              cap text DEFAULT NULL,
-    #              rem text DEFAULT NULL,
-    #              dump text DEFAULT NULL,
-    #              paid boolean DEFAULT FALSE,
-    #              thumb bytea DEFAULT NULL,
-    #              leechlog boolean DEFAULT FALSE,
-    #              cfont text ARRAY
-    #              )"""
-    #     self.cur.execute(sql)
-    #     sql = """CREATE TABLE IF NOT EXISTS rss (
-    #              name text,
-    #              link text,
-    #              last text,
-    #              title text,
-    #              filters text
-    #           )
-    #           """
-    #     self.cur.execute(sql)
-    #     self.cur.execute("CREATE TABLE IF NOT EXISTS {} (cid bigint, link text, tag text)".format(botname))
-    #     self.conn.commit()
-    #     LOGGER.info("Database Initiated")
-    #     self.db_load()
-
     def db_load(self):
         if self.__err:
             return
@@ -95,57 +48,6 @@ class DbManger:
                 rss_dict[title] = row
             LOGGER.info("Rss data has been imported from Database.")
 
-
-
-        #         if row[1] and row[0] not in SUDO_USERS:
-        #             SUDO_USERS.add(row[0])
-        #         elif row[2] and row[0] not in AUTHORIZED_CHATS:
-        #             AUTHORIZED_CHATS.add(row[0])
-        #         if row[3]:
-        #             AS_MEDIA_USERS.add(row[0])
-        #         elif row[4]:
-        #             AS_DOC_USERS.add(row[0])
-        #         if row[5]:
-        #             PRE_DICT[row[0]] = row[5]
-        #         if row[6]:
-        #             SUF_DICT[row[0]] = row[6]
-        #         if row[7]:
-        #             CAP_DICT[row[0]] = row[7]
-        #         if row[8]:
-        #             REM_DICT[row[0]] = row[8]
-        #         if row[9]:
-        #             LEECH_DICT[row[0]] = row[9]
-        #         if row[10] and row[0] not in PAID_USERS:
-        #             PAID_USERS.add(row[0])
-        #         path = f"Thumbnails/{row[0]}.jpg"
-        #         if row[11] is not None and not ospath.exists(path):
-        #             if not ospath.exists('Thumbnails'):
-        #                 makedirs('Thumbnails')
-        #             with open(path, 'wb+') as f:
-        #                 f.write(row[11])
-        #         if row[12] and row[0] not in LEECH_LOG:
-        #             LEECH_LOG.add(row[0])
-        #         if row[13]:
-        #             CFONT_DICT[row[0]] = row[13]
-
-
-
-        #     LOGGER.info("Users data has been imported from Database")
-        # # Rss Data
-        # self.cur.execute("SELECT * FROM rss")
-        # rows = self.cur.fetchall()  # return a list ==> (name, feed_link, last_link, last_title, filters)
-        # if rows:
-        #     for row in rows:
-        #         f_lists = []
-        #         if row[4] is not None:
-        #             filters_list = row[4].split('|')
-        #             for x in filters_list:
-        #                 y = x.split(' or ')
-        #                 f_lists.append(y)
-        #         rss_dict[row[0]] = [row[1], row[2], row[3], f_lists]
-        #     LOGGER.info("Rss data has been imported from Database.")
-        # self.disconnect()
-
     def update_user_data(self, user_id):
         if self.__err:
             return
@@ -163,6 +65,15 @@ class DbManger:
         else:
             image_bin = False
         self.__db.users.update_one({'_id': user_id}, {'$set': {'thumb': image_bin}}, upsert=True)
+
+    def update_prefix(self, user_id, value=None):
+        if self.__err:
+            return
+        if value is not None:
+            dbval = value
+        else:
+            dbval = False
+        self.__db.users.update_one({'_id': user_id}, {'$set': {'prefix': dbval}}, upsert=True)
 
     def rss_update(self, title):
         if self.__err:
