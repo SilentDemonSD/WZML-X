@@ -153,7 +153,7 @@ def scrapper(update, context):
           soup = BeautifulSoup (r, "html.parser")
           for a in soup.find_all("a"):
              c = a.get("href")
-             if "shortingly" in c:
+             if c and "shortingly" in c:
                        link = c
                        g = rock(link) 
                        t = client.get(g).text
@@ -167,11 +167,11 @@ def scrapper(update, context):
          soup = BeautifulSoup (r, "html.parser")
          for a in soup.find_all("a"):
                    c= a.get("href")
-                   if "redirect/main.php?" in c:
+                   if c and "redirect/main.php?" in c:
                        download = get(c, stream=True, allow_redirects=False)
                        link = download.headers["location"]
                        g = rock(link)
-                       if "gdtot" in g:
+                       if g and "gdtot" in g:
                            t = client.get(g).text
                            soupt = BeautifulSoup(t, "html.parser")
                            title = soupt.title
