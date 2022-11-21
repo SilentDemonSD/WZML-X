@@ -19,11 +19,11 @@ def getleechinfo(from_user):
     buttons = button_build.ButtonMaker()
     thumbpath = f"Thumbnails/{user_id}.jpg"
     prefix = user_data[user_id]['prefix'] if user_id in user_data and user_data[user_id].get('prefix') else "Not Exists"
-    suffix = user_data[user_id]['suffix'] if user_id in user_data and user_data[user_id].get('prefix') else "Not Exists"
-    caption = user_data[user_id]['caption'] if user_id in user_data and user_data[user_id].get('prefix') else "Not Exists"
-    userlog = user_data[user_id]['userlog'] if user_id in user_data and user_data[user_id].get('prefix') else "Not Exists"
-    remname = user_data[user_id]['remname'] if user_id in user_data and user_data[user_id].get('prefix') else "Not Exists"
-    cfont = user_data[user_id]['cfont'] if user_id in user_data and user_data[user_id].get('prefix') else "Not Exists"
+    suffix = user_data[user_id]['suffix'] if user_id in user_data and user_data[user_id].get('suffix') else "Not Exists"
+    caption = user_data[user_id]['caption'] if user_id in user_data and user_data[user_id].get('caption') else "Not Exists"
+    userlog = user_data[user_id]['userlog'] if user_id in user_data and user_data[user_id].get('userlog') else "Not Exists"
+    remname = user_data[user_id]['remname'] if user_id in user_data and user_data[user_id].get('remname') else "Not Exists"
+    cfont = user_data[user_id]['cfont'] if user_id in user_data and user_data[user_id].get('cfont') else "Not Exists"
     if user_id in user_data and (user_data[user_id].get('as_doc') or not user_data[user_id].get('as_media')) \
        and AS_DOCUMENT:
         ltype = "DOCUMENT"
