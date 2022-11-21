@@ -37,7 +37,7 @@ def prefix_set(update, context):
         prefix_ = txt
         update_user_ldata(user_id_, 'prefix', prefix_)
         if DB_URI:
-            DbManger().update_prefix(user_id_, prefix_)
+            DbManger().update_userval(user_id_, 'prefix', prefix_)
             LOGGER.info(f"User : {user_id_} Prefix is Saved in DB")
         editMessage(f"<u><b><a href='tg://user?id={user_id_}'>{u_men}</a>'s Prefix is Set Successfully</b></u>\n\n<b>• Prefix Text: </b>{txt}", lm)
 
@@ -69,7 +69,7 @@ def suffix_set(update, context):
         suffix_ = txt
         update_user_ldata(user_id_, 'suffix', suffix_)
         if DB_URI:
-            DbManger().update_suffix(user_id_, suffix_)
+            DbManger().update_userval(user_id_, 'suffix', suffix_)
             LOGGER.info(f"User : {user_id_} Suffix is Saved in DB")
         editMessage(f"<u><b><a href='tg://user?id={user_id_}'>{u_men}</a>'s Suffix is Set Successfully 🚀</b></u>\n\n<b>• Suffix Text: </b>{txt}", lm)
 
@@ -119,7 +119,7 @@ def caption_set(update, context):
         caption_ = txt
         update_user_ldata(user_id_, 'caption', caption_)
         if DB_URI:
-            DbManger().update_caption(user_id_, caption_)
+            DbManger().update_userval(user_id_, 'caption', caption_)
             LOGGER.info(f"User : {user_id_} Caption is Saved in DB")
         editMessage(f"<b><u><a href='tg://user?id={user_id_}'>{u_men}</a>'s Caption is Set Successfully :</u></b>\n\n<b>• Caption Text: </b>{txt}", lm, button)
 
@@ -243,7 +243,7 @@ def userlog_set(update, context):
         return
     update_user_ldata(user_id_, 'userlog', str(dumpid_))
     if DB_URI:
-        DbManger().update_userlog(user_id_, str(dumpid_))
+        DbManger().update_userval(user_id_, 'userlog', str(dumpid_))
         LOGGER.info(f"User : {user_id_} LeechLog ID Saved in DB")
     editMessage(f"<b><a href='tg://user?id={user_id_}'>{u_men}</a>'s Dump Channel ID Saved Successfully...🛸</b>", lm)
 
@@ -284,7 +284,7 @@ def remname_set(update, context):
         remname_ = txt
         update_user_ldata(user_id_, 'remname', remname_)
         if DB_URI:
-            DbManger().update_remname(user_id_, remname_)
+            DbManger().update_userval(user_id_, 'remname', remname_)
             LOGGER.info(f"User : {user_id_} Remname is Saved in DB")
         editMessage(f"<b><a href='tg://user?id={user_id_}'>{u_men}</a>'s Remname is Set Successfully :</b>\n\n<b>• Remname Text: </b>{txt}", lm)
 
