@@ -4,7 +4,7 @@ from threading import Thread
 from PIL import Image
 from telegram.ext import CommandHandler, CallbackQueryHandler
 
-from bot import user_data, dispatcher, AS_DOCUMENT, DB_URI, LEECH_DICT, CAP_DICT, REM_DICT, SUF_DICT, CFONT_DICT
+from bot import user_data, dispatcher, AS_DOCUMENT, DB_URI
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, sendPhoto
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -128,34 +128,34 @@ def setLeechType(update, context):
         query.answer(text="Your Prefix is Successfully Deleted!", show_alert=True)
         editLeechType(message, query)
     elif data[2] == "suffix":
-        SUF_DICT.pop(user_id)
+        update_user_ldata(user_id, 'suffix', False)
         if DB_URI: 
-            DbManger().user_suf(user_id, '')
+            DbManger().update_suffix(user_id)
         query.answer(text="Your Suffix is Successfully Deleted!", show_alert=True)
         editLeechType(message, query)
     elif data[2] == "cap":
-        CAP_DICT.pop(user_id)
-        if DB_URI:
-            DbManger().user_cap(user_id, None)
+        update_user_ldata(user_id, 'caption', False)
+        if DB_URI: 
+            DbManger().update_caption(user_id)
         query.answer(text="Your Caption is Successfully Deleted!", show_alert=True)
         editLeechType(message, query)
     elif data[2] == "rem":
-        REM_DICT.pop(user_id)
-        if DB_URI:
-            DbManger().user_rem(user_id, None)
+        update_user_ldata(user_id, 'remname', False)
+        if DB_URI: 
+            DbManger().update_remname(user_id)
         query.answer(text="Your Remname is Successfully Deleted!", show_alert=True)
         editLeechType(message, query)
     elif data[2] == "ulog":
-        LEECH_DICT.pop(user_id)
-        if DB_URI:
-            DbManger().user_dump(user_id, None)
-        query.answer(text="Your Dump ID is Successfully Deleted!", show_alert=True)
+        update_user_ldata(user_id, 'userlog', False)
+        if DB_URI: 
+            DbManger().update_userlog(user_id)
+        query.answer(text="Your UserLog is Successfully Deleted!", show_alert=True)
         editLeechType(message, query)
     elif data[2] == "cfont":
-        CFONT_DICT.pop(user_id)
-        if DB_URI:
-            DbManger().user_cfont(user_id, None)
-        query.answer(text="Your CapFont is Successfully Deleted!", show_alert=True)
+        update_user_ldata(user_id, 'cfont', False)
+        if DB_URI: 
+            DbManger().update_cfont(user_id)
+        query.answer(text="Your Caption Font is Successfully Deleted!", show_alert=True)
         editLeechType(message, query)
     else:
         query.answer()
@@ -184,7 +184,7 @@ def setThumb(update, context):
 def sendUsersSettings(update, context):
     msg = ''
     for u, d in user_data.items():
-        msg += f'<code>{u}</code>: {d}'
+        msg += f'• <code>{u}</code>: {d}'
     sendMessage(msg, context.bot, update.message)
 
 users_settings_handler = CommandHandler(BotCommands.UsersCommand, sendUsersSettings,
@@ -199,4 +199,3 @@ dispatcher.add_handler(leech_set_handler)
 dispatcher.add_handler(but_set_handler)
 dispatcher.add_handler(set_thumb_handler)
 dispatcher.add_handler(users_settings_handler)
-
