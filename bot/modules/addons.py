@@ -2,7 +2,7 @@ from pyrogram import enums
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, ConversationHandler
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-from bot import bot, LOGGER, DB_URI, OWNER_ID, PRE_DICT, LEECH_DICT, dispatcher, CAP_DICT, PAID_SERVICE, REM_DICT, SUF_DICT, CFONT_DICT, CAPTION_FONT
+from bot import bot, user_data, LOGGER, DB_URI, OWNER_ID, LEECH_DICT, dispatcher, CAP_DICT, PAID_SERVICE, REM_DICT, SUF_DICT, CFONT_DICT, CAPTION_FONT
 from bot.helper.telegram_helper.message_utils import *
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -15,7 +15,7 @@ def prefix_set(update, context):
     u_men = update.message.from_user.first_name
 
     if PAID_SERVICE is True:
-        if not (user_id_ in PAID_USERS) and user_id_ != OWNER_ID:
+        if not user_data[user_id].get('is_paid') and user_id_ != OWNER_ID:
             sendMessage(f"Buy Paid Service to Use this Prename Feature.", context.bot, update.message)
             return
     if (BotCommands.PreNameCommand in update.message.text) and (len(update.message.text.split(' ')) == 1):
@@ -35,11 +35,11 @@ def prefix_set(update, context):
         else:
             txt = ""
         prefix_ = txt
-        PRE_DICT[user_id_] = prefix_
+        update_user_ldata(user_id, 'prefix', prefix_)
         if DB_URI:
-            DbManger().user_pre(user_id_, prefix_)
-            LOGGER.info(f"User : {user_id_} Prename is Saved in DB")
-        editMessage(f"<u><b><a href='tg://user?id={user_id_}'>{u_men}</a>'s Prefix is Set Successfully 🚀</b></u>\n\n<b>• Prename Text: </b>{txt}", lm)
+            DbManger().user_prefix(user_id_, prefix_)
+            LOGGER.info(f"User : {user_id_} Prefix is Saved in DB")
+        editMessage(f"<u><b><a href='tg://user?id={user_id_}'>{u_men}</a>'s Prefix is Set Successfully</b></u>\n\n<b>• Prefix Text: </b>{txt}", lm)
 
 
 def suffix_set(update, context):
