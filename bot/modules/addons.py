@@ -8,7 +8,7 @@ from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.db_handler import DbManger
-
+from bot.helper.ext_utils.bot_utils import update_user_ldata
 
 def prefix_set(update, context):
     user_id_ = update.message.from_user.id 
