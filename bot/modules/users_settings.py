@@ -19,11 +19,11 @@ def getleechinfo(from_user):
     buttons = button_build.ButtonMaker()
     thumbpath = f"Thumbnails/{user_id}.jpg"
     prefix = user_data[user_id]['prefix'] if user_id in user_data and user_data[user_id].get('prefix') else "Not Exists"
-    suffix = SUF_DICT.get(user_id, "Not Exists")
-    caption = CAP_DICT.get(user_id, "Not Exists")
-    dumpid = LEECH_DICT.get(user_id, "Not Exists")
-    remname = REM_DICT.get(user_id, "Not Exists")
-    cfont = CFONT_DICT.get(user_id, ["Not Exists"])[0]
+    suffix = user_data[user_id]['suffix'] if user_id in user_data and user_data[user_id].get('prefix') else "Not Exists"
+    caption = user_data[user_id]['caption'] if user_id in user_data and user_data[user_id].get('prefix') else "Not Exists"
+    userlog = user_data[user_id]['userlog'] if user_id in user_data and user_data[user_id].get('prefix') else "Not Exists"
+    remname = user_data[user_id]['remname'] if user_id in user_data and user_data[user_id].get('prefix') else "Not Exists"
+    cfont = user_data[user_id]['cfont'] if user_id in user_data and user_data[user_id].get('prefix') else "Not Exists"
     if user_id in user_data and (user_data[user_id].get('as_doc') or not user_data[user_id].get('as_media')) \
        and AS_DOCUMENT:
         ltype = "DOCUMENT"
@@ -46,8 +46,8 @@ def getleechinfo(from_user):
         buttons.sbutton("Delete Suffix", f"leechset {user_id} suffix")
     if caption != "Not Exists": 
         buttons.sbutton("Delete Caption", f"leechset {user_id} cap")
-    if dumpid != "Not Exists":
-        buttons.sbutton("Delete DumpID", f"leechset {user_id} dump")
+    if userlog != "Not Exists":
+        buttons.sbutton("Delete UserLog", f"leechset {user_id} ulog")
     if remname != "Not Exists": 
         buttons.sbutton("Delete Remname", f"leechset {user_id} rem")
     if cfont != "Not Exists": 
@@ -124,7 +124,7 @@ def setLeechType(update, context):
     elif data[2] == "prefix":
         update_user_ldata(user_id, 'prefix', False)
         if DB_URI: 
-            DbManger().update_user_data(user_id)
+            DbManger().update_prefix(user_id)
         query.answer(text="Your Prefix is Successfully Deleted!", show_alert=True)
         editLeechType(message, query)
     elif data[2] == "suffix":
@@ -145,7 +145,7 @@ def setLeechType(update, context):
             DbManger().user_rem(user_id, None)
         query.answer(text="Your Remname is Successfully Deleted!", show_alert=True)
         editLeechType(message, query)
-    elif data[2] == "dump":
+    elif data[2] == "ulog":
         LEECH_DICT.pop(user_id)
         if DB_URI:
             DbManger().user_dump(user_id, None)
