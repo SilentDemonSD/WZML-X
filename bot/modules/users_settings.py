@@ -65,7 +65,7 @@ def getleechinfo(from_user):
 • Caption : <b>{caption}</b>
 • CapFont : <b>{cfont}</b>
 • Remname : <b>{remname}</b>
-• DumpID : <b>{dumpid}</b>
+• UserLog : <b>{userlog}</b>
 • User Plan : <b>{uplan}</b>'''
     return text, button
 
