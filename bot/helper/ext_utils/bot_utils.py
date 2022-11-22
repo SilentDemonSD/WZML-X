@@ -17,7 +17,7 @@ from telegram.error import RetryAfter
 from telegram.ext import CallbackQueryHandler
 from telegram.message import Message
 from telegram.update import Update
-from bot import *
+from bot import download_dict, download_dict_lock, botStartTime, DOWNLOAD_DIR, user_data, config_dict
 
 MAGNET_REGEX = r"magnet:\?xt=urn:btih:[a-zA-Z0-9]*"
 
@@ -29,7 +29,7 @@ PAGES = 0
 
 
 class MirrorStatus:
-    if config_dict['EMOJI_THEME'] is True:
+    if config_dict['EMOJI_THEME']:
         STATUS_UPLOADING = "📤 Upload"
         STATUS_DOWNLOADING = "📥 Download"
         STATUS_CLONING = "♻️ Clone"
