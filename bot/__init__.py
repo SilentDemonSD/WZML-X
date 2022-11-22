@@ -82,6 +82,7 @@ if DB_URI:
             getenv[key] = str(value)
     if pf_dict := db.settings.PFile.find_one({'_id': bot_id}):
         del config_dict['_id']
+        del pf_dict['_id']
         for key, value in pf_dict.items():
             if value:
                 with open(key, 'wb+') as f:
