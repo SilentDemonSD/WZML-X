@@ -3,7 +3,7 @@ import os
 from subprocess import run
 from bot.helper.ext_utils.shortenurl import short_url
 from telegram.ext import CommandHandler
-from bot import LOGGER, dispatcher, app, MEDIAINFO_ENABLED
+from bot import LOGGER, dispatcher, app, MEDIAINFO_ENABLED, config_dict
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.message_utils import editMessage, sendMessage
