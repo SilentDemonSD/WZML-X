@@ -121,7 +121,7 @@ class TgUploader:
             new_path = ospath.join(dirpath, file_)
             osrename(up_path, new_path)
             up_path = new_path
-        cfont = CAPTION_FONT if not FSTYLE else FSTYLE
+        cfont = config_dict['CAPTION_FONT'] if not FSTYLE else FSTYLE
         if CAPTION:
             slit = CAPTION.split("|")
             cap_mono = slit[0].format(
