@@ -282,12 +282,12 @@ class MirrorLeechListener:
             slmsg = f"Name: <{NAME_FONT}>{file_}</{NAME_FONT}>\n\n"
             slmsg += f"Size: {size}\n"
             slmsg += f"Added by: {self.tag} | <code>{self.user_id}</code>\n\n"
-        if LINK_LOGS:
+        if 'link_logs' in user_data:
             try:
                 upper = f"‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒\n"
                 source_link = f"<code>{message_args[1]}</code>\n"
                 lower = f"‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒\n"
-                for link_log in LINK_LOGS:
+                for link_log in user_data['link_logs']:
                     bot.sendMessage(link_log, text=slmsg + upper + source_link + lower, parse_mode=ParseMode.HTML )
             except IndexError:
                 pass
@@ -298,7 +298,7 @@ class MirrorLeechListener:
                         upper = f"‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒\n"
                         source_link = f"<code>{reply_text.strip()}</code>\n"
                         lower = f"‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒\n"
-                        for link_log in LINK_LOGS:
+                        for link_log in user_data['link_logs']:
                             bot.sendMessage(chat_id=link_log, text=slmsg + upper + source_link + lower, parse_mode=ParseMode.HTML )
                 except TypeError:
                     pass
@@ -325,7 +325,7 @@ class MirrorLeechListener:
             pmwarn = ''
         else:
             pmwarn = ''
-        if MIRROR_LOGS and self.message.chat.type != 'private':
+        if 'mirror_logs' in user_data and self.message.chat.type != 'private':
             if EMOJI_THEME is True:
                 logwarn = f"<b>⚠️ I have sent files in Mirror Log Channel. Join <a href=\"{MIRROR_LOG_URL}\">Mirror Log channel</a> </b>\n"
             else:
@@ -589,9 +589,9 @@ class MirrorLeechListener:
                     uploadmsg = sendMarkup(msg + pmwarn + logwarn + warnmsg, self.bot, self.message, buttons.build_menu(2))
                 Thread(target=auto_delete_upload_message, args=(bot, self.message, uploadmsg)).start()
             
-            if MIRROR_LOGS:	
+            if 'mirror_logs' in user_data:	
                 try:	
-                    for chatid in MIRROR_LOGS:	
+                    for chatid in user_data['mirror_logs']:	
                         bot.sendMessage(chat_id=chatid, text=msg,	
                                         reply_markup=buttons.build_menu(2),	
                                         parse_mode=ParseMode.HTML)	
