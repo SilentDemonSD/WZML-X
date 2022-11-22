@@ -205,7 +205,7 @@ class GoogleDriveHelper:
         try:
             if ospath.isfile(file_path):
                 mime_type = get_mime_type(file_path)
-                link = self.__upload_file(file_path, file_name, mime_type)
+                link = self.__upload_file(file_path, file_name, mime_type, PARENT_ID)
                 if self.__is_cancelled:
                     return
                 if link is None:
@@ -213,7 +213,7 @@ class GoogleDriveHelper:
                 LOGGER.info(f"Uploaded To G-Drive: {file_path}")
             else:
                 mime_type = 'Folder'
-                dir_id = self.__create_directory(ospath.basename(ospath.abspath(file_name)))
+                dir_id = self.__create_directory(ospath.basename(ospath.abspath(file_name)), PARENT_ID)
                 result = self.__upload_dir(file_path, dir_id)
                 if result is None:
                     raise Exception('Upload has been manually cancelled!')
@@ -239,38 +239,38 @@ class GoogleDriveHelper:
                 return
         self.__listener.onUploadComplete(link, size, self.__total_files, self.__total_folders, mime_type, self.name)
 
-    def __upload_dir(self, input_directory):
+    def __upload_dir(self, input_directory, dest_id):
         list_dirs = listdir(input_directory)
         if len(list_dirs) == 0:
-            return PARENT_ID
+            return dest_id
         new_id = None
         for item in list_dirs:
             current_file_name = ospath.join(input_directory, item)
             if ospath.isdir(current_file_name):
-                current_dir_id = self.__create_directory(item)
+                current_dir_id = self.__create_directory(item, dest_id)
                 new_id = self.__upload_dir(current_file_name, current_dir_id)
                 self.__total_folders += 1
             elif not item.lower().endswith(tuple(EXTENSION_FILTER)):
                 mime_type = get_mime_type(current_file_name)
                 file_name = current_file_name.split("/")[-1]
                 # current_file_name will have the full path
-                self.__upload_file(current_file_name, file_name, mime_type)
+                self.__upload_file(current_file_name, file_name, mime_type, dest_id)
                 self.__total_files += 1
-                new_id = PARENT_ID
+                new_id = dest_id
             if self.__is_cancelled:
                 break
         return new_id
 
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(3),
            retry=retry_if_exception_type(GCError))
-    def __create_directory(self, directory_name):
+    def __create_directory(self, directory_name, dest_id):
         file_metadata = {
             "name": directory_name,
             "description": "Uploaded by Mirror-leech-telegram-bot",
             "mimeType": self.__G_DRIVE_DIR_MIME_TYPE
         }
-        if PARENT_ID is not None:
-            file_metadata["parents"] = [PARENT_ID]
+        if dest_id is not None:
+            file_metadata["parents"] = [dest_id]
         file = self.__service.files().create(body=file_metadata, supportsTeamDrives=True).execute()
         file_id = file.get("id")
         if not IS_TEAM_DRIVE:
@@ -280,15 +280,15 @@ class GoogleDriveHelper:
 
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(3),
            retry=(retry_if_exception_type(GCError) | retry_if_exception_type(IOError)))
-    def __upload_file(self, file_path, file_name, mime_type):
+    def __upload_file(self, file_path, file_name, mime_type, dest_id):
         # File body description
         file_metadata = {
             'name': file_name,
             'description': f'{GD_INFO}',
             'mimeType': mime_type,
         }
-        if PARENT_ID is not None:
-            file_metadata['parents'] = [PARENT_ID]
+        if dest_id is not None:
+            file_metadata['parents'] = [dest_id]
 
         if ospath.getsize(file_path) == 0:
             media_body = MediaFileUpload(file_path,
@@ -326,7 +326,7 @@ class GoogleDriveHelper:
                     if USE_SERVICE_ACCOUNTS:
                         self.__switchServiceAccount()
                         LOGGER.info(f"Got: {reason}, Trying Again.")
-                        return self.__upload_file(file_path, file_name, mime_type)
+                        return self.__upload_file(file_path, file_name, mime_type, dest_id)
                     else:
                         LOGGER.error(f"Got: {reason}")
                         raise err
@@ -363,7 +363,7 @@ class GoogleDriveHelper:
             meta = self.__getFileMetadata(file_id)
             mime_type = meta.get("mimeType")
             if mime_type == self.__G_DRIVE_DIR_MIME_TYPE:
-                dir_id = self.__create_directory(meta.get('name'))
+                dir_id = self.__create_directory(meta.get('name'), PARENT_ID)
                 self.__cloneFolder(meta.get('name'), meta.get('name'), meta.get('id'), dir_id)
                 durl = self.__G_DRIVE_DIR_BASE_DOWNLOAD_URL.format(dir_id)
                 if self.__is_cancelled:
@@ -391,7 +391,7 @@ class GoogleDriveHelper:
                     url = short_url(url)
                     buttons.buildbutton("⚡ Index Link", url)
             else:
-                file = self.__copyFile(meta.get('id'))
+                file = self.__copyFile(meta.get('id'), PARENT_ID)
                 if EMOJI_THEME is True:
                     msg += f'<b>╭🗂️ Name: </b><code>{file.get("name")}</code>'
                 else:
@@ -443,28 +443,28 @@ class GoogleDriveHelper:
             return msg, ""
         return msg, buttons.build_menu(2)
 
-    def __cloneFolder(self, name, local_path, folder_id):
+    def __cloneFolder(self, name, local_path, folder_id, dest_id):
         LOGGER.info(f"Syncing: {local_path}")
         files = self.__getFilesByFolderId(folder_id)
         if len(files) == 0:
-            return PARENT_ID
+            return dest_id
         for file in files:
             if file.get('mimeType') == self.__G_DRIVE_DIR_MIME_TYPE:
                 self.__total_folders += 1
                 file_path = ospath.join(local_path, file.get('name'))
-                current_dir_id = self.__create_directory(file.get('name'))
+                current_dir_id = self.__create_directory(file.get('name'), dest_id)
                 self.__cloneFolder(file.get('name'), file_path, file.get('id'), current_dir_id)
             elif not file.get('name').lower().endswith(tuple(EXTENSION_FILTER)):
                 self.__total_files += 1
                 self.transferred_size += int(file.get('size', 0))
-                self.__copyFile(file.get('id'))
+                self.__copyFile(file.get('id'), dest_id)
             if self.__is_cancelled:
                 break
 
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(3),
            retry=retry_if_exception_type(GCError))
-    def __copyFile(self, file_id):
-        body = {'parents': [PARENT_ID]}
+    def __copyFile(self, file_id, dest_id):
+        body = {'parents': [dest_id]}
         try:
             return self.__service.files().copy(fileId=file_id, body=body, supportsTeamDrives=True).execute()
         except HttpError as err:
@@ -534,7 +534,7 @@ class GoogleDriveHelper:
                     return self.__service.files().list(supportsTeamDrives=True, includeTeamDriveItems=True,
                                                        driveId=dir_id, q=query, spaces='drive', pageSize=200,
                                                        fields='files(id, name, mimeType, size, teamDriveId, parents)',
-                                                       orderBy='folder, name asc').execute()
+                                                       corpora='drive', orderBy='folder, name asc').execute()
             else:
                 if stopDup:
                     query = f"'{dir_id}' in parents and name = '{fileName}' and "
