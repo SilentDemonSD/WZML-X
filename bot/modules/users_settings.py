@@ -24,8 +24,8 @@ def getleechinfo(from_user):
     userlog = user_data[user_id]['userlog'] if user_id in user_data and user_data[user_id].get('userlog') else "Not Exists"
     remname = user_data[user_id]['remname'] if user_id in user_data and user_data[user_id].get('remname') else "Not Exists"
     cfont = user_data[user_id]['cfont'][0] if user_id in user_data and user_data[user_id].get('cfont') else "Not Exists"
-    if user_id in user_data and (user_data[user_id].get('as_doc') or (not user_data[user_id].get('as_media') \
-       and AS_DOCUMENT)):
+    user_dict = user_data.get(user_id, False)
+    if not user_dict and AS_DOCUMENT or user_dict and user_dict.get('as_doc'):
         ltype = "DOCUMENT"
         buttons.sbutton("Send As Media", f"leechset {user_id} med")
     else:
@@ -87,17 +87,13 @@ def setLeechType(update, context):
     if user_id != int(data[1]):
         query.answer(text="Not Yours!", show_alert=True)
     elif data[2] == "doc":
-        if user_id in user_data and user_data[user_id].get('as_media'):
-            update_user_ldata(user_id, 'as_media', False)
         update_user_ldata(user_id, 'as_doc', True)
         if DB_URI is not None:
             DbManger().update_user_data(user_id)
         query.answer(text="Your File Will Deliver As Document!", show_alert=True)
         editLeechType(message, query)
     elif data[2] == "med":
-        if user_id in user_data and user_data[user_id].get('as_doc'):
-            update_user_ldata(user_id, 'as_doc', False)
-        update_user_ldata(user_id, 'as_media', True)
+        update_user_ldata(user_id, 'as_doc', False)
         if DB_URI is not None:
             DbManger().update_user_data(user_id)
         query.answer(text="Your File Will Deliver As Media!", show_alert=True)

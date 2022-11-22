@@ -35,7 +35,7 @@ class TgUploader:
         self.__sent_msg = app.get_messages(self.__listener.message.chat.id, self.__listener.uid)
         self.__size = size
         self.__user_settings()
-        self.__leech_log = LEECH_LOG.copy()  # copy then pop to keep the original var as it is
+        self.__leech_log = user_data[user_id].get('is_leech_log').copy()  # copy then pop to keep the original var as it is
         self.__app = app
         self.__user_id = listener.message.from_user.id
         self.isPrivate = listener.message.chat.type in ['private', 'group']
@@ -354,10 +354,12 @@ class TgUploader:
 
     def __user_settings(self):
         user_id = self.__listener.message.from_user.id
-        if user_id in user_data and user_data[user_id].get('as_doc'):
-            self.__as_doc = True
-        elif user_id in user_data and user_data[user_id].get('as_media'):
-            self.__as_doc = False
+        user_dict = user_data.get(user_id, False)
+        if user_dict:
+            if user_dict.get('as_doc'):
+                self.__as_doc = True
+            else:
+                self.__as_doc = False
         if not ospath.lexists(self.__thumb):
             self.__thumb = None
 
