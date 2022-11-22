@@ -117,7 +117,7 @@ class TgUploader:
                     + f"{SUFFIX}.{fileDict[-1]}"
                             )
             file_ = _newExtFileName
-        if PRENAME or REMNAME or SUFFIX:
+        if PREFIX or REMNAME or SUFFIX:
             new_path = ospath.join(dirpath, file_)
             osrename(up_path, new_path)
             up_path = new_path
