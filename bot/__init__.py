@@ -30,14 +30,7 @@ basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
 
 LOGGER = getLogger(__name__)
 
-
-PRE_DICT = {}
-SUF_DICT = {}
-CAP_DICT = {}
-LEECH_DICT = {}
-REM_DICT = {}
 TIME_GAP_STORE = {}
-CFONT_DICT = {}
 
 load_dotenv('config.env', override=True)
 
@@ -194,15 +187,16 @@ if len(aid) != 0:
 
 aid = getenv('LOG_LEECH', '')
 if len(aid) != 0:
-    aid = aid.split()
+    aid = aid.split(' ')
+    log_dict = []
     for id_ in aid:
-        user_data[int(id_.strip())] = {'is_log_leech': True}
+        log_dict.append(int(id_.strip()))
+    user_data['is_log_leech'] = log_dict
 
 aid = getenv('LEECH_LOG', '')
 if len(aid) != 0:
-    aid = aid.split()
-    for id_ in aid:
-        user_data[int(id_.strip())] = {'is_leech_log': True}
+    aid = aid.split(' ')
+    user_data['is_leech_log'] = [int(id_.strip()) for id_ in aid]
 
 aid = getenv('MIRROR_LOGS', '')
 if len(aid) != 0:
