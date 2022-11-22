@@ -13,7 +13,7 @@ from html import escape
 from threading import Thread
 from telegram import ParseMode, InlineKeyboardButton
 
-from bot import bot, Interval, aria2, dispatcher, user_data, download_dict, download_dict_lock,  LOGGER, PICS, config_dict, DOWNLOAD_DIR
+from bot import bot, Interval, aria2, dispatcher, user_data, download_dict, download_dict_lock, LOGGER, PICS, config_dict, DOWNLOAD_DIR, DB_URI
 from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_gdtot_link, is_mega_link, is_gdrive_link, get_content_type, get_readable_time
 from bot.helper.ext_utils.fs_utils import get_base_name, get_path_size, split_file, clean_download, clean_target
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException, NotSupportedExtractionArchive
