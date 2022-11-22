@@ -79,7 +79,7 @@ if DB_URI:
     if config_dict := db.settings.config.find_one({'_id': bot_id}):  #retrun config dict (all env vars)
         del config_dict['_id']
         for key, value in config_dict.items():
-            environ[key] = str(value)
+            getenv[key] = str(value)
     if pf_dict := db.settings.PFile.find_one({'_id': bot_id}):
         del config_dict['_id']
         for key, value in pf_dict.items():
