@@ -4,7 +4,7 @@ from time import time
 from os import remove, replace, rename
 from subprocess import run as srun, Popen
 
-from bot import config_dict, dispatcher, DB_URI, MAX_SPLIT_SIZE, DRIVES_IDS, DRIVES_NAMES, INDEX_URLS, aria2, GLOBAL_EXTENSION_FILTER, LOGGER, status_reply_dict_lock, Interval
+from bot import config_dict, dispatcher, DB_URI, tgBotMaxFileSize, DRIVES_IDS, DRIVES_NAMES, INDEX_URLS, aria2, GLOBAL_EXTENSION_FILTER, LOGGER, status_reply_dict_lock, Interval
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, deleteMessage, update_all_messages
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
