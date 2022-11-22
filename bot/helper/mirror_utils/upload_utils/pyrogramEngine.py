@@ -141,10 +141,7 @@ class TgUploader:
             cap_mono = file_ if FSTYLE == 'r' else f"<{cfont}>{file_}</{cfont}>"
 
         dumpid = user_data[user_id_].get('userlog') if user_id_ in user_data and user_data[user_id_].get('userlog') else ''
-        if len(dumpid) != 0:
-            LEECH_X = int(dumpid)
-        else:
-            LEECH_X = LOG_LEECH
+        LEECH_X = int(dumpid) if len(dumpid) != 0 else user_data.get('is_log_leech', [''])[0]
         notMedia = False
         thumb = self.__thumb
         self.__is_corrupted = False
