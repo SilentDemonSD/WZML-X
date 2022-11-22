@@ -17,7 +17,7 @@ from telegram.error import RetryAfter
 from telegram.ext import CallbackQueryHandler
 from telegram.message import Message
 from telegram.update import Update
-from bot import download_dict, download_dict_lock, botStartTime, DOWNLOAD_DIR, user_data, config_dict
+from bot import *
 
 MAGNET_REGEX = r"magnet:\?xt=urn:btih:[a-zA-Z0-9]*"
 
