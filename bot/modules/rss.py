@@ -9,7 +9,7 @@ from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, s
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.ext_utils.db_handler import DbManger
-from bot.helper.telegram_helper import button_build
+from bot.helper.telegram_helper.button_build import ButtonMaker
 
 rss_dict_lock = Lock()
 
@@ -133,14 +133,14 @@ def rss_unsub(update, context):
         sendMessage(f"Use this format to remove feed url:\n/{BotCommands.RssUnSubCommand[0]} Title", context.bot, update.message)
 
 def rss_settings(update, context):
-    buttons = button_build.ButtonMaker()
+    buttons = ButtonMaker()
     buttons.sbutton("Unsubscribe All", "rss unsuball")
     if rss_job.enabled:
         buttons.sbutton("Pause", "rss pause")
     else:
         buttons.sbutton("Start", "rss start")
     if AUTO_DELETE_MESSAGE_DURATION == -1:
-        buttons.sbutton("Close", f"rss close")
+        buttons.sbutton("Close", "rss close")
     button = buttons.build_menu(1)
     setting = sendMarkup('Rss Settings', context.bot, update.message, button)
     Thread(target=auto_delete_message, args=(context.bot, update.message, setting)).start()
@@ -190,12 +190,12 @@ def rss_monitor(context):
             rss_d = feedparse(data['link'])
             last_link = rss_d.entries[0]['link']
             last_title = rss_d.entries[0]['title']
-            if data['last_link'] == last_link or data['last_title'] == last_title:
+            if data['last_feed'] == last_link or data['last_title'] == last_title:
                 continue
             feed_count = 0
             while True:
                 try:
-                    if data['last_link'] == rss_d.entries[feed_count]['link'] or \
+                    if data['last_feed'] == rss_d.entries[feed_count]['link'] or \
                        data['last_title'] == rss_d.entries[feed_count]['title']:
                         break
                 except IndexError:
@@ -203,7 +203,7 @@ def rss_monitor(context):
                     break
                 parse = True
                 for list in data['filters']:
-                    if not any(x in str(rss_d.entries[feed_count]['title']).lower() for x in list):
+                    if all(x not in str(rss_d.entries[feed_count]['title']).lower() for x in list):
                         parse = False
                         feed_count += 1
                         break
@@ -222,7 +222,7 @@ def rss_monitor(context):
                 feed_count += 1
                 sleep(5)
             with rss_dict_lock:
-                rss_dict[title].update({'last_link': last_link, 'last_title': last_title})
+                rss_dict[title].update({'last_feed': last_link, 'last_title': last_title})
             DbManger().rss_update(title)
             LOGGER.info(f"Feed Name: {title}")
             LOGGER.info(f"Last item: {last_link}")

@@ -140,9 +140,8 @@ if len(PARENT_ID) == 0:
 DOWNLOAD_DIR = getenv('DOWNLOAD_DIR', '')
 if len(DOWNLOAD_DIR) == 0:
     DOWNLOAD_DIR = '/usr/src/app/downloads/'
-else:
-    if not DOWNLOAD_DIR.endswith("/"):
-        DOWNLOAD_DIR = DOWNLOAD_DIR + '/'
+elif not DOWNLOAD_DIR.endswith("/"):
+    DOWNLOAD_DIR = DOWNLOAD_DIR + '/'
 
 DOWNLOAD_STATUS_UPDATE_INTERVAL = getenv('DOWNLOAD_STATUS_UPDATE_INTERVAL', '')
 if len(DOWNLOAD_STATUS_UPDATE_INTERVAL) == 0:
@@ -179,43 +178,43 @@ aid = getenv('AUTHORIZED_CHATS', '')
 if len(aid) != 0:
     aid = aid.split()
     for id_ in aid:
-        user_data[id_.strip()] = {'is_auth': True}
+        user_data[int(id_.strip())] = {'is_auth': True}
 
 aid = getenv('SUDO_USERS', '')
 if len(aid) != 0:
     aid = aid.split()
     for id_ in aid:
-        user_data[id_.strip()] = {'is_sudo': True}
+        user_data[int(id_.strip())] = {'is_sudo': True}
 
 aid = getenv('PAID_USERS', '')
 if len(aid) != 0:
     aid = aid.split()
     for id_ in aid:
-        user_data[id_.strip()] = {'is_paid': True}
+        user_data[int(id_.strip())] = {'is_paid': True}
 
 aid = getenv('LOG_LEECH', '')
 if len(aid) != 0:
     aid = aid.split()
     for id_ in aid:
-        user_data[id_.strip()] = {'is_log_leech': True}
+        user_data[int(id_.strip())] = {'is_log_leech': True}
 
 aid = getenv('LEECH_LOG', '')
 if len(aid) != 0:
     aid = aid.split()
     for id_ in aid:
-        user_data[id_.strip()] = {'is_leech_log': True}
+        user_data[int(id_.strip())] = {'is_leech_log': True}
 
 aid = getenv('MIRROR_LOGS', '')
 if len(aid) != 0:
     aid = aid.split()
     for id_ in aid:
-        user_data[id_.strip()] = {'is_mirror_log': True}
+        user_data[int(id_.strip())] = {'is_mirror_log': True}
 
 aid = getenv('LINK_LOGS', '')
 if len(aid) != 0:
     aid = aid.split()
     for id_ in aid:
-        user_data[id_.strip()] = {'is_link_log': True}
+        user_data[int(id_.strip())] = {'is_link_log': True}
 
 fx = getenv('EXTENSION_FILTER', '')
 if len(fx) > 0:

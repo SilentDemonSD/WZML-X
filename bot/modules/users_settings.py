@@ -24,8 +24,8 @@ def getleechinfo(from_user):
     userlog = user_data[user_id]['userlog'] if user_id in user_data and user_data[user_id].get('userlog') else "Not Exists"
     remname = user_data[user_id]['remname'] if user_id in user_data and user_data[user_id].get('remname') else "Not Exists"
     cfont = user_data[user_id]['cfont'][0] if user_id in user_data and user_data[user_id].get('cfont') else "Not Exists"
-    if user_id in user_data and (user_data[user_id].get('as_doc') or not user_data[user_id].get('as_media')) \
-       and AS_DOCUMENT:
+    if user_id in user_data and (user_data[user_id].get('as_doc') or (not user_data[user_id].get('as_media') \
+       and AS_DOCUMENT)):
         ltype = "DOCUMENT"
         buttons.sbutton("Send As Media", f"leechset {user_id} med")
     else:
