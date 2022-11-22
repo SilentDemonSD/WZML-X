@@ -334,7 +334,7 @@ class MirrorLeechListener:
             logwarn = ''
         else:
             logwarn = ''
-        if LEECH_LOG and self.message.chat.type != 'private':
+        if 'is_leech_log' in user_data and self.message.chat.type != 'private':
             if EMOJI_THEME is True:
                 logleechwarn = f"<b>⚠️ I have sent files in Leech Log Channel. Join <a href=\"{LEECH_LOG_URL}\">Leech Log channel</a> </b>\n"
             else:
@@ -469,7 +469,7 @@ class MirrorLeechListener:
                             uploadmsg = sendMarkup(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, buttons.build_menu(2))
                         Thread(target=auto_delete_upload_message, args=(bot, self.message, uploadmsg)).start()
                 if LEECH_LOG_INDEXING is True:
-                    for i in LEECH_LOG:
+                    for i in user_data['is_leech_log']:
                         indexmsg = ''
                         for index, (link, name) in enumerate(files.items(), start=1):
                             indexmsg += f"{index}. <a href='{link}'>{name}</a>\n"
