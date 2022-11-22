@@ -73,6 +73,7 @@ class _BotCommands:
         self.RmleechlogCommand = getCommand('RMLEECHLOG_CMD', f'rmleechlog{CMD_PERFIX}')
         self.EvalCommand = f'eval{CMD_PERFIX}'
         self.ExecCommand = f'exec{CMD_PERFIX}'
+        self.BotSetCommand = f'bsetting{CMD_PERFIX}'
         self.ClearLocalsCommand = f'clearlocals{CMD_PERFIX}'
 
 BotCommands = _BotCommands()
