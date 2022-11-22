@@ -45,7 +45,7 @@ def _clone(message, bot):
         pmwarn = ''
     else:
         pmwarn = ''
-    if MIRROR_LOGS and message.chat.type != 'private':
+    if 'mirror_logs' in user_data and message.chat.type != 'private':
         if EMOJI_THEME is True:
             logwarn = f"<b>⚠️ I have sent files in Mirror Log Channel. Join <a href=\"{MIRROR_LOG_URL}\">Mirror Log channel</a> </b>\n"
         else:
@@ -278,12 +278,12 @@ def _clone(message, bot):
             slmsg = f"╭ Name: <{NAME_FONT}>{escape(name)}</{NAME_FONT}>\n"
             slmsg += f"├ Size: {size}\n"
             slmsg += f"╰ Added by: {tag} | <code>{user_id}</code>\n\n"
-        if LINK_LOGS:
+        if 'link_logs' in user_data:
                 try:
                     upper = f"‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒\n"
                     source_link = f"<code>{message_args[1]}</code>\n"
                     lower = f"‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒\n"
-                    for link_log in LINK_LOGS:
+                    for link_log in user_data['link_logs']:
                         bot.sendMessage(link_log, text=slmsg + upper + source_link + lower, parse_mode=ParseMode.HTML )
                 except IndexError:
                     pass
@@ -294,7 +294,7 @@ def _clone(message, bot):
                             upper = f"‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒\n"
                             source_link = f"<code>{reply_text.strip()}</code>\n"
                             lower = f"‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒\n"
-                            for link_log in LINK_LOGS:
+                            for link_log in user_data['link_logs']:
                                 bot.sendMessage(chat_id=link_log, text=slmsg + upper + source_link + lower, parse_mode=ParseMode.HTML )
                     except TypeError:
                         pass  
@@ -316,9 +316,9 @@ def _clone(message, bot):
         if (is_gdtot or is_unified or is_udrive):
             gd.deletefile(link)
 
-        if MIRROR_LOGS:	
+        if 'mirror_logs' in user_data:	
             try:	
-                for chatid in MIRROR_LOGS:	
+                for chatid in user_data['mirror_logs']:	
                     bot.sendMessage(chat_id=chatid, text=result + cc, reply_markup=button, parse_mode=ParseMode.HTML)	
             except Exception as e:	
                 LOGGER.warning(e)	
