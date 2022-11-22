@@ -171,6 +171,7 @@ class TgUploader:
                         for leechchat in self.__leech_log:
                             if ospath.getsize(up_path) > tgBotMaxFileSize: usingclient = premium_session
                             else: usingclient = self.__app
+                            LOGGER.info(__leech_log)
                             self.__sent_msg = usingclient.send_video(chat_id=int(leechchat),video=up_path,
                                                                   caption=cap_mono,
                                                                   duration=duration,
