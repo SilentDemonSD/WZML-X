@@ -2,7 +2,6 @@ from os import path as ospath, makedirs
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 
-# from bot import DB_URI, AUTHORIZED_CHATS, SUDO_USERS, AS_DOC_USERS, AS_MEDIA_USERS, rss_dict, LOGGER, botname, LEECH_LOG, PRE_DICT, LEECH_DICT, PAID_USERS, CAP_DICT, REM_DICT, SUF_DICT, CFONT_DICT
 from bot import DB_URI, user_data, rss_dict, botname, LOGGER
 
 

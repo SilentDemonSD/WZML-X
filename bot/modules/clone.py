@@ -94,7 +94,7 @@ def _clone(message, bot):
 
     total_task = len(download_dict)
     user_id = message.from_user.id
-    if user_id != OWNER_ID and user_id not in SUDO_USERS and user_id not in PAID_USERS:
+    if user_id != OWNER_ID and user_data[user_id].get('is_sudo') and user_data[user_id].get('is_paid'):
         if PAID_SERVICE is True:
             if TOTAL_TASKS_LIMIT == total_task:
                 return sendMessage(f"<b>Bᴏᴛ Tᴏᴛᴀʟ Tᴀsᴋ Lɪᴍɪᴛ : {TOTAL_TASKS_LIMIT}\nTᴀsᴋs Pʀᴏᴄᴇssɪɴɢ : {total_task}\n#total limit exceed </b>\n#Buy Paid Service", bot ,message)
@@ -106,7 +106,7 @@ def _clone(message, bot):
             if USER_TASKS_LIMIT == get_user_task(user_id):
                 return sendMessage(f"<b>Bᴏᴛ Usᴇʀ Tᴀsᴋ Lɪᴍɪᴛ : {USER_TASKS_LIMIT} \nYᴏᴜʀ Tᴀsᴋs : {get_user_task(user_id)}\n#user limit exceed</b>", bot ,message)
 
-    if user_id != OWNER_ID and user_id not in SUDO_USERS and user_id not in PAID_USERS:
+    if user_id != OWNER_ID and user_data[user_id].get('is_sudo') and user_data[user_id].get('is_paid'):
         time_gap = timegap_check(message)
         if time_gap:
             return
@@ -171,7 +171,7 @@ def _clone(message, bot):
                     cap = f"File/Folder is already available in Drive. Here are the search results:\n\n{cap}"
                     sendFile(bot, message, f_name, cap)
                     return
-        if CLONE_LIMIT is not None and user_id != OWNER_ID and user_id not in SUDO_USERS and user_id not in PAID_USERS:
+        if CLONE_LIMIT is not None and user_id != OWNER_ID and user_data[user_id].get('is_sudo') and user_data[user_id].get('is_paid'):
             LOGGER.info('Checking File/Folder Size...')
             if size > CLONE_LIMIT * 1024**3:
                 msg2 = f'Failed, Clone limit is {CLONE_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(size)}.'

@@ -1,7 +1,7 @@
 from time import sleep, time
 from os import remove, path as ospath
 from bot import LEECH_LIMIT, TELEGRAPH_STYLE, aria2, download_dict_lock, download_dict, STOP_DUPLICATE, BASE_URL, TORRENT_DIRECT_LIMIT, ZIP_UNZIP_LIMIT, LEECH_LIMIT, LOGGER, STORAGE_THRESHOLD, \
-                OWNER_ID, PAID_SERVICE 
+                OWNER_ID, PAID_SERVICE, user_data
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.ext_utils.bot_utils import is_magnet, getDownloadByGid, new_thread, bt_selection_buttons, get_readable_file_size
 from bot.helper.mirror_utils.status_utils.aria_download_status import AriaDownloadStatus
@@ -68,7 +68,7 @@ def __onDownloadStarted(api, gid):
                             sendFile(listener.bot, listener.message, f_name, cap)
                             return
             user_id = listener.message.from_user.id
-            if any([ZIP_UNZIP_LIMIT, LEECH_LIMIT, TORRENT_DIRECT_LIMIT, STORAGE_THRESHOLD]) and user_id != OWNER_ID and user_id not in SUDO_USERS and user_id not in PAID_USERS:
+            if any([ZIP_UNZIP_LIMIT, LEECH_LIMIT, TORRENT_DIRECT_LIMIT, STORAGE_THRESHOLD]) and user_id != OWNER_ID and user_data[user_id].get('is_sudo') and user_data[user_id].get('is_paid'):
                 sleep(1)
                 limit = None
                 size = download.total_length

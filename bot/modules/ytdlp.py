@@ -62,7 +62,7 @@ def _ytdl(bot, message, isZip=False, isLeech=False):
 
     total_task = len(download_dict)
     user_id = message.from_user.id
-    if user_id != OWNER_ID and user_id not in SUDO_USERS and user_id not in PAID_USERS:
+    if user_id != OWNER_ID and user_data[user_id].get('is_sudo') and user_data[user_id].get('is_paid'):
         if PAID_SERVICE is True:
             if TOTAL_TASKS_LIMIT == total_task:
                 return sendMessage(f"<b>Bᴏᴛ Tᴏᴛᴀʟ Tᴀsᴋ Lɪᴍɪᴛ : {TOTAL_TASKS_LIMIT}\nTᴀsᴋs Pʀᴏᴄᴇssɪɴɢ : {total_task}\n#total limit exceed </b>\n#Buy Paid Service", bot ,message)
@@ -74,7 +74,7 @@ def _ytdl(bot, message, isZip=False, isLeech=False):
             if USER_TASKS_LIMIT == get_user_task(user_id):
                 return sendMessage(f"<b>Bᴏᴛ Usᴇʀ Tᴀsᴋ Lɪᴍɪᴛ : {USER_TASKS_LIMIT} \nYᴏᴜʀ Tᴀsᴋs : {get_user_task(user_id)}\n#user limit exceed</b>", bot ,message)
 
-    if user_id != OWNER_ID and user_id not in SUDO_USERS and user_id not in PAID_USERS:
+    if user_id != OWNER_ID and user_data[user_id].get('is_sudo') and user_data[user_id].get('is_paid'):
         time_gap = timegap_check(message)
         if time_gap:
             return
