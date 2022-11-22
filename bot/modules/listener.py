@@ -272,6 +272,7 @@ class MirrorLeechListener:
                             )
             file_ = _newExtFileName
 
+        NAME_FONT = config_dict['NAME_FONT']
         if config_dict['EMOJI_THEME'] is True:
             slmsg = f"🗂️ Name: <{NAME_FONT}>{file_}</{NAME_FONT}>\n\n"
             slmsg += f"📐 Size: {size}\n"
@@ -300,6 +301,7 @@ class MirrorLeechListener:
                             bot.sendMessage(chat_id=link_log, text=slmsg + upper + source_link + lower, parse_mode=ParseMode.HTML )
                 except TypeError:
                     pass
+        AUTO_DELETE_UPLOAD_MESSAGE_DURATION = config_dict['AUTO_DELETE_UPLOAD_MESSAGE_DURATION']
         if AUTO_DELETE_UPLOAD_MESSAGE_DURATION != -1:
             reply_to = self.message.reply_to_message
             if reply_to is not None:
@@ -374,14 +376,14 @@ class MirrorLeechListener:
         else:
             msg = f"<b>╭ Name: </b><{NAME_FONT}>{file_}</{NAME_FONT}>\n<b>├ Size: </b>{size}"
 
-
+        SOURCE_LINK = config_dict['SOURCE_LINK']
         if self.isLeech:
             if SOURCE_LINK is True:
                 try:
                     mesg = message_args[1]
                     if is_magnet(mesg):
                         link = telegraph.create_page(
-                            title=f"{TITLE_NAME} Source Link",
+                            title=f"{config_dict['TITLE_NAME']} Source Link",
                             content=mesg,
                         )["path"]
                         buttons.buildbutton(f"🔗 Source Link", f"https://graph.org/{link}")
@@ -402,7 +404,7 @@ class MirrorLeechListener:
                             source_link = reply_text.strip()
                             if is_magnet(source_link):
                                 link = telegraph.create_page(
-                                    title=f"{TITLE_NAME} Source Link",
+                                    title=f"{config_dict['TITLE_NAME']} Source Link",
                                     content=source_link,
                                 )["path"]
                                 buttons.buildbutton(f"🔗 Source Link", f"https://graph.org/{link}")
@@ -530,7 +532,7 @@ class MirrorLeechListener:
                             mesg = message_args[1]
                             if is_magnet(mesg):
                                 link = telegraph.create_page(
-                                    title=f"{TITLE_NAME} Source Link",
+                                    title=f"{config_dict['TITLE_NAME']} Source Link",
                                     content=mesg,
                                 )["path"]
                                 buttons.buildbutton(f"🔗 Source Link", f"https://graph.org/{link}")
@@ -551,7 +553,7 @@ class MirrorLeechListener:
                                     source_link = reply_text.strip()
                                     if is_magnet(source_link):
                                         link = telegraph.create_page(
-                                            title=f"{TITLE_NAME} Source Link",
+                                            title=f"{config_dict['TITLE_NAME']} Source Link",
                                             content=source_link,
                                         )["path"]
                                         buttons.buildbutton(f"🔗 Source Link", f"https://graph.org/{link}")
@@ -572,7 +574,9 @@ class MirrorLeechListener:
                         botstart = ''
                     else:
                         botstart = ''
-
+            BUTTON_FOUR_NAME = config_dict['BUTTON_FOUR_NAME']
+            BUTTON_FIVE_NAME = config_dict['BUTTON_FIVE_NAME']
+            BUTTON_SIX_NAME = config_dict['BUTTON_SIX_NAME']
             if BUTTON_FOUR_NAME is not None and BUTTON_FOUR_URL is not None:
                 buttons.buildbutton(f"{BUTTON_FOUR_NAME}", f"{BUTTON_FOUR_URL}")
             if BUTTON_FIVE_NAME is not None and BUTTON_FIVE_URL is not None:
@@ -624,7 +628,7 @@ class MirrorLeechListener:
     def onDownloadError(self, error):
         error = error.replace('<', ' ').replace('>', ' ')
         try:
-            if AUTO_DELETE_UPLOAD_MESSAGE_DURATION != -1 and reply_to is not None:
+            if config_dict['AUTO_DELETE_UPLOAD_MESSAGE_DURATION'] != -1 and reply_to is not None:
                 reply_to.delete()
             else:
                 pass
