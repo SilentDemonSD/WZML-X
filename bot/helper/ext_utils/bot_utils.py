@@ -8,7 +8,7 @@ from requests import head as rhead
 from urllib.request import urlopen
 
 from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot import FINISHED_PROGRESS_STR, UN_FINISHED_PROGRESS_STR, download_dict, download_dict_lock, STATUS_LIMIT, botStartTime, DOWNLOAD_DIR, WEB_PINCODE, BASE_URL, EMOJI_THEME, TOTAL_TASKS_LIMIT, USER_TASKS_LIMIT, LEECH_LIMIT, MEGA_LIMIT, CREDIT_NAME, TORRENT_DIRECT_LIMIT, ZIP_UNZIP_LIMIT, user_data
+from bot import download_dict, download_dict_lock, botStartTime, DOWNLOAD_DIR, user_data, config_dict
 from bot.helper.telegram_helper.button_build import ButtonMaker
 
 import shutil
@@ -29,7 +29,7 @@ PAGES = 0
 
 
 class MirrorStatus:
-    if EMOJI_THEME is True:
+    if config_dict['EMOJI_THEME'] is True:
         STATUS_UPLOADING = "📤 Upload"
         STATUS_DOWNLOADING = "📥 Download"
         STATUS_CLONING = "♻️ Clone"
@@ -122,7 +122,8 @@ def bt_selection_buttons(id_: str):
             break
 
     buttons = ButtonMaker()
-    if WEB_PINCODE:
+    BASE_URL = config_dict['BASE_URL']
+    if config_dict['WEB_PINCODE']:
         buttons.buildbutton("Select Files", f"{BASE_URL}/app/files/{id_}")
         buttons.sbutton("Pincode", f"btsel pin {gid} {pincode}")
     else:
@@ -165,7 +166,7 @@ def get_progress_bar_string(status):
 def get_readable_message():
     with download_dict_lock:
         msg = f""
-        if STATUS_LIMIT is not None:
+        if STATUS_LIMIT := config_dict['STATUS_LIMIT']:
             tasks = len(download_dict)
             global pages
             globals()['PAGES'] = ceil(tasks/STATUS_LIMIT)
@@ -176,7 +177,7 @@ def get_readable_message():
             msg += f"<b>╭ <a href='{download.message.link}'>{download.status()}</a>: </b>"
             msg += f"<code>{escape(str(download.name()))}</code>"
             if download.status() not in [MirrorStatus.STATUS_SEEDING, MirrorStatus.STATUS_SPLITTING]:
-                if EMOJI_THEME is True:
+                if config_dict['EMOJI_THEME'] is True:
                     msg += f"\n<b>├</b>{get_progress_bar_string(download)} {download.progress()}"
                     msg += f"\n<b>├🔄 Process:</b> {get_readable_file_size(download.processed_bytes())} of {download.size()}"
                     msg += f"\n<b>├⚡ Speed:</b> {download.speed()}"
@@ -194,7 +195,7 @@ def get_readable_message():
 
                 if hasattr(download, 'seeders_num'):
                     try:
-                        if EMOJI_THEME is True:
+                        if config_dict['EMOJI_THEME'] is True:
                             msg += f"\n<b>├🌱 Seeders:</b> {download.seeders_num()} | <b>🐌 Leechers:</b> {download.leechers_num()}"
                             # msg += f"\n<b>├🧿 To Select:</b> <code>/{BotCommands.BtSelectCommand} {download.gid()}</code>"
                         else:
@@ -205,7 +206,7 @@ def get_readable_message():
                 if download.message.chat.type != 'private':
                     try:
                         chatid = str(download.message.chat.id)[4:]
-                        if EMOJI_THEME is True:
+                        if config_dict['EMOJI_THEME'] is True:
                             msg += f'\n<b>├🌐 Source: </b><a href="https://t.me/c/{chatid}/{download.message.message_id}">{download.message.from_user.first_name}</a> | <b>Id :</b> <code>{download.message.from_user.id}</code>'
                             msg += f"\n<b>╰❌ </b><code>/{BotCommands.CancelMirror} {download.gid()}</code>"
                         else:
@@ -214,7 +215,7 @@ def get_readable_message():
                     except:
                         pass
                 else:
-                    if EMOJI_THEME is True:
+                    if config_dict['EMOJI_THEME'] is True:
                         msg += f'\n<b>├👤 User:</b> ️<code>{download.message.from_user.first_name}</code> | <b>Id:</b> <code>{download.message.from_user.id}</code>'
                         msg += f"\n<b>╰❌ </b><code>/{BotCommands.CancelMirror} {download.gid()}</code>"
                     else:
@@ -222,7 +223,7 @@ def get_readable_message():
                         msg += f"\n<b>╰ </b><code>/{BotCommands.CancelMirror} {download.gid()}</code>"
 
             elif download.status() == MirrorStatus.STATUS_SEEDING:
-                if EMOJI_THEME is True:
+                if config_dict['EMOJI_THEME'] is True:
                     msg += f"\n<b>├📦 Size: </b>{download.size()}"
                     msg += f"\n<b>├⛓️ Engine:</b> <code>qBittorrent v4.4.2</code>"
                     msg += f"\n<b>├⚡ Speed: </b>{download.upload_speed()}"
@@ -241,7 +242,7 @@ def get_readable_message():
                     msg += f"\n<b>├ Elapsed: </b>{get_readable_time(time() - download.message.date.timestamp())}"
                     msg += f"\n<b>╰ </b><code>/{BotCommands.CancelMirror} {download.gid()}</code>"
             else:
-                if EMOJI_THEME is True:
+                if config_dict['EMOJI_THEME'] is True:
                     msg += f"\n<b>├⛓️ Engine :</b> {download.eng()}"
                     msg += f"\n<b>╰📐 Size: </b>{download.size()}"
                 else:
@@ -249,7 +250,7 @@ def get_readable_message():
                     msg += f"\n<b>╰ Size: </b>{download.size()}"
             msg += f"\n<b>_________________________________</b>"
             msg += "\n\n"
-            if STATUS_LIMIT is not None and index == STATUS_LIMIT:
+            if index == STATUS_LIMIT:
                 break
         if len(msg) == 0:
             return None, None
@@ -275,7 +276,7 @@ def get_readable_message():
                     up_speed += float(spd.split('K')[0]) * 1024
                 elif 'M' in spd:
                     up_speed += float(spd.split('M')[0]) * 1048576
-        if EMOJI_THEME is True:
+        if config_dict['EMOJI_THEME'] is True:
             bmsg = f"<b>🖥 CPU:</b> {cpu_percent()}% | <b>💿 FREE:</b> {get_readable_file_size(disk_usage(DOWNLOAD_DIR).free)}"
             bmsg += f"\n<b>🎮 RAM:</b> {virtual_memory().percent}% | <b>🟢 UPTIME:</b> {get_readable_time(time() - botStartTime)}"
             bmsg += f"\n<b>🔻 DL:</b> {get_readable_file_size(dl_speed)}/s | <b>🔺 UL:</b> {get_readable_file_size(up_speed)}/s"
@@ -290,10 +291,10 @@ def get_readable_message():
         buttons.sbutton("Close", "status close")
         sbutton = buttons.build_menu(3)
         
-        if STATUS_LIMIT is not None and tasks > STATUS_LIMIT:
+        if STATUS_LIMIT and tasks > STATUS_LIMIT:
             msg += f"<b>Tasks:</b> {tasks}\n"
             buttons = ButtonMaker()
-            if EMOJI_THEME is True:
+            if config_dict['EMOJI_THEME'] is True:
                 buttons.sbutton("⏪Previous", "status pre")
                 buttons.sbutton(f"{PAGE_NO}/{PAGES}", str(THREE))
                 buttons.sbutton("Next⏩", "status nex")
@@ -310,6 +311,7 @@ def get_readable_message():
         return msg + bmsg, sbutton
 
 def turn(data):
+    STATUS_LIMIT = config_dict['STATUS_LIMIT']
     try:
         with download_dict_lock:
             global COUNT, PAGE_NO
@@ -415,7 +417,7 @@ def get_content_type(link: str) -> str:
             content_type = None
     return content_type
 
-def update_user_ldata(id_: int, key, value):
+def update_user_ldata(id_, key, value):
     if id_ in user_data:
         user_data[id_][key] = value
     else:

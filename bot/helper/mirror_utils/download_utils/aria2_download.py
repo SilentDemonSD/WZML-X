@@ -1,7 +1,6 @@
 from time import sleep, time
 from os import remove, path as ospath
-from bot import LEECH_LIMIT, TELEGRAPH_STYLE, aria2, download_dict_lock, download_dict, STOP_DUPLICATE, BASE_URL, TORRENT_DIRECT_LIMIT, ZIP_UNZIP_LIMIT, LEECH_LIMIT, LOGGER, STORAGE_THRESHOLD, \
-                OWNER_ID, PAID_SERVICE, user_data
+from bot import aria2, download_dict_lock, download_dict, LOGGER, config_dict, user_data
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.ext_utils.bot_utils import is_magnet, getDownloadByGid, new_thread, bt_selection_buttons, get_readable_file_size
 from bot.helper.mirror_utils.status_utils.aria_download_status import AriaDownloadStatus
@@ -73,7 +72,7 @@ def __onDownloadStarted(api, gid):
                 limit = None
                 size = download.total_length
                 arch = any([listener.isZip, listener.isLeech, listener.extract])
-                if PAID_SERVICE is True:
+                if config_dict['PAID_SERVICE'] is True:
                     if STORAGE_THRESHOLD is not None:
                         acpt = check_storage_threshold(size, arch, True)
                         # True if files allocated, if allocation disabled remove True arg
@@ -132,7 +131,7 @@ def __onDownloadComplete(api, gid):
         LOGGER.info(f'Gid changed from {gid} to {new_gid}')
         if dl := getDownloadByGid(new_gid):
             listener = dl.listener()
-            if BASE_URL is not None and listener.select:
+            if config_dict['BASE_URL'] and listener.select:
                 api.client.force_pause(new_gid)
                 SBUTTONS = bt_selection_buttons(new_gid)
                 msg = "Your download paused. Choose files then press Done Selecting button to start downloading."

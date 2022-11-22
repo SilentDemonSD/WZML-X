@@ -50,7 +50,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
                 return reply_message
         except Exception:
             pass
-    if BOT_PM and message.chat.type != 'private':
+    if config_dict['BOT_PM'] and message.chat.type != 'private':
         try:
             msg1 = f'Added your Requested link to Download\n'
             send = bot.sendMessage(message.from_user.id, text=msg1)
@@ -71,7 +71,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
     total_task = len(download_dict)
     user_id = message.from_user.id
     if user_id != OWNER_ID and user_data[user_id].get('is_sudo') and user_data[user_id].get('is_paid'):
-        if PAID_SERVICE is True:
+        if config_dict['PAID_SERVICE'] is True:
             if TOTAL_TASKS_LIMIT == total_task:
                 return sendMessage(f"<b>Bot Total Task Limit : {TOTAL_TASKS_LIMIT}\nTasks Processing : {total_task}\n#total limit exceed </b>\n#Buy Paid Service", bot ,message)
             if USER_TASKS_LIMIT == get_user_task(user_id):
@@ -354,7 +354,7 @@ def qb_unzip_leech(update, context):
 def qb_zip_leech(update, context):
     _mirror_leech(context.bot, update.message, True, isQbit=True, isLeech=True)
 
-if MIRROR_ENABLED:
+if config_dict['MIRROR_ENABLED'] is True:
 
     mirror_handler = CommandHandler(BotCommands.MirrorCommand, mirror,
                                     filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
@@ -383,7 +383,7 @@ else:
     qb_zip_mirror_handler = CommandHandler(BotCommands.QbZipMirrorCommand, qb_zip_mirror,
                                     filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
 
-if LEECH_ENABLED:
+if config_dict['LEECH_ENABLED'] is True:
     leech_handler = CommandHandler(BotCommands.LeechCommand, leech,
                                     filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
     unzip_leech_handler = CommandHandler(BotCommands.UnzipLeechCommand, unzip_leech,

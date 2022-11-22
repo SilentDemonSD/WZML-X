@@ -253,7 +253,7 @@ def weebhelp(update, context):
 '''
     update.effective_message.reply_photo(IMAGE_URL, help_string, parse_mode=ParseMode.MARKDOWN)
 
-if ANILIST_ENABLED:
+if config_dict['ANILIST_ENABLED'] is True:
     ANIME_HANDLER = CommandHandler("anime", anime,
                                         filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
     CHARACTER_HANDLER = CommandHandler("character", character,

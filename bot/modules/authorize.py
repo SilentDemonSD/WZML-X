@@ -18,7 +18,7 @@ def authorize(update, context):
         msg = 'Already Authorized!'
     else:
         update_user_ldata(id_, 'is_auth', True)
-        if DB_URI is not None:
+        if DB_URI:
             DbManger().update_user_data(id_)
         msg = 'Authorized'
     sendMessage(msg, context.bot, update.message)
@@ -33,7 +33,7 @@ def unauthorize(update, context):
         id_ = update.effective_chat.id
     if id_ not in user_data or user_data[id_].get('is_auth'):
         update_user_ldata(id_, 'is_auth', False)
-        if DB_URI is not None:
+        if DB_URI:
             DbManger().update_user_data(id_)
         msg = 'Unauthorized'
     else:
@@ -52,7 +52,7 @@ def addSudo(update, context):
             msg = 'Already Sudo! 🤔'
         else:
             update_user_ldata(id_, 'is_sudo', True)
-            if DB_URI is not None:
+            if DB_URI:
                 DbManger().update_user_data(id_)
             msg = 'Promoted as Sudo 🤣'
     else:
@@ -68,7 +68,7 @@ def removeSudo(update, context):
         id_ = reply_message.from_user.id
     if id_ and id_ not in user_data or user_data[id_].get('is_sudo'):
         update_user_ldata(id_, 'is_sudo', False)
-        if DB_URI is not None:
+        if DB_URI:
             DbManger().update_user_data(id_)
         msg = 'Demoted'
     else:
@@ -87,7 +87,7 @@ def addleechlog(update, context):
         msg = 'Already Authorized!'
     else:
         update_user_ldata(id_, 'is_leech_log', True)
-        if DB_URI is not None:
+        if DB_URI:
             DbManger().update_user_data(id_)
         msg = 'Authorized'
     sendMessage(msg, context.bot, update.message)
@@ -102,7 +102,7 @@ def rmleechlog(update, context):
         id_ = update.effective_chat.id
     if id_ not in user_data or user_data[id_].get('is_leech_log'):
         update_user_ldata(id_, 'is_leech_log', False)
-        if DB_URI is not None:
+        if DB_URI:
             DbManger().update_user_data(id_)
         msg = 'Unauthorized'
     else:
@@ -121,7 +121,7 @@ def addPaid(update, context):
             msg = 'Already a Paid User!'
         else:
             update_user_ldata(id_, 'is_paid', True)
-            if DB_URI is not None:
+            if DB_URI:
                 DbManger().update_user_data(id_)
             msg = 'Promoted as Paid User'
     else:
@@ -137,7 +137,7 @@ def removePaid(update, context):
         id_ = reply_message.from_user.id
     if id_ and id_ not in user_data or user_data[id_].get('is_paid'):
         update_user_ldata(id_, 'is_paid', False)
-        if DB_URI is not None:
+        if DB_URI:
             DbManger().update_user_data(id_)
         msg = 'Demoted'
     else:

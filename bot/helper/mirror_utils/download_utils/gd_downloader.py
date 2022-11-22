@@ -1,7 +1,6 @@
 from random import SystemRandom
 from string import ascii_letters, digits
-from bot import TELEGRAPH_STYLE, download_dict, download_dict_lock, ZIP_UNZIP_LIMIT, LOGGER, STOP_DUPLICATE, STORAGE_THRESHOLD, TORRENT_DIRECT_LIMIT, LEECH_LIMIT, \
-                OWNER_ID, PAID_SERVICE, user_data
+from bot import TELEGRAPH_STYLE, download_dict, download_dict_lock, ZIP_UNZIP_LIMIT, LOGGER, user_data, config_dict
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.mirror_utils.status_utils.gd_download_status import GdDownloadStatus
 from bot.helper.telegram_helper.message_utils import sendMessage, sendStatusMessage, sendMarkup, sendFile
@@ -15,7 +14,7 @@ def add_gd_download(link, path, listener, is_gdtot, is_unified, is_udrive, newna
         return sendMessage(res, listener.bot, listener.message)
     if newname:
         name = newname
-    if STOP_DUPLICATE and not listener.isLeech:
+    if config_dict['STOP_DUPLICATE'] and not listener.isLeech:
         LOGGER.info('Checking File/Folder if already in Drive...')
         if listener.isZip:
             gname = f"{name}.zip"
@@ -41,7 +40,7 @@ def add_gd_download(link, path, listener, is_gdtot, is_unified, is_udrive, newna
     if any([ZIP_UNZIP_LIMIT, STORAGE_THRESHOLD, TORRENT_DIRECT_LIMIT, LEECH_LIMIT]) and user_id != OWNER_ID and user_data[user_id].get('is_sudo') and user_data[user_id].get('is_paid'):
         arch = any([listener.extract, listener.isZip])
         limit = None
-        if PAID_SERVICE is True:
+        if config_dict['PAID_SERVICE'] is True:
             if STORAGE_THRESHOLD is not None:
                 acpt = check_storage_threshold(size, arch)
                 if not acpt:

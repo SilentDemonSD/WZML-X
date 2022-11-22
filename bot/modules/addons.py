@@ -14,7 +14,7 @@ def prefix_set(update, context):
     user_id_ = update.message.from_user.id 
     u_men = update.message.from_user.first_name
 
-    if PAID_SERVICE is True:
+    if config_dict['PAID_SERVICE'] is True:
         if not user_data[user_id].get('is_paid') and user_id_ != OWNER_ID:
             sendMessage(f"Buy Paid Service to Use this Prename Feature.", context.bot, update.message)
             return
@@ -46,7 +46,7 @@ def suffix_set(update, context):
     user_id_ = update.message.from_user.id 
     u_men = update.message.from_user.first_name
 
-    if PAID_SERVICE is True:
+    if config_dict['PAID_SERVICE'] is True:
         if not user_data[user_id].get('is_paid') and user_id_ != OWNER_ID:
             sendMessage(f"Buy Paid Service to Use this Suffix Feature.", context.bot, update.message)
             return
@@ -79,7 +79,7 @@ def caption_set(update, context):
     u_men = update.message.from_user.first_name
     buttons = ButtonMaker()
 
-    if PAID_SERVICE is True:
+    if config_dict['PAID_SERVICE'] is True:
         if not user_data[user_id].get('is_paid') and user_id_ != OWNER_ID:
             sendMessage(f"Buy Paid Service to Use this Caption Feature.", context.bot, update.message)
             return
@@ -207,7 +207,7 @@ def userlog_set(update, context):
     user_id_ = update.message.from_user.id 
     u_men = update.message.from_user.first_name
 
-    if PAID_SERVICE is True:
+    if config_dict['PAID_SERVICE'] is True:
         if not user_data[user_id].get('is_paid') and user_id_ != OWNER_ID:
             sendMessage(f"Buy Paid Service to Use this Dump Feature.", context.bot, update.message)
             return
@@ -252,7 +252,7 @@ def remname_set(update, context):
     user_id_ = update.message.from_user.id 
     u_men = update.message.from_user.first_name
 
-    if PAID_SERVICE is True:
+    if config_dict['PAID_SERVICE'] is True:
         if not user_data[user_id].get('is_paid') and user_id_ != OWNER_ID:
             sendMessage(f"Buy Paid Service to Use this Remname Feature.", context.bot, update.message)
             return

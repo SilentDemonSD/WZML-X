@@ -10,14 +10,14 @@ from bs4 import BeautifulSoup, NavigableString, Tag
 
 from telegram import Message
 from telegram.ext import CommandHandler
-from bot import LOGGER, dispatcher, PAID_SERVICE, OWNER_ID
+from bot import LOGGER, dispatcher, config_dict['PAID_SERVICE'], OWNER_ID
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage
 
 def scrapper(update, context):
     user_id_ = update.message.from_user.id
-    if PAID_SERVICE is True:
+    if config_dict['PAID_SERVICE'] is True:
         if not (user_id_ in PAID_USERS) and user_id_ != OWNER_ID:
             sendMessage(f"Buy Paid Service to Use this Scrape Feature.", context.bot, update.message)
             return

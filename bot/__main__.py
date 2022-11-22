@@ -14,11 +14,8 @@ from telegram import ParseMode
 from telegram.ext import CommandHandler
 import requests
 import pytz
-from bot import bot, dispatcher, updater, botStartTime, TIMEZONE, IGNORE_PENDING_REQUESTS, LOGGER, Interval, INCOMPLETE_TASK_NOTIFIER, \
-                    DB_URI, app, main_loop, SET_BOT_COMMANDS, EMOJI_THEME, QbInterval, \
-                    START_BTN1_NAME, START_BTN1_URL, START_BTN2_NAME, START_BTN2_URL, CREDIT_NAME, TITLE_NAME, PICS, FINISHED_PROGRESS_STR, UN_FINISHED_PROGRESS_STR, \
-                    SHOW_LIMITS_IN_STATS, LEECH_LIMIT, TORRENT_DIRECT_LIMIT, CLONE_LIMIT, MEGA_LIMIT, ZIP_UNZIP_LIMIT, TOTAL_TASKS_LIMIT, USER_TASKS_LIMIT, \
-                    PIXABAY_API_KEY, PIXABAY_CATEGORY, PIXABAY_SEARCH, WALLCRAFT_CATEGORY, WALLTIP_SEARCH, WALLFLARE_SEARCH
+from bot import bot, dispatcher, updater, botStartTime, IGNORE_PENDING_REQUESTS, LOGGER, Interval, \
+                    DB_URI, app, main_loop, QbInterval, config_dict
 from .helper.ext_utils.fs_utils import start_cleanup, clean_all, exit_clean_up
 from .helper.ext_utils.telegraph_helper import telegraph
 from .helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time
@@ -28,13 +25,13 @@ from .helper.telegram_helper.message_utils import sendMessage, sendMarkup, editM
 from .helper.telegram_helper.filters import CustomFilters
 from .helper.telegram_helper.button_build import ButtonMaker
 from bot.modules.wayback import getRandomUserAgent
-from .modules import authorize, list, cancel_mirror, mirror_status, mirror_leech, clone, ytdlp, shell, eval, \
+from .modules import authorize, list, cancel_mirror, mirror_status, mirror_leech, clone, ytdlp, shell, eval, bot_settings, \
                     delete, count, users_settings, search, rss, wayback, speedtest, anilist, bt_select, mediainfo, hash, addons, scraper
 from datetime import datetime
 
 def progress_bar(percentage):
-    p_used = FINISHED_PROGRESS_STR
-    p_total = UN_FINISHED_PROGRESS_STR
+    p_used = config_dict['FINISHED_PROGRESS_STR']
+    p_total = config_dict['UN_FINISHED_PROGRESS_STR']
     if isinstance(percentage, str):
         return 'NaN'
     try:
@@ -45,11 +42,13 @@ def progress_bar(percentage):
         p_used if i <= percentage // 10 else p_total for i in range(1, 11)
     )
 
-now=datetime.now(pytz.timezone(f'{TIMEZONE}'))
+
+timez = config_dict['TIMEZONE']
+now=datetime.now(pytz.timezone(f'{timez}'))
 
 def stats(update, context):
     if ospath.exists('.git'):
-        if EMOJI_THEME is True:
+        if config_dict['EMOJI_THEME'] is True:
             last_commit = check_output(["git log -1 --date=short --pretty=format:'%cd \n<b>├</b> 🛠<b>From</b> %cr'"], shell=True).decode()
             botVersion = check_output(["git log -1 --date=format:v%y.%m%d.%H%M --pretty=format:%cd"], shell=True).decode()
         else:
@@ -79,7 +78,7 @@ def stats(update, context):
     mem_t = get_readable_file_size(memory.total)
     mem_a = get_readable_file_size(memory.available)
     mem_u = get_readable_file_size(memory.used)
-    if EMOJI_THEME is True:
+    if config_dict['EMOJI_THEME'] is True:
             stats = f'<b>╭─《🌐 BOT STATISTICS 🌐》</b>\n' \
                     f'<b>├ 🛠 Updated On: </b>{last_commit}\n'\
                     f'<b>├ ⌛ Uptime: </b>{currentTime}\n'\
@@ -105,7 +104,7 @@ def stats(update, context):
 
 
 
-    if SHOW_LIMITS_IN_STATS is True:
+    if config_dict['SHOW_LIMITS_IN_STATS'] is True:
         torrent_direct = 'No Limit Set' if TORRENT_DIRECT_LIMIT is None else f'{TORRENT_DIRECT_LIMIT}GB/Link'
         clone_limit = 'No Limit Set' if CLONE_LIMIT is None else f'{CLONE_LIMIT}GB/Link'
         mega_limit = 'No Limit Set' if MEGA_LIMIT is None else f'{MEGA_LIMIT}GB/Link'
@@ -114,7 +113,7 @@ def stats(update, context):
         total_task = 'No Limit Set' if TOTAL_TASKS_LIMIT is None else f'{TOTAL_TASKS_LIMIT} Total Tasks/Time'
         user_task = 'No Limit Set' if USER_TASKS_LIMIT is None else f'{USER_TASKS_LIMIT} Tasks/user'
 
-        if EMOJI_THEME is True: 
+        if config_dict['EMOJI_THEME'] is True: 
             stats += f'<b>╭─《 ⚠️ BOT LIMITS ⚠️ 》</b>\n'\
                      f'<b>├ 🧲 Torrent/Direct: </b>{torrent_direct}\n'\
                      f'<b>├ 🔐 Zip/Unzip: </b>{zip_unzip}\n'\
@@ -140,7 +139,7 @@ def stats(update, context):
 
 def start(update, context):
     buttons = ButtonMaker()
-    if EMOJI_THEME is True:
+    if config_dict['EMOJI_THEME'] is True:
         buttons.buildbutton(f"😎 {START_BTN1_NAME}", f"{START_BTN1_URL}")
         buttons.buildbutton(f"🔥 {START_BTN2_NAME}", f"{START_BTN2_URL}")
     else:
@@ -172,7 +171,7 @@ def restart(update, context):
         QbInterval[0].cancel()
         QbInterval.clear()
     clean_all()
-    srun(["pkill", "-f", "gunicorn|aria2c|qbittorrent-nox|ffmpeg"])
+    srun(["pkill", "-9", "-f", "gunicorn|aria2c|qbittorrent-nox|ffmpeg"])
     srun(["python3", "update.py"])
     with open(".restartmsg", "w") as f:
         f.truncate(0)
@@ -181,7 +180,7 @@ def restart(update, context):
 
 
 def ping(update, context):
-    if EMOJI_THEME is True:
+    if config_dict['EMOJI_THEME'] is True:
         start_time = int(round(time() * 1000))
         reply = sendMessage("Starting_Ping ⛔", context.bot, update.message)
         end_time = int(round(time() * 1000))
@@ -322,7 +321,7 @@ help_admin = telegraph.create_page(
 
 def bot_help(update, context):
     button = ButtonMaker()
-    if EMOJI_THEME is True:
+    if config_dict['EMOJI_THEME'] is True:
         button.buildbutton("👤 User", f"https://graph.org/{help_user}")
         button.buildbutton("🛡️ Admin", f"https://graph.org/{help_admin}")
     else:
@@ -331,7 +330,7 @@ def bot_help(update, context):
     sendMarkup(help_string, context.bot, update.message, button.build_menu(2))
 
 
-if SET_BOT_COMMANDS:
+if config_dict['SET_BOT_COMMANDS']:
     botcmds = [
         (f'{BotCommands.MirrorCommand}', 'Mirror'),
         (f'{BotCommands.ZipMirrorCommand}','Mirror and upload as zip'),
@@ -421,13 +420,13 @@ def main():
         except Exception as err:
             LOGGER.info(f"Pixabay API Error: {err}")
 
-    if SET_BOT_COMMANDS:
+    if config_dict['SET_BOT_COMMANDS']:
         bot.set_my_commands(botcmds)
     start_cleanup()
     date = now.strftime('%d/%m/%y')
     time = now.strftime('%I:%M:%S %p')
     notifier_dict = False
-    if INCOMPLETE_TASK_NOTIFIER and DB_URI is not None:
+    if config_dict['INCOMPLETE_TASK_NOTIFIER'] and DB_URI:
         if notifier_dict := DbManger().get_incomplete_tasks():
             for cid, data in notifier_dict.items():
                 if ospath.isfile(".restartmsg"):

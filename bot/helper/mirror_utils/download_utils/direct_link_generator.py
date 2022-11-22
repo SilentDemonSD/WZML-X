@@ -27,7 +27,7 @@ from base64 import standard_b64encode
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
-from bot import LOGGER, UPTOBOX_TOKEN, CRYPT, UNIFIED_EMAIL, UNIFIED_PASS, HUBDRIVE_CRYPT, KATDRIVE_CRYPT, DRIVEFIRE_CRYPT
+from bot import LOGGER, config_dict
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.ext_utils.bot_utils import *
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
@@ -146,7 +146,7 @@ def uptobox(url: str) -> str:
         link = re_findall(r'\bhttps?://.*uptobox\.com\S+', url)[0]
     except IndexError:
         raise DirectDownloadLinkException("No Uptobox links found\n")
-    if UPTOBOX_TOKEN is None:
+    if UPTOBOX_TOKEN := config_dict['UPTOBOX_TOKEN']:
         LOGGER.error('UPTOBOX_TOKEN not provided!')
         dl_url = link
     else:
@@ -427,7 +427,8 @@ def gdtot(url: str) -> str:
     """ Gdtot google drive link generator
     By https://github.com/xcscxr """
 
-    if CRYPT is None:
+
+    if CRYPT := config_dict['CRYPT']:
         raise DirectDownloadLinkException("ERROR: CRYPT cookie not provided")
 
     match = re_findall(r'https?://(.+)\.gdtot\.(.+)\/\S+\/\S+', url)[0]

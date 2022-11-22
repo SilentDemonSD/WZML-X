@@ -60,7 +60,7 @@ def mediainfo(update, context):
     help = telegraph.create_page(title='MediaInfo', content=reply)["path"]
     editMessage(short_url(f"https://graph.org/{help}"), sent)
 
-if MEDIAINFO_ENABLED:
+if config_dict['MEDIAINFO_ENABLED'] is True:
     mediainfo_handler = CommandHandler(BotCommands.MediaInfoCommand, mediainfo,
         filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
 else:

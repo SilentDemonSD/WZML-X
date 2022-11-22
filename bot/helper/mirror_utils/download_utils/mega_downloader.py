@@ -5,8 +5,8 @@ from threading import Event
 from mega import (MegaApi, MegaListener, MegaRequest, MegaTransfer, MegaError)
 
 
-from bot import LOGGER, MEGA_API_KEY, TELEGRAPH_STYLE, download_dict, download_dict_lock, MEGA_LIMIT, STOP_DUPLICATE, ZIP_UNZIP_LIMIT, STORAGE_THRESHOLD, LEECH_LIMIT, MEGA_EMAIL_ID, MEGA_PASSWORD, \
-                OWNER_ID, PAID_SERVICE, user_data
+from bot import LOGGER, download_dict, download_dict_lock, config_dict, \
+                user_data
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, sendStatusMessage, sendStatusMessage, sendFile
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, setInterval, get_mega_link_type
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
@@ -133,12 +133,15 @@ class AsyncExecutor:
 
 
 def add_mega_download(mega_link: str, path: str, listener, name: str):
+    MEGA_API_KEY = config_dict['MEGA_API_KEY']
+    MEGA_EMAIL_ID = config_dict['MEGA_EMAIL_ID']
+    MEGA_PASSWORD = config_dict['MEGA_PASSWORD']
     executor = AsyncExecutor()
     api = MegaApi(MEGA_API_KEY, None, None, 'mirror-leech-telegram-bot')
     folder_api = None
     mega_listener = MegaAppListener(executor.continue_event, listener)
     api.addListener(mega_listener)
-    if MEGA_EMAIL_ID is not None and MEGA_PASSWORD is not None:
+    if MEGA_EMAIL_ID and MEGA_PASSWORD:
         executor.do(api.login, (MEGA_EMAIL_ID, MEGA_PASSWORD))
     if get_mega_link_type(mega_link) == "file":
         executor.do(api.getPublicNode, (mega_link,))
@@ -155,7 +158,7 @@ def add_mega_download(mega_link: str, path: str, listener, name: str):
             folder_api.removeListener(mega_listener)
         return
     mname = name or node.getName()
-    if STOP_DUPLICATE and not listener.isLeech:
+    if config_dict['STOP_DUPLICATE'] and not listener.isLeech:
         LOGGER.info('Checking File/Folder if already in Drive')
         if listener.isZip:
             mname = f"{mname}.zip"
@@ -184,7 +187,7 @@ def add_mega_download(mega_link: str, path: str, listener, name: str):
     if any([STORAGE_THRESHOLD, ZIP_UNZIP_LIMIT, MEGA_LIMIT, LEECH_LIMIT]) and user_id != OWNER_ID and user_data[user_id].get('is_sudo') and user_data[user_id].get('is_paid'):
         size = api.getSize(node)
         arch = any([listener.isZip, listener.isLeech, listener.extract])
-        if PAID_SERVICE is True:
+        if config_dict['PAID_SERVICE'] is True:
             if STORAGE_THRESHOLD is not None:
                 acpt = check_storage_threshold(size, arch)
                 if not acpt:
