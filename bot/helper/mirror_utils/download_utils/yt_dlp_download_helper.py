@@ -3,7 +3,6 @@ from string import ascii_letters, digits
 from logging import getLogger
 from yt_dlp import YoutubeDL, DownloadError
 from threading import RLock
-from time import time
 from json import loads as jsonloads
 from re import search as re_search
 
@@ -50,7 +49,6 @@ class YoutubeDLHelper:
         self.__downloaded_bytes = 0
         self.__download_speed = 0
         self.__eta = '-'
-        self.__start_time = time()
         self.__listener = listener
         self.__gid = ""
         self.__is_cancelled = False

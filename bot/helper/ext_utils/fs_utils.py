@@ -102,7 +102,8 @@ def check_storage_threshold(size: int, arch=False, alloc=False):
     return True
 
 def get_base_name(orig_path: str):
-    if ext := [ext for ext in ARCH_EXT if orig_path.lower().endswith(ext)]:
+    ext = [ext for ext in ARCH_EXT if orig_path.lower().endswith(ext)]
+    if ext:
         ext = ext[0]
         return re_split(f'{ext}$', orig_path, maxsplit=1, flags=I)[0]
     else:

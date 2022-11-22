@@ -2,13 +2,11 @@ from os import path as ospath, getcwd, chdir
 from traceback import format_exc
 from textwrap import indent
 from io import StringIO, BytesIO
-from telegram import ParseMode
 from telegram.ext import CommandHandler
 from contextlib import redirect_stdout
 
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper.message_utils import sendMessage
 from bot import LOGGER, dispatcher
 
 namespaces = {}
@@ -43,7 +41,7 @@ def send(msg, bot, update):
         bot.send_message(
             chat_id=update.effective_chat.id,
             text=f"`{msg}`",
-            parse_mode=ParseMode.MARKDOWN)
+            parse_mode='Markdown')
 
 def evaluate(update, context):
     bot = context.bot

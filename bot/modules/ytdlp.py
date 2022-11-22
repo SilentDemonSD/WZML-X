@@ -110,10 +110,7 @@ def _ytdl(bot, message, isZip=False, isLeech=False):
         pswd = None
 
     opt = mssg.split(' opt: ')
-    if len(opt) > 1:
-        opt = opt[1]
-    else:
-        opt = None
+    opt = opt[1] if len(opt) > 1 else None
 
     if message.from_user.username:
         tag = f"@{message.from_user.username}"
@@ -206,8 +203,7 @@ def _ytdl(bot, message, isZip=False, isLeech=False):
                     if b_name in formats_dict:
                         formats_dict[b_name][str(frmt['tbr'])] = [size, v_format]
                     else:
-                        subformat = {}
-                        subformat[str(frmt['tbr'])] = [size, v_format]
+                        subformat = {str(frmt['tbr']): [size, v_format]}
                         formats_dict[b_name] = subformat
 
             for b_name, d_dict in formats_dict.items():
@@ -288,10 +284,7 @@ def select_format(update, context):
         return editMessage('Choose Video Quality:', msg, task_info[4])
     elif data[2] == "mp3":
         query.answer()
-        if len(data) == 4:
-            playlist = True
-        else:
-            playlist = False
+        playlist = len(data) == 4
         _mp3_subbuttons(task_id, msg, playlist)
         return
     elif data[2] == "cancel":
