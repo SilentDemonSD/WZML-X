@@ -343,7 +343,7 @@ class MirrorLeechListener:
             logleechwarn = ''
         else:
             logleechwarn = ''
-        if not self.isPrivate and INCOMPLETE_TASK_NOTIFIER and DB_URI is not None:
+        if not self.isPrivate and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DB_URI is not None:
             DbManger().rm_complete_task(self.message.link)
 
 
