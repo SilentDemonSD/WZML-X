@@ -89,6 +89,7 @@ def get_path_size(path: str):
     return total_size
 
 def check_storage_threshold(size: int, arch=False, alloc=False):
+    STORAGE_THRESHOLD = config_dict['STORAGE_THRESHOLD']
     if not alloc:
         if not arch:
             if disk_usage(DOWNLOAD_DIR).free - size < STORAGE_THRESHOLD * 1024**3:
