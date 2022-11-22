@@ -188,10 +188,7 @@ if len(aid) != 0:
 aid = getenv('LOG_LEECH', '')
 if len(aid) != 0:
     aid = aid.split(' ')
-    log_dict = []
-    for id_ in aid:
-        log_dict.append(int(id_.strip()))
-    user_data['is_log_leech'] = log_dict
+    user_data['is_log_leech'] = [int(id_.strip()) for id_ in aid]
 
 aid = getenv('LEECH_LOG', '')
 if len(aid) != 0:
@@ -200,22 +197,19 @@ if len(aid) != 0:
 
 aid = getenv('MIRROR_LOGS', '')
 if len(aid) != 0:
-    aid = aid.split()
-    for id_ in aid:
-        user_data[int(id_.strip())] = {'is_mirror_log': True}
+    aid = aid.split(' ')
+    user_data['mirror_logs'] = [int(id_.strip()) for id_ in aid]
 
 aid = getenv('LINK_LOGS', '')
 if len(aid) != 0:
-    aid = aid.split()
-    for id_ in aid:
-        user_data[int(id_.strip())] = {'is_link_log': True}
+    aid = aid.split(' ')
+    user_data['link_logs'] = [int(id_.strip()) for id_ in aid]
 
 fx = getenv('EXTENSION_FILTER', '')
 if len(fx) > 0:
     fx = fx.split(' ')
     for x in fx:
         EXTENSION_FILTER.add(x.strip().lower())
-
 
 
 LOGGER.info("Generating SESSION_STRING")
