@@ -6,7 +6,7 @@ from faulthandler import enable as faulthandler_enable
 from telegram.ext import Updater as tgUpdater
 from qbittorrentapi import Client as qbClient
 from aria2p import API as ariaAPI, Client as ariaClient
-from os import remove as osremove, path as ospath, getenv, mkdir
+from os import remove as osremove, path as ospath, getenv, mkdir, environ
 from requests import get as rget
 from subprocess import Popen, run as srun, check_output
 from time import sleep, time
@@ -79,7 +79,7 @@ if DB_URI:
     if config_dict := db.settings.config.find_one({'_id': bot_id}):  #retrun config dict (all env vars)
         del config_dict['_id']
         for key, value in config_dict.items():
-            getenv[key] = str(value)
+            environ[key] = str(value)
     if pf_dict := db.settings.PFile.find_one({'_id': bot_id}):
         del pf_dict['_id']
         for key, value in pf_dict.items():
