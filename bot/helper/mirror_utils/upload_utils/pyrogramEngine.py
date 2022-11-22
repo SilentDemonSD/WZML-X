@@ -35,7 +35,7 @@ class TgUploader:
         self.__sent_msg = app.get_messages(self.__listener.message.chat.id, self.__listener.uid)
         self.__size = size
         self.__user_settings()
-        self.__leech_log = user_data.get('is_leech_log', '').copy()  # copy then pop to keep the original var as it is
+        self.__leech_log = user_data.get('is_leech_log', ['']).copy()  # copy then pop to keep the original var as it is
         self.__app = app
         self.__user_id = listener.message.from_user.id
         self.isPrivate = listener.message.chat.type in ['private', 'group']
