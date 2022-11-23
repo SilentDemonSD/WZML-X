@@ -21,6 +21,7 @@ default_values = {'AUTO_DELETE_MESSAGE_DURATION': 30,
                   'UPSTREAM_BRANCH': 'master',
                   'UPSTREAM_REPO': 'https://github.com/weebzone/WZML',
                   'STATUS_UPDATE_INTERVAL': 10,
+                  'DOWNLOAD_DIR': '/usr/src/app/downloads/',
                   'TIME_GAP': -1,
                   'TG_SPLIT_SIZE': tgBotMaxFileSize,
                   'TGH_THUMB': 'https://te.legra.ph/file/3325f4053e8d68eab07b5.jpg',
@@ -51,6 +52,16 @@ def load_config():
     GDRIVE_ID = getenv('GDRIVE_ID', '')
     if len(GDRIVE_ID) == 0:
         GDRIVE_ID = ''
+
+    TGH_THUMB = getenv('TGH_THUMB', '')
+    if len(TGH_THUMB) == 0:
+        TGH_THUMB = 'https://te.legra.ph/file/3325f4053e8d68eab07b5.jpg'
+
+    DOWNLOAD_DIR = getenv('DOWNLOAD_DIR', '')
+    if len(DOWNLOAD_DIR) == 0:
+        DOWNLOAD_DIR = '/usr/src/app/downloads/'
+    elif not DOWNLOAD_DIR.endswith("/"):
+        DOWNLOAD_DIR = DOWNLOAD_DIR + '/'
 
     AUTHORIZED_CHATS = getenv('AUTHORIZED_CHATS', '')
     if len(AUTHORIZED_CHATS) != 0:
@@ -506,6 +517,7 @@ def load_config():
                    'AUTO_DELETE_MESSAGE_DURATION': AUTO_DELETE_MESSAGE_DURATION,
                    'AUTO_DELETE_UPLOAD_MESSAGE_DURATION': AUTO_DELETE_UPLOAD_MESSAGE_DURATION,
                    'BASE_URL': BASE_URL,
+                   'DOWNLOAD_DIR': DOWNLOAD_DIR
                    'CMD_PERFIX': CMD_PERFIX,
                    'EQUAL_SPLITS': EQUAL_SPLITS,
                    'EXTENSION_FILTER': EXTENSION_FILTER,
@@ -530,6 +542,7 @@ def load_config():
                    'STATUS_UPDATE_INTERVAL': STATUS_UPDATE_INTERVAL,
                    'STOP_DUPLICATE': STOP_DUPLICATE,
                    'SUDO_USERS': SUDO_USERS,
+                   'TGH_THUMB': TGH_THUMB,
                    'TELEGRAM_API': TELEGRAM_API,
                    'TELEGRAM_HASH': TELEGRAM_HASH,
                    'TORRENT_TIMEOUT': TORRENT_TIMEOUT,
