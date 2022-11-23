@@ -56,16 +56,14 @@ def get_user_settings(from_user):
     else:
         thumbmsg = "Not Exists"
         buttons.sbutton("Set Thumbnail", f"userset {user_id} sthumb")
-    if prefix != "Not Exists":
-        buttons.sbutton("Change/Delete Prefix", f"userset {user_id} sprefix")
-    else:
-        buttons.sbutton("Set Prefix", f"userset {user_id} sprefix")
-    if suffix != "Not Exists":
-        buttons.sbutton("Delete Suffix", f"userset {user_id} suffix")
-    if caption != "Not Exists": 
-        buttons.sbutton("Delete Caption", f"userset {user_id} cap")
-    if userlog != "Not Exists":
-        buttons.sbutton("Delete UserLog", f"userset {user_id} ulog")
+    buttxt = "Change/Delete Prefix" if prefix != "Not Exists" else "Set Prefix"
+    buttons.sbutton(buttxt, f"userset {user_id} suniversal prefix")
+    buttxt = "Change/Delete Suffix" if suffix != "Not Exists" else "Set Suffix"
+    buttons.sbutton(buttxt, f"userset {user_id} suniversal suffix")
+    buttxt = "Change/Delete Caption" if caption != "Not Exists" else "Set Caption"
+    buttons.sbutton(buttxt, f"userset {user_id} suniversal caption")
+    buttxt = "Change/Delete UserLog" if userlog != "Not Exists" else "Set UserLog"
+    buttons.sbutton(buttxt, f"userset {user_id} suniversal userlog")
     if remname != "Not Exists": 
         buttons.sbutton("Delete Remname", f"userset {user_id} rem")
     if cfont != "Not Exists": 
@@ -245,7 +243,7 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
             DbManger().update_userval(user_id, 'prefix')
         query.answer(text="Your Prefix is Successfully Deleted!", show_alert=True)
         update_user_settings(message, query.from_user)
-    elif data[2] == "sprefix":
+    elif data[2] == "suniversal":
         query.answer()
         menu = False
         if handler_dict.get(user_id):
@@ -254,40 +252,41 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
         start_time = time()
         handler_dict[user_id] = True
         buttons = ButtonMaker()
-        if user_id in user_data and user_data[user_id].get('prefix'):
+        if user_id in user_data and user_data[user_id].get(data[3]):
             menu = True
-            buttons.sbutton("Delete", f"userset {user_id} prefix")
+            buttons.sbutton("Delete", f"userset {user_id} {data[3]}")
         buttons.sbutton("Back", f"userset {user_id} back")
         buttons.sbutton("Close", f"userset {user_id} close")
-        editMessage('Send Prefix text to save it as custom Prefix.', message, buttons.build_menu(2) if menu else buttons.build_menu(1))
-        partial_fnc = partial(set_addons, data='prefix', omsg=message)
-        prefix_handler = MessageHandler(filters=Filters.text & Filters.chat(message.chat.id) & Filters.user(user_id),
+        editMessage(f'Send {data[3].capitalize()} text to save it as custom {data[3].capitalize()}.', message, buttons.build_menu(2) if menu else buttons.build_menu(1))
+        partial_fnc = partial(set_addons, data=data[3], omsg=message)
+        UNI_HANDLER = f"{data[3]}_handler"
+        UNI_HANDLER = MessageHandler(filters=Filters.text & Filters.chat(message.chat.id) & Filters.user(user_id),
                                        callback=partial_fnc, run_async=True)
-        dispatcher.add_handler(prefix_handler)
+        dispatcher.add_handler(UNI_HANDLER)
         while handler_dict[user_id]:
             if time() - start_time > 60:
                 handler_dict[user_id] = False
                 update_user_settings(message, query.from_user)
-        dispatcher.remove_handler(prefix_handler)
+        dispatcher.remove_handler(UNI_HANDLER)
     elif data[2] == "suffix":
         update_user_ldata(user_id, 'suffix', False)
         if DATABASE_URL: 
             DbManger().update_userval(user_id, 'suffix')
         query.answer(text="Your Suffix is Successfully Deleted!", show_alert=True)
         update_user_settings(message, query)
-    elif data[2] == "cap":
+    elif data[2] == "caption":
         update_user_ldata(user_id, 'caption', False)
         if DATABASE_URL: 
             DbManger().update_userval(user_id, 'caption')
         query.answer(text="Your Caption is Successfully Deleted!", show_alert=True)
         update_user_settings(message, query)
-    elif data[2] == "rem":
+    elif data[2] == "remname":
         update_user_ldata(user_id, 'remname', False)
         if DATABASE_URL: 
             DbManger().update_userval(user_id, 'remname')
         query.answer(text="Your Remname is Successfully Deleted!", show_alert=True)
         update_user_settings(message, query)
-    elif data[2] == "ulog":
+    elif data[2] == "userlog":
         update_user_ldata(user_id, 'userlog', False)
         if DATABASE_URL: 
             DbManger().update_userval(user_id, 'userlog')
