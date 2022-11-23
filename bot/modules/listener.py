@@ -487,6 +487,7 @@ class MirrorLeechListener:
                 if self.newDir:
                     clean_target(self.newDir)
                 return			   			  
+
         else:
             if config_dict['EMOJI_THEME']:
                 msg += f'\n<b>├📦 Type: </b>{typ}'
@@ -564,7 +565,7 @@ class MirrorLeechListener:
                         pass
                     
 
-                    if config_dict['BOT_PM'] and config_dict['FORCE_BOT_PM'] is '' and self.message.chat.type != 'private':	
+                    if config_dict['BOT_PM'] is True and config_dict['FORCE_BOT_PM'] is '' and self.message.chat.type != 'private':	
                         bot_d = bot.get_me()	
                         b_uname = bot_d.username	
                         botstart = f"http://t.me/{b_uname}"	
