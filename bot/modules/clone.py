@@ -310,6 +310,7 @@ def _clone(message, bot):
         if button in ["cancelled", ""]:
             sendMessage(f"{tag} {result}", bot, message)
         else:
+            sendMarkup(result + cc, bot, message, button)
             LOGGER.info(f'Cloning Done: {name}')
             if config_dict['FORCE_BOT_PM'] is '':
                 if PICS:
