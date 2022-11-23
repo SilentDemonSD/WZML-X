@@ -175,7 +175,7 @@ def _clone(message, bot):
                     return
 
         config_dict['CLONE_LIMIT']
-        if CLONE_LIMIT is not '' and user_id != OWNER_ID and user_data[user_id].get('is_sudo') and user_data[user_id].get('is_paid'):
+        if CLONE_LIMIT != '' and user_id != OWNER_ID and user_data[user_id].get('is_sudo') and user_data[user_id].get('is_paid'):
             LOGGER.info('Checking File/Folder Size...')
             if size > CLONE_LIMIT * 1024**3:
                 msg2 = f'Failed, Clone limit is {CLONE_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(size)}.'
@@ -312,7 +312,7 @@ def _clone(message, bot):
         else:
             sendMarkup(result + cc, bot, message, button)
             LOGGER.info(f'Cloning Done: {name}')
-            if config_dict['FORCE_BOT_PM'] is '':
+            if config_dict['FORCE_BOT_PM'] == '':
                 if PICS:
                     msg = sendPhoto(result + cc + pmwarn + logwarn + warnmsg, bot, message, random.choice(PICS), button)
                 else:

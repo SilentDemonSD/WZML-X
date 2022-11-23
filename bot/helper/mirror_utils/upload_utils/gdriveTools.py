@@ -424,11 +424,11 @@ class GoogleDriveHelper:
                         urls = f'{INDEX_URL}/{url_path}?a=view'
                         urls = short_url(urls)
                         buttons.buildbutton("🌐 View Link", urls)
-            if config_dict['BUTTON_FOUR_NAME'] is not '' and config_dict['BUTTON_FOUR_URL'] is not '':
+            if config_dict['BUTTON_FOUR_NAME'] != '' and config_dict['BUTTON_FOUR_URL'] != '':
                 buttons.buildbutton(f"{config_dict['BUTTON_FOUR_NAME']}", f"{config_dict['BUTTON_FOUR_URL']}")
-            if config_dict['BUTTON_FIVE_NAME'] is not '' and config_dict['BUTTON_FIVE_URL'] is not '':
+            if config_dict['BUTTON_FIVE_NAME'] != '' and config_dict['BUTTON_FIVE_URL'] != '':
                 buttons.buildbutton(f"{config_dict['BUTTON_FIVE_NAME']}", f"{config_dict['BUTTON_FIVE_URL']}")
-            if config_dict['BUTTON_SIX_NAME'] is not '' and config_dict['BUTTON_SIX_URL'] is not '':
+            if config_dict['BUTTON_SIX_NAME'] != '' and config_dict['BUTTON_SIX_URL'] != '':
                 buttons.buildbutton(f"{config_dict['BUTTON_SIX_NAME']}", f"{config_dict['BUTTON_SIX_URL']}")
             if config_dict['SOURCE_LINK']:
                 buttons.buildbutton(f"🔗 Source Link", link)

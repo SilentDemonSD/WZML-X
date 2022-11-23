@@ -475,7 +475,7 @@ def parse_infou(data):
     return info_parsed
 
 def unified(url: str) -> str:
-    if (UNIFIED_EMAIL or UNIFIED_PASS) is '':
+    if (UNIFIED_EMAIL or UNIFIED_PASS) == '':
         raise DirectDownloadLinkException("UNIFIED_EMAIL and UNIFIED_PASS env vars not provided")
     client = cloudscraper.create_scraper(delay=10, browser='chrome')
     client.headers.update({
