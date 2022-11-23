@@ -1,7 +1,7 @@
 from telegram.ext import CommandHandler, CallbackQueryHandler, MessageHandler, Filters
 from functools import partial
 from time import time, sleep
-from os import remove, rename, path as ospath
+from os import remove, rename, path as ospath, getenv
 from subprocess import run as srun, Popen
 from dotenv import load_dotenv
 from bot import config_dict, dispatcher, DB_URI, tgBotMaxFileSize, DRIVES_IDS, DRIVES_NAMES, INDEX_URLS, aria2, GLOBAL_EXTENSION_FILTER, LOGGER, status_reply_dict_lock, Interval, aria2_options, aria2c_global, download_dict
