@@ -71,12 +71,12 @@ if len(BOT_TOKEN) == 0:
 
 bot_id = int(BOT_TOKEN.split(':', 1)[0])
 
-DB_URI = getenv('DATABASE_URL', '')
-if len(DB_URI) == 0:
-    DB_URI = ''
+DATABASE_URL = environ.get('DATABASE_URL', '')
+if len(DATABASE_URL) == 0:
+    DATABASE_URL = ''
 
-if DB_URI:
-    conn = MongoClient(DB_URI)
+if DATABASE_URL:
+    conn = MongoClient(DATABASE_URL)
     db = conn.mltb
     if config_dict := db.settings.config.find_one({'_id': bot_id}):  #retrun config dict (all env vars)
         del config_dict['_id']
@@ -96,6 +96,9 @@ if DB_URI:
         del qbit_opt['_id']
         qbit_options = qbit_opt
     conn.close()
+    BOT_TOKEN = environ.get('BOT_TOKEN', '')
+    bot_id = int(BOT_TOKEN.split(':', 1)[0])
+    DATABASE_URL = environ.get('DATABASE_URL', '')
 else:
     config_dict = {}
 
@@ -126,7 +129,7 @@ DOWNLOAD_DIR = getenv('DOWNLOAD_DIR', '')
 if len(DOWNLOAD_DIR) == 0:
     DOWNLOAD_DIR = '/usr/src/app/downloads/'
 elif not DOWNLOAD_DIR.endswith("/"):
-    DOWNLOAD_DIR = DOWNLOAD_DIR + '/'
+    DOWNLOAD_DIR = f'{DOWNLOAD_DIR}/'
 
 
 TGH_THUMB = getenv('TGH_THUMB')
@@ -227,9 +230,9 @@ try:
                 exit(1)
             TG_SPLIT_SIZE = 4194304000
             LOGGER.info("Telegram Premium detected! Leech Limit upgraded to 4GB")
-        elif (not DB_URI) or (not RSS_CHAT_ID):
+        elif (not DATABASE_URL) or (not RSS_CHAT_ID):
             premium_session.stop()
-            LOGGER.info(f"Not using rss. if you want to use fill RSS_CHAT_ID and DB_URI variables.")
+            LOGGER.info(f"Not using rss. if you want to use fill RSS_CHAT_ID and DATABASE_URL variables.")
 except:
     USER_SESSION_STRING = ''
     premium_session = ''
@@ -580,7 +583,10 @@ if len(UPSTREAM_BRANCH) == 0:
                    'AUTO_DELETE_MESSAGE_DURATION': AUTO_DELETE_MESSAGE_DURATION,
                    'AUTO_DELETE_UPLOAD_MESSAGE_DURATION': AUTO_DELETE_UPLOAD_MESSAGE_DURATION,
                    'BASE_URL': BASE_URL,
+                   'BOT_TOKEN': BOT_TOKEN,
                    'DOWNLOAD_DIR': DOWNLOAD_DIR,
+                   'DATABASE_URL': DATABASE_URL,
+                   'OWNER_ID': OWNER_ID,
                    'CMD_PERFIX': CMD_PERFIX,
                    'EQUAL_SPLITS': EQUAL_SPLITS,
                    'EXTENSION_FILTER': EXTENSION_FILTER,
@@ -714,9 +720,13 @@ srun(["chmod", "600", ".netrc"])
 srun(["chmod", "+x", "aria.sh"])
 srun("./aria.sh", shell=True)
 if ospath.exists('accounts.zip'):
-    srun(["unzip", "-q", "-o", "accounts.zip"])
+    if ospath.exists('accounts'):
+        srun(["rm", "-rf", "accounts"])
+    srun(["unzip", "-q", "-o", "accounts.zip", "-x", "accounts/emails.txt"])
     srun(["chmod", "-R", "777", "accounts"])
     osremove('accounts.zip')
+if not ospath.exists('accounts'):
+    config_dict['USE_SERVICE_ACCOUNTS'] = False
 sleep(0.5)
 
 aria2 = ariaAPI(ariaClient(host="http://localhost", port=6800, secret=""))
@@ -752,9 +762,16 @@ if not aria2_options:
 qb_client = get_client()
 if not qbit_options:
     qbit_options = dict(qb_client.app_preferences())
-    del qbit_options['scan_dirs']
+    del qbit_options['listen_port']
+    for k in list(qbit_options.keys()):
+        if k.startswith('rss'):
+            del qbit_options[k]
 else:
-    qb_client.app_set_preferences(qbit_options)
+    qb_opt = {**qbit_options}
+    for k, v in list(qb_opt.items()):
+        if v in ["", "*"]:
+            del qb_opt[k]
+    qb_client.app_set_preferences(qb_opt)
 
 updater = tgUpdater(token=BOT_TOKEN, request_kwargs={'read_timeout': 20, 'connect_timeout': 15})
 bot = updater.bot

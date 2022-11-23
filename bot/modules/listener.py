@@ -62,7 +62,7 @@ class MirrorLeechListener:
             pass
 
     def onDownloadStart(self):
-        if not self.isPrivate and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DB_URI:
+        if not self.isPrivate and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL:
             DbManger().add_incomplete_task(self.message.chat.id, self.message.link, self.tag)
 
     def onDownloadComplete(self):
@@ -343,7 +343,7 @@ class MirrorLeechListener:
             logleechwarn = ''
         else:
             logleechwarn = ''
-        if not self.isPrivate and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DB_URI is not None:
+        if not self.isPrivate and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL is not None:
             DbManger().rm_complete_task(self.message.link)
 
 
@@ -651,7 +651,7 @@ class MirrorLeechListener:
         else:
             update_all_messages()
 
-        if not self.isPrivate and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DB_URI:
+        if not self.isPrivate and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL:
             DbManger().rm_complete_task(self.message.link)
 
     def onUploadError(self, error):
@@ -671,4 +671,4 @@ class MirrorLeechListener:
         else:
             update_all_messages()
 
-        if not self.isPrivate and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DB_URI:            DbManger().rm_complete_task(self.message.link)
+        if not self.isPrivate and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL:            DbManger().rm_complete_task(self.message.link)

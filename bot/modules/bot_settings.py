@@ -4,7 +4,7 @@ from time import time, sleep
 from os import remove, rename, path as ospath, getenv
 from subprocess import run as srun, Popen
 from dotenv import load_dotenv
-from bot import config_dict, dispatcher, user_data, DB_URI, tgBotMaxFileSize, DRIVES_IDS, DRIVES_NAMES, INDEX_URLS, aria2, GLOBAL_EXTENSION_FILTER, LOGGER, status_reply_dict_lock, Interval, aria2_options, aria2c_global, download_dict, qbit_options, get_client
+from bot import config_dict, dispatcher, user_data, DATABASE_URL, tgBotMaxFileSize, DRIVES_IDS, DRIVES_NAMES, INDEX_URLS, aria2, GLOBAL_EXTENSION_FILTER, LOGGER, status_reply_dict_lock, Interval, aria2_options, aria2c_global, download_dict, qbit_options, get_client
 from bot.helper.telegram_helper.message_utils import sendFile, sendMarkup, editMessage, update_all_messages
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -49,6 +49,37 @@ default_values = {'AUTO_DELETE_MESSAGE_DURATION': 30,
 
 def load_config():
 
+    BOT_TOKEN = environ.get('BOT_TOKEN', '')
+    if len(BOT_TOKEN) == 0:
+        BOT_TOKEN = config_dict['BOT_TOKEN']
+
+    TELEGRAM_API = environ.get('TELEGRAM_API', '')
+    if len(TELEGRAM_API) == 0:
+        TELEGRAM_API = config_dict['TELEGRAM_API']
+    else:
+        TELEGRAM_API = int(TELEGRAM_API)
+
+    TELEGRAM_HASH = environ.get('TELEGRAM_HASH', '')
+    if len(TELEGRAM_HASH) == 0:
+        TELEGRAM_HASH = config_dict['TELEGRAM_HASH']
+
+    OWNER_ID = environ.get('OWNER_ID', '')
+    if len(OWNER_ID) == 0:
+        OWNER_ID = config_dict['OWNER_ID']
+    else:
+        OWNER_ID = int(OWNER_ID)
+
+    DATABASE_URL = environ.get('DATABASE_URL', '')
+    if len(DATABASE_URL) == 0:
+        DATABASE_URL = ''
+
+    DOWNLOAD_DIR = environ.get('DOWNLOAD_DIR', '')
+    if len(DOWNLOAD_DIR) == 0:
+        DOWNLOAD_DIR = '/usr/src/app/downloads/'
+    elif not DOWNLOAD_DIR.endswith("/"):
+        DOWNLOAD_DIR = f'{DOWNLOAD_DIR}/'
+
+
     GDRIVE_ID = getenv('GDRIVE_ID', '')
     if len(GDRIVE_ID) == 0:
         GDRIVE_ID = ''
@@ -56,12 +87,6 @@ def load_config():
     TGH_THUMB = getenv('TGH_THUMB', '')
     if len(TGH_THUMB) == 0:
         TGH_THUMB = 'https://te.legra.ph/file/3325f4053e8d68eab07b5.jpg'
-
-    DOWNLOAD_DIR = getenv('DOWNLOAD_DIR', '')
-    if len(DOWNLOAD_DIR) == 0:
-        DOWNLOAD_DIR = '/usr/src/app/downloads/'
-    elif not DOWNLOAD_DIR.endswith("/"):
-        DOWNLOAD_DIR = DOWNLOAD_DIR + '/'
 
     AUTHORIZED_CHATS = getenv('AUTHORIZED_CHATS', '')
     if len(AUTHORIZED_CHATS) != 0:
@@ -176,10 +201,6 @@ def load_config():
 
     CMD_PERFIX = getenv('CMD_PERFIX', '')
 
-    TELEGRAM_HASH = getenv('TELEGRAM_HASH', '')
-
-    TELEGRAM_API = getenv('TELEGRAM_API', '')
-
     USER_SESSION_STRING = getenv('USER_SESSION_STRING', '')
 
     TORRENT_TIMEOUT = getenv('TORRENT_TIMEOUT', '')
@@ -222,6 +243,9 @@ def load_config():
 
     INCOMPLETE_TASK_NOTIFIER = getenv('INCOMPLETE_TASK_NOTIFIER', '')
     INCOMPLETE_TASK_NOTIFIER = INCOMPLETE_TASK_NOTIFIER.lower() == 'true'
+    if not INCOMPLETE_TASK_NOTIFIER and DATABASE_URL:
+        DbManger().trunc_table('tasks')
+
 
     STOP_DUPLICATE = getenv('STOP_DUPLICATE', '')
     STOP_DUPLICATE = STOP_DUPLICATE.lower() == 'true'
@@ -517,7 +541,10 @@ def load_config():
                    'AUTO_DELETE_MESSAGE_DURATION': AUTO_DELETE_MESSAGE_DURATION,
                    'AUTO_DELETE_UPLOAD_MESSAGE_DURATION': AUTO_DELETE_UPLOAD_MESSAGE_DURATION,
                    'BASE_URL': BASE_URL,
+                   'BOT_TOKEN': BOT_TOKEN,
+                   'DATABASE_URL': DATABASE_URL,
                    'DOWNLOAD_DIR': DOWNLOAD_DIR,
+                   'OWNER_ID': OWNER_ID,
                    'CMD_PERFIX': CMD_PERFIX,
                    'EQUAL_SPLITS': EQUAL_SPLITS,
                    'EXTENSION_FILTER': EXTENSION_FILTER,
@@ -623,7 +650,7 @@ def load_config():
                    'YT_DLP_QUALITY': YT_DLP_QUALITY})
 
 
-    if DB_URI:
+    if DATABASE_URL:
         DbManger().update_config(config_dict)
 
 
@@ -652,7 +679,8 @@ def get_buttons(key=None, edit_type=None):
     elif key == 'private':
         buttons.sbutton('Back', "botset back")
         buttons.sbutton('Close', "botset close")
-        msg = f'Send private file: config.env, token.pickle, accounts.zip, list_drives.txt, cookies.txt or .netrc.\nTimeout: 60 sec'
+        msg = 'Send private file: config.env, token.pickle, accounts.zip, list_drives.txt, cookies.txt or .netrc.' \
+              '\nTo delete private file send the name of the file only as text message.\nTimeout: 60 sec'
     elif key == 'aria':
         for k in list(aria2_options.keys())[START:10+START]:
             buttons.sbutton(k, f"botset editaria {k}")
@@ -680,7 +708,7 @@ def get_buttons(key=None, edit_type=None):
         msg = f'Qbittorrent Options. Page: {int(START/10)}. State: {STATE}'
     elif edit_type == 'editvar':
         buttons.sbutton('Back', "botset back var")
-        if key not in ['TELEGRAM_HASH', 'TELEGRAM_API']:
+        if key not in ['TELEGRAM_HASH', 'TELEGRAM_API', 'OWNER_ID', 'BOT_TOKEN']:
             buttons.sbutton('Default', f"botset resetvar {key}")
         buttons.sbutton('Close', "botset close")
         msg = f'Send a valid value for {key}. Timeout: 60 sec'
@@ -688,6 +716,7 @@ def get_buttons(key=None, edit_type=None):
         buttons.sbutton('Back', "botset back aria")
         if key != 'newkey':
             buttons.sbutton('Default', f"botset resetaria {key}")
+            buttons.sbutton('Empty String', f"botset emptyaria {key}")
         buttons.sbutton('Close', "botset close")
         if key == 'newkey':
             msg = 'Send a key with value. Example: https-proxy-user:value'
@@ -695,9 +724,14 @@ def get_buttons(key=None, edit_type=None):
             msg = f'Send a valid value for {key}. Timeout: 60 sec'
     elif edit_type == 'editqbit':
         buttons.sbutton('Back', "botset back qbit")
+        buttons.sbutton('Empty String', f"botset emptyqbit {key}")
         buttons.sbutton('Close', "botset close")
         msg = f'Send a valid value for {key}. Timeout: 60 sec'
-    return msg, buttons.build_menu(2)
+    if key is None:
+        button = buttons.build_menu(1)
+    else:
+        button = buttons.build_menu(2)
+    return msg, button
 
 def update_buttons(message, key=None, edit_type=None):
     msg, button = get_buttons(key, edit_type)
@@ -710,6 +744,11 @@ def edit_variable(update, context, omsg, key):
         value = True
     elif value.lower() == 'false':
         value = False
+        if key == 'INCOMPLETE_TASK_NOTIFIER' and DATABASE_URL:
+            DbManger().trunc_table('tasks')
+    elif key == 'DOWNLOAD_DIR':
+        if not value.endswith('/'):
+            value = f'{value}/'
     elif key == 'STATUS_UPDATE_INTERVAL':
         value = int(value)
         if len(download_dict) != 0:
@@ -753,7 +792,7 @@ def edit_variable(update, context, omsg, key):
     config_dict[key] = value
     update_buttons(omsg, 'var')
     update.message.delete()
-    if DB_URI:
+    if DATABASE_URL:
         DbManger().update_config({key: value})
 
 def edit_aria(update, context, omsg, key):
@@ -774,9 +813,8 @@ def edit_aria(update, context, omsg, key):
     aria2_options[key] = value
     update_buttons(omsg, 'aria')
     update.message.delete()
-    if DB_URI:
+    if DATABASE_URL:
         DbManger().update_aria2(key, value)
-
 
 def edit_qbit(update, context, omsg, key):
     handler_dict[omsg.chat.id] = False
@@ -794,54 +832,68 @@ def edit_qbit(update, context, omsg, key):
     qbit_options[key] = value
     update_buttons(omsg, 'qbit')
     update.message.delete()
-    if DB_URI:
+    if DATABASE_URL:
         DbManger().update_qbittorrent(key, value)
 
-def upload_file(update, context, omsg):
+def update_private_file(update, context, omsg):
     handler_dict[omsg.chat.id] = False
-    doc = update.message.document
-    file_name = doc.file_name
-    doc.get_file().download(custom_path=file_name)
-    if file_name == 'accounts.zip':
-        srun(["unzip", "-q", "-o", "accounts.zip"])
-        srun(["chmod", "-R", "777", "accounts"])
-    elif file_name == 'list_drives.txt':
-        DRIVES_IDS.clear()
-        DRIVES_NAMES.clear()
-        INDEX_URLS.clear()
-        if GDRIVE_ID := config_dict['GDRIVE_ID']:
-            DRIVES_NAMES.append("Main")
-            DRIVES_IDS.append(GDRIVE_ID)
-            INDEX_URLS.append(config_dict['INDEX_URL'])
-        with open('list_drives.txt', 'r+') as f:
-            lines = f.readlines()
-            for line in lines:
-                temp = line.strip().split()
-                DRIVES_IDS.append(temp[1])
-                DRIVES_NAMES.append(temp[0].replace("_", " "))
-                if len(temp) > 2:
-                    INDEX_URLS.append(temp[2])
-                else:
-                    INDEX_URLS.append('')
-    elif file_name in ['.netrc', 'netrc']:
-        if file_name == 'netrc':
-            rename('netrc', '.netrc')
-            file_name = '.netrc'
-        srun(["cp", ".netrc", "/root/.netrc"])
-        srun(["chmod", "600", ".netrc"])
-    elif file_name == 'config.env':
-        load_dotenv('config.env', override=True)
-        load_config()
-    if '@github.com' in config_dict['UPSTREAM_REPO']:
-        buttons = ButtonMaker()
-        msg = 'Push to UPSTREAM_REPO ?'
-        buttons.sbutton('Yes!', f"botset push {file_name}")
-        buttons.sbutton('No', "botset close")
-        sendMarkup(msg, context.bot, update.message, buttons.build_menu(2))
-    else:
+    message = update.message
+    if not message.document and message.text:
+        file_name = message.text
+        fn = file_name.rsplit('.zip', 1)[0]
+        if ospath.exists(fn):
+            remove(fn)
+        if fn == 'accounts':
+            config_dict['USE_SERVICE_ACCOUNTS'] = False
+            if DATABASE_URL:
+                DbManger().update_config({'USE_SERVICE_ACCOUNTS': False})
         update.message.delete()
+    else:
+        doc = update.message.document
+        file_name = doc.file_name
+        doc.get_file().download(custom_path=file_name)
+        if file_name == 'accounts.zip':
+            if ospath.exists('accounts'):
+                srun(["rm", "-rf", "accounts"])
+            srun(["unzip", "-q", "-o", "accounts.zip", "-x", "accounts/emails.txt"])
+            srun(["chmod", "-R", "777", "accounts"])
+        elif file_name == 'list_drives.txt':
+            DRIVES_IDS.clear()
+            DRIVES_NAMES.clear()
+            INDEX_URLS.clear()
+            if GDRIVE_ID := config_dict['GDRIVE_ID']:
+                DRIVES_NAMES.append("Main")
+                DRIVES_IDS.append(GDRIVE_ID)
+                INDEX_URLS.append(config_dict['INDEX_URL'])
+            with open('list_drives.txt', 'r+') as f:
+                lines = f.readlines()
+                for line in lines:
+                    temp = line.strip().split()
+                    DRIVES_IDS.append(temp[1])
+                    DRIVES_NAMES.append(temp[0].replace("_", " "))
+                    if len(temp) > 2:
+                        INDEX_URLS.append(temp[2])
+                    else:
+                        INDEX_URLS.append('')
+        elif file_name in ['.netrc', 'netrc']:
+            if file_name == 'netrc':
+                rename('netrc', '.netrc')
+                file_name = '.netrc'
+            srun(["cp", ".netrc", "/root/.netrc"])
+            srun(["chmod", "600", ".netrc"])
+        elif file_name == 'config.env':
+            load_dotenv('config.env', override=True)
+            load_config()
+        if '@github.com' in config_dict['UPSTREAM_REPO']:
+            buttons = ButtonMaker()
+            msg = 'Push to UPSTREAM_REPO ?'
+            buttons.sbutton('Yes!', f"botset push {file_name}")
+            buttons.sbutton('No', "botset close")
+            sendMarkup(msg, context.bot, update.message, buttons.build_menu(2))
+        else:
+            update.message.delete()
     update_buttons(omsg)
-    if DB_URI:
+    if DATABASE_URL and file_name != 'config.env':
         DbManger().update_private_file(file_name)
     if ospath.exists('accounts.zip'):
         remove('accounts.zip')
@@ -865,14 +917,21 @@ def edit_bot_settings(update, context):
         handler_dict[message.chat.id] = False
         key = data[2] if len(data) == 3 else None
         update_buttons(message, key)
-    elif data[1] == 'var':
+    elif data[1] in ['var', 'aria', 'qbit']:
         query.answer()
         update_buttons(message, data[1])
     elif data[1] == 'resetvar':
         query.answer()
+        handler_dict[message.chat.id] = False
         value = ''
         if data[2] in default_values:
             value = default_values[data[2]]
+            if data[2] == "STATUS_UPDATE_INTERVAL" and len(download_dict) != 0:
+                with status_reply_dict_lock:
+                    if Interval:
+                        Interval[0].cancel()
+                        Interval.clear()
+                        Interval.append(setInterval(value, update_all_messages))
         elif data[2] == 'EXTENSION_FILTER':
             GLOBAL_EXTENSION_FILTER.clear()
             GLOBAL_EXTENSION_FILTER.append('.aria2')
@@ -895,12 +954,14 @@ def edit_bot_settings(update, context):
         elif data[2] == 'INDEX_URL':
             if DRIVES_NAMES and DRIVES_NAMES[0] == 'Main':
                 INDEX_URLS[0] = ''
+        elif data[2] == 'INCOMPLETE_TASK_NOTIFIER' and DATABASE_URL:
+            DbManger().trunc_table('tasks')
         config_dict[data[2]] = value
         update_buttons(message, 'var')
-        if DB_URI:
+        if DATABASE_URL:
             DbManger().update_config({data[2]: value})
-        update_buttons(message, 'var')
     elif data[1] == 'resetaria':
+        handler_dict[message.chat.id] = False
         aria2_defaults = aria2.client.get_global_option()
         if aria2_defaults[data[2]] == aria2_options[data[2]]:
             query.answer(text='Value already same as you added in aria.sh!')
@@ -908,8 +969,31 @@ def edit_bot_settings(update, context):
         query.answer()
         value = aria2_defaults[data[2]]
         aria2_options[data[2]] = value
-        if DB_URI:
+        update_buttons(message, 'aria')
+        downloads = aria2.get_downloads()
+        if downloads:
+            aria2.set_options({data[2]: value}, downloads)
+        if DATABASE_URL:
             DbManger().update_aria2(data[2], value)
+    elif data[1] == 'emptyaria':
+        query.answer()
+        handler_dict[message.chat.id] = False
+        aria2_options[data[2]] = ''
+        update_buttons(message, 'aria')
+        downloads = aria2.get_downloads()
+        if downloads:
+            aria2.set_options({data[2]: ''}, downloads)
+        if DATABASE_URL:
+            DbManger().update_aria2(data[2], '')
+    elif data[1] == 'emptyqbit':
+        query.answer()
+        handler_dict[message.chat.id] = False
+        client = get_client()
+        client.app_set_preferences({data[2]: value})
+        qbit_options[data[2]] = ''
+        update_buttons(message, 'qbit')
+        if DATABASE_URL:
+            DbManger().update_qbittorrent(data[2], '')
     elif data[1] == 'private':
         query.answer()
         if handler_dict.get(message.chat.id):
@@ -918,9 +1002,8 @@ def edit_bot_settings(update, context):
         start_time = time()
         handler_dict[message.chat.id] = True
         update_buttons(message, 'private')
-        partial_fnc = partial(upload_file, omsg=message)
-        file_handler = MessageHandler(filters=Filters.document & Filters.chat(message.chat.id) & Filters.user(user_id),
-                                      callback=partial_fnc, run_async=True)
+        partial_fnc = partial(update_private_file, omsg=message)
+        file_handler = MessageHandler(filters=(Filters.document | Filters.text) & Filters.chat(message.chat.id) & Filters.user(user_id), callback=partial_fnc, run_async=True)
         dispatcher.add_handler(file_handler)
         while handler_dict[message.chat.id]:
             if time() - start_time > 60:
@@ -928,8 +1011,9 @@ def edit_bot_settings(update, context):
                 update_buttons(message)
         dispatcher.remove_handler(file_handler)
     elif data[1] == 'editvar' and STATE == 'edit':
-        if data[2] in ['SUDO_USERS', 'RSS_USER_SESSION_STRING', 'IGNORE_PENDING_REQUESTS', 'CMD_PERFIX',
-                       'USER_SESSION_STRING', 'TELEGRAM_HASH', 'TELEGRAM_API', 'AUTHORIZED_CHATS', 'RSS_DELAY']:
+        if data[2] in ['SUDO_USERS', 'RSS_USER_SESSION_STRING', 'IGNORE_PENDING_REQUESTS', 'CMD_PERFIX', 'OWNER_ID',
+                       'USER_SESSION_STRING', 'TELEGRAM_HASH', 'TELEGRAM_API', 'AUTHORIZED_CHATS', 'RSS_DELAY'
+                       'DATABASE_URL', 'BOT_TOKEN', 'DOWNLOAD_DIR']:
             query.answer(text='Restart required for this edit to take effect!', show_alert=True)
         else:
             query.answer()
@@ -1033,11 +1117,18 @@ def edit_bot_settings(update, context):
             update_buttons(message, data[2])
     elif data[1] == 'push':
         query.answer()
-        srun([f"git add -f {data[2]} \
-                && git commit -sm botsettings -q \
-                && git push origin {config_dict['UPSTREAM_BRANCH']} -q"], shell=True)
+        filename = data[2].rsplit('.zip', 1)[0]
+        if ospath.exits(filename):
+            srun([f"git add -f {filename} \
+                    && git commit -sm botsettings -q \
+                    && git push origin {config_dict['UPSTREAM_BRANCH']} -q"], shell=True)
+        else:
+            srun([f"git rm -r --cached {filename} \
+                    && git commit -sm botsettings -q \
+                    && git push origin {config_dict['UPSTREAM_BRANCH']} -q"], shell=True)
         query.message.delete()
         query.message.reply_to_message.delete()
+
 
 def bot_settings(update, context):
     msg, button = get_buttons()

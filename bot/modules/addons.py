@@ -2,7 +2,7 @@ from pyrogram import enums
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, ConversationHandler
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-from bot import bot, user_data, LOGGER, DB_URI, OWNER_ID, dispatcher, PAID_SERVICE, CAPTION_FONT
+from bot import bot, user_data, LOGGER, DATABASE_URL, OWNER_ID, dispatcher, PAID_SERVICE, CAPTION_FONT
 from bot.helper.telegram_helper.message_utils import *
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -36,7 +36,7 @@ def prefix_set(update, context):
             txt = ""
         prefix_ = txt
         update_user_ldata(user_id_, 'prefix', prefix_)
-        if DB_URI:
+        if DATABASE_URL:
             DbManger().update_userval(user_id_, 'prefix', prefix_)
             LOGGER.info(f"User : {user_id_} Prefix is Saved in DB")
         editMessage(f"<u><b><a href='tg://user?id={user_id_}'>{u_men}</a>'s Prefix is Set Successfully</b></u>\n\n<b>• Prefix Text: </b>{txt}", lm)
@@ -68,7 +68,7 @@ def suffix_set(update, context):
             txt = ""
         suffix_ = txt
         update_user_ldata(user_id_, 'suffix', suffix_)
-        if DB_URI:
+        if DATABASE_URL:
             DbManger().update_userval(user_id_, 'suffix', suffix_)
             LOGGER.info(f"User : {user_id_} Suffix is Saved in DB")
         editMessage(f"<u><b><a href='tg://user?id={user_id_}'>{u_men}</a>'s Suffix is Set Successfully 🚀</b></u>\n\n<b>• Suffix Text: </b>{txt}", lm)
@@ -118,7 +118,7 @@ def caption_set(update, context):
             txt = ""
         caption_ = txt
         update_user_ldata(user_id_, 'caption', caption_)
-        if DB_URI:
+        if DATABASE_URL:
             DbManger().update_userval(user_id_, 'caption', caption_)
             LOGGER.info(f"User : {user_id_} Caption is Saved in DB")
         editMessage(f"<b><u><a href='tg://user?id={user_id_}'>{u_men}</a>'s Caption is Set Successfully :</u></b>\n\n<b>• Caption Text: </b>{txt}", lm, button)
@@ -148,7 +148,7 @@ def setCapFont(update, context):
     elif data[2] == "Spoiler":
         eVal = ["<tg-spoiler>Spoiler</tg-spoiler>", "tg-spoiler"]
         update_user_ldata(user_id_, 'cfont', eVal)
-        if DB_URI:
+        if DATABASE_URL:
             DbManger().update_userval(user_id_, 'cfont', eVal)
             LOGGER.info(f"User : {user_id_} Font Style Saved in DB")
         query.answer(text="Font Style changed to Spoiler!", show_alert=True)
@@ -156,7 +156,7 @@ def setCapFont(update, context):
     elif data[2] == "Italics":
         eVal = ["<i>Italics</i>", "i"]
         update_user_ldata(user_id_, 'cfont', eVal)
-        if DB_URI:
+        if DATABASE_URL:
             DbManger().update_userval(user_id_, 'cfont', eVal)
             LOGGER.info(f"User : {user_id_} Font Style Saved in DB")
         query.answer(text="Font Style changed to Italics!", show_alert=True)
@@ -164,7 +164,7 @@ def setCapFont(update, context):
     elif data[2] == "Code":
         eVal = ["<code>Monospace</code>", "code"]
         update_user_ldata(user_id_, 'cfont', eVal)
-        if DB_URI:
+        if DATABASE_URL:
             DbManger().update_userval(user_id_, 'cfont', eVal)
             LOGGER.info(f"User : {user_id_} Font Style Saved in DB")
         query.answer(text="Font Style changed to Monospace!", show_alert=True)
@@ -172,7 +172,7 @@ def setCapFont(update, context):
     elif data[2] == "Strike":
         eVal = ["<s>Strike</s>", "s"]
         update_user_ldata(user_id_, 'cfont', eVal)
-        if DB_URI:
+        if DATABASE_URL:
             DbManger().update_userval(user_id_, 'cfont', eVal)
             LOGGER.info(f"User : {user_id_} Font Style Saved in DB")
         query.answer(text="Font Style changed to Strike!", show_alert=True)
@@ -180,7 +180,7 @@ def setCapFont(update, context):
     elif data[2] == "Underline":
         eVal = ["<u>Underline</u>", "u"]
         update_user_ldata(user_id_, 'cfont', eVal)
-        if DB_URI:
+        if DATABASE_URL:
             DbManger().update_userval(user_id_, 'cfont', eVal)
             LOGGER.info(f"User : {user_id_} Font Style Saved in DB")
         query.answer(text="Font Style changed to Underline!", show_alert=True)
@@ -188,7 +188,7 @@ def setCapFont(update, context):
     elif data[2] == "Bold":
         eVal = ["<b>Bold</b>", "b"]
         update_user_ldata(user_id_, 'cfont', eVal)
-        if DB_URI:
+        if DATABASE_URL:
             DbManger().update_userval(user_id_, 'cfont', eVal)
             LOGGER.info(f"User : {user_id_} Font Style Saved in DB")
         query.answer(text="Font Style changed to Bold!", show_alert=True)
@@ -196,7 +196,7 @@ def setCapFont(update, context):
     elif data[2] == "Regular":
         eVal = ["Regular", "r"]
         update_user_ldata(user_id_, 'cfont', eVal)
-        if DB_URI:
+        if DATABASE_URL:
             DbManger().update_userval(user_id_, 'cfont', eVal)
             LOGGER.info(f"User : {user_id_} Font Style Saved in DB")
         query.answer(text="Font Style changed to Regular!", show_alert=True)
@@ -242,7 +242,7 @@ def userlog_set(update, context):
         editMessage(f"<i>Make Sure You have Added the Bot as Admin with Post Permission, Retry Again.</i>\n\nError : {err}", lm)
         return
     update_user_ldata(user_id_, 'userlog', str(dumpid_))
-    if DB_URI:
+    if DATABASE_URL:
         DbManger().update_userval(user_id_, 'userlog', str(dumpid_))
         LOGGER.info(f"User : {user_id_} LeechLog ID Saved in DB")
     editMessage(f"<b><a href='tg://user?id={user_id_}'>{u_men}</a>'s Dump Channel ID Saved Successfully...🛸</b>", lm)
@@ -283,7 +283,7 @@ def remname_set(update, context):
             txt = ""
         remname_ = txt
         update_user_ldata(user_id_, 'remname', remname_)
-        if DB_URI:
+        if DATABASE_URL:
             DbManger().update_userval(user_id_, 'remname', remname_)
             LOGGER.info(f"User : {user_id_} Remname is Saved in DB")
         editMessage(f"<b><a href='tg://user?id={user_id_}'>{u_men}</a>'s Remname is Set Successfully :</b>\n\n<b>• Remname Text: </b>{txt}", lm)

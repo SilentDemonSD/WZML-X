@@ -6,7 +6,7 @@ from time import sleep, time
 from functools import partial
 from html import escape
 
-from bot import user_data, dispatcher, config_dict, DB_URI
+from bot import user_data, dispatcher, config_dict, DATABASE_URL
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, sendPhoto
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -102,7 +102,7 @@ def set_yt_quality(update, context, omsg):
     update_user_ldata(user_id, 'yt_ql', value)
     update.message.delete()
     update_user_settings(omsg, message.from_user)
-    if DB_URI:
+    if DATABASE_URL:
         DbManger().update_user_data(user_id)
 
 def set_thumb(update, context, omsg):
@@ -120,7 +120,7 @@ def set_thumb(update, context, omsg):
     update_user_ldata(user_id, 'thumb', des_dir)
     update.message.delete()
     update_user_settings(omsg, message.from_user)
-    if DB_URI:
+    if DATABASE_URL:
         DbManger().update_thumb(user_id, des_dir)
 
 def edit_user_settings(update, context):
@@ -135,13 +135,13 @@ def edit_user_settings(update, context):
         update_user_ldata(user_id, 'as_doc', True)
         query.answer(text="Your File Will Deliver As Document!", show_alert=True)
         update_user_settings(message, query.from_user)
-        if DB_URI:
+        if DATABASE_URL:
             DbManger().update_user_data(user_id)
     elif data[2] == "med":
         update_user_ldata(user_id, 'as_doc', False)
         query.answer(text="Your File Will Deliver As Media!", show_alert=True)
         update_user_settings(message, query.from_user)
-        if DB_URI:
+        if DATABASE_URL:
             DbManger().update_user_data(user_id)
 
 
@@ -152,7 +152,7 @@ def edit_user_settings(update, context):
             osremove(path)
             update_user_ldata(user_id, 'thumb', '')
             update_user_settings(message, query.from_user)
-            if DB_URI:
+            if DATABASE_URL:
                 DbManger().update_thumb(user_id)
         else:
             query.answer(text="Old Settings", show_alert=True)
@@ -208,7 +208,7 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
         query.answer(text="YT-DLP Quality Removed!", show_alert=True)
         update_user_ldata(user_id, 'yt_ql', '')
         update_user_settings(message, query.from_user)
-        if DB_URI:
+        if DATABASE_URL:
             DbManger().update_user_data(user_id)
     elif data[2] == 'back':
         query.answer()
@@ -223,37 +223,37 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
         else: query.answer(text="Send new settings command.")
     elif data[2] == "prefix":
         update_user_ldata(user_id, 'prefix', False)
-        if DB_URI: 
+        if DATABASE_URL: 
             DbManger().update_userval(user_id, 'prefix')
         query.answer(text="Your Prefix is Successfully Deleted!", show_alert=True)
         update_user_settings(message, query)
     elif data[2] == "suffix":
         update_user_ldata(user_id, 'suffix', False)
-        if DB_URI: 
+        if DATABASE_URL: 
             DbManger().update_userval(user_id, 'suffix')
         query.answer(text="Your Suffix is Successfully Deleted!", show_alert=True)
         update_user_settings(message, query)
     elif data[2] == "cap":
         update_user_ldata(user_id, 'caption', False)
-        if DB_URI: 
+        if DATABASE_URL: 
             DbManger().update_userval(user_id, 'caption')
         query.answer(text="Your Caption is Successfully Deleted!", show_alert=True)
         update_user_settings(message, query)
     elif data[2] == "rem":
         update_user_ldata(user_id, 'remname', False)
-        if DB_URI: 
+        if DATABASE_URL: 
             DbManger().update_userval(user_id, 'remname')
         query.answer(text="Your Remname is Successfully Deleted!", show_alert=True)
         update_user_settings(message, query)
     elif data[2] == "ulog":
         update_user_ldata(user_id, 'userlog', False)
-        if DB_URI: 
+        if DATABASE_URL: 
             DbManger().update_userval(user_id, 'userlog')
         query.answer(text="Your UserLog is Successfully Deleted!", show_alert=True)
         update_user_settings(message, query)
     elif data[2] == "cfont":
         update_user_ldata(user_id, 'cfont', False)
-        if DB_URI: 
+        if DATABASE_URL: 
             DbManger().update_userval(user_id, 'cfont')
         query.answer(text="Your Caption Font is Successfully Deleted!", show_alert=True)
         update_user_settings(message, query)

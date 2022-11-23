@@ -432,7 +432,7 @@ def main():
     date = now.strftime('%d/%m/%y')
     time = now.strftime('%I:%M:%S %p')
     notifier_dict = False
-    if config_dict['INCOMPLETE_TASK_NOTIFIER'] and DB_URI:
+    if config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL:
         if notifier_dict := DbManger().get_incomplete_tasks():
             for cid, data in notifier_dict.items():
                 if ospath.isfile(".restartmsg"):
@@ -454,28 +454,37 @@ def main():
                         msg += f" <a href='{link}'>{index}</a> |"
                         if len(msg.encode()) > 4000:
                             if '😎Restarted successfully❗' in msg and cid == chat_id:
-                                bot.editMessageText(msg, chat_id, msg_id, parse_mode='HTML', disable_web_page_preview=True)
+                                try:
+                                    bot.editMessageText(msg, chat_id, msg_id, parse_mode='HTML', disable_web_page_preview=True)
+                                except:
+                                    pass
                                 osremove(".restartmsg")
                             else:
                                 try:
-                                    bot.sendMessage(cid, msg, 'HTML', disable_web_page_preview=True)
+                                    bot.sendMessage(cid, msg, parse_mode='HTML', disable_web_page_preview=True)
                                 except Exception as e:
                                     LOGGER.error(e)
                             msg = ''
                 if '😎Restarted successfully❗' in msg and cid == chat_id:
-                    bot.editMessageText(msg, chat_id, msg_id, parse_mode='HTML', disable_web_page_preview=True)
+                    try:
+                        bot.editMessageText(msg, chat_id, msg_id, parse_mode='HTML', disable_web_page_preview=True)
+                    except:
+                        pass
                     osremove(".restartmsg")
                 else:
                     try:
-                        bot.sendMessage(cid, msg, 'HTML', disable_web_page_preview=True)
+                        bot.sendMessage(cid, msg, parse_mode='HTML', disable_web_page_preview=True)
                     except Exception as e:
                         LOGGER.error(e)
 
     if ospath.isfile(".restartmsg"):
         with open(".restartmsg") as f:
             chat_id, msg_id = map(int, f)
-        msg = f"😎Restarted successfully❗\n📅DATE: {date}\n⌚TIME: {time}\n🌐TIMEZONE: {timez}\n"
-        bot.edit_message_text(msg, chat_id, msg_id)
+        try:
+            msg = f"😎Restarted successfully❗\n📅DATE: {date}\n⌚TIME: {time}\n🌐TIMEZONE: {timez}\n"
+            bot.edit_message_text(msg, chat_id, msg_id)
+        except:
+            pass        
         osremove(".restartmsg")
 
 
