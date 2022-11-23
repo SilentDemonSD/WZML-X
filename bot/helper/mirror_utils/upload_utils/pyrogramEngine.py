@@ -35,7 +35,7 @@ class TgUploader:
         self.__sent_msg = app.get_messages(self.__listener.message.chat.id, self.__listener.uid)
         self.__size = size
         self.__user_settings()
-        self.__leech_log = user_data.get('is_leech_log', ['']).copy()  # copy then pop to keep the original var as it is
+        self.__leech_log = user_data.get('is_leech_log')
         self.__app = app
         self.__user_id = listener.message.from_user.id
         self.isPrivate = listener.message.chat.type in ['private', 'group']
@@ -76,7 +76,7 @@ class TgUploader:
     def __upload_file(self, up_path, file_, dirpath):
         fsize = ospath.getsize(up_path)
         user_id_ = self.__listener.message.from_user.id
-        # Initial Values >>>>
+
         client = premium_session if fsize > 2097152000 else app
         PREFIX = user_data[user_id_].get('prefix') if user_id_ in user_data and user_data[user_id_].get('prefix') else ''
         CAPTION = user_data[user_id_].get('caption') if user_id_ in user_data and user_data[user_id_].get('caption') else ''
@@ -167,7 +167,7 @@ class TgUploader:
                         new_path = ospath.join(dirpath, file_)
                         osrename(up_path, new_path)
                         up_path = new_path
-                    if len(user_data.get('is_leech_log', [''])) != 0:
+                    if 'is_leech_log' in user_data and user_data.get('is_leech_log'):
                         for leechchat in self.__leech_log:
                             if ospath.getsize(up_path) > tgBotMaxFileSize: usingclient = premium_session
                             else: usingclient = self.__app
@@ -209,7 +209,7 @@ class TgUploader:
                                 LOGGER.error(f"Failed To Send Vedio in PM:\n{err}")
                 elif is_audio:
                     duration , artist, title = get_media_info(up_path)
-                    if len(user_data.get('is_leech_log', [''])) != 0:
+                    if 'is_leech_log' in user_data and user_data.get('is_leech_log'):
                         for leechchat in self.__leech_log:
                             if ospath.getsize(up_path) > tgBotMaxFileSize: usingclient = premium_session
                             else: usingclient = self.__app
@@ -248,7 +248,7 @@ class TgUploader:
                                 LOGGER.error(f"Failed To Send Audio in PM:\n{err}")
 
                 elif file_.upper().endswith(IMAGE_SUFFIXES):
-                    if len(user_data.get('is_leech_log', [''])) != 0:
+                    if 'is_leech_log' in user_data and user_data.get('is_leech_log'):
                         for leechchat in self.__leech_log:
                             if ospath.getsize(up_path) > tgBotMaxFileSize: usingclient = premium_session
                             else: usingclient = self.__app
@@ -287,7 +287,7 @@ class TgUploader:
                         if self.__thumb is None and thumb is not None and ospath.lexists(thumb):
                             osremove(thumb)
                         return
-                if len(user_data.get('is_leech_log', [''])) != 0:
+                if 'is_leech_log' in user_data and user_data.get('is_leech_log'):
                     for leechchat in self.__leech_log:
                         if ospath.getsize(up_path) > tgBotMaxFileSize: usingclient = premium_session
                         else: usingclient = self.__app
