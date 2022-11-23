@@ -4,7 +4,7 @@ from time import time, sleep
 from os import remove, rename, path as ospath, getenv
 from subprocess import run as srun, Popen
 from dotenv import load_dotenv
-from bot import config_dict, dispatcher, DB_URI, tgBotMaxFileSize, DRIVES_IDS, DRIVES_NAMES, INDEX_URLS, aria2, GLOBAL_EXTENSION_FILTER, LOGGER, status_reply_dict_lock, Interval, aria2_options, aria2c_global, download_dict
+from bot import config_dict, dispatcher, user_data, DB_URI, tgBotMaxFileSize, DRIVES_IDS, DRIVES_NAMES, INDEX_URLS, aria2, GLOBAL_EXTENSION_FILTER, LOGGER, status_reply_dict_lock, Interval, aria2_options, aria2c_global, download_dict
 from bot.helper.telegram_helper.message_utils import sendFile, sendMarkup, editMessage, update_all_messages
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -146,7 +146,7 @@ def load_config():
             except:
                 pass
             finally:
-                Interval.append(setInterval(value, update_all_messages))
+                Interval.append(setInterval(STATUS_UPDATE_INTERVAL, update_all_messages))
 
     AUTO_DELETE_MESSAGE_DURATION = getenv('AUTO_DELETE_MESSAGE_DURATION', '')
     if len(AUTO_DELETE_MESSAGE_DURATION) == 0:
@@ -619,8 +619,7 @@ def get_buttons(key=None, edit_type=None):
         msg = f'Send private file: config.env, token.pickle, accounts.zip, list_drives.txt, cookies.txt or .netrc.\nTimeout: 60 sec'
     elif key == 'aria':
         for k in list(aria2_options.keys())[START:10+START]:
-            if k not in ['max-download-limit', 'lowest-speed-limit']:
-                buttons.sbutton(k, f"botset editaria {k}")
+            buttons.sbutton(k, f"botset editaria {k}")
         if STATE == 'view':
             buttons.sbutton('Edit', "botset edit aria")
         else:
@@ -728,12 +727,13 @@ def edit_aria(update, context, omsg, key):
 
 def upload_file(update, context, omsg):
     handler_dict[omsg.chat.id] = False
-    doc = update.message
-    doc_path = doc.document.get_file().download()
-    if doc_path == 'accounts.zip':
+    doc = update.message.document
+    file_name = doc.file_name
+    doc.get_file().download(custom_path=file_name)
+    if file_name == 'accounts.zip':
         srun(["unzip", "-q", "-o", "accounts.zip"])
         srun(["chmod", "-R", "777", "accounts"])
-    elif doc_path == 'list_drives.txt':
+    elif file_name == 'list_drives.txt':
         DRIVES_IDS.clear()
         DRIVES_NAMES.clear()
         INDEX_URLS.clear()
@@ -754,26 +754,26 @@ def upload_file(update, context, omsg):
                     INDEX_URLS.append(temp[2])
                 else:
                     INDEX_URLS.append(None)
-    elif doc_path in ['.netrc', 'netrc']:
-        if doc_path == 'netrc':
+    elif file_name in ['.netrc', 'netrc']:
+        if file_name == 'netrc':
             rename('netrc', '.netrc')
-            doc_path = '.netrc'
+            file_name = '.netrc'
         srun(["cp", ".netrc", "/root/.netrc"])
         srun(["chmod", "600", ".netrc"])
-    elif doc_path == 'config.env':
+    elif file_name == 'config.env':
         load_dotenv('config.env', override=True)
         load_config()
     if '@github.com' in config_dict['UPSTREAM_REPO']:
         buttons = ButtonMaker()
         msg = 'Push to UPSTREAM_REPO ?'
-        buttons.sbutton('Yes!', f"botset push {doc_path}")
+        buttons.sbutton('Yes!', f"botset push {file_name}")
         buttons.sbutton('No', "botset close")
         sendMarkup(msg, context.bot, update.message, buttons.build_menu(2))
     else:
         update.message.delete()
     update_buttons(omsg)
     if DB_URI:
-        DbManger.update_private_file(doc_path)
+        DbManger().update_private_file(file_name)
     if ospath.exists('accounts.zip'):
         remove('accounts.zip')
 
