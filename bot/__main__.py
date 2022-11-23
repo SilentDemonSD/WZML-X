@@ -47,7 +47,7 @@ now=datetime.now(pytz.timezone(f'{timez}'))
 
 def stats(update, context):
     if ospath.exists('.git'):
-        if config_dict['EMOJI_THEME'] is True:
+        if config_dict['EMOJI_THEME']:
             last_commit = check_output(["git log -1 --date=short --pretty=format:'%cd \n<b>├</b> 🛠<b>From</b> %cr'"], shell=True).decode()
             botVersion = check_output(["git log -1 --date=format:v%y.%m%d.%H%M --pretty=format:%cd"], shell=True).decode()
         else:
@@ -77,7 +77,7 @@ def stats(update, context):
     mem_t = get_readable_file_size(memory.total)
     mem_a = get_readable_file_size(memory.available)
     mem_u = get_readable_file_size(memory.used)
-    if config_dict['EMOJI_THEME'] is True:
+    if config_dict['EMOJI_THEME']:
             stats = f'<b>╭─《🌐 BOT STATISTICS 🌐》</b>\n' \
                     f'<b>├ 🛠 Updated On: </b>{last_commit}\n'\
                     f'<b>├ ⌛ Uptime: </b>{currentTime}\n'\
@@ -103,16 +103,25 @@ def stats(update, context):
 
 
 
-    if config_dict['SHOW_LIMITS_IN_STATS'] is True:
-        torrent_direct = 'No Limit Set' if TORRENT_DIRECT_LIMIT is None else f'{TORRENT_DIRECT_LIMIT}GB/Link'
-        clone_limit = 'No Limit Set' if CLONE_LIMIT is None else f'{CLONE_LIMIT}GB/Link'
-        mega_limit = 'No Limit Set' if MEGA_LIMIT is None else f'{MEGA_LIMIT}GB/Link'
-        leech_limit = 'No Limit Set' if LEECH_LIMIT is None else f'{LEECH_LIMIT}GB/Link'
-        zip_unzip = 'No Limit Set' if ZIP_UNZIP_LIMIT is None else f'{ZIP_UNZIP_LIMIT}GB/Link'
-        total_task = 'No Limit Set' if TOTAL_TASKS_LIMIT is None else f'{TOTAL_TASKS_LIMIT} Total Tasks/Time'
-        user_task = 'No Limit Set' if USER_TASKS_LIMIT is None else f'{USER_TASKS_LIMIT} Tasks/user'
+    if config_dict['SHOW_LIMITS_IN_STATS']:
 
-        if config_dict['EMOJI_THEME'] is True: 
+        TORRENT_DIRECT_LIMIT = config_dict['TORRENT_DIRECT_LIMIT']
+        CLONE_LIMIT = config_dict['CLONE_LIMIT']
+        MEGA_LIMIT = config_dict['MEGA_LIMIT']
+        LEECH_LIMIT = config_dict['LEECH_LIMIT']
+        ZIP_UNZIP_LIMIT = config_dict['ZIP_UNZIP_LIMIT']
+        TOTAL_TASKS_LIMIT = config_dict['TOTAL_TASKS_LIMIT']
+        USER_TASKS_LIMIT = config_dict['USER_TASKS_LIMIT']
+
+        torrent_direct = 'No Limit Set' if TORRENT_DIRECT_LIMIT is '' else f'{TORRENT_DIRECT_LIMIT}GB/Link'
+        clone_limit = 'No Limit Set' if CLONE_LIMIT is '' else f'{CLONE_LIMIT}GB/Link'
+        mega_limit = 'No Limit Set' if MEGA_LIMIT is '' else f'{MEGA_LIMIT}GB/Link'
+        leech_limit = 'No Limit Set' if LEECH_LIMIT is '' else f'{LEECH_LIMIT}GB/Link'
+        zip_unzip = 'No Limit Set' if ZIP_UNZIP_LIMIT is '' else f'{ZIP_UNZIP_LIMIT}GB/Link'
+        total_task = 'No Limit Set' if TOTAL_TASKS_LIMIT is '' else f'{TOTAL_TASKS_LIMIT} Total Tasks/Time'
+        user_task = 'No Limit Set' if USER_TASKS_LIMIT is '' else f'{USER_TASKS_LIMIT} Tasks/user'
+
+        if config_dict['EMOJI_THEME']: 
             stats += f'<b>╭─《 ⚠️ BOT LIMITS ⚠️ 》</b>\n'\
                      f'<b>├ 🧲 Torrent/Direct: </b>{torrent_direct}\n'\
                      f'<b>├ 🔐 Zip/Unzip: </b>{zip_unzip}\n'\
@@ -138,7 +147,11 @@ def stats(update, context):
 
 def start(update, context):
     buttons = ButtonMaker()
-    if config_dict['EMOJI_THEME'] is True:
+    START_BTN1_NAME = config_dict['START_BTN1_NAME']
+    START_BTN1_URL = config_dict['START_BTN1_URL']
+    START_BTN2_NAME = config_dict['START_BTN2_NAME']
+    START_BTN2_URL = config_dict['START_BTN2_URL']
+    if config_dict['EMOJI_THEME']:
         buttons.buildbutton(f"😎 {START_BTN1_NAME}", f"{START_BTN1_URL}")
         buttons.buildbutton(f"🔥 {START_BTN2_NAME}", f"{START_BTN2_URL}")
     else:
@@ -179,7 +192,7 @@ def restart(update, context):
 
 
 def ping(update, context):
-    if config_dict['EMOJI_THEME'] is True:
+    if config_dict['EMOJI_THEME']:
         start_time = int(round(time() * 1000))
         reply = sendMessage("Starting_Ping ⛔", context.bot, update.message)
         end_time = int(round(time() * 1000))
@@ -284,7 +297,7 @@ help_string_telegraph_user = f'''
 '''
 
 help_user = telegraph.create_page(
-    title=f"{TITLE_NAME} Help",
+    title=f"{config_dict['TITLE_NAME']} Help",
     content=help_string_telegraph_user)["path"]
 
 help_string_telegraph_admin = f'''
@@ -314,13 +327,13 @@ help_string_telegraph_admin = f'''
 '''
 
 help_admin = telegraph.create_page(
-    title=f"{TITLE_NAME} Help",
+    title=f"{config_dict['TITLE_NAME']} Help",
     content=help_string_telegraph_admin)["path"]
 
 
 def bot_help(update, context):
     button = ButtonMaker()
-    if config_dict['EMOJI_THEME'] is True:
+    if config_dict['EMOJI_THEME']:
         button.buildbutton("👤 User", f"https://graph.org/{help_user}")
         button.buildbutton("🛡️ Admin", f"https://graph.org/{help_admin}")
     else:
@@ -361,6 +374,7 @@ if config_dict['SET_BOT_COMMANDS']:
         (f'{BotCommands.ListCommand}','Search in Drive'),
         (f'{BotCommands.SearchCommand}','Search in Torrent'),
         (f'{BotCommands.UserSetCommand}','Users settings'),
+        (f'{BotCommands.BotSetCommand}','BOT settings'),
         (f'{BotCommands.SetThumbCommand}','Set thumbnail'),
         (f'{BotCommands.StatusCommand}','Get mirror status message'),
         (f'{BotCommands.SpeedCommand}','Speedtest'),
@@ -376,17 +390,17 @@ if config_dict['SET_BOT_COMMANDS']:
 
 def main():
 
-    if WALLCRAFT_CATEGORY:
+    if config_dict['WALLCRAFT_CATEGORY']:
         for page in range(1,20):
-            r2 = rget(f"https://wallpaperscraft.com/catalog/{WALLCRAFT_CATEGORY}/1280x720/page{page}")
+            r2 = rget(f"https://wallpaperscraft.com/catalog/{config_dict['WALLCRAFT_CATEGORY']}/1280x720/page{page}")
             soup2 = BeautifulSoup(r2.text, "html.parser")
             x = soup2.select('img[src^="https://images.wallpaperscraft.com/image/single"]')
             for img in x:
               PICS.append((img['src']).replace("300x168", "1280x720"))
 
-    if WALLTIP_SEARCH:
+    if config_dict['WALLTIP_SEARCH']:
         for page in range(1,3):
-            r2 = rget(f"https://www.wallpapertip.com/s/{WALLTIP_SEARCH}/{page}")
+            r2 = rget(f"https://www.wallpapertip.com/s/{config_dict['WALLTIP_SEARCH']}/{page}")
             soup2 = BeautifulSoup(r2.text, "html.parser")
             divTag = soup2.select('#flex_grid div.item')
             aTag = [x.find('a') for x in divTag]
@@ -395,10 +409,10 @@ def main():
             for o in scrList:
                 PICS.append(o)
 
-    if WALLFLARE_SEARCH:
+    if config_dict['WALLFLARE_SEARCH']:
         try:
             for page in range(1,20):
-                r2 = rget(f"https://www.wallpaperflare.com/search?wallpaper={WALLFLARE_SEARCH}&width=1280&height=720&page={page}")
+                r2 = rget(f"https://www.wallpaperflare.com/search?wallpaper={config_dict['WALLFLARE_SEARCH']}&width=1280&height=720&page={page}")
                 soup2 = BeautifulSoup(r2.text, "html.parser")
                 x = soup2.select('img[data-src^="https://c4.wallpaperflare.com/wallpaper"]')  
                 for img in x:
@@ -406,11 +420,11 @@ def main():
         except Exception as err:
             LOGGER.info(f"WallFlare Error: {err}")
 
-    if PIXABAY_API_KEY:
+    if config_dict['PIXABAY_API_KEY']:
         try:
-            PIXABAY_ENDPOINT = f"https://pixabay.com/api/?key={PIXABAY_API_KEY}&image_type=all&orientation=horizontal&min_width=1280&min_height=720&per_page=200&safesearch=true&editors_choice=true"
-            if PIXABAY_CATEGORY: PIXABAY_ENDPOINT += f"&category={PIXABAY_CATEGORY}"
-            if PIXABAY_SEARCH: PIXABAY_ENDPOINT += f"&q={q(PIXABAY_SEARCH)}"
+            PIXABAY_ENDPOINT = f"https://pixabay.com/api/?key={config_dict['PIXABAY_API_KEY']}&image_type=all&orientation=horizontal&min_width=1280&min_height=720&per_page=200&safesearch=true&editors_choice=true"
+            if config_dict['PIXABAY_CATEGORY']: PIXABAY_ENDPOINT += f"&category={config_dict['PIXABAY_CATEGORY']}"
+            if config_dict['PIXABAY_SEARCH']: PIXABAY_ENDPOINT += f"&q={q(config_dict['PIXABAY_SEARCH'])}"
             resp = rget(PIXABAY_ENDPOINT)
             jdata = resp.json()
             for x in range(0, 200):
@@ -434,12 +448,12 @@ def main():
                     msg = f"😎Restarted successfully❗\n"
                     msg += f"📅DATE: {date}\n"
                     msg += f"⌚TIME: {time}\n"
-                    msg += f"🌐TIMEZONE: {TIMEZONE}\n"
+                    msg += f"🌐TIMEZONE: {timez}\n"
                 else:
                     msg = f"😎Bot Restarted!\n"
                     msg += f"📅DATE: {date}\n"
                     msg += f"⌚TIME: {time}\n"
-                    msg += f"🌐TIMEZONE: {TIMEZONE}"
+                    msg += f"🌐TIMEZONE: {timez}"
 
                 for tag, links in data.items():
                     msg += f"\n{tag}: "
@@ -467,7 +481,7 @@ def main():
     if ospath.isfile(".restartmsg"):
         with open(".restartmsg") as f:
             chat_id, msg_id = map(int, f)
-        msg = f"😎Restarted successfully❗\n📅DATE: {date}\n⌚TIME: {time}\n🌐TIMEZONE: {TIMEZONE}\n"
+        msg = f"😎Restarted successfully❗\n📅DATE: {date}\n⌚TIME: {time}\n🌐TIMEZONE: {timez}\n"
         bot.edit_message_text(msg, chat_id, msg_id)
         osremove(".restartmsg")
 
@@ -475,9 +489,9 @@ def main():
 
     start_handler = CommandHandler(BotCommands.StartCommand, start, run_async=True)
     log_handler = CommandHandler(BotCommands.LogCommand, log,
-                                        filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
+                               filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     restart_handler = CommandHandler(BotCommands.RestartCommand, restart,
-                                        filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
+                               filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     ping_handler = CommandHandler(BotCommands.PingCommand, ping,
                                filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
     help_handler = CommandHandler(BotCommands.HelpCommand, bot_help,
