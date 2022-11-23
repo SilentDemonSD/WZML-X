@@ -1,7 +1,7 @@
 from asyncio import exceptions
 from logging import getLogger, ERROR
 from time import time
-from pickle import load as pload
+from pickle import load as pload, dump as pdump
 from json import loads as jsnloads
 from os import makedirs, path as ospath, listdir, remove as osremove
 from requests.utils import quote as rquote
@@ -15,7 +15,7 @@ from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type, RetryError
 from bot.helper.ext_utils.html_helper import hmtl_content
-
+from google.auth.transport.requests import Request
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot import config_dict, DRIVES_NAMES, DRIVES_IDS, INDEX_URLS, GLOBAL_EXTENSION_FILTER
 from bot.helper.ext_utils.telegraph_helper import telegraph
@@ -93,6 +93,11 @@ class GoogleDriveHelper:
         elif ospath.exists(self.__G_DRIVE_TOKEN_FILE):
             with open(self.__G_DRIVE_TOKEN_FILE, 'rb') as f:
                 credentials = pload(f)
+            if credentials and not credentials.valid and credentials.expired and credentials.refresh_token:
+                LOGGER.warning('Your token is expired! Refreshing Token...')
+                credentials.refresh(Request())
+                with open(self.__G_DRIVE_TOKEN_FILE, 'wb') as token:
+                    pdump(credentials, token)
         else:
             LOGGER.error('token.pickle not found!')
         return build('drive', 'v3', credentials=credentials, cache_discovery=False)
@@ -105,6 +110,11 @@ class GoogleDriveHelper:
                 LOGGER.info("Authorize with token.pickle")
                 with open(self.__G_DRIVE_TOKEN_FILE, 'rb') as f:
                     credentials = pload(f)
+                if credentials and not credentials.valid and credentials.expired and credentials.refresh_token:
+                    LOGGER.warning('Your token is expired! Refreshing Token...')
+                    credentials.refresh(Request())
+                    with open(self.__G_DRIVE_TOKEN_FILE, 'wb') as token:
+                        pdump(credentials, token)
                 return build('drive', 'v3', credentials=credentials, cache_discovery=False)
         return None
 
@@ -567,7 +577,7 @@ class GoogleDriveHelper:
                 token_service = self.__alt_authorize()
                 if token_service is not None:
                     self.__service = token_service
-            for index, dir_id in enumerate(DRIVES_IDS):
+            for drive_name, dir_id, index_url in zip(DRIVES_NAMES, DRIVES_IDS, INDEX_URLS):
                 isRecur = False if isRecursive and len(dir_id) > 23 else isRecursive
                 response = self.__drive_query(dir_id, fileName, stopDup, isRecur, itemType)
                 if not response["files"]:
@@ -578,7 +588,7 @@ class GoogleDriveHelper:
                 if not Title:
                     msg += f'<h4>Search Result For {fileName}</h4>'
                     Title = True
-                if len(DRIVES_NAMES) > 1 and DRIVES_NAMES[index] is not None:
+                if drive_name:
                     msg += f"╾────────────╼<br><b>{DRIVES_NAMES[index]}</b><br>╾────────────╼<br>"
                 for file in response.get('files', []):
                     mime_type = file.get('mimeType')
@@ -587,12 +597,11 @@ class GoogleDriveHelper:
                         msg += f"📁 <code>{file.get('name')}<br>(folder)</code><br>"
                         furl = short_url(furl)
                         msg += f"<b><a href={furl}>Drive Link</a></b>"
-                        if INDEX_URLS[index] is not None:
+                        if index_url:
                             if isRecur:
                                 url_path = "/".join([rquote(n, safe='') for n in self.__get_recursive_list(file, dir_id)])
                             else:
                                 url_path = rquote(f'{file.get("name")}', safe='')
-                            url = f'{INDEX_URLS[index]}/{url_path}/'
                             url = short_url(url)
                             msg += f' <b>| <a href="{url}">Index Link</a></b>'
                     elif mime_type == 'application/vnd.google-apps.shortcut':
@@ -604,13 +613,12 @@ class GoogleDriveHelper:
                         msg += f"📄 <code>{file.get('name')}<br>({get_readable_file_size(int(file.get('size', 0)))})</code><br>"
                         furl = short_url(furl)
                         msg += f"<b><a href={furl}>Drive Link</a></b>"
-                        if INDEX_URLS[index] is not None:
+                        if index_url:
                             if isRecur:
                                 url_path = "/".join(rquote(n, safe='') for n in self.__get_recursive_list(file, dir_id))
 
                             else:
                                 url_path = rquote(f'{file.get("name")}')
-                            url = f'{INDEX_URLS[index]}/{url_path}'
                             url = short_url(url)
                             msg += f' <b>| <a href="{url}">Index Link</a></b>'
                             if VIEW_LINK:
@@ -669,7 +677,7 @@ class GoogleDriveHelper:
                     msg += '<span class="container center rfontsize">' \
                           f'<h4>Search Result For {fileName}</h4></span>'
                     Title = True
-                if len(DRIVES_NAMES) > 1 and DRIVES_NAMES[index] is not None:
+                if drive_name:
                     msg += '<span class="container center rfontsize">' \
                           f'<b>{DRIVES_NAMES[index]}</b></span>'
                 for file in response.get('files', []):
@@ -680,14 +688,13 @@ class GoogleDriveHelper:
                               f"<div>📁 {file.get('name')} (folder)</div>" \
                                '<div class="dlinks">' \
                               f'<span> <a class="forhover" href="{furl}">Drive Link</a></span>'
-                        if INDEX_URLS[index] is not None:
+                        if index_url:
                             if isRecur:
                                 url_path = "/".join([rquote(n, safe='') for n in self.__get_recursive_list(file, dir_id)])
                             else:
                                 url_path = rquote(f'{file.get("name")}', safe='')
-                            url = f'{INDEX_URLS[index]}/{url_path}/'
                             msg += '<span> | </span>' \
-                                  f'<span> <a class="forhover" href="{url}">Index Link</a></span>'
+                              f'<span> <a class="forhover" href="{index_url}/{url_path}/">Index Link</a></span>'
                     elif mime_type == 'application/vnd.google-apps.shortcut':
                         furl = f"https://drive.google.com/drive/folders/{file.get('id')}"
                         msg += '<span class="container start rfontsize">' \
@@ -701,18 +708,17 @@ class GoogleDriveHelper:
                               f"<div>📄 {file.get('name')} ({get_readable_file_size(int(file.get('size', 0)))})</div>" \
                                '<div class="dlinks">' \
                               f'<span> <a class="forhover" href="{furl}">Drive Link</a></span>'
-                        if INDEX_URLS[index] is not None:
+                        if index_url:
                             if isRecur:
                                 url_path = "/".join(rquote(n, safe='') for n in self.__get_recursive_list(file, dir_id))
                             else:
                                 url_path = rquote(f'{file.get("name")}')
-                            url = f'{INDEX_URLS[index]}/{url_path}'
                             msg += '<span> | </span>' \
-                                  f'<span> <a class="forhover" href="{url}">Index Link</a></span>'
+                              f'<span> <a class="forhover" href="{index_url}/{url_path}/">Index Link</a></span>'
+
                         if config_dict['VIEW_LINK']:
-                                urlv = f'{INDEX_URLS[index]}/{url_path}?a=view'
                                 msg += '<span> | </span>' \
-                                      f'<span> <a class="forhover" href="{urlv}">View Link</a></span>'
+                                    f'<span> <a class="forhover" href="{index_url}/{url_path}?a=view">View Link</a></span>'
                     msg += '</div></span>'
                     contents_count += 1
                 if noMulti:
