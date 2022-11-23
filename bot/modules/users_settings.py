@@ -64,11 +64,10 @@ def get_user_settings(from_user):
     buttons.sbutton(buttxt, f"userset {user_id} suniversal caption")
     buttxt = "Change/Delete UserLog" if userlog != "Not Exists" else "Set UserLog"
     buttons.sbutton(buttxt, f"userset {user_id} suniversal userlog")
-    if remname != "Not Exists": 
-        buttons.sbutton("Delete Remname", f"userset {user_id} rem")
-    if cfont != "Not Exists": 
-        buttons.sbutton("Delete CapFont", f"userset {user_id} cfont")
-
+    buttxt = "Change/Delete Remname" if remname != "Not Exists" else "Set Remname"
+    buttons.sbutton(buttxt, f"userset {user_id} suniversal remname")
+    buttxt = "Change/Delete CapFont" if cfont != "Not Exists" else "Set CapFont"
+    buttons.sbutton(buttxt, f"userset {user_id} suniversal cfont")
     buttons.sbutton("Close", f"userset {user_id} close")
     button = buttons.build_menu(2)
 
@@ -269,35 +268,40 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
                 update_user_settings(message, query.from_user)
         dispatcher.remove_handler(UNI_HANDLER)
     elif data[2] == "suffix":
+        handler_dict[user_id] = False
         update_user_ldata(user_id, 'suffix', False)
         if DATABASE_URL: 
             DbManger().update_userval(user_id, 'suffix')
         query.answer(text="Your Suffix is Successfully Deleted!", show_alert=True)
-        update_user_settings(message, query)
+        update_user_settings(message, query.from_user)
     elif data[2] == "caption":
+        handler_dict[user_id] = False
         update_user_ldata(user_id, 'caption', False)
         if DATABASE_URL: 
             DbManger().update_userval(user_id, 'caption')
         query.answer(text="Your Caption is Successfully Deleted!", show_alert=True)
-        update_user_settings(message, query)
+        update_user_settings(message, query.from_user)
     elif data[2] == "remname":
+        handler_dict[user_id] = False
         update_user_ldata(user_id, 'remname', False)
         if DATABASE_URL: 
             DbManger().update_userval(user_id, 'remname')
         query.answer(text="Your Remname is Successfully Deleted!", show_alert=True)
-        update_user_settings(message, query)
+        update_user_settings(message, query.from_user)
     elif data[2] == "userlog":
+        handler_dict[user_id] = False
         update_user_ldata(user_id, 'userlog', False)
         if DATABASE_URL: 
             DbManger().update_userval(user_id, 'userlog')
         query.answer(text="Your UserLog is Successfully Deleted!", show_alert=True)
-        update_user_settings(message, query)
+        update_user_settings(message, query.from_user)
     elif data[2] == "cfont":
+        handler_dict[user_id] = False
         update_user_ldata(user_id, 'cfont', False)
         if DATABASE_URL: 
             DbManger().update_userval(user_id, 'cfont')
         query.answer(text="Your Caption Font is Successfully Deleted!", show_alert=True)
-        update_user_settings(message, query)
+        update_user_settings(message, query.from_user)
     else:
         query.answer()
         handler_dict[user_id] = False
