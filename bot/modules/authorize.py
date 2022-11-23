@@ -83,10 +83,14 @@ def addleechlog(update, context):
         id_ = reply_message.from_user.id
     else:
         id_ = update.effective_chat.id
-    if id_ in user_data and user_data[id_].get('is_leech_log'):
+    if 'is_leech_log' in user_data and id_ in user_data['is_leech_log']:
         msg = 'Already Authorized!'
     else:
-        update_user_ldata(id_, 'is_leech_log', True)
+        #update_user_ldata('is_leech_log', id_, list=True) #ToDo
+        if 'is_leech_log' in user_data:
+            user_data['is_leech_log'].append(id_)
+        else:
+            user_data['is_leech_log'] = [id_]
         if DATABASE_URL:
             DbManger().update_user_data(id_)
         msg = 'Authorized'
@@ -100,8 +104,9 @@ def rmleechlog(update, context):
         id_ = reply_message.from_user.id
     else:
         id_ = update.effective_chat.id
-    if id_ not in user_data or user_data[id_].get('is_leech_log'):
-        update_user_ldata(id_, 'is_leech_log', False)
+    if 'is_leech_log' in user_data and id_ in user_data['is_leech_log']:
+        #update_user_ldata(id_, 'is_leech_log', False)
+        user_data['is_leech_log'].pop(id_)
         if DATABASE_URL:
             DbManger().update_user_data(id_)
         msg = 'Unauthorized'
