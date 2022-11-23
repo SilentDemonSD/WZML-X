@@ -606,6 +606,7 @@ class MirrorLeechListener:
                 except Exception as e:	
                     LOGGER.warning(e)	
                     return
+            sendMarkup(msg, self.bot, self.message, buttons.build_menu(2))
             if self.seed:
                 if self.isZip:
                     clean_target(f"{self.dir}/{name}")
