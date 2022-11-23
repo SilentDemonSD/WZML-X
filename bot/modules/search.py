@@ -6,7 +6,8 @@ from telegram.ext import CommandHandler, CallbackQueryHandler
 from json import loads as jsonloads
 
 from bot import dispatcher, LOGGER, config_dict, get_client
-from bot.helper.telegram_helper.message_utils import editMessage, sendMessage, sendMarkup, deleteMessage, sendFile
+from bot.helper.telegram_helper.message_utils import editMessage, sendMessage, sendMarkup,  deleteMessage, sendFile
+from bot.helper.ext_utils.telegraph_helper import telegraph
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.ext_utils.bot_utils import get_readable_file_size
