@@ -517,7 +517,7 @@ def load_config():
                    'AUTO_DELETE_MESSAGE_DURATION': AUTO_DELETE_MESSAGE_DURATION,
                    'AUTO_DELETE_UPLOAD_MESSAGE_DURATION': AUTO_DELETE_UPLOAD_MESSAGE_DURATION,
                    'BASE_URL': BASE_URL,
-                   'DOWNLOAD_DIR': DOWNLOAD_DIR
+                   'DOWNLOAD_DIR': DOWNLOAD_DIR,
                    'CMD_PERFIX': CMD_PERFIX,
                    'EQUAL_SPLITS': EQUAL_SPLITS,
                    'EXTENSION_FILTER': EXTENSION_FILTER,
