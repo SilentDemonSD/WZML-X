@@ -52,7 +52,7 @@ def get_user_settings(from_user):
     if ospath.exists(thumbpath):
         thumbmsg = "Exists"
         buttons.sbutton("Change Thumbnail", f"userset {user_id} sthumb")
-        buttons.sbutton("Delete Thumbnail", f"userset {user_id} dthumb")
+        #buttons.sbutton("Delete Thumbnail", f"userset {user_id} dthumb")
         buttons.sbutton("Show Thumbnail", f"userset {user_id} showthumb")
     else:
         thumbmsg = "Not Exists"
@@ -143,9 +143,8 @@ def edit_user_settings(update, context):
         update_user_settings(message, query.from_user)
         if DATABASE_URL:
             DbManger().update_user_data(user_id)
-
-
     elif data[2] == "dthumb":
+        handler_dict[user_id] = False
         path = f"Thumbnails/{user_id}.jpg"
         if ospath.lexists(path):
             query.answer(text="Thumbnail Removed!", show_alert=True)
@@ -159,15 +158,20 @@ def edit_user_settings(update, context):
             update_user_settings(message, query.from_user)
     elif data[2] == "sthumb":
         query.answer()
+        menu = False
         if handler_dict.get(user_id):
             handler_dict[user_id] = False
             sleep(0.5)
         start_time = time()
         handler_dict[user_id] = True
         buttons = ButtonMaker()
+        thumbpath = f"Thumbnails/{user_id}.jpg"
+        if ospath.exists(thumbpath):
+            menu = True
+            buttons.sbutton("Delete", f"userset {user_id} dthumb")
         buttons.sbutton("Back", f"userset {user_id} back")
         buttons.sbutton("Close", f"userset {user_id} close")
-        editMessage('Send a photo to save it as custom thumbnail.', message, buttons.build_menu(1))
+        editMessage('Send a photo to save it as custom thumbnail.', message, buttons.build_menu(2) if menu else buttons.build_menu(1))
         partial_fnc = partial(set_thumb, omsg=message)
         photo_handler = MessageHandler(filters=Filters.photo & Filters.chat(message.chat.id) & Filters.user(user_id),
                                        callback=partial_fnc, run_async=True)
