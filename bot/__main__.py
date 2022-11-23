@@ -113,13 +113,13 @@ def stats(update, context):
         TOTAL_TASKS_LIMIT = config_dict['TOTAL_TASKS_LIMIT']
         USER_TASKS_LIMIT = config_dict['USER_TASKS_LIMIT']
 
-        torrent_direct = 'No Limit Set' if TORRENT_DIRECT_LIMIT is '' else f'{TORRENT_DIRECT_LIMIT}GB/Link'
-        clone_limit = 'No Limit Set' if CLONE_LIMIT is '' else f'{CLONE_LIMIT}GB/Link'
-        mega_limit = 'No Limit Set' if MEGA_LIMIT is '' else f'{MEGA_LIMIT}GB/Link'
-        leech_limit = 'No Limit Set' if LEECH_LIMIT is '' else f'{LEECH_LIMIT}GB/Link'
-        zip_unzip = 'No Limit Set' if ZIP_UNZIP_LIMIT is '' else f'{ZIP_UNZIP_LIMIT}GB/Link'
-        total_task = 'No Limit Set' if TOTAL_TASKS_LIMIT is '' else f'{TOTAL_TASKS_LIMIT} Total Tasks/Time'
-        user_task = 'No Limit Set' if USER_TASKS_LIMIT is '' else f'{USER_TASKS_LIMIT} Tasks/user'
+        torrent_direct = 'No Limit Set' if TORRENT_DIRECT_LIMIT == '' else f'{TORRENT_DIRECT_LIMIT}GB/Link'
+        clone_limit = 'No Limit Set' if CLONE_LIMIT == '' else f'{CLONE_LIMIT}GB/Link'
+        mega_limit = 'No Limit Set' if MEGA_LIMIT == '' else f'{MEGA_LIMIT}GB/Link'
+        leech_limit = 'No Limit Set' if LEECH_LIMIT == '' else f'{LEECH_LIMIT}GB/Link'
+        zip_unzip = 'No Limit Set' if ZIP_UNZIP_LIMIT == '' else f'{ZIP_UNZIP_LIMIT}GB/Link'
+        total_task = 'No Limit Set' if TOTAL_TASKS_LIMIT == '' else f'{TOTAL_TASKS_LIMIT} Total Tasks/Time'
+        user_task = 'No Limit Set' if USER_TASKS_LIMIT == '' else f'{USER_TASKS_LIMIT} Tasks/user'
 
         if config_dict['EMOJI_THEME']: 
             stats += f'<b>╭─《 ⚠️ BOT LIMITS ⚠️ 》</b>\n'\
@@ -147,16 +147,12 @@ def stats(update, context):
 
 def start(update, context):
     buttons = ButtonMaker()
-    START_BTN1_NAME = config_dict['START_BTN1_NAME']
-    START_BTN1_URL = config_dict['START_BTN1_URL']
-    START_BTN2_NAME = config_dict['START_BTN2_NAME']
-    START_BTN2_URL = config_dict['START_BTN2_URL']
     if config_dict['EMOJI_THEME']:
-        buttons.buildbutton(f"😎 {START_BTN1_NAME}", f"{START_BTN1_URL}")
-        buttons.buildbutton(f"🔥 {START_BTN2_NAME}", f"{START_BTN2_URL}")
+        buttons.buildbutton(f"😎 {config_dict['START_BTN1_NAME']}", f"{config_dict['START_BTN1_URL']}")
+        buttons.buildbutton(f"🔥 {config_dict['START_BTN2_NAME']}", f"{START_BTN2_URL}")
     else:
-        buttons.buildbutton(f"{START_BTN1_NAME}", f"{START_BTN1_URL}")
-        buttons.buildbutton(f"{START_BTN2_NAME}", f"{START_BTN2_URL}")
+        buttons.buildbutton(f"{config_dict['START_BTN1_NAME']}", f"{config_dict['START_BTN1_URL']}")
+        buttons.buildbutton(f"{config_dict['START_BTN2_NAME']}", f"{config_dict['START_BTN2_URL']}")
     reply_markup = buttons.build_menu(2)
     if CustomFilters.authorized_user(update) or CustomFilters.authorized_chat(update):
         start_string = f'''This bot can mirror all your links to Google Drive!
