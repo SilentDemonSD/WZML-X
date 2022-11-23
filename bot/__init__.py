@@ -631,6 +631,7 @@ if len(UPSTREAM_BRANCH) == 0:
                    'MIRROR_LOG_URL': MIRROR_LOG_URL,
                    'LINK_LOGS': LINK_LOGS,
                    'TIMEZONE': TIMEZONE,
+                   'TGH_THUMB': TGH_THUMB,
                    'TITLE_NAME': TITLE_NAME,
                    'AUTHOR_NAME': AUTHOR_NAME,
                    'AUTHOR_URL': AUTHOR_URL,
