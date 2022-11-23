@@ -1,7 +1,7 @@
 from threading import Thread
 from telegram.ext import CommandHandler, CallbackQueryHandler
 
-from bot import LOGGER, dispatcher, config_data
+from bot import LOGGER, dispatcher, config_dict
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, sendMarkup, sendFile, deleteMessage
 from bot.helper.telegram_helper.filters import CustomFilters
