@@ -167,7 +167,7 @@ class TgUploader:
                         new_path = ospath.join(dirpath, file_)
                         osrename(up_path, new_path)
                         up_path = new_path
-                    if len(user_data.get('is_leech_log')) != 0:
+                    if len(user_data.get('is_leech_log', [''])) != 0:
                         for leechchat in self.__leech_log:
                             if ospath.getsize(up_path) > tgBotMaxFileSize: usingclient = premium_session
                             else: usingclient = self.__app
@@ -209,7 +209,7 @@ class TgUploader:
                                 LOGGER.error(f"Failed To Send Vedio in PM:\n{err}")
                 elif is_audio:
                     duration , artist, title = get_media_info(up_path)
-                    if len(user_data.get('is_leech_log')) != 0:
+                    if len(user_data.get('is_leech_log', [''])) != 0:
                         for leechchat in self.__leech_log:
                             if ospath.getsize(up_path) > tgBotMaxFileSize: usingclient = premium_session
                             else: usingclient = self.__app
@@ -248,7 +248,7 @@ class TgUploader:
                                 LOGGER.error(f"Failed To Send Audio in PM:\n{err}")
 
                 elif file_.upper().endswith(IMAGE_SUFFIXES):
-                    if len(user_data.get('is_leech_log')) != 0:
+                    if len(user_data.get('is_leech_log', [''])) != 0:
                         for leechchat in self.__leech_log:
                             if ospath.getsize(up_path) > tgBotMaxFileSize: usingclient = premium_session
                             else: usingclient = self.__app
@@ -287,7 +287,7 @@ class TgUploader:
                         if self.__thumb is None and thumb is not None and ospath.lexists(thumb):
                             osremove(thumb)
                         return
-                if len(user_data.get('is_leech_log')) != 0:
+                if len(user_data.get('is_leech_log', [''])) != 0:
                     for leechchat in self.__leech_log:
                         if ospath.getsize(up_path) > tgBotMaxFileSize: usingclient = premium_session
                         else: usingclient = self.__app
