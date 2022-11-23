@@ -106,7 +106,7 @@ def rmleechlog(update, context):
         id_ = update.effective_chat.id
     if 'is_leech_log' in user_data and id_ in user_data['is_leech_log']:
         #update_user_ldata(id_, 'is_leech_log', False)
-        user_data['is_leech_log'].pop(id_)
+        user_data['is_leech_log'].remove(id_)
         if DATABASE_URL:
             DbManger().update_user_data(id_)
         msg = 'Unauthorized'
