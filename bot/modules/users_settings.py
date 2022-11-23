@@ -51,14 +51,15 @@ def get_user_settings(from_user):
 
     if ospath.exists(thumbpath):
         thumbmsg = "Exists"
-        buttons.sbutton("Change Thumbnail", f"userset {user_id} sthumb")
-        #buttons.sbutton("Delete Thumbnail", f"userset {user_id} dthumb")
+        buttons.sbutton("Change/Delete Thumbnail", f"userset {user_id} sthumb")
         buttons.sbutton("Show Thumbnail", f"userset {user_id} showthumb")
     else:
         thumbmsg = "Not Exists"
         buttons.sbutton("Set Thumbnail", f"userset {user_id} sthumb")
     if prefix != "Not Exists":
-        buttons.sbutton("Delete Prename", f"userset {user_id} prefix")
+        buttons.sbutton("Change/Delete Prefix", f"userset {user_id} sprefix")
+    else:
+        buttons.sbutton("Set Prefix", f"userset {user_id} sprefix")
     if suffix != "Not Exists":
         buttons.sbutton("Delete Suffix", f"userset {user_id} suffix")
     if caption != "Not Exists": 
@@ -94,12 +95,24 @@ def update_user_settings(message, from_user):
 def user_settings(update, context):
     msg, button = get_user_settings(update.message.from_user)
     buttons_msg  = sendMarkup(msg, context.bot, update.message, button)
+
 def set_yt_quality(update, context, omsg):
     message = update.message
     user_id = message.from_user.id
     handler_dict[user_id] = False
     value = message.text
     update_user_ldata(user_id, 'yt_ql', value)
+    update.message.delete()
+    update_user_settings(omsg, message.from_user)
+    if DATABASE_URL:
+        DbManger().update_user_data(user_id)
+
+def set_addons(update, context, data, omsg):
+    message = update.message
+    user_id = message.from_user.id
+    handler_dict[user_id] = False
+    value = message.text
+    update_user_ldata(user_id, data, value)
     update.message.delete()
     update_user_settings(omsg, message.from_user)
     if DATABASE_URL:
@@ -171,7 +184,7 @@ def edit_user_settings(update, context):
             buttons.sbutton("Delete", f"userset {user_id} dthumb")
         buttons.sbutton("Back", f"userset {user_id} back")
         buttons.sbutton("Close", f"userset {user_id} close")
-        editMessage('Send a photo to save it as custom thumbnail.', message, buttons.build_menu(2) if menu else buttons.build_menu(1))
+        editMessage('Send a photo to save it as custom Thumbnail.', message, buttons.build_menu(2) if menu else buttons.build_menu(1))
         partial_fnc = partial(set_thumb, omsg=message)
         photo_handler = MessageHandler(filters=Filters.photo & Filters.chat(message.chat.id) & Filters.user(user_id),
                                        callback=partial_fnc, run_async=True)
@@ -226,11 +239,36 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
             Thread(args=(context.bot, update.message, delo)).start()
         else: query.answer(text="Send new settings command.")
     elif data[2] == "prefix":
+        handler_dict[user_id] = False
         update_user_ldata(user_id, 'prefix', False)
         if DATABASE_URL: 
             DbManger().update_userval(user_id, 'prefix')
         query.answer(text="Your Prefix is Successfully Deleted!", show_alert=True)
         update_user_settings(message, query)
+    elif data[2] == "sprefix":
+        query.answer()
+        menu = False
+        if handler_dict.get(user_id):
+            handler_dict[user_id] = False
+            sleep(0.5)
+        start_time = time()
+        handler_dict[user_id] = True
+        buttons = ButtonMaker()
+        if user_id in user_data and user_data[user_id].get('prefix'):
+            menu = True
+            buttons.sbutton("Delete", f"userset {user_id} prefix")
+        buttons.sbutton("Back", f"userset {user_id} back")
+        buttons.sbutton("Close", f"userset {user_id} close")
+        editMessage('Send Prefix text to save it as custom Prefix.', message, buttons.build_menu(2) if menu else buttons.build_menu(1))
+        partial_fnc = partial(set_addons, data='prefix', omsg=message)
+        prefix_handler = MessageHandler(filters=Filters.text & Filters.chat(message.chat.id) & Filters.user(user_id),
+                                       callback=partial_fnc, run_async=True)
+        dispatcher.add_handler(prefix_handler)
+        while handler_dict[user_id]:
+            if time() - start_time > 60:
+                handler_dict[user_id] = False
+                update_user_settings(message, query.from_user)
+        dispatcher.remove_handler(prefix_handler)
     elif data[2] == "suffix":
         update_user_ldata(user_id, 'suffix', False)
         if DATABASE_URL: 
