@@ -244,7 +244,7 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
         if DATABASE_URL: 
             DbManger().update_userval(user_id, 'prefix')
         query.answer(text="Your Prefix is Successfully Deleted!", show_alert=True)
-        update_user_settings(message, query)
+        update_user_settings(message, query.from_user)
     elif data[2] == "sprefix":
         query.answer()
         menu = False
