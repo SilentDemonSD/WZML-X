@@ -85,15 +85,15 @@ class MirrorLeechListener:
                 download_dict[self.uid] = ZipStatus(name, size, gid, self)
             TG_SPLIT_SIZE = config_dict['TG_SPLIT_SIZE']
             if self.pswd is not None:
-                if self.isLeech and int(size) > config_dict['TG_SPLIT_SIZE']:
+                if self.isLeech and int(size) > TG_SPLIT_SIZE:
                     LOGGER.info(f'Zip: orig_path: {m_path}, zip_path: {path}.0*')
-                    self.suproc = Popen(["7z", f"-v{config_dict['TG_SPLIT_SIZE']}b", "a", "-mx=0", f"-p{self.pswd}", path, m_path])
+                    self.suproc = Popen(["7z", f"-v{TG_SPLIT_SIZE}b", "a", "-mx=0", f"-p{self.pswd}", path, m_path])
                 else:
                     LOGGER.info(f'Zip: orig_path: {m_path}, zip_path: {path}')
                     self.suproc = Popen(["7z", "a", "-mx=0", f"-p{self.pswd}", path, m_path])
-            elif self.isLeech and int(size) > config_dict['TG_SPLIT_SIZE']:
+            elif self.isLeech and int(size) > TG_SPLIT_SIZE:
                 LOGGER.info(f'Zip: orig_path: {m_path}, zip_path: {path}.0*')
-                self.suproc = Popen(["7z", f"-v{config_dict['TG_SPLIT_SIZE']}b", "a", "-mx=0", path, m_path])
+                self.suproc = Popen(["7z", f"-v{TG_SPLIT_SIZE}b", "a", "-mx=0", path, m_path])
             else:
                 LOGGER.info(f'Zip: orig_path: {m_path}, zip_path: {path}')
                 self.suproc = Popen(["7z", "a", "-mx=0", path, m_path])
@@ -180,17 +180,17 @@ class MirrorLeechListener:
                     for file_ in files:
                         f_path = ospath.join(dirpath, file_)
                         f_size = ospath.getsize(f_path)
-                        if f_size > config_dict['TG_SPLIT_SIZE']:
+                        if f_size > TG_SPLIT_SIZE:
                             if not checked:
                                 checked = True
                                 with download_dict_lock:
                                     download_dict[self.uid] = SplitStatus(up_name, size, gid, self)
                                 LOGGER.info(f"Splitting: {up_name}")
-                            res = split_file(f_path, f_size, file_, dirpath, config_dict['TG_SPLIT_SIZE'], self)
+                            res = split_file(f_path, f_size, file_, dirpath, TG_SPLIT_SIZE, self)
                             if not res:
                                 return
                             if res == "errored":
-                                if f_size <= config_dict['TG_SPLIT_SIZE']:
+                                if f_size <= tgBotMaxFileSize:
                                     continue
                                 else:
                                     try:
@@ -226,6 +226,7 @@ class MirrorLeechListener:
                 download_dict[self.uid] = upload_status
             update_all_messages()
             drive.upload(up_name)
+
 
     def onUploadComplete(self, link: str, size, files, folders, typ, name):
         buttons = ButtonMaker()
