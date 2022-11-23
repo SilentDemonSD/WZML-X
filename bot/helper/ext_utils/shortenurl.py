@@ -7,11 +7,13 @@ from base64 import b64encode
 from urllib.parse import quote, unquote
 from urllib3 import disable_warnings
 
-from bot import LOGGER, SHORTENER, SHORTENER_API
+from bot import LOGGER, config_dict
 
 
+SHORTENER_API = config_dict['SHORTENER_API']
+SHORTENER = config_dict['SHORTENER']
 def short_url(longurl):
-    if SHORTENER is None and SHORTENER_API is None:
+    if SHORTENER is '' and SHORTENER_API is '':
         return longurl
     try:
         cget = create_scraper().get

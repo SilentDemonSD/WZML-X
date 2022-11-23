@@ -170,7 +170,7 @@ def __stop_duplicate(client, tor):
                 qbmsg, button = GoogleDriveHelper().drive_list(qbname, True)
                 if qbmsg:
                     __onDownloadError("File/Folder is already available in Drive.", client, tor)
-                    if TELEGRAPH_STYLE is True:
+                    if config_dict['TELEGRAPH_STYLE']:
                         sendMarkup("Here are the search results:", listener.bot, listener.message, button)
                     else:
                         sendFile(listener.bot, listener.message, button, f"Here are the search results:\n\n{qbmsg}")
@@ -188,6 +188,10 @@ def __check_limits(client, tor):
     size = tor.size
     arch = any([listener.isZip, listener.extract])
     user_id = listener.message.from_user.id
+    TORRENT_DIRECT_LIMIT = config_dict['TORRENT_DIRECT_LIMIT']
+    ZIP_UNZIP_LIMIT = config_dict['ZIP_UNZIP_LIMIT']
+    LEECH_LIMIT = config_dict['LEECH_LIMIT']
+    STORAGE_THRESHOLD = config_dict['STORAGE_THRESHOLD']
     if any([ZIP_UNZIP_LIMIT, LEECH_LIMIT, TORRENT_DIRECT_LIMIT, STORAGE_THRESHOLD]) and user_id != OWNER_ID and user_data[user_id].get('is_sudo') and user_data[user_id].get('is_paid'):
         if STORAGE_THRESHOLD is not None:
             acpt = check_storage_threshold(size, arch)

@@ -169,7 +169,7 @@ def add_mega_download(mega_link: str, path: str, listener, name: str):
                 mname = None
         if mname is not None:
 
-            if TELEGRAPH_STYLE is True:
+            if config_dict['TELEGRAPH_STYLE']:
                 smsg, button = GoogleDriveHelper().drive_list(mname, True)
                 if smsg:
                     msg1 = "File/Folder is already available in Drive.\nHere are the search results:"
@@ -184,6 +184,10 @@ def add_mega_download(mega_link: str, path: str, listener, name: str):
                     folder_api.removeListener(mega_listener)
                 return
     user_id = listener.message.from_user.id
+    MEGA_LIMIT = config_dict['MEGA_LIMIT']
+    STORAGE_THRESHOLD = config_dict['STORAGE_THRESHOLD']
+    ZIP_UNZIP_LIMIT = config_dict['ZIP_UNZIP_LIMIT']
+    LEECH_LIMIT = config_dict['LEECH_LIMIT']
     if any([STORAGE_THRESHOLD, ZIP_UNZIP_LIMIT, MEGA_LIMIT, LEECH_LIMIT]) and user_id != OWNER_ID and user_data[user_id].get('is_sudo') and user_data[user_id].get('is_paid'):
         size = api.getSize(node)
         arch = any([listener.isZip, listener.isLeech, listener.extract])

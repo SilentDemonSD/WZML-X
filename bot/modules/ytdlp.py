@@ -26,9 +26,9 @@ def _ytdl(bot, message, isZip=False, isLeech=False):
     select = False
     multi = 0
     buttons = ButtonMaker()	
-    if FSUB:
+    if config_dict['FSUB']:
         try:
-            user = bot.get_chat_member(f"{FSUB_CHANNEL_ID}", message.from_user.id)
+            user = bot.get_chat_member(f"{config_dict['FSUB_CHANNEL_ID']}", message.from_user.id)
             LOGGER.info(user.status)
             if user.status not in ("member", "creator", "administrator", "supergroup"):
                 if message.from_user.username:
@@ -36,7 +36,7 @@ def _ytdl(bot, message, isZip=False, isLeech=False):
                 else:
                     uname = f'<a href="tg://user?id={message.from_user.id}">{message.from_user.first_name}</a>'
                 buttons = ButtonMaker()
-                chat_u = CHANNEL_USERNAME.replace("@", "")
+                chat_u = config_dict['CHANNEL_USERNAME'].replace("@", "")
                 buttons.buildbutton("👉🏻 CHANNEL LINK 👈🏻", f"https://t.me/{chat_u}")
                 help_msg = f"Dᴇᴀʀ {uname},\nYᴏᴜ ɴᴇᴇᴅ ᴛᴏ ᴊᴏɪɴ ᴍʏ Cʜᴀɴɴᴇʟ ᴛᴏ ᴜsᴇ Bᴏᴛ \n\nCʟɪᴄᴋ ᴏɴ ᴛʜᴇ ʙᴇʟᴏᴡ Bᴜᴛᴛᴏɴ ᴛᴏ ᴊᴏɪɴ ᴍʏ Cʜᴀɴɴᴇʟ."
                 reply_message = sendMarkup(help_msg, bot, message, buttons.build_menu(2))
@@ -64,6 +64,8 @@ def _ytdl(bot, message, isZip=False, isLeech=False):
 
     total_task = len(download_dict)
     user_id = message.from_user.id
+    USER_TASKS_LIMIT = config_dict['USER_TASKS_LIMIT']
+    TOTAL_TASKS_LIMIT = config_dict['TOTAL_TASKS_LIMIT']
     if user_id != OWNER_ID and user_data[user_id].get('is_sudo') and user_data[user_id].get('is_paid'):
         if config_dict['PAID_SERVICE'] is True:
             if TOTAL_TASKS_LIMIT == total_task:

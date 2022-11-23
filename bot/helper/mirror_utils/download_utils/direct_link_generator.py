@@ -444,6 +444,10 @@ def gdtot(url: str) -> str:
         raise DirectDownloadLinkException("ERROR: Try in your broswer, mostly file not found or user limit exceeded!")
     return f'https://drive.google.com/open?id={decoded_id}'
 
+
+
+UNIFIED_EMAIL = config_dict['UNIFIED_EMAIL']
+UNIFIED_PASS = config_dict['UNIFIED_PASS']
 account = {
     'email': UNIFIED_EMAIL, 
    'passwd': UNIFIED_PASS
@@ -471,7 +475,7 @@ def parse_infou(data):
     return info_parsed
 
 def unified(url: str) -> str:
-    if (UNIFIED_EMAIL or UNIFIED_PASS) is None:
+    if (UNIFIED_EMAIL or UNIFIED_PASS) is '':
         raise DirectDownloadLinkException("UNIFIED_EMAIL and UNIFIED_PASS env vars not provided")
     client = cloudscraper.create_scraper(delay=10, browser='chrome')
     client.headers.update({

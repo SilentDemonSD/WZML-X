@@ -1,7 +1,7 @@
 from threading import Thread
 from telegram.ext import CommandHandler, CallbackQueryHandler
 
-from bot import LOGGER, TELEGRAPH_STYLE, dispatcher
+from bot import LOGGER, dispatcher, config_data
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, sendMarkup, sendFile, deleteMessage
 from bot.helper.telegram_helper.filters import CustomFilters
@@ -38,7 +38,7 @@ def select_type(update, context):
     Thread(target=_list_drive, args=(context.bot, key, msg, item_type)).start()
 
 def _list_drive(bot, key, bmsg, item_type):
-    if TELEGRAPH_STYLE is True:
+    if config_dict['TELEGRAPH_STYLE']:
 
         LOGGER.info(f"listing: {key}")
         gdrive = GoogleDriveHelper()

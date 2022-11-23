@@ -2,7 +2,7 @@ from pyrogram import enums
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, ConversationHandler
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-from bot import bot, user_data, LOGGER, DATABASE_URL, OWNER_ID, dispatcher, PAID_SERVICE, CAPTION_FONT
+from bot import bot, user_data, LOGGER, DATABASE_URL, OWNER_ID, dispatcher, config_dict
 from bot.helper.telegram_helper.message_utils import *
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands

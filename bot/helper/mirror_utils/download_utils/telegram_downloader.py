@@ -99,7 +99,7 @@ class TelegramDownloadHelper:
                 size = media.file_size
                 if config_dict['STOP_DUPLICATE'] and not self.__listener.isLeech:
                     LOGGER.info('Checking File/Folder if already in Drive...')
-                    if TELEGRAPH_STYLE is True:
+                    if config_dict['TELEGRAPH_STYLE']:
                         smsg, button = GoogleDriveHelper().drive_list(name, True, True)
                         if smsg:
                             msg = "File/Folder is already available in Drive.\nHere are the search results:"

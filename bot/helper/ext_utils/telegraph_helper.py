@@ -7,7 +7,7 @@ from time import sleep
 from telegraph import Telegraph
 from telegraph.exceptions import RetryAfterError
 
-from bot import LOGGER, AUTHOR_NAME, AUTHOR_URL, TITLE_NAME
+from bot import LOGGER, config_dict
 
 
 class TelegraphHelper:
@@ -56,6 +56,7 @@ class TelegraphHelper:
         return self.edit_page(path, title, content)
 
     def edit_telegraph(self, path, telegraph_content):
+        TITLE_NAME = config_dict['TITLE_NAME']
         nxt_page = 1
         prev_page = 0
         num_of_path = len(path)
@@ -78,6 +79,8 @@ class TelegraphHelper:
         return
 
 try:
+    AUTHOR_NAME = config_dict['AUTHOR_NAME']
+    AUTHOR_URL = config_dict['AUTHOR_URL']
     telegraph=TelegraphHelper(f'{AUTHOR_NAME}', f'{AUTHOR_URL}')
 except Exception as err:
     LOGGER.warning(f"Can't Create Telegraph Account: {err}")

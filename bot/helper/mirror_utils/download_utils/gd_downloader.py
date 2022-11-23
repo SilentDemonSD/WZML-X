@@ -1,6 +1,6 @@
 from random import SystemRandom
 from string import ascii_letters, digits
-from bot import TELEGRAPH_STYLE, download_dict, download_dict_lock, ZIP_UNZIP_LIMIT, LOGGER, user_data, config_dict
+from bot import download_dict, download_dict_lock, LOGGER, user_data, config_dict
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.mirror_utils.status_utils.gd_download_status import GdDownloadStatus
 from bot.helper.telegram_helper.message_utils import sendMessage, sendStatusMessage, sendMarkup, sendFile
@@ -24,7 +24,7 @@ def add_gd_download(link, path, listener, is_gdtot, is_unified, is_udrive, newna
             except:
                 gname = None
         if gname is not None:
-            if TELEGRAPH_STYLE is True:
+            if config_dict['TELEGRAPH_STYLE']:
                 gmsg, button = GoogleDriveHelper().drive_list(gname, True)
                 if gmsg:
                     msg = "File/Folder is already available in Drive.\nHere are the search results:"
@@ -37,6 +37,10 @@ def add_gd_download(link, path, listener, is_gdtot, is_unified, is_udrive, newna
                     sendFile(listener.bot, listener.message, f_name, cap)
                     return
     user_id = listener.message.from_user.id
+    TORRENT_DIRECT_LIMIT = config_dict['TORRENT_DIRECT_LIMIT']
+    ZIP_UNZIP_LIMIT = config_dict['ZIP_UNZIP_LIMIT']
+    LEECH_LIMIT = config_dict['LEECH_LIMIT']
+    STORAGE_THRESHOLD = config_dict['STORAGE_THRESHOLD']
     if any([ZIP_UNZIP_LIMIT, STORAGE_THRESHOLD, TORRENT_DIRECT_LIMIT, LEECH_LIMIT]) and user_id != OWNER_ID and user_data[user_id].get('is_sudo') and user_data[user_id].get('is_paid'):
         arch = any([listener.extract, listener.isZip])
         limit = None

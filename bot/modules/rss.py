@@ -4,7 +4,7 @@ from telegram.ext import CommandHandler, CallbackQueryHandler
 from threading import Lock, Thread
 from copy import deepcopy
 
-from bot import dispatcher, job_queue, rss_dict, LOGGER, DATABASE_URL, config_dict, RSS_DELAY, RSS_CHAT_ID
+from bot import dispatcher, job_queue, rss_dict, LOGGER, DATABASE_URL, config_dict
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, sendMarkup, auto_delete_message, sendRss
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
