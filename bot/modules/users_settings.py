@@ -77,7 +77,7 @@ def get_user_settings(from_user):
     
 • Leech Type : <b>{ltype}</b>
 • Custom Thumbnail : <b>{thumbmsg}</b>
-• YT-DLP Quality is : <b><code>{escape(ytq)}</code>
+• YT-DLP Quality is : <b><code>{escape(ytq)}</code></b>
 • Prefix : <b>{prefix}</b>
 • Suffix : <b>{suffix}</b>
 • Caption : <b>{caption}</b>
