@@ -52,7 +52,6 @@ class _BotCommands:
         self.ShellCommand = getCommand('SHELL_COMMAND', f'shell{CMD_PERFIX}')
         self.ExecHelpCommand = getCommand('EXEHELP_COMMAND', f'exechelp{CMD_PERFIX}')
         self.UserSetCommand  = getCommand('USERSET_COMMAND', f'usetting{CMD_PERFIX}')
-        self.SetThumbCommand = getCommand('SETTHUMB_COMMAND', f'setthumb{CMD_PERFIX}')
         self.LeechCommand = getCommand('LEECH_COMMAND', f'leech{CMD_PERFIX}')
         self.UnzipLeechCommand = getCommand('UNZIPLEECH_COMMAND', f'unzipleech{CMD_PERFIX}')
         self.ZipLeechCommand = getCommand('ZIPLEECH_COMMAND', f'zipleech{CMD_PERFIX}')

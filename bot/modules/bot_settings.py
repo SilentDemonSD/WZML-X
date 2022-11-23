@@ -250,10 +250,28 @@ def load_config():
         RSS_COMMAND = ''
 
     SERVER_PORT = getenv('SERVER_PORT', '')
-    if len(SERVER_PORT) == 0:
-        SERVER_PORT = 80
-    else:
-        SERVER_PORT = int(SERVER_PORT)
+    SERVER_PORT = 80 if len(SERVER_PORT) == 0 else int(SERVER_PORT)
+
+    DRIVES_IDS.clear()
+    DRIVES_NAMES.clear()
+    INDEX_URLS.clear()
+
+    if GDRIVE_ID:
+        DRIVES_NAMES.append("Main")
+        DRIVES_IDS.append(GDRIVE_ID)
+        INDEX_URLS.append(INDEX_URL)
+
+    if ospath.exists('list_drives.txt'):
+        with open('list_drives.txt', 'r+') as f:
+            lines = f.readlines()
+            for line in lines:
+                temp = line.strip().split()
+                DRIVES_IDS.append(temp[1])
+                DRIVES_NAMES.append(temp[0].replace("_", " "))
+                if len(temp) > 2:
+                    INDEX_URLS.append(temp[2])
+                else:
+                    INDEX_URLS.append('')
 
     SEARCH_PLUGINS = getenv('SEARCH_PLUGINS', '')
     if len(SEARCH_PLUGINS) == 0:
@@ -469,6 +487,10 @@ def load_config():
 
     PICS = (getenv('PICS', '')).split()
 
+    YT_DLP_QUALITY = getenv('YT_DLP_QUALITY', '')
+    if len(YT_DLP_QUALITY) == 0:
+        YT_DLP_QUALITY = ''
+
     BASE_URL = getenv('BASE_URL', '').rstrip("/")
     if len(BASE_URL) == 0:
         BASE_URL = ''
@@ -584,7 +606,8 @@ def load_config():
                    'BUTTON_FIVE_URL': BUTTON_FIVE_URL,
                    'BUTTON_SIX_NAME': BUTTON_SIX_NAME,
                    'BUTTON_SIX_URL': TELEGRAPH_STYLE,
-                   'WEB_PINCODE': WEB_PINCODE})
+                   'WEB_PINCODE': WEB_PINCODE,
+                   'YT_DLP_QUALITY': YT_DLP_QUALITY})
 
 
     if DB_URI:
@@ -654,7 +677,7 @@ def get_buttons(key=None, edit_type=None):
             buttons.sbutton('Default', f"botset resetaria {key}")
         buttons.sbutton('Close', "botset close")
         if key == 'newkey':
-            msg = f'Send a key with value. Example: https-proxy-user:value'
+            msg = 'Send a key with value. Example: https-proxy-user:value'
         else:
             msg = f'Send a valid value for {key}. Timeout: 60 sec'
     elif edit_type == 'editqbit':
@@ -678,13 +701,9 @@ def edit_variable(update, context, omsg, key):
         value = int(value)
         if len(download_dict) != 0:
             with status_reply_dict_lock:
-                try:
-                    if Interval:
-                        Interval[0].cancel()
-                        Interval.clear()
-                except:
-                    pass
-                finally:
+                if Interval:
+                    Interval[0].cancel()
+                    Interval.clear()
                     Interval.append(setInterval(value, update_all_messages))
     elif key == 'TORRENT_TIMEOUT':
         value = int(value)
@@ -706,6 +725,16 @@ def edit_variable(update, context, omsg, key):
             GLOBAL_EXTENSION_FILTER.append(x.strip().lower())
     elif key in ['SEARCH_PLUGINS', 'SEARCH_API_LINK']:
         initiate_search_tools()
+    elif key == 'GDRIVE_ID':
+        if DRIVES_NAMES and DRIVES_NAMES[0] == 'Main':
+            DRIVES_IDS[0] = value
+        else:
+            DRIVES_IDS.insert(0, value)
+    elif key == 'INDEX_URL':
+        if DRIVES_NAMES and DRIVES_NAMES[0] == 'Main':
+            INDEX_URLS[0] = value
+        else:
+            INDEX_URLS.insert(0, value)
     elif value.isdigit():
         value = int(value)
     config_dict[key] = value
@@ -770,10 +799,7 @@ def upload_file(update, context, omsg):
         if GDRIVE_ID := config_dict['GDRIVE_ID']:
             DRIVES_NAMES.append("Main")
             DRIVES_IDS.append(GDRIVE_ID)
-            if INDEX_URL := config_dict['INDEX_URL']:
-                INDEX_URLS.append(INDEX_URL)
-            else:
-                INDEX_URLS.append(None)
+            INDEX_URLS.append(config_dict['INDEX_URL'])
         with open('list_drives.txt', 'r+') as f:
             lines = f.readlines()
             for line in lines:
@@ -783,7 +809,7 @@ def upload_file(update, context, omsg):
                 if len(temp) > 2:
                     INDEX_URLS.append(temp[2])
                 else:
-                    INDEX_URLS.append(None)
+                    INDEX_URLS.append('')
     elif file_name in ['.netrc', 'netrc']:
         if file_name == 'netrc':
             rename('netrc', '.netrc')
@@ -848,7 +874,16 @@ def edit_bot_settings(update, context):
             value = 80
             srun(["pkill", "-9", "-f", "gunicorn"])
             Popen("gunicorn web.wserver:app --bind 0.0.0.0:80", shell=True)
+        elif data[2] == 'GDRIVE_ID':
+            if DRIVES_NAMES and DRIVES_NAMES[0] == 'Main':
+                DRIVES_NAMES.pop(0)
+                DRIVES_IDS.pop(0)
+                INDEX_URLS.pop(0)
+        elif data[2] == 'INDEX_URL':
+            if DRIVES_NAMES and DRIVES_NAMES[0] == 'Main':
+                INDEX_URLS[0] = ''
         config_dict[data[2]] = value
+        update_buttons(message, 'var')
         if DB_URI:
             DbManger().update_config({data[2]: value})
         update_buttons(message, 'var')
@@ -871,8 +906,8 @@ def edit_bot_settings(update, context):
         handler_dict[message.chat.id] = True
         update_buttons(message, 'private')
         partial_fnc = partial(upload_file, omsg=message)
-        file_handler = MessageHandler(filters=Filters.document & Filters.chat(message.chat.id) &
-                        (CustomFilters.owner_filter | CustomFilters.sudo_user), callback=partial_fnc, run_async=True)
+        file_handler = MessageHandler(filters=Filters.document & Filters.chat(message.chat.id) & Filters.user(user_id),
+                                      callback=partial_fnc, run_async=True)
         dispatcher.add_handler(file_handler)
         while handler_dict[message.chat.id]:
             if time() - start_time > 60:
@@ -892,8 +927,8 @@ def edit_bot_settings(update, context):
         handler_dict[message.chat.id] = True
         update_buttons(message, data[2], data[1])
         partial_fnc = partial(edit_variable, omsg=message, key=data[2])
-        value_handler = MessageHandler(filters=Filters.text & Filters.chat(message.chat.id) &
-                        (CustomFilters.owner_filter | CustomFilters.sudo_user), callback=partial_fnc, run_async=True)
+        value_handler = MessageHandler(filters=Filters.text & Filters.chat(message.chat.id) & Filters.user(user_id),
+                                       callback=partial_fnc, run_async=True)
         dispatcher.add_handler(value_handler)
         while handler_dict[message.chat.id]:
             if time() - start_time > 60:

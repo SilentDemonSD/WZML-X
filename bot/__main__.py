@@ -263,8 +263,6 @@ help_string_telegraph_user = f'''
 <br><br>
 • <b>/{BotCommands.UserSetCommand}</b>: Users settings
 <br><br>
-• <b>/{BotCommands.SetThumbCommand}</b>: Reply photo to set it as Thumbnail
-<br><br>
 • <b>/{BotCommands.RssListCommand}</b>: List all subscribed rss feed info
 <br><br>
 • <b>/{BotCommands.RssGetCommand}</b>: [Title] [Number](last N links): Force fetch last N links
@@ -371,7 +369,6 @@ if config_dict['SET_BOT_COMMANDS']:
         (f'{BotCommands.SearchCommand}','Search in Torrent'),
         (f'{BotCommands.UserSetCommand}','Users settings'),
         (f'{BotCommands.BotSetCommand}','BOT settings'),
-        (f'{BotCommands.SetThumbCommand}','Set thumbnail'),
         (f'{BotCommands.StatusCommand}','Get mirror status message'),
         (f'{BotCommands.SpeedCommand}','Speedtest'),
         (f'{BotCommands.WayBackCommand}','Internet Archive'),

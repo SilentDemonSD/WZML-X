@@ -90,7 +90,6 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
 
     mesg = message.text.split('\n')
     message_args = mesg[0].split(maxsplit=1)
-    name_args = mesg[0].split('|', maxsplit=1)
     is_gdtot = False
     is_unified = False
     is_udrive = False
@@ -100,6 +99,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
     select = False
     seed = False
     multi = 0
+    link = ''
 
     if len(message_args) > 1:
         args = mesg[0].split(maxsplit=3)
@@ -127,33 +127,26 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
                 link = message_args[index].strip()
                 if link.startswith(("|", "pswd:")):
                     link = ''
-            else:
-                link = ''
+    name = mesg[0].split('|', maxsplit=1)
+    if len(name) > 1:
+        if 'pswd:' in name[0]:
+            name = ''
         else:
-            link = ''
-    else:
-        link = ''
-
-    if len(name_args) > 1:
-        name = name_args[1]
-        name = name.split(' pswd:')[0]
-        name = name.strip()
+            name = name[1].split('pswd:')[0].strip()
     else:
         name = ''
 
-    link = re_split(r"pswd:|\|", link)[0]
-    link = link.strip()
-
-    pswd_arg = mesg[0].split(' pswd: ')
-    if len(pswd_arg) > 1:
-        pswd = pswd_arg[1]
-    else:
-        pswd = None
+    pswd = mesg[0].split(' pswd: ')
+    pswd = pswd[1] if len(pswd) > 1 else None
 
     if message.from_user.username:
         tag = f"@{message.from_user.username}"
     else:
         tag = message.from_user.mention_html(message.from_user.first_name)
+
+    if link != '':
+        link = re_split(r"pswd:|\|", link)[0]
+        link = link.strip()
 
     reply_to = message.reply_to_message
     if reply_to is not None:

@@ -556,6 +556,9 @@ if len(SERVER_PORT) == 0:
 else:
     SERVER_PORT = int(SERVER_PORT)
 
+YT_DLP_QUALITY = getenv('YT_DLP_QUALITY', '')
+if len(YT_DLP_QUALITY) == 0:
+    YT_DLP_QUALITY = ''
 
 BASE_URL = getenv('BASE_URL', '').rstrip("/")
 if len(BASE_URL) == 0:
@@ -572,7 +575,6 @@ if len(UPSTREAM_BRANCH) == 0:
 
 
 
-if not config_dict:
     config_dict = {'AS_DOCUMENT': AS_DOCUMENT,
                    'AUTHORIZED_CHATS': AUTHORIZED_CHATS,
                    'AUTO_DELETE_MESSAGE_DURATION': AUTO_DELETE_MESSAGE_DURATION,
@@ -678,16 +680,14 @@ if not config_dict:
                    'BUTTON_FIVE_URL': BUTTON_FIVE_URL,
                    'BUTTON_SIX_NAME': BUTTON_SIX_NAME,
                    'BUTTON_SIX_URL': TELEGRAPH_STYLE,
-                   'WEB_PINCODE': WEB_PINCODE}
+                   'WEB_PINCODE': WEB_PINCODE,
+                   'YT_DLP_QUALITY': YT_DLP_QUALITY}
 
 
 if GDRIVE_ID:
     DRIVES_NAMES.append("Main")
     DRIVES_IDS.append(GDRIVE_ID)
-    if INDEX_URL:
-        INDEX_URLS.append(INDEX_URL)
-    else:
-        INDEX_URLS.append(None)
+    INDEX_URLS.append(INDEX_URL)
 
 if ospath.exists('list_drives.txt'):
     with open('list_drives.txt', 'r+') as f:
@@ -699,7 +699,7 @@ if ospath.exists('list_drives.txt'):
             if len(temp) > 2:
                 INDEX_URLS.append(temp[2])
             else:
-                INDEX_URLS.append(None)
+                INDEX_URLS.append('')
 
 if BASE_URL:
     Popen(f"gunicorn web.wserver:app --bind 0.0.0.0:{SERVER_PORT}", shell=True)
