@@ -231,7 +231,7 @@ def rss_monitor(context):
             LOGGER.error(f"{e} Feed Name: {title} - Feed Link: {data['link']}")
             continue
 
-if DATABASE_URL and RSS_CHAT_ID:
+if DATABASE_URL and config_dict['RSS_CHAT_ID']:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list,
                                       filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_get_handler = CommandHandler(BotCommands.RssGetCommand, rss_get,
