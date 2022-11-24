@@ -140,7 +140,9 @@ def _clone(message, bot):
     is_gdtot = is_gdtot_link(link)
     is_unified = is_unified_link(link)
     is_udrive = is_udrive_link(link)
-    if (is_gdtot or is_unified or is_udrive):
+    is_sharer = is_sharer_link(link)
+    is_sharedrive = is_sharedrive_link(link)
+    if (is_gdtot or is_unified or is_udrive or is_sharer or is_sharedrive):
         try:
             msg = sendMessage(f"Processing: <code>{link}</code>", bot, message)
             LOGGER.info(f"Processing: {link}")
@@ -150,6 +152,10 @@ def _clone(message, bot):
                 link = gdtot(link)
             if is_udrive:
                 link = udrive(link)
+            if is_sharer:
+                link = sharer_pw_dl(link)
+           if is_sharedrive:
+                link = shareDrive(link)
             LOGGER.info(f"Processing GdToT: {link}")
             deleteMessage(bot, msg)
         except DirectDownloadLinkException as e:
@@ -318,7 +324,7 @@ def _clone(message, bot):
                 else:
                     msg = sendMarkup(result + cc + pmwarn + logwarn + warnmsg, bot, message, button)
                 Thread(target=auto_delete_upload_message, args=(bot, message, msg)).start()
-        if (is_gdtot or is_unified or is_udrive):
+        if (is_gdtot or is_unified or is_udrive or is_sharer or is_sharedrive):
             gd.deletefile(link)
 
         if 'mirror_logs' in user_data:	
@@ -337,7 +343,7 @@ def _clone(message, bot):
 
 
     else:
-        sendMessage('Send Gdrive or GDToT/AppDrive/DriveApp/GDFlix/DriveBit/DrivePro/DriveAce/DriveSharer/HubDrive/DriveHub/KatDrive/Kolop/DriveFire link along with command or by replying to the link by command', bot, message)
+        sendMessage("Send Gdrive or GDToT/AppDrive/DriveApp/GDFlix/DriveAce/DriveLinks/DriveBit/DriveSharer/Anidrive/Driveroot/Driveflix/Indidrive/drivehub(in)/HubDrive/DriveHub(ws)/KatDrive/Kolop/DriveFire/DriveBuzz/SharerPw/ShareDrive link along with command or by replying to the link by command\n\n<b>Multi links only by replying to first link/file:</b>\n<code>/cmd</code> 10(number of links/files)", bot, message)
 
 @new_thread
 def cloneNode(update, context):
