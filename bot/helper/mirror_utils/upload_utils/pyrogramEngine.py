@@ -1,3 +1,5 @@
+import re
+import os
 from logging import getLogger, ERROR
 from os import remove as osremove, walk, path as ospath, rename as osrename
 from time import time, sleep
@@ -5,7 +7,8 @@ from pyrogram.errors import FloodWait, RPCError
 from PIL import Image
 from threading import RLock
 from bot import AS_DOCUMENT, AS_DOC_USERS, AS_MEDIA_USERS, EXTENSION_FILTER, \
-                 app, LEECH_LOG, BOT_PM, tgBotMaxFileSize, premium_session, CAPTION_FONT, PRE_DICT, LEECH_DICT, LOG_LEECH, CAP_DICT
+                app, LEECH_LOG, BOT_PM, tgBotMaxFileSize, premium_session, CAPTION_FONT, \
+                PRE_DICT, LEECH_DICT, LOG_LEECH, CAP_DICT, REM_DICT, SUF_DICT, CFONT_DICT
 from bot.helper.ext_utils.fs_utils import take_ss, get_media_info, get_media_streams, get_path_size, clean_unwanted
 from bot.helper.ext_utils.bot_utils import get_readable_file_size
 from pyrogram.types import Message
@@ -74,49 +77,73 @@ class TgUploader:
 
     def __upload_file(self, up_path, file_, dirpath):
         fsize = ospath.getsize(up_path)
-        if fsize > 2097152000:
-            client = premium_session
+        # Initial Values >>>>
+        client = premium_session if fsize > 2097152000 else app
+        PRENAME = PRE_DICT.get(self.__listener.message.from_user.id, "")
+        CAPTION = CAP_DICT.get(self.__listener.message.from_user.id, "")
+        REMNAME = REM_DICT.get(self.__listener.message.from_user.id, "")
+        SUFFIX = SUF_DICT.get(self.__listener.message.from_user.id, "")
+        FSTYLE = CFONT_DICT.get(self.__listener.message.from_user.id, ["", ""])[1]
+
+        #MysteryStyle
+        if file_.startswith('www'):
+            file_ = ' '.join(file_.split()[1:])
+        if REMNAME:
+            if not REMNAME.startswith('|'):
+                REMNAME = f"|{REMNAME}"
+            slit = REMNAME.split("|")
+            __newFileName = file_
+            for rep in range(1, len(slit)):
+                args = slit[rep].split(":")
+                if len(args) == 3:
+                    __newFileName = __newFileName.replace(args[0], args[1], int(args[2]))
+                elif len(args) == 2:
+                    __newFileName = __newFileName.replace(args[0], args[1])
+                elif len(args) == 1:
+                    __newFileName = __newFileName.replace(args[0], '')
+            file_ = __newFileName
+            LOGGER.info("Remname : "+file_)
+        if PRENAME:
+            if not file_.startswith(PRENAME):
+                file_ = f"{PRENAME}{file_}"
+        if SUFFIX:
+            sufLen = len(SUFFIX)
+            fileDict = file_.split('.')
+            _extIn = 1 + len(fileDict[-1])
+            _extOutName = '.'.join(fileDict[:-1]).replace('.', ' ').replace('-', ' ')
+            _newExtFileName = f"{_extOutName}{SUFFIX}.{fileDict[-1]}"
+            if len(_extOutName) > (64 - (sufLen + _extIn)):
+                _newExtFileName = (
+                    _extOutName[: 64 - (sufLen + _extIn)]
+                    + f"{SUFFIX}.{fileDict[-1]}"
+                            )
+            file_ = _newExtFileName
+        if PRENAME or REMNAME or SUFFIX:
+            new_path = ospath.join(dirpath, file_)
+            osrename(up_path, new_path)
+            up_path = new_path
+        cfont = CAPTION_FONT if not FSTYLE else FSTYLE
+        if CAPTION:
+            slit = CAPTION.split("|")
+            cap_mono = slit[0].format(
+                filename = file_,
+                size = get_readable_file_size(ospath.getsize(up_path))
+            )
+            if len(slit) > 1:
+                for rep in range(1, len(slit)):
+                    args = slit[rep].split(":")
+                    if len(args) == 3:
+                        cap_mono = cap_mono.replace(args[0], args[1], int(args[2]))
+                    elif len(args) == 2:
+                        cap_mono = cap_mono.replace(args[0], args[1])
+                    elif len(args) == 1:
+                        cap_mono = cap_mono.replace(args[0], '')
         else:
-            client = app
-        prefix = PRE_DICT.get(self.__listener.message.from_user.id, "")
-        PRENAME_X = prefix
-        caption = CAP_DICT.get(self.__listener.message.from_user.id, "")
-        CAPTION_X = caption
-        if len(PRENAME_X) != 0:
-            if file_.startswith('www'):
-                file_ = ' '.join(file_.split()[1:])
-                file_ = f"{PRENAME_X}" + file_.strip('-').strip('_')
-                cap_mono = f"<{CAPTION_FONT}>{file_}</{CAPTION_FONT}>"
-                cap = f"\n\n{CAPTION_X}\n\n"
-                new_path = ospath.join(dirpath, file_)
-                osrename(up_path, new_path)
-                up_path = new_path
-            else:
-                file_ = f"{PRENAME_X}" + " " + file_.strip('-').strip('_')
-                cap_mono = f"<{CAPTION_FONT}>{file_}</{CAPTION_FONT}>"
-                cap = f"\n\n{CAPTION_X}\n\n"
-                new_path = ospath.join(dirpath, file_)
-                osrename(up_path, new_path)
-                up_path = new_path
-        else:
-            cap_mono = f"<{CAPTION_FONT}>{file_}</{CAPTION_FONT}>"
-            cap = f"\n\n{CAPTION_X}\n\n"
-        # if CUSTOM_FILENAME is not None and PRENAME_X == 0 or prefix == "":
-        #     cap_mono = f"<{CAPTION_FONT}>{CUSTOM_FILENAME} {file_}</{CAPTION_FONT}>"
-        #     cap = f"\n\n{CAPTION_X}\n\n"
-        #     file_ = f"{CUSTOM_FILENAME} {file_}"
-        #     new_path = ospath.join(dirpath, file_)
-        #     osrename(up_path, new_path)
-        #     up_path = new_path
-        # else:
-        #     cap_mono = f"<{CAPTION_FONT}>{file_}</{CAPTION_FONT}>"
-        #     cap = f"\n\n{CAPTION_X}\n\n"
+            cap_mono = file_ if FSTYLE == 'r' else f"<{cfont}>{file_}</{cfont}>"
+
         dumpid = LEECH_DICT.get(self.__listener.message.from_user.id, "")
         if len(dumpid) != 0:
-            if fsize > 2097152000:
-                LEECH_X = int(dumpid)
-            else:
-                LEECH_X = int(dumpid)
+            LEECH_X = int(dumpid)
         else:
             LEECH_X = LOG_LEECH
         notMedia = False
@@ -149,7 +176,7 @@ class TgUploader:
                             if ospath.getsize(up_path) > tgBotMaxFileSize: usingclient = premium_session
                             else: usingclient = self.__app
                             self.__sent_msg = usingclient.send_video(chat_id=leechchat,video=up_path,
-                                                                  caption=cap_mono + cap,
+                                                                  caption=cap_mono,
                                                                   duration=duration,
                                                                   width=width,
                                                                   height=height,
@@ -167,10 +194,11 @@ class TgUploader:
                                     app.copy_message(chat_id=LEECH_X, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                                 except Exception as err:
                                     LOGGER.error(f"Failed To Send Video in dump:\n{err}")
+
                     else:
                         self.__sent_msg = self.__sent_msg.reply_video(video=up_path,
                                                                       quote=True,
-                                                                      caption=cap_mono + cap,
+                                                                      caption=cap_mono,
                                                                       duration=duration,
                                                                       width=width,
                                                                       height=height,
@@ -190,7 +218,7 @@ class TgUploader:
                             if ospath.getsize(up_path) > tgBotMaxFileSize: usingclient = premium_session
                             else: usingclient = self.__app
                             self.__sent_msg = usingclient.send_audio(chat_id=leechchat,audio=up_path,
-                                                                  caption=cap_mono + cap,
+                                                                  caption=cap_mono,
                                                                   duration=duration,
                                                                   performer=artist,
                                                                   title=title,
@@ -210,7 +238,7 @@ class TgUploader:
                     else:
                         self.__sent_msg = self.__sent_msg.reply_audio(audio=up_path,
                                                                       quote=True,
-                                                                      caption=cap_mono + cap,
+                                                                      caption=cap_mono,
                                                                       duration=duration,
                                                                       performer=artist,
                                                                       title=title,
@@ -222,6 +250,7 @@ class TgUploader:
                                 app.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                             except Exception as err:
                                 LOGGER.error(f"Failed To Send Audio in PM:\n{err}")
+
                 elif file_.upper().endswith(IMAGE_SUFFIXES):
                     if len(LEECH_LOG) != 0:
                         for leechchat in self.__leech_log:
@@ -229,7 +258,7 @@ class TgUploader:
                             else: usingclient = self.__app
                             self.__sent_msg = usingclient.send_photo(chat_id=leechchat,
                                                                 photo=up_path,
-                                                                caption=cap_mono + cap,
+                                                                caption=cap_mono,
                                                                 disable_notification=True,
                                                                 progress=self.__upload_progress)
                             if BOT_PM:
@@ -245,7 +274,7 @@ class TgUploader:
                     else:
                         self.__sent_msg = self.__sent_msg.reply_photo(photo=up_path,
                                                                       quote=True,
-                                                                      caption=cap_mono + cap,
+                                                                      caption=cap_mono,
                                                                       disable_notification=True,
                                                                       progress=self.__upload_progress)
                         if not self.isPrivate and BOT_PM:
@@ -269,7 +298,7 @@ class TgUploader:
                         self.__sent_msg = usingclient.send_document(chat_id=leechchat,
                                                                 document=up_path,
                                                                 thumb=thumb,
-                                                                caption=cap_mono + cap,
+                                                                caption=cap_mono,
                                                                 disable_notification=True,
                                                                 progress=self.__upload_progress)
                         if len(dumpid) != 0:
@@ -286,7 +315,7 @@ class TgUploader:
                     self.__sent_msg = self.__sent_msg.reply_document(document=up_path,
                                                                      quote=True,
                                                                      thumb=thumb,
-                                                                     caption=cap_mono + cap,
+                                                                     caption=cap_mono,
                                                                      disable_notification=True,
                                                                      progress=self.__upload_progress)
                     if not self.isPrivate and BOT_PM:
