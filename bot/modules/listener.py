@@ -413,7 +413,7 @@ class MirrorLeechListener:
                         pass
             else:
                 pass
-            if config_dict['BOT_PM'] is True and config_dict['FORCE_BOT_PM'] is False and self.message.chat.type != 'private':	
+            if config_dict['BOT_PM'] and not config_dict['FORCE_BOT_PM'] and self.message.chat.type != 'private':	
                 bot_d = bot.get_me()	
                 b_uname = bot_d.username	
                 botstart = f"http://t.me/{b_uname}"	
@@ -452,7 +452,7 @@ class MirrorLeechListener:
                     fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
                     if len(fmsg.encode() + msg.encode()) > 2000:
                         sleep(1.5)
-                        if config_dict['FORCE_BOT_PM'] is False:
+                        if not config_dict['FORCE_BOT_PM']:
                             if PICS:
                                 uploadmsg = sendPhoto(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, choice(PICS), buttons.build_menu(2))
                             else:
@@ -461,7 +461,7 @@ class MirrorLeechListener:
                         fmsg = ''
                 if fmsg != '':
                     sleep(1.5)
-                    if config_dict['FORCE_BOT_PM'] is False:
+                    if not config_dict['FORCE_BOT_PM']:
                         if PICS:
                             uploadmsg = sendPhoto(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, choice(PICS), buttons.build_menu(2))
                         else:
@@ -565,7 +565,7 @@ class MirrorLeechListener:
                         pass
                     
 
-                    if config_dict['BOT_PM'] and config_dict['FORCE_BOT_PM'] == '' and self.message.chat.type != 'private':	
+                    if config_dict['BOT_PM'] and not config_dict['FORCE_BOT_PM'] and self.message.chat.type != 'private':	
                         bot_d = bot.get_me()	
                         b_uname = bot_d.username	
                         botstart = f"http://t.me/{b_uname}"	
@@ -575,15 +575,15 @@ class MirrorLeechListener:
                     else:
                         botstart = ''
 
-            if config_dict['BUTTON_FOUR_NAME'] != '' and config_dict['BUTTON_FOUR_URL'] != '':
+            if not config_dict['BUTTON_FOUR_NAME'] and not config_dict['BUTTON_FOUR_URL'] != '':
                 buttons.buildbutton(f"{config_dict['BUTTON_FOUR_NAME']}", f"{config_dict['BUTTON_FOUR_URL']}")
-            if config_dict['BUTTON_FIVE_NAME'] != '' and config_dict['BUTTON_FIVE_URL'] != '':
+            if not config_dict['BUTTON_FIVE_NAME'] and not config_dict['BUTTON_FIVE_URL'] != '':
                 buttons.buildbutton(f"{config_dict['BUTTON_FIVE_NAME']}", f"{config_dict['BUTTON_FIVE_URL']}")
-            if config_dict['BUTTON_SIX_NAME'] != '' and config_dict['BUTTON_SIX_URL'] != '':
+            if not config_dict['BUTTON_SIX_NAME'] and not config_dict['BUTTON_SIX_URL'] != '':
                 buttons.buildbutton(f"{config_dict['BUTTON_SIX_NAME']}", f"{config_dict['BUTTON_SIX_URL']}")
 
 
-            if config_dict['FORCE_BOT_PM'] == '' or self.message.chat.type == 'private':
+            if not config_dict['FORCE_BOT_PM'] or self.message.chat.type == 'private':
                 if PICS:
                     uploadmsg = sendPhoto(msg + pmwarn + logwarn + warnmsg, self.bot, self.message, choice(PICS), buttons.build_menu(2))
                 else:
@@ -606,7 +606,6 @@ class MirrorLeechListener:
                 except Exception as e:	
                     LOGGER.warning(e)	
                     return
-            sendMarkup(msg, self.bot, self.message, buttons.build_menu(2))
             if self.seed:
                 if self.isZip:
                     clean_target(f"{self.dir}/{name}")
