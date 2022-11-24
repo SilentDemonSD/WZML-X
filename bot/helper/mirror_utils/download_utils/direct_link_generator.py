@@ -14,6 +14,10 @@ from requests import get as rget, head as rhead, post as rpost, Session as rsess
 from re import findall as re_findall, sub as re_sub, match as re_match, search as re_search
 import requests
 import re
+import os
+import base64
+import cloudscraper
+from lxml import etree
 from time import sleep, time
 from base64 import b64decode
 from urllib.parse import urlparse, unquote, parse_qs
@@ -82,6 +86,10 @@ def direct_link_generator(link: str):
         return unified(link)
     elif is_udrive_link(link):
         return udrive(link)
+    elif is_sharer_link(link):
+        return sharer_pw_dl(link)
+    elif is_sharedrive_link(link):
+        return shareDrive(link)
     elif any(x in link for x in fmed_list):
         return fembed(link)
     elif any(x in link for x in ['sbembed.com', 'watchsb.com', 'streamsb.net', 'sbplay.org']):
@@ -424,166 +432,184 @@ def krakenfiles(page_link: str) -> str:
 
 
 def gdtot(url: str) -> str:
-    """ Gdtot google drive link generator
-    By https://github.com/xcscxr """
+    if config_dict['GDTOT_CRYPT'] is None:
+        raise DirectDownloadLinkException("GDTOT_CRYPT env var not provided")
+    client = requests.Session()
+    client.cookies.update({"crypt": config_dict['GDTOT_CRYPT']})
+    res = client.get(url)
+    base_url = re.match('^.+?[^\/:](?=[?\/]|$\n)', url).group(0)
+    res = client.get(f"{base_url}/dld?id={url.split('/')[-1]}")
+    url = re.findall(r'URL=(.*?)"', res.text)[0]
+    info = {}
+    info["error"] = False
+    params = parse_qs(urlparse(url).query)
+    if "gd" not in params or not params["gd"] or params["gd"][0] == "false":
+        info["error"] = True
+        if "msgx" in params:
+            info["message"] = params["msgx"][0]
+        else:
+            info["message"] = "Invalid link"
+    else:
+        decoded_id = base64.b64decode(str(params["gd"][0])).decode("utf-8")
+        drive_link = f"https://drive.google.com/open?id={decoded_id}"
+        info["gdrive_link"] = drive_link
+    if not info["error"]:
+        return info["gdrive_link"]
+    else:
+        raise DirectDownloadLinkException(f"{info['message']}")
 
 
-    if CRYPT := config_dict['CRYPT']:
-        raise DirectDownloadLinkException("ERROR: CRYPT cookie not provided")
-
-    match = re_findall(r'https?://(.+)\.gdtot\.(.+)\/\S+\/\S+', url)[0]
-
-    with rsession() as client:
-        client.cookies.update({'crypt': CRYPT})
-        client.get(url)
-        res = client.get(f"https://{match[0]}.gdtot.{match[1]}/dld?id={url.split('/')[-1]}")
-    matches = re_findall('gd=(.*?)&', res.text)
-    try:
-        decoded_id = b64decode(str(matches[0])).decode('utf-8')
-    except:
-        raise DirectDownloadLinkException("ERROR: Try in your broswer, mostly file not found or user limit exceeded!")
-    return f'https://drive.google.com/open?id={decoded_id}'
+account = {"email": config_dict['UNIFIED_EMAIL'], "passwd": config_dict['UNIFIED_PASS']}
 
 
-
-UNIFIED_EMAIL = config_dict['UNIFIED_EMAIL']
-UNIFIED_PASS = config_dict['UNIFIED_PASS']
-account = {
-    'email': UNIFIED_EMAIL, 
-   'passwd': UNIFIED_PASS
-}
 def account_login(client, url, email, password):
-    data = {
-        'email': email,
-        'password': password
-    }
-    client.post(f'https://{urlparse(url).netloc}/login', data=data)
+    data = {"email": email, "password": password}
+    client.post(f"https://{urlparse(url).netloc}/login", data=data)
+
+
 def gen_payload(data, boundary=f'{"-"*6}_'):
-    data_string = ''
+    data_string = ""
     for item in data:
-        data_string += f'{boundary}\r\n'
-        data_string += f'Content-Disposition: form-data; name="{item}"\r\n\r\n{data[item]}\r\n'
-    data_string += f'{boundary}--\r\n'
+        data_string += f"{boundary}\r\n"
+        data_string += (
+            f'Content-Disposition: form-data; name="{item}"\r\n\r\n{data[item]}\r\n'
+        )
+    data_string += f"{boundary}--\r\n"
     return data_string
 
+
 def parse_infou(data):
-    info = re_findall('>(.*?)<\/li>', data)
+    info = re.findall(">(.*?)<\/li>", data)
     info_parsed = {}
     for item in info:
-        kv = [s.strip() for s in item.split(':', maxsplit = 1)]
+        kv = [s.strip() for s in item.split(":", maxsplit=1)]
         info_parsed[kv[0].lower()] = kv[1]
     return info_parsed
 
+
 def unified(url: str) -> str:
-    if (UNIFIED_EMAIL or UNIFIED_PASS) == '':
-        raise DirectDownloadLinkException("UNIFIED_EMAIL and UNIFIED_PASS env vars not provided")
+    if (config_dict['UNIFIED_EMAIL'] or config_dict['UNIFIED_PASS']) is None:
+        raise DirectDownloadLinkException(
+            "UNIFIED_EMAIL and UNIFIED_PASS env vars not provided"
+        )
     client = cloudscraper.create_scraper(delay=10, browser='chrome')
-    client.headers.update({
-        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36"
-    })
-    account_login(client, url, account['email'], account['passwd'])
+    client.headers.update(
+        {
+            "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36"
+        }
+    )
+
+    account_login(client, url, account["email"], account["passwd"])
+
     res = client.get(url)
-    key = re_findall('"key",\s+"(.*?)"', res.text)[0]
+    key = re.findall('"key",\s+"(.*?)"', res.text)[0]
+
     ddl_btn = etree.HTML(res.content).xpath("//button[@id='drc']")
+
     info_parsed = parse_infou(res.text)
-    info_parsed['error'] = False
-    info_parsed['link_type'] = 'login'  # direct/login
+    info_parsed["error"] = False
+    info_parsed["link_type"] = "login"  # direct/login
+
     headers = {
         "Content-Type": f"multipart/form-data; boundary={'-'*4}_",
     }
-    data = {
-        'type': 1,
-        'key': key,
-        'action': 'original'
-    }
+
+    data = {"type": 1, "key": key, "action": "original"}
+
     if len(ddl_btn):
-        info_parsed['link_type'] = 'direct'
-        data['action'] = 'direct'
-    while data['type'] <= 3:
+        info_parsed["link_type"] = "direct"
+        data["action"] = "direct"
+
+    while data["type"] <= 3:
         try:
             response = client.post(url, data=gen_payload(data), headers=headers).json()
             break
-        except: data['type'] += 1
-    if 'url' in response:
-        info_parsed['gdrive_link'] = response['url']
-    elif 'error' in response and response['error']:
-        info_parsed['error'] = True
-        info_parsed['error_message'] = response['message']
-    else:
-        info_parsed['error'] = True
-        info_parsed['error_message'] = 'Something went wrong :('
+        except:
+            data["type"] += 1
 
-    if info_parsed['error']:
+    if "url" in response:
+        info_parsed["gdrive_link"] = response["url"]
+    elif "error" in response and response["error"]:
+        info_parsed["error"] = True
+        info_parsed["error_message"] = response["message"]
+    else:
+        info_parsed["error"] = True
+        info_parsed["error_message"] = "Something went wrong :("
+
+    if info_parsed["error"]:
         raise DirectDownloadLinkException(f"ERROR! {info_parsed['error_message']}")
 
-    if urlparse(url).netloc == 'appdrive.info':
-        flink = info_parsed['gdrive_link']
+    if urlparse(url).netloc == "appdrive.info":
+        flink = info_parsed["gdrive_link"]
         return flink
 
-    elif urlparse(url).netloc == 'driveapp.in':
-        res = client.get(info_parsed['gdrive_link'])
-        drive_link = etree.HTML(res.content).xpath("//a[contains(@class,'btn')]/@href")[0]
+    elif urlparse(url).netloc == "driveapp.in":
+        res = client.get(info_parsed["gdrive_link"])
+        drive_link = etree.HTML(res.content).xpath("//a[contains(@class,'btn')]/@href")[
+            0
+        ]
         flink = drive_link
         return flink
 
     else:
-        res = client.get(info_parsed['gdrive_link'])
-        drive_link = etree.HTML(res.content).xpath("//a[contains(@class,'btn btn-primary')]/@href")[0]
+        res = client.get(info_parsed["gdrive_link"])
+        drive_link = etree.HTML(res.content).xpath(
+            "//a[contains(@class,'btn btn-primary')]/@href"
+        )[0]
         flink = drive_link
-        info_parsed['src_url'] = url
         return flink
+    
 
 def parse_info(res, url):
     info_parsed = {}
     if 'drivebuzz' in url:
         info_chunks = re.findall('<td\salign="right">(.*?)<\/td>', res.text)
     else:
-        info_chunks = re_findall('>(.*?)<\/td>', res.text)
+        info_chunks = re.findall(">(.*?)<\/td>", res.text)
     for i in range(0, len(info_chunks), 2):
-        info_parsed[info_chunks[i]] = info_chunks[i+1]
+        info_parsed[info_chunks[i]] = info_chunks[i + 1]
     return info_parsed
 
-def udrive(url: str) -> str:
-    if 'katdrive' or 'hubdrive'  in url:
-      client = rsession()
-    else:
-      client = cloudscraper.create_scraper(delay=10, browser='chrome')
 
-    if 'hubdrive' in url:
+def udrive(url: str) -> str:
+    if 'katdrive' or 'hubdrive' in url:
+        client = requests.Session()
+    else:
+        client = cloudscraper.create_scraper(delay=10, browser='chrome')
+        
+    if "hubdrive" in url:
         if "hubdrive.in" in url:
             url = url.replace(".in",".pro")
-        client.cookies.update({'crypt': HUBDRIVE_CRYPT})
-    if 'drivehub' in url:
-        client.cookies.update({'crypt': KATDRIVE_CRYPT})
-    if 'katdrive' in url:
-        client.cookies.update({'crypt': KATDRIVE_CRYPT})
-    if 'kolop' in url:
-        client.cookies.update({'crypt': KATDRIVE_CRYPT})
-    if 'drivefire' in url:
-        client.cookies.update({'crypt': DRIVEFIRE_CRYPT})
-    if 'drivebuzz' in url:
-        client.cookies.update({'crypt': DRIVEFIRE_CRYPT})
-
+        client.cookies.update({"crypt": config_dict['HUBDRIVE_CRYPT']})
+    if "drivehub" in url:
+        client.cookies.update({"crypt": config_dict['KATDRIVE_CRYPT']})
+    if "katdrive" in url:
+        client.cookies.update({"crypt": config_dict['KATDRIVE_CRYPT']})
+    if "kolop" in url:
+        client.cookies.update({"crypt": config_dict['KATDRIVE_CRYPT']})
+    if "drivefire" in url:
+        client.cookies.update({"crypt": config_dict['DRIVEFIRE_CRYPT']})
+    if "drivebuzz" in url:
+        client.cookies.update({"crypt": config_dict['DRIVEFIRE_CRYPT']})
     res = client.get(url)
     info_parsed = parse_info(res, url)
-
-
-    info_parsed['error'] = False
+    info_parsed["error"] = False
 
     up = urlparse(url)
     req_url = f"{up.scheme}://{up.netloc}/ajax.php?ajax=download"
 
-    file_id = url.split('/')[-1]
+    file_id = url.split("/")[-1]
 
-    data = { 'id': file_id }
+    data = {"id": file_id}
 
-    headers = {
-        'x-requested-with': 'XMLHttpRequest'
-    }
+    headers = {"x-requested-with": "XMLHttpRequest"}
 
     try:
-        res = client.post(req_url, headers=headers, data=data).json()['file']
-    except: return {'error': True, 'src_url': url}
+        res = client.post(req_url, headers=headers, data=data).json()["file"]
+    except:
+        raise DirectDownloadLinkException(
+            "ERROR! File Not Found or User rate exceeded !!"
+        )
 
     if 'drivefire' in url:
         decoded_id = res.rsplit('/', 1)[-1]
@@ -598,10 +624,90 @@ def udrive(url: str) -> str:
         flink = f"https://drive.google.com/open?id={gd_id}"
         return flink
     else:
-        gd_id = re_findall('gd=(.*)', res, re.DOTALL)[0]
+        gd_id = re.findall('gd=(.*)', res, re.DOTALL)[0]
 
-    info_parsed['gdrive_url'] = f"https://drive.google.com/open?id={gd_id}"
-    info_parsed['src_url'] = url
+    info_parsed["gdrive_url"] = f"https://drive.google.com/open?id={gd_id}"
+    info_parsed["src_url"] = url
     flink = info_parsed['gdrive_url']
 
-    return flink 
+    return flink
+    
+
+def sharer_pw_dl(url: str)-> str:
+    
+    client = cloudscraper.create_scraper(delay=10, browser='chrome')
+    client.cookies["XSRF-TOKEN"] = config_dict['XSRF_TOKEN']
+    client.cookies["laravel_session"] = config_dict['laravel_session']
+    
+    res = client.get(url)
+    token = re.findall("_token\s=\s'(.*?)'", res.text, re.DOTALL)[0]
+    data = { '_token': token, 'nl' :1}
+    headers={ 'content-type': 'application/x-www-form-urlencoded; charset=UTF-8', 'x-requested-with': 'XMLHttpRequest'}
+
+    try:
+        response = client.post(url+'/dl', headers=headers, data=data).json()
+        drive_link = response
+        return drive_link['url']
+    
+    except:
+        if drive_link["message"] == "OK":
+            raise DirectDownloadLinkException("Something went wrong. Could not generate GDrive URL for your Sharer Link")
+        else:
+            finalMsg = BeautifulSoup(drive_link["message"], "lxml").text
+            raise DirectDownloadLinkException(finalMsg)
+        
+def shareDrive(url,directLogin=True):
+
+    successMsgs = ['success', 'Success', 'SUCCESS']
+
+    scrapper = requests.Session()
+
+    #retrieving session PHPSESSID
+    cook = scrapper.get(url)
+    cookies = cook.cookies.get_dict()
+    config_dict['PHPSESSID'] = cookies['PHPSESSID']
+
+    headers = {
+        'authority' : urlparse(url).netloc,
+        'Content-Type' : 'application/x-www-form-urlencoded; charset=UTF-8',
+        'Origin' : f'https://{urlparse(url).netloc}/',
+        'referer' : url,
+        'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36 Edg/107.0.1418.35',
+        'X-Requested-With	' : 'XMLHttpRequest'
+    }
+
+    if directLogin==True:
+        cookies = {
+            'PHPSESSID' : config_dict['PHPSESSID']
+        }
+
+        data = {
+            'id' : url.rsplit('/',1)[1],
+            'key' : 'direct'
+        }
+    else:
+        cookies = {
+            'PHPSESSID' : config_dict['PHPSESSID'],
+            'PHPCKS' : config_dict['SHAREDRIVE_PHPCKS']
+        }
+
+        data = {
+            'id' : url.rsplit('/',1)[1],
+            'key' : 'original'
+        }
+    
+    resp = scrapper.post(f'https://{urlparse(url).netloc}/post', headers=headers, data=data, cookies=cookies)
+    toJson = resp.json()
+
+    if directLogin==True:
+        if toJson['message'] in successMsgs:
+            driveUrl = toJson['redirect']
+            return driveUrl
+        else:
+            shareDrive(url,directLogin=False)
+    else:
+        if toJson['message'] in successMsgs:
+            driveUrl = toJson['redirect']
+            return driveUrl
+        else:
+            raise DirectDownloadLinkException("ERROR! File Not Found or User rate exceeded !!")
