@@ -6,7 +6,7 @@ from time import sleep, time
 from functools import partial
 from html import escape
 
-from bot import user_data, dispatcher, config_dict, DATABASE_URL
+from bot import user_data, dispatcher, LOGGER, config_dict, DATABASE_URL
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, sendPhoto
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -200,7 +200,7 @@ def edit_user_settings(update, context):
         buttons = ButtonMaker()
         if user_id in user_data and user_data[user_id].get('yt_ql'):
             menu = True
-            buttons.sbutton("Delete", f"userset {user_id} dthumb")
+            buttons.sbutton("Delete", f"userset {user_id} rytq")
         buttons.sbutton("Back", f"userset {user_id} back")
         buttons.sbutton("Close", f"userset {user_id} close")
         rmsg = f'''
@@ -327,6 +327,54 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
             DbManger().update_userval(user_id, 'cfont', eVal)
             LOGGER.info(f"User : {user_id} Font Style Saved in DB")
         query.answer(text="Font Style changed to Spoiler!", show_alert=True)
+        update_user_settings(message, query.from_user)
+    elif data[2] == "Italics":
+        eVal = ["<i>Italics</i>", "i"]
+        update_user_ldata(user_id, 'cfont', eVal)
+        if DATABASE_URL:
+            DbManger().update_userval(user_id, 'cfont', eVal)
+            LOGGER.info(f"User : {user_id} Font Style Saved in DB")
+        query.answer(text="Font Style changed to Italics!", show_alert=True)
+        update_user_settings(message, query.from_user)
+    elif data[2] == "Code":
+        eVal = ["<code>Monospace</code>", "code"]
+        update_user_ldata(user_id, 'cfont', eVal)
+        if DATABASE_URL:
+            DbManger().update_userval(user_id, 'cfont', eVal)
+            LOGGER.info(f"User : {user_id} Font Style Saved in DB")
+        query.answer(text="Font Style changed to Monospace!", show_alert=True)
+        update_user_settings(message, query.from_user)
+    elif data[2] == "Strike":
+        eVal = ["<s>Strike</s>", "s"]
+        update_user_ldata(user_id, 'cfont', eVal)
+        if DATABASE_URL:
+            DbManger().update_userval(user_id, 'cfont', eVal)
+            LOGGER.info(f"User : {user_id} Font Style Saved in DB")
+        query.answer(text="Font Style changed to Strike!", show_alert=True)
+        update_user_settings(message, query.from_user)
+    elif data[2] == "Underline":
+        eVal = ["<u>Underline</u>", "u"]
+        update_user_ldata(user_id, 'cfont', eVal)
+        if DATABASE_URL:
+            DbManger().update_userval(user_id, 'cfont', eVal)
+            LOGGER.info(f"User : {user_id} Font Style Saved in DB")
+        query.answer(text="Font Style changed to Underline!", show_alert=True)
+        update_user_settings(message, query.from_user)
+    elif data[2] == "Bold":
+        eVal = ["<b>Bold</b>", "b"]
+        update_user_ldata(user_id, 'cfont', eVal)
+        if DATABASE_URL:
+            DbManger().update_userval(user_id, 'cfont', eVal)
+            LOGGER.info(f"User : {user_id} Font Style Saved in DB")
+        query.answer(text="Font Style changed to Bold!", show_alert=True)
+        update_user_settings(message, query.from_user)
+    elif data[2] == "Regular":
+        eVal = ["Regular", "r"]
+        update_user_ldata(user_id, 'cfont', eVal)
+        if DATABASE_URL:
+            DbManger().update_userval(user_id, 'cfont', eVal)
+            LOGGER.info(f"User : {user_id} Font Style Saved in DB")
+        query.answer(text="Font Style changed to Regular!", show_alert=True)
         update_user_settings(message, query.from_user)
     else:
         query.answer()
