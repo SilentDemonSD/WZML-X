@@ -566,6 +566,7 @@ class GoogleDriveHelper:
             return {'files': []}
 
     def drive_list(self, fileName, stopDup=False, noMulti=False, isRecursive=True, itemType=""):
+        TITLE_NAME = config_dict['TITLE_NAME']
         if config_dict['TELEGRAPH_STYLE']:
             msg = ""
             fileName = self.__escapes(str(fileName))
@@ -634,11 +635,11 @@ class GoogleDriveHelper:
     
             if len(telegraph_content) == 0:
                 return "", None
-    
+
             for content in telegraph_content:
                 path.append(
                     telegraph.create_page(
-                        title='Mirror-Leech-Bot Drive Search',
+                        title= f"{config_dict['TITLE_NAME']} Drive Search",
                         content=content
                     )["path"]
                 )
