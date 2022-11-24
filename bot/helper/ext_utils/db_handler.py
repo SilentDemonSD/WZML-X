@@ -1,7 +1,7 @@
 from os import path as ospath, makedirs
 from psycopg2 import connect, DatabaseError
 
-from bot import DB_URI, AUTHORIZED_CHATS, SUDO_USERS, AS_DOC_USERS, AS_MEDIA_USERS, rss_dict, LOGGER, botname, LEECH_LOG, PRE_DICT, LEECH_DICT, PAID_USERS, CAP_DICT
+from bot import DB_URI, AUTHORIZED_CHATS, SUDO_USERS, AS_DOC_USERS, AS_MEDIA_USERS, rss_dict, LOGGER, botname, LEECH_LOG, PRE_DICT, LEECH_DICT, PAID_USERS, CAP_DICT, REM_DICT, SUF_DICT, CFONT_DICT
 
 class DbManger:
     def __init__(self):
@@ -30,13 +30,15 @@ class DbManger:
                  media boolean DEFAULT FALSE,
                  doc boolean DEFAULT FALSE,
                  pre text DEFAULT NULL,
+                 suf text DEFAULT NULL,
                  cap text DEFAULT NULL,
+                 rem text DEFAULT NULL,
                  dump text DEFAULT NULL,
                  paid boolean DEFAULT FALSE,
                  thumb bytea DEFAULT NULL,
-                 leechlog boolean DEFAULT FALSE
-              )
-              """
+                 leechlog boolean DEFAULT FALSE,
+                 cfont text ARRAY
+                 )"""
         self.cur.execute(sql)
         sql = """CREATE TABLE IF NOT EXISTS rss (
                  name text,
@@ -69,19 +71,28 @@ class DbManger:
                 if row[5]:
                     PRE_DICT[row[0]] = row[5]
                 if row[6]:
-                    CAP_DICT[row[0]] = row[6]
+                    SUF_DICT[row[0]] = row[6]
                 if row[7]:
-                    LEECH_DICT[row[0]] = row[7]
-                if row[8] and row[0] not in PAID_USERS:
+                    CAP_DICT[row[0]] = row[7]
+                if row[8]:
+                    REM_DICT[row[0]] = row[8]
+                if row[9]:
+                    LEECH_DICT[row[0]] = row[9]
+                if row[10] and row[0] not in PAID_USERS:
                     PAID_USERS.add(row[0])
                 path = f"Thumbnails/{row[0]}.jpg"
-                if row[9] is not None and not ospath.exists(path):
+                if row[11] is not None and not ospath.exists(path):
                     if not ospath.exists('Thumbnails'):
                         makedirs('Thumbnails')
                     with open(path, 'wb+') as f:
-                        f.write(row[9])
-                if row[10] and row[0] not in LEECH_LOG:
+                        f.write(row[11])
+                if row[12] and row[0] not in LEECH_LOG:
                     LEECH_LOG.add(row[0])
+                if row[13]:
+                    CFONT_DICT[row[0]] = row[13]
+
+
+
             LOGGER.info("Users data has been imported from Database")
         # Rss Data
         self.cur.execute("SELECT * FROM rss")
@@ -174,6 +185,32 @@ class DbManger:
         self.cur.execute(sql, (user_pre, user_id))
         self.conn.commit()
         self.disconnect()
+        
+
+    def user_cfont(self, user_id: int, user_cfont):
+        if self.err:
+            return
+        elif not self.user_check(user_id):
+            sql = 'INSERT INTO users (cfont, uid) VALUES (%s, %s)'
+        else:
+            sql = 'UPDATE users SET cfont = %s WHERE uid = %s'
+        self.cur.execute(sql, (user_cfont, user_id))
+        self.conn.commit()
+        self.disconnect()
+
+        
+        
+    def user_suf(self, user_id: int, user_suf):
+        if self.err:
+            return
+        elif not self.user_check(user_id):
+            sql = 'INSERT INTO users (suf, uid) VALUES (%s, %s)'
+        else:
+            sql = 'UPDATE users SET suf = %s WHERE uid = %s'
+        self.cur.execute(sql, (user_suf, user_id))
+        self.conn.commit()
+        self.disconnect()
+
 
 
     def user_cap(self, user_id: int, user_cap):
@@ -199,6 +236,18 @@ class DbManger:
         self.conn.commit()
         self.disconnect()
 
+
+    def user_rem(self, user_id: int, user_rem):
+        if self.err:
+            return
+        elif not self.user_check(user_id):
+            sql = 'INSERT INTO users (rem, uid) VALUES (%s, %s)'
+        else:
+            sql = 'UPDATE users SET rem = %s WHERE uid = %s'
+        self.cur.execute(sql, (user_rem, user_id))
+        self.conn.commit()
+        self.disconnect()
+
     def user_addpaid(self, user_id: int):
         if self.err:
             return "Error in DB connection, check log for details"
@@ -220,6 +269,7 @@ class DbManger:
             self.conn.commit()
             self.disconnect()
             return 'Successfully removed from Paid Membership'
+
 
     def user_save_thumb(self, user_id: int, path):
         if self.err:
@@ -340,4 +390,3 @@ class DbManger:
 
 if DB_URI is not None:
     DbManger().db_init()
-
