@@ -583,7 +583,14 @@ class MirrorLeechListener:
                 buttons.buildbutton(f"{config_dict['BUTTON_SIX_NAME']}", f"{config_dict['BUTTON_SIX_URL']}")
 
 
-            if not config_dict['FORCE_BOT_PM'] or self.message.chat.type == 'private':
+            if not config_dict['FORCE_BOT_PM'] and config_dict['BOT_PM'] or self.message.chat.type != 'private':
+                if PICS:
+                    uploadmsg = sendPhoto(msg + pmwarn + logwarn + warnmsg, self.bot, self.message, choice(PICS), buttons.build_menu(2))
+                else:
+                    uploadmsg = sendMarkup(msg + pmwarn + logwarn + warnmsg, self.bot, self.message, buttons.build_menu(2))
+                Thread(target=auto_delete_upload_message, args=(bot, self.message, uploadmsg)).start()
+
+            if not config_dict['BOT_PM'] and not config_dict['BOT_PM'] or self.message.chat.type != 'private':
                 if PICS:
                     uploadmsg = sendPhoto(msg + pmwarn + logwarn + warnmsg, self.bot, self.message, choice(PICS), buttons.build_menu(2))
                 else:
