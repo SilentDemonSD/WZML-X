@@ -328,11 +328,11 @@ help_admin = telegraph.create_page(
 def bot_help(update, context):
     button = ButtonMaker()
     if config_dict['EMOJI_THEME']:
-        button.buildbutton("👤 User", f"https://graph.org/{help_user}")
-        button.buildbutton("🛡️ Admin", f"https://graph.org/{help_admin}")
+        button.buildbutton("👤 User", f"https://telegra.ph/{help_user}")
+        button.buildbutton("🛡️ Admin", f"https://telegra.ph/{help_admin}")
     else:
-        button.buildbutton("User", f"https://graph.org/{help_user}")
-        button.buildbutton("Admin", f"https://graph.org/{help_admin}")
+        button.buildbutton("User", f"https://telegra.ph/{help_user}")
+        button.buildbutton("Admin", f"https://telegra.ph/{help_admin}")
     sendMarkup(help_string, context.bot, update.message, button.build_menu(2))
 
 

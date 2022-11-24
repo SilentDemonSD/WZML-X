@@ -168,7 +168,6 @@ def add_mega_download(mega_link: str, path: str, listener, name: str):
             except:
                 mname = None
         if mname is not None:
-
             if config_dict['TELEGRAPH_STYLE']:
                 smsg, button = GoogleDriveHelper().drive_list(mname, True)
                 if smsg:

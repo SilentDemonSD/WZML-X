@@ -1,8 +1,5 @@
-# Implement By - @VarnaX-279
-
 from string import ascii_letters
 from random import SystemRandom
-
 from time import sleep
 from telegraph import Telegraph
 from telegraph.exceptions import RetryAfterError
@@ -12,7 +9,7 @@ from bot import LOGGER, config_dict
 
 class TelegraphHelper:
     def __init__(self, author_name=None, author_url=None):
-        self.telegraph = Telegraph()
+        self.telegraph = Telegraph(domain='graph.org')
         self.short_name = ''.join(SystemRandom().choices(ascii_letters, k=8))
         self.access_token = None
         self.author_name = author_name
@@ -62,14 +59,14 @@ class TelegraphHelper:
         num_of_path = len(path)
         for content in telegraph_content :
             if nxt_page == 1 :
-                content += f'<b><a href="https://graph.org/{path[nxt_page]}">Next</a></b>'
+                content += f'<b><a href="https://telegra.ph/{path[nxt_page]}">Next</a></b>'
                 nxt_page += 1
             else :
                 if prev_page <= num_of_path:
-                    content += f'<b><a href="https://graph.org/{path[prev_page]}">Prev</a></b>'
+                    content += f'<b><a href="https://telegra.ph/{path[prev_page]}">Prev</a></b>'
                     prev_page += 1
                 if nxt_page < num_of_path:
-                    content += f'<b> | <a href="https://graph.org/{path[nxt_page]}">Next</a></b>'
+                    content += f'<b> | <a href="https://telegra.ph/{path[nxt_page]}">Next</a></b>'
                     nxt_page += 1
             self.edit_page(
                 path = path[prev_page],

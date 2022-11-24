@@ -29,7 +29,6 @@ def add_gd_download(link, path, listener, is_gdtot, is_unified, is_udrive, newna
                 if gmsg:
                     msg = "File/Folder is already available in Drive.\nHere are the search results:"
                     return sendMarkup(msg, listener.bot, listener.message, button)
-
             else:
                 cap, f_name = GoogleDriveHelper().drive_list(gname, True)
                 if cap:
