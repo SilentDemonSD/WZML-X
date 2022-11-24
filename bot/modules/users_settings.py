@@ -43,7 +43,7 @@ def get_user_settings(from_user):
         buttons.sbutton("Set YT-DLP Quality", f"userset {user_id} ytq")
     else:
         buttons.sbutton("Set YT-DLP Quality", f"userset {user_id} ytq")
-        ytq = 'None'
+        ytq = 'Not Exists'
 
 
     uplan = "Paid User" if user_id in user_data and (user_data[user_id].get('is_paid')) else "Normal User"
@@ -307,6 +307,7 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
         query.answer(text="Your Caption Font is Successfully Deleted!", show_alert=True)
         update_user_settings(message, query.from_user)
     elif data[2] == "font":
+        handler_dict[user_id] = False
         FONT_SPELL = {'b':'<b>Bold</b>', 'i':'<i>Italics</i>', 'code':'<code>Monospace</code>', 's':'<s>Strike</s>', 'u':'<u>Underline</u>', 'tg-spoiler':'<tg-spoiler>Spoiler</tg-spoiler>'}
         buttons = ButtonMaker()
         buttons.sbutton("Spoiler", f"userset {user_id} Spoiler")
