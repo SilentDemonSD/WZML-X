@@ -439,10 +439,6 @@ if len(SHORTENER) == 0 or len(SHORTENER_API) == 0:
     SHORTENER = ''
     SHORTENER_API = ''
 
-CRYPT = environ.get('CRYPT', '')
-if len(CRYPT) == 0:
-    CRYPT = ''
-
 UNIFIED_EMAIL = environ.get('UNIFIED_EMAIL', '')
 if len(UNIFIED_EMAIL) == 0:
     UNIFIED_EMAIL = ''
@@ -450,6 +446,10 @@ if len(UNIFIED_EMAIL) == 0:
 UNIFIED_PASS = environ.get('UNIFIED_PASS', '')
 if len(UNIFIED_PASS) == 0:
     UNIFIED_PASS = ''
+
+GDTOT_CRYPT = environ.get('GDTOT_CRYPT', '')
+if len(GDTOT_CRYPT) == 0:
+    GDTOT_CRYPT = ''
 
 HUBDRIVE_CRYPT = environ.get('HUBDRIVE_CRYPT', '')
 if len(HUBDRIVE_CRYPT) == 0:
@@ -462,6 +462,18 @@ if len(KATDRIVE_CRYPT) == 0:
 DRIVEFIRE_CRYPT = environ.get('DRIVEFIRE_CRYPT', '')
 if len(DRIVEFIRE_CRYPT) == 0:
     DRIVEFIRE_CRYPT = ''
+
+SHAREDRIVE_PHPCKS = environ.get('SHAREDRIVE_PHPCKS', '')
+if len(SHAREDRIVE_PHPCKS) == 0:
+    SHAREDRIVE_PHPCKS = ''
+
+XSRF_TOKEN = environ.get('XSRF_TOKEN', '')
+if len(XSRF_TOKEN) == 0:
+    XSRF_TOKEN = ''
+
+laravel_session = environ.get('laravel_session', '')
+if len(laravel_session) == 0:
+    laravel_session = ''
 
 MIRROR_LOG_URL = environ.get('MIRROR_LOG_URL', '')
 if len(MIRROR_LOG_URL) == 0:
@@ -647,12 +659,15 @@ config_dict = {'AS_DOCUMENT': AS_DOCUMENT,
                'FSUB_CHANNEL_ID': FSUB_CHANNEL_ID,
                'SHORTENER': SHORTENER,
                'SHORTENER_API': SHORTENER_API,
-               'CRYPT': CRYPT,
                'UNIFIED_EMAIL': UNIFIED_EMAIL,
                'UNIFIED_PASS': UNIFIED_PASS,
+               'GDTOT_CRYPT': GDTOT_CRYPT,
                'HUBDRIVE_CRYPT': HUBDRIVE_CRYPT,
                'KATDRIVE_CRYPT': KATDRIVE_CRYPT,
                'DRIVEFIRE_CRYPT': DRIVEFIRE_CRYPT,
+               'SHAREDRIVE_PHPCKS': SHAREDRIVE_PHPCKS,
+               'XSRF_TOKEN': XSRF_TOKEN,
+               'laravel_session': laravel_session,
                'TOTAL_TASKS_LIMIT': TOTAL_TASKS_LIMIT,
                'USER_TASKS_LIMIT': USER_TASKS_LIMIT,
                'STORAGE_THRESHOLD': STORAGE_THRESHOLD,
