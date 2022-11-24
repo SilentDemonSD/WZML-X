@@ -582,7 +582,7 @@ class MirrorLeechListener:
             if not config_dict['BUTTON_SIX_NAME'] and not config_dict['BUTTON_SIX_URL'] != '':
                 buttons.buildbutton(f"{config_dict['BUTTON_SIX_NAME']}", f"{config_dict['BUTTON_SIX_URL']}")
 
-
+            LOGGER.info(buttons.build_menu(2))
             if not config_dict['FORCE_BOT_PM'] or self.message.chat.type == 'private':
                 if PICS:
                     uploadmsg = sendPhoto(msg + pmwarn + logwarn + warnmsg, self.bot, self.message, choice(PICS), buttons.build_menu(2))
@@ -597,13 +597,13 @@ class MirrorLeechListener:
                                         reply_markup=buttons.build_menu(2),	
                                         parse_mode=ParseMode.HTML)	
                 except Exception as e:	
-                    LOGGER.warning(e)	
+                    LOGGER.warning(e)
             if config_dict['BOT_PM'] and self.message.chat.type != 'private':	
                 try:	
                     bot.sendMessage(chat_id=self.user_id, text=msg,	
                                     reply_markup=buttons.build_menu(2),	
                                     parse_mode=ParseMode.HTML)	
-                except Exception as e:	
+                except Exception as e:
                     LOGGER.warning(e)	
                     return
             if self.seed:
