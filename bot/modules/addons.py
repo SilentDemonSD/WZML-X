@@ -144,7 +144,7 @@ def setCapFont(update, context):
         return
     elif data[2] == "font":
         FONT_SPELL = {'b':'<b>Bold</b>', 'i':'<i>Italics</i>', 'code':'<code>Monospace</code>', 's':'<s>Strike</s>', 'u':'<u>Underline</u>', 'tg-spoiler':'<tg-spoiler>Spoiler</tg-spoiler>'}
-        editMessage("<u>Change your Font Style from below:</u>\n\n• Current Style : " + user_data[user_id_].get('cfont', [f'{FONT_SPELL[str(CAPTION_FONT)]} (Default)'])[0], message, btns)
+        editMessage("<u>Change your Font Style from below:</u>\n\n• Current Style : " + user_data[user_id_].get('cfont', [f'{FONT_SPELL[config_dict["CAPTION_FONT"])]} (Default)'])[0], message, btns)
     elif data[2] == "Spoiler":
         eVal = ["<tg-spoiler>Spoiler</tg-spoiler>", "tg-spoiler"]
         update_user_ldata(user_id_, 'cfont', eVal)
