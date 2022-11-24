@@ -250,7 +250,7 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
         start_time = time()
         handler_dict[user_id] = True
         buttons = ButtonMaker()
-        if data[3] == 'cfont':
+        if data[3] == 'caption':
             buttons.sbutton("Change Font Style", f"capfont {user_id} font")
         if user_id in user_data and user_data[user_id].get(data[3]):
             menu = True
