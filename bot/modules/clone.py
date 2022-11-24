@@ -316,13 +316,14 @@ def _clone(message, bot):
         if button in ["cancelled", ""]:
             sendMessage(f"{tag} {result}", bot, message)
         else:
+            sendMarkup(result + cc, bot, message, button)
             LOGGER.info(f'Cloning Done: {name}')
-            if config_dict['FORCE_BOT_PM'] == '':
-                if PICS:
-                    msg = sendPhoto(result + cc + pmwarn + logwarn + warnmsg, bot, message, random.choice(PICS), button)
-                else:
-                    msg = sendMarkup(result + cc + pmwarn + logwarn + warnmsg, bot, message, button)
-                Thread(target=auto_delete_upload_message, args=(bot, message, msg)).start()
+        if config_dict['FORCE_BOT_PM'] == '':
+            if PICS:
+                msg = sendPhoto(result + cc + pmwarn + logwarn + warnmsg, bot, message, random.choice(PICS), button)
+            else:
+                msg = sendMarkup(result + cc + pmwarn + logwarn + warnmsg, bot, message, button)
+            Thread(target=auto_delete_upload_message, args=(bot, message, msg)).start()
         if (is_gdtot or is_unified or is_udrive or is_sharer or is_sharedrive):
             gd.deletefile(link)
 
