@@ -575,11 +575,11 @@ class MirrorLeechListener:
                     else:
                         botstart = ''
 
-            if not config_dict['BUTTON_FOUR_NAME'] and not config_dict['BUTTON_FOUR_URL'] != '':
+            if config_dict['BUTTON_FOUR_NAME'] != '' and config_dict['BUTTON_FOUR_URL'] != '':
                 buttons.buildbutton(f"{config_dict['BUTTON_FOUR_NAME']}", f"{config_dict['BUTTON_FOUR_URL']}")
-            if not config_dict['BUTTON_FIVE_NAME'] and not config_dict['BUTTON_FIVE_URL'] != '':
+            if config_dict['BUTTON_FIVE_NAME'] != '' and config_dict['BUTTON_FIVE_URL'] != '':
                 buttons.buildbutton(f"{config_dict['BUTTON_FIVE_NAME']}", f"{config_dict['BUTTON_FIVE_URL']}")
-            if not config_dict['BUTTON_SIX_NAME'] and not config_dict['BUTTON_SIX_URL'] != '':
+            if config_dict['BUTTON_SIX_NAME'] != '' and config_dict['BUTTON_SIX_URL'] != '':
                 buttons.buildbutton(f"{config_dict['BUTTON_SIX_NAME']}", f"{config_dict['BUTTON_SIX_URL']}")
 
             LOGGER.info(buttons.build_menu(2))
