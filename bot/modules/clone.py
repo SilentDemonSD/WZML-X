@@ -154,7 +154,7 @@ def _clone(message, bot):
                 link = udrive(link)
             if is_sharer:
                 link = sharer_pw_dl(link)
-           if is_sharedrive:
+            if is_sharedrive:
                 link = shareDrive(link)
             LOGGER.info(f"Processing GdToT: {link}")
             deleteMessage(bot, msg)
