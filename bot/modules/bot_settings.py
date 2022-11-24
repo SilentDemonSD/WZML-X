@@ -17,7 +17,9 @@ START = 0
 STATE = 'view'
 handler_dict = {}
 default_values = {'AUTO_DELETE_MESSAGE_DURATION': 30,
-                  'AUTO_DELETE_UPLOAD_MESSAGE_DURATION': -1,               
+                  'AUTO_DELETE_UPLOAD_MESSAGE_DURATION': -1,
+                  'BOT_PM': False,
+                  'FORCE_BOT_PM': False,
                   'UPSTREAM_BRANCH': 'master',
                   'UPSTREAM_REPO': 'https://github.com/weebzone/WZML',
                   'STATUS_UPDATE_INTERVAL': 10,
