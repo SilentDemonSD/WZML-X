@@ -66,21 +66,20 @@ def get_user_settings(from_user):
     buttons.sbutton(buttxt, f"userset {user_id} suniversal userlog")
     buttxt = "Change/Delete Remname" if remname != "Not Exists" else "Set Remname"
     buttons.sbutton(buttxt, f"userset {user_id} suniversal remname")
-    buttxt = "Change/Delete CapFont" if cfont != "Not Exists" else "Set CapFont"
-    buttons.sbutton(buttxt, f"userset {user_id} suniversal cfont")
+    if cfont != "Not Exists": buttons.sbutton("Delete CapFont", f"userset {user_id} cfont")
     buttons.sbutton("Close", f"userset {user_id} close")
     button = buttons.build_menu(2)
 
     text = f'''<u>Leech Settings for <a href='tg://user?id={user_id}'>{name}</a></u>
-    
+
 • Leech Type : <b>{ltype}</b>
 • Custom Thumbnail : <b>{thumbmsg}</b>
 • YT-DLP Quality is : <b><code>{escape(ytq)}</code></b>
-• Prefix : <b>{prefix}</b>
+• Prefix : <b>{escape(prefix)}</b>
 • Suffix : <b>{suffix}</b>
-• Caption : <b>{caption}</b>
-• CapFont : <b>{cfont}</b>
-• Remname : <b>{remname}</b>
+• Caption : <b>{escape(caption)}</b>
+• CapFont : {cfont}
+• Remname : <b>{escape(remname)}</b>
 • UserLog : <b>{userlog}</b>
 • User Plan : <b>{uplan}</b>'''
     return text, button
@@ -202,7 +201,7 @@ def edit_user_settings(update, context):
         buttons.sbutton("Back", f"userset {user_id} back")
         buttons.sbutton("Close", f"userset {user_id} close")
         rmsg = f'''
-Send YT-DLP Qaulity.
+Send YT-DLP Quality :
 Examples:
 1. <code>{escape('bv*[height<=1080][ext=mp4]+ba[ext=m4a]/b[height<=1080]')}</code> this will give 1080p-mp4.
 2. <code>{escape('bv*[height<=720][ext=webm]+ba/b[height<=720]')}</code> this will give 720p-webm.
@@ -251,12 +250,14 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
         start_time = time()
         handler_dict[user_id] = True
         buttons = ButtonMaker()
+        if data[3] == 'cfont':
+            buttons.sbutton("Change Font Style", f"capfont {user_id} font")
         if user_id in user_data and user_data[user_id].get(data[3]):
             menu = True
             buttons.sbutton("Delete", f"userset {user_id} {data[3]}")
         buttons.sbutton("Back", f"userset {user_id} back")
         buttons.sbutton("Close", f"userset {user_id} close")
-        editMessage(f'Send {data[3].capitalize()} text to save it as custom {data[3].capitalize()}.', message, buttons.build_menu(2) if menu else buttons.build_menu(1))
+        editMessage(f'<u>Set {data[3].capitalize()} text :</u>\n\nExamples:\n1. Soon ... 😁', message, buttons.build_menu(2) if menu else buttons.build_menu(1))
         partial_fnc = partial(set_addons, data=data[3], omsg=message)
         UNI_HANDLER = f"{data[3]}_handler"
         UNI_HANDLER = MessageHandler(filters=Filters.text & Filters.chat(message.chat.id) & Filters.user(user_id),
