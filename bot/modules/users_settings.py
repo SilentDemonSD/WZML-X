@@ -37,8 +37,7 @@ def get_user_settings(from_user):
 
     if user_dict and user_dict.get('yt_ql'):
         ytq = user_dict['yt_ql']
-        buttons.sbutton("Change YT-DLP Quality", f"userset {user_id} ytq")
-        buttons.sbutton("Remove YT-DLP Quality", f"userset {user_id} rytq")
+        buttons.sbutton("Change/Remove YT-DLP Quality", f"userset {user_id} ytq")
     elif config_dict['YT_DLP_QUALITY']:
         ytq = config_dict['YT_DLP_QUALITY']
         buttons.sbutton("Set YT-DLP Quality", f"userset {user_id} ytq")
@@ -192,22 +191,26 @@ def edit_user_settings(update, context):
         dispatcher.remove_handler(photo_handler)
     elif data[2] == 'ytq':
         query.answer()
+        menu = False
         if handler_dict.get(user_id):
             handler_dict[user_id] = False
             sleep(0.5)
         start_time = time()
         handler_dict[user_id] = True
         buttons = ButtonMaker()
+        if user_id in user_data and user_data[user_id].get('yt_ql'):
+            menu = True
+            buttons.sbutton("Delete", f"userset {user_id} dthumb")
         buttons.sbutton("Back", f"userset {user_id} back")
         buttons.sbutton("Close", f"userset {user_id} close")
         rmsg = f'''
-Send YT-DLP Quality :
+<u>Send YT-DLP Quality :</u>
 Examples:
 1. <code>{escape('bv*[height<=1080][ext=mp4]+ba[ext=m4a]/b[height<=1080]')}</code> this will give 1080p-mp4.
 2. <code>{escape('bv*[height<=720][ext=webm]+ba/b[height<=720]')}</code> this will give 720p-webm.
 Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#filtering-formats">HERE</a>.
         '''
-        editMessage(rmsg, message, buttons.build_menu(1))
+        editMessage(rmsg, message, buttons.build_menu(2) if menu else buttons.build_menu(1))
         partial_fnc = partial(set_yt_quality, omsg=message)
         value_handler = MessageHandler(filters=Filters.text & Filters.chat(message.chat.id) & Filters.user(user_id),
                                        callback=partial_fnc, run_async=True)
@@ -234,13 +237,6 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
             delo = sendPhoto(text=msg, bot=context.bot, message=message, photo=open(path, 'rb'))
             Thread(args=(context.bot, update.message, delo)).start()
         else: query.answer(text="Send new settings command.")
-    elif data[2] == "prefix":
-        handler_dict[user_id] = False
-        update_user_ldata(user_id, 'prefix', False)
-        if DATABASE_URL: 
-            DbManger().update_userval(user_id, 'prefix')
-        query.answer(text="Your Prefix is Successfully Deleted!", show_alert=True)
-        update_user_settings(message, query.from_user)
     elif data[2] == "suniversal":
         query.answer()
         menu = False
@@ -251,13 +247,13 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
         handler_dict[user_id] = True
         buttons = ButtonMaker()
         if data[3] == 'caption':
-            buttons.sbutton("Change Font Style", f"capfont {user_id} font")
+            buttons.sbutton("Set Font Style", f"userset {user_id} font")
         if user_id in user_data and user_data[user_id].get(data[3]):
             menu = True
             buttons.sbutton("Delete", f"userset {user_id} {data[3]}")
         buttons.sbutton("Back", f"userset {user_id} back")
         buttons.sbutton("Close", f"userset {user_id} close")
-        editMessage(f'<u>Set {data[3].capitalize()} text :</u>\n\nExamples:\n1. Soon ... 😁', message, buttons.build_menu(2) if menu else buttons.build_menu(1))
+        editMessage(f'<u>Send {data[3].capitalize()} text :</u>\n\nExamples:\n1. Soon ... 😁', message, buttons.build_menu(2) if menu else buttons.build_menu(1))
         partial_fnc = partial(set_addons, data=data[3], omsg=message)
         UNI_HANDLER = f"{data[3]}_handler"
         UNI_HANDLER = MessageHandler(filters=Filters.text & Filters.chat(message.chat.id) & Filters.user(user_id),
@@ -268,6 +264,13 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
                 handler_dict[user_id] = False
                 update_user_settings(message, query.from_user)
         dispatcher.remove_handler(UNI_HANDLER)
+    elif data[2] == "prefix":
+        handler_dict[user_id] = False
+        update_user_ldata(user_id, 'prefix', False)
+        if DATABASE_URL: 
+            DbManger().update_userval(user_id, 'prefix')
+        query.answer(text="Your Prefix is Successfully Deleted!", show_alert=True)
+        update_user_settings(message, query.from_user)
     elif data[2] == "suffix":
         handler_dict[user_id] = False
         update_user_ldata(user_id, 'suffix', False)
@@ -302,6 +305,28 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
         if DATABASE_URL: 
             DbManger().update_userval(user_id, 'cfont')
         query.answer(text="Your Caption Font is Successfully Deleted!", show_alert=True)
+        update_user_settings(message, query.from_user)
+    elif data[2] == "font":
+        FONT_SPELL = {'b':'<b>Bold</b>', 'i':'<i>Italics</i>', 'code':'<code>Monospace</code>', 's':'<s>Strike</s>', 'u':'<u>Underline</u>', 'tg-spoiler':'<tg-spoiler>Spoiler</tg-spoiler>'}
+        buttons = ButtonMaker()
+        buttons.sbutton("Spoiler", f"userset {user_id} Spoiler")
+        buttons.sbutton("Italics", f"userset {user_id} Italics")
+        buttons.sbutton("Monospace", f"userset {user_id} Code")
+        buttons.sbutton("Strike", f"userset {user_id} Strike")
+        buttons.sbutton("Underline", f"userset {user_id} Underline")
+        buttons.sbutton("Bold", f"userset {user_id} Bold")
+        buttons.sbutton("Regular", f"userset {user_id} Regular")
+        buttons.sbutton("Back", f"userset {user_id} back")
+        buttons.sbutton("Close", f"userset {user_id} close")
+        btns = buttons.build_menu(2)
+        editMessage("<u>Change your Font Style from below:</u>\n\n• Current Style : " + user_data[user_id].get('cfont', [f'{FONT_SPELL[config_dict["CAPTION_FONT"]]} (Default)'])[0], message, btns)
+    elif data[2] == "Spoiler":
+        eVal = ["<tg-spoiler>Spoiler</tg-spoiler>", "tg-spoiler"]
+        update_user_ldata(user_id, 'cfont', eVal)
+        if DATABASE_URL:
+            DbManger().update_userval(user_id, 'cfont', eVal)
+            LOGGER.info(f"User : {user_id} Font Style Saved in DB")
+        query.answer(text="Font Style changed to Spoiler!", show_alert=True)
         update_user_settings(message, query.from_user)
     else:
         query.answer()
