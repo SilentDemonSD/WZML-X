@@ -62,9 +62,12 @@ except:
     HEROKU_API_KEY = None
 
 PRE_DICT = {}
+SUF_DICT = {}
 CAP_DICT = {}
 LEECH_DICT = {}
+REM_DICT = {}
 TIME_GAP_STORE = {}
+CFONT_DICT = {}
 
 load_dotenv('config.env', override=True)
 
