@@ -243,7 +243,7 @@ help_string_telegraph_user = f'''
 <br><br>
 • <b>/{BotCommands.DeleteCommand}</b> [drive_url]: Delete file/folder from Google Drive (Only Owner & Sudo)
 <br><br>
-• <b>/{BotCommands.YtdlCommand}</b> [yt-dlp supported link]: Mirror yt-dlp supported link. Send <b>/{BotCommands.WatchCommand}</b> for more help
+• <b>/{BotCommands.YtdlCommand}</b> [yt-dlp supported link]: Mirror yt-dlp supported link. Send <b>/{BotCommands.YtdlCommand}</b> for more help
 <br><br>
 • <b>/{BotCommands.YtdlZipCommand}</b> [yt-dlp supported link]: Mirror yt-dlp supported link as zip
 <br><br>

@@ -25,7 +25,7 @@ class _BotCommands:
         self.QbLeechCommand = getCommand(f'QBLEECH_COMMAND', f'qbleech{CMD_PERFIX}'), f'ql{CMD_PERFIX}'
         self.QbUnzipLeechCommand = getCommand(f'QBZIPLEECH_COMMAND', f'qbunzipleech{CMD_PERFIX}'), f'quzl{CMD_PERFIX}'
         self.QbZipLeechCommand = getCommand(f'QBUNZIPLEECH_COMMAND', f'qbzipleech{CMD_PERFIX}'), f'qzl{CMD_PERFIX}'
-        self.ScrapeCommand = getCommand(f'SCRAPE_COMMAND', f'scrape{CMD_PERFIX}'), f'sp{CMD_PERFIX}'
+        self.ScrapeCommand = getCommand(f'SCRAPE_COMMAND', f'scrape{CMD_PERFIX}'), f'sm{CMD_PERFIX}'
         self.YtdlCommand =  getCommand(f'YTDL_COMMAND', f'ytdl{CMD_PERFIX}'), f'y{CMD_PERFIX}'
         self.YtdlZipCommand = getCommand(f'YTDLZIP_COMMAND', f'ytdlzip{CMD_PERFIX}'), f'yz{CMD_PERFIX}'
         self.YtdlLeechCommand = getCommand(f'YTDLLEECH_COMMAND',  f'ytdlleech{CMD_PERFIX}'), f'yl{CMD_PERFIX}'
