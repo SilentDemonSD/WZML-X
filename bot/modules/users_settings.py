@@ -391,6 +391,7 @@ def send_users_settings(update, context):
         sendMessage('No users data!', context.bot, update.message)
 
 def sendPaidDetails(update, context):
+    PAID_USERS = config_dict['PAID_USERS']
     paid = ''
     paid += '\n'.join(f"<code>{u}</code>" for u in PAID_USERS)
     sendMessage(f'<b><u>Paid Users🤑 :</u></b>\n{paid}', context.bot, update.message)
