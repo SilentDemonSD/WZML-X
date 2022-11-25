@@ -10,7 +10,7 @@ from re import search as re_search
 from threading import Lock, Thread
 
 from bot import download_dict, download_dict_lock, get_client, config_dict, \
-                QbInterval, user_data, LOGGER
+                QbInterval, user_data, LOGGER, OWNER_ID
 from bot.helper.mirror_utils.status_utils.qbit_download_status import QbDownloadStatus
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, deleteMessage, sendStatusMessage, update_all_messages, sendFile
