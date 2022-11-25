@@ -435,6 +435,16 @@ def update_user_ldata(id_, key, value):
     else:
         user_data[id_] = {key: value}
 
+def is_sudo(user_id):
+    if user_id in user_data:
+        return user_data[user_id].get('is_sudo')
+    return False
+
+def is_paid(user_id):
+    if user_id in user_data:
+        return user_data[user_id].get('is_paid')
+    return False
+
 ONE, TWO, THREE = range(3)
 def pop_up_stats(update, context):
     query = update.callback_query
