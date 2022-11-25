@@ -384,20 +384,34 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
         query.message.reply_to_message.delete()
 
 def send_users_settings(update, context):
-    msg = ''.join(f'<code>{u}</code>: {escape(str(d))}\n\n' for u, d in user_data.items())
-    if msg:
-        sendMessage(msg, context.bot, update.message)
-    else:
-        sendMessage('No users data!', context.bot, update.message)
+    msg, auth_chat, sudos, leechlogs = '', '', '', ''
+    for u, d in user_data.items()
+        try:
+            for ud, dd in d.items():
+                if ud == 'is_auth' and dd is True:
+                    auth_chat += f"<code>{u}</code>\n"
+                elif ud == 'is_sudo' and dd is True:
+                    sudos += f"<code>{u}</code>\n"
+        except:
+            if u == 'is_leech_log':
+                leechlogs = '\n'.join(f"<code>{ll}</code>" for ll in d)
+        else:
+            continue
+    #msg = ''.join(f'<code>{u}</code>: {escape(str(d))}\n\n' )
+    msg = f'<b><u>Authorized Chats💬 :</u></b>\n{auth_chat}\n\n<b><u>Sudo Users👤 :</u></b>\n{sudos}\n\n<b><u>Leech Log:</u></b>\n{leechlogs}'
+    if msg == '': msg = 'No Users Data!'
+    sendMessage(msg, context.bot, update.message)
 
 def sendPaidDetails(update, context):
     paid = ''
     for u, d in user_data.items():
         try:
             for ud, dd in d.items():
-                if ud == 'is_paid' and dd is False:
+                if ud == 'is_paid' and dd is True:
                     paid += f"<code>{u}</code>\n"
-        except: continue
+        except: 
+            continue
+    if not paid: paid = 'No Data'
     sendMessage(f'<b><u>Paid Users🤑 :</u></b>\n{paid}', context.bot, update.message)
 
 
