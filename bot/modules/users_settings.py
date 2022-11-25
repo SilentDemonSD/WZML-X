@@ -49,7 +49,6 @@ def get_user_settings(from_user):
         buttons.sbutton("Set YT-DLP Quality", f"userset {user_id} ytq")
         ytq = 'Not Exists'
 
-
     uplan = "Paid User" if user_id in user_data and (user_data[user_id].get('is_paid')) else "Normal User"
 
     if ospath.exists(thumbpath):
@@ -69,14 +68,14 @@ def get_user_settings(from_user):
     buttons.sbutton(buttxt, f"userset {user_id} suniversal userlog")
     buttxt = "Change/Delete Remname" if remname != "Not Exists" else "Set Remname"
     buttons.sbutton(buttxt, f"userset {user_id} suniversal remname")
-    imdbval = ""
+    imdbval, anival = "", ''
     if imdb != "Not Exists":
         imdbval = "Exists"
         buttons.sbutton("Change/Delete IMDB", f"userset {user_id} suniversal imdb_temp")
         buttons.sbutton("Show IMDB Template", f"userset {user_id} showimdb")
     else: buttons.sbutton("Set IMDB", f"userset {user_id} suniversal imdb")
     if anilist != "Not Exists":
-        imdbval = "Exists"
+        anival = "Exists"
         buttons.sbutton("Change/Delete AniList", f"userset {user_id} suniversal ani_temp")
         buttons.sbutton("Show AniList Template", f"userset {user_id} showanilist")
     else:
