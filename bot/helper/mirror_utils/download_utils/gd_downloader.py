@@ -1,10 +1,10 @@
 from random import SystemRandom
 from string import ascii_letters, digits
-from bot import download_dict, download_dict_lock, LOGGER, user_data, config_dict
+from bot import download_dict, download_dict_lock, LOGGER, user_data, config_dict, OWNER_ID
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.mirror_utils.status_utils.gd_download_status import GdDownloadStatus
 from bot.helper.telegram_helper.message_utils import sendMessage, sendStatusMessage, sendMarkup, sendFile
-from bot.helper.ext_utils.bot_utils import get_readable_file_size
+from bot.helper.ext_utils.bot_utils import get_readable_file_size, is_sudo, is_paid
 from bot.helper.ext_utils.fs_utils import get_base_name, check_storage_threshold
 
 
@@ -40,7 +40,7 @@ def add_gd_download(link, path, listener, newname, is_gdtot, is_unified, is_udri
     ZIP_UNZIP_LIMIT = config_dict['ZIP_UNZIP_LIMIT']
     LEECH_LIMIT = config_dict['LEECH_LIMIT']
     STORAGE_THRESHOLD = config_dict['STORAGE_THRESHOLD']
-    if any([ZIP_UNZIP_LIMIT, STORAGE_THRESHOLD, TORRENT_DIRECT_LIMIT, LEECH_LIMIT]) and user_id != OWNER_ID and user_data[user_id].get('is_sudo') and user_data[user_id].get('is_paid'):
+    if any([ZIP_UNZIP_LIMIT, STORAGE_THRESHOLD, TORRENT_DIRECT_LIMIT, LEECH_LIMIT]) and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id):
         arch = any([listener.extract, listener.isZip])
         limit = None
         if config_dict['PAID_SERVICE'] is True:
