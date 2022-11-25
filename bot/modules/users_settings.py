@@ -393,9 +393,11 @@ def send_users_settings(update, context):
 def sendPaidDetails(update, context):
     paid = ''
     for u, d in user_data.items():
-        for ud, dd in d.items():
-            if ud == 'is_paid' and dd is False:
-                paid += f"<code>{u}</code>\n"
+        try:
+            for ud, dd in d.items():
+                if ud == 'is_paid' and dd is False:
+                    paid += f"<code>{u}</code>\n"
+        except: continue
     sendMessage(f'<b><u>Paid Users🤑 :</u></b>\n{paid}', context.bot, update.message)
 
 
