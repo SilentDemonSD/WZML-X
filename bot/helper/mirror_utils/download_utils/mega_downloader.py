@@ -6,9 +6,9 @@ from mega import (MegaApi, MegaListener, MegaRequest, MegaTransfer, MegaError)
 
 
 from bot import LOGGER, download_dict, download_dict_lock, config_dict, \
-                user_data
+                user_data, OWNER_ID
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, sendStatusMessage, sendStatusMessage, sendFile
-from bot.helper.ext_utils.bot_utils import get_readable_file_size, setInterval, get_mega_link_type
+from bot.helper.ext_utils.bot_utils import get_readable_file_size, setInterval, get_mega_link_type, is_sudo, is_paid
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.ext_utils.fs_utils import get_base_name, check_storage_threshold
 from bot.helper.mirror_utils.status_utils.mega_download_status import MegaDownloadStatus
@@ -187,7 +187,7 @@ def add_mega_download(mega_link: str, path: str, listener, name: str):
     STORAGE_THRESHOLD = config_dict['STORAGE_THRESHOLD']
     ZIP_UNZIP_LIMIT = config_dict['ZIP_UNZIP_LIMIT']
     LEECH_LIMIT = config_dict['LEECH_LIMIT']
-    if any([STORAGE_THRESHOLD, ZIP_UNZIP_LIMIT, MEGA_LIMIT, LEECH_LIMIT]) and user_id != OWNER_ID and user_data[user_id].get('is_sudo') and user_data[user_id].get('is_paid'):
+    if any([STORAGE_THRESHOLD, ZIP_UNZIP_LIMIT, MEGA_LIMIT, LEECH_LIMIT]) and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id):
         size = api.getSize(node)
         arch = any([listener.isZip, listener.isLeech, listener.extract])
         if config_dict['PAID_SERVICE'] is True:
