@@ -1,6 +1,7 @@
 from logging import FileHandler, StreamHandler, INFO, basicConfig, error as log_error, info as log_info
 from os import path as ospath, environ
-from subprocess import run as srun
+from subprocess import run as srun, call as scall
+from pkg_resources import working_set
 from requests import get as rget
 from dotenv import load_dotenv
 from pymongo import MongoClient
@@ -39,7 +40,12 @@ if DATABASE_URL is not None:
     if config_dict := db.settings.config.find_one({'_id': bot_id}):  #retrun config dict (all env vars)
         environ['UPSTREAM_REPO'] = config_dict['UPSTREAM_REPO']
         environ['UPSTREAM_BRANCH'] = config_dict['UPSTREAM_BRANCH']
+        environ['UPDATE_PACKAGES'] = config_dict['UPDATE_PACKAGES']
     conn.close()
+
+if environ.get('UPDATE_PACKAGES', 'False').lower() == 'true':
+    packages = [dist.project_name for dist in working_set]
+    scall("pip install --upgrade " + ' '.join(packages), shell=True)
 
 UPSTREAM_REPO = environ.get('UPSTREAM_REPO', '')
 if len(UPSTREAM_REPO) == 0:
@@ -55,7 +61,7 @@ if UPSTREAM_REPO is not None:
 
     update = srun([f"git init -q \
                      && git config --global user.email e.anastayyar@gmail.com \
-                     && git config --global user.name mltb \
+                     && git config --global user.name WZML \
                      && git add . \
                      && git commit -sm update -q \
                      && git remote add origin {UPSTREAM_REPO} \

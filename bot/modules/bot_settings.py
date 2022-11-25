@@ -20,6 +20,7 @@ default_values = {'AUTO_DELETE_MESSAGE_DURATION': 30,
                   'AUTO_DELETE_UPLOAD_MESSAGE_DURATION': -1,
                   'BOT_PM': False,
                   'FORCE_BOT_PM': False,
+                  'UPDATE_PACKAGES': False,
                   'UPSTREAM_BRANCH': 'master',
                   'UPSTREAM_REPO': 'https://github.com/weebzone/WZML',
                   'STATUS_UPDATE_INTERVAL': 10,
@@ -135,7 +136,6 @@ def load_config():
         GLOBAL_EXTENSION_FILTER.append('.aria2')
         for x in fx:
             GLOBAL_EXTENSION_FILTER.append(x.strip().lower())
-
 
     tgBotMaxFileSize = 2097151000
 
@@ -318,6 +318,9 @@ def load_config():
     if len(UPSTREAM_BRANCH) == 0:   
         UPSTREAM_BRANCH = 'master'
 
+    UPDATE_PACKAGES = environ.get('UPDATE_PACKAGES', '')
+    if len(UPDATE_PACKAGES) == 0:
+        UPDATE_PACKAGES = False
 
     MIRROR_ENABLED = environ.get('MIRROR_ENABLED', '')
     MIRROR_ENABLED = MIRROR_ENABLED.lower() == 'true'
@@ -585,6 +588,7 @@ def load_config():
                         'TORRENT_TIMEOUT': TORRENT_TIMEOUT,
                         'UPSTREAM_REPO': UPSTREAM_REPO,
                         'UPSTREAM_BRANCH': UPSTREAM_BRANCH,
+                        'UPDATE_PACKAGES': UPDATE_PACKAGES,
                         'UPTOBOX_TOKEN': UPTOBOX_TOKEN,
                         'USE_SERVICE_ACCOUNTS': USE_SERVICE_ACCOUNTS,
                         'VIEW_LINK': VIEW_LINK,

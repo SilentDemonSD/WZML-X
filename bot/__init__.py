@@ -605,6 +605,9 @@ UPSTREAM_BRANCH = environ.get('UPSTREAM_BRANCH', '')
 if len(UPSTREAM_BRANCH) == 0:
     UPSTREAM_BRANCH = 'master'
 
+UPDATE_PACKAGES = environ.get('UPDATE_PACKAGES', '')
+if len(UPDATE_PACKAGES) == 0:
+    UPDATE_PACKAGES = False
 
 
 config_dict = {'AS_DOCUMENT': AS_DOCUMENT,
@@ -709,6 +712,7 @@ config_dict = {'AS_DOCUMENT': AS_DOCUMENT,
                'NAME_FONT': NAME_FONT,
                'CAPTION_FONT': CAPTION_FONT,
                'DISABLE_DRIVE_LINK': DISABLE_DRIVE_LINK,
+               'UPDATE_PACKAGES': UPDATE_PACKAGES,
                'SOURCE_LINK': SOURCE_LINK,
                'START_BTN1_NAME': START_BTN1_NAME,
                'START_BTN1_URL': START_BTN1_URL,
