@@ -182,7 +182,6 @@ def __stop_duplicate(client, tor):
 def __check_limits(client, tor):
     download = getDownloadByGid(tor.hash[:12])
     listener = download.listener()
-    except: return
     size = tor.size
     arch = any([listener.isZip, listener.extract])
     user_id = listener.message.from_user.id
