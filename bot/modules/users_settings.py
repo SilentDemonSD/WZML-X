@@ -16,6 +16,7 @@ from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.ext_utils.bot_utils import update_user_ldata
 
 handler_dict = {}
+example_dict = {'prefix':'1. <code>@your_channel_username or Anything</code>', 'suffix':'', 'caption':'', 'userlog':'', 'remname':'', 'imdb_temp':'', 'ani_temp':''}
 
 def get_user_settings(from_user):
     user_id = from_user.id
@@ -27,6 +28,8 @@ def get_user_settings(from_user):
     caption = user_data[user_id]['caption'] if user_id in user_data and user_data[user_id].get('caption') else "Not Exists"
     userlog = user_data[user_id]['userlog'] if user_id in user_data and user_data[user_id].get('userlog') else "Not Exists"
     remname = user_data[user_id]['remname'] if user_id in user_data and user_data[user_id].get('remname') else "Not Exists"
+    imdb = user_data[user_id]['imdb_temp'] if user_id in user_data and user_data[user_id].get('imdb_temp') else "Not Exists"
+    anilist = user_data[user_id]['ani_temp'] if user_id in user_data and user_data[user_id].get('ani_temp') else "Not Exists"
     cfont = user_data[user_id]['cfont'][0] if user_id in user_data and user_data[user_id].get('cfont') else "Not Exists"
     user_dict = user_data.get(user_id, False)
     if not user_dict and config_dict['AS_DOCUMENT'] or user_dict and user_dict.get('as_doc'):
@@ -66,6 +69,17 @@ def get_user_settings(from_user):
     buttons.sbutton(buttxt, f"userset {user_id} suniversal userlog")
     buttxt = "Change/Delete Remname" if remname != "Not Exists" else "Set Remname"
     buttons.sbutton(buttxt, f"userset {user_id} suniversal remname")
+    if imdb != "Not Exists":
+        imdbval = "Exists"
+        buttons.sbutton("Change/Delete IMDB", f"userset {user_id} suniversal imdb_temp")
+        buttons.sbutton("Show IMDB Template", f"userset {user_id} showimdb")
+    else: buttons.sbutton("Set IMDB", f"userset {user_id} suniversal imdb")
+    if anilist != "Not Exists":
+        imdbval = "Exists"
+        buttons.sbutton("Change/Delete AniList", f"userset {user_id} suniversal ani_temp")
+        buttons.sbutton("Show AniList Template", f"userset {user_id} showanilist")
+    else:
+        buttons.sbutton("Set AniList", f"userset {user_id} suniversal anilist")
     if cfont != "Not Exists": buttons.sbutton("Delete CapFont", f"userset {user_id} cfont")
     buttons.sbutton("Close", f"userset {user_id} close")
     button = buttons.build_menu(2)
@@ -81,6 +95,8 @@ def get_user_settings(from_user):
 • CapFont : {cfont}
 • Remname : <b>{escape(remname)}</b>
 • UserLog : <b>{userlog}</b>
+• IMDB : <b>{imdbval if imdbval else imdb}</b>
+• AniList : <b>{anival if anival else anilist}</b>
 • User Plan : <b>{uplan}</b>'''
     return text, button
 
@@ -254,7 +270,7 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
             buttons.sbutton("Delete", f"userset {user_id} {data[3]}")
         buttons.sbutton("Back", f"userset {user_id} back")
         buttons.sbutton("Close", f"userset {user_id} close")
-        editMessage(f'<u>Send {data[3].capitalize()} text :</u>\n\nExamples:\n1. Soon ... 😁', message, buttons.build_menu(2) if menu else buttons.build_menu(1))
+        editMessage(f'<u>Send {data[3].capitalize()} text :</u>\n\nExamples:\n', message, buttons.build_menu(2) if menu else buttons.build_menu(1))
         partial_fnc = partial(set_addons, data=data[3], omsg=message)
         UNI_HANDLER = f"{data[3]}_handler"
         UNI_HANDLER = MessageHandler(filters=Filters.text & Filters.chat(message.chat.id) & Filters.user(user_id),
@@ -306,6 +322,20 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
         if DATABASE_URL: 
             DbManger().update_userval(user_id, 'cfont')
         query.answer(text="Your Caption Font is Successfully Deleted!", show_alert=True)
+        update_user_settings(message, query.from_user)
+    elif data[2] == "imdb_temp":
+        handler_dict[user_id] = False
+        update_user_ldata(user_id, 'imdb_temp', False)
+        if DATABASE_URL:
+            DbManger().update_userval(user_id, 'imdb_temp')
+        query.answer(text="Your IMDB Template is Successfully Deleted!", show_alert=True)
+        update_user_settings(message, query.from_user)
+    elif data[2] == "ani_temp":
+        handler_dict[user_id] = False
+        update_user_ldata(user_id, 'ani_temp', False)
+        if DATABASE_URL:
+            DbManger().update_userval(user_id, 'ani_temp')
+        query.answer(text="Your AniList Template is Successfully Deleted!", show_alert=True)
         update_user_settings(message, query.from_user)
     elif data[2] == "font":
         handler_dict[user_id] = False
@@ -378,6 +408,22 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
             LOGGER.info(f"User : {user_id} Font Style Saved in DB")
         query.answer(text="Font Style changed to Regular!", show_alert=True)
         update_user_settings(message, query.from_user)
+    elif data[2] == "showimdb":
+        if user_id not in user_data and not user_data[user_id].get('imdb_temp'):
+            return query.answer(text="Send new settings command. 🙃")
+        imdb = user_data[user_id].get('imdb_temp')
+        if imdb:
+            msg = f"IMDB Template for: {query.from_user.mention_html()} (<code>{str(user_id)}</code>)\n\n{escape(imdb)}"
+            im = sendMessage(msg, context.bot, message)
+            Thread(args=(context.bot, update.message, im)).start()
+    elif data[2] == "showanilist":
+        if user_id not in user_data and not user_data[user_id].get('ani_temp'):
+            return query.answer(text="Send new settings command. 🙃")
+        anilist = user_data[user_id].get('ani_temp')
+        if anilist:
+            msg = f"AniList Template for: {query.from_user.mention_html()} (<code>{str(user_id)}</code>)\n\n{escape(anilist)}"
+            ani = sendMessage(msg, context.bot, message)
+            Thread(args=(context.bot, update.message, ani)).start()
     else:
         query.answer()
         handler_dict[user_id] = False

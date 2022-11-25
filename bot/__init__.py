@@ -188,6 +188,23 @@ if len(EXTENSION_FILTER) > 0:
     for x in fx:
         GLOBAL_EXTENSION_FILTER.append(x.strip().lower())
 
+DEF_ANI_TEMP  = environ.get('ANIME_TEMPLATE', '')
+if len(DEF_ANI_TEMP) == 0:
+    DEF_ANI_TEMP = """<b>{ro_title}</b>({na_title})
+<b>Format</b>: <code>{format}</code>
+<b>Status</b>: <code>{status}</code>
+<b>Start Date</b>: <code>{startdate}</code>
+<b>End Date</b>: <code>{enddate}</code>
+<b>Season</b>: <code>{season}</code>
+<b>Country</b>: {country}
+<b>Episodes</b>: <code>{episodes}</code>
+<b>Duration</b>: <code>{duration}</code>
+<b>Average Score</b>: <code>{avgscore}</code>
+<b>Genres</b>: {genres}
+<b>Hashtag</b>: {hashtag}
+<b>Studios</b>: {studios}
+
+<b>Description</b>: <i>{description}</i>"""
 
 LOGGER.info("Generating SESSION_STRING")
 app = Client(name='pyrogram', api_id=(TELEGRAM_API), api_hash=TELEGRAM_HASH, bot_token=BOT_TOKEN, parse_mode=enums.ParseMode.HTML, no_updates=True)
