@@ -361,25 +361,17 @@ def ytdlleech(update, context):
 def ytdlZipleech(update, context):
     _ytdl(context.bot, update.message, True, True)
 
-if config_dict['WATCH_ENABLED'] is True:
-    ytdl_handler = CommandHandler(BotCommands.WatchCommand, ytdl,
-                                    filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
-    ytdl_zip_handler = CommandHandler(BotCommands.ZipWatchCommand, ytdlZip,
-                                        filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
-    ytdl_leech_handler = CommandHandler(BotCommands.LeechWatchCommand, ytdlleech,
-                                    filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
-    ytdl_zip_leech_handler = CommandHandler(BotCommands.LeechZipWatchCommand, ytdlZipleech,
-                                        filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
 
-else:
-    ytdl_handler = CommandHandler(BotCommands.WatchCommand, ytdl,
-                                    filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
-    ytdl_zip_handler = CommandHandler(BotCommands.ZipWatchCommand, ytdlZip,
-                                        filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
-    ytdl_leech_handler = CommandHandler(BotCommands.LeechWatchCommand, ytdlleech,
-                                    filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
-    ytdl_zip_leech_handler = CommandHandler(BotCommands.LeechZipWatchCommand, ytdlZipleech,
-                                        filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
+authfilter = CustomFilters.authorized_chat if config_dict['WATCH_ENABLED'] is True else CustomFilters.owner_filter
+ytdl_handler = CommandHandler(BotCommands.YtdlCommand, ytdl,
+                                    filters=authfilter | CustomFilters.authorized_user, run_async=True)
+ytdl_zip_handler = CommandHandler(BotCommands.YtdlZipCommand, ytdlZip,
+                                    filters=authfilter | CustomFilters.authorized_user, run_async=True)
+ytdl_leech_handler = CommandHandler(BotCommands.YtdlLeechCommand, ytdlleech,
+                                    filters=authfilter | CustomFilters.authorized_user, run_async=True)
+ytdl_zip_leech_handler = CommandHandler(BotCommands.YtdlZipLeechCommand, ytdlZipleech,
+                                    filters=authfilter | CustomFilters.authorized_user, run_async=True)
+
 
 quality_handler = CallbackQueryHandler(select_format, pattern="qu", run_async=True)
 

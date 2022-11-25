@@ -349,9 +349,11 @@ def _clone(message, bot):
 def cloneNode(update, context):
     _clone(update.message, context.bot)
 
-if config_dict['CLONE_ENABLED'] is True:
-    clone_handler = CommandHandler(BotCommands.CloneCommand, cloneNode, filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
-else:
-    clone_handler = CommandHandler(BotCommands.CloneCommand, cloneNode, filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
+
+
+authfilter = CustomFilters.authorized_chat if config_dict['CLONE_ENABLED'] is True else CustomFilters.owner_filter
+clone_handler = CommandHandler(BotCommands.CloneCommand, cloneNode,
+                                    filters=authfilter | CustomFilters.authorized_user, run_async=True)
+
 
 dispatcher.add_handler(clone_handler)

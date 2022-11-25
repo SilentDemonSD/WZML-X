@@ -243,13 +243,13 @@ help_string_telegraph_user = f'''
 <br><br>
 • <b>/{BotCommands.DeleteCommand}</b> [drive_url]: Delete file/folder from Google Drive (Only Owner & Sudo)
 <br><br>
-• <b>/{BotCommands.WatchCommand}</b> [yt-dlp supported link]: Mirror yt-dlp supported link. Send <b>/{BotCommands.WatchCommand}</b> for more help
+• <b>/{BotCommands.YtdlCommand}</b> [yt-dlp supported link]: Mirror yt-dlp supported link. Send <b>/{BotCommands.WatchCommand}</b> for more help
 <br><br>
-• <b>/{BotCommands.ZipWatchCommand}</b> [yt-dlp supported link]: Mirror yt-dlp supported link as zip
+• <b>/{BotCommands.YtdlZipCommand}</b> [yt-dlp supported link]: Mirror yt-dlp supported link as zip
 <br><br>
-• <b>/{BotCommands.LeechWatchCommand}</b> [yt-dlp supported link]: Leech yt-dlp supported link
+• <b>/{BotCommands.YtdlLeechCommand}</b> [yt-dlp supported link]: Leech yt-dlp supported link
 <br><br>
-• <b>/{BotCommands.LeechZipWatchCommand}</b> [yt-dlp supported link]: Leech yt-dlp supported link as zip
+• <b>/{BotCommands.YtdlZipLeechCommand}</b> [yt-dlp supported link]: Leech yt-dlp supported link as zip
 <br><br>
 • <b>/{BotCommands.PreNameCommand}</b>: Set Prename to leech files
 <br><br>

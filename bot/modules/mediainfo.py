@@ -60,11 +60,10 @@ def mediainfo(update, context):
     help = telegraph.create_page(title='MediaInfo', content=reply)["path"]
     editMessage(short_url(f"https://telegra.ph/{help}"), sent)
 
-if config_dict['MEDIAINFO_ENABLED'] is True:
-    mediainfo_handler = CommandHandler(BotCommands.MediaInfoCommand, mediainfo,
-        filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
-else:
-    mediainfo_handler = CommandHandler(BotCommands.MediaInfoCommand, mediainfo,
-                                    filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
+
+authfilter = CustomFilters.authorized_chat if config_dict['MEDIAINFO_ENABLED'] is True else CustomFilters.owner_filter
+mediainfo_handler = CommandHandler(BotCommands.MediaInfoCommand, mediainfo,
+                                    filters=authfilter | CustomFilters.authorized_user, run_async=True)
+
 
 dispatcher.add_handler(mediainfo_handler)
