@@ -390,6 +390,14 @@ def send_users_settings(update, context):
     else:
         sendMessage('No users data!', context.bot, update.message)
 
+def sendPaidDetails(update, context):
+    paid = ''
+    paid += '\n'.join(f"<code>{u}</code>" for u in PAID_USERS)
+    sendMessage(f'<b><u>Paid Users🤑 :</u></b>\n{paid}', context.bot, update.message)
+
+
+pdetails_handler = CommandHandler(command=BotCommands.PaidUsersCommand, callback=sendPaidDetails,
+                                    filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
 users_settings_handler = CommandHandler(BotCommands.UsersCommand, send_users_settings,
                                             filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
 user_set_handler  = CommandHandler(BotCommands.UserSetCommand, user_settings,
@@ -399,3 +407,4 @@ but_set_handler = CallbackQueryHandler(edit_user_settings, pattern="userset", ru
 dispatcher.add_handler(user_set_handler )
 dispatcher.add_handler(but_set_handler)
 dispatcher.add_handler(users_settings_handler)
+dispatcher.add_handler(pdetails_handler)
