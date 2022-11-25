@@ -4,7 +4,7 @@ from bot.helper.telegram_helper.message_utils import sendMessage
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.ext_utils.db_handler import DbManger
-from bot.helper.ext_utils.bot_utils import update_user_ldata
+from bot.helper.ext_utils.bot_utils import update_user_ldata, is_paid, is_sudo
 
 def authorize(update, context):
     reply_message = update.message.reply_to_message
@@ -48,7 +48,7 @@ def addSudo(update, context):
     elif reply_message:
         id_ = reply_message.from_user.id
     if id_:
-        if id_ in user_data and user_data[id_].get('is_sudo'):
+        if is_sudo(id_):
             msg = 'Already Sudo! 🤔'
         else:
             update_user_ldata(id_, 'is_sudo', True)
@@ -66,7 +66,7 @@ def removeSudo(update, context):
         id_ = int(context.args[0])
     elif reply_message:
         id_ = reply_message.from_user.id
-    if id_ and id_ not in user_data or user_data[id_].get('is_sudo'):
+    if id_ and is_sudo(id_):
         update_user_ldata(id_, 'is_sudo', False)
         if DATABASE_URL:
             DbManger().update_user_data(id_)
@@ -122,7 +122,7 @@ def addPaid(update, context):
     elif reply_message:
         id_ = reply_message.from_user.id
     if id_:
-        if id_ in user_data and user_data[id_].get('is_paid'):
+        if is_paid(id_):
             msg = 'Already a Paid User!'
         else:
             update_user_ldata(id_, 'is_paid', True)
@@ -140,7 +140,7 @@ def removePaid(update, context):
         id_ = int(context.args[0])
     elif reply_message:
         id_ = reply_message.from_user.id
-    if id_ and id_ not in user_data or user_data[id_].get('is_paid'):
+    if id_ and is_paid(id_):
         update_user_ldata(id_, 'is_paid', False)
         if DATABASE_URL:
             DbManger().update_user_data(id_)
@@ -159,7 +159,6 @@ addsudo_handler = CommandHandler(BotCommands.AddSudoCommand, addSudo,
                                    filters=CustomFilters.owner_filter, run_async=True)
 removesudo_handler = CommandHandler(BotCommands.RmSudoCommand, removeSudo,
                                    filters=CustomFilters.owner_filter, run_async=True)
-
 
 
 addleechlog_handler = CommandHandler(BotCommands.AddleechlogCommand, addleechlog,
