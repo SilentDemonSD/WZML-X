@@ -385,7 +385,7 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
 
 def send_users_settings(update, context):
     msg, auth_chat, sudos, leechlogs = '', '', '', ''
-    for u, d in user_data.items()
+    for u, d in user_data.items():
         try:
             for ud, dd in d.items():
                 if ud == 'is_auth' and dd is True:
