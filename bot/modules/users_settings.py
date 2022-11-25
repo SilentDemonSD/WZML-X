@@ -69,6 +69,7 @@ def get_user_settings(from_user):
     buttons.sbutton(buttxt, f"userset {user_id} suniversal userlog")
     buttxt = "Change/Delete Remname" if remname != "Not Exists" else "Set Remname"
     buttons.sbutton(buttxt, f"userset {user_id} suniversal remname")
+    imdbval = ""
     if imdb != "Not Exists":
         imdbval = "Exists"
         buttons.sbutton("Change/Delete IMDB", f"userset {user_id} suniversal imdb_temp")
