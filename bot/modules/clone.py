@@ -181,7 +181,7 @@ def _clone(message, bot):
                     return
 
         config_dict['CLONE_LIMIT']
-        if CLONE_LIMIT != '' and user_id != OWNER_ID and user_data[user_id].get('is_sudo') and user_data[user_id].get('is_paid'):
+        if CLONE_LIMIT != '' and user_id != OWNER_ID and user_id in user_data and user_data[user_id].get('is_sudo') and user_data[user_id].get('is_paid'):
             LOGGER.info('Checking File/Folder Size...')
             if size > CLONE_LIMIT * 1024**3:
                 msg2 = f'Failed, Clone limit is {CLONE_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(size)}.'
