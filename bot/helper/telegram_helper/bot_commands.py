@@ -12,7 +12,7 @@ def getCommand(name: str, command: str):
 class _BotCommands:
     def __init__(self):
         self.StartCommand = getCommand(f'START_COMMAND', f'start{CMD_PERFIX}')
-        self.MirrorCommand = getCommand('MIRROR_COMMAND', f'mirror{CMD_PERFIX}', f'm{CMD_PERFIX}')
+        self.MirrorCommand = getCommand(f'mirror{CMD_PERFIX}', f'm{CMD_PERFIX}')
         self.UnzipMirrorCommand = getCommand('UNZIP_COMMAND', f'unzipmirror{CMD_PERFIX}')
         self.ZipMirrorCommand = getCommand('ZIP_COMMAND', f'zipmirror{CMD_PERFIX}')
         self.CancelMirror = getCommand('CANCEL_COMMAND', f'cancel{CMD_PERFIX}')
