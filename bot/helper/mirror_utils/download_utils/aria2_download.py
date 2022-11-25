@@ -2,7 +2,7 @@ from time import sleep, time
 from os import remove, path as ospath
 from bot import aria2, download_dict_lock, download_dict, LOGGER, config_dict, user_data, aria2_options, aria2c_global, OWNER_ID
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
-from bot.helper.ext_utils.bot_utils import is_magnet, getDownloadByGid, new_thread, bt_selection_buttons, get_readable_file_size
+from bot.helper.ext_utils.bot_utils import is_magnet, getDownloadByGid, new_thread, bt_selection_buttons, get_readable_file_size, is_sudo, is_paid
 from bot.helper.mirror_utils.status_utils.aria_download_status import AriaDownloadStatus
 from bot.helper.telegram_helper.message_utils import sendMarkup, sendStatusMessage, sendMessage, deleteMessage, update_all_messages, sendFile
 from bot.helper.ext_utils.fs_utils import get_base_name, check_storage_threshold, clean_unwanted
@@ -69,7 +69,7 @@ def __onDownloadStarted(api, gid):
                             sendFile(listener.bot, listener.message, f_name, cap)
                             return
             user_id = listener.message.from_user.id
-            if any([ZIP_UNZIP_LIMIT, LEECH_LIMIT, TORRENT_DIRECT_LIMIT, STORAGE_THRESHOLD]) and user_id != OWNER_ID and user_data[user_id].get('is_sudo') and user_data[user_id].get('is_paid'):
+            if any([ZIP_UNZIP_LIMIT, LEECH_LIMIT, TORRENT_DIRECT_LIMIT, STORAGE_THRESHOLD]) and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id):
                 sleep(1)
                 limit = None
                 size = download.total_length
