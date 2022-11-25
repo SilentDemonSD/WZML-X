@@ -318,7 +318,7 @@ def _clone(message, bot):
         else:
             sendMarkup(result + cc, bot, message, button)
             LOGGER.info(f'Cloning Done: {name}')
-        if config_dict['FORCE_BOT_PM'] == '':
+        if not config_dict['FORCE_BOT_PM']:
             if PICS:
                 msg = sendPhoto(result + cc + pmwarn + logwarn + warnmsg, bot, message, random.choice(PICS), button)
             else:
