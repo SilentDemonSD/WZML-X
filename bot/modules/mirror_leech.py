@@ -72,9 +72,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
     user_id = message.from_user.id
     USER_TASKS_LIMIT = config_dict['USER_TASKS_LIMIT']
     TOTAL_TASKS_LIMIT = config_dict['TOTAL_TASKS_LIMIT']
-    SUDO_USERS = config_dict['SUDO_USERS']
-    #PAID_USERS = config_dict['PAID_USERS']
-    if user_id != OWNER_ID and user_id not in SUDO_USERS:
+    if user_id != OWNER_ID and user_id in user_data and user_data[user_id].get('is_sudo') and user_data[user_id].get('is_paid'):
         if config_dict['PAID_SERVICE'] is True:
             if TOTAL_TASKS_LIMIT == total_task:
                 return sendMessage(f"<b>Bot Total Task Limit : {TOTAL_TASKS_LIMIT}\nTasks Processing : {total_task}\n#total limit exceed </b>\n#Buy Paid Service", bot ,message)
@@ -86,7 +84,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
             if USER_TASKS_LIMIT == get_user_task(user_id):
                 return sendMessage(f"<b>Bot Total Task Limit : {USER_TASKS_LIMIT} \nYour Tasks : {get_user_task(user_id)}\n#user limit exceed</b>", bot ,message)
 
-    if user_id != OWNER_ID and user_data[user_id].get('is_sudo') and user_data[user_id].get('is_paid'):
+    if user_id != OWNER_ID and user_id in user_data and user_data[user_id].get('is_sudo') and user_data[user_id].get('is_paid'):
         time_gap = timegap_check(message)
         if time_gap:
             return
