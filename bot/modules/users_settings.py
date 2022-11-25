@@ -5,6 +5,7 @@ from telegram.ext import CommandHandler, CallbackQueryHandler, MessageHandler, F
 from time import sleep, time
 from functools import partial
 from html import escape
+from threading import Thread
 
 from bot import user_data, dispatcher, LOGGER, config_dict, DATABASE_URL
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, sendPhoto
