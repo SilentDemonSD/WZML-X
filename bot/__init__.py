@@ -161,6 +161,7 @@ if len(PAID_USERS) != 0:
     aid = PAID_USERS.split()
     for id_ in aid:
         user_data[int(id_.strip())] = {'is_paid': True}
+    user_data['paid_users'] = [int(id_.strip()) for id_ in aid]
 
 LOG_LEECH = environ.get('LOG_LEECH', '')
 if len(LOG_LEECH) != 0:
