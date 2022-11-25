@@ -57,7 +57,7 @@ class _BotCommands:
         self.HelpCommand = getCommand(f'HELP_COMMAND', f'help{CMD_PERFIX}')
         self.LogCommand = getCommand(f'LOG_COMMAND', f'log{CMD_PERFIX}')
         self.BtSelectCommand = getCommand(f'BTSEL_COMMAND', f'btsel{CMD_PERFIX}')
-        self.SpeedCommand = getCommand(f'SPEEDTEST_COMMAND', f'speedtest{CMD_PERFIX}')
+        self.SpeedCommand = getCommand(f'SPEEDTEST_COMMAND', f'speedtest{CMD_PERFIX}'), f'st{CMD_PERFIX}'
         self.CountCommand = getCommand(f'COUNT_COMMAND', f'count{CMD_PERFIX}')
         self.DeleteCommand = getCommand(f'DELETE_COMMAND', f'del{CMD_PERFIX}')
         self.ShellCommand = getCommand(f'SHELL_COMMAND', f'shell{CMD_PERFIX}')

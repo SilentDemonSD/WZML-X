@@ -365,7 +365,7 @@ if config_dict['SET_BOT_COMMANDS']:
         (f'{BotCommands.UserSetCommand[0]}','Users settings'),
         (f'{BotCommands.BotSetCommand[0]}','BOT settings'),
         (f'{BotCommands.StatusCommand}','Get mirror status message'),
-        (f'{BotCommands.SpeedCommand}','Speedtest'),
+        (f'{BotCommands.SpeedCommand[0]}','Speedtest'),
         (f'{BotCommands.WayBackCommand}','Internet Archive'),
         (f'{BotCommands.MediaInfoCommand[0]}','Get Information of telegram Files'),
         (f'{BotCommands.HashCommand}','Get Hash of telegram Files'),
