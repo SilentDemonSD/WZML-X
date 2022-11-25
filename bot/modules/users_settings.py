@@ -397,8 +397,7 @@ def send_users_settings(update, context):
                 leechlogs = '\n'.join(f"<code>{ll}</code>" for ll in d)
         else:
             continue
-    #msg = ''.join(f'<code>{u}</code>: {escape(str(d))}\n\n' )
-    msg = f'<b><u>Authorized Chats💬 :</u></b>\n{auth_chat}\n\n<b><u>Sudo Users👤 :</u></b>\n{sudos}\n\n<b><u>Leech Log:</u></b>\n{leechlogs}'
+    msg = f'<b><u>Authorized Chats💬 :</u></b>\n{auth_chat}\n<b><u>Sudo Users👤 :</u></b>\n{sudos}\n<b><u>Leech Log:</u></b>\n{leechlogs}'
     if msg == '': msg = 'No Users Data!'
     sendMessage(msg, context.bot, update.message)
 
