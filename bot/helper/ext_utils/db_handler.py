@@ -90,8 +90,8 @@ class DbManger:
     def update_user_data(self, user_id):
         if self.__err:
             return
-        data = user_data[user_id]
-        if data.get('thumb'):
+        data = user_data.get(user_id)
+        if data and data.get('thumb'):
             del data['thumb']
         self.__db.users.update_one({'_id': user_id}, {'$set': data}, upsert=True)
         self.__conn.close()
@@ -168,103 +168,3 @@ class DbManger:
 
 if DATABASE_URL:
     DbManger().db_load()
-
-
-
-
-
-
-    
-
-#     def user_auth(self, chat_id: int):
-#         if self.err:
-#             return "Error in DB connection, check log for details"
-#         elif not self.user_check(chat_id):
-#             sql = 'INSERT INTO users (uid, auth) VALUES ({}, TRUE)'.format(chat_id)
-#         else:
-#             sql = 'UPDATE users SET auth = TRUE WHERE uid = {}'.format(chat_id)
-#         self.cur.execute(sql)
-#         self.conn.commit()
-#         self.disconnect()
-#         return 'Authorized successfully'
-
-#     def user_unauth(self, chat_id: int):
-#         if self.err:
-#             return "Error in DB connection, check log for details"
-#         elif self.user_check(chat_id):
-#             sql = 'UPDATE users SET auth = FALSE WHERE uid = {}'.format(chat_id)
-#             self.cur.execute(sql)
-#             self.conn.commit()
-#             self.disconnect()
-#             return 'Unauthorized successfully'
-
-#     def user_addsudo(self, user_id: int):
-#         if self.err:
-#             return "Error in DB connection, check log for details"
-#         elif not self.user_check(user_id):
-#             sql = 'INSERT INTO users (uid, sudo) VALUES ({}, TRUE)'.format(user_id)
-#         else:
-#             sql = 'UPDATE users SET sudo = TRUE WHERE uid = {}'.format(user_id)
-#         self.cur.execute(sql)
-#         self.conn.commit()
-#         self.disconnect()
-#         return 'Successfully Promoted as Sudo'
-
-#     def user_rmsudo(self, user_id: int):
-#         if self.err:
-#             return "Error in DB connection, check log for details"
-#         elif self.user_check(user_id):
-#             sql = 'UPDATE users SET sudo = FALSE WHERE uid = {}'.format(user_id)
-#             self.cur.execute(sql)
-#             self.conn.commit()
-#             self.disconnect()
-#             return 'Successfully removed from Sudo'
-
-#     def user_addpaid(self, user_id: int):
-#         if self.err:
-#             return "Error in DB connection, check log for details"
-#         elif not self.user_check(user_id):
-#             sql = 'INSERT INTO users (uid, paid) VALUES ({}, TRUE)'.format(user_id)
-#         else:
-#             sql = 'UPDATE users SET paid = TRUE WHERE uid = {}'.format(user_id)
-#         self.cur.execute(sql)
-#         self.conn.commit()
-#         self.disconnect()
-#         return 'Successfully Promoted as Paid Member'
-
-#     def user_rmpaid(self, user_id: int):
-#         if self.err:
-#             return "Error in DB connection, check log for details"
-#         elif self.user_check(user_id):
-#             sql = 'UPDATE users SET paid = FALSE WHERE uid = {}'.format(user_id)
-#             self.cur.execute(sql)
-#             self.conn.commit()
-#             self.disconnect()
-#             return 'Successfully removed from Paid Membership'
-
-#     def addleech_log(self, chat_id: int):
-#         if self.err:
-#             return "Error in DB connection, check log for details"
-#         elif not self.user_check(chat_id):
-#             sql = 'INSERT INTO users (uid, leechlog) VALUES ({}, TRUE)'.format(chat_id)
-#         else:
-#             sql = 'UPDATE users SET leechlog = TRUE WHERE uid = {}'.format(chat_id)
-#         self.cur.execute(sql)
-#         self.conn.commit()
-#         self.disconnect()
-#         return 'Successfully added to leech logs'
-
-#     def rmleech_log(self, chat_id: int):
-#         if self.err:
-#             return "Error in DB connection, check log for details"
-#         elif self.user_check(chat_id):
-#             sql = 'UPDATE users SET leechlog = FALSE WHERE uid = {}'.format(chat_id)
-#             self.cur.execute(sql)
-#             self.conn.commit()
-#             self.disconnect()
-#             return 'Removed from leech logs successfully'
-
-#     def user_check(self, uid: int):
-#         self.cur.execute("SELECT * FROM users WHERE uid = {}".format(uid))
-#         res = self.cur.fetchone()
-#         return res
