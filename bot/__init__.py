@@ -190,7 +190,7 @@ if len(EXTENSION_FILTER) > 0:
 
 DEF_ANI_TEMP  = environ.get('ANIME_TEMPLATE', '')
 if len(DEF_ANI_TEMP) == 0:
-    DEF_ANI_TEMP = """<b>{ro_title}</b>({na_title})
+    DEF_ANI_TEMP = '''<b>{ro_title}</b>({na_title})
 <b>Format</b>: <code>{format}</code>
 <b>Status</b>: <code>{status}</code>
 <b>Start Date</b>: <code>{startdate}</code>
@@ -204,7 +204,7 @@ if len(DEF_ANI_TEMP) == 0:
 <b>Hashtag</b>: {hashtag}
 <b>Studios</b>: {studios}
 
-<b>Description</b>: <i>{description}</i>"""
+<b>Description</b>: <i>{description}</i>'''
 
 LIST_ITEMS  = environ.get('LIST_ITEMS', '')
 if len(LIST_ITEMS) == 0:
@@ -734,6 +734,8 @@ config_dict = {'AS_DOCUMENT': AS_DOCUMENT,
                'PIXABAY_SEARCH': PIXABAY_SEARCH,
                'NAME_FONT': NAME_FONT,
                'CAPTION_FONT': CAPTION_FONT,
+               'DEF_IMDB_TEMP': DEF_IMDB_TEMP,
+               'DEF_ANI_TEMP': DEF_ANI_TEMP,
                'DISABLE_DRIVE_LINK': DISABLE_DRIVE_LINK,
                'UPDATE_PACKAGES': UPDATE_PACKAGES,
                'SOURCE_LINK': SOURCE_LINK,

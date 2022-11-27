@@ -46,7 +46,34 @@ default_values = {'AUTO_DELETE_MESSAGE_DURATION': 30,
                   'IMAGE_URL': 'https://graph.org/file/6b22ef7b8a733c5131d3f.jpg',
                   'TIMEZONE': 'Asia/Kolkata',
                   'SEARCH_LIMIT': 0,
-                  'RSS_DELAY': 900}
+                  'RSS_DELAY': 900,
+                  'DEF_ANI_TEMP': '''<b>{ro_title}</b>({na_title})
+                                     <b>Format</b>: <code>{format}</code>
+                                     <b>Status</b>: <code>{status}</code>
+                                     <b>Start Date</b>: <code>{startdate}</code>
+                                     <b>End Date</b>: <code>{enddate}</code>
+                                     <b>Season</b>: <code>{season}</code>
+                                     <b>Country</b>: {country}
+                                     <b>Episodes</b>: <code>{episodes}</code>
+                                     <b>Duration</b>: <code>{duration}</code>
+                                     <b>Average Score</b>: <code>{avgscore}</code>
+                                     <b>Genres</b>: {genres}
+                                     <b>Hashtag</b>: {hashtag}
+                                     <b>Studios</b>: {studios}
+
+                                     <b>Description</b>: <i>{description}</i>''',
+                  'DEF_IMDB_TEMP': '''<b>Title: </b> {title} [{year}]
+                                      <b>Also Known As:</b> {aka}
+                                      <b>Rating ⭐️:</b> <i>{rating}</i>
+                                      <b>Release Info: </b> <a href="{url_releaseinfo}">{release_date}</a>
+                                      <b>Genre: </b>{genres}
+                                      <b>IMDb URL:</b> {url}
+                                      <b>Language: </b>{languages}
+                                      <b>Country of Origin : </b> {countries}
+                                      
+                                      <b>Story Line: </b><code>{plot}</code>
+                                      
+                                      <a href="{url_cast}">Read More ...</a>'''}
 
 
 
@@ -487,6 +514,40 @@ def load_config():
     if len(CAPTION_FONT) == 0:  
         CAPTION_FONT = 'code'
 
+    DEF_IMDB_TEMP  = environ.get('IMDB_TEMPLATE', '')
+    if len(DEF_IMDB_TEMP) == 0:
+        DEF_IMDB_TEMP = '''<b>Title: </b> {title} [{year}]
+    <b>Also Known As:</b> {aka}
+    <b>Rating ⭐️:</b> <i>{rating}</i>
+    <b>Release Info: </b> <a href="{url_releaseinfo}">{release_date}</a>
+    <b>Genre: </b>{genres}
+    <b>IMDb URL:</b> {url}
+    <b>Language: </b>{languages}
+    <b>Country of Origin : </b> {countries}
+
+    <b>Story Line: </b><code>{plot}</code>
+
+    <a href="{url_cast}">Read More ...</a>'''
+
+
+    DEF_ANI_TEMP  = environ.get('ANIME_TEMPLATE', '')
+    if len(DEF_ANI_TEMP) == 0:
+        DEF_ANI_TEMP = """<b>{ro_title}</b>({na_title})
+    <b>Format</b>: <code>{format}</code>
+    <b>Status</b>: <code>{status}</code>
+    <b>Start Date</b>: <code>{startdate}</code>
+    <b>End Date</b>: <code>{enddate}</code>
+    <b>Season</b>: <code>{season}</code>
+    <b>Country</b>: {country}
+    <b>Episodes</b>: <code>{episodes}</code>
+    <b>Duration</b>: <code>{duration}</code>
+    <b>Average Score</b>: <code>{avgscore}</code>
+    <b>Genres</b>: {genres}
+    <b>Hashtag</b>: {hashtag}
+    <b>Studios</b>: {studios}
+
+    <b>Description</b>: <i>{description}</i>"""
+
     FINISHED_PROGRESS_STR = environ.get('FINISHED_PROGRESS_STR', '')
     UN_FINISHED_PROGRESS_STR = environ.get('UN_FINISHED_PROGRESS_STR', '')
     if len(FINISHED_PROGRESS_STR) == 0 or len(FINISHED_PROGRESS_STR) == 0:
@@ -651,6 +712,8 @@ def load_config():
                         'PIXABAY_SEARCH': PIXABAY_SEARCH,
                         'NAME_FONT': NAME_FONT,
                         'CAPTION_FONT': CAPTION_FONT,
+                        'DEF_IMDB_TEMP': DEF_IMDB_TEMP,
+                        'DEF_ANI_TEMP': DEF_ANI_TEMP,
                         'DISABLE_DRIVE_LINK': DISABLE_DRIVE_LINK,
                         'SOURCE_LINK': SOURCE_LINK,
                         'START_BTN1_NAME': START_BTN1_NAME,
