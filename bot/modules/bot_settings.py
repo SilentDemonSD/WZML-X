@@ -20,7 +20,7 @@ default_values = {'AUTO_DELETE_MESSAGE_DURATION': 30,
                   'AUTO_DELETE_UPLOAD_MESSAGE_DURATION': -1,
                   'BOT_PM': False,
                   'FORCE_BOT_PM': False,
-                  'UPDATE_PACKAGES': False,
+                  'UPDATE_PACKAGES': 'False',
                   'UPSTREAM_BRANCH': 'master',
                   'UPSTREAM_REPO': 'https://github.com/weebzone/WZML',
                   'STATUS_UPDATE_INTERVAL': 10,
@@ -347,7 +347,7 @@ def load_config():
 
     UPDATE_PACKAGES = environ.get('UPDATE_PACKAGES', '')
     if len(UPDATE_PACKAGES) == 0:
-        UPDATE_PACKAGES = False
+        UPDATE_PACKAGES = 'False'
 
     MIRROR_ENABLED = environ.get('MIRROR_ENABLED', '')
     MIRROR_ENABLED = MIRROR_ENABLED.lower() == 'true'
