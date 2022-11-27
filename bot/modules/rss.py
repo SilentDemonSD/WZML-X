@@ -2,9 +2,8 @@ from feedparser import parse as feedparse
 from time import sleep
 from telegram.ext import CommandHandler, CallbackQueryHandler
 from threading import Lock, Thread
-from copy import deepcopy
 
-from bot import dispatcher, job_queue, rss_dict, LOGGER, DATABASE_URL, config_dict
+from bot import dispatcher, job_queue, rss_dict, LOGGER, DATABASE_URL, config_dict, RSS_DELAY, RSS_CHAT_ID
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, sendMarkup, auto_delete_message, sendRss
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -230,7 +229,7 @@ def rss_monitor(context):
             LOGGER.error(f"{e} Feed Name: {title} - Feed Link: {data['link']}")
             continue
 
-if DATABASE_URL and config_dict['RSS_CHAT_ID']:
+if DATABASE_URL and RSS_CHAT_ID:
     rss_list_handler = CommandHandler(BotCommands.RssListCommand, rss_list,
                                       filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     rss_get_handler = CommandHandler(BotCommands.RssGetCommand, rss_get,
