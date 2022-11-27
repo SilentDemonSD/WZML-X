@@ -12,7 +12,7 @@ dnspython
 feedparser
 flask
 gc-python-utils
-git+https://github.com/cinemagoer/cinemagoer
+git+https://github.com/SilentDemonSD/cinemagoer
 google-api-python-client
 google-auth-httplib2
 google-auth-oauthlib
