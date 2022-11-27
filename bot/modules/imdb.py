@@ -173,8 +173,8 @@ def imdb_callback(update, context):
         buttons = ButtonMaker()
         if imdb['trailer']:
             if isinstance(imdb['trailer'], list):
-                buttons.buildbutton("▶️ IMDb Trailer ", imdb['trailer'][-1])
-            else: buttons.buildbutton("▶️ IMDb Trailer ", imdb['trailer'])
+                buttons.buildbutton("▶️ IMDb Trailer ", str(imdb['trailer'][-1]))
+            else: buttons.buildbutton("▶️ IMDb Trailer ", str(imdb['trailer']))
         if isinstance(imdb['trailer'], list):
             imdb['trailer'] = list_to_str(imdb['trailer'])
         buttons.sbutton("🚫 Close 🚫", f"imdb {user_id} close")
