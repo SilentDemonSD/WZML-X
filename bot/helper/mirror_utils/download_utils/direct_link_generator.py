@@ -714,6 +714,7 @@ def sharer_pw_dl(url: str)-> str:
             raise DirectDownloadLinkException(finalMsg)
         
 def shareDrive(url,directLogin=True):
+    by https://github.com/majnurangeela/sharedrive-dl
 
     successMsgs = ['success', 'Success', 'SUCCESS']
 
