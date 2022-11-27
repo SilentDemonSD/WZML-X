@@ -39,8 +39,8 @@ default_values = {'AUTO_DELETE_MESSAGE_DURATION': 30,
                   'CREDIT_NAME': 'WeebZone',
                   'NAME_FONT': 'code',
                   'CAPTION_FONT': 'code',
-                  'FINISHED_PROGRESS_STR': '●',
-                  'UN_FINISHED_PROGRESS_STR': '○',
+                  'FINISHED_PROGRESS_STR': '█',
+                  'UN_FINISHED_PROGRESS_STR': '▒',
                   'CHANNEL_USERNAME': 'WeebZone_updates',
                   'FSUB_CHANNEL_ID': '-1001512307861',
                   'IMAGE_URL': 'https://graph.org/file/6b22ef7b8a733c5131d3f.jpg',
@@ -490,8 +490,8 @@ def load_config():
     FINISHED_PROGRESS_STR = environ.get('FINISHED_PROGRESS_STR', '')
     UN_FINISHED_PROGRESS_STR = environ.get('UN_FINISHED_PROGRESS_STR', '')
     if len(FINISHED_PROGRESS_STR) == 0 or len(FINISHED_PROGRESS_STR) == 0:
-        FINISHED_PROGRESS_STR = '●' # '■'
-        UN_FINISHED_PROGRESS_STR = '○' # '□'
+        FINISHED_PROGRESS_STR = '█' # '■'
+        UN_FINISHED_PROGRESS_STR = '▒' # '□'
 
     CHANNEL_USERNAME = environ.get('CHANNEL_USERNAME', '')
     if len(CHANNEL_USERNAME) == 0:
