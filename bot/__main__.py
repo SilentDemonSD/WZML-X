@@ -1,9 +1,8 @@
-import random
 from bs4 import BeautifulSoup
 from signal import signal, SIGINT
 from requests import get as rget
 from urllib.parse import quote as q
-from random import choice
+from random import choice as rchoice
 from os import path as ospath, remove as osremove, execl as osexecl
 from subprocess import run as srun, check_output
 from datetime import datetime, timedelta
@@ -12,13 +11,8 @@ from time import time
 from sys import executable
 from telegram import ParseMode
 from telegram.ext import CommandHandler
-import requests
-import pytz
-from bot import bot, dispatcher, updater, botStartTime, TIMEZONE, IGNORE_PENDING_REQUESTS, LOGGER, Interval, INCOMPLETE_TASK_NOTIFIER, \
-                    DB_URI, app, main_loop, SET_BOT_COMMANDS, AUTHORIZED_CHATS, EMOJI_THEME, \
-                    START_BTN1_NAME, START_BTN1_URL, START_BTN2_NAME, START_BTN2_URL, CREDIT_NAME, TITLE_NAME, PICS, FINISHED_PROGRESS_STR, UN_FINISHED_PROGRESS_STR, \
-                    SHOW_LIMITS_IN_STATS, LEECH_LIMIT, TORRENT_DIRECT_LIMIT, CLONE_LIMIT, MEGA_LIMIT, ZIP_UNZIP_LIMIT, TOTAL_TASKS_LIMIT, USER_TASKS_LIMIT, \
-                    PIXABAY_API_KEY, PIXABAY_CATEGORY, PIXABAY_SEARCH, WALLCRAFT_CATEGORY, WALLTIP_SEARCH, WALLFLARE_SEARCH
+from pytz import timezone
+from bot import *
 from .helper.ext_utils.fs_utils import start_cleanup, clean_all, exit_clean_up
 from .helper.ext_utils.telegraph_helper import telegraph
 from .helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time
@@ -28,13 +22,13 @@ from .helper.telegram_helper.message_utils import sendMessage, sendMarkup, editM
 from .helper.telegram_helper.filters import CustomFilters
 from .helper.telegram_helper.button_build import ButtonMaker
 from bot.modules.wayback import getRandomUserAgent
-from .modules import authorize, list, cancel_mirror, mirror_status, mirror_leech, clone, ytdlp, shell, eval, \
-                    delete, count, leech_settings, search, rss, wayback, speedtest, anilist, bt_select, mediainfo, hash, addons, scraper
+from .modules import authorize, list, cancel_mirror, mirror_status, mirror_leech, clone, ytdlp, shell, eval, bot_settings, \
+                    delete, count, users_settings, search, rss, wayback, speedtest, anilist, imdb, bt_select, mediainfo, hash, addons, scraper
 from datetime import datetime
 
 def progress_bar(percentage):
-    p_used = FINISHED_PROGRESS_STR
-    p_total = UN_FINISHED_PROGRESS_STR
+    p_used = config_dict['FINISHED_PROGRESS_STR']
+    p_total = config_dict['UN_FINISHED_PROGRESS_STR']
     if isinstance(percentage, str):
         return 'NaN'
     try:
@@ -45,15 +39,17 @@ def progress_bar(percentage):
         p_used if i <= percentage // 10 else p_total for i in range(1, 11)
     )
 
-now=datetime.now(pytz.timezone(f'{TIMEZONE}'))
+
+timez = config_dict['TIMEZONE']
+now=datetime.now(timezone(f'{timez}'))
 
 def stats(update, context):
     if ospath.exists('.git'):
-        if EMOJI_THEME is True:
-            last_commit = check_output(["git log -1 --date=short --pretty=format:'%cd \n<b>├</b> 🛠<b>From</b> %cr'"], shell=True).decode()
+        if config_dict['EMOJI_THEME']:
+            last_commit = check_output(["git log -1 --date=short --pretty=format:'%cd \n<b>├</b> 🛠<b>From:</b> %cr'"], shell=True).decode()
             botVersion = check_output(["git log -1 --date=format:v%y.%m%d.%H%M --pretty=format:%cd"], shell=True).decode()
         else:
-            last_commit = check_output(["git log -1 --date=short --pretty=format:'%cd \n<b>├</b> <b>From</b> %cr'"], shell=True).decode()
+            last_commit = check_output(["git log -1 --date=short --pretty=format:'%cd \n<b>├  From:</b> %cr'"], shell=True).decode()
             botVersion = check_output(["git log -1 --date=format:v%y.%m%d.%H%M --pretty=format:%cd"], shell=True).decode()
     else:
         botVersion = 'No UPSTREAM_REPO'
@@ -79,7 +75,7 @@ def stats(update, context):
     mem_t = get_readable_file_size(memory.total)
     mem_a = get_readable_file_size(memory.available)
     mem_u = get_readable_file_size(memory.used)
-    if EMOJI_THEME is True:
+    if config_dict['EMOJI_THEME']:
             stats = f'<b>╭─《🌐 BOT STATISTICS 🌐》</b>\n' \
                     f'<b>├ 🛠 Updated On: </b>{last_commit}\n'\
                     f'<b>├ ⌛ Uptime: </b>{currentTime}\n'\
@@ -92,7 +88,7 @@ def stats(update, context):
                     f'<b>╰ 🔻 Download Data:</b> {recv}\n\n'
 
     else:
-            stats = f'<b>╭─《 BOT STATISTICS 》</b>\n' \
+            stats = f'<b>╭─《🌐 BOT STATISTICS 🌐》</b>\n' \
                     f'<b>├  Updated On: </b>{last_commit}\n'\
                     f'<b>├  Uptime: </b>{currentTime}\n'\
                     f'<b>├  OS Uptime: </b>{osUptime}\n'\
@@ -105,16 +101,25 @@ def stats(update, context):
 
 
 
-    if SHOW_LIMITS_IN_STATS is True:
-        torrent_direct = 'No Limit Set' if TORRENT_DIRECT_LIMIT is None else f'{TORRENT_DIRECT_LIMIT}GB/Link'
-        clone_limit = 'No Limit Set' if CLONE_LIMIT is None else f'{CLONE_LIMIT}GB/Link'
-        mega_limit = 'No Limit Set' if MEGA_LIMIT is None else f'{MEGA_LIMIT}GB/Link'
-        leech_limit = 'No Limit Set' if LEECH_LIMIT is None else f'{LEECH_LIMIT}GB/Link'
-        zip_unzip = 'No Limit Set' if ZIP_UNZIP_LIMIT is None else f'{ZIP_UNZIP_LIMIT}GB/Link'
-        total_task = 'No Limit Set' if TOTAL_TASKS_LIMIT is None else f'{TOTAL_TASKS_LIMIT} Total Tasks/Time'
-        user_task = 'No Limit Set' if USER_TASKS_LIMIT is None else f'{USER_TASKS_LIMIT} Tasks/user'
+    if config_dict['SHOW_LIMITS_IN_STATS']:
 
-        if EMOJI_THEME is True: 
+        TORRENT_DIRECT_LIMIT = config_dict['TORRENT_DIRECT_LIMIT']
+        CLONE_LIMIT = config_dict['CLONE_LIMIT']
+        MEGA_LIMIT = config_dict['MEGA_LIMIT']
+        LEECH_LIMIT = config_dict['LEECH_LIMIT']
+        ZIP_UNZIP_LIMIT = config_dict['ZIP_UNZIP_LIMIT']
+        TOTAL_TASKS_LIMIT = config_dict['TOTAL_TASKS_LIMIT']
+        USER_TASKS_LIMIT = config_dict['USER_TASKS_LIMIT']
+
+        torrent_direct = 'No Limit Set' if TORRENT_DIRECT_LIMIT == '' else f'{TORRENT_DIRECT_LIMIT}GB/Link'
+        clone_limit = 'No Limit Set' if CLONE_LIMIT == '' else f'{CLONE_LIMIT}GB/Link'
+        mega_limit = 'No Limit Set' if MEGA_LIMIT == '' else f'{MEGA_LIMIT}GB/Link'
+        leech_limit = 'No Limit Set' if LEECH_LIMIT == '' else f'{LEECH_LIMIT}GB/Link'
+        zip_unzip = 'No Limit Set' if ZIP_UNZIP_LIMIT == '' else f'{ZIP_UNZIP_LIMIT}GB/Link'
+        total_task = 'No Limit Set' if TOTAL_TASKS_LIMIT == '' else f'{TOTAL_TASKS_LIMIT} Total Tasks/Time'
+        user_task = 'No Limit Set' if USER_TASKS_LIMIT == '' else f'{USER_TASKS_LIMIT} Tasks/user'
+
+        if config_dict['EMOJI_THEME']: 
             stats += f'<b>╭─《 ⚠️ BOT LIMITS ⚠️ 》</b>\n'\
                      f'<b>├ 🧲 Torrent/Direct: </b>{torrent_direct}\n'\
                      f'<b>├ 🔐 Zip/Unzip: </b>{zip_unzip}\n'\
@@ -124,7 +129,7 @@ def stats(update, context):
                      f'<b>├ 💣 Total Tasks: </b>{total_task}\n'\
                      f'<b>╰ 🔫 User Tasks: </b>{user_task}\n\n'
         else: 
-            stats += f'<b>╭─《  BOT LIMITS  》</b>\n'\
+            stats += f'<b>╭─《 ⚠️ BOT LIMITS ⚠️ 》</b>\n'\
                      f'<b>├  Torrent/Direct: </b>{torrent_direct}\n'\
                      f'<b>├  Zip/Unzip: </b>{zip_unzip}\n'\
                      f'<b>├  Leech: </b>{leech_limit}\n'\
@@ -134,31 +139,31 @@ def stats(update, context):
                      f'<b>╰  User Tasks: </b>{user_task}\n\n'
 
     if PICS:
-        sendPhoto(stats, context.bot, update.message, random.choice(PICS))
+        sendPhoto(stats, context.bot, update.message, rchoice(PICS))
     else:
         sendMessage(stats, context.bot, update.message)
 
 def start(update, context):
     buttons = ButtonMaker()
-    if EMOJI_THEME is True:
-        buttons.buildbutton(f"😎 {START_BTN1_NAME}", f"{START_BTN1_URL}")
-        buttons.buildbutton(f"🔥 {START_BTN2_NAME}", f"{START_BTN2_URL}")
+    if config_dict['EMOJI_THEME']:
+        buttons.buildbutton(f"😎 {config_dict['START_BTN1_NAME']}", f"{config_dict['START_BTN1_URL']}")
+        buttons.buildbutton(f"🔥 {config_dict['START_BTN2_NAME']}", f"{START_BTN2_URL}")
     else:
-        buttons.buildbutton(f"{START_BTN1_NAME}", f"{START_BTN1_URL}")
-        buttons.buildbutton(f"{START_BTN2_NAME}", f"{START_BTN2_URL}")
+        buttons.buildbutton(f"{config_dict['START_BTN1_NAME']}", f"{config_dict['START_BTN1_URL']}")
+        buttons.buildbutton(f"{config_dict['START_BTN2_NAME']}", f"{config_dict['START_BTN2_URL']}")
     reply_markup = buttons.build_menu(2)
     if CustomFilters.authorized_user(update) or CustomFilters.authorized_chat(update):
         start_string = f'''This bot can mirror all your links to Google Drive!
 Type /{BotCommands.HelpCommand} to get a list of available commands
 '''
         if PICS:
-            sendPhoto(start_string, context.bot, update.message, random.choice(PICS), reply_markup)
+            sendPhoto(start_string, context.bot, update.message, rchoice(PICS), reply_markup)
         else:
             sendMarkup(start_string, context.bot, update.message, reply_markup)
     else:
         text = f"Not Authorized user, deploy your own mirror bot"
         if PICS:
-            sendPhoto(text, context.bot, update.message, random.choice(PICS), reply_markup)
+            sendPhoto(text, context.bot, update.message, rchoice(PICS), reply_markup)
         else:
             sendMarkup(text, context.bot, update.message, reply_markup)
 
@@ -168,8 +173,11 @@ def restart(update, context):
     if Interval:
         Interval[0].cancel()
         Interval.clear()
+    if QbInterval:
+        QbInterval[0].cancel()
+        QbInterval.clear()
     clean_all()
-    srun(["pkill", "-f", "gunicorn|aria2c|qbittorrent-nox|ffmpeg"])
+    srun(["pkill", "-9", "-f", "gunicorn|aria2c|qbittorrent-nox|ffmpeg"])
     srun(["python3", "update.py"])
     with open(".restartmsg", "w") as f:
         f.truncate(0)
@@ -178,7 +186,7 @@ def restart(update, context):
 
 
 def ping(update, context):
-    if EMOJI_THEME is True:
+    if config_dict['EMOJI_THEME']:
         start_time = int(round(time() * 1000))
         reply = sendMessage("Starting_Ping ⛔", context.bot, update.message)
         end_time = int(round(time() * 1000))
@@ -203,57 +211,45 @@ help_string_telegraph_user = f'''
 <br><br>
 • <b>/{BotCommands.HelpCommand}</b>: To get this message
 <br><br>
-• <b>/{BotCommands.MirrorCommand}</b> [download_url][magnet_link]: Start mirroring to Google Drive. Send <b>/{BotCommands.MirrorCommand}</b> for more help
+• <b>/{BotCommands.MirrorCommand[0]}</b> [download_url][magnet_link]: Start mirroring to Google Drive. Send <b>/{BotCommands.MirrorCommand[0]}</b> for more help
 <br><br>
-• <b>/{BotCommands.ZipMirrorCommand}</b> [download_url][magnet_link]: Start mirroring and upload the file/folder compressed with zip extension
+• <b>/{BotCommands.ZipMirrorCommand[0]}</b> [download_url][magnet_link]: Start mirroring and upload the file/folder compressed with zip extension
 <br><br>
-• <b>/{BotCommands.UnzipMirrorCommand}</b> [download_url][magnet_link]: Start mirroring and upload the file/folder extracted from any archive extension
+• <b>/{BotCommands.UnzipMirrorCommand[0]}</b> [download_url][magnet_link]: Start mirroring and upload the file/folder extracted from any archive extension
 <br><br>
-• <b>/{BotCommands.QbMirrorCommand}</b> [magnet_link][torrent_file][torrent_file_url]: Start Mirroring using qBittorrent, Use <b>/{BotCommands.QbMirrorCommand} s</b> to select files before downloading
+• <b>/{BotCommands.QbMirrorCommand[0]}</b> [magnet_link][torrent_file][torrent_file_url]: Start Mirroring using qBittorrent, Use <b>/{BotCommands.QbMirrorCommand[0]} s</b> to select files before downloading
 <br><br>
-• <b>/{BotCommands.QbZipMirrorCommand}</b> [magnet_link][torrent_file][torrent_file_url]: Start mirroring using qBittorrent and upload the file/folder compressed with zip extension
+• <b>/{BotCommands.QbZipMirrorCommand[0]}</b> [magnet_link][torrent_file][torrent_file_url]: Start mirroring using qBittorrent and upload the file/folder compressed with zip extension
 <br><br>
-• <b>/{BotCommands.QbUnzipMirrorCommand}</b> [magnet_link][torrent_file][torrent_file_url]: Start mirroring using qBittorrent and upload the file/folder extracted from any archive extension
+• <b>/{BotCommands.QbUnzipMirrorCommand[0]}</b> [magnet_link][torrent_file][torrent_file_url]: Start mirroring using qBittorrent and upload the file/folder extracted from any archive extension
 <br><br>
-• <b>/{BotCommands.LeechCommand}</b> [download_url][magnet_link]: Start leeching to Telegram, Use <b>/{BotCommands.LeechCommand} s</b> to select files before leeching
+• <b>/{BotCommands.LeechCommand[0]}</b> [download_url][magnet_link]: Start leeching to Telegram, Use <b>/{BotCommands.LeechCommand[0]} s</b> to select files before leeching
 <br><br>
-• <b>/{BotCommands.ZipLeechCommand}</b> [download_url][magnet_link]: Start leeching to Telegram and upload the file/folder compressed with zip extension
+• <b>/{BotCommands.ZipLeechCommand[0]}</b> [download_url][magnet_link]: Start leeching to Telegram and upload the file/folder compressed with zip extension
 <br><br>
-• <b>/{BotCommands.UnzipLeechCommand}</b> [download_url][magnet_link][torent_file]: Start leeching to Telegram and upload the file/folder extracted from any archive extension
+• <b>/{BotCommands.UnzipLeechCommand[0]}</b> [download_url][magnet_link][torent_file]: Start leeching to Telegram and upload the file/folder extracted from any archive extension
 <br><br>
-• <b>/{BotCommands.QbLeechCommand}</b> [magnet_link][torrent_file][torrent_file_url]: Start leeching to Telegram using qBittorrent, Use <b>/{BotCommands.QbLeechCommand} s</b> to select files before leeching
+• <b>/{BotCommands.QbLeechCommand[0]}</b> [magnet_link][torrent_file][torrent_file_url]: Start leeching to Telegram using qBittorrent, Use <b>/{BotCommands.QbLeechCommand[0]} s</b> to select files before leeching
 <br><br>
-• <b>/{BotCommands.QbZipLeechCommand}</b> [magnet_link][torrent_file][torrent_file_url]: Start leeching to Telegram using qBittorrent and upload the file/folder compressed with zip extension
+• <b>/{BotCommands.QbZipLeechCommand[0]}</b> [magnet_link][torrent_file][torrent_file_url]: Start leeching to Telegram using qBittorrent and upload the file/folder compressed with zip extension
 <br><br>
-• <b>/{BotCommands.QbUnzipLeechCommand}</b> [magnet_link][torrent_file][torrent_file_url]: Start leeching to Telegram using qBittorrent and upload the file/folder extracted from any archive extension
+• <b>/{BotCommands.QbUnzipLeechCommand[0]}</b> [magnet_link][torrent_file][torrent_file_url]: Start leeching to Telegram using qBittorrent and upload the file/folder extracted from any archive extension
 <br><br>
-• <b>/{BotCommands.CloneCommand}</b> [drive_url][gdtot_url]: Copy file/folder to Google Drive
+• <b>/{BotCommands.CloneCommand[0]}</b> [drive_url][gdtot_url]: Copy file/folder to Google Drive
 <br><br>
 • <b>/{BotCommands.CountCommand}</b> [drive_url][gdtot_url]: Count file/folder of Google Drive
 <br><br>
 • <b>/{BotCommands.DeleteCommand}</b> [drive_url]: Delete file/folder from Google Drive (Only Owner & Sudo)
 <br><br>
-• <b>/{BotCommands.WatchCommand}</b> [yt-dlp supported link]: Mirror yt-dlp supported link. Send <b>/{BotCommands.WatchCommand}</b> for more help
+• <b>/{BotCommands.YtdlCommand[0]}</b> [yt-dlp supported link]: Mirror yt-dlp supported link. Send <b>/{BotCommands.YtdlCommand[0]}</b> for more help
 <br><br>
-• <b>/{BotCommands.ZipWatchCommand}</b> [yt-dlp supported link]: Mirror yt-dlp supported link as zip
+• <b>/{BotCommands.YtdlZipCommand[0]}</b> [yt-dlp supported link]: Mirror yt-dlp supported link as zip
 <br><br>
-• <b>/{BotCommands.LeechWatchCommand}</b> [yt-dlp supported link]: Leech yt-dlp supported link
+• <b>/{BotCommands.YtdlLeechCommand[0]}</b> [yt-dlp supported link]: Leech yt-dlp supported link
 <br><br>
-• <b>/{BotCommands.LeechZipWatchCommand}</b> [yt-dlp supported link]: Leech yt-dlp supported link as zip
+• <b>/{BotCommands.YtdlZipLeechCommand[0]}</b> [yt-dlp supported link]: Leech yt-dlp supported link as zip
 <br><br>
-• <b>/{BotCommands.PreNameCommand}</b>: Set Prename to leech files
-<br><br>
-• <b>/{BotCommands.SufNameCommand}</b>: Set Suffix to leech files
-<br><br>
-• <b>/{BotCommands.RemnameCommand}</b>: Remove Specific Words from filename
-<br><br>
-• <b>/{BotCommands.CaptionCommand}</b>: Set Caption for leech files
-<br><br>
-• <b>/{BotCommands.UserLogCommand}</b>: Add Dump Channel for leech files. make sure bot should an admin in dump channel.
-<br><br>
-• <b>/{BotCommands.LeechSetCommand}</b>: Leech settings
-<br><br>
-• <b>/{BotCommands.SetThumbCommand}</b>: Reply photo to set it as Thumbnail
+• <b>/{BotCommands.UserSetCommand[0]}</b>: Users settings
 <br><br>
 • <b>/{BotCommands.RssListCommand}</b>: List all subscribed rss feed info
 <br><br>
@@ -277,19 +273,14 @@ help_string_telegraph_user = f'''
 <br><br>
 • <b>/{BotCommands.StatsCommand}</b>: Show Stats of the machine the bot is hosted on
 <br><br>
-• <b>/{BotCommands.SpeedCommand}</b>: Speedtest of server
+• <b>/{BotCommands.SpeedCommand[0]}</b>: Speedtest of server
 <br><br>
 • <b>/weebhelp</b>: Okatu helper
 '''
 
-try:
-    help_user = telegraph.create_page(
-        title=f'{TITLE_NAME} HELP',
-        content=help_string_telegraph_user,
-    )["path"]
-except Exception as err:
-    LOGGER.warning(f"Telegraph Error: {err}")
-
+help_user = telegraph.create_page(
+    title=f"{config_dict['TITLE_NAME']} Help",
+    content=help_string_telegraph_user)["path"]
 
 help_string_telegraph_admin = f'''
 <b><u>🛡️ Admin Commands</u></b>
@@ -300,7 +291,7 @@ help_string_telegraph_admin = f'''
 <br><br>
 • <b>/{BotCommands.UnAuthorizeCommand}</b>: Unauthorize a chat or a user to use the bot (Can only be invoked by Owner & Sudo of the bot)
 <br><br>
-• <b>/{BotCommands.AuthorizedUsersCommand}</b>: Show authorized users (Only Owner & Sudo)
+• <b>/{BotCommands.UsersCommand}</b>: show users settings (Only Owner & Sudo).
 <br><br>
 • <b>/{BotCommands.AddSudoCommand}</b>: Add sudo user (Only Owner)
 <br><br>
@@ -317,62 +308,54 @@ help_string_telegraph_admin = f'''
 • <b>/{BotCommands.LogCommand}</b>: Get a log file of the bot. Handy for getting crash reports
 '''
 
-try:
-    help_admin = telegraph.create_page(
-        title=f'{TITLE_NAME} HELP',
-        content=help_string_telegraph_admin,
-    )["path"]
-except Exception as err:
-    LOGGER.warning(f"Telegraph Error: {err}")
+help_admin = telegraph.create_page(
+    title=f"{config_dict['TITLE_NAME']} Help",
+    content=help_string_telegraph_admin)["path"]
+
 
 def bot_help(update, context):
     button = ButtonMaker()
-    if EMOJI_THEME is True:
-        button.buildbutton("👤 User", f"https://graph.org/{help_user}")
-        button.buildbutton("🛡️ Admin", f"https://graph.org/{help_admin}")
+    if config_dict['EMOJI_THEME']:
+        button.buildbutton("👤 User", f"https://telegra.ph/{help_user}")
+        button.buildbutton("🛡️ Admin", f"https://telegra.ph/{help_admin}")
     else:
-        button.buildbutton("User", f"https://graph.org/{help_user}")
-        button.buildbutton("Admin", f"https://graph.org/{help_admin}")
+        button.buildbutton("User", f"https://telegra.ph/{help_user}")
+        button.buildbutton("Admin", f"https://telegra.ph/{help_admin}")
     sendMarkup(help_string, context.bot, update.message, button.build_menu(2))
 
 
-if SET_BOT_COMMANDS:
+if config_dict['SET_BOT_COMMANDS']:
     botcmds = [
-        (f'{BotCommands.MirrorCommand}', 'Mirror'),
-        (f'{BotCommands.ZipMirrorCommand}','Mirror and upload as zip'),
-        (f'{BotCommands.UnzipMirrorCommand}','Mirror and extract files'),
-        (f'{BotCommands.QbMirrorCommand}','Mirror torrent using qBittorrent'),
-        (f'{BotCommands.QbZipMirrorCommand}','Mirror torrent and upload as zip using qb'),
-        (f'{BotCommands.QbUnzipMirrorCommand}','Mirror torrent and extract files using qb'),
-        (f'{BotCommands.WatchCommand}','Mirror yt-dlp supported link'),
-        (f'{BotCommands.ZipWatchCommand}','Mirror yt-dlp supported link as zip'),
-        (f'{BotCommands.CloneCommand}','Copy file/folder to Drive'),
-        (f'{BotCommands.LeechCommand}','Leech'),
-        (f'{BotCommands.ZipLeechCommand}','Leech and upload as zip'),
-        (f'{BotCommands.UnzipLeechCommand}','Leech and extract files'),
-        (f'{BotCommands.QbLeechCommand}','Leech torrent using qBittorrent'),
-        (f'{BotCommands.QbZipLeechCommand}','Leech torrent and upload as zip using qb'),
-        (f'{BotCommands.QbUnzipLeechCommand}','Leech torrent and extract using qb'),
-        (f'{BotCommands.LeechWatchCommand}','Leech yt-dlp supported link'),
-        (f'{BotCommands.LeechZipWatchCommand}','Leech yt-dlp supported link as zip'),
-        (f'{BotCommands.PreNameCommand}','Set Prename for Leech Files'),
-        (f'{BotCommands.SufNameCommand}','Set Suffix for Leech Files'),
-        (f'{BotCommands.CaptionCommand}','Set Caption for Leech Files'),
-        (f'{BotCommands.RemnameCommand}','Remove Specific words from filename'),
-        (f'{BotCommands.UserLogCommand}','Set Dump Channel for Leech Files'),
-        (f'{BotCommands.ScrapeCommand}','Scrape Links from Website'),
+        (f'{BotCommands.MirrorCommand[0]}', 'Mirror'),
+        (f'{BotCommands.ZipMirrorCommand[0]}','Mirror and upload as zip'),
+        (f'{BotCommands.UnzipMirrorCommand[0]}','Mirror and extract files'),
+        (f'{BotCommands.QbMirrorCommand[0]}','Mirror torrent using qBittorrent'),
+        (f'{BotCommands.QbZipMirrorCommand[0]}','Mirror torrent and upload as zip using qb'),
+        (f'{BotCommands.QbUnzipMirrorCommand[0]}','Mirror torrent and extract files using qb'),
+        (f'{BotCommands.YtdlCommand[0]}','Mirror yt-dlp supported link'),
+        (f'{BotCommands.YtdlZipCommand[0]}','Mirror yt-dlp supported link as zip'),
+        (f'{BotCommands.CloneCommand[0]}','Copy file/folder to Drive'),
+        (f'{BotCommands.LeechCommand[0]}','Leech'),
+        (f'{BotCommands.ZipLeechCommand[0]}','Leech and upload as zip'),
+        (f'{BotCommands.UnzipLeechCommand[0]}','Leech and extract files'),
+        (f'{BotCommands.QbLeechCommand[0]}','Leech torrent using qBittorrent'),
+        (f'{BotCommands.QbZipLeechCommand[0]}','Leech torrent and upload as zip using qb'),
+        (f'{BotCommands.QbUnzipLeechCommand[0]}','Leech torrent and extract using qb'),
+        (f'{BotCommands.YtdlLeechCommand[0]}','Leech yt-dlp supported link'),
+        (f'{BotCommands.YtdlZipLeechCommand[0]}','Leech yt-dlp supported link as zip'),
+        (f'{BotCommands.ScrapeCommand[0]}','Scrape Links from Website'),
         (f'{BotCommands.CountCommand}','Count file/folder of Drive'),
         (f'{BotCommands.DeleteCommand}','Delete file/folder from Drive'),
         (f'{BotCommands.CancelMirror}','Cancel a task'),
         (f'{BotCommands.CancelAllCommand}','Cancel all downloading tasks'),
         (f'{BotCommands.ListCommand}','Search in Drive'),
         (f'{BotCommands.SearchCommand}','Search in Torrent'),
-        (f'{BotCommands.LeechSetCommand}','Leech settings'),
-        (f'{BotCommands.SetThumbCommand}','Set thumbnail'),
+        (f'{BotCommands.UserSetCommand[0]}','Users settings'),
+        (f'{BotCommands.BotSetCommand[0]}','BOT settings'),
         (f'{BotCommands.StatusCommand}','Get mirror status message'),
-        (f'{BotCommands.SpeedCommand}','Speedtest'),
+        (f'{BotCommands.SpeedCommand[0]}','Speedtest'),
         (f'{BotCommands.WayBackCommand}','Internet Archive'),
-        (f'{BotCommands.MediaInfoCommand}','Get Information of telegram Files'),
+        (f'{BotCommands.MediaInfoCommand[0]}','Get Information of telegram Files'),
         (f'{BotCommands.HashCommand}','Get Hash of telegram Files'),
         (f'{BotCommands.PingCommand}','Ping the bot'),
         (f'{BotCommands.RestartCommand}','Restart the bot'),
@@ -383,17 +366,17 @@ if SET_BOT_COMMANDS:
 
 def main():
 
-    if WALLCRAFT_CATEGORY:
+    if config_dict['WALLCRAFT_CATEGORY']:
         for page in range(1,20):
-            r2 = rget(f"https://wallpaperscraft.com/catalog/{WALLCRAFT_CATEGORY}/1280x720/page{page}")
+            r2 = rget(f"https://wallpaperscraft.com/catalog/{config_dict['WALLCRAFT_CATEGORY']}/1280x720/page{page}")
             soup2 = BeautifulSoup(r2.text, "html.parser")
             x = soup2.select('img[src^="https://images.wallpaperscraft.com/image/single"]')
             for img in x:
               PICS.append((img['src']).replace("300x168", "1280x720"))
 
-    if WALLTIP_SEARCH:
+    if config_dict['WALLTIP_SEARCH']:
         for page in range(1,3):
-            r2 = rget(f"https://www.wallpapertip.com/s/{WALLTIP_SEARCH}/{page}")
+            r2 = rget(f"https://www.wallpapertip.com/s/{config_dict['WALLTIP_SEARCH']}/{page}")
             soup2 = BeautifulSoup(r2.text, "html.parser")
             divTag = soup2.select('#flex_grid div.item')
             aTag = [x.find('a') for x in divTag]
@@ -402,10 +385,10 @@ def main():
             for o in scrList:
                 PICS.append(o)
 
-    if WALLFLARE_SEARCH:
+    if config_dict['WALLFLARE_SEARCH']:
         try:
             for page in range(1,20):
-                r2 = rget(f"https://www.wallpaperflare.com/search?wallpaper={WALLFLARE_SEARCH}&width=1280&height=720&page={page}")
+                r2 = rget(f"https://www.wallpaperflare.com/search?wallpaper={config_dict['WALLFLARE_SEARCH']}&width=1280&height=720&page={page}")
                 soup2 = BeautifulSoup(r2.text, "html.parser")
                 x = soup2.select('img[data-src^="https://c4.wallpaperflare.com/wallpaper"]')  
                 for img in x:
@@ -413,11 +396,11 @@ def main():
         except Exception as err:
             LOGGER.info(f"WallFlare Error: {err}")
 
-    if PIXABAY_API_KEY:
+    if config_dict['PIXABAY_API_KEY']:
         try:
-            PIXABAY_ENDPOINT = f"https://pixabay.com/api/?key={PIXABAY_API_KEY}&image_type=all&orientation=horizontal&min_width=1280&min_height=720&per_page=200&safesearch=true&editors_choice=true"
-            if PIXABAY_CATEGORY: PIXABAY_ENDPOINT += f"&category={PIXABAY_CATEGORY}"
-            if PIXABAY_SEARCH: PIXABAY_ENDPOINT += f"&q={q(PIXABAY_SEARCH)}"
+            PIXABAY_ENDPOINT = f"https://pixabay.com/api/?key={config_dict['PIXABAY_API_KEY']}&image_type=all&orientation=horizontal&min_width=1280&min_height=720&per_page=200&safesearch=true&editors_choice=true"
+            if config_dict['PIXABAY_CATEGORY']: PIXABAY_ENDPOINT += f"&category={config_dict['PIXABAY_CATEGORY']}"
+            if config_dict['PIXABAY_SEARCH']: PIXABAY_ENDPOINT += f"&q={q(config_dict['PIXABAY_SEARCH'])}"
             resp = rget(PIXABAY_ENDPOINT)
             jdata = resp.json()
             for x in range(0, 200):
@@ -426,13 +409,13 @@ def main():
         except Exception as err:
             LOGGER.info(f"Pixabay API Error: {err}")
 
-    if SET_BOT_COMMANDS:
+    if config_dict['SET_BOT_COMMANDS']:
         bot.set_my_commands(botcmds)
     start_cleanup()
     date = now.strftime('%d/%m/%y')
     time = now.strftime('%I:%M:%S %p')
     notifier_dict = False
-    if INCOMPLETE_TASK_NOTIFIER and DB_URI is not None:
+    if config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL:
         if notifier_dict := DbManger().get_incomplete_tasks():
             for cid, data in notifier_dict.items():
                 if ospath.isfile(".restartmsg"):
@@ -441,61 +424,67 @@ def main():
                     msg = f"😎Restarted successfully❗\n"
                     msg += f"📅DATE: {date}\n"
                     msg += f"⌚TIME: {time}\n"
-                    msg += f"🌐TIMEZONE: {TIMEZONE}\n"
+                    msg += f"🌐TIMEZONE: {timez}\n"
                 else:
                     msg = f"😎Bot Restarted!\n"
                     msg += f"📅DATE: {date}\n"
                     msg += f"⌚TIME: {time}\n"
-                    msg += f"🌐TIMEZONE: {TIMEZONE}"
+                    msg += f"🌐TIMEZONE: {timez}"
 
                 for tag, links in data.items():
-                     msg += f"\n{tag}: "
-                     for index, link in enumerate(links, start=1):
-                         msg += f" <a href='{link}'>{index}</a> |"
-                         if len(msg.encode()) > 4000:
-                             if '😎Restarted successfully❗' in msg and cid == chat_id:
-                                 bot.editMessageText(msg, chat_id, msg_id, parse_mode='HTML', disable_web_page_preview=True)
-                                 osremove(".restartmsg")
-                             else:
-                                 try:
-                                     bot.sendMessage(cid, msg, 'HTML', disable_web_page_preview=True)
-                                 except Exception as e:
-                                     LOGGER.error(e)
-                             msg = ''
+                    msg += f"\n{tag}: "
+                    for index, link in enumerate(links, start=1):
+                        msg += f" <a href='{link}'>{index}</a> |"
+                        if len(msg.encode()) > 4000:
+                            if '😎Restarted successfully❗' in msg and cid == chat_id:
+                                try:
+                                    bot.editMessageText(msg, chat_id, msg_id, parse_mode='HTML', disable_web_page_preview=True)
+                                except:
+                                    pass
+                                osremove(".restartmsg")
+                            else:
+                                try:
+                                    bot.sendMessage(cid, msg, parse_mode='HTML', disable_web_page_preview=True)
+                                except Exception as e:
+                                    LOGGER.error(e)
+                            msg = ''
                 if '😎Restarted successfully❗' in msg and cid == chat_id:
-                     bot.editMessageText(msg, chat_id, msg_id, parse_mode='HTML', disable_web_page_preview=True)
-                     osremove(".restartmsg")
+                    try:
+                        bot.editMessageText(msg, chat_id, msg_id, parse_mode='HTML', disable_web_page_preview=True)
+                    except:
+                        pass
+                    osremove(".restartmsg")
                 else:
                     try:
-                        bot.sendMessage(cid, msg, 'HTML', disable_web_page_preview=True)
+                        bot.sendMessage(cid, msg, parse_mode='HTML', disable_web_page_preview=True)
                     except Exception as e:
                         LOGGER.error(e)
 
     if ospath.isfile(".restartmsg"):
         with open(".restartmsg") as f:
             chat_id, msg_id = map(int, f)
-        msg = f"😎Restarted successfully❗\n📅DATE: {date}\n⌚TIME: {time}\n🌐TIMEZONE: {TIMEZONE}\n"
-        bot.edit_message_text(msg, chat_id, msg_id)
+        try:
+            msg = f"😎Restarted successfully❗\n📅DATE: {date}\n⌚TIME: {time}\n🌐TIMEZONE: {timez}\n"
+            bot.edit_message_text(msg, chat_id, msg_id)
+        except:
+            pass        
         osremove(".restartmsg")
-    elif not notifier_dict and AUTHORIZED_CHATS:
-        text = f"😎Bot Restarted❗ \n📅DATE: {date} \n⌚TIME: {time} \n🌐TIMEZONE: {TIMEZONE}"
-        for id_ in AUTHORIZED_CHATS:
-            try:
-                bot.sendMessage(chat_id=id_, text=text, parse_mode=ParseMode.HTML)
-            except Exception as e:
-                LOGGER.error(e)
+
 
 
     start_handler = CommandHandler(BotCommands.StartCommand, start, run_async=True)
-    ping_handler = CommandHandler(BotCommands.PingCommand, ping,
-                                  filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
+    log_handler = CommandHandler(BotCommands.LogCommand, log,
+                               filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
     restart_handler = CommandHandler(BotCommands.RestartCommand, restart,
-                                     filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
-    help_handler = CommandHandler(BotCommands.HelpCommand,
-                                  bot_help, filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
-    stats_handler = CommandHandler(BotCommands.StatsCommand,
-                                   stats, filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
-    log_handler = CommandHandler(BotCommands.LogCommand, log, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
+                               filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
+    ping_handler = CommandHandler(BotCommands.PingCommand, ping,
+                               filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
+    help_handler = CommandHandler(BotCommands.HelpCommand, bot_help,
+                               filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
+    stats_handler = CommandHandler(BotCommands.StatsCommand, stats,
+                               filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
+
+
     dispatcher.add_handler(start_handler)
     dispatcher.add_handler(ping_handler)
     dispatcher.add_handler(restart_handler)

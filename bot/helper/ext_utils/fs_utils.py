@@ -9,7 +9,7 @@ from time import time
 from math import ceil
 from re import split as re_split, I
 from .exceptions import NotSupportedExtractionArchive
-from bot import aria2, app, LOGGER, DOWNLOAD_DIR, get_client, TG_SPLIT_SIZE, EQUAL_SPLITS, STORAGE_THRESHOLD, premium_session
+from bot import aria2, app, LOGGER, DOWNLOAD_DIR, get_client, premium_session, config_dict
 
 
 ARCH_EXT = [".tar.bz2", ".tar.gz", ".bz2", ".gz", ".tar.xz", ".tar", ".tbz2", ".tgz", ".lzma2",
@@ -40,6 +40,7 @@ def clean_download(path: str):
             pass
 
 def start_cleanup():
+    get_client().torrents_delete(torrent_hashes="all")
     try:
         rmtree(DOWNLOAD_DIR)
     except:
@@ -88,6 +89,7 @@ def get_path_size(path: str):
     return total_size
 
 def check_storage_threshold(size: int, arch=False, alloc=False):
+    STORAGE_THRESHOLD = config_dict['STORAGE_THRESHOLD']
     if not alloc:
         if not arch:
             if disk_usage(DOWNLOAD_DIR).free - size < STORAGE_THRESHOLD * 1024**3:
@@ -102,7 +104,8 @@ def check_storage_threshold(size: int, arch=False, alloc=False):
     return True
 
 def get_base_name(orig_path: str):
-    if ext := [ext for ext in ARCH_EXT if orig_path.lower().endswith(ext)]:
+    ext = [ext for ext in ARCH_EXT if orig_path.lower().endswith(ext)]
+    if ext:
         ext = ext[0]
         return re_split(f'{ext}$', orig_path, maxsplit=1, flags=I)[0]
     else:
@@ -141,8 +144,8 @@ def split_file(path, size, file_, dirpath, split_size, listener, start_time=0, i
         dirpath = f"{dirpath}/splited_files_wz"
         if not ospath.exists(dirpath):
             mkdir(dirpath)
-    parts = ceil(size/TG_SPLIT_SIZE)
-    if EQUAL_SPLITS and not inLoop:
+    parts = ceil(size/config_dict['TG_SPLIT_SIZE'])
+    if config_dict['EQUAL_SPLITS'] and not inLoop:
         split_size = ceil(size/parts) + 1000
     if get_media_streams(path)[0]:
         duration = get_media_info(path)[0]
@@ -170,15 +173,15 @@ def split_file(path, size, file_, dirpath, split_size, listener, start_time=0, i
                     pass
                 return split_file(path, size, file_, dirpath, split_size, listener, start_time, i, True, True)
             elif listener.suproc.returncode != 0:
-                LOGGER.warning(f"Unable to split this video, if it's size less than {TG_SPLIT_SIZE} will be uploaded as it is. Path: {path}")
+                LOGGER.warning(f"Unable to split this video, if it's size less than {config_dict['TG_SPLIT_SIZE']} will be uploaded as it is. Path: {path}")
                 try:
                     osremove(out_path)
                 except:
                     pass
                 return "errored"
             out_size = get_path_size(out_path)
-            if out_size > (TG_SPLIT_SIZE + 1000):
-                dif = out_size - (TG_SPLIT_SIZE + 1000)
+            if out_size > (config_dict['TG_SPLIT_SIZE'] + 1000):
+                dif = out_size - (config_dict['TG_SPLIT_SIZE'] + 1000)
                 split_size = split_size - dif + 5000000
                 osremove(out_path)
                 return split_file(path, size, file_, dirpath, split_size, listener, start_time, i, True, noMap)

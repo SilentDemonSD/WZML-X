@@ -1,29 +1,25 @@
 import cloudscraper
-import requests
-import re
-from re import S
-from requests import get
-from re import match as rematch, findall, sub as resub
+from re import S, match as rematch, findall, sub as resub
 from asyncio import sleep as asleep
 from time import sleep
 from urllib.parse import urlparse, unquote
 from requests import get as rget, head as rhead
 from bs4 import BeautifulSoup, NavigableString, Tag
-import time
+
 from telegram import Message
 from telegram.ext import CommandHandler
-from bot import LOGGER, dispatcher, PAID_SERVICE, PAID_USERS, OWNER_ID
+from bot import LOGGER, dispatcher, config_dict, OWNER_ID
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage
+from bot.helper.ext_utils.bot_utils import is_paid, is_sudo
 from bot.helper.mirror_utils.download_utils.direct_link_generator import rock, try2link, ez4
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 
-
 def scrapper(update, context):
     user_id_ = update.message.from_user.id
-    if PAID_SERVICE is True:
-        if not (user_id_ in PAID_USERS) and user_id_ != OWNER_ID:
+    if config_dict['PAID_SERVICE'] is True:
+        if user_id_ != OWNER_ID and not is_sudo(user_id_) and not is_paid(user_id_):
             sendMessage(f"Buy Paid Service to Use this Scrape Feature.", context.bot, update.message)
             return
     message:Message = update.effective_message
@@ -35,9 +31,9 @@ def scrapper(update, context):
             link = link[1]
         else:
             help_msg = "<b>Send link after command:</b>"
-            help_msg += f"\n<code>/{BotCommands.ScrapeCommand}" + " {link}" + "</code>"
+            help_msg += f"\n<code>/{BotCommands.ScrapeCommand[0]}" + " {link}" + "</code>"
             help_msg += "\n<b>By Replying to Message (Including Link):</b>"
-            help_msg += f"\n<code>/{BotCommands.ScrapeCommand}" + " {message}" + "</code>"
+            help_msg += f"\n<code>/{BotCommands.ScrapeCommand[0]}" + " {message}" + "</code>"
             return sendMessage(help_msg, context.bot, update.message)
     try: link = rematch(r"((http|https)\:\/\/)?[a-zA-Z0-9\.\/\?\:@\-_=#]+\.([a-zA-Z]){2,6}([a-zA-Z0-9\.\&\/\?\:@\-_=#])*", link)[0]
     except TypeError: return sendMessage('Not a Valid Link.', context.bot, update)
@@ -54,17 +50,17 @@ def scrapper(update, context):
             if next2_s and isinstance(next2_s,Tag) and next2_s.name == 'br':
               if str(next_s).strip():
                  List = next_s.split()
-                 if re.match(r'^(480p|720p|1080p)(.+)? Links:\Z', next_s):
+                 if rematch(r'^(480p|720p|1080p)(.+)? Links:\Z', next_s):
                     gd_txt += f'<b>{next_s.replace("Links:", "GDToT Links :")}</b>\n\n'
                  for s in List:
-                      ns = re.sub(r'\(|\)', '', s)
-                      if re.match(r'https?://.+\.gdtot\.\S+', ns):
+                      ns = resub(r'\(|\)', '', s)
+                      if rematch(r'https?://.+\.gdtot\.\S+', ns):
                          r = rget(ns)
                          soup = BeautifulSoup(r.content, "html.parser")
                          title = soup.title
                          gd_txt += f"<code>{(title.text).replace('GDToT | ' , '')}</code>\n{ns}\n\n"
-                      elif re.match(r'https?://pastetot\.\S+', ns):
-                         nxt = re.sub(r'\(|\)|(https?://pastetot\.\S+)', '', next_s)
+                      elif rematch(r'https?://pastetot\.\S+', ns):
+                         nxt = resub(r'\(|\)|(https?://pastetot\.\S+)', '', next_s)
                          gd_txt += f"\n<code>{nxt}</code>\n{ns}\n"
             if len(gd_txt) > 4000:
                 sendMessage(gd_txt, context.bot, update.message)
@@ -101,17 +97,24 @@ def scrapper(update, context):
                     sent = sendMessage("<i>Scrapping More...</i>", context.bot, update.message)
                     prsd = ""
     elif "teluguflix" in link:
-        client = requests.session()
-        r = client.get(link).text
-        soup = BeautifulSoup (r, "html.parser")
-        for a in soup.find_all("a"):
-             c = a.get("href")
-             if c and "gdtot" in c:
-                  t = client.get(c).text
-                  soupt = BeautifulSoup(t, "html.parser")
-                  title = soupt.title
-                  gd_txt = f"<code>{(title.text).replace('GDToT | ' , '')}</code>\n{c}\n\n"
-                  sendMessage(gd_txt, context.bot, update.message)
+        sent = sendMessage('Running Scrape ...', context.bot, update.message)
+        gd_txt = ""
+        r = rget(link)
+        soup = BeautifulSoup (r.text, "html.parser")
+        links = soup.select('a[href*="gdtot"]')
+        gd_txt = f"Total Links Found : {len(links)}\n\n"
+        editMessage(gd_txt, sent)
+        for no, link in enumerate(links, start=1):
+            gdlk = link['href']
+            t = rget(gdlk)
+            soupt = BeautifulSoup(t.text, "html.parser")
+            title = soupt.select('meta[property^="og:description"]')
+            gd_txt += f"{no}. <code>{(title[0]['content']).replace('Download ' , '')}</code>\n{gdlk}\n\n"
+            editMessage(gd_txt, sent)
+            asleep(1.5)
+            if len(gd_txt) > 4000:
+                sent = sendMessage("<i>Running More Scrape ...</i>", context.bot, update.message)
+                gd_txt = ""
     elif "cinevood" in link:
         prsd = ""
         links = []
@@ -148,35 +151,65 @@ def scrapper(update, context):
         if prsd != "":
             sendMessage(prsd, context.bot, update.message)
     elif "taemovies" in link:
-          client = requests.session()
-          r = client.get(link).text
-          soup = BeautifulSoup (r, "html.parser")
-          for a in soup.find_all("a"):
-             c = a.get("href")
-             if c and "shortingly" in c:
-                       link = c
-                       g = rock(link) 
-                       t = client.get(g).text
-                       soupt = BeautifulSoup(t, "html.parser")
-                       title = soupt.title
-                       gd_txt = f"{(title.text).replace('GDToT | ' , '')}\n{g}\n\n"
-                       sendMessage(gd_txt,context.bot,update.message)
+        sent = sendMessage('Running Scrape ...', context.bot, update.message)
+        gd_txt, no = "", 0
+        r = rget(link)
+        soup = BeautifulSoup (r.text, "html.parser")
+        links = soup.select('a[href*="shortingly"]')
+        gd_txt = f"Total Links Found : {len(links)}\n\n"
+        editMessage(gd_txt, sent)
+        for a in links:
+            glink = rock(a["href"]) 
+            t = rget(glink)
+            soupt = BeautifulSoup(t.text, "html.parser")
+            title = soupt.select('meta[property^="og:description"]')
+            no += 1
+            gd_txt += f"{no}. {(title[0]['content']).replace('Download ' , '')}\n{glink}\n\n"
+            editMessage(gd_txt, sent)
+            if len(gd_txt) > 4000:
+                sent = sendMessage("<i>Running More Scrape ...</i>", context.bot, update.message)
+                gd_txt = ""
     elif "toonworld4all" in link:
-         client = requests.session()
-         r = client.get(link).text
-         soup = BeautifulSoup (r, "html.parser")
-         for a in soup.find_all("a"):
-                   c= a.get("href")
-                   if c and "redirect/main.php?" in c:
-                       download = get(c, stream=True, allow_redirects=False)
-                       link = download.headers["location"]
-                       g = rock(link)
-                       if g and "gdtot" in g:
-                           t = client.get(g).text
-                           soupt = BeautifulSoup(t, "html.parser")
-                           title = soupt.title
-                           gd_txt = f"{(title.text).replace('GDToT | ' , '')}\n{g}\n\n"
-                           sendMessage(gd_txt,context.bot,update.message)
+        sent = sendMessage('Running Scrape ...', context.bot, update.message)
+        gd_txt, no = "", 0
+        r = rget(link)
+        soup = BeautifulSoup(r.text, "html.parser")
+        links = soup.select('a[href*="redirect/main.php?"]')
+        for a in links:
+            down = rget(a['href'], stream=True, allow_redirects=False)
+            link = down.headers["location"]
+            glink = rock(link)
+            if glink and "gdtot" in glink:
+                t = rget(glink)
+                soupt = BeautifulSoup(t.text, "html.parser")
+                title = soupt.select('meta[property^="og:description"]')
+                no += 1
+                gd_txt += f"{no}. {(title[0]['content']).replace('Download ' , '')}\n{glink}\n\n"
+                editMessage(gd_txt, sent)
+                if len(gd_txt) > 4000:
+                    sent = sendMessage("<i>Running More Scrape ...</i>", context.bot, update.message)
+                    gd_txt = ""
+    elif "animeremux" in link:
+        sent = sendMessage('Running Scrape ...', context.bot, update.message)
+        gd_txt, no = "", 0
+        r = rget(link)
+        soup = BeautifulSoup (r.text, "html.parser")
+        links = soup.select('a[href*="urlshortx.com"]')
+        gd_txt = f"Total Links Found : {len(links)}\n\n"
+        editMessage(gd_txt, sent)
+        for a in links:
+            link = a["href"]
+            x = link.split("url=")[-1]
+            t = rget(x)
+            soupt = BeautifulSoup(t.text, "html.parser")
+            title = soupt.title
+            no += 1
+            gd_txt += f"{no}. {title.text}\n{x}\n\n"
+            editMessage(gd_txt, sent)
+            asleep(1.5)
+            if len(gd_txt) > 4000:
+                sent = sendMessage("<i>Running More Scrape ...</i>", context.bot, update.message)
+                gd_txt = ""
     elif "olamovies" in link:
         headers = {
             'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:103.0) Gecko/20100101 Firefox/103.0',
@@ -191,6 +224,8 @@ def scrapper(update, context):
             'Sec-Fetch-Site': 'same-origin',
             'Sec-Fetch-User': '?1',
         }
+        sent = sendMessage('Running Scrape ...', context.bot, update.message)
+        gd_txt, no = "", 0
         client = cloudscraper.create_scraper()
         res = client.get(link)
         soup = BeautifulSoup(res.text,"html.parser")
@@ -198,47 +233,38 @@ def scrapper(update, context):
    
         outlist = []
         for ele in soup:
-           outlist.append(ele.find("a").get("href"))
+            outlist.append(ele.find("a").get("href"))
         slist = []
+        gd_txt = f"Total Links Found : {len(outlist)}\n\n"
+        editMessage(gd_txt, sent)
         for ele in outlist:
-          try:
-            key = ele.split("?key=")[1].split("&id=")[0].replace("%2B","+").replace("%3D","=").replace("%2F","/")
-            id = ele.split("&id=")[1]
-          except:
-            continue
-          count = 3
-          params = { 'key': key, 'id': id}
-          soup = "None"
-         # print("trying","https://olamovies.wtf/download/&key="+key+"&id="+id)
-          url = "https://olamovies.wtf/download/&key="+key+"&id="+id
-          while 'rocklinks.net' not in soup and "try2link.com" not in soup and "ez4short.com" not in soup:
-            res = client.get("https://olamovies.ink/download/", params=params, headers=headers)
-            jack = res.text
-            rose = jack.split('url = "')[-1]
-            soup = rose.split('";')[0]
-            if soup != "":
-                if "try2link.com" in soup:
-                      final = try2link(soup)
-                      t = client.get(final).text
-                      soupt = BeautifulSoup(t, "html.parser")
-                      title = soupt.title
-                      gd_txt = f"{(title.text).replace('GDToT | ' , '')}\n{final}\n\n"
-                      sendMessage(gd_txt, context.bot, update.message)  
-                elif 'rocklinks.net' in soup:
-                      final = rock(soup)
-                      t = client.get(final).text
-                      soupt = BeautifulSoup(t, "html.parser")
-                      title = soupt.title
-                      gd_txt = f"{(title.text).replace('GDToT | ' , '')}\n{final}\n\n"
-                      sendMessage(gd_txt, context.bot, update.message)
-                elif "ez4short.com" in soup:
-                      final = ez4(soup)
-                      t = client.get(final).text
-                      soupt = BeautifulSoup(t, "html.parser")
-                      title = soupt.title
-                      gd_txt = f"{(title.text).replace('GDToT | ' , '')}\n{final}\n\n"
-                      sendMessage(gd_txt, context.bot, update.message)
-         
+            try:
+                key = ele.split("?key=")[1].split("&id=")[0].replace("%2B","+").replace("%3D","=").replace("%2F","/")
+                id = ele.split("&id=")[1]
+            except:
+                continue
+            soup = "None"
+            url = f"https://olamovies.wtf/download/&key={key}&id={id}"
+            while 'rocklinks.net' not in soup and "try2link.com" not in soup and "ez4short.com" not in soup:
+                res = client.get("https://olamovies.ink/download/", params={ 'key': key, 'id': id}, headers=headers)
+                soup = (res.text).split('url = "')[-1].split('";')[0]
+                if soup != "":
+                    if "try2link.com" in soup:
+                        final = try2link(soup)
+                    elif 'rocklinks.net' in soup:
+                        final = rock(soup)
+                    elif "ez4short.com" in soup:
+                        final = ez4(soup)
+                    if "try2link.com" in soup or 'rocklinks.net' in soup or "ez4short.com" in soup:
+                        t = client.get(final)
+                        soupt = BeautifulSoup(t.text, "html.parser")
+                        title = soupt.select('meta[property^="og:description"]')
+                        no += 1
+                        gd_txt += f"{no}. {(title[0]['content']).replace('Download ' , '')}\n{final}\n\n"
+                        editMessage(gd_txt, sent)
+                        if len(gd_txt) > 4000:
+                            sent = sendMessage("<i>Running More Scrape ...</i>", context.bot, update.message)
+                            gd_txt = ""
     else:
         res = rget(link)
         soup = BeautifulSoup(res.text, 'html.parser')
@@ -247,8 +273,6 @@ def scrapper(update, context):
             links.append(hy['href'])
         for txt in links:
             sendMessage(txt, context.bot, update.message)
-
-   
 
 def htpmovies(link):
     client = cloudscraper.create_scraper(allow_brotli=False)
@@ -271,7 +295,6 @@ def htpmovies(link):
     except: return "Something went Wrong !!"
         
 srp_handler = CommandHandler(BotCommands.ScrapeCommand, scrapper,
-
-                                filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
+                            filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
 
 dispatcher.add_handler(srp_handler)

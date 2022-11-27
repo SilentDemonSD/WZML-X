@@ -1,9 +1,9 @@
+from os import path as ospath, listdir
 from random import SystemRandom
 from string import ascii_letters, digits
 from logging import getLogger
 from yt_dlp import YoutubeDL, DownloadError
 from threading import RLock
-from time import time
 from json import loads as jsonloads
 from re import search as re_search
 
@@ -50,7 +50,6 @@ class YoutubeDLHelper:
         self.__downloaded_bytes = 0
         self.__download_speed = 0
         self.__eta = '-'
-        self.__start_time = time()
         self.__listener = listener
         self.__gid = ""
         self.__is_cancelled = False
@@ -134,7 +133,7 @@ class YoutubeDLHelper:
         self.__listener.onDownloadError(error)
 
     def extractMetaData(self, link, name, args, get_info=False):
-        if args is not None:
+        if args:
             self.__set_args(args)
         if get_info:
             self.opts['playlist_items'] = '0'
@@ -147,36 +146,41 @@ class YoutubeDLHelper:
                     return result
                 elif result is None:
                     raise ValueError('Info result is None')
-                realName = ydl.prepare_filename(result)
             except Exception as e:
                 if get_info:
                     raise e
                 return self.__onDownloadError(str(e))
         if 'entries' in result:
-            for v in result['entries']:
-                if not v:
+            for entry in result['entries']:
+                if not entry:
                     continue
-                elif 'filesize_approx' in v:
-                    self.__size += v['filesize_approx']
-                elif 'filesize' in v:
-                    self.__size += v['filesize']
-            if name == "":
-                self.name = realName.split(f" [{result['id'].replace('*', '_')}]")[0]
-            else:
-                self.name = name
+                elif 'filesize_approx' in entry:
+                    self.__size += entry['filesize_approx']
+                elif 'filesize' in entry:
+                    self.__size += entry['filesize']
+                if name == "":
+                    outtmpl_ = '%(series,playlist_title,channel)s%(season_number& |)s%(season_number&S|)s%(season_number|)02d'
+                    self.name = ydl.prepare_filename(entry, outtmpl=outtmpl_)
+                else:
+                    self.name = name
         else:
-            ext = realName.split('.')[-1]
+            outtmpl_ ='%(title,fulltitle,alt_title)s%(season_number& |)s%(season_number&S|)s%(season_number|)02d%(episode_number&E|)s%(episode_number|)02d%(height& |)s%(height|)s%(height&p|)s%(fps|)s%(fps&fps|)s%(tbr& |)s%(tbr|)d.%(ext)s'
+            realName = ydl.prepare_filename(result, outtmpl=outtmpl_)
+            ext = realName.rsplit('.', 1)[-1]
             if name == "":
                 newname = str(realName).split(f" [{result['id'].replace('*', '_')}]")
-                self.name = newname[0] + '.' + ext if len(newname) > 1 else newname[0]
+                self.name = f'{newname[0]}.{ext}' if len(newname) > 1 else newname[0]
             else:
                 self.name = f"{name}.{ext}"
 
-    def __download(self, link):
+    def __download(self, link, path):
         try:
             with YoutubeDL(self.opts) as ydl:
                 try:
                     ydl.download([link])
+                    if self.is_playlist and (not ospath.exists(path) or len(listdir(path)) == 0):
+                        self.__onDownloadError("No video available to download from this playlist. Check logs for more details")
+                        return
                 except DownloadError as e:
                     if not self.__is_cancelled:
                         self.__onDownloadError(str(e))
@@ -210,14 +214,14 @@ class YoutubeDLHelper:
                 msg += f'\nYour File/Folder size is {get_readable_file_size(self.size)}'
                 return self.__onDownloadError(msg)
         if self.is_playlist:
-            self.opts['outtmpl'] = f"{path}/{self.name}/%(title)s.%(ext)s"
-        elif args is None:
+            self.opts['outtmpl'] = f"{path}/{self.name}/%(title,fulltitle,alt_title)s%(season_number& |)s%(season_number&S|)s%(season_number|)02d%(episode_number&E|)s%(episode_number|)02d%(height& |)s%(height|)s%(height&p|)s%(fps|)s%(fps&fps|)s%(tbr& |)s%(tbr|)d.%(ext)s"
+        elif not args:
             self.opts['outtmpl'] = f"{path}/{self.name}"
         else:
             folder_name = self.name.rsplit('.', 1)[0]
             self.opts['outtmpl'] = f"{path}/{folder_name}/{self.name}"
             self.name = folder_name
-        self.__download(link)
+        self.__download(link, path)
 
     def cancel_download(self):
         self.__is_cancelled = True
@@ -230,6 +234,8 @@ class YoutubeDLHelper:
         for arg in args:
             xy = arg.split(':', 1)
             karg = xy[0].strip()
+            if karg == 'format':
+                continue
             varg = xy[1].strip()
             if varg.startswith('^'):
                 varg = int(varg.split('^')[1])

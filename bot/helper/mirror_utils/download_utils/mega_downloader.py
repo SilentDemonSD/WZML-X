@@ -5,10 +5,10 @@ from threading import Event
 from mega import (MegaApi, MegaListener, MegaRequest, MegaTransfer, MegaError)
 
 
-from bot import LOGGER, MEGA_API_KEY, TELEGRAPH_STYLE, download_dict, download_dict_lock, MEGA_LIMIT, STOP_DUPLICATE, ZIP_UNZIP_LIMIT, STORAGE_THRESHOLD, LEECH_LIMIT, MEGA_EMAIL_ID, MEGA_PASSWORD, \
-                OWNER_ID, SUDO_USERS, PAID_USERS, PAID_SERVICE
+from bot import LOGGER, download_dict, download_dict_lock, config_dict, \
+                user_data, OWNER_ID
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, sendStatusMessage, sendStatusMessage, sendFile
-from bot.helper.ext_utils.bot_utils import get_readable_file_size, setInterval, get_mega_link_type
+from bot.helper.ext_utils.bot_utils import get_readable_file_size, setInterval, get_mega_link_type, is_sudo, is_paid
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.ext_utils.fs_utils import get_base_name, check_storage_threshold
 from bot.helper.mirror_utils.status_utils.mega_download_status import MegaDownloadStatus
@@ -133,12 +133,15 @@ class AsyncExecutor:
 
 
 def add_mega_download(mega_link: str, path: str, listener, name: str):
+    MEGA_API_KEY = config_dict['MEGA_API_KEY']
+    MEGA_EMAIL_ID = config_dict['MEGA_EMAIL_ID']
+    MEGA_PASSWORD = config_dict['MEGA_PASSWORD']
     executor = AsyncExecutor()
     api = MegaApi(MEGA_API_KEY, None, None, 'mirror-leech-telegram-bot')
     folder_api = None
     mega_listener = MegaAppListener(executor.continue_event, listener)
     api.addListener(mega_listener)
-    if MEGA_EMAIL_ID is not None and MEGA_PASSWORD is not None:
+    if MEGA_EMAIL_ID and MEGA_PASSWORD:
         executor.do(api.login, (MEGA_EMAIL_ID, MEGA_PASSWORD))
     if get_mega_link_type(mega_link) == "file":
         executor.do(api.getPublicNode, (mega_link,))
@@ -155,7 +158,7 @@ def add_mega_download(mega_link: str, path: str, listener, name: str):
             folder_api.removeListener(mega_listener)
         return
     mname = name or node.getName()
-    if STOP_DUPLICATE and not listener.isLeech:
+    if config_dict['STOP_DUPLICATE'] and not listener.isLeech:
         LOGGER.info('Checking File/Folder if already in Drive')
         if listener.isZip:
             mname = f"{mname}.zip"
@@ -165,8 +168,7 @@ def add_mega_download(mega_link: str, path: str, listener, name: str):
             except:
                 mname = None
         if mname is not None:
-
-            if TELEGRAPH_STYLE is True:
+            if config_dict['TELEGRAPH_STYLE']:
                 smsg, button = GoogleDriveHelper().drive_list(mname, True)
                 if smsg:
                     msg1 = "File/Folder is already available in Drive.\nHere are the search results:"
@@ -181,10 +183,14 @@ def add_mega_download(mega_link: str, path: str, listener, name: str):
                     folder_api.removeListener(mega_listener)
                 return
     user_id = listener.message.from_user.id
-    if any([STORAGE_THRESHOLD, ZIP_UNZIP_LIMIT, MEGA_LIMIT, LEECH_LIMIT]) and user_id != OWNER_ID and user_id not in SUDO_USERS and user_id not in PAID_USERS:
+    MEGA_LIMIT = config_dict['MEGA_LIMIT']
+    STORAGE_THRESHOLD = config_dict['STORAGE_THRESHOLD']
+    ZIP_UNZIP_LIMIT = config_dict['ZIP_UNZIP_LIMIT']
+    LEECH_LIMIT = config_dict['LEECH_LIMIT']
+    if any([STORAGE_THRESHOLD, ZIP_UNZIP_LIMIT, MEGA_LIMIT, LEECH_LIMIT]) and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id):
         size = api.getSize(node)
         arch = any([listener.isZip, listener.isLeech, listener.extract])
-        if PAID_SERVICE is True:
+        if config_dict['PAID_SERVICE'] is True:
             if STORAGE_THRESHOLD is not None:
                 acpt = check_storage_threshold(size, arch)
                 if not acpt:

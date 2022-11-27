@@ -1,7 +1,7 @@
 from telegram import Message
 import waybackpy, re, random
 from telegram.ext import CommandHandler
-from bot import LOGGER, dispatcher, WAYBACK_ENABLED
+from bot import LOGGER, dispatcher, config_dict
 from bot.helper.ext_utils.shortenurl import short_url
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -72,10 +72,9 @@ def getRandomUserAgent():
     ]
     return agents[random.randint(0, len(agents)-1)]
 
-if WAYBACK_ENABLED:
-    wayback_handler = CommandHandler(BotCommands.WayBackCommand, wayback,
-                                    filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
-else:
-    wayback_handler = CommandHandler(BotCommands.WayBackCommand, wayback,
-                                    filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
+
+authfilter = CustomFilters.authorized_chat if config_dict['WAYBACK_ENABLED'] is True else CustomFilters.owner_filter
+wayback_handler = CommandHandler(BotCommands.WayBackCommand, wayback,
+                                    filters=authfilter | CustomFilters.authorized_user, run_async=True)
+
 dispatcher.add_handler(wayback_handler)

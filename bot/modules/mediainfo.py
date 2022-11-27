@@ -3,7 +3,7 @@ import os
 from subprocess import run
 from bot.helper.ext_utils.shortenurl import short_url
 from telegram.ext import CommandHandler
-from bot import LOGGER, dispatcher, app, MEDIAINFO_ENABLED
+from bot import LOGGER, dispatcher, app, MEDIAINFO_ENABLED, config_dict
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.message_utils import editMessage, sendMessage
@@ -58,13 +58,12 @@ def mediainfo(update, context):
     try: os.remove(file)
     except: pass
     help = telegraph.create_page(title='MediaInfo', content=reply)["path"]
-    editMessage(short_url(f"https://graph.org/{help}"), sent)
+    editMessage(short_url(f"https://telegra.ph/{help}"), sent)
 
-if MEDIAINFO_ENABLED:
-    mediainfo_handler = CommandHandler(BotCommands.MediaInfoCommand, mediainfo,
-        filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
-else:
-    mediainfo_handler = CommandHandler(BotCommands.MediaInfoCommand, mediainfo,
-                                    filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
+
+authfilter = CustomFilters.authorized_chat if config_dict['MEDIAINFO_ENABLED'] is True else CustomFilters.owner_filter
+mediainfo_handler = CommandHandler(BotCommands.MediaInfoCommand, mediainfo,
+                                    filters=authfilter | CustomFilters.authorized_user, run_async=True)
+
 
 dispatcher.add_handler(mediainfo_handler)

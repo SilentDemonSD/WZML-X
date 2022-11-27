@@ -1,21 +1,20 @@
 from random import SystemRandom
 from string import ascii_letters, digits
-from bot import TELEGRAPH_STYLE, download_dict, download_dict_lock, ZIP_UNZIP_LIMIT, LOGGER, STOP_DUPLICATE, STORAGE_THRESHOLD, TORRENT_DIRECT_LIMIT, LEECH_LIMIT, \
-                OWNER_ID, SUDO_USERS, PAID_USERS, PAID_SERVICE
+from bot import download_dict, download_dict_lock, LOGGER, user_data, config_dict, OWNER_ID
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.mirror_utils.status_utils.gd_download_status import GdDownloadStatus
 from bot.helper.telegram_helper.message_utils import sendMessage, sendStatusMessage, sendMarkup, sendFile
-from bot.helper.ext_utils.bot_utils import get_readable_file_size
+from bot.helper.ext_utils.bot_utils import get_readable_file_size, is_sudo, is_paid
 from bot.helper.ext_utils.fs_utils import get_base_name, check_storage_threshold
 
 
-def add_gd_download(link, path, listener, is_gdtot, is_unified, is_udrive, newname):
+def add_gd_download(link, path, listener, newname, is_gdtot, is_unified, is_udrive, is_sharer, is_sharedrive):
     res, size, name, files = GoogleDriveHelper().helper(link)
     if res != "":
         return sendMessage(res, listener.bot, listener.message)
     if newname:
         name = newname
-    if STOP_DUPLICATE and not listener.isLeech:
+    if config_dict['STOP_DUPLICATE'] and not listener.isLeech:
         LOGGER.info('Checking File/Folder if already in Drive...')
         if listener.isZip:
             gname = f"{name}.zip"
@@ -25,12 +24,11 @@ def add_gd_download(link, path, listener, is_gdtot, is_unified, is_udrive, newna
             except:
                 gname = None
         if gname is not None:
-            if TELEGRAPH_STYLE is True:
+            if config_dict['TELEGRAPH_STYLE']:
                 gmsg, button = GoogleDriveHelper().drive_list(gname, True)
                 if gmsg:
                     msg = "File/Folder is already available in Drive.\nHere are the search results:"
                     return sendMarkup(msg, listener.bot, listener.message, button)
-
             else:
                 cap, f_name = GoogleDriveHelper().drive_list(gname, True)
                 if cap:
@@ -38,10 +36,14 @@ def add_gd_download(link, path, listener, is_gdtot, is_unified, is_udrive, newna
                     sendFile(listener.bot, listener.message, f_name, cap)
                     return
     user_id = listener.message.from_user.id
-    if any([ZIP_UNZIP_LIMIT, STORAGE_THRESHOLD, TORRENT_DIRECT_LIMIT, LEECH_LIMIT]) and user_id != OWNER_ID and user_id not in SUDO_USERS and user_id not in PAID_USERS:
+    TORRENT_DIRECT_LIMIT = config_dict['TORRENT_DIRECT_LIMIT']
+    ZIP_UNZIP_LIMIT = config_dict['ZIP_UNZIP_LIMIT']
+    LEECH_LIMIT = config_dict['LEECH_LIMIT']
+    STORAGE_THRESHOLD = config_dict['STORAGE_THRESHOLD']
+    if any([ZIP_UNZIP_LIMIT, STORAGE_THRESHOLD, TORRENT_DIRECT_LIMIT, LEECH_LIMIT]) and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id):
         arch = any([listener.extract, listener.isZip])
         limit = None
-        if PAID_SERVICE is True:
+        if config_dict['PAID_SERVICE'] is True:
             if STORAGE_THRESHOLD is not None:
                 acpt = check_storage_threshold(size, arch)
                 if not acpt:
@@ -91,5 +93,6 @@ def add_gd_download(link, path, listener, is_gdtot, is_unified, is_udrive, newna
     listener.onDownloadStart()
     sendStatusMessage(listener.message, listener.bot)
     drive.download(link)
-    if (is_gdtot or is_unified or is_udrive):
+    if (is_gdtot or is_unified or is_udrive or is_sharer or is_sharedrive):
         drive.deletefile(link)
+ 

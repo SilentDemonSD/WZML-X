@@ -1,8 +1,10 @@
 from logging import FileHandler, StreamHandler, INFO, basicConfig, error as log_error, info as log_info
 from os import path as ospath, environ
-from subprocess import run as srun
+from subprocess import run as srun, call as scall
+from pkg_resources import working_set
 from requests import get as rget
 from dotenv import load_dotenv
+from pymongo import MongoClient
 
 if ospath.exists('log.txt'):
     with open('log.txt', 'r+') as f:
@@ -12,35 +14,45 @@ basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     handlers=[FileHandler('log.txt'), StreamHandler()],
                     level=INFO)
 
-CONFIG_FILE_URL = environ.get('CONFIG_FILE_URL')
+load_dotenv('config.env', override=True)
+
 try:
-    if len(CONFIG_FILE_URL) == 0:
-        raise TypeError
-    try:
-        res = rget(CONFIG_FILE_URL)
-        if res.status_code == 200:
-            with open('config.env', 'wb+') as f:
-                f.write(res.content)
-        else:
-            log_error(f"Failed to download config.env {res.status_code}")
-    except Exception as e:
-        log_error(f"CONFIG_FILE_URL: {e}")
+    if bool(environ.get('_____REMOVE_THIS_LINE_____')):
+        log_error('The README.md file there to be read! Exiting now!')
+        exit()
 except:
     pass
 
-load_dotenv('config.env', override=True)
+BOT_TOKEN = environ.get('BOT_TOKEN', '')
+if len(BOT_TOKEN) == 0:
+    log_error("BOT_TOKEN variable is missing! Exiting now")
+    exit(1)
 
-UPSTREAM_REPO = environ.get('UPSTREAM_REPO')
-UPSTREAM_BRANCH = environ.get('UPSTREAM_BRANCH')
-try:
-    if len(UPSTREAM_REPO) == 0:
-       raise TypeError
-except:
-    UPSTREAM_REPO = "https://github.com/weebzone/WZML"
-try:
-    if len(UPSTREAM_BRANCH) == 0:
-       raise TypeError
-except:
+bot_id = int(BOT_TOKEN.split(':', 1)[0])
+
+DATABASE_URL = environ.get('DATABASE_URL', '')
+if len(DATABASE_URL) == 0:
+    DATABASE_URL = None
+
+if DATABASE_URL is not None:
+    conn = MongoClient(DATABASE_URL)
+    db = conn.mltb
+    if config_dict := db.settings.config.find_one({'_id': bot_id}):  #retrun config dict (all env vars)
+        environ['UPSTREAM_REPO'] = config_dict['UPSTREAM_REPO']
+        environ['UPSTREAM_BRANCH'] = config_dict['UPSTREAM_BRANCH']
+        environ['UPDATE_PACKAGES'] = config_dict['UPDATE_PACKAGES']
+    conn.close()
+
+if environ.get('UPDATE_PACKAGES', 'False').lower() == 'true':
+    packages = [dist.project_name for dist in working_set]
+    scall("pip install --upgrade " + ' '.join(packages), shell=True)
+
+UPSTREAM_REPO = environ.get('UPSTREAM_REPO', '')
+if len(UPSTREAM_REPO) == 0:
+   UPSTREAM_REPO = None
+
+UPSTREAM_BRANCH = environ.get('UPSTREAM_BRANCH', '')
+if len(UPSTREAM_BRANCH) == 0:
     UPSTREAM_BRANCH = 'master'
 
 if UPSTREAM_REPO is not None:
@@ -48,8 +60,8 @@ if UPSTREAM_REPO is not None:
         srun(["rm", "-rf", ".git"])
 
     update = srun([f"git init -q \
-                 && git config --global user.email codewithweeb@gmail.com \
-                 && git config --global user.name Karan \
+                     && git config --global user.email e.anastayyar@gmail.com \
+                     && git config --global user.name WZML \
                      && git add . \
                      && git commit -sm update -q \
                      && git remote add origin {UPSTREAM_REPO} \

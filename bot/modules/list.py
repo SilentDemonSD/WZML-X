@@ -1,18 +1,18 @@
 from threading import Thread
 from telegram.ext import CommandHandler, CallbackQueryHandler
 
-from bot import LOGGER, TELEGRAPH_STYLE, dispatcher
+from bot import LOGGER, dispatcher, config_dict
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, sendMarkup, sendFile, deleteMessage
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper import button_build
+from bot.helper.telegram_helper.button_build import ButtonMaker
 
 def list_buttons(update, context):
     user_id = update.message.from_user.id
     if len(context.args) == 0:
         return sendMessage('Send a search key along with command', context.bot, update.message)
-    buttons = button_build.ButtonMaker()
+    buttons = ButtonMaker()
     buttons.sbutton("Folders", f"types {user_id} folders")
     buttons.sbutton("Files", f"types {user_id} files")
     buttons.sbutton("Both", f"types {user_id} both")
@@ -38,7 +38,7 @@ def select_type(update, context):
     Thread(target=_list_drive, args=(context.bot, key, msg, item_type)).start()
 
 def _list_drive(bot, key, bmsg, item_type):
-    if TELEGRAPH_STYLE is True:
+    if config_dict['TELEGRAPH_STYLE']:
 
         LOGGER.info(f"listing: {key}")
         gdrive = GoogleDriveHelper()
@@ -59,7 +59,8 @@ def _list_drive(bot, key, bmsg, item_type):
         else:
             editMessage(f'No result found for <i>{key}</i>', bmsg)
 
-list_handler = CommandHandler(BotCommands.ListCommand, list_buttons, filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
+list_handler = CommandHandler(BotCommands.ListCommand, list_buttons,
+                              filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
 list_type_handler = CallbackQueryHandler(select_type, pattern="types", run_async=True)
 dispatcher.add_handler(list_handler)
 dispatcher.add_handler(list_type_handler)

@@ -2,7 +2,7 @@ from logging import getLogger, WARNING
 from time import time
 from threading import RLock, Lock
 
-from bot import LOGGER, TELEGRAPH_STYLE, download_dict, download_dict_lock, STOP_DUPLICATE, STORAGE_THRESHOLD, app
+from bot import LOGGER, download_dict, download_dict_lock, config_dict, app
 from bot.helper.ext_utils.bot_utils import get_readable_file_size
 from ..status_utils.telegram_download_status import TelegramDownloadStatus
 from bot.helper.telegram_helper.message_utils import sendMarkup, sendMessage, sendStatusMessage, sendStatusMessage, sendFile
@@ -97,9 +97,9 @@ class TelegramDownloadHelper:
 
             if download:
                 size = media.file_size
-                if STOP_DUPLICATE and not self.__listener.isLeech:
+                if config_dict['STOP_DUPLICATE'] and not self.__listener.isLeech:
                     LOGGER.info('Checking File/Folder if already in Drive...')
-                    if TELEGRAPH_STYLE is True:
+                    if config_dict['TELEGRAPH_STYLE']:
                         smsg, button = GoogleDriveHelper().drive_list(name, True, True)
                         if smsg:
                             msg = "File/Folder is already available in Drive.\nHere are the search results:"
@@ -110,7 +110,7 @@ class TelegramDownloadHelper:
                             cap = f"File/Folder is already available in Drive. Here are the search results:\n\n{cap}"
                             sendFile(self.__listener.bot, self.__listener.message, f_name, cap)
                             return
-                if STORAGE_THRESHOLD is not None:
+                if config_dict['STORAGE_THRESHOLD']:
                     arch = any([self.__listener.isZip, self.__listener.extract])
                     acpt = check_storage_threshold(size, arch)
                     if not acpt:

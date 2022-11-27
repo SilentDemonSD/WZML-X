@@ -11,13 +11,13 @@ from telegram.ext import CommandHandler
 from telegram import ParseMode, InlineKeyboardButton
 
 from bot import *
-from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_gdtot_link, is_mega_link, is_gdrive_link, is_unified_link, is_udrive_link, get_content_type, get_readable_time, get_user_task
+from bot.helper.ext_utils.bot_utils import *
 from bot.helper.ext_utils.timegap import timegap_check
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException, NotSupportedExtractionArchive
 from bot.helper.ext_utils.shortenurl import short_url
 from bot.helper.mirror_utils.download_utils.aria2_download import add_aria2c_download
 from bot.helper.mirror_utils.download_utils.gd_downloader import add_gd_download
-from bot.helper.mirror_utils.download_utils.qbit_downloader import QbDownloader
+from bot.helper.mirror_utils.download_utils.qbit_downloader import add_qb_torrent
 from bot.helper.mirror_utils.download_utils.mega_downloader import add_mega_download
 from bot.helper.mirror_utils.download_utils.direct_link_generator import direct_link_generator
 from bot.helper.mirror_utils.download_utils.telegram_downloader import TelegramDownloadHelper
@@ -32,17 +32,17 @@ from .listener import MirrorLeechListener
 def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeech=False):
     buttons = ButtonMaker()
 	
-    if FSUB:
+    if config_dict['FSUB']:
         try:
-            user = bot.get_chat_member(f"{FSUB_CHANNEL_ID}", message.from_user.id)
-            LOGGER.info(user.status)
+            user = bot.get_chat_member(f"{config_dict['FSUB_CHANNEL_ID']}", message.from_user.id)
+            LOGGER.info(f"User Status : {str(user.status).capitalize()}")
             if user.status not in ("member", "creator", "administrator", "supergroup"):
                 if message.from_user.username:
                     uname = f'<a href="tg://user?id={message.from_user.id}">{message.from_user.username}</a>'
                 else:
                     uname = f'<a href="tg://user?id={message.from_user.id}">{message.from_user.first_name}</a>'
                 buttons = ButtonMaker()
-                chat_u = CHANNEL_USERNAME.replace("@", "")
+                chat_u = config_dict['CHANNEL_USERNAME'].replace("@", "")
                 buttons.buildbutton("👉🏻 CHANNEL LINK 👈🏻", f"https://t.me/{chat_u}")
                 help_msg = f"Dᴇᴀʀ {uname},\nYᴏᴜ ɴᴇᴇᴅ ᴛᴏ ᴊᴏɪɴ ᴍʏ Cʜᴀɴɴᴇʟ ᴛᴏ ᴜsᴇ Bᴏᴛ \n\nCʟɪᴄᴋ ᴏɴ ᴛʜᴇ ʙᴇʟᴏᴡ Bᴜᴛᴛᴏɴ ᴛᴏ ᴊᴏɪɴ ᴍʏ Cʜᴀɴɴᴇʟ."
                 reply_message = sendMarkup(help_msg, bot, message, buttons.build_menu(2))
@@ -50,7 +50,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
                 return reply_message
         except Exception:
             pass
-    if BOT_PM and message.chat.type != 'private':
+    if config_dict['BOT_PM'] and message.chat.type != 'private':
         try:
             msg1 = f'Added your Requested link to Download\n'
             send = bot.sendMessage(message.from_user.id, text=msg1)
@@ -70,8 +70,10 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
 
     total_task = len(download_dict)
     user_id = message.from_user.id
-    if user_id != OWNER_ID and user_id not in SUDO_USERS and user_id not in PAID_USERS:
-        if PAID_SERVICE is True:
+    USER_TASKS_LIMIT = config_dict['USER_TASKS_LIMIT']
+    TOTAL_TASKS_LIMIT = config_dict['TOTAL_TASKS_LIMIT']
+    if user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id):
+        if config_dict['PAID_SERVICE'] is True:
             if TOTAL_TASKS_LIMIT == total_task:
                 return sendMessage(f"<b>Bot Total Task Limit : {TOTAL_TASKS_LIMIT}\nTasks Processing : {total_task}\n#total limit exceed </b>\n#Buy Paid Service", bot ,message)
             if USER_TASKS_LIMIT == get_user_task(user_id):
@@ -82,7 +84,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
             if USER_TASKS_LIMIT == get_user_task(user_id):
                 return sendMessage(f"<b>Bot Total Task Limit : {USER_TASKS_LIMIT} \nYour Tasks : {get_user_task(user_id)}\n#user limit exceed</b>", bot ,message)
 
-    if user_id != OWNER_ID and user_id not in SUDO_USERS and user_id not in PAID_USERS:
+    if user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id):
         time_gap = timegap_check(message)
         if time_gap:
             return
@@ -90,16 +92,18 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
 
     mesg = message.text.split('\n')
     message_args = mesg[0].split(maxsplit=1)
-    name_args = mesg[0].split('|', maxsplit=1)
     is_gdtot = False
     is_unified = False
     is_udrive = False
+    is_sharer = False
+    is_sharedrive = False
     index = 1
     ratio = None
     seed_time = None
     select = False
     seed = False
     multi = 0
+    link = ''
 
     if len(message_args) > 1:
         args = mesg[0].split(maxsplit=3)
@@ -127,33 +131,26 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
                 link = message_args[index].strip()
                 if link.startswith(("|", "pswd:")):
                     link = ''
-            else:
-                link = ''
+    name = mesg[0].split('|', maxsplit=1)
+    if len(name) > 1:
+        if 'pswd:' in name[0]:
+            name = ''
         else:
-            link = ''
-    else:
-        link = ''
-
-    if len(name_args) > 1:
-        name = name_args[1]
-        name = name.split(' pswd:')[0]
-        name = name.strip()
+            name = name[1].split('pswd:')[0].strip()
     else:
         name = ''
 
-    link = re_split(r"pswd:|\|", link)[0]
-    link = link.strip()
-
-    pswd_arg = mesg[0].split(' pswd: ')
-    if len(pswd_arg) > 1:
-        pswd = pswd_arg[1]
-    else:
-        pswd = None
+    pswd = mesg[0].split(' pswd: ')
+    pswd = pswd[1] if len(pswd) > 1 else None
 
     if message.from_user.username:
         tag = f"@{message.from_user.username}"
     else:
         tag = message.from_user.mention_html(message.from_user.first_name)
+
+    if link != '':
+        link = re_split(r"pswd:|\|", link)[0]
+        link = link.strip()
 
     reply_to = message.reply_to_message
     if reply_to is not None:
@@ -228,6 +225,8 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
                 is_gdtot = is_gdtot_link(link)
                 is_unified = is_unified_link(link)
                 is_udrive = is_udrive_link(link)
+                is_sharer = is_sharer_link(link)
+                is_sharedrive = is_sharedrive_link(link)
                 link = direct_link_generator(link)
                 LOGGER.info(f"Generated link: {link}")
             except DirectDownloadLinkException as e:
@@ -260,22 +259,6 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
             msg = "Qb commands for torrents only. if you are trying to dowload torrent then report."
             return sendMessage(msg, bot, message)
 
-
-    # if not is_mega_link(link) and not isQbit and not is_magnet(link) \
-    #     and not is_gdrive_link(link) and not link.endswith('.torrent'):
-    #     content_type = get_content_type(link)
-    #     if content_type is None or re_match(r'text/html|text/plain', content_type):
-    #         try:
-    #             is_gdtot = is_gdtot_link(link)
-    #             is_unified = is_unified_link(link)
-    #             is_udrive = is_udrive_link(link)
-    #             link = direct_link_generator(link)
-    #             LOGGER.info(f"Generated link: {link}")
-    #         except DirectDownloadLinkException as e:
-    #             LOGGER.info(str(e))
-    #             if str(e).startswith('ERROR:'):
-    #                 return sendMessage(str(e), bot, message)
-
     listener = MirrorLeechListener(bot, message, isZip, extract, isQbit, isLeech, pswd, tag, select, seed)
 
     if is_gdrive_link(link):
@@ -285,12 +268,12 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
             gmsg += f"Use /{BotCommands.UnzipMirrorCommand} to extracts Google Drive archive file"
             sendMessage(gmsg, bot, message)
         else:
-            Thread(target=add_gd_download, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener, is_gdtot, is_unified, is_udrive, name)).start()
+            Thread(target=add_gd_download, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener, name, is_gdtot, is_unified, is_udrive, is_sharer, is_sharedrive)).start()
     elif is_mega_link(link):
         Thread(target=add_mega_download, args=(link, f'{DOWNLOAD_DIR}{listener.uid}/', listener, name)).start()
     elif isQbit and (is_magnet(link) or ospath.exists(link)):
-        Thread(target=QbDownloader(listener).add_qb_torrent, args=(link, f'{DOWNLOAD_DIR}{listener.uid}',
-                                                                   ratio, seed_time)).start()
+        Thread(target=add_qb_torrent, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener,
+                                            ratio, seed_time)).start()
     else:
         if len(mesg) > 1:
             ussr = mesg[1]
@@ -354,62 +337,33 @@ def qb_unzip_leech(update, context):
 def qb_zip_leech(update, context):
     _mirror_leech(context.bot, update.message, True, isQbit=True, isLeech=True)
 
-if MIRROR_ENABLED:
+authfilter = CustomFilters.authorized_chat if config_dict['MIRROR_ENABLED'] is True else CustomFilters.owner_filter
+mirror_handler = CommandHandler(BotCommands.MirrorCommand, mirror,
+                                    filters=authfilter | CustomFilters.authorized_user, run_async=True)
+unzip_mirror_handler = CommandHandler(BotCommands.UnzipMirrorCommand, unzip_mirror,
+                                    filters=authfilter | CustomFilters.authorized_user, run_async=True)
+zip_mirror_handler = CommandHandler(BotCommands.ZipMirrorCommand, zip_mirror,
+                                    filters=authfilter | CustomFilters.authorized_user, run_async=True)
+qb_mirror_handler = CommandHandler(BotCommands.QbMirrorCommand, qb_mirror,
+                                    filters=authfilter | CustomFilters.authorized_user, run_async=True)
+qb_unzip_mirror_handler = CommandHandler(BotCommands.QbUnzipMirrorCommand, qb_unzip_mirror,
+                                    filters=authfilter | CustomFilters.authorized_user, run_async=True)
+qb_zip_mirror_handler = CommandHandler(BotCommands.QbZipMirrorCommand, qb_zip_mirror,
+                                    filters=authfilter | CustomFilters.authorized_user, run_async=True)
 
-    mirror_handler = CommandHandler(BotCommands.MirrorCommand, mirror,
-                                    filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
-    unzip_mirror_handler = CommandHandler(BotCommands.UnzipMirrorCommand, unzip_mirror,
-                                    filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
-    zip_mirror_handler = CommandHandler(BotCommands.ZipMirrorCommand, zip_mirror,
-                                    filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
-    qb_mirror_handler = CommandHandler(BotCommands.QbMirrorCommand, qb_mirror,
-                                    filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
-    qb_unzip_mirror_handler = CommandHandler(BotCommands.QbUnzipMirrorCommand, qb_unzip_mirror,
-                                    filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
-    qb_zip_mirror_handler = CommandHandler(BotCommands.QbZipMirrorCommand, qb_zip_mirror,
-                                    filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
-
-else:
-    mirror_handler = CommandHandler(BotCommands.MirrorCommand, mirror,
-                                    filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
-    unzip_mirror_handler = CommandHandler(BotCommands.UnzipMirrorCommand, unzip_mirror,
-                                    filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
-    zip_mirror_handler = CommandHandler(BotCommands.ZipMirrorCommand, zip_mirror,
-                                    filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
-    qb_mirror_handler = CommandHandler(BotCommands.QbMirrorCommand, qb_mirror,
-                                    filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
-    qb_unzip_mirror_handler = CommandHandler(BotCommands.QbUnzipMirrorCommand, qb_unzip_mirror,
-                                    filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
-    qb_zip_mirror_handler = CommandHandler(BotCommands.QbZipMirrorCommand, qb_zip_mirror,
-                                    filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
-
-if LEECH_ENABLED:
-    leech_handler = CommandHandler(BotCommands.LeechCommand, leech,
-                                    filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
-    unzip_leech_handler = CommandHandler(BotCommands.UnzipLeechCommand, unzip_leech,
-                                    filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
-    zip_leech_handler = CommandHandler(BotCommands.ZipLeechCommand, zip_leech,
-                                    filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
-    qb_leech_handler = CommandHandler(BotCommands.QbLeechCommand, qb_leech,
-                                    filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
-    qb_unzip_leech_handler = CommandHandler(BotCommands.QbUnzipLeechCommand, qb_unzip_leech,
-                                    filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
-    qb_zip_leech_handler = CommandHandler(BotCommands.QbZipLeechCommand, qb_zip_leech,
-                                    filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
-
-else:
-    leech_handler = CommandHandler(BotCommands.LeechCommand, leech,
-                                    filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
-    unzip_leech_handler = CommandHandler(BotCommands.UnzipLeechCommand, unzip_leech,
-                                    filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
-    zip_leech_handler = CommandHandler(BotCommands.ZipLeechCommand, zip_leech,
-                                    filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
-    qb_leech_handler = CommandHandler(BotCommands.QbLeechCommand, qb_leech,
-                                    filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
-    qb_unzip_leech_handler = CommandHandler(BotCommands.QbUnzipLeechCommand, qb_unzip_leech,
-                                    filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
-    qb_zip_leech_handler = CommandHandler(BotCommands.QbZipLeechCommand, qb_zip_leech,
-                                    filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
+authfilter = CustomFilters.authorized_chat if config_dict['LEECH_ENABLED'] is True else CustomFilters.owner_filter
+leech_handler = CommandHandler(BotCommands.LeechCommand, leech,
+                                    filters=authfilter | CustomFilters.authorized_user, run_async=True)
+unzip_leech_handler = CommandHandler(BotCommands.UnzipLeechCommand, unzip_leech,
+                                    filters=authfilter | CustomFilters.authorized_user, run_async=True)
+zip_leech_handler = CommandHandler(BotCommands.ZipLeechCommand, zip_leech,
+                                    filters=authfilter | CustomFilters.authorized_user, run_async=True)
+qb_leech_handler = CommandHandler(BotCommands.QbLeechCommand, qb_leech,
+                                    filters=authfilter | CustomFilters.authorized_user, run_async=True)
+qb_unzip_leech_handler = CommandHandler(BotCommands.QbUnzipLeechCommand, qb_unzip_leech,
+                                    filters=authfilter | CustomFilters.authorized_user, run_async=True)
+qb_zip_leech_handler = CommandHandler(BotCommands.QbZipLeechCommand, qb_zip_leech,
+                                    filters=authfilter | CustomFilters.authorized_user, run_async=True)
 
 dispatcher.add_handler(mirror_handler)
 dispatcher.add_handler(unzip_mirror_handler)

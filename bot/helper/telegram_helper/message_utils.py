@@ -7,13 +7,13 @@ from pyrogram import enums
 from pyrogram.errors import FloodWait
 from os import remove
 
-from bot import AUTO_DELETE_MESSAGE_DURATION, LOGGER, status_reply_dict, status_reply_dict_lock, \
-                Interval, DOWNLOAD_STATUS_UPDATE_INTERVAL, RSS_CHAT_ID, bot, rss_session, \
-                AUTO_DELETE_UPLOAD_MESSAGE_DURATION, PICS, app
+from bot import LOGGER, status_reply_dict, status_reply_dict_lock, \
+                Interval, bot, rss_session, \
+                PICS, app, config_dict
 from bot.helper.ext_utils.bot_utils import get_readable_message, setInterval
 
 
-def sendMessage(text: str, bot, message: Message):
+def sendMessage(text, bot, message):
     try:
         return bot.sendMessage(message.chat_id,
                             reply_to_message_id=message.message_id,
@@ -26,7 +26,7 @@ def sendMessage(text: str, bot, message: Message):
         LOGGER.error(str(e))
         return
 
-def sendMarkup(text: str, bot, message: Message, reply_markup: InlineKeyboardMarkup):
+def sendMarkup(text, bot, message, reply_markup: InlineKeyboardMarkup):
     try:
         return bot.sendMessage(message.chat_id,
                             reply_to_message_id=message.message_id,
@@ -40,7 +40,7 @@ def sendMarkup(text: str, bot, message: Message, reply_markup: InlineKeyboardMar
         LOGGER.error(str(e))
         return
 
-def editMessage(text: str, message: Message, reply_markup=None):
+def editMessage(text, message, reply_markup=None):
     try:
         bot.editMessageText(text=text, message_id=message.message_id,
                               chat_id=message.chat.id,reply_markup=reply_markup,
@@ -53,7 +53,7 @@ def editMessage(text: str, message: Message, reply_markup=None):
         LOGGER.error(str(e))
         return str(e)
 
-def editCaption(text: str, message: Message, reply_markup=None):
+def editCaption(text, message, reply_markup=None):
     try:
         bot.edit_message_caption(chat_id=message.chat.id, message_id=message.message_id, caption=text, 
                               reply_markup=reply_markup, parse_mode='HTML')
@@ -65,10 +65,10 @@ def editCaption(text: str, message: Message, reply_markup=None):
         LOGGER.error(str(e))
         return str(e)
 
-def sendRss(text: str, bot):
-    if rss_session is None:
+def sendRss(text, bot):
+    if not rss_session:
         try:
-            return bot.sendMessage(RSS_CHAT_ID, text, parse_mode='HTML', disable_web_page_preview=True)
+            return bot.sendMessage(config_dict['RSS_CHAT_ID'], text, parse_mode='HTML', disable_web_page_preview=True)
         except RetryAfter as r:
             LOGGER.warning(str(r))
             sleep(r.retry_after * 1.5)
@@ -79,7 +79,7 @@ def sendRss(text: str, bot):
     else:
         try:
             with rss_session:
-                return rss_session.send_message(RSS_CHAT_ID, text, disable_web_page_preview=True)
+                return rss_session.send_message(config_dict['RSS_CHAT_ID'], text, disable_web_page_preview=True)
         except FloodWait as e:
             LOGGER.warning(str(e))
             sleep(e.value * 1.5)
@@ -93,7 +93,7 @@ async def sendRss_pyro(text: str):
     rss_session = Client(name='rss_session', api_id=int(TELEGRAM_API), api_hash=TELEGRAM_HASH, session_string=USER_STRING_SESSION, parse_mode=enums.ParseMode.HTML)
     await rss_session.start()
     try:
-        return await rss_session.send_message(RSS_CHAT_ID, text, disable_web_page_preview=True)
+        return await rss_session.send_message(config_dict['RSS_CHAT_ID'], text, disable_web_page_preview=True)
     except FloodWait as e:
         LOGGER.warning(str(e))
         await asleep(e.value * 1.5)
@@ -102,7 +102,7 @@ async def sendRss_pyro(text: str):
         LOGGER.error(str(e))
         return
 
-def sendPhoto(text: str, bot, message, photo, reply_markup=None):
+def sendPhoto(text, bot, message, photo, reply_markup=None):
     try:
         return bot.send_photo(chat_id=message.chat_id, photo=photo, reply_to_message_id=message.message_id,
             caption=text, reply_markup=reply_markup, parse_mode='html')
@@ -114,19 +114,19 @@ def sendPhoto(text: str, bot, message, photo, reply_markup=None):
         LOGGER.error(str(e))
         return
 
-def deleteMessage(bot, message: Message):
+def deleteMessage(bot, message):
     try:
         bot.deleteMessage(chat_id=message.chat.id,
                            message_id=message.message_id)
     except Exception as e:
-        LOGGER.error(str(e))
+        pass
 
-def sendLogFile(bot, message: Message):
+def sendLogFile(bot, message):
     app.send_document(document='log.txt', thumb='Thumbnails/weeb.jpg',
                           reply_to_message_id=message.message_id,
                           chat_id=message.chat_id, caption='log.txt')
 
-def sendFile(bot, message: Message, name: str, caption=""):
+def sendFile(bot, message, name, caption=""):
     try:
         app.send_document(document=name, reply_to_message_id=message.message_id,
                              caption=caption, parse_mode=enums.ParseMode.HTML, chat_id=message.chat_id,
@@ -141,27 +141,20 @@ def sendFile(bot, message: Message, name: str, caption=""):
         LOGGER.error(str(e))
         return
 
-def auto_delete_message(bot, cmd_message: Message, bot_message: Message):
-    if AUTO_DELETE_MESSAGE_DURATION != -1:
-        sleep(AUTO_DELETE_MESSAGE_DURATION)
-        try:
-            # Skip if None is passed meaning we don't want to delete bot xor cmd message
-            deleteMessage(bot, cmd_message)
-            deleteMessage(bot, bot_message)
-        except AttributeError:
-            pass
+def auto_delete_message(bot, cmd_message, bot_message):
+    if config_dict['AUTO_DELETE_MESSAGE_DURATION'] != -1:
+        sleep(config_dict['AUTO_DELETE_MESSAGE_DURATION'])
+        deleteMessage(bot, cmd_message)
+        deleteMessage(bot, bot_message)
 
-def auto_delete_upload_message(bot, cmd_message: Message, bot_message: Message):
+
+def auto_delete_upload_message(bot, cmd_message, bot_message):
     if cmd_message.chat.type == 'private':
         pass
-    elif AUTO_DELETE_UPLOAD_MESSAGE_DURATION != -1:
-        sleep(AUTO_DELETE_UPLOAD_MESSAGE_DURATION)
-        try:
-            # Skip if None is passed meaning we don't want to delete bot or cmd message
-            deleteMessage(bot, cmd_message)
-            deleteMessage(bot, bot_message)
-        except AttributeError:
-            pass
+    elif config_dict['AUTO_DELETE_UPLOAD_MESSAGE_DURATION'] != -1:
+        sleep(config_dict['AUTO_DELETE_UPLOAD_MESSAGE_DURATION'])
+        deleteMessage(bot, cmd_message)
+        deleteMessage(bot, bot_message)
 
 def delete_all_messages():
     with status_reply_dict_lock:
@@ -218,4 +211,4 @@ def sendStatusMessage(msg, bot):
             message = sendMarkup(progress, bot, msg, buttons)
         status_reply_dict[msg.chat.id] = [message, time()]
         if not Interval:
-            Interval.append(setInterval(DOWNLOAD_STATUS_UPDATE_INTERVAL, update_all_messages))
+            Interval.append(setInterval(config_dict['STATUS_UPDATE_INTERVAL'], update_all_messages))

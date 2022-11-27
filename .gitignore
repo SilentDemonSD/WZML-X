@@ -1,7 +1,8 @@
 config.env
 Thumbnails/*
-drive_folder
+list_drives.txt
 cookies.txt
+downloads
 *auth_token.txt
 *.pyc
 data*

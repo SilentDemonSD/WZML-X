@@ -8,9 +8,11 @@ bencode.py
 bencoding
 cfscrape
 cloudscraper
+dnspython
 feedparser
 flask
 gc-python-utils
+git+https://github.com/cinemagoer/cinemagoer
 google-api-python-client
 google-auth-httplib2
 google-auth-oauthlib
@@ -20,8 +22,9 @@ lxml
 mediainfo
 pillow
 psutil
-psycopg2-binary
 pybase64
+pycountry
+pymongo
 pyrogram
 python-dotenv
 python-magic
