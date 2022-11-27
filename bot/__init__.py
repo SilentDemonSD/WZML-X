@@ -630,7 +630,7 @@ if len(UPSTREAM_BRANCH) == 0:
 
 UPDATE_PACKAGES = environ.get('UPDATE_PACKAGES', '')
 if len(UPDATE_PACKAGES) == 0:
-    UPDATE_PACKAGES = False
+    UPDATE_PACKAGES = 'False'
 
 
 config_dict = {'AS_DOCUMENT': AS_DOCUMENT,
