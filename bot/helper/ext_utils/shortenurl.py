@@ -13,7 +13,7 @@ from bot import LOGGER, config_dict
 SHORTENER_API = config_dict['SHORTENER_API']
 SHORTENER = config_dict['SHORTENER']
 def short_url(longurl):
-    if SHORTENER is '' and SHORTENER_API is '':
+    if SHORTENER == '' and SHORTENER_API == '':
         return longurl
     try:
         cget = create_scraper().get
