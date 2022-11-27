@@ -80,6 +80,12 @@ def direct_link_generator(link: str):
         return solidfiles(link)
     elif 'krakenfiles.com' in link:
         return krakenfiles(link)
+    elif 'rocklinks.net' in link:
+        return rock(link)
+    elif 'try2link.com' in link:
+        return try2link(link)
+    elif 'ez4short.com' in link:
+        return ez4(link)
     elif is_gdtot_link(link):
         return gdtot(link)
     elif is_unified_link(link):
@@ -90,12 +96,6 @@ def direct_link_generator(link: str):
         return sharer_pw_dl(link)
     elif is_sharedrive_link(link):
         return shareDrive(link)
-    elif is_rock_link(link):
-        return rock(link)
-    elif is_try2link_link(link):
-        return try2link(link)
-    elif is_ez4_link(link):
-        return ez4(link)
     elif any(x in link for x in fmed_list):
         return fembed(link)
     elif any(x in link for x in ['sbembed.com', 'watchsb.com', 'streamsb.net', 'sbplay.org']):

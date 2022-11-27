@@ -1026,9 +1026,9 @@ def edit_bot_settings(update, context):
                 update_buttons(message)
         dispatcher.remove_handler(file_handler)
     elif data[1] == 'editvar' and STATE == 'edit':
-        if data[2] in ['SUDO_USERS', 'RSS_USER_SESSION_STRING', 'IGNORE_PENDING_REQUESTS', 'CMD_PERFIX', 'OWNER_ID',
+        if data[2] in ['SUDO_USERS', 'IGNORE_PENDING_REQUESTS', 'CMD_PERFIX', 'OWNER_ID',
                        'USER_SESSION_STRING', 'TELEGRAM_HASH', 'TELEGRAM_API', 'AUTHORIZED_CHATS', 'RSS_DELAY'
-                       'DATABASE_URL', 'BOT_TOKEN', 'DOWNLOAD_DIR']:
+                       'DATABASE_URL', 'BOT_TOKEN', 'DOWNLOAD_DIR', 'MIRROR_LOGS', 'LINK_LOGS', 'LEECH_LOG']:
             query.answer(text='Restart required for this edit to take effect!', show_alert=True)
         else:
             query.answer()
