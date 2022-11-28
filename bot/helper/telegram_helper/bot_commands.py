@@ -3,9 +3,9 @@ from os import environ
 
 def getCommand(name: str, command: str):
     try:
-        if len(os.environ[name]) == 0:
+        if len(environ[name]) == 0:
             raise KeyError
-        return os.environ[name]
+        return environ[name]
     except KeyError:
         return command
 
