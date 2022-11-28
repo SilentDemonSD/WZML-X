@@ -132,7 +132,7 @@ elif not DOWNLOAD_DIR.endswith("/"):
     DOWNLOAD_DIR = f'{DOWNLOAD_DIR}/'
 
 
-TGH_THUMB = environ.get('TGH_THUMB')
+TGH_THUMB = environ.get('TGH_THUMB', '')
 if len(TGH_THUMB) == 0:
     TGH_THUMB = 'https://te.legra.ph/file/3325f4053e8d68eab07b5.jpg'
 
