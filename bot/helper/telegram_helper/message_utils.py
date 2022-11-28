@@ -114,9 +114,9 @@ def sendPhoto(text, bot, message, photo, reply_markup=None):
         LOGGER.error(str(e))
         return
 
-def editPhoto(text, bot, message, photo, reply_markup=None):
+def editPhoto(text, message, photo, reply_markup=None):
     try:
-        return bot.edit_message_media(media=InputMedia(media_type='photo', media=photo, caption=text, parse_mode='html'), chat_id=message.chat_id, message_id=message.message_id,
+        return bot.edit_message_media(media=InputMedia(media_type='photo', media=photo, caption=text, parse_mode='html'), chat_id=message.chat.id, message_id=message.message_id,
                                       reply_markup=reply_markup)
     except RetryAfter as r:
         LOGGER.warning(str(r))
@@ -191,13 +191,13 @@ def update_all_messages(force=False):
         for chat_id in status_reply_dict:
             if status_reply_dict[chat_id] and msg != status_reply_dict[chat_id][0].text:
                 if buttons == "" and PICS:
-                    rmsg = editCaption(msg, status_reply_dict[chat_id][0])
+                    rmsg = editPhoto(msg, status_reply_dict[chat_id][0], choice(PICS))
                 elif buttons == "":
                     rmsg = editMessage(msg, status_reply_dict[chat_id][0])
                 elif PICS:
-                    rmsg = editCaption(msg, status_reply_dict[chat_id][0], buttons)
+                    rmsg = editPhoto(msg, status_reply_dict[chat_id][0], buttons)
                 else:
-                    rmsg = editMessage(msg, status_reply_dict[chat_id][0], buttons)
+                    rmsg = editMessage(msg, status_reply_dict[chat_id][0], choice(PICS), buttons)
                 if rmsg == "Message to edit not found":
                     del status_reply_dict[chat_id]
                     return
