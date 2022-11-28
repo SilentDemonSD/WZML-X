@@ -362,8 +362,8 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
         buttons.sbutton("Back", f"userset {user_id} back")
         buttons.sbutton("Close", f"userset {user_id} close")
         btns = buttons.build_menu(2)
-        cf = user_data[user_id].get('cfont', False)
-        if not cf: cf = [f'{FONT_SPELL[config_dict["CAPTION_FONT"]]} (Default)']
+        if user_id in user_data and user_data[user_id].get('cfont'): cf = user_data[user_id]['cfont']
+        else: cf = [f'{FONT_SPELL[config_dict["CAPTION_FONT"]]} (Default)']
         editMessage("<u>Change your Font Style from below:</u>\n\n• Current Style : " + cf[0], message, btns)
     elif data[2] == "Spoiler":
         eVal = ["<tg-spoiler>Spoiler</tg-spoiler>", "tg-spoiler"]
