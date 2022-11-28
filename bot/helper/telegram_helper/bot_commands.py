@@ -1,5 +1,6 @@
 from bot import CMD_PERFIX
-import os
+from os import environ
+
 def getCommand(name: str, command: str):
     try:
         if len(os.environ[name]) == 0:
@@ -7,7 +8,6 @@ def getCommand(name: str, command: str):
         return os.environ[name]
     except KeyError:
         return command
-
 
 class _BotCommands:
     def __init__(self):
