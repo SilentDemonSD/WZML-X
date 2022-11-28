@@ -29,7 +29,7 @@ def imdb_search(update: Update, context: CallbackContext):
         else:
             movies = get_poster(title, bulk=True)
             if not movies:
-                return editMessage("<i>No Results Found</i>", k)
+                return editMessage("<i>No Results Found</i>, Try Again or Use <b>Title ID</b>", k)
             for movie in movies:
                 buttons.sbutton(f"🎬 {movie.get('title')} ({movie.get('year')})", f"imdb {user_id} movie {movie.movieID}")
         buttons.sbutton("🚫 Close 🚫", f"imdb {user_id} close")
@@ -174,9 +174,8 @@ def imdb_callback(update, context):
         if imdb['trailer']:
             if isinstance(imdb['trailer'], list):
                 buttons.buildbutton("▶️ IMDb Trailer ", str(imdb['trailer'][-1]))
+                imdb['trailer'] = list_to_str(imdb['trailer'])
             else: buttons.buildbutton("▶️ IMDb Trailer ", str(imdb['trailer']))
-        if isinstance(imdb['trailer'], list):
-            imdb['trailer'] = list_to_str(imdb['trailer'])
         buttons.sbutton("🚫 Close 🚫", f"imdb {user_id} close")
         template = ''
         if int(data[1]) in user_data and user_data[int(data[1])].get('imdb_temp'):
