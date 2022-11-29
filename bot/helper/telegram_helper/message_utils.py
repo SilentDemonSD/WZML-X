@@ -116,8 +116,6 @@ def sendPhoto(text, bot, message, photo, reply_markup=None):
 
 def editPhoto(text, message, photo, reply_markup=None):
     try:
-        LOGGER.info(photo)
-        LOGGER.info(text)
         return bot.edit_message_media(media=InputMediaPhoto(media=photo, caption=text, parse_mode='html'), chat_id=message.chat.id, message_id=message.message_id,
                                       reply_markup=reply_markup)
     except RetryAfter as r:
