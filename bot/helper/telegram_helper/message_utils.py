@@ -118,7 +118,7 @@ def editPhoto(text, message, photo, reply_markup=None):
     try:
         LOGGER.info(photo)
         LOGGER.info(text)
-        return bot.edit_message_media(media=InputMediaPhoto(media=str(photo), caption=text, parse_mode='html'), chat_id=message.chat.id, message_id=message.message_id,
+        return bot.edit_message_media(media=InputMediaPhoto(media=photo, caption=text, parse_mode='html'), chat_id=message.chat.id, message_id=message.message_id,
                                       reply_markup=reply_markup)
     except RetryAfter as r:
         LOGGER.warning(str(r))
@@ -197,9 +197,9 @@ def update_all_messages(force=False):
                 elif buttons == "":
                     rmsg = editMessage(msg, status_reply_dict[chat_id][0])
                 elif PICS:
-                    rmsg = editPhoto(msg, status_reply_dict[chat_id][0], buttons)
+                    rmsg = editPhoto(msg, status_reply_dict[chat_id][0], choice(PICS), buttons)
                 else:
-                    rmsg = editMessage(msg, status_reply_dict[chat_id][0], choice(PICS), buttons)
+                    rmsg = editMessage(msg, status_reply_dict[chat_id][0], buttons)
                 if rmsg == "Message to edit not found":
                     del status_reply_dict[chat_id]
                     return
