@@ -1,5 +1,6 @@
 from telegram.ext import CommandHandler, CallbackQueryHandler, MessageHandler, Filters
 from functools import partial
+from collections import OrderedDict
 from time import time, sleep
 from os import remove, rename, path as ospath, environ
 from subprocess import run as srun, Popen
@@ -748,7 +749,8 @@ def get_buttons(key=None, edit_type=None):
         buttons.sbutton('Close', "botset close")
         msg = 'Bot Settings:'
     elif key == 'var':
-        for k in list(config_dict.keys())[START:10+START]:
+        alpha_config = OrderedDict(sorted(config_dict.items()))
+        for k in list(alpha_config.keys())[START:10+START]:
             buttons.sbutton(k, f"botset editvar {k}")
         if STATE == 'view':
             buttons.sbutton('Edit', "botset edit var")
