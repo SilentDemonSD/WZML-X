@@ -1,6 +1,6 @@
 from random import choice
 from time import sleep, time
-from telegram import InlineKeyboardMarkup, InputMedia
+from telegram import InlineKeyboardMarkup, InputMediaPhoto
 from telegram.message import Message
 from telegram.error import RetryAfter
 from pyrogram import enums
@@ -116,7 +116,7 @@ def sendPhoto(text, bot, message, photo, reply_markup=None):
 
 def editPhoto(text, message, photo, reply_markup=None):
     try:
-        return bot.edit_message_media(media=InputMedia(media_type='photo', media=photo, caption=text, parse_mode='html'), chat_id=message.chat.id, message_id=message.message_id,
+        return bot.edit_message_media(media=InputMediaPhoto(media=photo, caption=text, parse_mode='html'), chat_id=message.chat.id, message_id=message.message_id,
                                       reply_markup=reply_markup)
     except RetryAfter as r:
         LOGGER.warning(str(r))
