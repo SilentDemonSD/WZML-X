@@ -564,10 +564,11 @@ if len(FINISHED_PROGRESS_STR) == 0 or len(FINISHED_PROGRESS_STR) == 0 or len(MUL
     FINISHED_PROGRESS_STR = '█' # '■'
     UN_FINISHED_PROGRESS_STR = '▒' # '□'
     MULTI_WORKING_PROGRESS_STR = '▁ ▂ ▃ ▄ ▅ ▆ ▇'
-MULTI_WORKING_PROGRESS_STR = MULTI_WORKING_PROGRESS_STR.split()
+MULTI_WORKING_PROGRESS_STR = MULTI_WORKING_PROGRESS_STR.split(' ')
+
 if len(MULTI_WORKING_PROGRESS_STR) != 7:
     LOGGER.warning("Multi Progress doesn't contain 7 Symbols. Check Agian, Using Default for Now !")
-    MULTI_WORKING_PROGRESS_STR = ['▁', '▂', '▃', '▄', '▅', '▆', '▇']
+    MULTI_WORKING_PROGRESS_STR = '▁ ▂ ▃ ▄ ▅ ▆ ▇'.split(' ')
 
 CHANNEL_USERNAME = environ.get('CHANNEL_USERNAME', '')
 if len(CHANNEL_USERNAME) == 0:
