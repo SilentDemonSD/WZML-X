@@ -139,13 +139,18 @@ def sendLogFile(bot, message):
     logFileRead = open('log.txt', 'r')
     logFileLines = logFileRead.read().splitlines()
     toDisplay = 0
-    toDisplay = min(len(logFileLines), 20)
+    i = len(logFileLines)
+    txt = ''
+    while len(txt) <= 2000:
+        txt += logFileLines[-i]
+        toDisplay += 1
+        i -= 1
+    #toDisplay = min(len(logFileLines), 20)
     startLine = f'Last {toDisplay} Lines : \n\n---------------- START LOG -----------------\n\n'
     endLine = '\n---------------- END LOG -----------------'
     try:
         Loglines = '\n'.join(logFileLines[-l] for l in range (toDisplay, 0, -1))
-        textLog = startLine+Loglines+endLine
-        sendMessage(textLog, bot, message)
+        sendMessage(startLine+Loglines+endLine, bot, message)
     except Exception as err:
         LOGGER.info(f"Error Log Display : {err}")
     app.send_document(document='log.txt', thumb='Thumbnails/weeb.jpg',
