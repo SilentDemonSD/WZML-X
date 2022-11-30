@@ -18,7 +18,8 @@ def picture_add(update, context):
             pic_add = msg_text.strip()
             editMessage("Adding your Link ...", editable)
     elif resm and resm.photo:
-        if not (resm.photo and resm.photo.file_size <= 5242880*2):
+        LOGGER.info(resm.photo)
+        if not (resm.photo and (resm.photo).file_size <= 5242880*2):
             editMessage("This Media is Not Supported! Only Send Photos !!", editable)
             return
         editMessage("Uploading to telegra.ph Server ...", editable)
@@ -28,8 +29,7 @@ def picture_add(update, context):
         photo_dir = resm.photo[-1].get_file().download()
         editMessage("`Uploading to te.legra.ph Server, Please Wait...`", editable)
         try:
-            tgh_post = upload_file(photo_dir)
-            pic_add = f'https://graph.org{tgh_post[0]}'
+            pic_add = f'https://graph.org{upload_file(photo_dir)[0]}'
         except Exception as e:
             editMessage(str(e), editable)
         finally:
@@ -70,10 +70,17 @@ def pics_callback(update, context):
         buttons.sbutton("<<", f"pics {data[1]} turn {ind-1}")
         buttons.sbutton(">>", f"pics {data[1]} turn {ind+1}")
         buttons.sbutton("Remove Photo", f"pics {data[1]} remov {ind}")
-        editPhoto(pic_info, context.bot, update.message, config_dict['PICS'][ind], buttons.build_menu(2))
+        editPhoto(pic_info, update.message, config_dict['PICS'][ind], buttons.build_menu(2))
     elif data[2] == "remov":
         config_dict['PICS'].pop(int(data[3]))
         query.answer(text="Photo Successfully Deleted", show_alert=True)
+        ind = int(data[3])+1
+        pic_info = f'🌄 <b>Picture No. : {ind} / {len(config_dict["PICS"])}</b>'
+        buttons = ButtonMaker()
+        buttons.sbutton("<<", f"pics {data[1]} turn {ind-1}")
+        buttons.sbutton(">>", f"pics {data[1]} turn {ind+1}")
+        buttons.sbutton("Remove Photo", f"pics {data[1]} remov {ind}")
+        editPhoto(pic_info, update.message, config_dict['PICS'][ind], buttons.build_menu(2))
 
 picture_add_handler = CommandHandler('addpic', picture_add,
                                     filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
