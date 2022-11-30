@@ -1,9 +1,13 @@
 from os import remove as osremove, mkdir, path as ospath
 from time import sleep
 from telegraph import upload_file
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, ConversationHandler
 
 from bot import user_data, dispatcher, LOGGER, config_dict, DATABASE_URL, OWNER_ID
-from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, sendPhoto
+from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, sendPhoto, deleteMessage
+from bot.helper.telegram_helper.filters import CustomFilters
+from bot.helper.telegram_helper.bot_commands import BotCommands
+from bot.helper.telegram_helper.button_build import ButtonMaker
 
 def picture_add(update, context):
     message = update.message
@@ -38,19 +42,17 @@ def picture_add(update, context):
     sleep(1.5)
     editMessage("<b><i>Added to Existing Random Pictures Status List!</i></b>", editable)
 
-def pictures(client: Client, message: Message):
-    '''/pics command'''
-    if not PICS_LIST:
-        await message.reply_text("Add Some Photos OR use API to Let me Show you !!")
+def pictures(update, context):
+    if not PICS:
+        sendMessage("Add Some Photos OR use API to Let me Show you !!", context.bot, update.message)
     else:
-        to_edit = await message.reply_text("Generating Grid of your Images...")
-        btn = [
-            [InlineKeyboardButton("<<", callback_data=f"pic -1"),
-            InlineKeyboardButton(">>", callback_data="pic 1")],
-            [InlineKeyboardButton("Remove Photo", callback_data="picsremove 0")]
-        ]
-        await to_edit.delete()
-        await message.reply_photo(photo=PICS_LIST[0], caption=f'• Picture No. : 1 / {len(PICS_LIST)}', reply_markup=InlineKeyboardMarkup(btn))
+        to_edit = sendMessage("Generating Grid of your Images...", context.bot, update.message)
+        buttons = ButtonMaker()
+        buttons.sbutton("<<", f"pic -1")
+        buttons.sbutton(">>", "pic 1")
+        buttons.sbutton("Remove Photo", "picsremove 0")
+        deleteMessage(context.bot, to_edit)
+        sendPhoto(f'• Picture No. : 1 / {len(PICS)}', context.bot, update.message, PICS[0], buttons.build_menu(2))
 
 def pics_callback(client: Client, query: CallbackQuery):
     if query.data.startswith("pic"):
@@ -74,12 +76,10 @@ def pics_callback(client: Client, query: CallbackQuery):
 
 picture_add_handler = CommandHandler('addpic', picture_add,
                                     filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
-users_settings_handler = CommandHandler(BotCommands.UsersCommand, send_users_settings,
-                                            filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
-user_set_handler  = CommandHandler(BotCommands.UserSetCommand, user_settings,
-                                   filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
+pictures_handler = CommandHandler('pics', pictures,
+                                    filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
 but_set_handler = CallbackQueryHandler(edit_user_settings, pattern="userset", run_async=True)
 
 dispatcher.add_handler(picture_add_handler)
-dispatcher.add_handler(but_set_handler)
+dispatcher.add_handler(pictures_handler)
 dispatcher.add_handler(users_settings_handler)
