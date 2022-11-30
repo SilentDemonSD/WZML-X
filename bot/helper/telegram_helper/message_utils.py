@@ -148,8 +148,8 @@ def sendLogFile(bot, message):
             toDisplay += 1
             if ind == 1: break
             ind -= 1
-        startLine = f"Generated Last {toDisplay} Lines from log.txt: \n\n---------------- START LOG -----------------\n\n'
-        endLine = '\n\n---------------- END LOG -----------------'
+        startLine = f"Generated Last {toDisplay} Lines from log.txt: \n\n---------------- START LOG -----------------\n\n"
+        endLine = "\n\n---------------- END LOG -----------------"
         #Loglines = '\n'.join(logFileLines[-l] for l in range(toDisplay, 0, -1))
         sendMessage(escape(startLine+Loglines+endLine), bot, message)
     except Exception as err:
