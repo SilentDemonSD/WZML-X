@@ -70,7 +70,7 @@ def pics_callback(update, context):
         buttons.sbutton("<<", f"pics {data[1]} turn {ind-1}")
         buttons.sbutton(">>", f"pics {data[1]} turn {ind+1}")
         buttons.sbutton("Remove Photo", f"pics {data[1]} remov {ind}")
-        editPhoto(pic_info, update.message, config_dict['PICS'][ind], buttons.build_menu(2))
+        editPhoto(pic_info, message, config_dict['PICS'][ind], buttons.build_menu(2))
     elif data[2] == "remov":
         config_dict['PICS'].pop(int(data[3]))
         query.answer(text="Photo Successfully Deleted", show_alert=True)
@@ -80,7 +80,7 @@ def pics_callback(update, context):
         buttons.sbutton("<<", f"pics {data[1]} turn {ind-1}")
         buttons.sbutton(">>", f"pics {data[1]} turn {ind+1}")
         buttons.sbutton("Remove Photo", f"pics {data[1]} remov {ind}")
-        editPhoto(pic_info, update.message, config_dict['PICS'][ind], buttons.build_menu(2))
+        editPhoto(pic_info, message, config_dict['PICS'][ind], buttons.build_menu(2))
 
 picture_add_handler = CommandHandler('addpic', picture_add,
                                     filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
