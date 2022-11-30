@@ -80,9 +80,13 @@ def pics_callback(update, context):
     elif data[2] == "remov":
         config_dict['PICS'].pop(int(data[3]))
         query.answer(text="Photo Successfully Deleted", show_alert=True)
+        if len(config_dict['PICS']) == 0:
+            query.message.delete()
+            sendMessage("No Photo to Show ! Add by /addpic", context.bot, update.message)
+            return
         ind = int(data[3])+1
         ind = len(config_dict['PICS']) - abs(ind) if ind < 0 else ind
-        pic_info = f'🌄 <b>Picture No. : {ind} / {len(config_dict["PICS"])}</b>'
+        pic_info = f'🌄 <b>Picture No. : {ind+1} / {len(config_dict["PICS"])}</b>'
         buttons = ButtonMaker()
         buttons.sbutton("<<", f"pics {data[1]} turn {ind-1}")
         buttons.sbutton(">>", f"pics {data[1]} turn {ind+1}")
