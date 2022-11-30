@@ -52,7 +52,7 @@ def pictures(update, context):
         buttons.sbutton(">>", f"pics {user_id} turn 1")
         buttons.sbutton("Remove Photo", f"pics {user_id} remov 0")
         deleteMessage(context.bot, to_edit)
-        sendPhoto(f'• Picture No. : 1 / {len(config_dict['PICS'])}', context.bot, update.message, config_dict['PICS'][0], buttons.build_menu(2))
+        sendPhoto(f'• Picture No. : 1 / {len(config_dict["PICS"])}', context.bot, update.message, config_dict['PICS'][0], buttons.build_menu(2))
 
 def pics_callback(update, context):
     query = update.callback_query
@@ -65,7 +65,7 @@ def pics_callback(update, context):
         query.answer()
         ind = int(data[3])
         no = len(config_dict['PICS']) - abs(ind+1) if ind < 0 else ind + 1
-        pic_info = f'🌄 <b>Picture No. : {no} / {len(config_dict['PICS'])}</b>'
+        pic_info = f'🌄 <b>Picture No. : {no} / {len(config_dict["PICS"])}</b>'
         buttons = ButtonMaker()
         buttons.sbutton("<<", f"pics {data[1]} turn {ind-1}")
         buttons.sbutton(">>", f"pics {data[1]} turn {ind+1}")
