@@ -44,8 +44,8 @@ def picture_add(update, context):
 
 def pictures(update, context):
     user_id = update.message.from_user.id
-    if not PICS:
-        sendMessage("Add Some Photos OR use API to Let me Show you !!", context.bot, update.message)
+    if not config_dict['PICS']:
+        sendMessage("Add Some Photos by /addpic OR use API to Let me Show you !!", context.bot, update.message)
     else:
         to_edit = sendMessage("Generating Grid of your Images...", context.bot, update.message)
         buttons = ButtonMaker()
@@ -53,7 +53,7 @@ def pictures(update, context):
         buttons.sbutton(">>", f"pics {user_id} turn 1")
         buttons.sbutton("Remove Photo", f"pics {user_id} remov 0")
         deleteMessage(context.bot, to_edit)
-        sendPhoto(f'• Picture No. : 1 / {len(PICS)}', context.bot, update.message, PICS[0], buttons.build_menu(2))
+        sendPhoto(f'• Picture No. : 1 / {len(config_dict['PICS'])}', context.bot, update.message, config_dict['PICS'][0], buttons.build_menu(2))
 
 def pics_callback(update, context):
     query = update.callback_query
@@ -65,15 +65,15 @@ def pics_callback(update, context):
     if data[2] == "turn":
         query.answer()
         ind = int(data[3])
-        no = len(PICS) - abs(ind+1) if ind < 0 else ind + 1
-        pic_info = f'🌄 <b>Picture No. : {no} / {len(PICS)}</b>'
+        no = len(config_dict['PICS']) - abs(ind+1) if ind < 0 else ind + 1
+        pic_info = f'🌄 <b>Picture No. : {no} / {len(config_dict['PICS'])}</b>'
         buttons = ButtonMaker()
         buttons.sbutton("<<", f"pics {data[1]} turn {ind-1}")
         buttons.sbutton(">>", f"pics {data[1]} turn {ind+1}")
         buttons.sbutton("Remove Photo", f"pics {data[1]} remov {ind}")
-        editPhoto(pic_info, context.bot, update.message, PICS[ind], buttons.build_menu(2))
+        editPhoto(pic_info, context.bot, update.message, config_dict['PICS'][ind], buttons.build_menu(2))
     elif data[2] == "remov":
-        PICS.pop(int(data[3]))
+        config_dict['PICS'].pop(int(data[3]))
         query.answer(text="Photo Successfully Deleted", show_alert=True)
 
 picture_add_handler = CommandHandler('addpic', picture_add,
