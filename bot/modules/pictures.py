@@ -10,41 +10,46 @@ from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 
 def picture_add(update, context):
-    editable = sendMessage("Checking Input ...", context.bot, update.message)
+    editable = sendMessage("<code>Checking Input ...</code>", context.bot, update.message)
     resm = update.message.reply_to_message
     if resm is not None and resm.text:
         msg_text = resm.text
         if msg_text.startswith("http"):
             pic_add = msg_text.strip()
-            editMessage("Adding your Link ...", editable)
+            editMessage("<b>Adding your Link ...</b>", editable)
     elif resm and resm.photo:
         if not (resm.photo and resm.photo[-1].file_size <= 5242880*2):
             editMessage("This Media is Not Supported! Only Send Photos !!", editable)
             return
-        editMessage("Uploading to telegra.ph Server ...", editable)
         path = "Thumbnails/"
         if not ospath.isdir(path):
             mkdir(path)
         photo_dir = resm.photo[-1].get_file().download()
-        editMessage("`Uploading to telegra.ph Server, Please Wait...`", editable)
+        editMessage("<b>Uploading to telegra.ph Server, Please Wait...</b>", editable)
         sleep(1.5)
         try:
             pic_add = f'https://graph.org{upload_file(photo_dir)[0]}'
+            LOGGER.info(f"Telegraph Link : {pic_add}")
         except Exception as e:
+            LOGGER.error(f"Pictures Error: {e}")
             editMessage(str(e), editable)
         finally:
             osremove(photo_dir)
     else:
-        editMessage("Reply to Any Valid Photo!! Or Provide Direct DL Links of Images.", editable)
+        help_msg = "<b>By Replying to Link (Telegra.ph or DDL):</b>"
+        help_msg += f"\n<code>/addpic" + " {link}" + "</code>\n"
+        help_msg += "\n<b>By Replying to Photo on Telegram:</b>"
+        help_msg += f"\n<code>/addpic" + " {photo}" + "</code>"
+        editMessage(help_msg, editable)
         return
     config_dict['PICS'].append(pic_add)
     sleep(1.5)
-    editMessage("<b><i>Added to Existing Random Pictures Status List!</i></b>", editable)
+    editMessage(f"<b><i>Successfully Added to Existing Random Pictures Status List!</i></b>\n\n<b>Total Pics :</b><code>{len(config_dict['PICS'])}</code>", editable)
 
 def pictures(update, context):
     user_id = update.message.from_user.id
     if not config_dict['PICS']:
-        sendMessage("Add Some Photos by /addpic OR use API to Let me Show you !!", context.bot, update.message)
+        sendMessage("No Photo to Show ! Add by /addpic", context.bot, update.message)
     else:
         to_edit = sendMessage("Generating Grid of your Images...", context.bot, update.message)
         buttons = ButtonMaker()
@@ -52,7 +57,7 @@ def pictures(update, context):
         buttons.sbutton(">>", f"pics {user_id} turn 1")
         buttons.sbutton("Remove Photo", f"pics {user_id} remov 0")
         deleteMessage(context.bot, to_edit)
-        sendPhoto(f'• Picture No. : 1 / {len(config_dict["PICS"])}', context.bot, update.message, config_dict['PICS'][0], buttons.build_menu(2))
+        sendPhoto(f'🌄 <b>Picture No. : 1 / {len(config_dict["PICS"])}</b>', context.bot, update.message, config_dict['PICS'][0], buttons.build_menu(2))
 
 def pics_callback(update, context):
     query = update.callback_query
