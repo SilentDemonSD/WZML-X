@@ -10,15 +10,14 @@ from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 
 def picture_add(update, context):
-    message = update.message
     editable = sendMessage("Checking Input ...", context.bot, update.message)
-    resm = message.reply_to_message
-    if resm.text:
+    resm = update.message.reply_to_message
+    if resm is not None and resm.text:
         msg_text = resm.text
         if msg_text.startswith("http"):
             pic_add = msg_text.strip()
             editMessage("Adding your Link ...", editable)
-    elif resm.photo:
+    elif resm and resm.photo:
         if not (resm.photo and resm.photo.file_size <= 5242880*2):
             editMessage("This Media is Not Supported! Only Send Photos !!", editable)
             return
