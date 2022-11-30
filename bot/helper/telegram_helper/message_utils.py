@@ -145,6 +145,7 @@ def sendLogFile(bot, message):
     while len(txt) <= 2000:
         txt += logFileLines[-i]
         toDisplay += 1
+        if i == 1: break
         i -= 1
     #toDisplay = min(len(logFileLines), 20)
     startLine = f'Last {toDisplay} Lines : \n\n---------------- START LOG -----------------\n\n'
