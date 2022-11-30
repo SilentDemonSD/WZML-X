@@ -313,7 +313,6 @@ SEARCH_LIMIT = 0 if len(SEARCH_LIMIT) == 0 else int(SEARCH_LIMIT)
 
 CMD_PERFIX = environ.get('CMD_PERFIX', '')
 
-
 TORRENT_TIMEOUT = environ.get('TORRENT_TIMEOUT', '')
 TORRENT_TIMEOUT = '' if len(TORRENT_TIMEOUT) == 0 else int(TORRENT_TIMEOUT)
 
@@ -611,7 +610,7 @@ if len(WALLCRAFT_CATEGORY) == 0:
     WALLCRAFT_CATEGORY = ''
 
 PICS = environ.get('PICS', '')
-PICS = (PICS.replace("'", '').replace('"', '').replace('[', '').replace(']', '').replace(",", "")).split(' ')
+PICS = (PICS.replace("'", '').replace('"', '').replace('[', '').replace(']', '').replace(",", "")).split()
 
 SERVER_PORT = environ.get('SERVER_PORT', '')
 if len(SERVER_PORT) == 0:
