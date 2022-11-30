@@ -43,43 +43,45 @@ def picture_add(update, context):
     editMessage("<b><i>Added to Existing Random Pictures Status List!</i></b>", editable)
 
 def pictures(update, context):
+    user_id = update.message.from_user.id
     if not PICS:
         sendMessage("Add Some Photos OR use API to Let me Show you !!", context.bot, update.message)
     else:
         to_edit = sendMessage("Generating Grid of your Images...", context.bot, update.message)
         buttons = ButtonMaker()
-        buttons.sbutton("<<", f"pic -1")
-        buttons.sbutton(">>", "pic 1")
-        buttons.sbutton("Remove Photo", "picsremove 0")
+        buttons.sbutton("<<", f"pics {user_id} turn -1")
+        buttons.sbutton(">>", f"pics {user_id} turn 1")
+        buttons.sbutton("Remove Photo", f"pics {user_id} remov 0")
         deleteMessage(context.bot, to_edit)
         sendPhoto(f'• Picture No. : 1 / {len(PICS)}', context.bot, update.message, PICS[0], buttons.build_menu(2))
 
-def pics_callback(client: Client, query: CallbackQuery):
-    if query.data.startswith("pic"):
-        if query.data.startswith("picsremove"):
-            getData = (query.data).split()
-            index = int(getData[1])
-            PICS_LIST.pop(index)
-            await query.edit_message_media(media=InputMediaPhoto(media="https://te.legra.ph/file/06dbd8fb0628b8ba4ab45.png", caption="Removed from Existing Random Pictures Status List !!"))
-            return
-        getData = (query.data).split()
-        ind = int(getData[1])
-        no = len(PICS_LIST) - abs(ind+1) if ind < 0 else ind + 1
-        pic_info = f'🌄 <b>Picture No. : {no} / {len(PICS_LIST)}</b>'
-        btns = [
-            [InlineKeyboardButton("<<", callback_data=f"pic {ind-1}"),
-            InlineKeyboardButton(">>", callback_data=f"pic {ind+1}")],
-            [InlineKeyboardButton("Remove Photo", callback_data=f"picsremove {ind}")]
-        ]
-        await query.edit_message_media(media=InputMediaPhoto(media=PICS_LIST[ind], caption=pic_info), reply_markup=InlineKeyboardMarkup(btns))
-    query.answer()
+def pics_callback(update, context):
+    query = update.callback_query
+    message = query.message
+    user_id = query.from_user.id
+    data = query.data.split()
+    if user_id != int(data[1]):
+        query.answer(text="Not Authorized User!", show_alert=True)
+    if data[2] == "turn":
+        query.answer()
+        ind = int(data[3])
+        no = len(PICS) - abs(ind+1) if ind < 0 else ind + 1
+        pic_info = f'🌄 <b>Picture No. : {no} / {len(PICS)}</b>'
+        buttons = ButtonMaker()
+        buttons.sbutton("<<", f"pics {data[1]} turn {ind-1}")
+        buttons.sbutton(">>", f"pics {data[1]} turn {ind+1}")
+        buttons.sbutton("Remove Photo", f"pics {data[1]} remov {ind}")
+        editPhoto(pic_info, context.bot, update.message, PICS[ind], buttons.build_menu(2))
+    elif data[2] == "remov":
+        PICS.pop(int(data[3]))
+        query.answer(text="Photo Successfully Deleted", show_alert=True)
 
 picture_add_handler = CommandHandler('addpic', picture_add,
                                     filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
 pictures_handler = CommandHandler('pics', pictures,
                                     filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
-but_set_handler = CallbackQueryHandler(edit_user_settings, pattern="userset", run_async=True)
+pic_call_handler = CallbackQueryHandler(pics_callback, pattern="pics", run_async=True)
 
 dispatcher.add_handler(picture_add_handler)
 dispatcher.add_handler(pictures_handler)
-dispatcher.add_handler(users_settings_handler)
+dispatcher.add_handler(pic_call_handler)
