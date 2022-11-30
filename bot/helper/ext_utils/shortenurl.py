@@ -10,7 +10,7 @@ from bot import LOGGER, config_dict
 LSHORTENER_API = config_dict['SHORTENER_API'].split(' ')
 LSHORTENER = config_dict['SHORTENER'].split(' ')
 def short_url(longurl):
-    if len(SHORTENER) == 0 and len(SHORTENER_API) == 0:
+    if len(LSHORTENER) == 0 and len(LSHORTENER_API) == 0:
         return longurl
     SHORTENER = choice(LSHORTENER)
     ind = LSHORTENER.index(SHORTENER)
