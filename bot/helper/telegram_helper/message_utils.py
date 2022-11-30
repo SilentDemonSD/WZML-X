@@ -145,7 +145,7 @@ def sendLogFile(bot, message):
     try:
         Loglines = '\n'.join(logFileLines[-l] for l in range (toDisplay, 0, -1))
         textLog = startLine+Loglines+endLine
-            sendMessage(textLog, bot, message)
+        sendMessage(textLog, bot, message)
     except Exception as err:
         LOGGER.info(f"Error Log Display : {err}")
     app.send_document(document='log.txt', thumb='Thumbnails/weeb.jpg',
