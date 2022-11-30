@@ -18,7 +18,7 @@ def picture_add(update, context):
             pic_add = msg_text.strip()
             editMessage("Adding your Link ...", editable)
     elif resm and resm.photo:
-        if not (resm.photo and (resm.photo)[-1].file_size <= 5242880*2):
+        if not (resm.photo and resm.photo[-1].file_size <= 5242880*2):
             editMessage("This Media is Not Supported! Only Send Photos !!", editable)
             return
         editMessage("Uploading to telegra.ph Server ...", editable)
@@ -26,7 +26,8 @@ def picture_add(update, context):
         if not ospath.isdir(path):
             mkdir(path)
         photo_dir = resm.photo[-1].get_file().download()
-        editMessage("`Uploading to te.legra.ph Server, Please Wait...`", editable)
+        editMessage("`Uploading to telegra.ph Server, Please Wait...`", editable)
+        sleep(1.5)
         try:
             pic_add = f'https://graph.org{upload_file(photo_dir)[0]}'
         except Exception as e:
@@ -60,6 +61,7 @@ def pics_callback(update, context):
     data = query.data.split()
     if user_id != int(data[1]):
         query.answer(text="Not Authorized User!", show_alert=True)
+        return
     if data[2] == "turn":
         query.answer()
         ind = int(data[3])
@@ -82,9 +84,9 @@ def pics_callback(update, context):
         editPhoto(pic_info, message, config_dict['PICS'][ind], buttons.build_menu(2))
 
 picture_add_handler = CommandHandler('addpic', picture_add,
-                                    filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
+                                    filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
 pictures_handler = CommandHandler('pics', pictures,
-                                    filters=CustomFilters.owner_filter | CustomFilters.authorized_user, run_async=True)
+                                    filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
 pic_call_handler = CallbackQueryHandler(pics_callback, pattern="pics", run_async=True)
 
 dispatcher.add_handler(picture_add_handler)
