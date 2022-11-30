@@ -81,6 +81,7 @@ def pics_callback(update, context):
         config_dict['PICS'].pop(int(data[3]))
         query.answer(text="Photo Successfully Deleted", show_alert=True)
         ind = int(data[3])+1
+        ind = len(config_dict['PICS']) - abs(ind) if ind < 0 else ind
         pic_info = f'🌄 <b>Picture No. : {ind} / {len(config_dict["PICS"])}</b>'
         buttons = ButtonMaker()
         buttons.sbutton("<<", f"pics {data[1]} turn {ind-1}")
