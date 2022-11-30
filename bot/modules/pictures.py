@@ -4,7 +4,7 @@ from telegraph import upload_file
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, ConversationHandler
 
 from bot import user_data, dispatcher, LOGGER, config_dict, DATABASE_URL, OWNER_ID
-from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, sendPhoto, deleteMessage
+from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, sendPhoto, deleteMessage, editPhoto
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
