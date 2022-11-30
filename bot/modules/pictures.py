@@ -18,8 +18,7 @@ def picture_add(update, context):
             pic_add = msg_text.strip()
             editMessage("Adding your Link ...", editable)
     elif resm and resm.photo:
-        LOGGER.info(resm.photo)
-        if not (resm.photo and (resm.photo).file_size <= 5242880*2):
+        if not (resm.photo and (resm.photo)[-1].file_size <= 5242880*2):
             editMessage("This Media is Not Supported! Only Send Photos !!", editable)
             return
         editMessage("Uploading to telegra.ph Server ...", editable)
