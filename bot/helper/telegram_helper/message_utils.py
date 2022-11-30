@@ -139,25 +139,24 @@ def deleteMessage(bot, message):
 def sendLogFile(bot, message):
     logFileRead = open('log.txt', 'r')
     logFileLines = logFileRead.read().splitlines()
+    ind = len(logFileLines)
     toDisplay = 0
-    i = len(logFileLines)
-    txt = ''
-    while len(txt) <= 2000:
-        txt += logFileLines[-i]
-        toDisplay += 1
-        if i == 1: break
-        i -= 1
-    #toDisplay = min(len(logFileLines), 20)
-    startLine = f'Last {toDisplay} Lines : \n\n---------------- START LOG -----------------\n\n'
-    endLine = '\n---------------- END LOG -----------------'
+    Loglines = ''
     try:
-        Loglines = '\n'.join(logFileLines[-l] for l in range (toDisplay, 0, -1))
+        while len(Loglines) <= 2500:
+            Loglines += logFileLines[-ind]+'\n'
+            toDisplay += 1
+            if ind == 1: break
+            ind -= 1
+        startLine = f"Generated Last {toDisplay} Lines from log.txt: \n\n---------------- START LOG -----------------\n\n'
+        endLine = '\n\n---------------- END LOG -----------------'
+        #Loglines = '\n'.join(logFileLines[-l] for l in range(toDisplay, 0, -1))
         sendMessage(escape(startLine+Loglines+endLine), bot, message)
     except Exception as err:
-        LOGGER.info(f"Error Log Display : {err}")
+        LOGGER.error(f"Log Display : {err}")
     app.send_document(document='log.txt', thumb='Thumbnails/weeb.jpg',
                           reply_to_message_id=message.message_id,
-                          chat_id=message.chat_id, caption=f'log.txt\n\nUpTime: {get_readable_time(time() - botStartTime)}')
+                          chat_id=message.chat_id, caption=f'log.txt\n\n⏰️ UpTime: {get_readable_time(time() - botStartTime)}')
 
 def sendFile(bot, message, name, caption=""):
     try:
