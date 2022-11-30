@@ -9,7 +9,7 @@ from time import time
 from math import ceil
 from re import split as re_split, I
 from .exceptions import NotSupportedExtractionArchive
-from bot import aria2, app, LOGGER, DOWNLOAD_DIR, get_client, premium_session, config_dict
+from bot import aria2, app, LOGGER, DOWNLOAD_DIR, get_client, premium_session, config_dict, STORAGE_THRESHOLD
 
 
 ARCH_EXT = [".tar.bz2", ".tar.gz", ".bz2", ".gz", ".tar.xz", ".tar", ".tbz2", ".tgz", ".lzma2",
@@ -89,7 +89,6 @@ def get_path_size(path: str):
     return total_size
 
 def check_storage_threshold(size: int, arch=False, alloc=False):
-    STORAGE_THRESHOLD = config_dict['STORAGE_THRESHOLD']
     if not alloc:
         if not arch:
             if disk_usage(DOWNLOAD_DIR).free - size < STORAGE_THRESHOLD * 1024**3:

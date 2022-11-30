@@ -1,5 +1,6 @@
 from telegram.ext import CommandHandler, CallbackQueryHandler, MessageHandler, Filters
 from functools import partial
+from collections import OrderedDict
 from time import time, sleep
 from os import remove, rename, path as ospath, environ
 from subprocess import run as srun, Popen
@@ -41,6 +42,7 @@ default_values = {'AUTO_DELETE_MESSAGE_DURATION': 30,
                   'CAPTION_FONT': 'code',
                   'FINISHED_PROGRESS_STR': '█',
                   'UN_FINISHED_PROGRESS_STR': '▒',
+                  'MULTI_WORKING_PROGRESS_STR': '▁ ▂ ▃ ▄ ▅ ▆ ▇'.split(' '),
                   'CHANNEL_USERNAME': 'WeebZone_updates',
                   'FSUB_CHANNEL_ID': '-1001512307861',
                   'IMAGE_URL': 'https://graph.org/file/6b22ef7b8a733c5131d3f.jpg',
@@ -550,9 +552,12 @@ def load_config():
 
     FINISHED_PROGRESS_STR = environ.get('FINISHED_PROGRESS_STR', '')
     UN_FINISHED_PROGRESS_STR = environ.get('UN_FINISHED_PROGRESS_STR', '')
-    if len(FINISHED_PROGRESS_STR) == 0 or len(FINISHED_PROGRESS_STR) == 0:
+    MULTI_WORKING_PROGRESS_STR = environ.get('MULTI_WORKING_PROGRESS_STR', '')
+    MULTI_WORKING_PROGRESS_STR = MULTI_WORKING_PROGRESS_STR.split(' ')
+    if len(FINISHED_PROGRESS_STR) == 0 or len(FINISHED_PROGRESS_STR) == 0 or len(MULTI_WORKING_PROGRESS_STR) == 0:
         FINISHED_PROGRESS_STR = '█' # '■'
         UN_FINISHED_PROGRESS_STR = '▒' # '□'
+        MULTI_WORKING_PROGRESS_STR = '▁ ▂ ▃ ▄ ▅ ▆ ▇'.split(' ')
 
     CHANNEL_USERNAME = environ.get('CHANNEL_USERNAME', '')
     if len(CHANNEL_USERNAME) == 0:
@@ -700,6 +705,7 @@ def load_config():
                         'TIME_GAP': TIME_GAP,
                         'FINISHED_PROGRESS_STR': FINISHED_PROGRESS_STR,
                         'UN_FINISHED_PROGRESS_STR': UN_FINISHED_PROGRESS_STR,
+                        'MULTI_WORKING_PROGRESS_STR': MULTI_WORKING_PROGRESS_STR,
                         'EMOJI_THEME': EMOJI_THEME,
                         'SHOW_LIMITS_IN_STATS': SHOW_LIMITS_IN_STATS,
                         'TELEGRAPH_STYLE': TELEGRAPH_STYLE,
@@ -743,7 +749,8 @@ def get_buttons(key=None, edit_type=None):
         buttons.sbutton('Close', "botset close")
         msg = 'Bot Settings:'
     elif key == 'var':
-        for k in list(config_dict.keys())[START:10+START]:
+        alpha_config = OrderedDict(sorted(config_dict.items()))
+        for k in list(alpha_config.keys())[START:10+START]:
             buttons.sbutton(k, f"botset editvar {k}")
         if STATE == 'view':
             buttons.sbutton('Edit', "botset edit var")

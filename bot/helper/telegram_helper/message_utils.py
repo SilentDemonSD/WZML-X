@@ -1,11 +1,14 @@
 from random import choice
+from html import escape
 from time import sleep, time
-from telegram import InlineKeyboardMarkup
+from telegram import InlineKeyboardMarkup, InputMediaPhoto
 from telegram.message import Message
 from telegram.error import RetryAfter
 from pyrogram import enums
 from pyrogram.errors import FloodWait
 from os import remove
+from bot import botStartTime
+from bot.helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time
 
 from bot import LOGGER, status_reply_dict, status_reply_dict_lock, \
                 Interval, bot, rss_session, \
@@ -114,6 +117,18 @@ def sendPhoto(text, bot, message, photo, reply_markup=None):
         LOGGER.error(str(e))
         return
 
+def editPhoto(text, message, photo, reply_markup=None):
+    try:
+        return bot.edit_message_media(media=InputMediaPhoto(media=photo, caption=text, parse_mode='html'), chat_id=message.chat.id, message_id=message.message_id,
+                                      reply_markup=reply_markup)
+    except RetryAfter as r:
+        LOGGER.warning(str(r))
+        sleep(r.retry_after * 1.5)
+        return editPhoto(text, message, photo, reply_markup)
+    except Exception as e:
+        LOGGER.error(str(e))
+        return
+
 def deleteMessage(bot, message):
     try:
         bot.deleteMessage(chat_id=message.chat.id,
@@ -122,9 +137,25 @@ def deleteMessage(bot, message):
         pass
 
 def sendLogFile(bot, message):
+    logFileRead = open('log.txt', 'r')
+    logFileLines = logFileRead.read().splitlines()
+    ind = len(logFileLines)
+    toDisplay = 0
+    Loglines = ''
+    try:
+        while len(Loglines) <= 2500:
+            Loglines += logFileLines[-ind]+'\n'
+            toDisplay += 1
+            if ind == 1: break
+            ind -= 1
+        startLine = f"Generated Last {toDisplay} Lines from log.txt: \n\n---------------- START LOG -----------------\n\n"
+        endLine = "\n---------------- END LOG -----------------"
+        sendMessage(escape(startLine+Loglines+endLine), bot, message)
+    except Exception as err:
+        LOGGER.error(f"Log Display : {err}")
     app.send_document(document='log.txt', thumb='Thumbnails/weeb.jpg',
                           reply_to_message_id=message.message_id,
-                          chat_id=message.chat_id, caption='log.txt')
+                          chat_id=message.chat_id, caption=f'log.txt\n\n⏰️ UpTime: {get_readable_time(time() - botStartTime)}')
 
 def sendFile(bot, message, name, caption=""):
     try:
@@ -179,11 +210,11 @@ def update_all_messages(force=False):
         for chat_id in status_reply_dict:
             if status_reply_dict[chat_id] and msg != status_reply_dict[chat_id][0].text:
                 if buttons == "" and PICS:
-                    rmsg = editCaption(msg, status_reply_dict[chat_id][0])
+                    rmsg = editPhoto(msg, status_reply_dict[chat_id][0], choice(PICS))
                 elif buttons == "":
                     rmsg = editMessage(msg, status_reply_dict[chat_id][0])
                 elif PICS:
-                    rmsg = editCaption(msg, status_reply_dict[chat_id][0], buttons)
+                    rmsg = editPhoto(msg, status_reply_dict[chat_id][0], choice(PICS), buttons)
                 else:
                     rmsg = editMessage(msg, status_reply_dict[chat_id][0], buttons)
                 if rmsg == "Message to edit not found":

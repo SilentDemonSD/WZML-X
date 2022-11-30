@@ -66,7 +66,6 @@ class EngineStatus:
 
     
 SIZE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
-PROGRESS_INCOMPLETE = ['▁', '▂', '▃', '▄', '▅', '▆', '▇']
 
 class setInterval:
     def __init__(self, interval, action):
@@ -143,7 +142,7 @@ def get_user_task(user_id):
 def progress_bar(percentage):
     """Returns a progress bar for download"""
     if isinstance(percentage, str):
-        return "NaN"
+        return "N/A"
     try:
         percentage = int(percentage)
     except Exception:
@@ -173,7 +172,7 @@ def get_progress_bar_string(status):
     cPart = p % 8 - 1
     p_str = config_dict['FINISHED_PROGRESS_STR'] * cFull
     if cPart >= 0:
-        p_str += PROGRESS_INCOMPLETE[cPart]
+        p_str += config_dict['MULTI_WORKING_PROGRESS_STR'][cPart]
     p_str += config_dict['UN_FINISHED_PROGRESS_STR']  * (12 - cFull)
     p_str = f"[{p_str}]"
     return p_str
