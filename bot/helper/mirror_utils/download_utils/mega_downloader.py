@@ -173,15 +173,19 @@ def add_mega_download(mega_link: str, path: str, listener, name: str):
                 if smsg:
                     msg1 = "File/Folder is already available in Drive.\nHere are the search results:"
                     return sendMarkup(msg1, listener.bot, listener.message, button)
+                    api.removeListener(mega_listener)
+                    if folder_api is not None:
+                        folder_api.removeListener(mega_listener)
+                    return
             else:
                 cap, f_name = GoogleDriveHelper().drive_list(mname, True)
                 if cap:
                     cap = f"File/Folder is already available in Drive. Here are the search results:\n\n{cap}"
                     sendFile(listener.bot, listener.message, f_name, cap)
-                api.removeListener(mega_listener)
-                if folder_api is not None:
-                    folder_api.removeListener(mega_listener)
-                return
+                    api.removeListener(mega_listener)
+                    if folder_api is not None:
+                        folder_api.removeListener(mega_listener)
+                    return
     user_id = listener.message.from_user.id
     MEGA_LIMIT = config_dict['MEGA_LIMIT']
     STORAGE_THRESHOLD = config_dict['STORAGE_THRESHOLD']
