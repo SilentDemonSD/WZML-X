@@ -1,4 +1,5 @@
 from random import choice
+from html import escape
 from time import sleep, time
 from telegram import InlineKeyboardMarkup, InputMediaPhoto
 from telegram.message import Message
@@ -150,7 +151,7 @@ def sendLogFile(bot, message):
     endLine = '\n---------------- END LOG -----------------'
     try:
         Loglines = '\n'.join(logFileLines[-l] for l in range (toDisplay, 0, -1))
-        sendMessage(startLine+Loglines+endLine, bot, message)
+        sendMessage(escape(startLine+Loglines+endLine), bot, message)
     except Exception as err:
         LOGGER.info(f"Error Log Display : {err}")
     app.send_document(document='log.txt', thumb='Thumbnails/weeb.jpg',
