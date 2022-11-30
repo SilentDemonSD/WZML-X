@@ -6,6 +6,8 @@ from telegram.error import RetryAfter
 from pyrogram import enums
 from pyrogram.errors import FloodWait
 from os import remove
+from bot import botStartTime
+from bot.helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time
 
 from bot import LOGGER, status_reply_dict, status_reply_dict_lock, \
                 Interval, bot, rss_session, \
@@ -134,9 +136,21 @@ def deleteMessage(bot, message):
         pass
 
 def sendLogFile(bot, message):
+    logFileRead = open('log.txt', 'r')
+    logFileLines = logFileRead.read().splitlines()
+    toDisplay = 0
+    toDisplay = min(len(logFileLines), 20)
+    startLine = f'Last {toDisplay} Lines : \n\n---------------- START LOG -----------------\n\n'
+    endLine = '\n---------------- END LOG -----------------'
+    try:
+        Loglines = '\n'.join(logFileLines[-l] for l in range (toDisplay, 0, -1))
+        textLog = startLine+Loglines+endLine
+            sendMessage(textLog, bot, message)
+    except Exception as err:
+        LOGGER.info(f"Error Log Display : {err}")
     app.send_document(document='log.txt', thumb='Thumbnails/weeb.jpg',
                           reply_to_message_id=message.message_id,
-                          chat_id=message.chat_id, caption='log.txt')
+                          chat_id=message.chat_id, caption=f'log.txt\n\nUpTime: {get_readable_time(time() - botStartTime)}')
 
 def sendFile(bot, message, name, caption=""):
     try:
