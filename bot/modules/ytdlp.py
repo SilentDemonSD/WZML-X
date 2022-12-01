@@ -7,7 +7,7 @@ from re import split as re_split
 
 from bot import *
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, auto_delete_upload_message, auto_delete_message
-from bot.helper.ext_utils.bot_utils import get_readable_file_size, is_url, get_user_task
+from bot.helper.ext_utils.bot_utils import get_readable_file_size, is_url, get_user_task, is_sudo, is_paid
 from bot.helper.ext_utils.timegap import timegap_check
 from bot.helper.mirror_utils.download_utils.yt_dlp_download_helper import YoutubeDLHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -66,7 +66,7 @@ def _ytdl(bot, message, isZip=False, isLeech=False):
     user_id = message.from_user.id
     USER_TASKS_LIMIT = config_dict['USER_TASKS_LIMIT']
     TOTAL_TASKS_LIMIT = config_dict['TOTAL_TASKS_LIMIT']
-    if user_id != OWNER_ID and user_data[user_id].get('is_sudo') and user_data[user_id].get('is_paid'):
+    if user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id):
         if config_dict['PAID_SERVICE'] is True:
             if TOTAL_TASKS_LIMIT == total_task:
                 return sendMessage(f"<b>Bᴏᴛ Tᴏᴛᴀʟ Tᴀsᴋ Lɪᴍɪᴛ : {TOTAL_TASKS_LIMIT}\nTᴀsᴋs Pʀᴏᴄᴇssɪɴɢ : {total_task}\n#total limit exceed </b>\n#Buy Paid Service", bot ,message)
@@ -78,7 +78,7 @@ def _ytdl(bot, message, isZip=False, isLeech=False):
             if USER_TASKS_LIMIT == get_user_task(user_id):
                 return sendMessage(f"<b>Bᴏᴛ Usᴇʀ Tᴀsᴋ Lɪᴍɪᴛ : {USER_TASKS_LIMIT} \nYᴏᴜʀ Tᴀsᴋs : {get_user_task(user_id)}\n#user limit exceed</b>", bot ,message)
 
-    if user_id != OWNER_ID and user_data[user_id].get('is_sudo') and user_data[user_id].get('is_paid'):
+    if user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id):
         time_gap = timegap_check(message)
         if time_gap:
             return
