@@ -139,16 +139,14 @@ def deleteMessage(bot, message):
 def sendLogFile(bot, message):
     logFileRead = open('log.txt', 'r')
     logFileLines = logFileRead.read().splitlines()
-    ind = len(logFileLines)
-    toDisplay = 0
+    ind = 1
     Loglines = ''
     try:
         while len(Loglines) <= 2500:
-            Loglines += logFileLines[-ind]+'\n'
-            toDisplay += 1
-            if ind == 1: break
-            ind -= 1
-        startLine = f"Generated Last {toDisplay} Lines from log.txt: \n\n---------------- START LOG -----------------\n\n"
+            Loglines = logFileLines[-ind]+'\n'+Loglines
+            if ind == len(logFileLines): break
+            ind += 1
+        startLine = f"Generated Last {ind} Lines from log.txt: \n\n---------------- START LOG -----------------\n\n"
         endLine = "\n---------------- END LOG -----------------"
         sendMessage(escape(startLine+Loglines+endLine), bot, message)
     except Exception as err:
