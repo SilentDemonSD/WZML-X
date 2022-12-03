@@ -31,7 +31,7 @@ def scrapper(update, context):
             link = link[1]
         else:
             help_msg = "<b>Send link after command:</b>"
-            help_msg += f"\n<code>/{BotCommands.ScrapeCommand[0]}" + " {link}" + "</code>"
+            help_msg += f"\n<code>/{BotCommands.ScrapeCommand[0]}" + " {link}" + "</code>\n"
             help_msg += "\n<b>By Replying to Message (Including Link):</b>"
             help_msg += f"\n<code>/{BotCommands.ScrapeCommand[0]}" + " {message}" + "</code>"
             return sendMessage(help_msg, context.bot, update.message)
@@ -189,6 +189,30 @@ def scrapper(update, context):
                 if len(gd_txt) > 4000:
                     sent = sendMessage("<i>Running More Scrape ...</i>", context.bot, update.message)
                     gd_txt = ""
+    elif "moviesmod.com" in link:
+        gd_txt, no = "", 0
+        rep = rget(link)
+        soup = BeautifulSoup(rep.text, 'html.parser')
+        links = soup.select("a[rel='noopener nofollow external noreferrer']")
+        gd_txt = f"Total Links Found : {len(links)}\n\n"
+        for l in links:
+            gd_txt += l.text + '\n'
+            scrapper = cloudscraper.create_scraper(allow_brotli=False)
+            res = scrapper.get(l['href'])
+            nsoup = BeautifulSoup(res.text, 'html.parser')
+            for ll in nsoup.select('a[href]'):
+                for url in drive_list:
+                    if url in ll['href']:
+                        nl = rget(ll['href']).text
+                        nl = nl.split('"')[1]
+                        gd_txt += f"https://{url}{nl}\n"
+                    elif 'urlflix.xyz' in ll['href']:
+                        resp = rget(ll['href'])
+                        ssoup = BeautifulSoup(resp.text, 'html.parser')
+                        atag = ssoup.select('div[id="text-url"] > a[href]')
+                        for ref in atag:
+                            gd_txt += ref['href'] + '\n'
+        sendMessage(gd_txt, context.bot, update.message)
     elif "animeremux" in link:
         sent = sendMessage('Running Scrape ...', context.bot, update.message)
         gd_txt, no = "", 0
