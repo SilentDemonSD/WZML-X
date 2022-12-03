@@ -233,13 +233,26 @@ def load_config():
     TORRENT_TIMEOUT = environ.get('TORRENT_TIMEOUT', '')
     downloads = aria2.get_downloads()
     if len(TORRENT_TIMEOUT) == 0:
-        if downloads:
-            aria2.set_options({'bt-stop-timeout': '0'}, downloads)
+        for download in downloads:
+            if not download.is_complete:
+                try:
+                    aria2.client.change_option(download.gid, {'bt-stop-timeout': '0'})
+                except Exception as e:
+                    LOGGER.error(e)
         aria2_options['bt-stop-timeout'] = '0'
+    if DATABASE_URL:
+            DbManger().update_aria2('bt-stop-timeout', '0')
+        TORRENT_TIMEOUT = ''
     else:
-        if downloads:
-            aria2.set_options({'bt-stop-timeout': TORRENT_TIMEOUT}, downloads)
+        for download in downloads:
+            if not download.is_complete:
+                try:
+                    aria2.client.change_option(download.gid, {'bt-stop-timeout': TORRENT_TIMEOUT})
+                except Exception as e:
+                    LOGGER.error(e)
         aria2_options['bt-stop-timeout'] = TORRENT_TIMEOUT
+        if DATABASE_URL:
+            DbManger().update_aria2('bt-stop-timeout', TORRENT_TIMEOUT)
         TORRENT_TIMEOUT = int(TORRENT_TIMEOUT)
 
 
@@ -845,8 +858,12 @@ def edit_variable(update, context, omsg, key):
     elif key == 'TORRENT_TIMEOUT':
         value = int(value)
         downloads = aria2.get_downloads()
-        if downloads:
-            aria2.set_options({'bt-stop-timeout': f'{value}'}, downloads)
+        for download in downloads:
+            if not download.is_complete:
+                try:
+                    aria2.client.change_option(download.gid, {'bt-stop-timeout': f'{value}'})
+                except Exception as e:
+                    LOGGER.error(e)
         aria2_options['bt-stop-timeout'] = f'{value}'
     elif key == 'TG_SPLIT_SIZE':
         value = min(int(value), tgBotMaxFileSize)
@@ -893,8 +910,12 @@ def edit_aria(update, context, omsg, key):
         aria2.set_global_options({key: value})
     else:
         downloads = aria2.get_downloads()
-        if downloads:
-            aria2.set_options({key: value}, downloads)
+        for download in downloads:
+            if not download.is_complete:
+                try:
+                    aria2.client.change_option(download.gid, {key: value})
+                except Exception as e:
+                    LOGGER.error(e)
     aria2_options[key] = value
     update_buttons(omsg, 'aria')
     update.message.delete()
@@ -932,6 +953,10 @@ def update_private_file(update, context, omsg):
             config_dict['USE_SERVICE_ACCOUNTS'] = False
             if DATABASE_URL:
                 DbManger().update_config({'USE_SERVICE_ACCOUNTS': False})
+        elif file_name in ['.netrc', 'netrc']:
+            srun(["touch", ".netrc"])
+            srun(["cp", ".netrc", "/root/.netrc"])
+            srun(["chmod", "600", ".netrc"])
         update.message.delete()
     else:
         doc = update.message.document
@@ -1022,9 +1047,15 @@ def edit_bot_settings(update, context):
             GLOBAL_EXTENSION_FILTER.append('.aria2')
         elif data[2] == 'TORRENT_TIMEOUT':
             downloads = aria2.get_downloads()
-            if downloads:
-                aria2.set_options({'bt-stop-timeout': '0'}, downloads)
+            for download in downloads:
+                if not download.is_complete:
+                    try:
+                        aria2.client.change_option(download.gid, {'bt-stop-timeout': '0'})
+                    except Exception as e:
+                        LOGGER.error(e)
             aria2_options['bt-stop-timeout'] = '0'
+            if DATABASE_URL:
+                    DbManger().update_aria2('bt-stop-timeout', '0')
         elif data[2] == 'BASE_URL':
             srun(["pkill", "-9", "-f", "gunicorn"])
         elif data[2] == 'SERVER_PORT':
@@ -1056,8 +1087,12 @@ def edit_bot_settings(update, context):
         aria2_options[data[2]] = value
         update_buttons(message, 'aria')
         downloads = aria2.get_downloads()
-        if downloads:
-            aria2.set_options({data[2]: value}, downloads)
+        for download in downloads:
+            if not download.is_complete:
+                try:
+                    aria2.client.change_option(download.gid, {data[2]: value})
+                except Exception as e:
+                    LOGGER.error(e)
         if DATABASE_URL:
             DbManger().update_aria2(data[2], value)
     elif data[1] == 'emptyaria':
@@ -1066,8 +1101,12 @@ def edit_bot_settings(update, context):
         aria2_options[data[2]] = ''
         update_buttons(message, 'aria')
         downloads = aria2.get_downloads()
-        if downloads:
-            aria2.set_options({data[2]: ''}, downloads)
+        for download in downloads:
+            if not download.is_complete:
+                try:
+                    aria2.client.change_option(download.gid, {data[2]: ''})
+                except Exception as e:
+                    LOGGER.error(e)
         if DATABASE_URL:
             DbManger().update_aria2(data[2], '')
     elif data[1] == 'emptyqbit':
@@ -1138,8 +1177,8 @@ def edit_bot_settings(update, context):
         handler_dict[message.chat.id] = True
         update_buttons(message, data[2], data[1])
         partial_fnc = partial(edit_aria, omsg=message, key=data[2])
-        value_handler = MessageHandler(filters=Filters.text & Filters.chat(message.chat.id) &
-                        (CustomFilters.owner_filter | CustomFilters.sudo_user), callback=partial_fnc, run_async=True)
+        value_handler = MessageHandler(filters=Filters.text & Filters.chat(message.chat.id) & Filters.user(user_id),
+                                       callback=partial_fnc, run_async=True)
         dispatcher.add_handler(value_handler)
         while handler_dict[message.chat.id]:
             if time() - start_time > 60:
