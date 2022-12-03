@@ -232,7 +232,8 @@ def scrapper(update, context):
         soup = BeautifulSoup(res.text, 'html.parser')
         a = soup.select('a[href^="https://howblogs.xyz"]')
         t = soup.select('div[class^="Robiul"]')
-        gd_txt += t[-1].text.replace('Download ', '')+"\n"
+        LOGGER.info(t)
+        if t: gd_txt += t[-1].text.replace('Download ', '')+"\n"
         gd_txt += a[0].text
         nres = rget(a[0]['href'], allow_redirects=False)
         nsoup = BeautifulSoup(nres.text, 'html.parser')
