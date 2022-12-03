@@ -4,6 +4,8 @@ services:
   app:
     build: .
     command: bash start.sh
+    volumes:
+      - /cloned/repo/path/config.env:/usr/src/app/config.env
     restart: on-failure
     ports:
       - "80:80"
