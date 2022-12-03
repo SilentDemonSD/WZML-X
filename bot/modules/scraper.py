@@ -203,7 +203,7 @@ def scrapper(update, context):
             res = scrapper.get(l['href'])
             nsoup = BeautifulSoup(res.text, 'html.parser')
             for ll in nsoup.select('a[href]'):
-                for url in drive_list:
+                for url in drive_list:
                     if url in ll['href']:
                         nl = rget(ll['href']).text
                         nl = nl.split('"')[1]
