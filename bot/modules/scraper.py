@@ -1,5 +1,6 @@
 import cloudscraper
-from re import S, match as rematch, findall, sub as resub
+import concurrent.futures
+from re import S, match as rematch, findall, sub as resub, compile as recompile
 from asyncio import sleep as asleep
 from time import sleep
 from urllib.parse import urlparse, unquote
@@ -223,8 +224,6 @@ def scrapper(update, context):
             sendMessage(gd_txt, context.bot, update.message)
         elif gd_txt!= "":
             editMessage(gd_txt, sent)
-    elif "animekaizoku" in link:
-        sent = sendMessage('Running Scrape ... Coming Soon...', context.bot, update.message)
     elif "skymovieshd" in link:
         sent = sendMessage('Running Scrape ...', context.bot, update.message)
         gd_txt = ""
@@ -242,6 +241,46 @@ def scrapper(update, context):
             for no, link in enumerate(atag, start=1):
                 gd_txt += f"{no}. {link['href']}"
                 editMessage(gd_txt, sent)
+    elif "animekaizoku" in link:
+        sent = sendMessage('Running Scrape ... Coming Soon...', context.bot, update.message)
+        global post_id
+        DDL_REGEX = recompile(r"DDL\(([^),]+)\, (([^),]+)), (([^),]+)), (([^),]+))\)")
+        POST_ID_REGEX =  recompile(r'"postId":"(\d+)"')
+
+        try: website_html = rget(url).text
+        except: editMessage("Please provide the correct episode link of animekaizoku", sent); return
+	try:
+            post_id = POST_ID_REGEX.search(website_html).group(0).split(":")[1].split('"')[1]
+            payload_data_matches = DDL_REGEX.finditer(website_html)
+        except: editMessage("Something Went wrong !!", sent); return
+
+        for match in payload_data_matches:
+            payload_data = match.group(0).split("DDL(")[1].replace(")", "").split(",")
+            payload = {
+               "action" : "DDL",
+               "post_id": post_id,
+               "div_id" : payload_data[0].strip(),
+               "tab_id" : payload_data[1].strip(),
+               "num"    : payload_data[2].strip(),
+               "folder" : payload_data[3].strip(),
+            }
+            del payload["num"]     
+            link_types = "DDL" if payload["tab_id"] == "2" else "WORKER" if payload["tab_id"] == "4" else "GDRIVE"
+            response = rpost("https://animekaizoku.com/wp-admin/admin-ajax.php",headers=headers, data=payload)
+            soup = BeautifulSoup(response.text, "html.parser")  
+            downloadbutton = soup.find_all(class_="downloadbutton")
+            print(f"Now Scrapping {link_types} Links .....")
+
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                for button in downloadbutton:
+                    if button.text == "Patches": pass
+                    else:
+                        dict_key = button.text.strip()
+                        data_dict[dict_key] = []
+                        executor.submit(looper, dict_key, str(button))
+            main_dict[link_types] = copy.deepcopy(data_dict)
+            data_dict.clear()
+        #dictionary_decrypter()
     elif "animeremux" in link:
         sent = sendMessage('Running Scrape ...', context.bot, update.message)
         gd_txt, no = "", 0
@@ -250,6 +289,7 @@ def scrapper(update, context):
         links = soup.select('a[href*="urlshortx.com"]')
         gd_txt = f"Total Links Found : {len(links)}\n\n"
         editMessage(gd_txt, sent)
+        ptime = 0
         for a in links:
             link = a["href"]
             x = link.split("url=")[-1]
@@ -258,11 +298,14 @@ def scrapper(update, context):
             title = soupt.title
             no += 1
             gd_txt += f"{no}. {title.text}\n{x}\n\n"
-            editMessage(gd_txt, sent)
-            asleep(1.5)
-            if len(gd_txt) > 4000:
-                sent = sendMessage("<i>Running More Scrape ...</i>", context.bot, update.message)
-                gd_txt = ""
+            ptime += 1
+            if ptime == 3:
+                ptime = 0
+                asleep(3)
+                editMessage(gd_txt, sent)
+                if len(gd_txt) > 4000:
+                    sent = sendMessage("<i>Running More Scrape ...</i>", context.bot, update.message)
+                    gd_txt = ""
     elif "olamovies" in link:
         headers = {
             'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:103.0) Gecko/20100101 Firefox/103.0',
