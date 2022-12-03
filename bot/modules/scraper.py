@@ -193,7 +193,7 @@ def scrapper(update, context):
                     gd_txt = ""
     elif "moviesmod.com" in link:
         sent = sendMessage('Running Scrape ...', context.bot, update.message)
-        gd_txt, no = "", 0
+        gd_txt, no, to_edit = "", 0, False
         rep = rget(link)
         soup = BeautifulSoup(rep.text, 'html.parser')
         links = soup.select("a[rel='noopener nofollow external noreferrer']")
@@ -214,11 +214,15 @@ def scrapper(update, context):
                     atag = ssoup.select('div[id="text-url"] > a[href]')
                     for ref in atag:
                         gd_txt += ref['href'] + '\n'
-                asleep(3)
-                editMessage(gd_txt, sent)
                 if len(gd_txt) > 4000:
-                    sent = sendMessage("<i>Running More Scrape ...</i>", context.bot, update.message)
+                    asleep(2.5)
+                    editMessage(gd_txt, sent)
+                    to_edit = True
                     gd_txt = ""
+        if gd_txt != "" and to_edit:
+            sendMessage(gd_txt, context.bot, update.message)
+        elif gd_txt!= "":
+            editMessage(gd_txt, sent)
     elif "animekaizoku.com" in link:
         sent = sendMessage('Running Scrape ... Coming Soon...', context.bot, update.message)
     elif "animeremux" in link:
