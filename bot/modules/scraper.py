@@ -1,5 +1,6 @@
 import cloudscraper
 import concurrent.futures
+from copy import deepcopy
 from re import S, match as rematch, findall, sub as resub, compile as recompile
 from asyncio import sleep as asleep
 from time import sleep
@@ -279,7 +280,7 @@ def scrapper(update, context):
                         dict_key = button.text.strip()
                         data_dict[dict_key] = []
                         executor.submit(looper, dict_key, str(button))
-            main_dict[link_types] = copy.deepcopy(data_dict)
+            main_dict[link_types] = deepcopy(data_dict)
             data_dict.clear()
         #dictionary_decrypter()
     elif "animeremux" in link:
