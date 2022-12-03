@@ -207,12 +207,12 @@ def scrapper(update, context):
                     if url in ll['href']:
                         nl = (rget(ll['href']).text).split('"')[1]
                         gd_txt += f"https://{url}{nl}\n"
-                    elif 'urlflix.xyz' in ll['href']:
-                        resp = rget(ll['href'])
-                        ssoup = BeautifulSoup(resp.text, 'html.parser')
-                        atag = ssoup.select('div[id="text-url"] > a[href]')
-                        for ref in atag:
-                            gd_txt += ref['href'] + '\n'
+                if 'urlflix.xyz' in ll['href']:
+                    resp = rget(ll['href'])
+                    ssoup = BeautifulSoup(resp.text, 'html.parser')
+                    atag = ssoup.select('div[id="text-url"] > a[href]')
+                    for ref in atag:
+                        gd_txt += ref['href'] + '\n'
         sendMessage(gd_txt, context.bot, update.message)
     elif "animeremux" in link:
         sent = sendMessage('Running Scrape ...', context.bot, update.message)
