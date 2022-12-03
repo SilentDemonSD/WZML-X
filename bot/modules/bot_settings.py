@@ -240,7 +240,7 @@ def load_config():
                 except Exception as e:
                     LOGGER.error(e)
         aria2_options['bt-stop-timeout'] = '0'
-    if DATABASE_URL:
+        if DATABASE_URL:
             DbManger().update_aria2('bt-stop-timeout', '0')
         TORRENT_TIMEOUT = ''
     else:
@@ -254,6 +254,7 @@ def load_config():
         if DATABASE_URL:
             DbManger().update_aria2('bt-stop-timeout', TORRENT_TIMEOUT)
         TORRENT_TIMEOUT = int(TORRENT_TIMEOUT)
+
 
 
     TORRENT_DIRECT_LIMIT = environ.get('TORRENT_DIRECT_LIMIT', '')
