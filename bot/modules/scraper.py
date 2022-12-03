@@ -4,7 +4,7 @@ from copy import deepcopy
 from re import S, match as rematch, findall, sub as resub, compile as recompile
 from asyncio import sleep as asleep
 from time import sleep
-from urllib.parse import urlparse, unquote, quote
+from urllib.parse import urlparse, unquote
 from requests import get as rget, head as rhead
 from bs4 import BeautifulSoup, NavigableString, Tag
 
@@ -228,20 +228,18 @@ def scrapper(update, context):
     elif "skymovieshd" in link:
         sent = sendMessage('Running Scrape ...', context.bot, update.message)
         gd_txt = ""
-        LOGGER.info(link)
-        res = rget(quote(link, safe=":/"), allow_redirects=False)
+        res = rget(link, allow_redirects=False)
         soup = BeautifulSoup(res.text, 'html.parser')
         a = soup.select('a[href^="https://howblogs.xyz"]')
         t = soup.select('div[class^="Robiul"]')
-        LOGGER.info(t)
-        gd_txt += t[-1].text.replace('Download ', '')+"\n\n"
-        gd_txt += a[0].text + '\n'
+        gd_txt += f"<i>{t[-1].text.replace('Download ', '')}</i>\n\n"
+        gd_txt += f"<b>{a[0].text} :</b> \n"
         nres = rget(a[0]['href'], allow_redirects=False)
         nsoup = BeautifulSoup(nres.text, 'html.parser')
         atag = nsoup.select('div[class="cotent-box"] > a[href]')
         for no, link in enumerate(atag, start=1):
             gd_txt += f"{no}. {link['href']}\n"
-            editMessage(gd_txt, sent)
+        editMessage(gd_txt, sent)
     elif "animekaizoku" in link:
         sent = sendMessage('Running Scrape ... Coming Soon...', context.bot, update.message)
         global post_id
@@ -301,7 +299,7 @@ def scrapper(update, context):
             ptime += 1
             if ptime == 3:
                 ptime = 0
-                asleep(3)
+                asleep(5)
                 editMessage(gd_txt, sent)
                 if len(gd_txt) > 4000:
                     sent = sendMessage("<i>Running More Scrape ...</i>", context.bot, update.message)
