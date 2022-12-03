@@ -16,6 +16,8 @@ from bot.helper.ext_utils.bot_utils import is_paid, is_sudo
 from bot.helper.mirror_utils.download_utils.direct_link_generator import rock, try2link, ez4
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 
+drive_list = ['drivelinks.in', 'driveroot.in', 'drivesharer.in', 'driveace.in', "drivehub.in"]
+
 def scrapper(update, context):
     user_id_ = update.message.from_user.id
     if config_dict['PAID_SERVICE'] is True:
@@ -202,8 +204,8 @@ def scrapper(update, context):
             nsoup = BeautifulSoup(res.text, 'html.parser')
             for ll in nsoup.select('a[href]'):
                 for url in drive_list:
-                    if url in ll['href']:
-                        nl = rget(ll['href']).text
+                    if url in ll['href']:
+                        nl = rget(ll['href']).text
                         nl = nl.split('"')[1]
                         gd_txt += f"https://{url}{nl}\n"
                     elif 'urlflix.xyz' in ll['href']:
