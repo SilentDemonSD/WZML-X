@@ -199,7 +199,7 @@ def scrapper(update, context):
         links = soup.select("a[rel='noopener nofollow external noreferrer']")
         gd_txt = f"Total Links Found : {len(links)}\n"
         for l in links:
-            gd_txt += f'\n{(l.text).replace('Download Links', '🏷 Download Links')} :\n'
+            gd_txt += f"\n{(l.text).replace('Download Links', '🏷 Download Links')} :\n"
             scrapper = cloudscraper.create_scraper(allow_brotli=False)
             res = scrapper.get(l['href'])
             nsoup = BeautifulSoup(res.text, 'html.parser')
@@ -219,6 +219,8 @@ def scrapper(update, context):
                 if len(gd_txt) > 4000:
                     sent = sendMessage("<i>Running More Scrape ...</i>", context.bot, update.message)
                     gd_txt = ""
+    elif "animekaizoku.com" in link:
+        sent = sendMessage('Running Scrape ... Coming Soon...', context.bot, update.message)
     elif "animeremux" in link:
         sent = sendMessage('Running Scrape ...', context.bot, update.message)
         gd_txt, no = "", 0
