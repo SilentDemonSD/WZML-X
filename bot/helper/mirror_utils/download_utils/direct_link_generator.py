@@ -193,14 +193,14 @@ def ouo(url):
     for _ in range(2):
         if res.headers.get('Location'):
             break
-	bs4 = BeautifulSoup(res.content, 'html.parser')
-	inputs = bs4.form.findAll("input", {"name": re.compile(r"token$")})
-	data = { input.get('name'): input.get('value') for input in inputs }        
-	ans = RecaptchaV3(ANCHOR_URL)
-        data['x-token'] = ans    
-	h = {'content-type': 'application/x-www-form-urlencoded'}        
-	res = client.post(next_url, data=data, headers=h, allow_redirects=False)
-	next_url = f"{p.scheme}://{p.hostname}/xreallcygo/{id}"
+        bs4 = BeautifulSoup(res.content, 'html.parser')
+        inputs = bs4.form.findAll("input", {"name": re.compile(r"token$")})
+        data = { input.get('name'): input.get('value') for input in inputs }        
+        ans = RecaptchaV3(ANCHOR_URL)
+        data['x-token'] = ans
+        h = {'content-type': 'application/x-www-form-urlencoded'}        
+        res = client.post(next_url, data=data, headers=h, allow_redirects=False)
+        next_url = f"{p.scheme}://{p.hostname}/xreallcygo/{id}"
     return res.headers.get('Location')        
         
 def zippy_share(url: str) -> str:
