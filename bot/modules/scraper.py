@@ -204,10 +204,9 @@ def scrapper(update, context):
             nsoup = BeautifulSoup(res.text, 'html.parser')
             for ll in nsoup.select('a[href]'):
                 for url in drive_list:
-                    if url in ll['href']:
-                        nl = rget(ll['href']).text
-                        nl = nl.split('"')[1]
-                        gd_txt += f"https://{url}{nl}\n"
+                    if url in ll['href']:
+                        nl = (rget(ll['href']).text).split('"')[1]
+                        gd_txt += f"https://{url}{nl}\n"
                     elif 'urlflix.xyz' in ll['href']:
                         resp = rget(ll['href'])
                         ssoup = BeautifulSoup(resp.text, 'html.parser')
