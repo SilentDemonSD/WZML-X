@@ -248,7 +248,6 @@ def scrapper(update, context):
         global post_id
         DDL_REGEX = recompile(r"DDL\(([^),]+)\, (([^),]+)), (([^),]+)), (([^),]+))\)")
         POST_ID_REGEX =  recompile(r'"postId":"(\d+)"')
-
         try: website_html = rget(url).text
         except: editMessage("Please provide the correct episode link of animekaizoku", sent); return
 	try:
