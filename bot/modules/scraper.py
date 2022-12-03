@@ -191,7 +191,7 @@ def scrapper(update, context):
                 if len(gd_txt) > 4000:
                     sent = sendMessage("<i>Running More Scrape ...</i>", context.bot, update.message)
                     gd_txt = ""
-    elif "moviesmod.com" in link:
+    elif "moviesmod" in link:
         sent = sendMessage('Running Scrape ...', context.bot, update.message)
         gd_txt, no, to_edit = "", 0, False
         rep = rget(link)
@@ -223,8 +223,23 @@ def scrapper(update, context):
             sendMessage(gd_txt, context.bot, update.message)
         elif gd_txt!= "":
             editMessage(gd_txt, sent)
-    elif "animekaizoku.com" in link:
+    elif "animekaizoku" in link:
         sent = sendMessage('Running Scrape ... Coming Soon...', context.bot, update.message)
+    elif "skymovieshd" in link:
+        sent = sendMessage('Running Scrape ...', context.bot, update.message)
+        gd_txt = ""
+        res = rget(link, allow_redirects=False)
+        soup = BeautifulSoup(res.text, 'html.parser')
+        a = soup.select('a[href^="https://howblogs.xyz"]')
+        t = soup.select('div[class^="Robiul"]')
+        gd_txt += t[2].text.replace('Download ', '')+"\n"
+        gd_txt += a[0].text
+        nres = rget(a[0]['href'], allow_redirects=False)
+        nsoup = BeautifulSoup(nres.text, 'html.parser')
+        atag = nsoup.select('div[class="cotent-box"] > a[href]')
+        for no, link in enumerate(atag, start=1):
+            gd_txt += f"{no}. {link['href']}"
+        editMessage(gd_txt, sent)
     elif "animeremux" in link:
         sent = sendMessage('Running Scrape ...', context.bot, update.message)
         gd_txt, no = "", 0
