@@ -234,13 +234,13 @@ def scrapper(update, context):
         a = soup.select('a[href^="https://howblogs.xyz"]')
         t = soup.select('div[class^="Robiul"]')
         LOGGER.info(t)
-        gd_txt += t[-1].text.replace('Download ', '')+"\n"
-        gd_txt += a[0].text
+        gd_txt += t[-1].text.replace('Download ', '')+"\n\n"
+        gd_txt += a[0].text + '\n'
         nres = rget(a[0]['href'], allow_redirects=False)
         nsoup = BeautifulSoup(nres.text, 'html.parser')
         atag = nsoup.select('div[class="cotent-box"] > a[href]')
         for no, link in enumerate(atag, start=1):
-            gd_txt += f"{no}. {link['href']}"
+            gd_txt += f"{no}. {link['href']}\n"
             editMessage(gd_txt, sent)
     elif "animekaizoku" in link:
         sent = sendMessage('Running Scrape ... Coming Soon...', context.bot, update.message)
