@@ -4,7 +4,7 @@ from copy import deepcopy
 from re import S, match as rematch, findall, sub as resub, compile as recompile
 from asyncio import sleep as asleep
 from time import sleep
-from urllib.parse import urlparse, unquote
+from urllib.parse import urlparse, unquote, quote
 from requests import get as rget, head as rhead
 from bs4 import BeautifulSoup, NavigableString, Tag
 
@@ -228,21 +228,20 @@ def scrapper(update, context):
     elif "skymovieshd" in link:
         sent = sendMessage('Running Scrape ...', context.bot, update.message)
         gd_txt = ""
-        res = rget(link, allow_redirects=False)
+        LOGGER.info(link)
+        res = rget(quote(link, safe=":/"), allow_redirects=False)
         soup = BeautifulSoup(res.text, 'html.parser')
-        LOGGER.info(soup)
         a = soup.select('a[href^="https://howblogs.xyz"]')
         t = soup.select('div[class^="Robiul"]')
         LOGGER.info(t)
-        if t:
-            gd_txt += t[-1].text.replace('Download ', '')+"\n"
-            gd_txt += a[0].text
-            nres = rget(a[0]['href'], allow_redirects=False)
-            nsoup = BeautifulSoup(nres.text, 'html.parser')
-            atag = nsoup.select('div[class="cotent-box"] > a[href]')
-            for no, link in enumerate(atag, start=1):
-                gd_txt += f"{no}. {link['href']}"
-                editMessage(gd_txt, sent)
+        gd_txt += t[-1].text.replace('Download ', '')+"\n"
+        gd_txt += a[0].text
+        nres = rget(a[0]['href'], allow_redirects=False)
+        nsoup = BeautifulSoup(nres.text, 'html.parser')
+        atag = nsoup.select('div[class="cotent-box"] > a[href]')
+        for no, link in enumerate(atag, start=1):
+            gd_txt += f"{no}. {link['href']}"
+            editMessage(gd_txt, sent)
     elif "animekaizoku" in link:
         sent = sendMessage('Running Scrape ... Coming Soon...', context.bot, update.message)
         global post_id
