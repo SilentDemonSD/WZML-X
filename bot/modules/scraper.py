@@ -229,6 +229,7 @@ def scrapper(update, context):
         gd_txt = ""
         res = rget(link, allow_redirects=False)
         soup = BeautifulSoup(res.text, 'html.parser')
+        LOGGER.info(soup)
         a = soup.select('a[href^="https://howblogs.xyz"]')
         t = soup.select('div[class^="Robiul"]')
         LOGGER.info(t)
