@@ -5,7 +5,7 @@ from re import S, match as rematch, findall, sub as resub, compile as recompile
 from asyncio import sleep as asleep
 from time import sleep
 from urllib.parse import urlparse, unquote
-from requests import get as rget, head as rhead
+from requests import get as rget, head as rhead, post as rpost
 from bs4 import BeautifulSoup, NavigableString, Tag
 from base64 import b64decode
 
