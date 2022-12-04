@@ -7,6 +7,7 @@ from time import sleep
 from urllib.parse import urlparse, unquote
 from requests import get as rget, head as rhead
 from bs4 import BeautifulSoup, NavigableString, Tag
+from base64 import b64decode
 
 from telegram import Message
 from telegram.ext import CommandHandler
@@ -15,10 +16,12 @@ from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage
 from bot.helper.ext_utils.bot_utils import is_paid, is_sudo
-from bot.helper.mirror_utils.download_utils.direct_link_generator import rock, try2link, ez4
+from bot.helper.mirror_utils.download_utils.direct_link_generator import rock, try2link, ez4, ouo
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 
 drive_list = ['drivelinks.in', 'driveroot.in', 'drivesharer.in', 'driveace.in', "drivehub.in"]
+DDL_REGEX = recompile(r"DDL\(([^),]+)\, (([^),]+)), (([^),]+)), (([^),]+))\)")
+POST_ID_REGEX =  recompile(r'"postId":"(\d+)"')
 
 def scrapper(update, context):
     user_id_ = update.message.from_user.id
@@ -241,10 +244,8 @@ def scrapper(update, context):
             gd_txt += f"{no}. {link['href']}\n"
         editMessage(gd_txt, sent)
     elif "animekaizoku" in link:
-        sent = sendMessage('Running Scrape ... Coming Soon...', context.bot, update.message)
+        sent = sendMessage('Running Scrape ...', context.bot, update.message)
         global post_id
-        DDL_REGEX = recompile(r"DDL\(([^),]+)\, (([^),]+)), (([^),]+)), (([^),]+))\)")
-        POST_ID_REGEX =  recompile(r'"postId":"(\d+)"')
         try: website_html = rget(url).text
         except: editMessage("Please provide the correct episode link of animekaizoku", sent); return
         try:
@@ -264,10 +265,10 @@ def scrapper(update, context):
             }
             del payload["num"]     
             link_types = "DDL" if payload["tab_id"] == "2" else "WORKER" if payload["tab_id"] == "4" else "GDRIVE"
-            response = rpost("https://animekaizoku.com/wp-admin/admin-ajax.php",headers=headers, data=payload)
+            response = rpost("https://animekaizoku.com/wp-admin/admin-ajax.php",headers={"x-requested-with": "XMLHttpRequest", "referer": "https://animekaizoku.com"}, data=payload)
             soup = BeautifulSoup(response.text, "html.parser")  
             downloadbutton = soup.find_all(class_="downloadbutton")
-            print(f"Now Scrapping {link_types} Links .....")
+            #print(f"Now Scrapping {link_types} Links .....")
 
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 for button in downloadbutton:
@@ -278,7 +279,21 @@ def scrapper(update, context):
                         executor.submit(looper, dict_key, str(button))
             main_dict[link_types] = deepcopy(data_dict)
             data_dict.clear()
-        #dictionary_decrypter()
+
+        for key in main_dict:
+		    print(f"---------------- {key} ----------------\n")
+		    dict_data = main_dict[key]
+		
+		if bool(dict_data) == 0:
+			print(f"No Links found in {key}.")
+			return
+		else:
+			for y in dict_data:
+				print(f"▪︎ {y}")
+				for i in dict_data[y]:
+					try: print(f"{i[0]} : {i[1]}")
+					except: pass
+			print("\n")
     elif "animeremux" in link:
         sent = sendMessage('Running Scrape ...', context.bot, update.message)
         gd_txt, no = "", 0
@@ -387,6 +402,35 @@ def htpmovies(link):
     try:
         return r.json()['url']
     except: return "Something went Wrong !!"
+
+def looper(dict_key, click):
+    payload_data = DDL_REGEX.search(click).group(0).split("DDL(")[1].replace(")", "").split(",")
+	data = {
+	       "action" : "DDL",
+	       "post_id": post_id,
+	       "div_id" : payload_data[0].strip(),
+	       "tab_id" : payload_data[1].strip(),
+	       "num"    : payload_data[2].strip(),
+	       "folder" : payload_data[3].strip(),
+	}
+	new_num = data["num"].split("'")[1]
+	data["num"] = new_num
+	   
+	response = client.post("https://animekaizoku.com/wp-admin/admin-ajax.php", headers={"x-requested-with": "XMLHttpRequest", "referer": "https://animekaizoku.com"}, data=data)  
+	loop_soup = BeautifulSoup(response.text, "html.parser")
+	downloadbutton = loop_soup.find_all(class_="downloadbutton")
+	
+	with concurrent.futures.ThreadPoolExecutor() as executor:
+		[executor.submit(ouo_parse, dict_key, button, loop_soup) for button in downloadbutton]
+
+def ouo_parse(dict_key, button, loop_soup):          
+	try:
+		ouo_encrypt = recompile(r"openInNewTab\(([^),]+\)"")").search(str(loop_soup)).group(0).strip().split('"')[1]
+		ouo_decrypt = b64decode(ouo_encrypt).decode("utf-8").strip()
+		try: decrypted_link= ouo(ouo_decrypt)
+		except: decrypted_link = ouo_decrypt
+		data_dict[dict_key].append([button.text.strip(), decrypted_link.strip()])  
+	except: looper(dict_key, str(button))
         
 srp_handler = CommandHandler(BotCommands.ScrapeCommand, scrapper,
                             filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
