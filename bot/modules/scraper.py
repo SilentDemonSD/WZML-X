@@ -19,6 +19,9 @@ from bot.helper.ext_utils.bot_utils import is_paid, is_sudo
 from bot.helper.mirror_utils.download_utils.direct_link_generator import rock, try2link, ez4, ouo
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 
+post_id = " "
+data_dict = {}
+main_dict = {}
 drive_list = ['drivelinks.in', 'driveroot.in', 'drivesharer.in', 'driveace.in', "drivehub.in"]
 DDL_REGEX = recompile(r"DDL\(([^),]+)\, (([^),]+)), (([^),]+)), (([^),]+))\)")
 POST_ID_REGEX =  recompile(r'"postId":"(\d+)"')
