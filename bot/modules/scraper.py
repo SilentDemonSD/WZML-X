@@ -289,15 +289,15 @@ def scrapper(update, context):
             gd_txt += f"---------------- {key} ----------------\n"
             dict_data = main_dict[key]
 
-        if bool(dict_data) == 0:
-            gd_txt += f"No Links found in {key}."
-        else:
-            for y in dict_data:
-                gd_txt += f"▪︎ {y}"
-                for i in dict_data[y]:
-                    try: gd_txt += f"{i[0]} : {i[1]}"
-                    except: pass
-            gd_txt += "\n"
+            if bool(dict_data) == 0:
+                gd_txt += f"No Links found in {key}."
+            else:
+                for y in dict_data:
+                    gd_txt += f"▪︎ {y}"
+                    for i in dict_data[y]:
+                        try: gd_txt += f"{i[0]} : {i[1]}"
+                        except: pass
+                gd_txt += "\n"
         editMessage(gd_txt, sent)
     elif "animeremux" in link:
         sent = sendMessage('Running Scrape ...', context.bot, update.message)
