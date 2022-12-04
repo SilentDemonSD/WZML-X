@@ -246,6 +246,7 @@ def scrapper(update, context):
     elif "animekaizoku" in link:
         sent = sendMessage('Running Scrape ...', context.bot, update.message)
         global post_id
+        gd_txt = ""
         try: website_html = rget(url).text
         except: editMessage("Please provide the correct episode link of animekaizoku", sent); return
         try:
@@ -281,19 +282,20 @@ def scrapper(update, context):
             data_dict.clear()
 
         for key in main_dict:
-		    print(f"---------------- {key} ----------------\n")
+		    gd_txt += f"---------------- {key} ----------------\n"
 		    dict_data = main_dict[key]
 		
 		if bool(dict_data) == 0:
-			print(f"No Links found in {key}.")
+			gd_txt += f"No Links found in {key}."
 			return
 		else:
 			for y in dict_data:
-				print(f"▪︎ {y}")
+				gd_txt += f"▪︎ {y}"
 				for i in dict_data[y]:
-					try: print(f"{i[0]} : {i[1]}")
+					try: gd_txt += f"{i[0]} : {i[1]}"
 					except: pass
-			print("\n")
+			gd_txt += "\n"
+        editMessage(gd_txt, sent)
     elif "animeremux" in link:
         sent = sendMessage('Running Scrape ...', context.bot, update.message)
         gd_txt, no = "", 0

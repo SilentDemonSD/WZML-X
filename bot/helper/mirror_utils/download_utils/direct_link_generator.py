@@ -183,7 +183,7 @@ def RecaptchaV3(ANCHOR_URL):
     answer = re.findall(r'"rresp","(.*?)"', res.text)[0]    
     return answer
 
-def ouo(url):
+def ouo(url: str) -> str:
     client = requests.Session()
     tempurl = url.replace("ouo.press", "ouo.io")
     p = urlparse(tempurl)
