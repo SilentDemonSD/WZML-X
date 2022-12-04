@@ -272,7 +272,6 @@ def scrapper(update, context):
             response = rpost("https://animekaizoku.com/wp-admin/admin-ajax.php",headers={"x-requested-with": "XMLHttpRequest", "referer": "https://animekaizoku.com"}, data=payload)
             soup = BeautifulSoup(response.text, "html.parser")  
             downloadbutton = soup.find_all(class_="downloadbutton")
-            LOGGER.info(f"Now Scrapping {link_types} Links .....")
 
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 for button in downloadbutton:
@@ -283,22 +282,30 @@ def scrapper(update, context):
                         executor.submit(looper, dict_key, str(button))
             main_dict[link_types] = deepcopy(data_dict)
             data_dict.clear()
-        LOGGER.info(main_dict)
-        LOGGER.info(dict_key)
+
         for key in main_dict:
-            gd_txt += f"---------------- {key} ----------------\n"
+            gd_txt += f"----------------- <b>{key}</b> -----------------\n"
             dict_data = main_dict[key]
 
             if bool(dict_data) == 0:
                 gd_txt += f"No Links found in {key}."
             else:
                 for y in dict_data:
-                    gd_txt += f"▪︎ {y}"
-                    for i in dict_data[y]:
-                        try: gd_txt += f"{i[0]} : {i[1]}"
+                    gd_txt += f"○ <b>{y}</b>\n"
+                    for no, i in enumerate(dict_data[y], start=1):
+                        try: gd_txt += f"➥ {no}. <i>{i[0]}</i> : {i[1]}"
                         except: pass
                 gd_txt += "\n"
-        editMessage(gd_txt, sent)
+                asleep(5)
+                editMessage(gd_txt, sent)
+                if len(gd_txt) > 4000:
+                    editMessage(gd_txt, sent)
+                    to_edit = True
+                    gd_txt = ""
+        if gd_txt != "" and to_edit:
+            sendMessage(gd_txt, context.bot, update.message)
+        elif gd_txt!= "":
+            editMessage(gd_txt, sent)
     elif "animeremux" in link:
         sent = sendMessage('Running Scrape ...', context.bot, update.message)
         gd_txt, no = "", 0
