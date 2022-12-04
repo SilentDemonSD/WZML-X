@@ -331,7 +331,7 @@ def _clone(message, bot):
                 for chatid in user_data['mirror_logs']:	
                     bot.sendMessage(chat_id=chatid, text=result + cc, reply_markup=button, parse_mode=ParseMode.HTML)	
             except Exception as e:	
-                LOGGER.warning(e)	
+                LOGGER.warning(e)
         if config_dict['BOT_PM'] and message.chat.type != 'private':	
             try:	
                 bot.sendMessage(message.from_user.id, text=result + cc, reply_markup=button,	

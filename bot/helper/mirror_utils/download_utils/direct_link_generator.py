@@ -170,7 +170,7 @@ def RecaptchaV3(ANCHOR_URL):
     post_data = "v={}&reason=q&c={}&k={}&co={}"
     client = requests.Session()
     client.headers.update({
-	'content-type': 'application/x-www-form-urlencoded'
+    'content-type': 'application/x-www-form-urlencoded'
     })
     matches = re.findall('([api2|enterprise]+)\/anchor\?(.*)', ANCHOR_URL)[0]
     url_base += matches[0]+'/'
@@ -775,7 +775,7 @@ def shareDrive(url,directLogin=True):
         'Origin' : f'https://{urlparse(url).netloc}/',
         'referer' : url,
         'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36 Edg/107.0.1418.35',
-        'X-Requested-With	' : 'XMLHttpRequest'
+        'X-Requested-With' : 'XMLHttpRequest'
     }
 
     if directLogin==True:

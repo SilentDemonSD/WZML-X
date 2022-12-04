@@ -282,19 +282,19 @@ def scrapper(update, context):
             data_dict.clear()
 
         for key in main_dict:
-		    gd_txt += f"---------------- {key} ----------------\n"
-		    dict_data = main_dict[key]
-		
-		if bool(dict_data) == 0:
-			gd_txt += f"No Links found in {key}."
-			return
-		else:
-			for y in dict_data:
-				gd_txt += f"▪︎ {y}"
-				for i in dict_data[y]:
-					try: gd_txt += f"{i[0]} : {i[1]}"
-					except: pass
-			gd_txt += "\n"
+            gd_txt += f"---------------- {key} ----------------\n"
+            dict_data = main_dict[key]
+
+        if bool(dict_data) == 0:
+            gd_txt += f"No Links found in {key}."
+            return
+        else:
+            for y in dict_data:
+                gd_txt += f"▪︎ {y}"
+                for i in dict_data[y]:
+                    try: gd_txt += f"{i[0]} : {i[1]}"
+                    except: pass
+            gd_txt += "\n"
         editMessage(gd_txt, sent)
     elif "animeremux" in link:
         sent = sendMessage('Running Scrape ...', context.bot, update.message)
@@ -407,32 +407,32 @@ def htpmovies(link):
 
 def looper(dict_key, click):
     payload_data = DDL_REGEX.search(click).group(0).split("DDL(")[1].replace(")", "").split(",")
-	data = {
-	       "action" : "DDL",
-	       "post_id": post_id,
-	       "div_id" : payload_data[0].strip(),
-	       "tab_id" : payload_data[1].strip(),
-	       "num"    : payload_data[2].strip(),
-	       "folder" : payload_data[3].strip(),
-	}
-	new_num = data["num"].split("'")[1]
-	data["num"] = new_num
-	   
-	response = client.post("https://animekaizoku.com/wp-admin/admin-ajax.php", headers={"x-requested-with": "XMLHttpRequest", "referer": "https://animekaizoku.com"}, data=data)  
-	loop_soup = BeautifulSoup(response.text, "html.parser")
-	downloadbutton = loop_soup.find_all(class_="downloadbutton")
-	
-	with concurrent.futures.ThreadPoolExecutor() as executor:
-		[executor.submit(ouo_parse, dict_key, button, loop_soup) for button in downloadbutton]
+    data = {
+           "action" : "DDL",
+           "post_id": post_id,
+           "div_id" : payload_data[0].strip(),
+           "tab_id" : payload_data[1].strip(),
+           "num"    : payload_data[2].strip(),
+           "folder" : payload_data[3].strip(),
+    }
+    new_num = data["num"].split("'")[1]
+    data["num"] = new_num
+       
+    response = client.post("https://animekaizoku.com/wp-admin/admin-ajax.php", headers={"x-requested-with": "XMLHttpRequest", "referer": "https://animekaizoku.com"}, data=data)  
+    loop_soup = BeautifulSoup(response.text, "html.parser")
+    downloadbutton = loop_soup.find_all(class_="downloadbutton")
+        
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        [executor.submit(ouo_parse, dict_key, button, loop_soup) for button in downloadbutton]
 
 def ouo_parse(dict_key, button, loop_soup):          
-	try:
-		ouo_encrypt = recompile(r"openInNewTab\(([^),]+\)"")").search(str(loop_soup)).group(0).strip().split('"')[1]
-		ouo_decrypt = b64decode(ouo_encrypt).decode("utf-8").strip()
-		try: decrypted_link= ouo(ouo_decrypt)
-		except: decrypted_link = ouo_decrypt
-		data_dict[dict_key].append([button.text.strip(), decrypted_link.strip()])  
-	except: looper(dict_key, str(button))
+    try:
+        ouo_encrypt = recompile(r"openInNewTab\(([^),]+\)"")").search(str(loop_soup)).group(0).strip().split('"')[1]
+        ouo_decrypt = b64decode(ouo_encrypt).decode("utf-8").strip()
+        try: decrypted_link= ouo(ouo_decrypt)
+        except: decrypted_link = ouo_decrypt
+        data_dict[dict_key].append([button.text.strip(), decrypted_link.strip()])  
+    except: looper(dict_key, str(button))
         
 srp_handler = CommandHandler(BotCommands.ScrapeCommand, scrapper,
                             filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
