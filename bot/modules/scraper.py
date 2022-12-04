@@ -68,7 +68,7 @@ def scrapper(update, context):
                          r = rget(ns)
                          soup = BeautifulSoup(r.content, "html.parser")
                          title = soup.select('meta[property^="og:description"]')
-                         gd_txt += f"<code>{title[0]['content']).replace('Download ' , '')}</code>\n{ns}\n\n"
+                         gd_txt += f"<code>{(title[0]['content']).replace('Download ' , '')}</code>\n{ns}\n\n"
                       elif rematch(r'https?://pastetot\.\S+', ns):
                          nxt = resub(r'\(|\)|(https?://pastetot\.\S+)', '', next_s)
                          gd_txt += f"\n<code>{nxt}</code>\n{ns}\n"
