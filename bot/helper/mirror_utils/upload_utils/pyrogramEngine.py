@@ -1,5 +1,3 @@
-import re
-import os
 from logging import getLogger, ERROR
 from os import remove as osremove, walk, path as ospath, rename as osrename
 from time import time, sleep
@@ -123,6 +121,7 @@ class TgUploader:
             up_path = new_path
         cfont = config_dict['CAPTION_FONT'] if not FSTYLE else FSTYLE
         if CAPTION:
+            CAPTION = CAPTION.replace('\|', '%')
             slit = CAPTION.split("|")
             cap_mono = slit[0].format(
                 filename = file_,
@@ -137,6 +136,7 @@ class TgUploader:
                         cap_mono = cap_mono.replace(args[0], args[1])
                     elif len(args) == 1:
                         cap_mono = cap_mono.replace(args[0], '')
+            cap_mono = cap_mono.replace('%', '|')
         else:
             cap_mono = file_ if FSTYLE == 'r' else f"<{cfont}>{file_}</{cfont}>"
 
