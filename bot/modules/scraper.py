@@ -255,7 +255,7 @@ def scrapper(update, context):
         try:
             post_id = POST_ID_REGEX.search(website_html).group(0).split(":")[1].split('"')[1]
             payload_data_matches = DDL_REGEX.finditer(website_html)
-        except: editMessage("Something Went wrong !!", sent); return
+        except: editMessage("Something Went Wrong !!", sent); return
 
         for match in payload_data_matches:
             payload_data = match.group(0).split("DDL(")[1].replace(")", "").split(",")
@@ -272,7 +272,7 @@ def scrapper(update, context):
             response = rpost("https://animekaizoku.com/wp-admin/admin-ajax.php",headers={"x-requested-with": "XMLHttpRequest", "referer": "https://animekaizoku.com"}, data=payload)
             soup = BeautifulSoup(response.text, "html.parser")  
             downloadbutton = soup.find_all(class_="downloadbutton")
-            #print(f"Now Scrapping {link_types} Links .....")
+            LOGGER.info(f"Now Scrapping {link_types} Links .....")
 
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 for button in downloadbutton:
@@ -283,14 +283,14 @@ def scrapper(update, context):
                         executor.submit(looper, dict_key, str(button))
             main_dict[link_types] = deepcopy(data_dict)
             data_dict.clear()
-
+        LOGGER.info(main_dict)
+        LOGGER.info(dict_key)
         for key in main_dict:
             gd_txt += f"---------------- {key} ----------------\n"
             dict_data = main_dict[key]
 
         if bool(dict_data) == 0:
             gd_txt += f"No Links found in {key}."
-            return
         else:
             for y in dict_data:
                 gd_txt += f"▪︎ {y}"
@@ -420,7 +420,6 @@ def looper(dict_key, click):
     }
     new_num = data["num"].split("'")[1]
     data["num"] = new_num
-       
     response = rpost("https://animekaizoku.com/wp-admin/admin-ajax.php", headers={"x-requested-with": "XMLHttpRequest", "referer": "https://animekaizoku.com"}, data=data)  
     loop_soup = BeautifulSoup(response.text, "html.parser")
     downloadbutton = loop_soup.find_all(class_="downloadbutton")
