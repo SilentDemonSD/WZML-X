@@ -421,7 +421,7 @@ def looper(dict_key, click):
     new_num = data["num"].split("'")[1]
     data["num"] = new_num
        
-    response = client.post("https://animekaizoku.com/wp-admin/admin-ajax.php", headers={"x-requested-with": "XMLHttpRequest", "referer": "https://animekaizoku.com"}, data=data)  
+    response = rpost("https://animekaizoku.com/wp-admin/admin-ajax.php", headers={"x-requested-with": "XMLHttpRequest", "referer": "https://animekaizoku.com"}, data=data)  
     loop_soup = BeautifulSoup(response.text, "html.parser")
     downloadbutton = loop_soup.find_all(class_="downloadbutton")
         
