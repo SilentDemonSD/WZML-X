@@ -283,6 +283,7 @@ def scrapper(update, context):
             main_dict[link_types] = deepcopy(data_dict)
             data_dict.clear()
 
+        to_edit = False
         for key in main_dict:
             gd_txt += f"----------------- <b>{key}</b> -----------------\n"
             dict_data = main_dict[key]
