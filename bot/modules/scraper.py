@@ -292,13 +292,13 @@ def scrapper(update, context):
                 gd_txt += "No Links Found\n"
             else:
                 for y in dict_data:
-                    gd_txt += f"○ <b>{y}</b>\n"
+                    gd_txt += f"\n○ <b>{y}</b>\n"
                     for no, i in enumerate(dict_data[y], start=1):
                         try: gd_txt += f"➥ {no}. <i>{i[0]}</i> : {i[1]}\n"
                         except: pass
                     asleep(5)
                     editMessage(gd_txt, sent)
-                    if len(gd_txt) > 4000:
+                    if len(gd_txt) > 3500:
                         sent = sendMessage('Running More Scrape ...', context.bot, update.message)
                         gd_txt = ""
                 gd_txt += "\n"
