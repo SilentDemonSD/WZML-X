@@ -296,13 +296,13 @@ def scrapper(update, context):
                     for no, i in enumerate(dict_data[y], start=1):
                         try: gd_txt += f"➥ {no}. <i>{i[0]}</i> : {i[1]}"
                         except: pass
-                gd_txt += "\n"
-                asleep(5)
-                editMessage(gd_txt, sent)
-                if len(gd_txt) > 4000:
+                    asleep(5)
                     editMessage(gd_txt, sent)
-                    to_edit = True
-                    gd_txt = ""
+                    if len(gd_txt) > 4000:
+                        editMessage(gd_txt, sent)
+                        to_edit = True
+                        gd_txt = ""
+                gd_txt += "\n"
         if gd_txt != "" and to_edit:
             sendMessage(gd_txt, context.bot, update.message)
         elif gd_txt!= "":
