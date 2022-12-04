@@ -247,7 +247,7 @@ def scrapper(update, context):
         sent = sendMessage('Running Scrape ...', context.bot, update.message)
         global post_id
         gd_txt = ""
-        try: website_html = rget(url).text
+        try: website_html = rget(link).text
         except: editMessage("Please provide the correct episode link of animekaizoku", sent); return
         try:
             post_id = POST_ID_REGEX.search(website_html).group(0).split(":")[1].split('"')[1]
