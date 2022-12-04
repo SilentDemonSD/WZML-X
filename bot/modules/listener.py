@@ -48,7 +48,7 @@ class MirrorLeechListener:
         self.select = select
         self.isPrivate = message.chat.type in ['private', 'group']
         self.suproc = None
-        self.user_id = self.message.from_user.id	
+        self.user_id = self.message.from_user.id
         self.reply_to = self.message.reply_to_message
 
     def clean(self):
@@ -413,10 +413,10 @@ class MirrorLeechListener:
                         pass
             else:
                 pass
-            if config_dict['BOT_PM'] and not config_dict['FORCE_BOT_PM'] and self.message.chat.type != 'private':	
-                bot_d = bot.get_me()	
-                b_uname = bot_d.username	
-                botstart = f"http://t.me/{b_uname}"	
+            if config_dict['BOT_PM'] and not config_dict['FORCE_BOT_PM'] and self.message.chat.type != 'private':
+                bot_d = bot.get_me()
+                b_uname = bot_d.username
+                botstart = f"http://t.me/{b_uname}"
                 buttons.buildbutton("View file in PM", f"{botstart}")
             elif self.message.chat.type == 'private':
                 botstart = ''
@@ -486,7 +486,7 @@ class MirrorLeechListener:
             if self.seed:
                 if self.newDir:
                     clean_target(self.newDir)
-                return			   			  
+                return     
 
         else:
             if config_dict['EMOJI_THEME']:
@@ -565,10 +565,10 @@ class MirrorLeechListener:
                         pass
                     
 
-                    if config_dict['BOT_PM'] and not config_dict['FORCE_BOT_PM'] and self.message.chat.type != 'private':	
-                        bot_d = bot.get_me()	
-                        b_uname = bot_d.username	
-                        botstart = f"http://t.me/{b_uname}"	
+                    if config_dict['BOT_PM'] and not config_dict['FORCE_BOT_PM'] and self.message.chat.type != 'private':
+                        bot_d = bot.get_me()
+                        b_uname = bot_d.username
+                        botstart = f"http://t.me/{b_uname}"
                         buttons.buildbutton("View file in PM", f"{botstart}")
                     elif self.message.chat.type == 'private':
                         botstart = ''
@@ -589,21 +589,21 @@ class MirrorLeechListener:
                     uploadmsg = sendMarkup(msg + pmwarn + logwarn + warnmsg, self.bot, self.message, buttons.build_menu(2))
                 Thread(target=auto_delete_upload_message, args=(bot, self.message, uploadmsg)).start()
             
-            if 'mirror_logs' in user_data:	
-                try:	
-                    for chatid in user_data['mirror_logs']:	
-                        bot.sendMessage(chat_id=chatid, text=msg,	
-                                        reply_markup=buttons.build_menu(2),	
-                                        parse_mode=ParseMode.HTML)	
-                except Exception as e:	
-                    LOGGER.warning(e)
-            if config_dict['BOT_PM'] and self.message.chat.type != 'private':	
-                try:	
-                    bot.sendMessage(chat_id=self.user_id, text=msg,	
-                                    reply_markup=buttons.build_menu(2),	
-                                    parse_mode=ParseMode.HTML)	
+            if 'mirror_logs' in user_data:
+                try:
+                    for chatid in user_data['mirror_logs']:
+                        bot.sendMessage(chat_id=chatid, text=msg,
+                                        reply_markup=buttons.build_menu(2),
+                                        parse_mode=ParseMode.HTML)
                 except Exception as e:
-                    LOGGER.warning(e)	
+                    LOGGER.warning(e)
+            if config_dict['BOT_PM'] and self.message.chat.type != 'private':
+                try:
+                    bot.sendMessage(chat_id=self.user_id, text=msg,
+                                    reply_markup=buttons.build_menu(2),
+                                    parse_mode=ParseMode.HTML)
+                except Exception as e:
+                    LOGGER.warning(e)
                     return
             if self.seed:
                 if self.isZip:

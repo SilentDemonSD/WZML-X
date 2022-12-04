@@ -53,7 +53,7 @@ def _clone(message, bot):
         logwarn = ''
     else:
         logwarn = ''
-    buttons = ButtonMaker()	
+    buttons = ButtonMaker()
     if config_dict['FSUB']:
         try:
             user = bot.get_chat_member(f"{config_dict['FSUB_CHANNEL_ID']}", message.from_user.id)
@@ -326,18 +326,18 @@ def _clone(message, bot):
         if (is_gdtot or is_unified or is_udrive or is_sharer or is_sharedrive):
             gd.deletefile(link)
 
-        if 'mirror_logs' in user_data:	
-            try:	
-                for chatid in user_data['mirror_logs']:	
-                    bot.sendMessage(chat_id=chatid, text=result + cc, reply_markup=button, parse_mode=ParseMode.HTML)	
-            except Exception as e:	
+        if 'mirror_logs' in user_data:
+            try:
+                for chatid in user_data['mirror_logs']:
+                    bot.sendMessage(chat_id=chatid, text=result + cc, reply_markup=button, parse_mode=ParseMode.HTML)
+            except Exception as e:
                 LOGGER.warning(e)
-        if config_dict['BOT_PM'] and message.chat.type != 'private':	
-            try:	
-                bot.sendMessage(message.from_user.id, text=result + cc, reply_markup=button,	
-                                parse_mode=ParseMode.HTML)	
-            except Exception as e:	
-                LOGGER.warning(e)	
+        if config_dict['BOT_PM'] and message.chat.type != 'private':
+            try:
+                bot.sendMessage(message.from_user.id, text=result + cc, reply_markup=button,
+                                parse_mode=ParseMode.HTML)
+            except Exception as e:
+                LOGGER.warning(e)
                 return
 
 
