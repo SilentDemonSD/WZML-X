@@ -14,7 +14,7 @@ from threading import Thread
 from telegram import ParseMode, InlineKeyboardButton
 
 from bot import *
-from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_gdtot_link, is_mega_link, is_gdrive_link, get_content_type, get_readable_time
+from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_gdtot_link, is_mega_link, is_gdrive_link, get_content_type, get_readable_time, __change_file
 from bot.helper.ext_utils.fs_utils import get_base_name, get_path_size, split_file, clean_download, clean_target
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException, NotSupportedExtractionArchive
 from bot.helper.mirror_utils.status_utils.extract_status import ExtractStatus
@@ -233,44 +233,8 @@ class MirrorLeechListener:
         message_args = mesg[0].split(' ', maxsplit=1)
         reply_to = self.message.reply_to_message
         user_id_ = self.message.from_user.id
-        PREFIX = user_data[user_id_].get('prefix') if user_id_ in user_data and user_data[user_id_].get('prefix') else ''
-        REMNAME = user_data[user_id_].get('remname') if user_id_ in user_data and user_data[user_id_].get('remname') else ''
-        SUFFIX = user_data[user_id_].get('suffix') if user_id_ in user_data and user_data[user_id_].get('suffix') else ''
         file_ = escape(name)
-
-        #MysteryStyle ~ Tele-LeechX
-        if file_.startswith('www'):
-            file_ = ' '.join(file_.split()[1:])
-        if REMNAME:
-            if not REMNAME.startswith('|'):
-                REMNAME = f"|{REMNAME}"
-            slit = REMNAME.split("|")
-            __newFileName = file_
-            for rep in range(1, len(slit)):
-                args = slit[rep].split(":")
-                if len(args) == 3:
-                    __newFileName = __newFileName.replace(args[0], args[1], int(args[2]))
-                elif len(args) == 2:
-                    __newFileName = __newFileName.replace(args[0], args[1])
-                elif len(args) == 1:
-                    __newFileName = __newFileName.replace(args[0], '')
-            file_ = __newFileName
-            LOGGER.info("Remname : "+file_)
-        if PREFIX:
-            if not file_.startswith(PREFIX):
-                file_ = f"{PREFIX}{file_}"
-        if SUFFIX:
-            sufLen = len(SUFFIX)
-            fileDict = file_.split('.')
-            _extIn = 1 + len(fileDict[-1])
-            _extOutName = '.'.join(fileDict[:-1]).replace('.', ' ').replace('-', ' ')
-            _newExtFileName = f"{_extOutName}{SUFFIX}.{fileDict[-1]}"
-            if len(_extOutName) > (64 - (sufLen + _extIn)):
-                _newExtFileName = (
-                    _extOutName[: 64 - (sufLen + _extIn)]
-                    + f"{SUFFIX}.{fileDict[-1]}"
-                            )
-            file_ = _newExtFileName
+        up_path, file_, _ = __change_file(file_, user_id_, None, False)
 
         NAME_FONT = config_dict['NAME_FONT']
         if config_dict['EMOJI_THEME']:

@@ -339,8 +339,6 @@ def _clone(message, bot):
             except Exception as e:
                 LOGGER.warning(e)
                 return
-
-
     else:
         sendMessage("Send Gdrive or GDToT/AppDrive/DriveApp/GDFlix/DriveAce/DriveLinks/DriveBit/DriveSharer/Anidrive/Driveroot/Driveflix/Indidrive/drivehub(in)/HubDrive/DriveHub(ws)/KatDrive/Kolop/DriveFire/DriveBuzz/SharerPw/ShareDrive link along with command or by replying to the link by command\n\n<b>Multi links only by replying to first link/file:</b>\n<code>/cmd</code> 10(number of links/files)", bot, message)
 
@@ -349,10 +347,8 @@ def cloneNode(update, context):
     _clone(update.message, context.bot)
 
 
-
 authfilter = CustomFilters.authorized_chat if config_dict['CLONE_ENABLED'] is True else CustomFilters.owner_filter
 clone_handler = CommandHandler(BotCommands.CloneCommand, cloneNode,
                                     filters=authfilter | CustomFilters.authorized_user, run_async=True)
-
 
 dispatcher.add_handler(clone_handler)

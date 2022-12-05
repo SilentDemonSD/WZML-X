@@ -1,4 +1,5 @@
 from re import match as re_match, findall as re_findall
+from os import path as ospath, remove as osremove
 from threading import Thread, Event
 from time import time
 from datetime import datetime
@@ -442,6 +443,77 @@ def get_content_type(link: str) -> str:
         except:
             content_type = None
     return content_type
+
+def __change_file(file_, user_id_, dirpath, all_edit=True):
+    user_dict = user_data.get(user_id_, False)
+    PREFIX = user_dict.get('prefix') if user_dict and user_dict.get('prefix') else ''
+    REMNAME = user_dict.get('remname') if user_dict and user_dict.get('remname') else ''
+    SUFFIX = user_dict.get('suffix') if user_dict and user_dict.get('suffix') else ''
+
+    FSTYLE = user_dict.get('cfont')[1] if user_dict and user_dict.get('cfont') else ''
+    CAPTION = user_dict.get('caption') if user_dict and user_dict.get('caption') else ''
+
+    #MysteryStyle ~ Tele-LeechX
+    if file_.startswith('www'):
+        file_ = ' '.join(file_.split()[1:])
+    if REMNAME:
+        if not REMNAME.startswith('|'):
+            REMNAME = f"|{REMNAME}"
+        slit = REMNAME.split("|")
+        __newFileName = file_
+        for rep in range(1, len(slit)):
+            args = slit[rep].split(":")
+            if len(args) == 3:
+                __newFileName = __newFileName.replace(args[0], args[1], int(args[2]))
+            elif len(args) == 2:
+                __newFileName = __newFileName.replace(args[0], args[1])
+            elif len(args) == 1:
+                __newFileName = __newFileName.replace(args[0], '')
+        file_ = __newFileName
+        LOGGER.info("Remname : "+file_)
+    if PREFIX:
+        if not file_.startswith(PREFIX):
+            file_ = f"{PREFIX}{file_}"
+    if SUFFIX:
+        sufLen = len(SUFFIX)
+        fileDict = file_.split('.')
+        _extIn = 1 + len(fileDict[-1])
+        _extOutName = '.'.join(fileDict[:-1]).replace('.', ' ').replace('-', ' ')
+        _newExtFileName = f"{_extOutName}{SUFFIX}.{fileDict[-1]}"
+        if len(_extOutName) > (64 - (sufLen + _extIn)):
+            _newExtFileName = (
+                _extOutName[: 64 - (sufLen + _extIn)]
+                + f"{SUFFIX}.{fileDict[-1]}"
+                        )
+        file_ = _newExtFileName
+
+    if (PREFIX or REMNAME or SUFFIX) and all_edit:
+        new_path = ospath.join(dirpath, file_)
+        osrename(up_path, new_path)
+        up_path = new_path
+    cap_mono = ""
+    if CAPTION and all_edit:
+        cfont = config_dict['CAPTION_FONT'] if not FSTYLE else FSTYLE
+        CAPTION = CAPTION.replace('\|', '/\')
+        slit = CAPTION.split("|")
+        cap_mono = slit[0].format(
+            filename = file_,
+            size = get_readable_file_size(ospath.getsize(up_path))
+        )
+        if len(slit) > 1:
+            for rep in range(1, len(slit)):
+                args = slit[rep].split(":")
+                if len(args) == 3:
+                   cap_mono = cap_mono.replace(args[0], args[1], int(args[2]))
+                elif len(args) == 2:
+                    cap_mono = cap_mono.replace(args[0], args[1])
+                elif len(args) == 1:
+                    cap_mono = cap_mono.replace(args[0], '')
+        cap_mono = cap_mono.replace('/\', '|')
+    elif all_edit:
+        cap_mono = file_ if FSTYLE == 'r' else f"<{cfont}>{file_}</{cfont}>"
+
+    return up_path, file_, cap_mono
 
 def update_user_ldata(id_, key, value):
     if id_ in user_data:
