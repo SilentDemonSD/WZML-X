@@ -290,9 +290,8 @@ class GoogleDriveHelper:
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(3),
            retry=(retry_if_exception_type(Exception)))
     def __upload_file(self, file_path, file_name, mime_type, dest_id, user_id):
+        # Change file name
         _ , file_name, _ = change_filename(file_name, user_id, all_edit=False)
-        LOGGER.info(file_name)
-        LOGGER.info(user_id)
         # File body description
         file_metadata = {
             'name': file_name,
@@ -357,7 +356,7 @@ class GoogleDriveHelper:
         return download_url
 
 
-    def clone(self, link):
+    def clone(self, link, user_id):
         self.__is_cloning = True
         self.__start_time = time()
         self.__total_files = 0
@@ -401,7 +400,7 @@ class GoogleDriveHelper:
                     url = short_url(url)
                     buttons.buildbutton("⚡ Index Link", url)
             else:
-                file = self.__copyFile(meta.get('id'), config_dict['GDRIVE_ID'])
+                file = self.__copyFile(meta.get('id'), config_dict['GDRIVE_ID'], meta.get('name'), user_id)
                 if config_dict['EMOJI_THEME']:
                     msg += f'<b>╭🗂️ Name: </b><code>{file.get("name")}</code>'
                 else:
@@ -453,7 +452,7 @@ class GoogleDriveHelper:
             return msg, ""
         return msg, buttons.build_menu(2)
 
-    def __cloneFolder(self, name, local_path, folder_id, dest_id):
+    def __cloneFolder(self, name, local_path, folder_id, dest_id, user_id):
         LOGGER.info(f"Syncing: {local_path}")
         files = self.__getFilesByFolderId(folder_id)
         if len(files) == 0:
@@ -463,18 +462,22 @@ class GoogleDriveHelper:
                 self.__total_folders += 1
                 file_path = ospath.join(local_path, file.get('name'))
                 current_dir_id = self.__create_directory(file.get('name'), dest_id)
-                self.__cloneFolder(file.get('name'), file_path, file.get('id'), current_dir_id)
+                self.__cloneFolder(file.get('name'), file_path, file.get('id'), current_dir_id, user_id)
             elif not file.get('name').lower().endswith(tuple(GLOBAL_EXTENSION_FILTER)):
                 self.__total_files += 1
                 self.transferred_size += int(file.get('size', 0))
-                self.__copyFile(file.get('id'), dest_id)
+                self.__copyFile(file.get('id'), dest_id, file.get('name'), user_id)
             if self.__is_cancelled:
                 break
 
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(3),
            retry=retry_if_exception_type(Exception))
-    def __copyFile(self, file_id, dest_id):
-        body = {'parents': [dest_id]}
+    def __copyFile(self, file_id, dest_id, file_name, user_id):
+        # Change file name
+        _, file_name, _ = change_filename(file_name, user_id, all_edit=False)
+
+        body = {'name': file_name,
+                'parents': [dest_id]}
         try:
             return self.__service.files().copy(fileId=file_id, body=body, supportsAllDrives=True).execute()
         except HttpError as err:
@@ -487,7 +490,7 @@ class GoogleDriveHelper:
                             raise err
                         else:
                             self.__switchServiceAccount()
-                            return self.__copyFile(file_id, dest_id)
+                            return self.__copyFile(file_id, dest_id, file_name, user_id)
                     else:
                         self.__is_cancelled = True
                         LOGGER.error(f"Got: {reason}")
