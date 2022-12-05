@@ -234,7 +234,7 @@ class MirrorLeechListener:
         reply_to = self.message.reply_to_message
         user_id_ = self.message.from_user.id
         file_ = escape(name)
-        up_path, file_, _ = change_filename(file_, user_id_, None, False)
+        up_path, file_, _ = change_filename(file_, user_id_, all_edit=False)
 
         NAME_FONT = config_dict['NAME_FONT']
         if config_dict['EMOJI_THEME']:
