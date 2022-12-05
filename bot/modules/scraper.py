@@ -441,5 +441,4 @@ def ouo_parse(dict_key, button, loop_soup):
         
 srp_handler = CommandHandler(BotCommands.ScrapeCommand, scrapper,
                             filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
-
 dispatcher.add_handler(srp_handler)

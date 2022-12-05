@@ -30,7 +30,7 @@ def wayback(update, context):
 
 
 def saveWebPage(pageurl:str):
-    LOGGER.info("wayback running for: " + pageurl)
+    LOGGER.info("Wayback running for: " + pageurl)
     user_agent = getRandomUserAgent()
     try:
         wayback = waybackpy.Url(pageurl, user_agent)

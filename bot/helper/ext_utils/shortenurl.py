@@ -7,18 +7,14 @@ from urllib3 import disable_warnings
 
 from bot import LOGGER, config_dict
 
-LSHORTENER_API = config_dict['SHORTENER_API'].split(' ')
-LSHORTENER = config_dict['SHORTENER'].split(' ')
 def short_url(longurl):
-    if len(LSHORTENER) == 0 and len(LSHORTENER_API) == 0:
+    API_LIST = config_dict['SHORTENER_API']
+    SHORT_LIST = config_dict['SHORTENER']
+    if len(SHORT_LIST) == 0 and len(API_LIST) == 0:
         return longurl
-    SHORTENER = choice(LSHORTENER)
-    ind = LSHORTENER.index(SHORTENER)
-    try:
-        SHORTENER_API = LSHORTENER_API[ind]
-    except IndexError:
-        LOGGER.error(f"{SHORTENER}'s API Key Not Found")
-        return longurl
+    SHORTENER = choice(SHORT_LIST)
+    try: SHORTENER_API = API_LIST[SHORT_LIST.index(SHORTENER)]
+    except IndexError: LOGGER.error(f"{SHORTENER}'s API Key Not Found"); return longurl
     try:
         cget = create_scraper().get
         try:

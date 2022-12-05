@@ -477,6 +477,9 @@ SHORTENER_API = environ.get('SHORTENER_API', '')
 if len(SHORTENER) == 0 or len(SHORTENER_API) == 0:
     SHORTENER = ''
     SHORTENER_API = ''
+SHORTENER = SHORTENER.replace("'", '').replace('"', '').replace('[', '').replace(']', '').replace(",", "")).split()
+SHORTENER_API = SHORTENER_API..replace("'", '').replace('"', '').replace('[', '').replace(']', '').replace(",", "")).split()
+
 
 UNIFIED_EMAIL = environ.get('UNIFIED_EMAIL', '')
 if len(UNIFIED_EMAIL) == 0:
