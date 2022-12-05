@@ -54,7 +54,10 @@ def short_url(longurl):
             return cget(f'http://cutt.ly/api/api.php?key={SHORTENER_API}&short={longurl}', verify=False).json()['url']['shortLink']
         elif "shrinkme.io" in SHORTENER:
             disable_warnings()
-            return cget(f'https://shrinkme.io/api?api={SHORTENER_API}&url={quote(longurl)}&format=text').text           
+            return cget(f'https://shrinkme.io/api?api={SHORTENER_API}&url={quote(longurl)}&format=text').text
+        elif "bc.vc" in SHORTENER:
+            disable_warnings()
+            return cget(f'https://bc.vc/{SHORTENER_API}/{longurl}', verify=False.text
         else:
             return cget(f'https://{SHORTENER}/api?api={SHORTENER_API}&url={quote(longurl)}&format=text').text
     except Exception as e:
