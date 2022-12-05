@@ -476,9 +476,9 @@ class MirrorLeechListener:
                 pass
             else:
                 buttons.buildbutton("☁️ Drive Link", link)
-            LOGGER.info(f'Done Uploading {name}')
+            LOGGER.info(f'Done Uploading {file_}')
             if INDEX_URL:= config_dict['INDEX_URL']:
-                url_path = rutils.quote(f'{name}')
+                url_path = rutils.quote(f'{file_}')
                 share_url = f'{INDEX_URL}/{url_path}'
                 if typ == "Folder":
                     share_url += '/'
