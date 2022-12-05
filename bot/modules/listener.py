@@ -14,7 +14,7 @@ from threading import Thread
 from telegram import ParseMode, InlineKeyboardButton
 
 from bot import *
-from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_gdtot_link, is_mega_link, is_gdrive_link, get_content_type, get_readable_time, __change_file
+from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_gdtot_link, is_mega_link, is_gdrive_link, get_content_type, get_readable_time, change_filename
 from bot.helper.ext_utils.fs_utils import get_base_name, get_path_size, split_file, clean_download, clean_target
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException, NotSupportedExtractionArchive
 from bot.helper.mirror_utils.status_utils.extract_status import ExtractStatus
@@ -234,7 +234,7 @@ class MirrorLeechListener:
         reply_to = self.message.reply_to_message
         user_id_ = self.message.from_user.id
         file_ = escape(name)
-        up_path, file_, _ = __change_file(file_, user_id_, None, False)
+        up_path, file_, _ = change_filename(file_, user_id_, None, False)
 
         NAME_FONT = config_dict['NAME_FONT']
         if config_dict['EMOJI_THEME']:

@@ -7,7 +7,7 @@ from threading import RLock
 from bot import user_data, GLOBAL_EXTENSION_FILTER, \
                 app, tgBotMaxFileSize, premium_session, config_dict
 from bot.helper.ext_utils.fs_utils import take_ss, get_media_info, get_media_streams, get_path_size, clean_unwanted
-from bot.helper.ext_utils.bot_utils import get_readable_file_size, __change_file
+from bot.helper.ext_utils.bot_utils import get_readable_file_size, change_filename
 from pyrogram.types import Message
 
 LOGGER = getLogger(__name__)
@@ -76,7 +76,7 @@ class TgUploader:
         user_id_ = self.__listener.message.from_user.id
 
         client = premium_session if fsize > 2097152000 else app
-        up_path, file_, cap_mono = __change_file(file_, user_id_, dirpath)
+        up_path, file_, cap_mono = change_filename(file_, user_id_, dirpath)
 
         dumpid = user_data[user_id_].get('userlog') if user_id_ in user_data and user_data[user_id_].get('userlog') else ''
         LEECH_X = int(dumpid) if len(dumpid) != 0 else user_data.get('is_log_leech', [''])[0]

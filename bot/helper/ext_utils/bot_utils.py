@@ -444,7 +444,7 @@ def get_content_type(link: str) -> str:
             content_type = None
     return content_type
 
-def __change_file(file_, user_id_, dirpath, all_edit=True):
+def change_filename(file_, user_id_, dirpath, all_edit=True):
     user_dict = user_data.get(user_id_, False)
     PREFIX = user_dict.get('prefix') if user_dict and user_dict.get('prefix') else ''
     REMNAME = user_dict.get('remname') if user_dict and user_dict.get('remname') else ''
