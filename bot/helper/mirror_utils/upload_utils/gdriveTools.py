@@ -291,6 +291,8 @@ class GoogleDriveHelper:
            retry=(retry_if_exception_type(Exception)))
     def __upload_file(self, file_path, file_name, mime_type, dest_id, user_id):
         _ , file_name, _ = change_filename(file_name, user_id, all_edit=False)
+        LOGGER.info(file_name)
+        LOGGER.info(user_id)
         # File body description
         file_metadata = {
             'name': file_name,
