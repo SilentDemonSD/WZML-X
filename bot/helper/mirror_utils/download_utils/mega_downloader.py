@@ -187,7 +187,6 @@ def add_mega_download(mega_link: str, path: str, listener, name: str):
     if any([STORAGE_THRESHOLD, ZIP_UNZIP_LIMIT, MEGA_LIMIT, LEECH_LIMIT]) and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id):
         size = api.getSize(node)
         arch = any([listener.isZip, listener.isLeech, listener.extract])
-        if config_dict['PAID_SERVICE'] is True:
         if STORAGE_THRESHOLD is not None:
             acpt = check_storage_threshold(size, arch)
             if not acpt:
