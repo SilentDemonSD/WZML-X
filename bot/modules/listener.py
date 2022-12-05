@@ -214,7 +214,7 @@ class MirrorLeechListener:
             with download_dict_lock:
                 download_dict[self.uid] = tg_upload_status
             update_all_messages()
-            tg.upload(o_files)
+            tg.upload(o_files, self.user_id)
         else:
             up_path = f'{up_dir}/{up_name}'
             size = get_path_size(up_path)
@@ -224,7 +224,7 @@ class MirrorLeechListener:
             with download_dict_lock:
                 download_dict[self.uid] = upload_status
             update_all_messages()
-            drive.upload(up_name)
+            drive.upload(up_name, self.user_id)
 
 
     def onUploadComplete(self, link: str, size, files, folders, typ, name):
