@@ -2,7 +2,7 @@
 #
 # Licensed under the Raphielscape Public License, Version 1.c (the "License");
 # you may not use this file except in compliance with the License.
-#
+
 """ Helper Module containing various sites direct links generators. This module is copied and modified as per need
 from https://github.com/AvinashReddy3108/PaperplaneExtended . I hereby take no credit of the following code other
 than the modifications. See https://github.com/AvinashReddy3108/PaperplaneExtended/commits/master/userbot/modules/direct_links.py
@@ -166,15 +166,15 @@ def RecaptchaV3(ANCHOR_URL):
     client.headers.update({
     'content-type': 'application/x-www-form-urlencoded'
     })
-    matches = ('([api2|enterprise]+)\/anchor\?(.*)', ANCHOR_URL)[0]
+    matches = re_findall('([api2|enterprise]+)\/anchor\?(.*)', ANCHOR_URL)[0]
     url_base += matches[0]+'/'
     params = matches[1]
     res = client.get(url_base+'anchor', params=params)
-    token = (r'"recaptcha-token" value="(.*?)"', res.text)[0]
+    token = re_findall(r'"recaptcha-token" value="(.*?)"', res.text)[0]
     params = dict(pair.split('=') for pair in params.split('&'))
     post_data = post_data.format(params["v"], token, params["k"], params["co"])
     res = client.post(url_base+'reload', params=f'k={params["k"]}', data=post_data)
-    answer = (r'"rresp","(.*?)"', res.text)[0]    
+    answer = re_findall(r'"rresp","(.*?)"', res.text)[0]    
     return answer
 
 def ouo(url: str) -> str:
@@ -539,13 +539,13 @@ def gdtot(url: str) -> str:
     if not config_dict['GDTOT_CRYPT']:
         raise DirectDownloadLinkException("ERROR: CRYPT cookie not provided")
 
-    match = (r'https?://(.+)\.gdtot\.(.+)\/\S+\/\S+', url)[0]
+    match = re_findall(r'https?://(.+)\.gdtot\.(.+)\/\S+\/\S+', url)[0]
 
     with rsession() as client:
         client.cookies.update({'crypt': config_dict['GDTOT_CRYPT']})
         client.get(url)
         res = client.get(f"https://{match[0]}.gdtot.{match[1]}/dld?id={url.split('/')[-1]}")
-    matches = ('gd=(.*?)&', res.text)
+    matches = re_findall('gd=(.*?)&', res.text)
     try:
         decoded_id = b64decode(str(matches[0])).decode('utf-8')
     except:
@@ -573,7 +573,7 @@ def gen_payload(data, boundary=f'{"-"*6}_'):
 
 
 def parse_infou(data):
-    info = (">(.*?)<\/li>", data)
+    info = re_findall(">(.*?)<\/li>", data)
     info_parsed = {}
     for item in info:
         kv = [s.strip() for s in item.split(":", maxsplit=1)]
@@ -596,7 +596,7 @@ def unified(url: str) -> str:
     account_login(client, url, account["email"], account["passwd"])
 
     res = client.get(url)
-    key = ('"key",\s+"(.*?)"', res.text)[0]
+    key = re_findall('"key",\s+"(.*?)"', res.text)[0]
 
     ddl_btn = etree.HTML(res.content).xpath("//button[@id='drc']")
 
@@ -657,9 +657,9 @@ def unified(url: str) -> str:
 def parse_info(res, url):
     info_parsed = {}
     if 'drivebuzz' in url:
-        info_chunks = ('<td\salign="right">(.*?)<\/td>', res.text)
+        info_chunks = re_findall('<td\salign="right">(.*?)<\/td>', res.text)
     else:
-        info_chunks = (">(.*?)<\/td>", res.text)
+        info_chunks = re_findall(">(.*?)<\/td>", res.text)
     for i in range(0, len(info_chunks), 2):
         info_parsed[info_chunks[i]] = info_chunks[i + 1]
     return info_parsed
@@ -718,7 +718,7 @@ def udrive(url: str) -> str:
         flink = f"https://drive.google.com/open?id={gd_id}"
         return flink
     else:
-        gd_id = ('gd=(.*)', res, DOTALL)[0]
+        gd_id = re_findall('gd=(.*)', res, DOTALL)[0]
 
     info_parsed["gdrive_url"] = f"https://drive.google.com/open?id={gd_id}"
     info_parsed["src_url"] = url
@@ -734,7 +734,7 @@ def sharer_pw_dl(url: str)-> str:
     client.cookies["laravel_session"] = config_dict['laravel_session']
     
     res = client.get(url)
-    token = ("_token\s=\s'(.*?)'", res.text, DOTALL)[0]
+    token = re_findall("_token\s=\s'(.*?)'", res.text, DOTALL)[0]
     data = { '_token': token, 'nl' :1}
     headers={ 'content-type': 'application/x-www-form-urlencoded; charset=UTF-8', 'x-requested-with': 'XMLHttpRequest'}
 
