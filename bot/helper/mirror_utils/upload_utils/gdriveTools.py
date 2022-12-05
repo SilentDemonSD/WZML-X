@@ -19,7 +19,7 @@ from google.auth.transport.requests import Request
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot import config_dict, DRIVES_NAMES, DRIVES_IDS, INDEX_URLS, GLOBAL_EXTENSION_FILTER
 from bot.helper.ext_utils.telegraph_helper import telegraph
-from bot.helper.ext_utils.bot_utils import get_readable_file_size, setInterval
+from bot.helper.ext_utils.bot_utils import get_readable_file_size, setInterval, change_filename
 from bot.helper.ext_utils.fs_utils import get_mime_type
 from bot.helper.ext_utils.shortenurl import short_url
 
@@ -205,7 +205,7 @@ class GoogleDriveHelper:
         finally:
             return msg
 
-    def upload(self, file_name: str):
+    def upload(self, file_name: str, user_id: int):
         self.__is_uploading = True
         file_path = f"{self.__path}/{file_name}"
         size = get_readable_file_size(self.__size)
@@ -214,7 +214,7 @@ class GoogleDriveHelper:
         try:
             if ospath.isfile(file_path):
                 mime_type = get_mime_type(file_path)
-                link = self.__upload_file(file_path, file_name, mime_type, config_dict['GDRIVE_ID'])
+                link = self.__upload_file(file_path, file_name, mime_type, config_dict['GDRIVE_ID'], user_id)
                 if self.__is_cancelled:
                     return
                 if link is None:
@@ -223,7 +223,7 @@ class GoogleDriveHelper:
             else:
                 mime_type = 'Folder'
                 dir_id = self.__create_directory(ospath.basename(ospath.abspath(file_name)), config_dict['GDRIVE_ID'])
-                result = self.__upload_dir(file_path, dir_id)
+                result = self.__upload_dir(file_path, dir_id, user_id)
                 if result is None:
                     raise Exception('Upload has been manually cancelled!')
                 link = f"https://drive.google.com/folderview?id={dir_id}"
@@ -248,7 +248,7 @@ class GoogleDriveHelper:
                 return
         self.__listener.onUploadComplete(link, size, self.__total_files, self.__total_folders, mime_type, self.name)
 
-    def __upload_dir(self, input_directory, dest_id):
+    def __upload_dir(self, input_directory, dest_id, user_id):
         list_dirs = listdir(input_directory)
         if len(list_dirs) == 0:
             return dest_id
@@ -257,13 +257,13 @@ class GoogleDriveHelper:
             current_file_name = ospath.join(input_directory, item)
             if ospath.isdir(current_file_name):
                 current_dir_id = self.__create_directory(item, dest_id)
-                new_id = self.__upload_dir(current_file_name, current_dir_id)
+                new_id = self.__upload_dir(current_file_name, current_dir_id, user_id)
                 self.__total_folders += 1
             elif not item.lower().endswith(tuple(GLOBAL_EXTENSION_FILTER)):
                 mime_type = get_mime_type(current_file_name)
                 file_name = current_file_name.split("/")[-1]
                 # current_file_name will have the full path
-                self.__upload_file(current_file_name, file_name, mime_type, dest_id)
+                self.__upload_file(current_file_name, file_name, mime_type, dest_id, user_id)
                 self.__total_files += 1
                 new_id = dest_id
             if self.__is_cancelled:
@@ -289,7 +289,8 @@ class GoogleDriveHelper:
 
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(3),
            retry=(retry_if_exception_type(Exception)))
-    def __upload_file(self, file_path, file_name, mime_type, dest_id):
+    def __upload_file(self, file_path, file_name, mime_type, dest_id, user_id):
+        _ , file_name, _ = change_filename(file_name, user_id, all_edit=False)
         # File body description
         file_metadata = {
             'name': file_name,
