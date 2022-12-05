@@ -494,7 +494,7 @@ def __change_file(file_, user_id_, dirpath, all_edit=True):
     cap_mono = ""
     if CAPTION and all_edit:
         cfont = config_dict['CAPTION_FONT'] if not FSTYLE else FSTYLE
-        CAPTION = CAPTION.replace('\|', '/\')
+        CAPTION = CAPTION.replace('\|', '%%')
         slit = CAPTION.split("|")
         cap_mono = slit[0].format(
             filename = file_,
@@ -509,7 +509,7 @@ def __change_file(file_, user_id_, dirpath, all_edit=True):
                     cap_mono = cap_mono.replace(args[0], args[1])
                 elif len(args) == 1:
                     cap_mono = cap_mono.replace(args[0], '')
-        cap_mono = cap_mono.replace('/\', '|')
+        cap_mono = cap_mono.replace('%%', '|')
     elif all_edit:
         cap_mono = file_ if FSTYLE == 'r' else f"<{cfont}>{file_}</{cfont}>"
 
