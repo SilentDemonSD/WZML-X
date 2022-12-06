@@ -372,6 +372,7 @@ def edit_user_settings(update, context):
     elif data[2] == "showimdb":
         if user_id not in user_data and not user_data[user_id].get('imdb_temp'):
             return query.answer(text="Send new settings command. 🙃")
+        query.answer()
         imdb = user_data[user_id].get('imdb_temp')
         if imdb:
             msg = f"IMDB Template for: {query.from_user.mention_html()} (<code>{str(user_id)}</code>)\n\n{escape(imdb)}"
@@ -380,6 +381,7 @@ def edit_user_settings(update, context):
     elif data[2] == "showanilist":
         if user_id not in user_data and not user_data[user_id].get('ani_temp'):
             return query.answer(text="Send new settings command. 🙃")
+        query.answer()
         anilist = user_data[user_id].get('ani_temp')
         if anilist:
             msg = f"AniList Template for: {query.from_user.mention_html()} (<code>{str(user_id)}</code>)\n\n{escape(anilist)}"
