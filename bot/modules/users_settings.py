@@ -117,13 +117,13 @@ def get_user_settings(from_user, key=None):
         cfont = user_dict['cfont'][0] if user_dict and user_dict.get('cfont') else "Not Exists"
 
         buttxt = "Change/Delete Prefix" if prefix != "Not Exists" else "Set Prefix"
-        buttons.sbutton(buttxt, f"userset {user_id} suniversal prefix")
+        buttons.sbutton(buttxt, f"userset {user_id} suniversal prefix leech")
         buttxt = "Change/Delete Suffix" if suffix != "Not Exists" else "Set Suffix"
-        buttons.sbutton(buttxt, f"userset {user_id} suniversal suffix")
+        buttons.sbutton(buttxt, f"userset {user_id} suniversal suffix leech")
         buttxt = "Change/Delete Caption" if caption != "Not Exists" else "Set Caption"
-        buttons.sbutton(buttxt, f"userset {user_id} suniversal caption")
+        buttons.sbutton(buttxt, f"userset {user_id} suniversal caption leech")
         buttxt = "Change/Delete Remname" if remname != "Not Exists" else "Set Remname"
-        buttons.sbutton(buttxt, f"userset {user_id} suniversal remname")
+        buttons.sbutton(buttxt, f"userset {user_id} suniversal remname leech")
         if cfont != "Not Exists": buttons.sbutton("Delete CapFont", f"userset {user_id} cfont")
 
         buttons.sbutton("Back", f"userset {user_id} mback")
@@ -335,7 +335,7 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
         while handler_dict[user_id]:
             if time() - start_time > 60:
                 handler_dict[user_id] = False
-                update_user_settings(message, query.from_user)
+                update_user_settings(message, query.from_user, data[4])
         dispatcher.remove_handler(UNI_HANDLER)
     elif data[2] == "prefix":
         handler_dict[user_id] = False
