@@ -392,7 +392,7 @@ def edit_user_settings(update, context):
         query.message.reply_to_message.delete()
 
 def send_users_settings(update, context):
-    msg, auth_chat, sudos, leechlogs, linklogs, mirrorlogs = '', '', '', '', '', ''
+    msg, auth_chat, sudos, leechlogs, linklogs, mirrorlogs = 'No Data', 'No Data', 'No Data', 'No Data', 'No Data', 'No Data'
     for u, d in user_data.items():
         try:
             for ud, dd in d.items():
@@ -410,7 +410,6 @@ def send_users_settings(update, context):
         else:
             continue
     msg = f'<b><u>Authorized Chats💬 :</u></b>\n{auth_chat}\n<b><u>Sudo Users👤 :</u></b>\n{sudos}\n<b><u>Leech Log:</u></b>\n{leechlogs}\n\n<b><u>Mirror Log♻️ :</u></b>\n{mirrorlogs}\n<b><u>Links Log🔗 :</u></b>\n{linklogs}'
-    if msg == '': msg = 'No Users Data!'
     sendMessage(msg, context.bot, update.message)
 
 def sendPaidDetails(update, context):
