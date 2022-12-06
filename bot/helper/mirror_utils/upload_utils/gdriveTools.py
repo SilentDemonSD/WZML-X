@@ -274,7 +274,7 @@ class GoogleDriveHelper:
            retry=retry_if_exception_type(Exception))
     def __create_directory(self, directory_name, dest_id, user_id):
         # Change file name
-        _ , directory_name, _ = change_filename(directory_name, user_id, all_edit=False)
+        _ , directory_name, _ = change_filename(directory_name, user_id, all_edit=False, mirror_type=True)
         # File body description
         file_metadata = {
             "name": directory_name,
@@ -294,7 +294,7 @@ class GoogleDriveHelper:
            retry=(retry_if_exception_type(Exception)))
     def __upload_file(self, file_path, file_name, mime_type, dest_id, user_id):
         # Change file name
-        _ , file_name, _ = change_filename(file_name, user_id, all_edit=False)
+        _ , file_name, _ = change_filename(file_name, user_id, all_edit=False, mirror_type=True)
         # File body description
         file_metadata = {
             'name': file_name,
@@ -477,7 +477,7 @@ class GoogleDriveHelper:
            retry=retry_if_exception_type(Exception))
     def __copyFile(self, file_id, dest_id, file_name, user_id):
         # Change file name
-        _, file_name, _ = change_filename(file_name, user_id, all_edit=False)
+        _, file_name, _ = change_filename(file_name, user_id, all_edit=False, mirror_type=True)
 
         body = {'name': file_name,
                 'parents': [dest_id]}
