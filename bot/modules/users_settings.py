@@ -77,9 +77,9 @@ def get_user_settings(from_user, key=None):
         buttons.sbutton("Back", f"userset {user_id} back universal")
         buttons.sbutton("Close", f"userset {user_id} close")
         button = buttons.build_menu(2)
-        text = f'''╭─《 <u>Universal Settings for <a href='tg://user?id={user_id}'>{name}</a></u> 》
+        text = f'''<u>Universal Settings for <a href='tg://user?id={user_id}'>{name}</a></u>
 
-├ Leech Type : <b>{ltype}</b>
+╭ Leech Type : <b>{ltype}</b>
 ├ Custom Thumbnail : <b>{thumbmsg}</b>
 ├ YT-DLP Quality is : <b><code>{escape(ytq)}</code></b>
 ├ UserLog : <b>{userlog}</b>
@@ -102,9 +102,9 @@ def get_user_settings(from_user, key=None):
         buttons.sbutton("Back", f"userset {user_id} back mirror")
         buttons.sbutton("Close", f"userset {user_id} close")
         button = buttons.build_menu(2)
-        text = f'''╭─《 <u>Universal Settings for <a href='tg://user?id={user_id}'>{name}</a></u> 》
+        text = f'''<u>Universal Settings for <a href='tg://user?id={user_id}'>{name}</a></u>
 
-├ Prefix : <b>{escape(prefix)}</b>
+╭ Prefix : <b>{escape(prefix)}</b>
 ├ Suffix : <b>{suffix}</b>
 ├ Remname : <b>{escape(remname)}</b>
 ╰ User Plan : <b>{uplan}</b>
@@ -129,9 +129,9 @@ def get_user_settings(from_user, key=None):
         buttons.sbutton("Back", f"userset {user_id} back leech")
         buttons.sbutton("Close", f"userset {user_id} close")
         button = buttons.build_menu(2)
-        text = f'''╭─《 <u>Leech Settings for <a href='tg://user?id={user_id}'>{name}</a></u> 》
+        text = f'''<u>Leech Settings for <a href='tg://user?id={user_id}'>{name}</a></u>
 
-├ Prefix : <b>{escape(prefix)}</b>
+╭ Prefix : <b>{escape(prefix)}</b>
 ├ Suffix : <b>{suffix}</b>
 ├ Caption : <b>{escape(caption)}</b>
 ├ CapFont : {cfont}
@@ -141,7 +141,7 @@ def get_user_settings(from_user, key=None):
     if uplan == "Paid User":
         ex_date = user_dict.get('expiry_date', False)
         if not ex_date: ex_date = 'Not Specified'
-        text += f"• Expiry Date : <b>{ex_date}</b>"
+        text += f"╰ Expiry Date : <b>{ex_date}</b>"
     return text, button
 
 def update_user_settings(message, from_user, key):
@@ -203,6 +203,9 @@ def edit_user_settings(update, context):
     elif data[2] in ['universal', 'leech', 'mirror']:
         query.answer()
         update_user_settings(message, query.from_user, data[2])
+    elif data[2] == 'back':
+        query.answer()
+        update_user_settings(message, query.from_user, data[3])
     elif data[2] == "doc":
         update_user_ldata(user_id, 'as_doc', True)
         query.answer(text="Your File Will Deliver As Document!", show_alert=True)
