@@ -16,7 +16,7 @@ from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.ext_utils.bot_utils import update_user_ldata, is_paid, is_sudo
 
 handler_dict = {}
-example_dict = {'prefix':'1. <code>@your_channel_username or Anything</code>', 'suffix':'1. <code>~ WZML</code>\n2. <code>~ @channelname</code>', 'caption': '1.'+escape("<b>{filename}</b>\nJoin Now : @WeebZone_updates")+'\nCheck all available fillings options <a href="">HERE</a> and Make Custom Caption.', 'userlog':'1. <code>-100xxxxxx or Channel ID</code>', 'remname':'<b>Syntax:</b> previousname:newname:times|previousname:newname:times\n\n1. Fork:Star|Here:Now:1|WZML\n\n<b>Output :</b> Star Now : Click Here.txt', 'imdb_temp':'Check all available fillings options <a href="">HERE</a> and Make Custom Template.', 'ani_temp':'Check all available fillings options <a href="">HERE</a> and Make Custom AniList Template.'}
+example_dict = {'prefix':'1. <code>@your_channel_username or Anything</code>', 'suffix':'1. <code>~ WZML</code>\n2. <code>~ @channelname</code>', 'caption': '1.'+escape("<b>{filename}</b>\nJoin Now : @WeebZone_updates")+'\nCheck all available fillings options <a href="">HERE</a> and Make Custom Caption.', 'userlog':'1. <code>-100xxxxxx or Channel ID</code>', 'remname':'<b>Syntax:</b> previousname:newname:times|previousname:newname:times\n\n1. Fork:Star|Here:Now:1|WZML\n\n<b>Output :</b> Star Now : Click Here.txt', 'imdb_temp':'Check all available fillings options <a href="">HERE</a> and Make Custom Template.', 'ani_temp':'Check all available fillings options <a href="">HERE</a> and Make Custom AniList Template.', 'yt_ql': '1. <code>{escape('bv*[height<=1080][ext=mp4]+ba[ext=m4a]/b[height<=1080]')}</code> this will give 1080p-mp4.\n2. <code>{escape('bv*[height<=720][ext=webm]+ba/b[height<=720]')}</code> this will give 720p-webm.\nCheck all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#filtering-formats">HERE</a>.'}
 
 def get_user_settings(from_user, key=None):
     user_id = from_user.id
@@ -36,6 +36,8 @@ def get_user_settings(from_user, key=None):
         userlog = user_dict['userlog'] if user_dict and user_dict.get('userlog') else "Not Exists"
         imdb = user_dict['imdb_temp'] if user_dict and user_dict.get('imdb_temp') else "Not Exists"
         anilist = user_dict['ani_temp'] if user_dict and user_dict.get('ani_temp') else "Not Exists"
+        ytq = user_dict['yt_ql'] if user_dict and user_dict.get('yt_ql') else config_dict['YT_DLP_QUALITY'] if config_dict['YT_DLP_QUALITY'] else "Not Exists"
+
         if not user_dict and config_dict['AS_DOCUMENT'] or user_dict and user_dict.get('as_doc'):
             ltype = "DOCUMENT"
             buttons.sbutton("Send As Media", f"userset {user_id} med")
@@ -43,15 +45,6 @@ def get_user_settings(from_user, key=None):
             ltype = "MEDIA"
             buttons.sbutton("Send As Document", f"userset {user_id} doc")
 
-        if user_dict and user_dict.get('yt_ql'):
-            ytq = user_dict['yt_ql']
-            buttons.sbutton("Change/Remove YT-DLP Quality", f"userset {user_id} ytq")
-        elif config_dict['YT_DLP_QUALITY']:
-            ytq = config_dict['YT_DLP_QUALITY']
-            buttons.sbutton("Set YT-DLP Quality", f"userset {user_id} ytq")
-        else:
-            buttons.sbutton("Set YT-DLP Quality", f"userset {user_id} ytq")
-            ytq = 'Not Exists'
         if ospath.exists(thumbpath):
             thumbmsg = "Exists"
             buttons.sbutton("Change/Delete Thumbnail", f"userset {user_id} sthumb")
@@ -59,10 +52,13 @@ def get_user_settings(from_user, key=None):
         else:
             thumbmsg = "Not Exists"
             buttons.sbutton("Set Thumbnail", f"userset {user_id} sthumb")
+
+        buttxt = "Change/Delete YT-DLP Quality" if ytq != "Not Exists" else "Set YT-DLP Quality"
+        buttons.sbutton(buttxt, f"userset {user_id} suniversal yt_ql universal")
         buttxt = "Change/Delete UserLog" if userlog != "Not Exists" else "Set UserLog"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal userlog universal")
 
-        imdbval, anival = "", ''
+        imdbval, anival = '', ''
         if imdb != "Not Exists":
             imdbval = "Exists"
             buttons.sbutton("Change/Delete IMDB", f"userset {user_id} suniversal imdb_temp universal")
@@ -81,7 +77,7 @@ def get_user_settings(from_user, key=None):
 
 ╭ Leech Type : <b>{ltype}</b>
 ├ Custom Thumbnail : <b>{thumbmsg}</b>
-├ YT-DLP Quality is : <b><code>{escape(ytq)}</code></b>
+├ YT-DLP Quality is : <b>{escape(ytq)}</b>
 ├ UserLog : <b>{userlog}</b>
 ├ IMDB : <b>{imdbval if imdbval else imdb}</b>
 ├ AniList : <b>{anival if anival else anilist}</b>
@@ -151,17 +147,6 @@ def update_user_settings(message, from_user, key):
 def user_settings(update, context):
     msg, button = get_user_settings(update.message.from_user)
     buttons_msg  = sendMarkup(msg, context.bot, update.message, button)
-
-def set_yt_quality(update, context, omsg):
-    message = update.message
-    user_id = message.from_user.id
-    handler_dict[user_id] = False
-    value = message.text
-    update_user_ldata(user_id, 'yt_ql', value)
-    update.message.delete()
-    update_user_settings(omsg, message.from_user, 'universal')
-    if DATABASE_URL:
-        DbManger().update_user_data(user_id)
 
 def set_addons(update, context, data, omsg, key):
     message = update.message
@@ -256,46 +241,6 @@ def edit_user_settings(update, context):
                 handler_dict[user_id] = False
                 update_user_settings(message, query.from_user, 'universal')
         dispatcher.remove_handler(photo_handler)
-    elif data[2] == 'ytq':
-        if config_dict['PAID_SERVICE'] and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id):
-            query.answer("You not Not Paid User to Use this Feature. \n#Buy Paid Service", show_alert=True)
-            return
-        query.answer()
-        menu = False
-        if handler_dict.get(user_id):
-            handler_dict[user_id] = False
-            sleep(0.5)
-        start_time = time()
-        handler_dict[user_id] = True
-        buttons = ButtonMaker()
-        if user_id in user_data and user_data[user_id].get('yt_ql'):
-            menu = True
-            buttons.sbutton("Delete", f"userset {user_id} rytq")
-        buttons.sbutton("Back", f"userset {user_id} back")
-        buttons.sbutton("Close", f"userset {user_id} close")
-        rmsg = f'''
-<u>Send YT-DLP Quality :</u>
-Examples:
-1. <code>{escape('bv*[height<=1080][ext=mp4]+ba[ext=m4a]/b[height<=1080]')}</code> this will give 1080p-mp4.
-2. <code>{escape('bv*[height<=720][ext=webm]+ba/b[height<=720]')}</code> this will give 720p-webm.
-Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#filtering-formats">HERE</a>.
-        '''
-        editMessage(rmsg, message, buttons.build_menu(2) if menu else buttons.build_menu(1))
-        partial_fnc = partial(set_yt_quality, omsg=message)
-        value_handler = MessageHandler(filters=Filters.text & Filters.chat(message.chat.id) & Filters.user(user_id),
-                                       callback=partial_fnc, run_async=True)
-        dispatcher.add_handler(value_handler)
-        while handler_dict[user_id]:
-            if time() - start_time > 60:
-                handler_dict[user_id] = False
-                update_user_settings(message, query.from_user)
-        dispatcher.remove_handler(value_handler)
-    elif data[2] == 'rytq':
-        query.answer(text="YT-DLP Quality Removed!", show_alert=True)
-        update_user_ldata(user_id, 'yt_ql', '')
-        update_user_settings(message, query.from_user, 'universal')
-        if DATABASE_URL:
-            DbManger().update_user_data(user_id)
     elif data[2] == 'back':
         query.answer()
         handler_dict[user_id] = False
@@ -324,7 +269,7 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
         if user_id in user_data and user_data[user_id].get(data[3]):
             menu = True
             buttons.sbutton("Delete", f"userset {user_id} sremove {data[3]} {data[4]}")
-        buttons.sbutton("Back", f"userset {user_id} back")
+        buttons.sbutton("Back", f"userset {user_id} back {data[4]}")
         buttons.sbutton("Close", f"userset {user_id} close")
         editMessage(f'<u>Send {data[3].capitalize()} text :</u>\n\nExamples:\n{example_dict[data[3]]}', message, buttons.build_menu(2) if menu else buttons.build_menu(1))
         partial_fnc = partial(set_addons, data=data[3], omsg=message, key=data[4])
@@ -342,8 +287,15 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
         update_user_ldata(user_id, data[3], False)
         if DATABASE_URL: 
             DbManger().update_userval(user_id, 'prefix')
-        query.answer(text=f"Your {data[3].capitalize()} is Successfully Deleted!", show_alert=True)
+        query.answer(text=f"{data[3].capitalize()} Deleted!", show_alert=True)
         update_user_settings(message, query.from_user, data[4])
+    elif data[2] == "cfont":
+        handler_dict[user_id] = False
+        update_user_ldata(user_id, 'cfont', False)
+        if DATABASE_URL: 
+            DbManger().update_userval(user_id, 'cfont')
+        query.answer(text="Your Caption Font is Successfully Deleted!", show_alert=True)
+        update_user_settings(message, query.from_user, 'leech')
     elif data[2] == "font":
         handler_dict[user_id] = False
         FONT_SPELL = {'b':'<b>Bold</b>', 'i':'<i>Italics</i>', 'code':'<code>Monospace</code>', 's':'<s>Strike</s>', 'u':'<u>Underline</u>', 'tg-spoiler':'<tg-spoiler>Spoiler</tg-spoiler>'}
