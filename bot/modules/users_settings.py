@@ -134,7 +134,7 @@ def get_user_settings(from_user, key=None):
 ├ Remname : <b>{escape(remname)}</b>
 ╰ User Plan : <b>{uplan}</b>
 '''
-    if uplan == "Paid User":
+    if uplan == "Paid User" and key:
         ex_date = user_dict.get('expiry_date', False)
         if not ex_date: ex_date = 'Not Specified'
         text += f"╰ Expiry Date : <b>{ex_date}</b>"
@@ -409,7 +409,7 @@ def send_users_settings(update, context):
                 mirrorlogs = '\n'.join(f"<b>{bot.get_chat(ll).title}</b> ( <code>{ll}</code> )" for ll in d)
         else:
             continue
-    msg = f'<b><u>Authorized Chats💬 :</u></b>\n{auth_chat}\n<b><u>Sudo Users👤 :</u></b>\n{sudos}\n<b><u>Leech Log:</u></b>\n{leechlogs}\n<b><u>Mirror Log:</u></b>\n{mirrorlogs}\n<b><u>Links Log:</u></b>\n{linklogs}'
+    msg = f'<b><u>Authorized Chats💬 :</u></b>\n{auth_chat}\n<b><u>Sudo Users👤 :</u></b>\n{sudos}\n<b><u>Leech Log:</u></b>\n{leechlogs}\n\n<b><u>Mirror Log♻️ :</u></b>\n{mirrorlogs}\n<b><u>Links Log🔗 :</u></b>\n{linklogs}'
     if msg == '': msg = 'No Users Data!'
     sendMessage(msg, context.bot, update.message)
 
