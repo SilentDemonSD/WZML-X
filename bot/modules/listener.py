@@ -14,7 +14,7 @@ from threading import Thread
 from telegram import ParseMode, InlineKeyboardButton
 
 from bot import *
-from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_gdtot_link, is_mega_link, is_gdrive_link, get_content_type, get_readable_time
+from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_gdtot_link, is_mega_link, is_gdrive_link, get_content_type, get_readable_time, change_filename
 from bot.helper.ext_utils.fs_utils import get_base_name, get_path_size, split_file, clean_download, clean_target
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException, NotSupportedExtractionArchive
 from bot.helper.mirror_utils.status_utils.extract_status import ExtractStatus
@@ -48,7 +48,7 @@ class MirrorLeechListener:
         self.select = select
         self.isPrivate = message.chat.type in ['private', 'group']
         self.suproc = None
-        self.user_id = self.message.from_user.id	
+        self.user_id = self.message.from_user.id
         self.reply_to = self.message.reply_to_message
 
     def clean(self):
@@ -224,7 +224,7 @@ class MirrorLeechListener:
             with download_dict_lock:
                 download_dict[self.uid] = upload_status
             update_all_messages()
-            drive.upload(up_name)
+            drive.upload(up_name, self.user_id)
 
 
     def onUploadComplete(self, link: str, size, files, folders, typ, name):
@@ -233,44 +233,8 @@ class MirrorLeechListener:
         message_args = mesg[0].split(' ', maxsplit=1)
         reply_to = self.message.reply_to_message
         user_id_ = self.message.from_user.id
-        PREFIX = user_data[user_id_].get('prefix') if user_id_ in user_data and user_data[user_id_].get('prefix') else ''
-        REMNAME = user_data[user_id_].get('remname') if user_id_ in user_data and user_data[user_id_].get('remname') else ''
-        SUFFIX = user_data[user_id_].get('suffix') if user_id_ in user_data and user_data[user_id_].get('suffix') else ''
         file_ = escape(name)
-
-        #MysteryStyle ~ Tele-LeechX
-        if file_.startswith('www'):
-            file_ = ' '.join(file_.split()[1:])
-        if REMNAME:
-            if not REMNAME.startswith('|'):
-                REMNAME = f"|{REMNAME}"
-            slit = REMNAME.split("|")
-            __newFileName = file_
-            for rep in range(1, len(slit)):
-                args = slit[rep].split(":")
-                if len(args) == 3:
-                    __newFileName = __newFileName.replace(args[0], args[1], int(args[2]))
-                elif len(args) == 2:
-                    __newFileName = __newFileName.replace(args[0], args[1])
-                elif len(args) == 1:
-                    __newFileName = __newFileName.replace(args[0], '')
-            file_ = __newFileName
-            LOGGER.info("Remname : "+file_)
-        if PREFIX:
-            if not file_.startswith(PREFIX):
-                file_ = f"{PREFIX}{file_}"
-        if SUFFIX:
-            sufLen = len(SUFFIX)
-            fileDict = file_.split('.')
-            _extIn = 1 + len(fileDict[-1])
-            _extOutName = '.'.join(fileDict[:-1]).replace('.', ' ').replace('-', ' ')
-            _newExtFileName = f"{_extOutName}{SUFFIX}.{fileDict[-1]}"
-            if len(_extOutName) > (64 - (sufLen + _extIn)):
-                _newExtFileName = (
-                    _extOutName[: 64 - (sufLen + _extIn)]
-                    + f"{SUFFIX}.{fileDict[-1]}"
-                            )
-            file_ = _newExtFileName
+        up_path, file_, _ = change_filename(file_, user_id_, all_edit=False)
 
         NAME_FONT = config_dict['NAME_FONT']
         if config_dict['EMOJI_THEME']:
@@ -413,10 +377,10 @@ class MirrorLeechListener:
                         pass
             else:
                 pass
-            if config_dict['BOT_PM'] and not config_dict['FORCE_BOT_PM'] and self.message.chat.type != 'private':	
-                bot_d = bot.get_me()	
-                b_uname = bot_d.username	
-                botstart = f"http://t.me/{b_uname}"	
+            if config_dict['BOT_PM'] and not config_dict['FORCE_BOT_PM'] and self.message.chat.type != 'private':
+                bot_d = bot.get_me()
+                b_uname = bot_d.username
+                botstart = f"http://t.me/{b_uname}"
                 buttons.buildbutton("View file in PM", f"{botstart}")
             elif self.message.chat.type == 'private':
                 botstart = ''
@@ -486,7 +450,7 @@ class MirrorLeechListener:
             if self.seed:
                 if self.newDir:
                     clean_target(self.newDir)
-                return			   			  
+                return     
 
         else:
             if config_dict['EMOJI_THEME']:
@@ -512,9 +476,9 @@ class MirrorLeechListener:
                 pass
             else:
                 buttons.buildbutton("☁️ Drive Link", link)
-            LOGGER.info(f'Done Uploading {name}')
+            LOGGER.info(f'Done Uploading {file_}')
             if INDEX_URL:= config_dict['INDEX_URL']:
-                url_path = rutils.quote(f'{name}')
+                url_path = rutils.quote(f'{file_}')
                 share_url = f'{INDEX_URL}/{url_path}'
                 if typ == "Folder":
                     share_url += '/'
@@ -565,10 +529,10 @@ class MirrorLeechListener:
                         pass
                     
 
-                    if config_dict['BOT_PM'] and not config_dict['FORCE_BOT_PM'] and self.message.chat.type != 'private':	
-                        bot_d = bot.get_me()	
-                        b_uname = bot_d.username	
-                        botstart = f"http://t.me/{b_uname}"	
+                    if config_dict['BOT_PM'] and not config_dict['FORCE_BOT_PM'] and self.message.chat.type != 'private':
+                        bot_d = bot.get_me()
+                        b_uname = bot_d.username
+                        botstart = f"http://t.me/{b_uname}"
                         buttons.buildbutton("View file in PM", f"{botstart}")
                     elif self.message.chat.type == 'private':
                         botstart = ''
@@ -589,21 +553,21 @@ class MirrorLeechListener:
                     uploadmsg = sendMarkup(msg + pmwarn + logwarn + warnmsg, self.bot, self.message, buttons.build_menu(2))
                 Thread(target=auto_delete_upload_message, args=(bot, self.message, uploadmsg)).start()
             
-            if 'mirror_logs' in user_data:	
-                try:	
-                    for chatid in user_data['mirror_logs']:	
-                        bot.sendMessage(chat_id=chatid, text=msg,	
-                                        reply_markup=buttons.build_menu(2),	
-                                        parse_mode=ParseMode.HTML)	
-                except Exception as e:	
-                    LOGGER.warning(e)
-            if config_dict['BOT_PM'] and self.message.chat.type != 'private':	
-                try:	
-                    bot.sendMessage(chat_id=self.user_id, text=msg,	
-                                    reply_markup=buttons.build_menu(2),	
-                                    parse_mode=ParseMode.HTML)	
+            if 'mirror_logs' in user_data:
+                try:
+                    for chatid in user_data['mirror_logs']:
+                        bot.sendMessage(chat_id=chatid, text=msg,
+                                        reply_markup=buttons.build_menu(2),
+                                        parse_mode=ParseMode.HTML)
                 except Exception as e:
-                    LOGGER.warning(e)	
+                    LOGGER.warning(e)
+            if config_dict['BOT_PM'] and self.message.chat.type != 'private':
+                try:
+                    bot.sendMessage(chat_id=self.user_id, text=msg,
+                                    reply_markup=buttons.build_menu(2),
+                                    parse_mode=ParseMode.HTML)
+                except Exception as e:
+                    LOGGER.warning(e)
                     return
             if self.seed:
                 if self.isZip:

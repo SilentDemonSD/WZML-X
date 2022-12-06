@@ -25,7 +25,7 @@ def _ytdl(bot, message, isZip=False, isLeech=False):
     qual = ''
     select = False
     multi = 0
-    buttons = ButtonMaker()	
+    buttons = ButtonMaker()
     if config_dict['FSUB']:
         try:
             user = bot.get_chat_member(f"{config_dict['FSUB_CHANNEL_ID']}", message.from_user.id)

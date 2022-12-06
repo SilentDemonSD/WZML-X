@@ -1,10 +1,13 @@
 import cloudscraper
-from re import S, match as rematch, findall, sub as resub
+import concurrent.futures
+from copy import deepcopy
+from re import S, match as rematch, findall, sub as resub, compile as recompile
 from asyncio import sleep as asleep
 from time import sleep
 from urllib.parse import urlparse, unquote
-from requests import get as rget, head as rhead
+from requests import get as rget, head as rhead, post as rpost
 from bs4 import BeautifulSoup, NavigableString, Tag
+from base64 import b64decode
 
 from telegram import Message
 from telegram.ext import CommandHandler
@@ -13,8 +16,15 @@ from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage
 from bot.helper.ext_utils.bot_utils import is_paid, is_sudo
-from bot.helper.mirror_utils.download_utils.direct_link_generator import rock, try2link, ez4
+from bot.helper.mirror_utils.download_utils.direct_link_generator import rock, try2link, ez4, ouo
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
+
+post_id = " "
+data_dict = {}
+main_dict = {}
+drive_list = ['drivelinks.in', 'driveroot.in', 'drivesharer.in', 'driveace.in', "drivehub.in"]
+DDL_REGEX = recompile(r"DDL\(([^),]+)\, (([^),]+)), (([^),]+)), (([^),]+))\)")
+POST_ID_REGEX =  recompile(r'"postId":"(\d+)"')
 
 def scrapper(update, context):
     user_id_ = update.message.from_user.id
@@ -31,11 +41,11 @@ def scrapper(update, context):
             link = link[1]
         else:
             help_msg = "<b>Send link after command:</b>"
-            help_msg += f"\n<code>/{BotCommands.ScrapeCommand[0]}" + " {link}" + "</code>"
+            help_msg += f"\n<code>/{BotCommands.ScrapeCommand[0]}" + " {link}" + "</code>\n"
             help_msg += "\n<b>By Replying to Message (Including Link):</b>"
             help_msg += f"\n<code>/{BotCommands.ScrapeCommand[0]}" + " {message}" + "</code>"
             return sendMessage(help_msg, context.bot, update.message)
-    try: link = rematch(r"((http|https)\:\/\/)?[a-zA-Z0-9\.\/\?\:@\-_=#]+\.([a-zA-Z]){2,6}([a-zA-Z0-9\.\&\/\?\:@\-_=#])*", link)[0]
+    try: link = rematch(r"^(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))", link)[0]
     except TypeError: return sendMessage('Not a Valid Link.', context.bot, update)
     links = []
     if "sharespark" in link:
@@ -57,8 +67,8 @@ def scrapper(update, context):
                       if rematch(r'https?://.+\.gdtot\.\S+', ns):
                          r = rget(ns)
                          soup = BeautifulSoup(r.content, "html.parser")
-                         title = soup.title
-                         gd_txt += f"<code>{(title.text).replace('GDToT | ' , '')}</code>\n{ns}\n\n"
+                         title = soup.select('meta[property^="og:description"]')
+                         gd_txt += f"<code>{(title[0]['content']).replace('Download ' , '')}</code>\n{ns}\n\n"
                       elif rematch(r'https?://pastetot\.\S+', ns):
                          nxt = resub(r'\(|\)|(https?://pastetot\.\S+)', '', next_s)
                          gd_txt += f"\n<code>{nxt}</code>\n{ns}\n"
@@ -189,6 +199,109 @@ def scrapper(update, context):
                 if len(gd_txt) > 4000:
                     sent = sendMessage("<i>Running More Scrape ...</i>", context.bot, update.message)
                     gd_txt = ""
+    elif "moviesmod" in link:
+        sent = sendMessage('Running Scrape ...', context.bot, update.message)
+        gd_txt, no, to_edit = "", 0, False
+        rep = rget(link)
+        soup = BeautifulSoup(rep.text, 'html.parser')
+        links = soup.select("a[rel='noopener nofollow external noreferrer']")
+        gd_txt = f"Total Links Found : {len(links)}\n"
+        for l in links:
+            gd_txt += f"\n{(l.text).replace('Download Links', '🏷 Download Links')} :\n"
+            scrapper = cloudscraper.create_scraper(allow_brotli=False)
+            res = scrapper.get(l['href'])
+            nsoup = BeautifulSoup(res.text, 'html.parser')
+            for ll in nsoup.select('a[href]'):
+                for url in drive_list:
+                    if url in ll['href']:
+                        nl = (rget(ll['href']).text).split('"')[1]
+                        gd_txt += f"https://{url}{nl}\n"
+                if 'urlflix.xyz' in ll['href']:
+                    resp = rget(ll['href'])
+                    ssoup = BeautifulSoup(resp.text, 'html.parser')
+                    atag = ssoup.select('div[id="text-url"] > a[href]')
+                    for ref in atag:
+                        gd_txt += ref['href'] + '\n'
+                if len(gd_txt) > 4000:
+                    asleep(2.5)
+                    editMessage(gd_txt, sent)
+                    to_edit = True
+                    gd_txt = ""
+        if gd_txt != "" and to_edit:
+            sendMessage(gd_txt, context.bot, update.message)
+        elif gd_txt!= "":
+            editMessage(gd_txt, sent)
+    elif "skymovieshd" in link:
+        sent = sendMessage('Running Scrape ...', context.bot, update.message)
+        gd_txt = ""
+        res = rget(link, allow_redirects=False)
+        soup = BeautifulSoup(res.text, 'html.parser')
+        a = soup.select('a[href^="https://howblogs.xyz"]')
+        t = soup.select('div[class^="Robiul"]')
+        gd_txt += f"<i>{t[-1].text.replace('Download ', '')}</i>\n\n"
+        gd_txt += f"<b>{a[0].text} :</b> \n"
+        nres = rget(a[0]['href'], allow_redirects=False)
+        nsoup = BeautifulSoup(nres.text, 'html.parser')
+        atag = nsoup.select('div[class="cotent-box"] > a[href]')
+        for no, link in enumerate(atag, start=1):
+            gd_txt += f"{no}. {link['href']}\n"
+        editMessage(gd_txt, sent)
+    elif "animekaizoku" in link:
+        sent = sendMessage('Running Scrape ...', context.bot, update.message)
+        global post_id
+        gd_txt = ""
+        try: website_html = rget(link).text
+        except: editMessage("Please provide the correct episode link of animekaizoku", sent); return
+        try:
+            post_id = POST_ID_REGEX.search(website_html).group(0).split(":")[1].split('"')[1]
+            payload_data_matches = DDL_REGEX.finditer(website_html)
+        except: editMessage("Something Went Wrong !!", sent); return
+
+        for match in payload_data_matches:
+            payload_data = match.group(0).split("DDL(")[1].replace(")", "").split(",")
+            payload = {
+               "action" : "DDL",
+               "post_id": post_id,
+               "div_id" : payload_data[0].strip(),
+               "tab_id" : payload_data[1].strip(),
+               "num"    : payload_data[2].strip(),
+               "folder" : payload_data[3].strip(),
+            }
+            del payload["num"]     
+            link_types = "DDL" if payload["tab_id"] == "2" else "WORKER" if payload["tab_id"] == "4" else "GDRIVE"
+            response = rpost("https://animekaizoku.com/wp-admin/admin-ajax.php",headers={"x-requested-with": "XMLHttpRequest", "referer": "https://animekaizoku.com"}, data=payload)
+            soup = BeautifulSoup(response.text, "html.parser")  
+            downloadbutton = soup.find_all(class_="downloadbutton")
+
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                for button in downloadbutton:
+                    if button.text == "Patches": pass
+                    else:
+                        dict_key = button.text.strip()
+                        data_dict[dict_key] = []
+                        executor.submit(looper, dict_key, str(button))
+            main_dict[link_types] = deepcopy(data_dict)
+            data_dict.clear()
+
+        to_edit = False
+        for key in main_dict:
+            gd_txt += f"----------------- <b>{key}</b> -----------------\n"
+            dict_data = main_dict[key]
+
+            if bool(dict_data) == 0:
+                gd_txt += "No Links Found\n"
+            else:
+                for y in dict_data:
+                    gd_txt += f"\n○ <b>{y}</b>\n"
+                    for no, i in enumerate(dict_data[y], start=1):
+                        try: gd_txt += f"➥ {no}. <i>{i[0]}</i> : {i[1]}\n"
+                        except: pass
+                    asleep(5)
+                    editMessage(gd_txt, sent)
+                    if len(gd_txt) > 3500:
+                        sent = sendMessage('Running More Scrape ...', context.bot, update.message)
+                        gd_txt = ""
+                gd_txt += "\n"
     elif "animeremux" in link:
         sent = sendMessage('Running Scrape ...', context.bot, update.message)
         gd_txt, no = "", 0
@@ -197,6 +310,7 @@ def scrapper(update, context):
         links = soup.select('a[href*="urlshortx.com"]')
         gd_txt = f"Total Links Found : {len(links)}\n\n"
         editMessage(gd_txt, sent)
+        ptime = 0
         for a in links:
             link = a["href"]
             x = link.split("url=")[-1]
@@ -205,11 +319,14 @@ def scrapper(update, context):
             title = soupt.title
             no += 1
             gd_txt += f"{no}. {title.text}\n{x}\n\n"
-            editMessage(gd_txt, sent)
-            asleep(1.5)
-            if len(gd_txt) > 4000:
-                sent = sendMessage("<i>Running More Scrape ...</i>", context.bot, update.message)
-                gd_txt = ""
+            ptime += 1
+            if ptime == 3:
+                ptime = 0
+                asleep(5)
+                editMessage(gd_txt, sent)
+                if len(gd_txt) > 4000:
+                    sent = sendMessage("<i>Running More Scrape ...</i>", context.bot, update.message)
+                    gd_txt = ""
     elif "olamovies" in link:
         headers = {
             'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:103.0) Gecko/20100101 Firefox/103.0',
@@ -293,8 +410,35 @@ def htpmovies(link):
     try:
         return r.json()['url']
     except: return "Something went Wrong !!"
+
+def looper(dict_key, click):
+    payload_data = DDL_REGEX.search(click).group(0).split("DDL(")[1].replace(")", "").split(",")
+    data = {
+           "action" : "DDL",
+           "post_id": post_id,
+           "div_id" : payload_data[0].strip(),
+           "tab_id" : payload_data[1].strip(),
+           "num"    : payload_data[2].strip(),
+           "folder" : payload_data[3].strip(),
+    }
+    new_num = data["num"].split("'")[1]
+    data["num"] = new_num
+    response = rpost("https://animekaizoku.com/wp-admin/admin-ajax.php", headers={"x-requested-with": "XMLHttpRequest", "referer": "https://animekaizoku.com"}, data=data)  
+    loop_soup = BeautifulSoup(response.text, "html.parser")
+    downloadbutton = loop_soup.find_all(class_="downloadbutton")
+        
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        [executor.submit(ouo_parse, dict_key, button, loop_soup) for button in downloadbutton]
+
+def ouo_parse(dict_key, button, loop_soup):          
+    try:
+        ouo_encrypt = recompile(r"openInNewTab\(([^),]+\)"")").search(str(loop_soup)).group(0).strip().split('"')[1]
+        ouo_decrypt = b64decode(ouo_encrypt).decode("utf-8").strip()
+        try: decrypted_link= ouo(ouo_decrypt)
+        except: decrypted_link = ouo_decrypt
+        data_dict[dict_key].append([button.text.strip(), decrypted_link.strip()])  
+    except: looper(dict_key, str(button))
         
 srp_handler = CommandHandler(BotCommands.ScrapeCommand, scrapper,
                             filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
-
 dispatcher.add_handler(srp_handler)

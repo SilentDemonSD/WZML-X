@@ -99,17 +99,12 @@ class TelegramDownloadHelper:
                 size = media.file_size
                 if config_dict['STOP_DUPLICATE'] and not self.__listener.isLeech:
                     LOGGER.info('Checking File/Folder if already in Drive...')
-                    if config_dict['TELEGRAPH_STYLE']:
-                        smsg, button = GoogleDriveHelper().drive_list(name, True, True)
-                        if smsg:
-                            msg = "File/Folder is already available in Drive.\nHere are the search results:"
-                            return sendMarkup(msg, self.__listener.bot, self.__listener.message, button)
-                    else:
-                        cap, f_name = GoogleDriveHelper().drive_list(name, True, True)
-                        if cap:
-                            cap = f"File/Folder is already available in Drive. Here are the search results:\n\n{cap}"
-                            sendFile(self.__listener.bot, self.__listener.message, f_name, cap)
-                            return
+                    smsg, button = GoogleDriveHelper().drive_list(name, True, True)
+                    if smsg:
+                        if config_dict['TELEGRAPH_STYLE']:
+                            return sendMarkup("File/Folder is already available in Drive.\nHere are the search results:", self.__listener.bot, self.__listener.message, button)
+                        else:
+                            return sendFile(self.__listener.bot, self.__listener.message, f_name, f"File/Folder is already available in Drive. Here are the search results:\n\n{smsg}")
                 if config_dict['STORAGE_THRESHOLD']:
                     arch = any([self.__listener.isZip, self.__listener.extract])
                     acpt = check_storage_threshold(size, arch)

@@ -1,5 +1,3 @@
-import re
-import os
 from logging import getLogger, ERROR
 from os import remove as osremove, walk, path as ospath, rename as osrename
 from time import time, sleep
@@ -9,7 +7,7 @@ from threading import RLock
 from bot import user_data, GLOBAL_EXTENSION_FILTER, \
                 app, tgBotMaxFileSize, premium_session, config_dict
 from bot.helper.ext_utils.fs_utils import take_ss, get_media_info, get_media_streams, get_path_size, clean_unwanted
-from bot.helper.ext_utils.bot_utils import get_readable_file_size
+from bot.helper.ext_utils.bot_utils import get_readable_file_size, change_filename
 from pyrogram.types import Message
 
 LOGGER = getLogger(__name__)
@@ -79,67 +77,7 @@ class TgUploader:
         user_id_ = self.__listener.message.from_user.id
 
         client = premium_session if fsize > 2097152000 else app
-        PREFIX = user_data[user_id_].get('prefix') if user_id_ in user_data and user_data[user_id_].get('prefix') else ''
-        CAPTION = user_data[user_id_].get('caption') if user_id_ in user_data and user_data[user_id_].get('caption') else ''
-        REMNAME = user_data[user_id_].get('remname') if user_id_ in user_data and user_data[user_id_].get('remname') else ''
-        SUFFIX = user_data[user_id_].get('suffix') if user_id_ in user_data and user_data[user_id_].get('suffix') else ''
-        FSTYLE = user_data[user_id_].get('cfont')[1] if user_id_ in user_data and user_data[user_id_].get('cfont') else ''
-
-        #MysteryStyle
-        if file_.startswith('www'):
-            file_ = ' '.join(file_.split()[1:])
-        if REMNAME:
-            if not REMNAME.startswith('|'):
-                REMNAME = f"|{REMNAME}"
-            slit = REMNAME.split("|")
-            __newFileName = file_
-            for rep in range(1, len(slit)):
-                args = slit[rep].split(":")
-                if len(args) == 3:
-                    __newFileName = __newFileName.replace(args[0], args[1], int(args[2]))
-                elif len(args) == 2:
-                    __newFileName = __newFileName.replace(args[0], args[1])
-                elif len(args) == 1:
-                    __newFileName = __newFileName.replace(args[0], '')
-            file_ = __newFileName
-            LOGGER.info("Remname : "+file_)
-        if PREFIX:
-            if not file_.startswith(PREFIX):
-                file_ = f"{PREFIX}{file_}"
-        if SUFFIX:
-            sufLen = len(SUFFIX)
-            fileDict = file_.split('.')
-            _extIn = 1 + len(fileDict[-1])
-            _extOutName = '.'.join(fileDict[:-1]).replace('.', ' ').replace('-', ' ')
-            _newExtFileName = f"{_extOutName}{SUFFIX}.{fileDict[-1]}"
-            if len(_extOutName) > (64 - (sufLen + _extIn)):
-                _newExtFileName = (
-                    _extOutName[: 64 - (sufLen + _extIn)]
-                    + f"{SUFFIX}.{fileDict[-1]}"
-                            )
-            file_ = _newExtFileName
-        if PREFIX or REMNAME or SUFFIX:
-            new_path = ospath.join(dirpath, file_)
-            osrename(up_path, new_path)
-            up_path = new_path
-        cfont = config_dict['CAPTION_FONT'] if not FSTYLE else FSTYLE
-        if CAPTION:
-            slit = CAPTION.split("|")
-            cap_mono = slit[0].format(
-                filename = file_,
-                size = get_readable_file_size(ospath.getsize(up_path))
-            )
-            if len(slit) > 1:
-                for rep in range(1, len(slit)):
-                    args = slit[rep].split(":")
-                    if len(args) == 3:
-                        cap_mono = cap_mono.replace(args[0], args[1], int(args[2]))
-                    elif len(args) == 2:
-                        cap_mono = cap_mono.replace(args[0], args[1])
-                    elif len(args) == 1:
-                        cap_mono = cap_mono.replace(args[0], '')
-        else:
-            cap_mono = file_ if FSTYLE == 'r' else f"<{cfont}>{file_}</{cfont}>"
+        up_path, file_, cap_mono = change_filename(file_, user_id_, dirpath, up_path)
 
         dumpid = user_data[user_id_].get('userlog') if user_id_ in user_data and user_data[user_id_].get('userlog') else ''
         LEECH_X = int(dumpid) if len(dumpid) != 0 else user_data.get('is_log_leech', [''])[0]

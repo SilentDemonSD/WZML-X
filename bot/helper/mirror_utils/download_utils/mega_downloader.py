@@ -168,24 +168,17 @@ def add_mega_download(mega_link: str, path: str, listener, name: str):
             except:
                 mname = None
         if mname is not None:
-            if config_dict['TELEGRAPH_STYLE']:
-                smsg, button = GoogleDriveHelper().drive_list(mname, True)
-                if smsg:
-                    msg1 = "File/Folder is already available in Drive.\nHere are the search results:"
-                    return sendMarkup(msg1, listener.bot, listener.message, button)
-                    api.removeListener(mega_listener)
-                    if folder_api is not None:
-                        folder_api.removeListener(mega_listener)
-                    return
-            else:
-                cap, f_name = GoogleDriveHelper().drive_list(mname, True)
-                if cap:
-                    cap = f"File/Folder is already available in Drive. Here are the search results:\n\n{cap}"
-                    sendFile(listener.bot, listener.message, f_name, cap)
-                    api.removeListener(mega_listener)
-                    if folder_api is not None:
-                        folder_api.removeListener(mega_listener)
-                    return
+            smsg, button = GoogleDriveHelper().drive_list(mname, True)
+            if smsg:
+                if config_dict['TELEGRAPH_STYLE']:
+                    sendMarkup("File/Folder is already available in Drive.\nHere are the search results:", listener.bot, listener.message, button)
+                else:
+                    sendFile(listener.bot, listener.message, f_name, f"File/Folder is already available in Drive. Here are the search results:\n\n{smsg}")
+                api.removeListener(mega_listener)
+                if folder_api is not None:
+                    folder_api.removeListener(mega_listener)
+                return
+
     user_id = listener.message.from_user.id
     MEGA_LIMIT = config_dict['MEGA_LIMIT']
     STORAGE_THRESHOLD = config_dict['STORAGE_THRESHOLD']
@@ -194,44 +187,26 @@ def add_mega_download(mega_link: str, path: str, listener, name: str):
     if any([STORAGE_THRESHOLD, ZIP_UNZIP_LIMIT, MEGA_LIMIT, LEECH_LIMIT]) and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id):
         size = api.getSize(node)
         arch = any([listener.isZip, listener.isLeech, listener.extract])
-        if config_dict['PAID_SERVICE'] is True:
-            if STORAGE_THRESHOLD is not None:
-                acpt = check_storage_threshold(size, arch)
-                if not acpt:
-                    msg = f'You must leave {STORAGE_THRESHOLD}GB free storage.'
-                    msg += f'\nYour File/Folder size is {get_readable_file_size(size)}'
+        if STORAGE_THRESHOLD is not None:
+            acpt = check_storage_threshold(size, arch)
+            if not acpt:
+                msg = f'You must leave {STORAGE_THRESHOLD}GB free storage.'
+                msg += f'\nYour File/Folder size is {get_readable_file_size(size)}'
+                if config_dict['PAID_SERVICE'] is True:
                     msg += f'\n#Buy Paid Service'
-                    return sendMessage(msg, listener.bot, listener.message)
-            limit = None
-            if ZIP_UNZIP_LIMIT is not None and arch:
-                msg3 = f'Failed, Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(api.getSize(node))}.'
-                msg3 += f'\n#Buy Paid Service'
-                limit = ZIP_UNZIP_LIMIT
-            if LEECH_LIMIT is not None and arch:
-                msg3 = f'Failed, Leech limit is {LEECH_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(api.getSize(node))}.'
-                msg3 += f'\n#Buy Paid Service'
-                limit = LEECH_LIMIT
-            if MEGA_LIMIT is not None:
-                msg3 = f'Failed, Mega limit is {MEGA_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(api.getSize(node))}.'
-                msg3 += f'\n#Buy Paid Service'
-                limit = MEGA_LIMIT
-        else:
-            if STORAGE_THRESHOLD is not None:
-                acpt = check_storage_threshold(size, arch)
-                if not acpt:
-                    msg = f'You must leave {STORAGE_THRESHOLD}GB free storage.'
-                    msg += f'\nYour File/Folder size is {get_readable_file_size(size)}'
-                    return sendMessage(msg, listener.bot, listener.message)
-            limit = None
-            if ZIP_UNZIP_LIMIT is not None and arch:
-                msg3 = f'Failed, Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(api.getSize(node))}.'
-                limit = ZIP_UNZIP_LIMIT
-            if LEECH_LIMIT is not None and arch:
-                msg3 = f'Failed, Leech limit is {LEECH_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(api.getSize(node))}.'
-                limit = LEECH_LIMIT
-            if MEGA_LIMIT is not None:
-                msg3 = f'Failed, Mega limit is {MEGA_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(api.getSize(node))}.'
-                limit = MEGA_LIMIT
+                return sendMessage(msg, listener.bot, listener.message)
+        limit = None
+        if ZIP_UNZIP_LIMIT is not None and arch:
+            msg3 = f'Failed, Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(api.getSize(node))}.'
+            limit = ZIP_UNZIP_LIMIT
+        if LEECH_LIMIT is not None and arch:
+            msg3 = f'Failed, Leech limit is {LEECH_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(api.getSize(node))}.'
+            limit = LEECH_LIMIT
+        if MEGA_LIMIT is not None:
+            msg3 = f'Failed, Mega limit is {MEGA_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(api.getSize(node))}.'
+            limit = MEGA_LIMIT
+        if config_dict['PAID_SERVICE'] is True:
+            msg3 += f'\n#Buy Paid Service'
         if limit is not None:
             LOGGER.info('Checking File/Folder Size...')
             if size > limit * 1024**3:
@@ -249,68 +224,6 @@ def add_mega_download(mega_link: str, path: str, listener, name: str):
     api.removeListener(mega_listener)
     if folder_api is not None:
         folder_api.removeListener(mega_listener)
-
-
-
-
-
-    # def add_download(self, link, path):
-    #     Path(path).mkdir(parents=True, exist_ok=True)
-    #     try:
-    #         dl = self.__mega_client.addDl(link, path)
-    #     except Exception as err:
-    #         LOGGER.error(err)
-    #         return sendMessage(str(err), self.__listener.bot, self.__listener.message)
-    #     gid = dl['gid']
-    #     info = self.__mega_client.getDownloadInfo(gid)
-    #     file_name = info['name']
-    #     file_size = info['total_length']
-    #     if STOP_DUPLICATE and not self.__listener.isLeech:
-    #         LOGGER.info('Checking File/Folder if already in Drive')
-    #         mname = file_name
-    #         if self.__listener.isZip:
-    #             mname = f"{mname}.zip"
-    #         elif self.__listener.extract:
-    #             try:
-    #                 mname = get_base_name(mname)
-    #             except:
-    #                 mname = None
-    #         if mname is not None:
-    #             if TELEGRAPH_STYLE is True:
-    #                 smsg, button = GoogleDriveHelper().drive_list(mname, True)
-    #                 if smsg:
-    #                     msg1 = "File/Folder is already available in Drive.\nHere are the search results:"
-    #                     return sendMarkup(msg1, self.__listener.bot, self.__listener.message, button)
-    #             else:
-    #                 cap, f_name = GoogleDriveHelper().drive_list(mname, True)
-    #                 if cap:
-    #                     cap = f"File/Folder is already available in Drive. Here are the search results:\n\n{cap}"
-    #                     sendFile(self.__listener.bot, self.__listener.message, f_name, cap)
-    #                     return
-    #     if any([STORAGE_THRESHOLD, ZIP_UNZIP_LIMIT, MEGA_LIMIT, LEECH_LIMIT]):
-    #         arch = any([self.__listener.isZip, self.__listener.extract])
-    #         if STORAGE_THRESHOLD is not None:
-    #             acpt = check_storage_threshold(file_size, arch)
-    #             if not acpt:
-    #                 msg = f'You must leave {STORAGE_THRESHOLD}GB free storage.'
-    #                 msg += f'\nYour File/Folder size is {get_readable_file_size(file_size)}'
-    #                 return sendMessage(msg, self.__listener.bot, self.__listener.message)
-    #         limit = None
-    #         if ZIP_UNZIP_LIMIT is not None and arch:
-    #             msg3 = f'Failed, Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(file_size)}.'
-    #             limit = ZIP_UNZIP_LIMIT
-    #         if LEECH_LIMIT is not None and self.__listener.isLeech:
-    #             msg3 = f'Failed, Leech limit is {LEECH_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(file_size)}.'
-    #             limit = LEECH_LIMIT
-    #         elif MEGA_LIMIT is not None:
-    #             msg3 = f'Failed, Mega limit is {MEGA_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(file_size)}.'
-    #             limit = MEGA_LIMIT
-    #         if limit is not None:
-    #             LOGGER.info('Checking File/Folder Size...')
-    #             if file_size > limit * 1024**3:
-    #                 return sendMessage(msg3, self.__listener.bot, self.__listener.message)
-    #     self.__onDownloadStart(file_name, file_size, gid)
-    #     LOGGER.info(f'Mega download started with gid: {gid}')
 
     # def cancel_download(self):
     #     LOGGER.info(f'Cancelling download on user request: {self.gid}')
