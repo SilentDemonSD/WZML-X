@@ -392,7 +392,7 @@ def edit_user_settings(update, context):
         query.message.reply_to_message.delete()
 
 def send_users_settings(update, context):
-    msg, auth_chat, sudos, leechlogs, linklogs, mirrorlogs = 'No Data', 'No Data', 'No Data', 'No Data', 'No Data', 'No Data'
+    msg, auth_chat, sudos, leechlogs, linklogs, mirrorlogs = '', '', '', '', '', ''
     for u, d in user_data.items():
         try:
             for ud, dd in d.items():
