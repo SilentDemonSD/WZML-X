@@ -469,8 +469,8 @@ def main():
             msg += f"🌐 TIMEZONE: {timez}\n"
             msg += f"🤖 VERSION: {__version__}"            
             bot.edit_message_text(msg, chat_id, msg_id)
-        except:
-            pass        
+        except Exception as e:
+            LOGGER.info(e)
         osremove(".restartmsg")
 
 
