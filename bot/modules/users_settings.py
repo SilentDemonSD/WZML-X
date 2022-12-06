@@ -74,7 +74,7 @@ def get_user_settings(from_user, key=None):
             buttons.sbutton("Show AniList Template", f"userset {user_id} showanilist")
         else:
             buttons.sbutton("Set AniList", f"userset {user_id} suniversal ani_temp")
-        buttons.sbutton("Back", f"userset {user_id} back")
+        buttons.sbutton("Back", f"userset {user_id} mback")
         buttons.sbutton("Close", f"userset {user_id} close")
         button = buttons.build_menu(2)
         text = f'''<u>Universal Settings for <a href='tg://user?id={user_id}'>{name}</a></u>
@@ -99,7 +99,7 @@ def get_user_settings(from_user, key=None):
         buttxt = "Change/Delete Remname" if remname != "Not Exists" else "Set Remname"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal mremname")
 
-        buttons.sbutton("Back", f"userset {user_id} back")
+        buttons.sbutton("Back", f"userset {user_id} mback")
         buttons.sbutton("Close", f"userset {user_id} close")
         button = buttons.build_menu(2)
         text = f'''<u>Universal Settings for <a href='tg://user?id={user_id}'>{name}</a></u>
@@ -126,7 +126,7 @@ def get_user_settings(from_user, key=None):
         buttons.sbutton(buttxt, f"userset {user_id} suniversal remname")
         if cfont != "Not Exists": buttons.sbutton("Delete CapFont", f"userset {user_id} cfont")
 
-        buttons.sbutton("Back", f"userset {user_id} back")
+        buttons.sbutton("Back", f"userset {user_id} mback")
         buttons.sbutton("Close", f"userset {user_id} close")
         button = buttons.build_menu(2)
         text = f'''<u>Leech Settings for <a href='tg://user?id={user_id}'>{name}</a></u>
@@ -159,7 +159,7 @@ def set_yt_quality(update, context, omsg):
     value = message.text
     update_user_ldata(user_id, 'yt_ql', value)
     update.message.delete()
-    update_user_settings(omsg, message.from_user)
+    update_user_settings(omsg, message.from_user, 'universal')
     if DATABASE_URL:
         DbManger().update_user_data(user_id)
 
@@ -188,7 +188,7 @@ def set_thumb(update, context, omsg):
     osremove(photo_dir)
     update_user_ldata(user_id, 'thumb', des_dir)
     update.message.delete()
-    update_user_settings(omsg, message.from_user)
+    update_user_settings(omsg, message.from_user, 'universal')
     if DATABASE_URL:
         DbManger().update_thumb(user_id, des_dir)
 
@@ -203,19 +203,19 @@ def edit_user_settings(update, context):
     elif data[2] in ['universal', 'leech', 'mirror']:
         query.answer()
         update_user_settings(message, query.from_user, data[2])
-    elif data[2] == 'back':
+    elif data[2] == 'mback':
         query.answer()
         update_user_settings(message, query.from_user, None)
     elif data[2] == "doc":
         update_user_ldata(user_id, 'as_doc', True)
         query.answer(text="Your File Will Deliver As Document!", show_alert=True)
-        update_user_settings(message, query.from_user)
+        update_user_settings(message, query.from_user, 'universal')
         if DATABASE_URL:
             DbManger().update_user_data(user_id)
     elif data[2] == "med":
         update_user_ldata(user_id, 'as_doc', False)
         query.answer(text="Your File Will Deliver As Media!", show_alert=True)
-        update_user_settings(message, query.from_user)
+        update_user_settings(message, query.from_user, 'universal')
         if DATABASE_URL:
             DbManger().update_user_data(user_id)
     elif data[2] == "dthumb":
@@ -225,12 +225,12 @@ def edit_user_settings(update, context):
             query.answer(text="Thumbnail Removed!", show_alert=True)
             osremove(path)
             update_user_ldata(user_id, 'thumb', '')
-            update_user_settings(message, query.from_user)
+            update_user_settings(message, query.from_user, 'universal')
             if DATABASE_URL:
                 DbManger().update_thumb(user_id)
         else:
             query.answer(text="Old Settings", show_alert=True)
-            update_user_settings(message, query.from_user)
+            update_user_settings(message, query.from_user, 'universal')
     elif data[2] == "sthumb":
         query.answer()
         menu = False
@@ -254,7 +254,7 @@ def edit_user_settings(update, context):
         while handler_dict[user_id]:
             if time() - start_time > 60:
                 handler_dict[user_id] = False
-                update_user_settings(message, query.from_user)
+                update_user_settings(message, query.from_user, 'universal')
         dispatcher.remove_handler(photo_handler)
     elif data[2] == 'ytq':
         if config_dict['PAID_SERVICE'] and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id):
@@ -293,13 +293,13 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
     elif data[2] == 'rytq':
         query.answer(text="YT-DLP Quality Removed!", show_alert=True)
         update_user_ldata(user_id, 'yt_ql', '')
-        update_user_settings(message, query.from_user)
+        update_user_settings(message, query.from_user, 'universal')
         if DATABASE_URL:
             DbManger().update_user_data(user_id)
     elif data[2] == 'back':
         query.answer()
         handler_dict[user_id] = False
-        update_user_settings(message, query.from_user)
+        update_user_settings(message, query.from_user, data[3])
     elif data[2] == "showthumb":
         path = f"Thumbnails/{user_id}.jpg"
         if ospath.lexists(path):
@@ -417,7 +417,7 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
             DbManger().update_userval(user_id, 'cfont', eVal)
             LOGGER.info(f"User : {user_id} Font Style Saved in DB")
         query.answer(text="Font Style changed to Spoiler!", show_alert=True)
-        update_user_settings(message, query.from_user)
+        update_user_settings(message, query.from_user, 'leech')
     elif data[2] == "Italics":
         eVal = ["<i>Italics</i>", "i"]
         update_user_ldata(user_id, 'cfont', eVal)
@@ -425,7 +425,7 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
             DbManger().update_userval(user_id, 'cfont', eVal)
             LOGGER.info(f"User : {user_id} Font Style Saved in DB")
         query.answer(text="Font Style changed to Italics!", show_alert=True)
-        update_user_settings(message, query.from_user)
+        update_user_settings(message, query.from_user, 'leech')
     elif data[2] == "Code":
         eVal = ["<code>Monospace</code>", "code"]
         update_user_ldata(user_id, 'cfont', eVal)
@@ -433,7 +433,7 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
             DbManger().update_userval(user_id, 'cfont', eVal)
             LOGGER.info(f"User : {user_id} Font Style Saved in DB")
         query.answer(text="Font Style changed to Monospace!", show_alert=True)
-        update_user_settings(message, query.from_user)
+        update_user_settings(message, query.from_user, 'leech')
     elif data[2] == "Strike":
         eVal = ["<s>Strike</s>", "s"]
         update_user_ldata(user_id, 'cfont', eVal)
@@ -441,7 +441,7 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
             DbManger().update_userval(user_id, 'cfont', eVal)
             LOGGER.info(f"User : {user_id} Font Style Saved in DB")
         query.answer(text="Font Style changed to Strike!", show_alert=True)
-        update_user_settings(message, query.from_user)
+        update_user_settings(message, query.from_user, 'leech')
     elif data[2] == "Underline":
         eVal = ["<u>Underline</u>", "u"]
         update_user_ldata(user_id, 'cfont', eVal)
@@ -449,7 +449,7 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
             DbManger().update_userval(user_id, 'cfont', eVal)
             LOGGER.info(f"User : {user_id} Font Style Saved in DB")
         query.answer(text="Font Style changed to Underline!", show_alert=True)
-        update_user_settings(message, query.from_user)
+        update_user_settings(message, query.from_user, 'leech')
     elif data[2] == "Bold":
         eVal = ["<b>Bold</b>", "b"]
         update_user_ldata(user_id, 'cfont', eVal)
@@ -457,7 +457,7 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
             DbManger().update_userval(user_id, 'cfont', eVal)
             LOGGER.info(f"User : {user_id} Font Style Saved in DB")
         query.answer(text="Font Style changed to Bold!", show_alert=True)
-        update_user_settings(message, query.from_user)
+        update_user_settings(message, query.from_user, 'leech')
     elif data[2] == "Regular":
         eVal = ["Regular", "r"]
         update_user_ldata(user_id, 'cfont', eVal)
@@ -465,7 +465,7 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
             DbManger().update_userval(user_id, 'cfont', eVal)
             LOGGER.info(f"User : {user_id} Font Style Saved in DB")
         query.answer(text="Font Style changed to Regular!", show_alert=True)
-        update_user_settings(message, query.from_user)
+        update_user_settings(message, query.from_user, 'leech')
     elif data[2] == "showimdb":
         if user_id not in user_data and not user_data[user_id].get('imdb_temp'):
             return query.answer(text="Send new settings command. 🙃")
