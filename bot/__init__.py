@@ -23,7 +23,6 @@ faulthandler_enable()
 setdefaulttimeout(600)
 
 botStartTime = time()
-__version__ = "4.1.75"
 
 basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     handlers=[FileHandler('log.txt'), StreamHandler()],
