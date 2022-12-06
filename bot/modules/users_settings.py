@@ -74,7 +74,7 @@ def get_user_settings(from_user, key=None):
             buttons.sbutton("Show AniList Template", f"userset {user_id} showanilist")
         else:
             buttons.sbutton("Set AniList", f"userset {user_id} suniversal ani_temp")
-        buttons.sbutton("Back", f"userset {user_id} back universal")
+        buttons.sbutton("Back", f"userset {user_id} back")
         buttons.sbutton("Close", f"userset {user_id} close")
         button = buttons.build_menu(2)
         text = f'''<u>Universal Settings for <a href='tg://user?id={user_id}'>{name}</a></u>
@@ -99,7 +99,7 @@ def get_user_settings(from_user, key=None):
         buttxt = "Change/Delete Remname" if remname != "Not Exists" else "Set Remname"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal mremname")
 
-        buttons.sbutton("Back", f"userset {user_id} back mirror")
+        buttons.sbutton("Back", f"userset {user_id} back")
         buttons.sbutton("Close", f"userset {user_id} close")
         button = buttons.build_menu(2)
         text = f'''<u>Universal Settings for <a href='tg://user?id={user_id}'>{name}</a></u>
@@ -126,7 +126,7 @@ def get_user_settings(from_user, key=None):
         buttons.sbutton(buttxt, f"userset {user_id} suniversal remname")
         if cfont != "Not Exists": buttons.sbutton("Delete CapFont", f"userset {user_id} cfont")
 
-        buttons.sbutton("Back", f"userset {user_id} back leech")
+        buttons.sbutton("Back", f"userset {user_id} back")
         buttons.sbutton("Close", f"userset {user_id} close")
         button = buttons.build_menu(2)
         text = f'''<u>Leech Settings for <a href='tg://user?id={user_id}'>{name}</a></u>
@@ -205,7 +205,7 @@ def edit_user_settings(update, context):
         update_user_settings(message, query.from_user, data[2])
     elif data[2] == 'back':
         query.answer()
-        update_user_settings(message, query.from_user, data[3])
+        update_user_settings(message, query.from_user, None)
     elif data[2] == "doc":
         update_user_ldata(user_id, 'as_doc', True)
         query.answer(text="Your File Will Deliver As Document!", show_alert=True)
