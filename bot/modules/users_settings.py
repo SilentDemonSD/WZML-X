@@ -7,7 +7,7 @@ from functools import partial
 from html import escape
 from threading import Thread
 
-from bot import user_data, dispatcher, LOGGER, config_dict, DATABASE_URL, OWNER_ID
+from bot import bot, user_data, dispatcher, LOGGER, config_dict, DATABASE_URL, OWNER_ID
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, sendPhoto
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -417,7 +417,7 @@ def sendPaidDetails(update, context):
                 if ud == 'is_paid' and dd is True:
                     ex_date = user_data[u].get('expiry_date', False)
                     if not ex_date: ex_date = 'Not Specified'
-                    paid += f"<code>{u}</code> : {ex_date}\n"
+                    paid += f"<a href='tg://user?id={u}'>{bot.get_chat(u).first_name}</a> ( <code>{u}</code> ) : {ex_date}\n"
                     break
         except: 
             continue
