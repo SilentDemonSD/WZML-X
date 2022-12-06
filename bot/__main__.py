@@ -367,6 +367,8 @@ if config_dict['SET_BOT_COMMANDS']:
 
 def main():
 
+    version = "4.1.75"
+
     if config_dict['WALLCRAFT_CATEGORY']:
         for page in range(1,20):
             r2 = rget(f"https://wallpaperscraft.com/catalog/{config_dict['WALLCRAFT_CATEGORY']}/1280x720/page{page}")
@@ -428,7 +430,7 @@ def main():
                 msg += f"📅 DATE: {date}\n"
                 msg += f"⌚ TIME: {time}\n"
                 msg += f"🌐 TIMEZONE: {timez}\n"
-                msg += f"🤖 VERSION: {__version__}"
+                msg += f"🤖 VERSION: {version}"
 
                 for tag, links in data.items():
                     msg += f"\n{tag}: "
@@ -467,7 +469,7 @@ def main():
             msg += f"📅 DATE: {date}\n"
             msg += f"⌚ TIME: {time}\n"
             msg += f"🌐 TIMEZONE: {timez}\n"
-            msg += f"🤖 VERSION: {__version__}"            
+            msg += f"🤖 VERSION: {version}"            
             bot.edit_message_text(msg, chat_id, msg_id)
         except Exception as e:
             LOGGER.info(e)
