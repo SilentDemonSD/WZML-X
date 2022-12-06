@@ -444,11 +444,16 @@ def get_content_type(link: str) -> str:
             content_type = None
     return content_type
 
-def change_filename(file_, user_id_, dirpath=None, up_path=None, all_edit=True):
+def change_filename(file_, user_id_, dirpath=None, up_path=None, all_edit=True, mirror_type=False):
     user_dict = user_data.get(user_id_, False)
-    PREFIX = user_dict.get('prefix') if user_dict and user_dict.get('prefix') else ''
-    REMNAME = user_dict.get('remname') if user_dict and user_dict.get('remname') else ''
-    SUFFIX = user_dict.get('suffix') if user_dict and user_dict.get('suffix') else ''
+    if mirror_type:
+        PREFIX = user_dict.get('mprefix') if user_dict and user_dict.get('mprefix') else ''
+        REMNAME = user_dict.get('mremname') if user_dict and user_dict.get('mremname') else ''
+        SUFFIX = user_dict.get('msuffix') if user_dict and user_dict.get('msuffix') else ''
+    else:
+        PREFIX = user_dict.get('prefix') if user_dict and user_dict.get('prefix') else ''
+        REMNAME = user_dict.get('remname') if user_dict and user_dict.get('remname') else ''
+        SUFFIX = user_dict.get('suffix') if user_dict and user_dict.get('suffix') else ''
 
     FSTYLE = user_dict.get('cfont')[1] if user_dict and user_dict.get('cfont') else ''
     CAPTION = user_dict.get('caption') if user_dict and user_dict.get('caption') else ''
@@ -474,7 +479,7 @@ def change_filename(file_, user_id_, dirpath=None, up_path=None, all_edit=True):
     if PREFIX:
         if not file_.startswith(PREFIX):
             file_ = f"{PREFIX}{file_}"
-    if SUFFIX:
+    if SUFFIX and not mirror_type:
         sufLen = len(SUFFIX)
         fileDict = file_.split('.')
         _extIn = 1 + len(fileDict[-1])
@@ -484,8 +489,10 @@ def change_filename(file_, user_id_, dirpath=None, up_path=None, all_edit=True):
             _newExtFileName = (
                 _extOutName[: 64 - (sufLen + _extIn)]
                 + f"{SUFFIX}.{fileDict[-1]}"
-                        )
+            )
         file_ = _newExtFileName
+    elif SUFFIX:
+        file_ = f"{ospath.splitext(file_)[0]}{SUFFIX}{ospath.splitext(file_)[1]}"
 
     if (PREFIX or REMNAME or SUFFIX) and all_edit:
         new_path = ospath.join(dirpath, file_)
@@ -535,7 +542,7 @@ def is_paid(user_id):
             ndate = datetime.today()
             if odate.year <= ndate.year:
                 if odate.month <= ndate.month:
-                    if odate.day <= ndate.day:
+                    if odate.day < ndate.day:
                         return False
         return True
     else: return False
