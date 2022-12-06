@@ -163,14 +163,14 @@ def set_yt_quality(update, context, omsg):
     if DATABASE_URL:
         DbManger().update_user_data(user_id)
 
-def set_addons(update, context, data, omsg):
+def set_addons(update, context, data, omsg, key):
     message = update.message
     user_id = message.from_user.id
     handler_dict[user_id] = False
     value = message.text
     update_user_ldata(user_id, data, value)
     update.message.delete()
-    update_user_settings(omsg, message.from_user)
+    update_user_settings(omsg, message.from_user, key)
     if DATABASE_URL:
         DbManger().update_user_data(user_id)
 
@@ -327,7 +327,7 @@ Check all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#
         buttons.sbutton("Back", f"userset {user_id} back")
         buttons.sbutton("Close", f"userset {user_id} close")
         editMessage(f'<u>Send {data[3].capitalize()} text :</u>\n\nExamples:\n{example_dict[data[3]]}', message, buttons.build_menu(2) if menu else buttons.build_menu(1))
-        partial_fnc = partial(set_addons, data=data[3], omsg=message)
+        partial_fnc = partial(set_addons, data=data[3], omsg=message, key=data[4])
         UNI_HANDLER = f"{data[3]}_handler"
         UNI_HANDLER = MessageHandler(filters=Filters.text & Filters.chat(message.chat.id) & Filters.user(user_id),
                                        callback=partial_fnc, run_async=True)
