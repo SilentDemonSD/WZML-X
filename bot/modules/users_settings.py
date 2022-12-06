@@ -86,7 +86,7 @@ def get_user_settings(from_user, key=None):
     elif key == 'mirror':
         prefix = user_dict['mprefix'] if user_dict and user_dict.get('mprefix') else "Not Exists"
         suffix = user_dict['msuffix'] if user_dict and user_dict.get('msuffix') else "Not Exists"
-        remname = user_dict['remname'] if user_dict and user_dict.get('mremname') else "Not Exists"
+        remname = user_dict['mremname'] if user_dict and user_dict.get('mremname') else "Not Exists"
 
         buttxt = "Change/Delete Prefix" if prefix != "Not Exists" else "Set Prefix"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal mprefix mirror")
@@ -98,7 +98,7 @@ def get_user_settings(from_user, key=None):
         buttons.sbutton("Back", f"userset {user_id} mback")
         buttons.sbutton("Close", f"userset {user_id} close")
         button = buttons.build_menu(2)
-        text = f'''<u>Universal Settings for <a href='tg://user?id={user_id}'>{name}</a></u>
+        text = f'''<u>Mirror Settings for <a href='tg://user?id={user_id}'>{name}</a></u>
 
 ╭ Prefix : <b>{escape(prefix)}</b>
 ├ Suffix : <b>{suffix}</b>
