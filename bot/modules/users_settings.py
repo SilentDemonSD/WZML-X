@@ -18,86 +18,125 @@ from bot.helper.ext_utils.bot_utils import update_user_ldata, is_paid, is_sudo
 handler_dict = {}
 example_dict = {'prefix':'1. <code>@your_channel_username or Anything</code>', 'suffix':'1. <code>~ WZML</code>\n2. <code>~ @channelname</code>', 'caption': '1.'+escape("<b>{filename}</b>\nJoin Now : @WeebZone_updates")+'\nCheck all available fillings options <a href="">HERE</a> and Make Custom Caption.', 'userlog':'1. <code>-100xxxxxx or Channel ID</code>', 'remname':'<b>Syntax:</b> previousname:newname:times|previousname:newname:times\n\n1. Fork:Star|Here:Now:1|WZML\n\n<b>Output :</b> Star Now : Click Here.txt', 'imdb_temp':'Check all available fillings options <a href="">HERE</a> and Make Custom Template.', 'ani_temp':'Check all available fillings options <a href="">HERE</a> and Make Custom AniList Template.'}
 
-def get_user_settings(from_user):
+def get_user_settings(from_user, key=None):
     user_id = from_user.id
     name = from_user.full_name
     buttons = ButtonMaker()
     thumbpath = f"Thumbnails/{user_id}.jpg"
-    prefix = user_data[user_id]['prefix'] if user_id in user_data and user_data[user_id].get('prefix') else "Not Exists"
-    suffix = user_data[user_id]['suffix'] if user_id in user_data and user_data[user_id].get('suffix') else "Not Exists"
-    caption = user_data[user_id]['caption'] if user_id in user_data and user_data[user_id].get('caption') else "Not Exists"
-    userlog = user_data[user_id]['userlog'] if user_id in user_data and user_data[user_id].get('userlog') else "Not Exists"
-    remname = user_data[user_id]['remname'] if user_id in user_data and user_data[user_id].get('remname') else "Not Exists"
-    imdb = user_data[user_id]['imdb_temp'] if user_id in user_data and user_data[user_id].get('imdb_temp') else "Not Exists"
-    anilist = user_data[user_id]['ani_temp'] if user_id in user_data and user_data[user_id].get('ani_temp') else "Not Exists"
-    cfont = user_data[user_id]['cfont'][0] if user_id in user_data and user_data[user_id].get('cfont') else "Not Exists"
     user_dict = user_data.get(user_id, False)
-    if not user_dict and config_dict['AS_DOCUMENT'] or user_dict and user_dict.get('as_doc'):
-        ltype = "DOCUMENT"
-        buttons.sbutton("Send As Media", f"userset {user_id} med")
-    else:
-        ltype = "MEDIA"
-        buttons.sbutton("Send As Document", f"userset {user_id} doc")
-
-    if user_dict and user_dict.get('yt_ql'):
-        ytq = user_dict['yt_ql']
-        buttons.sbutton("Change/Remove YT-DLP Quality", f"userset {user_id} ytq")
-    elif config_dict['YT_DLP_QUALITY']:
-        ytq = config_dict['YT_DLP_QUALITY']
-        buttons.sbutton("Set YT-DLP Quality", f"userset {user_id} ytq")
-    else:
-        buttons.sbutton("Set YT-DLP Quality", f"userset {user_id} ytq")
-        ytq = 'Not Exists'
-
     uplan = "Paid User" if is_paid(user_id) else "Normal User"
+    if key is None:
+        buttons.sbutton("Universal Settings", f"userset {user_id} universal")
+        buttons.sbutton("Leech Settings", f"userset {user_id} leech")
+        buttons.sbutton("Mirror Settings", f"userset {user_id} mirror")
+        buttons.sbutton("Close", f"userset {user_id} close")
+        text = "User Settings:"
+        button = buttons.build_menu(1)
+    elif key == 'universal':
+        userlog = user_dict['userlog'] if user_dict and user_dict.get('userlog') else "Not Exists"
+        imdb = user_dict['imdb_temp'] if user_dict and user_dict.get('imdb_temp') else "Not Exists"
+        anilist = user_dict['ani_temp'] if user_dict and user_dict.get('ani_temp') else "Not Exists"
+        if not user_dict and config_dict['AS_DOCUMENT'] or user_dict and user_dict.get('as_doc'):
+            ltype = "DOCUMENT"
+            buttons.sbutton("Send As Media", f"userset {user_id} med")
+        else:
+            ltype = "MEDIA"
+            buttons.sbutton("Send As Document", f"userset {user_id} doc")
 
-    if ospath.exists(thumbpath):
-        thumbmsg = "Exists"
-        buttons.sbutton("Change/Delete Thumbnail", f"userset {user_id} sthumb")
-        buttons.sbutton("Show Thumbnail", f"userset {user_id} showthumb")
-    else:
-        thumbmsg = "Not Exists"
-        buttons.sbutton("Set Thumbnail", f"userset {user_id} sthumb")
-    buttxt = "Change/Delete Prefix" if prefix != "Not Exists" else "Set Prefix"
-    buttons.sbutton(buttxt, f"userset {user_id} suniversal prefix")
-    buttxt = "Change/Delete Suffix" if suffix != "Not Exists" else "Set Suffix"
-    buttons.sbutton(buttxt, f"userset {user_id} suniversal suffix")
-    buttxt = "Change/Delete Caption" if caption != "Not Exists" else "Set Caption"
-    buttons.sbutton(buttxt, f"userset {user_id} suniversal caption")
-    buttxt = "Change/Delete UserLog" if userlog != "Not Exists" else "Set UserLog"
-    buttons.sbutton(buttxt, f"userset {user_id} suniversal userlog")
-    buttxt = "Change/Delete Remname" if remname != "Not Exists" else "Set Remname"
-    buttons.sbutton(buttxt, f"userset {user_id} suniversal remname")
-    imdbval, anival = "", ''
-    if imdb != "Not Exists":
-        imdbval = "Exists"
-        buttons.sbutton("Change/Delete IMDB", f"userset {user_id} suniversal imdb_temp")
-        buttons.sbutton("Show IMDB Template", f"userset {user_id} showimdb")
-    else: buttons.sbutton("Set IMDB", f"userset {user_id} suniversal imdb_temp")
-    if anilist != "Not Exists":
-        anival = "Exists"
-        buttons.sbutton("Change/Delete AniList", f"userset {user_id} suniversal ani_temp")
-        buttons.sbutton("Show AniList Template", f"userset {user_id} showanilist")
-    else:
-        buttons.sbutton("Set AniList", f"userset {user_id} suniversal ani_temp")
-    if cfont != "Not Exists": buttons.sbutton("Delete CapFont", f"userset {user_id} cfont")
-    buttons.sbutton("Close", f"userset {user_id} close")
-    button = buttons.build_menu(2)
+        if user_dict and user_dict.get('yt_ql'):
+            ytq = user_dict['yt_ql']
+            buttons.sbutton("Change/Remove YT-DLP Quality", f"userset {user_id} ytq")
+        elif config_dict['YT_DLP_QUALITY']:
+            ytq = config_dict['YT_DLP_QUALITY']
+            buttons.sbutton("Set YT-DLP Quality", f"userset {user_id} ytq")
+        else:
+            buttons.sbutton("Set YT-DLP Quality", f"userset {user_id} ytq")
+            ytq = 'Not Exists'
+        if ospath.exists(thumbpath):
+            thumbmsg = "Exists"
+            buttons.sbutton("Change/Delete Thumbnail", f"userset {user_id} sthumb")
+            buttons.sbutton("Show Thumbnail", f"userset {user_id} showthumb")
+        else:
+            thumbmsg = "Not Exists"
+            buttons.sbutton("Set Thumbnail", f"userset {user_id} sthumb")
+        buttxt = "Change/Delete UserLog" if userlog != "Not Exists" else "Set UserLog"
+        buttons.sbutton(buttxt, f"userset {user_id} suniversal userlog")
 
-    text = f'''<u>Leech Settings for <a href='tg://user?id={user_id}'>{name}</a></u>
+        imdbval, anival = "", ''
+        if imdb != "Not Exists":
+            imdbval = "Exists"
+            buttons.sbutton("Change/Delete IMDB", f"userset {user_id} suniversal imdb_temp")
+            buttons.sbutton("Show IMDB Template", f"userset {user_id} showimdb")
+        else: buttons.sbutton("Set IMDB", f"userset {user_id} suniversal imdb_temp")
+        if anilist != "Not Exists":
+            anival = "Exists"
+            buttons.sbutton("Change/Delete AniList", f"userset {user_id} suniversal ani_temp")
+            buttons.sbutton("Show AniList Template", f"userset {user_id} showanilist")
+        else:
+            buttons.sbutton("Set AniList", f"userset {user_id} suniversal ani_temp")
+        buttons.sbutton("Back", f"userset {user_id} back universal")
+        buttons.sbutton("Close", f"userset {user_id} close")
+        button = buttons.build_menu(2)
+        text = f'''╭─《 <u>Universal Settings for <a href='tg://user?id={user_id}'>{name}</a></u> 》
 
-• Leech Type : <b>{ltype}</b>
-• Custom Thumbnail : <b>{thumbmsg}</b>
-• YT-DLP Quality is : <b><code>{escape(ytq)}</code></b>
-• Prefix : <b>{escape(prefix)}</b>
-• Suffix : <b>{suffix}</b>
-• Caption : <b>{escape(caption)}</b>
-• CapFont : {cfont}
-• Remname : <b>{escape(remname)}</b>
-• UserLog : <b>{userlog}</b>
-• IMDB : <b>{imdbval if imdbval else imdb}</b>
-• AniList : <b>{anival if anival else anilist}</b>
-• User Plan : <b>{uplan}</b>
+├ Leech Type : <b>{ltype}</b>
+├ Custom Thumbnail : <b>{thumbmsg}</b>
+├ YT-DLP Quality is : <b><code>{escape(ytq)}</code></b>
+├ UserLog : <b>{userlog}</b>
+├ IMDB : <b>{imdbval if imdbval else imdb}</b>
+├ AniList : <b>{anival if anival else anilist}</b>
+╰ User Plan : <b>{uplan}</b>
+'''
+    elif key == 'mirror':
+        prefix = user_dict['mprefix'] if user_dict and user_dict.get('mprefix') else "Not Exists"
+        suffix = user_dict['msuffix'] if user_dict and user_dict.get('msuffix') else "Not Exists"
+        remname = user_dict['remname'] if user_dict and user_dict.get('mremname') else "Not Exists"
+
+        buttxt = "Change/Delete Prefix" if prefix != "Not Exists" else "Set Prefix"
+        buttons.sbutton(buttxt, f"userset {user_id} suniversal mprefix")
+        buttxt = "Change/Delete Suffix" if suffix != "Not Exists" else "Set Suffix"
+        buttons.sbutton(buttxt, f"userset {user_id} suniversal msuffix")
+        buttxt = "Change/Delete Remname" if remname != "Not Exists" else "Set Remname"
+        buttons.sbutton(buttxt, f"userset {user_id} suniversal mremname")
+
+        buttons.sbutton("Back", f"userset {user_id} back mirror")
+        buttons.sbutton("Close", f"userset {user_id} close")
+        button = buttons.build_menu(2)
+        text = f'''╭─《 <u>Universal Settings for <a href='tg://user?id={user_id}'>{name}</a></u> 》
+
+├ Prefix : <b>{escape(prefix)}</b>
+├ Suffix : <b>{suffix}</b>
+├ Remname : <b>{escape(remname)}</b>
+╰ User Plan : <b>{uplan}</b>
+'''
+    elif key == 'leech':
+        prefix = user_dict['prefix'] if user_dict and user_dict.get('prefix') else "Not Exists"
+        suffix = user_dict['suffix'] if user_dict and user_dict.get('suffix') else "Not Exists"
+        caption = user_dict['caption'] if user_dict and user_dict.get('caption') else "Not Exists"
+        remname = user_dict['remname'] if user_dict and user_dict.get('remname') else "Not Exists"
+        cfont = user_dict['cfont'][0] if user_dict and user_dict.get('cfont') else "Not Exists"
+
+        buttxt = "Change/Delete Prefix" if prefix != "Not Exists" else "Set Prefix"
+        buttons.sbutton(buttxt, f"userset {user_id} suniversal prefix")
+        buttxt = "Change/Delete Suffix" if suffix != "Not Exists" else "Set Suffix"
+        buttons.sbutton(buttxt, f"userset {user_id} suniversal suffix")
+        buttxt = "Change/Delete Caption" if caption != "Not Exists" else "Set Caption"
+        buttons.sbutton(buttxt, f"userset {user_id} suniversal caption")
+        buttxt = "Change/Delete Remname" if remname != "Not Exists" else "Set Remname"
+        buttons.sbutton(buttxt, f"userset {user_id} suniversal remname")
+        if cfont != "Not Exists": buttons.sbutton("Delete CapFont", f"userset {user_id} cfont")
+
+        buttons.sbutton("Back", f"userset {user_id} back leech")
+        buttons.sbutton("Close", f"userset {user_id} close")
+        button = buttons.build_menu(2)
+        text = f'''╭─《 <u>Leech Settings for <a href='tg://user?id={user_id}'>{name}</a></u> 》
+
+├ Prefix : <b>{escape(prefix)}</b>
+├ Suffix : <b>{suffix}</b>
+├ Caption : <b>{escape(caption)}</b>
+├ CapFont : {cfont}
+├ Remname : <b>{escape(remname)}</b>
+╰ User Plan : <b>{uplan}</b>
 '''
     if uplan == "Paid User":
         ex_date = user_dict.get('expiry_date', False)
@@ -105,8 +144,8 @@ def get_user_settings(from_user):
         text += f"• Expiry Date : <b>{ex_date}</b>"
     return text, button
 
-def update_user_settings(message, from_user):
-    msg, button = get_user_settings(from_user)
+def update_user_settings(message, from_user, key):
+    msg, button = get_user_settings(from_user, key)
     editMessage(msg, message, button)
 
 def user_settings(update, context):
@@ -161,6 +200,9 @@ def edit_user_settings(update, context):
     data = data.split()
     if user_id != int(data[1]):
         query.answer(text="Not Yours!", show_alert=True)
+    elif data[2] in ['universal', 'leech', 'mirror']:
+        query.answer()
+        update_user_settings(message, query.from_user, data[2])
     elif data[2] == "doc":
         update_user_ldata(user_id, 'as_doc', True)
         query.answer(text="Your File Will Deliver As Document!", show_alert=True)
