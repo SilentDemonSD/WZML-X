@@ -256,7 +256,7 @@ class GoogleDriveHelper:
         for item in list_dirs:
             current_file_name = ospath.join(input_directory, item)
             if ospath.isdir(current_file_name):
-                current_dir_id = self.__create_directory(item, dest_id)
+                current_dir_id = self.__create_directory(item, dest_id, user_id)
                 new_id = self.__upload_dir(current_file_name, current_dir_id, user_id)
                 self.__total_folders += 1
             elif not item.lower().endswith(tuple(GLOBAL_EXTENSION_FILTER)):
@@ -272,7 +272,10 @@ class GoogleDriveHelper:
 
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(3),
            retry=retry_if_exception_type(Exception))
-    def __create_directory(self, directory_name, dest_id):
+    def __create_directory(self, directory_name, dest_id, user_id):
+        # Change file name
+        _ , directory_name, _ = change_filename(directory_name, user_id, all_edit=False)
+        # File body description
         file_metadata = {
             "name": directory_name,
             "description": f"{config_dict['GD_INFO']}",
