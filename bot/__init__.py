@@ -23,14 +23,13 @@ faulthandler_enable()
 setdefaulttimeout(600)
 
 botStartTime = time()
+__version__ = "4.1.75"
 
 basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     handlers=[FileHandler('log.txt'), StreamHandler()],
                     level=INFO)
 
 LOGGER = getLogger(__name__)
-
-TIME_GAP_STORE = {}
 
 load_dotenv('config.env', override=True)
 
@@ -42,6 +41,7 @@ INDEX_URLS = []
 user_data = {}
 aria2_options = {}
 qbit_options = {}
+TIME_GAP_STORE = {}
 GLOBAL_EXTENSION_FILTER = ['.aria2']
 
 try:
