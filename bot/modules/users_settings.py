@@ -392,20 +392,24 @@ def edit_user_settings(update, context):
         query.message.reply_to_message.delete()
 
 def send_users_settings(update, context):
-    msg, auth_chat, sudos, leechlogs = '', '', '', ''
+    msg, auth_chat, sudos, leechlogs, linklogs, mirrorlogs = '', '', '', '', '', ''
     for u, d in user_data.items():
         try:
             for ud, dd in d.items():
                 if ud == 'is_auth' and dd is True:
-                    auth_chat += f"<code>{u}</code>\n"
+                    auth_chat += f"<b>{bot.get_chat(u).title}</b> ( <code>{u}</code> )\n"
                 elif ud == 'is_sudo' and dd is True:
-                    sudos += f"<code>{u}</code>\n"
+                    sudos += f"<a href='tg://user?id={u}'>{bot.get_chat(u).first_name}</a> ( <code>{u}</code> )\n"
         except:
             if u == 'is_leech_log':
-                leechlogs = '\n'.join(f"<code>{ll}</code>" for ll in d)
+                leechlogs = '\n'.join(f"<b>{bot.get_chat(ll).title}</b> ( <code>{ll}</code> )" for ll in d)
+            elif u == 'mirror_logs':
+                linklogs = '\n'.join(f"<b>{bot.get_chat(ll).title}</b> ( <code>{ll}</code> )" for ll in d)
+            elif u == 'link_logs':
+                mirrorlogs = '\n'.join(f"<b>{bot.get_chat(ll).title}</b> ( <code>{ll}</code> )" for ll in d)
         else:
             continue
-    msg = f'<b><u>Authorized Chats💬 :</u></b>\n{auth_chat}\n<b><u>Sudo Users👤 :</u></b>\n{sudos}\n<b><u>Leech Log:</u></b>\n{leechlogs}'
+    msg = f'<b><u>Authorized Chats💬 :</u></b>\n{auth_chat}\n<b><u>Sudo Users👤 :</u></b>\n{sudos}\n<b><u>Leech Log:</u></b>\n{leechlogs}\n<b><u>Mirror Log:</u></b>\n{mirrorlogs}\n<b><u>Links Log:</u></b>\n{linklogs}'
     if msg == '': msg = 'No Users Data!'
     sendMessage(msg, context.bot, update.message)
 
@@ -422,7 +426,7 @@ def sendPaidDetails(update, context):
         except: 
             continue
     if not paid: paid = 'No Data'
-    sendMessage(f'<b><u>Paid Users🤑 :</u></b>\n{paid}', context.bot, update.message)
+    sendMessage(f'<b><u>Paid Users🤑 :</u></b>\n\n{paid}', context.bot, update.message)
 
 
 pdetails_handler = CommandHandler(command=BotCommands.PaidUsersCommand, callback=sendPaidDetails,
