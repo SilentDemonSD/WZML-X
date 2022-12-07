@@ -97,6 +97,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
     is_udrive = False
     is_sharer = False
     is_sharedrive = False
+    is_filepress = False
     index = 1
     ratio = None
     seed_time = None
@@ -227,6 +228,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
                 is_udrive = is_udrive_link(link)
                 is_sharer = is_sharer_link(link)
                 is_sharedrive = is_sharedrive_link(link)
+                is_filepress = is_filepress_link(link)
                 link = direct_link_generator(link)
                 LOGGER.info(f"Generated link: {link}")
             except DirectDownloadLinkException as e:
@@ -268,7 +270,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
             gmsg += f"Use /{BotCommands.UnzipMirrorCommand} to extracts Google Drive archive file"
             sendMessage(gmsg, bot, message)
         else:
-            Thread(target=add_gd_download, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener, name, is_gdtot, is_unified, is_udrive, is_sharer, is_sharedrive)).start()
+            Thread(target=add_gd_download, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener, name, is_gdtot, is_unified, is_udrive, is_sharer, is_sharedrive, is_filepress)).start()
     elif is_mega_link(link):
         Thread(target=add_mega_download, args=(link, f'{DOWNLOAD_DIR}{listener.uid}/', listener, name)).start()
     elif isQbit and (is_magnet(link) or ospath.exists(link)):
