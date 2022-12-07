@@ -367,7 +367,7 @@ if config_dict['SET_BOT_COMMANDS']:
 
 def main():
 
-    version = "4.2.0"
+    version = "4.3.0"
 
     if config_dict['WALLCRAFT_CATEGORY']:
         for page in range(1,20):
