@@ -24,6 +24,7 @@ from bs4 import BeautifulSoup
 from base64 import standard_b64encode, b64decode
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from playwright.sync_api import Playwright, sync_playwright, expect
 
 from bot import LOGGER, config_dict
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -92,6 +93,8 @@ def direct_link_generator(link: str):
         return sharer_pw_dl(link)
     elif is_sharedrive_link(link):
         return shareDrive(link)
+    elif is_filepress_link(link):
+        return filepress(link)
     elif any(x in link for x in fmed_list):
         return fembed(link)
     elif any(x in link for x in ['sbembed.com', 'watchsb.com', 'streamsb.net', 'sbplay.org']):
@@ -807,3 +810,40 @@ def shareDrive(url,directLogin=True):
             return driveUrl
         else:
             raise DirectDownloadLinkException("ERROR! File Not Found or User rate exceeded !!")
+
+def prun(playwright: Playwright, link:str) -> str:
+    """ filepress google drive link generator
+    By https://t.me/maverick9099
+    GitHub: https://github.com/majnurangeela"""
+    
+    browser = playwright.chromium.launch()
+    context = browser.new_context()
+    
+    page = context.new_page()
+    page.goto(link)
+    
+    firstbtn = page.locator("xpath=//div[text()='Direct Download']/parent::button")
+    expect(firstbtn).to_be_visible()
+    firstbtn.click()
+    sleep(10)
+    
+    secondBtn = page.get_by_role("button", name="Download Now")
+    expect(secondBtn).to_be_visible()
+    with page.expect_navigation():
+        secondBtn.click()
+ 
+    Flink = page.url
+    
+    context.close()
+    browser.close()
+    
+    if 'drive.google.com' in Flink:
+        return Flink
+    else:
+        raise DirectDownloadLinkException("Unable To Get Google Drive Link!")
+    
+    
+def filepress(link:str) -> str:
+    with sync_playwright() as playwright:
+        flink = prun(playwright, link)
+        return flink            
