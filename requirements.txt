@@ -40,3 +40,4 @@ urllib3
 xattr
 yt-dlp
 waybackpy
+playwright
