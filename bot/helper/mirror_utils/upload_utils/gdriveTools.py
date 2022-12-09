@@ -340,7 +340,7 @@ class GoogleDriveHelper:
                     if config_dict['USE_SERVICE_ACCOUNTS']:
                         self.__switchServiceAccount()
                         LOGGER.info(f"Got: {reason}, Trying Again.")
-                        return self.__upload_file(file_path, file_name, mime_type, dest_id)
+                        return self.__upload_file(file_path, file_name, mime_type, dest_id, user_id)
                     else:
                         LOGGER.error(f"Got: {reason}")
                         raise err
@@ -378,7 +378,7 @@ class GoogleDriveHelper:
             mime_type = meta.get("mimeType")
             if mime_type == self.__G_DRIVE_DIR_MIME_TYPE:
                 dir_id = self.__create_directory(meta.get('name'), config_dict['GDRIVE_ID'], user_id)
-                self.__cloneFolder(meta.get('name'), meta.get('name'), meta.get('id'), dir_id)
+                self.__cloneFolder(meta.get('name'), meta.get('name'), meta.get('id'), dir_id, user_id)
                 durl = self.__G_DRIVE_DIR_BASE_DOWNLOAD_URL.format(dir_id)
                 if self.__is_cancelled:
                     LOGGER.info("Deleting cloned data from Drive...")
