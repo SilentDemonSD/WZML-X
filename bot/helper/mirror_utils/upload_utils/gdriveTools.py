@@ -384,14 +384,15 @@ class GoogleDriveHelper:
                     LOGGER.info("Deleting cloned data from Drive...")
                     self.deletefile(durl)
                     return "your clone has been stopped and cloned data has been deleted!", "cancelled"
+                _, f_name, _ = change_filename(meta.get("name"), user_id, all_edit=False, mirror_type=True)
                 if config_dict['EMOJI_THEME']:
-                    msg += f'<b>╭🗂️ Name: </b><code>{meta.get("name")}</code>'
+                    msg += f'<b>╭🗂️ Name: </b><code>{f_name}</code>'
                     msg += f'\n<b>├📦 Size: </b>{get_readable_file_size(self.transferred_size)}'
                     msg += f'\n<b>├♻ Type: </b>Folder'
                     msg += f'\n<b>├🗃️ SubFolders: </b>{self.__total_folders}'
                     msg += f'\n<b>├🗂️ Files: </b>{self.__total_files}'
                 else:
-                    msg += f'<b>╭ Name: </b><code>{meta.get("name")}</code>'
+                    msg += f'<b>╭ Name: </b><code>{f_name}</code>'
                     msg += f'\n<b>├ Size: </b>{get_readable_file_size(self.transferred_size)}'
                     msg += f'\n<b>├ Type: </b>Folder'
                     msg += f'\n<b>├ SubFolders: </b>{self.__total_folders}'
@@ -400,7 +401,7 @@ class GoogleDriveHelper:
                 durl = short_url(durl)
                 buttons.buildbutton("☁️ Drive Link", durl)
                 if INDEX_URL := config_dict['INDEX_URL']:
-                    url_path = rquote(f'{meta.get("name")}', safe='')
+                    url_path = rquote(f'{f_name}', safe='')
                     url = f'{INDEX_URL}/{url_path}/'
                     url = short_url(url)
                     buttons.buildbutton("⚡ Index Link", url)
