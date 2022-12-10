@@ -213,8 +213,9 @@ class GoogleDriveHelper:
         self.__updater = setInterval(self.__update_interval, self._progress)
         GDriveID = ''
         IS_GDX = user_data[user_id].get('is_gdx') if user_id in user_data and user_data[user_id].get('is_gdx') else False
-        IS_PAID = is_paid(user_id)
-        if (config_dict['PAID_SERVICE'] != True and IS_GDX == True) or (config_dict['PAID_SERVICE'] == True and IS_PAID == True and IS_GDX == True):
+#         IS_PAID = is_paid(user_id)
+        if IS_GDX:
+            LOGGER.info("Using USER TD!")
             userDest = user_data[user_id].get('gdx') if user_id in user_data and user_data[user_id].get('gdx') else ''
             if len(userDest) != 0:
                 arrForUser = userDest.split()
@@ -387,8 +388,9 @@ class GoogleDriveHelper:
         GDriveID = ''
         IndexURL = ''
         IS_GDX = user_data[user_id].get('is_gdx') if user_id in user_data and user_data[user_id].get('is_gdx') else False
-        IS_PAID = is_paid(user_id)
-        if (config_dict['PAID_SERVICE'] != True and IS_GDX == True) or (config_dict['PAID_SERVICE'] == True and IS_PAID == True and IS_GDX == True):
+#         IS_PAID = is_paid(user_id)
+        if IS_GDX:
+            LOGGER.info("Using USER TD!")
             userDest = user_data[user_id].get('gdx') if user_id_ in user_data and user_data[user_id].get('gdx') else ''
             if len(userDest) != 0:
                 arrForUser = userDest.split()
