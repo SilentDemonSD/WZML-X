@@ -35,7 +35,6 @@ def get_user_settings(from_user, key=None):
     elif key == 'universal':
         userlog = user_dict['userlog'] if user_dict and user_dict.get('userlog') else "Not Exists"
         usertd = user_dict['usertd'] if user_dict and user_dict.get('usertd') else "Not Exists"
-#         is_gdx = user_dict['is_gdx'] if user_dict and user_dict.get('is_gdx') else "false"
         imdb = user_dict['imdb_temp'] if user_dict and user_dict.get('imdb_temp') else "Not Exists"
         anilist = user_dict['ani_temp'] if user_dict and user_dict.get('ani_temp') else "Not Exists"
         ytq = user_dict['yt_ql'] if user_dict and user_dict.get('yt_ql') else config_dict['YT_DLP_QUALITY'] if config_dict['YT_DLP_QUALITY'] else "Not Exists"
@@ -90,7 +89,7 @@ def get_user_settings(from_user, key=None):
 ├ Custom Thumbnail : <b>{thumbmsg}</b>
 ├ YT-DLP Quality is : <b>{escape(ytq)}</b>
 ├ UserLog : <b>{userlog}</b>
-├ GDX : <b>{gdx}</b>
+├ USER TeamDrive : <b>{usertd}</b>
 ├ IMDB : <b>{imdbval if imdbval else imdb}</b>
 ├ AniList : <b>{anival if anival else anilist}</b>
 ╰ User Plan : <b>{uplan}</b>
