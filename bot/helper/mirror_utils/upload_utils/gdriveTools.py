@@ -391,7 +391,7 @@ class GoogleDriveHelper:
 #         IS_PAID = is_paid(user_id)
         if IS_USRTD:
             LOGGER.info("Using USER TD!")
-            userDest = user_data[user_id].get('usertd') if user_id_ in user_data and user_data[user_id].get('usertd') else ''
+            userDest = user_data[user_id].get('usertd') if user_id in user_data and user_data[user_id].get('usertd') else ''
             if len(userDest) != 0:
                 arrForUser = userDest.split()
                 GDriveID = arrForUser[0]
