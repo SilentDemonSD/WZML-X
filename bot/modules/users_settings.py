@@ -47,7 +47,7 @@ def get_user_settings(from_user, key=None):
             ltype = "MEDIA"
             buttons.sbutton("Send As Document", f"userset {user_id} doc")
             
-        if user_dict and user_dict.get('is_gdx'):
+        if not user_dict and config_dict['GDX_DEFAULT'] or user_dict and user_dict.get('is_gdx'):
             ltype = "True"
             buttons.sbutton("Disable GDX", f"userset {user_id} gdxon")
         else:
