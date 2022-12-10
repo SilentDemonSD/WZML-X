@@ -34,6 +34,7 @@ def get_user_settings(from_user, key=None):
         button = buttons.build_menu(1)
     elif key == 'universal':
         userlog = user_dict['userlog'] if user_dict and user_dict.get('userlog') else "Not Exists"
+        gdx = user_dict['gdx'] if user_dict and user_dict.get('gdx') else "Not Exists"
         imdb = user_dict['imdb_temp'] if user_dict and user_dict.get('imdb_temp') else "Not Exists"
         anilist = user_dict['ani_temp'] if user_dict and user_dict.get('ani_temp') else "Not Exists"
         ytq = user_dict['yt_ql'] if user_dict and user_dict.get('yt_ql') else config_dict['YT_DLP_QUALITY'] if config_dict['YT_DLP_QUALITY'] else "Not Exists"
@@ -57,6 +58,8 @@ def get_user_settings(from_user, key=None):
         buttons.sbutton(buttxt, f"userset {user_id} suniversal yt_ql universal")
         buttxt = "Change/Delete UserLog" if userlog != "Not Exists" else "Set UserLog"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal userlog universal")
+        buttxt = "Change/Delete GDX" if userlog != "Not Exists" else "Set GDX"
+        buttons.sbutton(buttxt, f"userset {user_id} suniversal gdx universal")
 
         imdbval, anival = '', ''
         if imdb != "Not Exists":
@@ -79,6 +82,7 @@ def get_user_settings(from_user, key=None):
 ├ Custom Thumbnail : <b>{thumbmsg}</b>
 ├ YT-DLP Quality is : <b>{escape(ytq)}</b>
 ├ UserLog : <b>{userlog}</b>
+├ GDX : <b>{gdx}</b>
 ├ IMDB : <b>{imdbval if imdbval else imdb}</b>
 ├ AniList : <b>{anival if anival else anilist}</b>
 ╰ User Plan : <b>{uplan}</b>
