@@ -1,3 +1,4 @@
+from re import match
 from time import sleep, time
 from os import remove, path as ospath
 from bot import aria2, download_dict_lock, download_dict, LOGGER, config_dict, user_data, aria2_options, aria2c_global, OWNER_ID
@@ -6,7 +7,7 @@ from bot.helper.ext_utils.bot_utils import is_magnet, getDownloadByGid, new_thre
 from bot.helper.mirror_utils.status_utils.aria_download_status import AriaDownloadStatus
 from bot.helper.telegram_helper.message_utils import sendMarkup, sendStatusMessage, sendMessage, deleteMessage, update_all_messages, sendFile
 from bot.helper.ext_utils.fs_utils import get_base_name, check_storage_threshold, clean_unwanted
-
+from bot.modules.scraper import indexScrape
 
 @new_thread
 def __onDownloadStarted(api, gid):
@@ -219,6 +220,9 @@ def add_aria2c_download(link: str, path, listener, filename, auth, ratio, seed_t
         args['bt-stop-timeout'] = str(TORRENT_TIMEOUT)
     if is_magnet(link):
         download = aria2.add_magnet(link, args)
+    elif match(r'https?://.+\/\d+\:\/', link) and link[-1] == '/':
+        link = indexScrape({"page_token": "", "page_index": 0}, link, "none", "none", folder_mode=True)
+        download = aria2.add_uris(link, args)
     else:
         download = aria2.add_uris([link], args)
     if download.error_message:
