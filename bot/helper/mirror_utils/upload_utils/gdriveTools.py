@@ -17,7 +17,7 @@ from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_excep
 from bot.helper.ext_utils.html_helper import hmtl_content
 from google.auth.transport.requests import Request
 from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot import config_dict, DRIVES_NAMES, DRIVES_IDS, INDEX_URLS, GLOBAL_EXTENSION_FILTER
+from bot import config_dict, DRIVES_NAMES, DRIVES_IDS, INDEX_URLS, GLOBAL_EXTENSION_FILTER, user_data
 from bot.helper.ext_utils.telegraph_helper import telegraph
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, setInterval, change_filename
 from bot.helper.ext_utils.fs_utils import get_mime_type
@@ -59,6 +59,7 @@ class GoogleDriveHelper:
         self.name = name
         self.processed_bytes = 0
         self.transferred_size = 0
+        self.__user_settings()
         self.__service_account_index = 0
         self.__service = self.__authorize()
 
@@ -211,10 +212,20 @@ class GoogleDriveHelper:
         size = get_readable_file_size(self.__size)
         LOGGER.info(f"Uploading File: {file_path}")
         self.__updater = setInterval(self.__update_interval, self._progress)
+        GDriveID = ''
+        IndexURL = ''
+        userDest = user_data[user_id_].get('gdx') if user_id_ in user_data and user_data[user_id_].get('gdx') else ''
+        if len(userDest) != 0:
+            arrForUser = userDest.split()
+            GDriveID = arrForUser[0]
+            if len(arrForUser) > 1:
+                IndexURL = arrForUser[1].rstrip('/')
+        GDRIVEID = GDriveID if len(GDriveID) != 0 else config_dict['GDRIVE_ID']
+        INDEXURL = IndexURL if len(IndexURL) != 0 else config_dict['INDEX_URL']
         try:
             if ospath.isfile(file_path):
                 mime_type = get_mime_type(file_path)
-                link = self.__upload_file(file_path, file_name, mime_type, config_dict['GDRIVE_ID'], user_id)
+                link = self.__upload_file(file_path, file_name, mime_type, GDRIVEID, user_id)
                 if self.__is_cancelled:
                     return
                 if link is None:
@@ -222,7 +233,7 @@ class GoogleDriveHelper:
                 LOGGER.info(f"Uploaded To G-Drive: {file_path}")
             else:
                 mime_type = 'Folder'
-                dir_id = self.__create_directory(ospath.basename(ospath.abspath(file_name)), config_dict['GDRIVE_ID'], user_id)
+                dir_id = self.__create_directory(ospath.basename(ospath.abspath(file_name)), GDRIVEID, user_id)
                 result = self.__upload_dir(file_path, dir_id, user_id)
                 if result is None:
                     raise Exception('Upload has been manually cancelled!')
@@ -373,11 +384,21 @@ class GoogleDriveHelper:
             return msg
         msg = ""
         LOGGER.info(f"File ID: {file_id}")
+        GDriveID = ''
+        IndexURL = ''
+        userDest = user_data[user_id_].get('gdx') if user_id_ in user_data and user_data[user_id_].get('gdx') else ''
+        if len(userDest) != 0:
+            arrForUser = userDest.split()
+            GDriveID = arrForUser[0]
+            if len(arrForUser) > 1:
+                IndexURL = arrForUser[1].rstrip('/')
+        GDRIVEID = GDriveID if len(GDriveID) != 0 else config_dict['GDRIVE_ID']
+        INDEXURL = IndexURL if len(IndexURL) != 0 else config_dict['INDEX_URL']
         try:
             meta = self.__getFileMetadata(file_id)
             mime_type = meta.get("mimeType")
             if mime_type == self.__G_DRIVE_DIR_MIME_TYPE:
-                dir_id = self.__create_directory(meta.get('name'), config_dict['GDRIVE_ID'], user_id)
+                dir_id = self.__create_directory(meta.get('name'), GDRIVEID, user_id)
                 self.__cloneFolder(meta.get('name'), meta.get('name'), meta.get('id'), dir_id, user_id)
                 durl = self.__G_DRIVE_DIR_BASE_DOWNLOAD_URL.format(dir_id)
                 if self.__is_cancelled:
@@ -400,13 +421,13 @@ class GoogleDriveHelper:
                 buttons = ButtonMaker()
                 durl = short_url(durl)
                 buttons.buildbutton("☁️ Drive Link", durl)
-                if INDEX_URL := config_dict['INDEX_URL']:
+                if INDEX_URL := INDEXURL:
                     url_path = rquote(f'{f_name}', safe='')
                     url = f'{INDEX_URL}/{url_path}/'
                     url = short_url(url)
                     buttons.buildbutton("⚡ Index Link", url)
             else:
-                file = self.__copyFile(meta.get('id'), config_dict['GDRIVE_ID'], meta.get('name'), user_id)
+                file = self.__copyFile(meta.get('id'), GDRIVEID, meta.get('name'), user_id)
                 if config_dict['EMOJI_THEME']:
                     msg += f'<b>╭🗂️ Name: </b><code>{file.get("name")}</code>'
                 else:
@@ -423,7 +444,7 @@ class GoogleDriveHelper:
                 else:
                     msg += f'\n<b>├ Size: </b>{get_readable_file_size(int(meta.get("size", 0)))}'
                     msg += f'\n<b>├ Type: </b>{mime_type}'
-                if INDEX_URL := config_dict['INDEX_URL']:
+                if INDEX_URL := INDEXURL:
                     url_path = rquote(f'{file.get("name")}', safe='')
                     url = f'{INDEX_URL}/{url_path}'
                     url = short_url(url)
@@ -964,3 +985,7 @@ class GoogleDriveHelper:
         elif self.__is_uploading:
             LOGGER.info(f"Cancelling Upload: {self.name}")
             self.__listener.onUploadError('your upload has been stopped and uploaded data has been deleted!')
+
+    def __user_settings(self):
+        user_id = self.__listener.message.from_user.id
+        user_dict = user_data.get(user_id, False)            
