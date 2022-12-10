@@ -85,6 +85,7 @@ def get_user_settings(from_user, key=None):
 ├ Custom Thumbnail : <b>{thumbmsg}</b>
 ├ YT-DLP Quality is : <b>{escape(ytq)}</b>
 ├ UserLog : <b>{userlog}</b>
+├ GDX Mirror : <b>{is_gdx}</b>
 ├ GDX : <b>{gdx}</b>
 ├ IMDB : <b>{imdbval if imdbval else imdb}</b>
 ├ AniList : <b>{anival if anival else anilist}</b>
