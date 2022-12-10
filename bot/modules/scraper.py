@@ -504,17 +504,14 @@ def indexScrape(payload_input, url, username, password):
                 folNo += 1
                 direct_download_link = url + quote(files_name) + '/'
                 result += f"{i+1}. <b>{files_name}</b>\n⇒ <a href='{direct_download_link}'>Index Link</a>\n\n"
-                LOGGER.info(result)
-                r = indexScrape({"page_token":next_page_token, "page_index": 0}, direct_download_link, username, password)
-                LOGGER.info(f"2nd : {r}")
-                result += r
+                result += "-----------------------------------------" + indexScrape({"page_token":next_page_token, "page_index": 0}, direct_download_link, username, password) + "-----------------------------------------" 
             else:
                 filNo += 1
                 file_size = int(decrypted_response["data"]["files"][i]["size"])
                 direct_download_link = url + quote(files_name)
                 result += f"{i+1}. <b>{files_name} - {get_readable_file_size(file_size)}</b>\n⇒ <a href='{direct_download_link}'>Index Link</a>\n\n"
-            if filNo > 20:
-                return "Too Much Files"
+            if filNo > 30 or folNo > 2:
+                break
         result = f"<b>Total Folders :</b> {folNo}\n<b>Total Files :</b> {filNo}\n\n" + result
     return result
         
