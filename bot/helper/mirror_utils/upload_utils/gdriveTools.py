@@ -387,7 +387,7 @@ class GoogleDriveHelper:
         LOGGER.info(f"File ID: {file_id}")
         GDriveID = ''
         IndexURL = ''
-        IS_USRTD = user_data[user_id_].get('is_usertd') if user_id_ in user_data and user_data[user_id_].get('is_usertd') else False
+        IS_USRTD = user_data[user_id].get('is_usertd') if user_id in user_data and user_data[user_id].get('is_usertd') else False
 #         IS_PAID = is_paid(user_id)
         if IS_USRTD:
             LOGGER.info("Using USER TD!")
