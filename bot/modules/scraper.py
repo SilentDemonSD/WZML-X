@@ -395,9 +395,7 @@ def scrapper(update, context):
         sent = sendMessage('Running Scrape ...', context.bot, update.message)
         gd_txt, no = "", 0
         pgNo = 0
-        LOGGER.info(userindex)
-        LOGGER.info(passindex)
-        gd_txt += f"Index Link: {link}\n\n"
+        gd_txt += f"🗂 Index Link Scrape :\n\n"
         gd_txt += indexScrape({"page_token":next_page_token, "page_index": pgNo}, link, userindex, passindex)
 
         while next_page == True:
@@ -468,14 +466,15 @@ def ouo_parse(dict_key, button, loop_soup):
 def indexScrape(payload_input, url, username, password): 
     global next_page 
     global next_page_token
-    
+    folNo, filNo = 0, 0
+
     url = f"{url}/" if url[-1] != '/' else url
     try:
         token = "Basic "+b64encode(f"{username}:{password}".encode()).decode()
         headers = {"authorization":token}
     except Exception as e:
         LOGGER.error('Index Scrape Error :'+e)
-        return "Error : {e}"
+        return f"Error : {e}"
 
     ses = cloudscraper.create_scraper(allow_brotli=False)
     encrypted_response = ses.post(url, data=payload_input, headers=headers)
@@ -500,14 +499,17 @@ def indexScrape(payload_input, url, username, password):
         file_length = len(decrypted_response["data"]["files"])
         for i, _ in enumerate(range(file_length)):
             files_type = decrypted_response["data"]["files"][i]["mimeType"] 
-            files_name = decrypted_response["data"]["files"][i]["name"] 
+            files_name = decrypted_response["data"]["files"][i]["name"]
             if files_type == "application/vnd.google-apps.folder":
+                folNo += 1
                 direct_download_link = url + quote(files_name) + '/'
-                result += f"• {files_name}\n{direct_download_link}\n\n"
+                result += f"{i+1}. <b>{files_name}</b>\n⇒ <a href='{direct_download_link}'>Index Link</a>\n\n"
             else:
+                filNo += 1
                 file_size = int(decrypted_response["data"]["files"][i]["size"])
                 direct_download_link = url + quote(files_name)
-                result += f"• {files_name} - {get_readable_file_size(file_size)}\n{direct_download_link}\n\n"
+                result += f"{i+1}. <b>{files_name} - {get_readable_file_size(file_size)}</b>\n⇒ <a href='{direct_download_link}'>Index Link</a>\n\n"
+        result = f"<b>Total Folders :</b> {folNo}\n<b>Total Files :</b> {filNo}\n\n" + result
     return result
         
 srp_handler = CommandHandler(BotCommands.ScrapeCommand, scrapper,
