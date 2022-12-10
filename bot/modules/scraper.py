@@ -17,7 +17,7 @@ from bot import LOGGER, dispatcher, config_dict, OWNER_ID
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage
-from bot.helper.ext_utils.bot_utils import is_paid, is_sudo
+from bot.helper.ext_utils.bot_utils import is_paid, is_sudo, get_readable_file_size
 from bot.helper.mirror_utils.download_utils.direct_link_generator import rock, try2link, ez4, ouo
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 
@@ -41,7 +41,7 @@ def scrapper(update, context):
     if message.reply_to_message: link = message.reply_to_message.text
     else:
         userindex, passindex = 'none', 'none'
-        link = message.text.split('\n', 1)
+        link = message.text.split('\n')
         if len(link) == 3:
             userindex = link[1]
             passindex = link[2]
@@ -469,21 +469,21 @@ def indexScrape(payload_input, url, username, password):
     global next_page 
     global next_page_token
     
-    url = url + "/" if  url[-1] != '/' else url
-         
+    url = f"{url}/" if url[-1] != '/' else url
     try:
         token = "Basic "+b64encode(f"{username}:{password}".encode()).decode()
         headers = {"authorization":token}
     except Exception as e:
-        LOGGER.info(e)
-        return "username/password combination"
+        LOGGER.error('Index Scrape Error :'+e)
+        return "Error : {e}"
 
-    encrypted_response = rpost(url, data=payload_input, headers=headers)
-    if encrypted_response.status_code == 401: 
-        return "username/password combination is wrong"
+    ses = cloudscraper.create_scraper(allow_brotli=False)
+    encrypted_response = ses.post(url, data=payload_input, headers=headers)
+    if encrypted_response.status_code == 401:
+        return "Could not Acess your Entered URL!, Check your Username / Password"
  
     try: decrypted_response = json.loads(b64decode((encrypted_response.text)[::-1][24:-20]).decode('utf-8'))
-    except: return "something went wrong. check index link/username/password field again"
+    except: return "Something Went Wrong. Check Index Link / Username / Password Valid or Not"
      
     page_token = decrypted_response["nextPageToken"] 
     if page_token == None: 
@@ -495,7 +495,7 @@ def indexScrape(payload_input, url, username, password):
     result = ""
 
     if list(decrypted_response.get("data").keys())[0] == "error":
-        pass
+        return "Nothing Found in Your Entered URL"
     else:
         file_length = len(decrypted_response["data"]["files"])
         for i, _ in enumerate(range(file_length)):
@@ -503,10 +503,11 @@ def indexScrape(payload_input, url, username, password):
             files_name = decrypted_response["data"]["files"][i]["name"] 
             if files_type == "application/vnd.google-apps.folder":
                 direct_download_link = url + quote(files_name) + '/'
-                result += f"• {files_name}:-\n{direct_download_link}\n\n"
+                result += f"• {files_name}\n{direct_download_link}\n\n"
             else:
+                files_size = int(decrypted_response["data"]["files"][i]["size"])
                 direct_download_link = url + quote(files_name)
-                result += f"• {files_name}:-\n{direct_download_link}\n\n"
+                result += f"• {files_name} - {get_readable_file_size(file_size)}\n{direct_download_link}\n\n"
     return result
         
 srp_handler = CommandHandler(BotCommands.ScrapeCommand, scrapper,
