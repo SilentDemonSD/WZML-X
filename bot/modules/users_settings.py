@@ -58,7 +58,7 @@ def get_user_settings(from_user, key=None):
         buttons.sbutton(buttxt, f"userset {user_id} suniversal yt_ql universal")
         buttxt = "Change/Delete UserLog" if userlog != "Not Exists" else "Set UserLog"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal userlog universal")
-        buttxt = "Change/Delete GDX" if userlog != "Not Exists" else "Set GDX"
+        buttxt = "Change/Delete GDX" if gdx != "Not Exists" else "Set GDX"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal gdx universal")
 
         imdbval, anival = '', ''
