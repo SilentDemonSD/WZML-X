@@ -9,7 +9,7 @@ from time import sleep
 from urllib.parse import urlparse, unquote, quote
 from requests import get as rget, head as rhead, post as rpost
 from bs4 import BeautifulSoup, NavigableString, Tag
-from base64 import b64decode
+from base64 import b64decode, b64encode
 
 from telegram import Message
 from telegram.ext import CommandHandler
