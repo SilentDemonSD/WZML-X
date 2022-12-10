@@ -47,12 +47,12 @@ def get_user_settings(from_user, key=None):
             ltype = "MEDIA"
             buttons.sbutton("Send As Document", f"userset {user_id} doc")
             
-        if not user_dict and config_dict['GDX_DEFAULT'] or user_dict and user_dict.get('is_gdx'):
+        if not user_dict and config_dict['USR_TD_DEFAULT'] or user_dict and user_dict.get('is_usertd'):
             ltype = "True"
-            buttons.sbutton("Disable GDX", f"userset {user_id} gdxoff")
+            buttons.sbutton("Disable USER TD", f"userset {user_id} usertdxoff")
         else:
             ltype = "False"
-            buttons.sbutton("Enable GDX", f"userset {user_id} gdxon")
+            buttons.sbutton("Enable USER TD", f"userset {user_id} usertdxon")
 
         if ospath.exists(thumbpath):
             thumbmsg = "Exists"
@@ -215,14 +215,14 @@ def edit_user_settings(update, context):
         update_user_settings(message, query.from_user, 'universal')
         if DATABASE_URL:
             DbManger().update_user_data(user_id)
-    elif data[2] == "gdxon":
-        update_user_ldata(user_id, 'is_gdx', True)
+    elif data[2] == "usertdxon":
+        update_user_ldata(user_id, 'is_usertd', True)
         query.answer(text="Your Files Will Be Mirrored/Cloned ON Your Personal TD!", show_alert=True)
         update_user_settings(message, query.from_user, 'universal')
         if DATABASE_URL:
             DbManger().update_user_data(user_id)
-    elif data[2] == "gdxoff":
-        update_user_ldata(user_id, 'is_gdx', False)
+    elif data[2] == "usertdxoff":
+        update_user_ldata(user_id, 'is_usertd', False)
         query.answer(text="Your Files Will Be Mirrorred/Cloned ON Global TD!", show_alert=True)
         update_user_settings(message, query.from_user, 'universal')
         if DATABASE_URL:
