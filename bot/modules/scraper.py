@@ -504,7 +504,10 @@ def indexScrape(payload_input, url, username, password):
                 folNo += 1
                 direct_download_link = url + quote(files_name) + '/'
                 result += f"{i+1}. <b>{files_name}</b>\n⇒ <a href='{direct_download_link}'>Index Link</a>\n\n"
-                result += indexScrape(payload_input, direct_download_link, username, password)
+                LOGGER.info(result)
+                r = indexScrape({"page_token":next_page_token, "page_index": 0}, direct_download_link, username, password)
+                LOGGER.info(f"2nd : {r}")
+                result += r
             else:
                 filNo += 1
                 file_size = int(decrypted_response["data"]["files"][i]["size"])
