@@ -505,7 +505,7 @@ def indexScrape(payload_input, url, username, password):
                 direct_download_link = url + quote(files_name) + '/'
                 result += f"• {files_name}\n{direct_download_link}\n\n"
             else:
-                files_size = int(decrypted_response["data"]["files"][i]["size"])
+                file_size = int(decrypted_response["data"]["files"][i]["size"])
                 direct_download_link = url + quote(files_name)
                 result += f"• {files_name} - {get_readable_file_size(file_size)}\n{direct_download_link}\n\n"
     return result
