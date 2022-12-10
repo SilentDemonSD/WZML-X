@@ -1,5 +1,7 @@
+import json
 import cloudscraper
 import concurrent.futures
+
 from copy import deepcopy
 from re import S, match as rematch, findall, sub as resub, compile as recompile
 from asyncio import sleep as asleep
@@ -19,6 +21,8 @@ from bot.helper.ext_utils.bot_utils import is_paid, is_sudo
 from bot.helper.mirror_utils.download_utils.direct_link_generator import rock, try2link, ez4, ouo
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 
+next_page = False
+next_page_token = ""
 post_id = " "
 data_dict = {}
 main_dict = {}
@@ -36,7 +40,11 @@ def scrapper(update, context):
     link = None
     if message.reply_to_message: link = message.reply_to_message.text
     else:
-        link = message.text.split(' ', 1)
+        link = message.text.split('\n', 1)
+        if len(link) == 3:
+            userindex = link[1]
+            passindex = link[2]
+        link = link[0].split(' ', 1)
         if len(link) == 2:
             link = link[1]
         else:
@@ -382,6 +390,17 @@ def scrapper(update, context):
                         if len(gd_txt) > 4000:
                             sent = sendMessage("<i>Running More Scrape ...</i>", context.bot, update.message)
                             gd_txt = ""
+    elif rematch(r'https?://.+\/\d+\:\/', link):
+       # indexScrape()
+        x = 0
+        payload = {"page_token":next_page_token, "page_index": x}	
+        print(f"Index Link: {url}\n\n")
+       # print(func(payload, url, username, password))
+
+        while next_page == True:
+            payload = {"page_token":next_page_token, "page_index": x}
+           # print(func(payload, url, username, password))
+            x += 1
     else:
         res = rget(link)
         soup = BeautifulSoup(res.text, 'html.parser')
