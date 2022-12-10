@@ -44,9 +44,7 @@ def __onDownloadStarted(api, gid):
                 if not download.is_torrent:
                     sleep(3)
                     download = download.live
-            user_id = listener.message.from_user.id
-            IS_USRTD = user_data[user_id].get('is_usertd') if user_id in user_data and user_data[user_id].get('is_usertd') else False
-            if STOP_DUPLICATE and not dl.listener().isLeech and IS_USRTD == False:
+            if STOP_DUPLICATE and not dl.listener().isLeech:
                 LOGGER.info('Checking File/Folder if already in Drive...')
                 sname = download.name
                 if listener.isZip:
@@ -66,6 +64,7 @@ def __onDownloadStarted(api, gid):
                         else:
                             return sendFile(listener.bot, listener.message, f_name, f"Here are the search results:\n\n{smsg}")
                             
+            user_id = listener.message.from_user.id
             if any([ZIP_UNZIP_LIMIT, LEECH_LIMIT, TORRENT_DIRECT_LIMIT, STORAGE_THRESHOLD]) and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id):
                 sleep(1)
                 limit = None
