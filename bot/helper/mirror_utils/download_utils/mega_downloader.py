@@ -141,6 +141,7 @@ def add_mega_download(mega_link: str, path: str, listener, name: str):
     folder_api = None
     mega_listener = MegaAppListener(executor.continue_event, listener)
     api.addListener(mega_listener)
+    user_id = listener.message.from_user.id
     if MEGA_EMAIL_ID and MEGA_PASSWORD:
         executor.do(api.login, (MEGA_EMAIL_ID, MEGA_PASSWORD))
     if get_mega_link_type(mega_link) == "file":
@@ -158,7 +159,8 @@ def add_mega_download(mega_link: str, path: str, listener, name: str):
             folder_api.removeListener(mega_listener)
         return
     mname = name or node.getName()
-    if config_dict['STOP_DUPLICATE'] and not listener.isLeech:
+    IS_USRTD = user_data[user_id].get('is_usertd') if user_id in user_data and user_data[user_id].get('is_usertd') else False
+    if config_dict['STOP_DUPLICATE'] and not listener.isLeech and IS_USRTD == False:
         LOGGER.info('Checking File/Folder if already in Drive')
         if listener.isZip:
             mname = f"{mname}.zip"

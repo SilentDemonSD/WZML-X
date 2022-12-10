@@ -156,7 +156,9 @@ def __stop_duplicate(client, tor):
     download = getDownloadByGid(tor.hash[:12])
     try:
         listener = download.listener()
-        if not listener.select and not listener.isLeech:
+        user_id = listener.message.from_user.id
+        IS_USRTD = user_data[user_id].get('is_usertd') if user_id in user_data and user_data[user_id].get('is_usertd') else False
+        if not listener.select and not listener.isLeech and IS_USRTD == False:
             LOGGER.info('Checking File/Folder if already in Drive')
             qbname = tor.content_path.rsplit('/', 1)[-1].rsplit('.!qB', 1)[0]
             if listener.isZip:
