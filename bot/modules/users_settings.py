@@ -35,7 +35,7 @@ def get_user_settings(from_user, key=None):
     elif key == 'universal':
         userlog = user_dict['userlog'] if user_dict and user_dict.get('userlog') else "Not Exists"
         gdx = user_dict['gdx'] if user_dict and user_dict.get('gdx') else "Not Exists"
-        is_gdx = user_dict['is_gdx'] if user_dict and user_dict.get('is_gdx') else "false"
+#         is_gdx = user_dict['is_gdx'] if user_dict and user_dict.get('is_gdx') else "false"
         imdb = user_dict['imdb_temp'] if user_dict and user_dict.get('imdb_temp') else "Not Exists"
         anilist = user_dict['ani_temp'] if user_dict and user_dict.get('ani_temp') else "Not Exists"
         ytq = user_dict['yt_ql'] if user_dict and user_dict.get('yt_ql') else config_dict['YT_DLP_QUALITY'] if config_dict['YT_DLP_QUALITY'] else "Not Exists"
@@ -46,6 +46,13 @@ def get_user_settings(from_user, key=None):
         else:
             ltype = "MEDIA"
             buttons.sbutton("Send As Document", f"userset {user_id} doc")
+            
+        if user_dict and user_dict.get('is_gdx'):
+            ltype = "True"
+            buttons.sbutton("Disable GDX", f"userset {user_id} gdxon")
+        else:
+            ltype = "False"
+            buttons.sbutton("Enable GDX", f"userset {user_id} gdxoff")
 
         if ospath.exists(thumbpath):
             thumbmsg = "Exists"
@@ -85,7 +92,6 @@ def get_user_settings(from_user, key=None):
 ├ Custom Thumbnail : <b>{thumbmsg}</b>
 ├ YT-DLP Quality is : <b>{escape(ytq)}</b>
 ├ UserLog : <b>{userlog}</b>
-├ GDX Mirror : <b>{is_gdx}</b>
 ├ GDX : <b>{gdx}</b>
 ├ IMDB : <b>{imdbval if imdbval else imdb}</b>
 ├ AniList : <b>{anival if anival else anilist}</b>
@@ -208,6 +214,18 @@ def edit_user_settings(update, context):
     elif data[2] == "med":
         update_user_ldata(user_id, 'as_doc', False)
         query.answer(text="Your File Will Deliver As Media!", show_alert=True)
+        update_user_settings(message, query.from_user, 'universal')
+        if DATABASE_URL:
+            DbManger().update_user_data(user_id)
+    elif data[2] == "gdxon":
+        update_user_ldata(user_id, 'is_gdx', True)
+        query.answer(text="Your Files Will Be Mirrored/Cloned ON Your Personal TD!", show_alert=True)
+        update_user_settings(message, query.from_user, 'universal')
+        if DATABASE_URL:
+            DbManger().update_user_data(user_id)
+    elif data[2] == "gdxoff":
+        update_user_ldata(user_id, 'is_gdx', False)
+        query.answer(text="Your Files Will Be Mirrorred/Cloned ON Global TD!", show_alert=True)
         update_user_settings(message, query.from_user, 'universal')
         if DATABASE_URL:
             DbManger().update_user_data(user_id)
