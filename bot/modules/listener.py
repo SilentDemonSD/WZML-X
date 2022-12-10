@@ -480,8 +480,9 @@ class MirrorLeechListener:
             LOGGER.info(f'Done Uploading {file_}')
             IndexURL = ''
             IS_GDX = user_data[user_id_].get('is_gdx') if user_id_ in user_data and user_data[user_id_].get('is_gdx') else False
-            IS_PAID = is_paid(user_id_)
-            if (config_dict['PAID_SERVICE'] != True and IS_GDX == True) or (config_dict['PAID_SERVICE'] == True and IS_PAID == True and IS_GDX == True):
+#             IS_PAID = is_paid(user_id_)
+            if IS_GDX:
+                LOGGER.info("Using USER TD!")
                 userDest = user_data[user_id_].get('gdx') if user_id_ in user_data and user_data[user_id_].get('gdx') else ''
                 if len(userDest) != 0:
                     arrForUser = userDest.split()
