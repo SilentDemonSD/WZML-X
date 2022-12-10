@@ -60,7 +60,7 @@ class GoogleDriveHelper:
         self.name = name
         self.processed_bytes = 0
         self.transferred_size = 0
-        self.__user_settings()
+#         self.__user_settings()
         self.__service_account_index = 0
         self.__service = self.__authorize()
 
@@ -987,6 +987,6 @@ class GoogleDriveHelper:
             LOGGER.info(f"Cancelling Upload: {self.name}")
             self.__listener.onUploadError('your upload has been stopped and uploaded data has been deleted!')
 
-    def __user_settings(self):
-        user_id = self.__listener.message.from_user.id
-        user_dict = user_data.get(user_id, False)            
+#     def __user_settings(self):
+#         user_id = self.__listener.message.from_user.id
+#         user_dict = user_data.get(user_id, False)            
