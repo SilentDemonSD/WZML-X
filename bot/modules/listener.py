@@ -14,7 +14,7 @@ from threading import Thread
 from telegram import ParseMode, InlineKeyboardButton
 
 from bot import *
-from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_gdtot_link, is_mega_link, is_gdrive_link, get_content_type, get_readable_time, change_filename
+from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_gdtot_link, is_mega_link, is_gdrive_link, get_content_type, get_readable_time, change_filename, is_paid
 from bot.helper.ext_utils.fs_utils import get_base_name, get_path_size, split_file, clean_download, clean_target
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException, NotSupportedExtractionArchive
 from bot.helper.mirror_utils.status_utils.extract_status import ExtractStatus
@@ -479,12 +479,15 @@ class MirrorLeechListener:
                 buttons.buildbutton("☁️ Drive Link", link)
             LOGGER.info(f'Done Uploading {file_}')
             IndexURL = ''
-            userDest = user_data[user_id_].get('gdx') if user_id_ in user_data and user_data[user_id_].get('gdx') else ''
-            if len(userDest) != 0:
-                arrForUser = userDest.split()
-                if len(arrForUser) > 1:
-                    IndexURL = arrForUser[1].rstrip('/')
-            INDEXURL = IndexURL if len(IndexURL) != 0 else config_dict['INDEX_URL']                    
+            IS_GDX = user_data[user_id_].get('is_gdx').lower if user_id_ in user_data and user_data[user_id_].get('is_gdx') else 'false'
+            IS_PAID = is_paid(user_id_)
+            if (config_dict['PAID_SERVICE'].lower() != 'true' and IS_GDX == 'true') or (config_dict['PAID_SERVICE'].lower() == 'true' and IS_PAID == True and IS_GDX.lower() == 'true'):
+                userDest = user_data[user_id_].get('gdx') if user_id_ in user_data and user_data[user_id_].get('gdx') else ''
+                if len(userDest) != 0:
+                    arrForUser = userDest.split()
+                    if len(arrForUser) > 1:
+                        IndexURL = arrForUser[1].rstrip('/')
+            INDEXURL = IndexURL if len(IndexURL) != 0 else config_dict['INDEX_URL']
             if INDEX_URL:= INDEXURL:
                 url_path = rutils.quote(f'{file_}')
                 share_url = f'{INDEX_URL}/{url_path}'
