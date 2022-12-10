@@ -6,7 +6,7 @@ from copy import deepcopy
 from re import S, match as rematch, findall, sub as resub, compile as recompile
 from asyncio import sleep as asleep
 from time import sleep
-from urllib.parse import urlparse, unquote
+from urllib.parse import urlparse, unquote, quote
 from requests import get as rget, head as rhead, post as rpost
 from bs4 import BeautifulSoup, NavigableString, Tag
 from base64 import b64decode
@@ -40,6 +40,7 @@ def scrapper(update, context):
     link = None
     if message.reply_to_message: link = message.reply_to_message.text
     else:
+        userindex, passindex = 'none', 'none'
         link = message.text.split('\n', 1)
         if len(link) == 3:
             userindex = link[1]
@@ -391,16 +392,19 @@ def scrapper(update, context):
                             sent = sendMessage("<i>Running More Scrape ...</i>", context.bot, update.message)
                             gd_txt = ""
     elif rematch(r'https?://.+\/\d+\:\/', link):
-       # indexScrape()
-        x = 0
-        payload = {"page_token":next_page_token, "page_index": x}	
-        print(f"Index Link: {url}\n\n")
-       # print(func(payload, url, username, password))
+        sent = sendMessage('Running Scrape ...', context.bot, update.message)
+        gd_txt, no = "", 0
+        pgNo = 0
+        gd_txt += f"Index Link: {link}\n\n"
+        gd_txt += indexScrape({"page_token":next_page_token, "page_index": pgNo}, link, userindex, passindex)
 
         while next_page == True:
-            payload = {"page_token":next_page_token, "page_index": x}
-           # print(func(payload, url, username, password))
-            x += 1
+            gd_txt += indexScrape({"page_token":next_page_token, "page_index": pgNo}, link, userindex, passindex)
+            pgNo += 1
+        editMessage(gd_txt, sent)
+        if len(gd_txt) > 4000:
+            sent = sendMessage("<i>Running More Scrape ...</i>", context.bot, update.message)
+            gd_txt = ""
     else:
         res = rget(link)
         soup = BeautifulSoup(res.text, 'html.parser')
@@ -456,7 +460,49 @@ def ouo_parse(dict_key, button, loop_soup):
         try: decrypted_link= ouo(ouo_decrypt)
         except: decrypted_link = ouo_decrypt
         data_dict[dict_key].append([button.text.strip(), decrypted_link.strip()])  
-    except: looper(dict_key, str(button))
+    except: looper(dict_key, str(button))  
+
+def indexScrape(payload_input, url, username, password): 
+    global next_page 
+    global next_page_token
+    
+    url = url + "/" if  url[-1] != '/' else url
+         
+    try:
+        token = "Basic "+b64encode(f"{username}:{password}".encode()).decode()
+        headers = {"authorization":token}
+    except: 
+        return "username/password combination is wrong"
+
+    encrypted_response = rpost(url, data=payload_input, headers=headers)
+    if encrypted_response.status_code == 401: return "username/password combination is wrong"
+ 
+    try: decrypted_response = json.loads(b64decode((encrypted_response.text)[::-1][24:-20]).decode('utf-8'))
+    except: return "something went wrong. check index link/username/password field again"
+     
+    page_token = decrypted_response["nextPageToken"] 
+    if page_token == None: 
+        next_page = False 
+    else: 
+        next_page = True 
+        next_page_token = page_token 
+   
+    result = ""
+
+    if list(decrypted_response.get("data").keys())[0] == "error":
+        pass
+    else:
+        file_length = len(decrypted_response["data"]["files"])
+        for i, _ in enumerate(range(file_length)):
+            files_type = decrypted_response["data"]["files"][i]["mimeType"] 
+            files_name = decrypted_response["data"]["files"][i]["name"] 
+            if files_type == "application/vnd.google-apps.folder":
+                direct_download_link = url + quote(files_name) + '/'
+                result += f"• {files_name}:-\n{direct_download_link}\n\n"
+            else:
+                direct_download_link = url + quote(files_name)
+                result += f"• {files_name}:-\n{direct_download_link}\n\n"
+    return result
         
 srp_handler = CommandHandler(BotCommands.ScrapeCommand, scrapper,
                             filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
