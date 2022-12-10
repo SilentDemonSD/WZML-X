@@ -38,7 +38,7 @@ class GoogleDriveHelper:
         self.__G_DRIVE_BASE_DOWNLOAD_URL = "https://drive.google.com/uc?id={}&export=download"
         self.__G_DRIVE_DIR_BASE_DOWNLOAD_URL = "https://drive.google.com/drive/folders/{}"
         self.__listener = listener
-        self.__user_id = listener.message.from_user.id
+#         self.__user_id = listener.message.from_user.id
         self.__path = path
         self.__total_bytes = 0
         self.__total_files = 0
