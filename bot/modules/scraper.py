@@ -395,12 +395,15 @@ def scrapper(update, context):
         sent = sendMessage('Running Scrape ...', context.bot, update.message)
         gd_txt, no = "", 0
         pgNo = 0
+        LOGGER.info(userindex)
+        LOGGER.info(passindex)
         gd_txt += f"Index Link: {link}\n\n"
         gd_txt += indexScrape({"page_token":next_page_token, "page_index": pgNo}, link, userindex, passindex)
 
         while next_page == True:
             gd_txt += indexScrape({"page_token":next_page_token, "page_index": pgNo}, link, userindex, passindex)
             pgNo += 1
+
         editMessage(gd_txt, sent)
         if len(gd_txt) > 4000:
             sent = sendMessage("<i>Running More Scrape ...</i>", context.bot, update.message)
@@ -471,11 +474,13 @@ def indexScrape(payload_input, url, username, password):
     try:
         token = "Basic "+b64encode(f"{username}:{password}".encode()).decode()
         headers = {"authorization":token}
-    except: 
-        return "username/password combination is wrong"
+    except Exception as e:
+        LOGGER.info(e)
+        return "username/password combination"
 
     encrypted_response = rpost(url, data=payload_input, headers=headers)
-    if encrypted_response.status_code == 401: return "username/password combination is wrong"
+    if encrypted_response.status_code == 401: 
+        return "username/password combination is wrong"
  
     try: decrypted_response = json.loads(b64decode((encrypted_response.text)[::-1][24:-20]).decode('utf-8'))
     except: return "something went wrong. check index link/username/password field again"
