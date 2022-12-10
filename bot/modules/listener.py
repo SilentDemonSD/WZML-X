@@ -481,7 +481,7 @@ class MirrorLeechListener:
             IndexURL = ''
             IS_GDX = user_data[user_id_].get('is_gdx').lower if user_id_ in user_data and user_data[user_id_].get('is_gdx') else 'false'
             IS_PAID = is_paid(user_id_)
-            if (config_dict['PAID_SERVICE'].lower() != 'true' and IS_GDX == 'true') or (config_dict['PAID_SERVICE'].lower() == 'true' and IS_PAID == True and IS_GDX.lower() == 'true'):
+            if (config_dict['PAID_SERVICE'] != True and IS_GDX == 'true') or (config_dict['PAID_SERVICE'] == True and IS_PAID == True and IS_GDX == 'true'):
                 userDest = user_data[user_id_].get('gdx') if user_id_ in user_data and user_data[user_id_].get('gdx') else ''
                 if len(userDest) != 0:
                     arrForUser = userDest.split()
