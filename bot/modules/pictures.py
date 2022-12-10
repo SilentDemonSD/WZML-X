@@ -7,6 +7,7 @@ from bot import user_data, dispatcher, LOGGER, config_dict, DATABASE_URL, OWNER_
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, sendPhoto, deleteMessage, editPhoto
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
+from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.telegram_helper.button_build import ButtonMaker
 
 def picture_add(update, context):
@@ -43,6 +44,8 @@ def picture_add(update, context):
         editMessage(help_msg, editable)
         return
     config_dict['PICS'].append(pic_add)
+    if DATABASE_URL:
+        DbManger().update_config({'PICS': config_dict['PICS']})
     sleep(1.5)
     editMessage(f"<b><i>Successfully Added to Existing Random Pictures Status List!</i></b>\n\n<b>Total Pics :</b><code>{len(config_dict['PICS'])}</code>", editable)
 
@@ -79,6 +82,8 @@ def pics_callback(update, context):
         editPhoto(pic_info, message, config_dict['PICS'][ind], buttons.build_menu(2))
     elif data[2] == "remov":
         config_dict['PICS'].pop(int(data[3]))
+        if DATABASE_URL:
+            DbManger().update_config({'PICS': config_dict['PICS']})
         query.answer(text="Photo Successfully Deleted", show_alert=True)
         if len(config_dict['PICS']) == 0:
             query.message.delete()
