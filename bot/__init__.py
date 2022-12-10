@@ -372,6 +372,9 @@ SET_BOT_COMMANDS = SET_BOT_COMMANDS.lower() == 'true'
 IS_TEAM_DRIVE = environ.get('IS_TEAM_DRIVE', '')
 IS_TEAM_DRIVE = IS_TEAM_DRIVE.lower() == 'true'
 
+GDX_DEFAULT = environ.get('GDX_DEFAULT', '')
+GDX_DEFAULT = GDX_DEFAULT.lower() == 'false'
+
 USE_SERVICE_ACCOUNTS = environ.get('USE_SERVICE_ACCOUNTS', '')
 USE_SERVICE_ACCOUNTS = USE_SERVICE_ACCOUNTS.lower() == 'true'
 
@@ -668,13 +671,14 @@ config_dict = {'ANILIST_ENABLED': ANILIST_ENABLED,
                'DOWNLOAD_DIR': DOWNLOAD_DIR,
                'DATABASE_URL': DATABASE_URL,
                'DEF_IMDB_TEMP': DEF_IMDB_TEMP,
-               'DEF_ANI_TEMP': DEF_ANI_TEMP,
+               'DEF_ANI_TEMP': DEF_ANI_TEMP,  
                'DISABLE_DRIVE_LINK': DISABLE_DRIVE_LINK,
                'OWNER_ID': OWNER_ID,
                'EQUAL_SPLITS': EQUAL_SPLITS,
                'EXTENSION_FILTER': EXTENSION_FILTER,
                'EMOJI_THEME': EMOJI_THEME,
                'GDRIVE_ID': GDRIVE_ID,
+               'GDX_DEFAULT' : GDX_DEFAULT,
                'IGNORE_PENDING_REQUESTS': IGNORE_PENDING_REQUESTS,
                'INCOMPLETE_TASK_NOTIFIER': INCOMPLETE_TASK_NOTIFIER,
                'INDEX_URL': INDEX_URL,
