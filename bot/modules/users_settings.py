@@ -49,10 +49,10 @@ def get_user_settings(from_user, key=None):
             
         if not user_dict and config_dict['GDX_DEFAULT'] or user_dict and user_dict.get('is_gdx'):
             ltype = "True"
-            buttons.sbutton("Disable GDX", f"userset {user_id} gdxon")
+            buttons.sbutton("Disable GDX", f"userset {user_id} gdxoff")
         else:
             ltype = "False"
-            buttons.sbutton("Enable GDX", f"userset {user_id} gdxoff")
+            buttons.sbutton("Enable GDX", f"userset {user_id} gdxon")
 
         if ospath.exists(thumbpath):
             thumbmsg = "Exists"
