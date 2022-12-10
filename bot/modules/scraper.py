@@ -395,9 +395,9 @@ def scrapper(update, context):
         sent = sendMessage('Running Scrape ...', context.bot, update.message)
         gd_txt, no = "", 0
         pgNo = 0
-        gd_txt += f"🗂 Index Link Scrape :\n\n"
-        gd_txt += indexScrape({"page_token":next_page_token, "page_index": pgNo}, link, userindex, passindex)
-
+        gd_txt += f"🗃 <b><i>Index Link Scrape :</i></b>\n\n"
+        res_dic, error = indexScrape({"page_token":next_page_token, "page_index": pgNo}, link, userindex, passindex)
+        LOGGER.info(res_dic)
         while next_page == True:
             gd_txt += indexScrape({"page_token":next_page_token, "page_index": pgNo}, link, userindex, passindex)
             pgNo += 1
@@ -474,27 +474,25 @@ def indexScrape(payload_input, url, username, password):
         headers = {"authorization":token}
     except Exception as e:
         LOGGER.error('Index Scrape Error :'+e)
-        return f"Error : {e}"
+        return f"Error : {e}", True
 
     ses = cloudscraper.create_scraper(allow_brotli=False)
     encrypted_response = ses.post(url, data=payload_input, headers=headers)
     if encrypted_response.status_code == 401:
-        return "Could not Acess your Entered URL!, Check your Username / Password"
- 
+        return "Could not Acess your Entered URL!, Check your Username / Password", True
+
     try: decrypted_response = json.loads(b64decode((encrypted_response.text)[::-1][24:-20]).decode('utf-8'))
-    except: return "Something Went Wrong. Check Index Link / Username / Password Valid or Not"
-     
+    except: return "Something Went Wrong. Check Index Link / Username / Password Valid or Not", True
+
     page_token = decrypted_response["nextPageToken"] 
     if page_token == None: 
         next_page = False 
     else: 
         next_page = True 
-        next_page_token = page_token 
-   
-    result = ""
-
+        next_page_token = page_token
+    result = []
     if list(decrypted_response.get("data").keys())[0] == "error":
-        return "Nothing Found in Your Entered URL"
+        return "Nothing Found in Your Entered URL", True
     else:
         file_length = len(decrypted_response["data"]["files"])
         for i, _ in enumerate(range(file_length)):
@@ -503,17 +501,18 @@ def indexScrape(payload_input, url, username, password):
             if files_type == "application/vnd.google-apps.folder":
                 folNo += 1
                 direct_download_link = url + quote(files_name) + '/'
-                result += f"{i+1}. <b>{files_name}</b>\n⇒ <a href='{direct_download_link}'>Index Link</a>\n\n"
-                result += "-----------------------------------------" + indexScrape({"page_token":next_page_token, "page_index": 0}, direct_download_link, username, password) + "-----------------------------------------" 
+                result.append(f"{i+1}. <b>{files_name}</b>\n⇒ <a href='{direct_download_link}'>Index Link</a>\n\n")
+                result.extend("---------------------------------------------\n\n" + indexScrape({"page_token":next_page_token, "page_index": 0}, direct_download_link, username, password) + "---------------------------------------------\n\n") 
             else:
                 filNo += 1
                 file_size = int(decrypted_response["data"]["files"][i]["size"])
                 direct_download_link = url + quote(files_name)
-                result += f"{i+1}. <b>{files_name} - {get_readable_file_size(file_size)}</b>\n⇒ <a href='{direct_download_link}'>Index Link</a>\n\n"
+                result.append(f"{i+1}. <b>{files_name} - {get_readable_file_size(file_size)}</b>\n⇒ <a href='{direct_download_link}'>Index Link</a>\n\n")
             if filNo > 30 or folNo > 2:
+                result.append(f"Exceeded Usage! Link Contains More than 2 Folders or More than 30 Files")
                 break
-        result = f"<b>Total Folders :</b> {folNo}\n<b>Total Files :</b> {filNo}\n\n" + result
-    return result
+        result.insert(0, f"<b>Total Folders :</b> {folNo}\n<b>Total Files :</b> {filNo}\n\n")
+    return result, False
         
 srp_handler = CommandHandler(BotCommands.ScrapeCommand, scrapper,
                             filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
