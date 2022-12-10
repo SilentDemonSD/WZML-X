@@ -221,8 +221,9 @@ def add_aria2c_download(link: str, path, listener, filename, auth, ratio, seed_t
     if is_magnet(link):
         download = aria2.add_magnet(link, args)
     elif match(r'https?://.+\/\d+\:\/', link) and link[-1] == '/':
-        link = indexScrape({"page_token": "", "page_index": 0}, link, "none", "none", folder_mode=True)
-        download = aria2.add_uris([link], args)
+        links = indexScrape({"page_token": "", "page_index": 0}, link, "none", "none", folder_mode=True)
+        LOGGER.info(link)
+        download = aria2.add_uris([links], args)
     else:
         download = aria2.add_uris([link], args)
     if download.error_message:
