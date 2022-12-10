@@ -47,6 +47,7 @@ class MirrorLeechListener:
         self.dir = f"{DOWNLOAD_DIR}{self.uid}"
         self.select = select
         self.isPrivate = message.chat.type in ['private', 'group']
+        self.__user_settings()
         self.suproc = None
         self.user_id = self.message.from_user.id
         self.reply_to = self.message.reply_to_message
@@ -477,7 +478,14 @@ class MirrorLeechListener:
             else:
                 buttons.buildbutton("☁️ Drive Link", link)
             LOGGER.info(f'Done Uploading {file_}')
-            if INDEX_URL:= config_dict['INDEX_URL']:
+            IndexURL = ''
+            userDest = user_data[user_id_].get('gdx') if user_id_ in user_data and user_data[user_id_].get('gdx') else ''
+            if len(userDest) != 0:
+                arrForUser = userDest.split()
+                if len(arrForUser) > 1:
+                    IndexURL = arrForUser[1].rstrip('/')
+            INDEXURL = IndexURL if len(IndexURL) != 0 else config_dict['INDEX_URL']                    
+            if INDEX_URL:= INDEXURL:
                 url_path = rutils.quote(f'{file_}')
                 share_url = f'{INDEX_URL}/{url_path}'
                 if typ == "Folder":
@@ -634,3 +642,7 @@ class MirrorLeechListener:
             update_all_messages()
 
         if not self.isPrivate and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL:            DbManger().rm_complete_task(self.message.link)
+
+    def __user_settings(self):
+        user_id = self.__listener.message.from_user.id
+        user_dict = user_data.get(user_id, False)            
