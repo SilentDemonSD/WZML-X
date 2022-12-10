@@ -166,9 +166,10 @@ def _clone(message, bot):
     if is_gdrive_link(link):
         gd = GoogleDriveHelper()
         res, size, name, files = gd.helper(link)
+        IS_USRTD = user_data[user_id].get('is_usertd') if user_id in user_data and user_data[user_id].get('is_usertd') else False
         if res != "":
             return sendMessage(res, bot, message)
-        if config_dict['STOP_DUPLICATE']:
+        if config_dict['STOP_DUPLICATE'] and IS_USRTD == False:
             LOGGER.info('Checking File/Folder if already in Drive...')
             smsg, button = gd.drive_list(name, True, True)
             if smsg:
