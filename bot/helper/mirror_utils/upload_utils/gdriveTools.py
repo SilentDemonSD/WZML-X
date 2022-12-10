@@ -214,7 +214,7 @@ class GoogleDriveHelper:
         self.__updater = setInterval(self.__update_interval, self._progress)
         GDriveID = ''
         IndexURL = ''
-        userDest = user_data[user_id_].get('gdx') if user_id_ in user_data and user_data[user_id_].get('gdx') else ''
+        userDest = user_data[user_id].get('gdx') if user_id_ in user_data and user_data[user_id].get('gdx') else ''
         if len(userDest) != 0:
             arrForUser = userDest.split()
             GDriveID = arrForUser[0]
@@ -386,7 +386,7 @@ class GoogleDriveHelper:
         LOGGER.info(f"File ID: {file_id}")
         GDriveID = ''
         IndexURL = ''
-        userDest = user_data[user_id_].get('gdx') if user_id_ in user_data and user_data[user_id_].get('gdx') else ''
+        userDest = user_data[user_id].get('gdx') if user_id_ in user_data and user_data[user_id].get('gdx') else ''
         if len(userDest) != 0:
             arrForUser = userDest.split()
             GDriveID = arrForUser[0]
