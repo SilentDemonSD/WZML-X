@@ -401,11 +401,14 @@ def scrapper(update, context):
         while next_page == True:
             gd_txt += indexScrape({"page_token":next_page_token, "page_index": pgNo}, link, userindex, passindex)
             pgNo += 1
-
-        editMessage(gd_txt, sent)
-        if len(gd_txt) > 4000:
-            sent = sendMessage("<i>Running More Scrape ...</i>", context.bot, update.message)
-            gd_txt = ""
+        for txt in res_dic:
+            gd_txt += txt
+            if len(gd_txt) > 4000:
+                editMessage(gd_txt, sent)
+                sent = sendMessage("<i>Running More Scrape ...</i>", context.bot, update.message)
+                gd_txt = ""
+        if gd_txt != '':
+            editMessage(gd_txt, sent)
     else:
         res = rget(link)
         soup = BeautifulSoup(res.text, 'html.parser')
@@ -502,7 +505,8 @@ def indexScrape(payload_input, url, username, password):
                 folNo += 1
                 direct_download_link = url + quote(files_name) + '/'
                 result.append(f"{i+1}. <b>{files_name}</b>\n⇒ <a href='{direct_download_link}'>Index Link</a>\n\n")
-                result.extend(["---------------------------------------------\n\n"] + indexScrape({"page_token":next_page_token, "page_index": 0}, direct_download_link, username, password) + ["---------------------------------------------\n\n"]) 
+                data, error = indexScrape({"page_token":next_page_token, "page_index": 0}, direct_download_link, username, password)
+                result.extend(["---------------------------------------------\n\n"] + data + ["---------------------------------------------\n\n"]) 
             else:
                 filNo += 1
                 file_size = int(decrypted_response["data"]["files"][i]["size"])
