@@ -502,7 +502,7 @@ def indexScrape(payload_input, url, username, password):
                 folNo += 1
                 direct_download_link = url + quote(files_name) + '/'
                 result.append(f"{i+1}. <b>{files_name}</b>\n⇒ <a href='{direct_download_link}'>Index Link</a>\n\n")
-                result.extend("---------------------------------------------\n\n" + indexScrape({"page_token":next_page_token, "page_index": 0}, direct_download_link, username, password) + "---------------------------------------------\n\n") 
+                result.extend(["---------------------------------------------\n\n"] + indexScrape({"page_token":next_page_token, "page_index": 0}, direct_download_link, username, password) + ["---------------------------------------------\n\n"]) 
             else:
                 filNo += 1
                 file_size = int(decrypted_response["data"]["files"][i]["size"])
