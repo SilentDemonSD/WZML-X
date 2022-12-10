@@ -644,5 +644,5 @@ class MirrorLeechListener:
         if not self.isPrivate and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL:            DbManger().rm_complete_task(self.message.link)
 
     def __user_settings(self):
-        user_id = self.__listener.message.from_user.id
+        user_id = self.message.from_user.id
         user_dict = user_data.get(user_id, False)            
