@@ -479,11 +479,10 @@ class MirrorLeechListener:
                 buttons.buildbutton("☁️ Drive Link", link)
             LOGGER.info(f'Done Uploading {file_}')
             IndexURL = ''
-            IS_GDX = user_data[user_id_].get('is_gdx') if user_id_ in user_data and user_data[user_id_].get('is_gdx') else False
-#             IS_PAID = is_paid(user_id_)
-            if IS_GDX:
+            IS_USRTD = user_data[user_id_].get('is_usertd') if user_id_ in user_data and user_data[user_id_].get('is_usertd') else False
+            if IS_USRTD:
                 LOGGER.info("Using USER TD!")
-                userDest = user_data[user_id_].get('gdx') if user_id_ in user_data and user_data[user_id_].get('gdx') else ''
+                userDest = user_data[user_id_].get('usertd') if user_id_ in user_data and user_data[user_id_].get('usertd') else ''
                 if len(userDest) != 0:
                     arrForUser = userDest.split()
                     if len(arrForUser) > 1:
