@@ -372,8 +372,8 @@ SET_BOT_COMMANDS = SET_BOT_COMMANDS.lower() == 'true'
 IS_TEAM_DRIVE = environ.get('IS_TEAM_DRIVE', '')
 IS_TEAM_DRIVE = IS_TEAM_DRIVE.lower() == 'true'
 
-GDX_DEFAULT = environ.get('GDX_DEFAULT', '')
-GDX_DEFAULT = GDX_DEFAULT.lower() == 'false'
+USR_TD_DEFAULT = environ.get('USR_TD_DEFAULT', '')
+USR_TD_DEFAULT = USR_TD_DEFAULT.lower() == 'false'
 
 USE_SERVICE_ACCOUNTS = environ.get('USE_SERVICE_ACCOUNTS', '')
 USE_SERVICE_ACCOUNTS = USE_SERVICE_ACCOUNTS.lower() == 'true'
