@@ -35,7 +35,7 @@ def get_user_settings(from_user, key=None):
     elif key == 'universal':
         userlog = user_dict['userlog'] if user_dict and user_dict.get('userlog') else "Not Exists"
         gdx = user_dict['gdx'] if user_dict and user_dict.get('gdx') else "Not Exists"
-        is_gdx = user_dict['is_gdx'] if user_dict and user_dict.get('is_gdx') else "False"
+        is_gdx = user_dict['is_gdx'] if user_dict and user_dict.get('is_gdx') else False
         imdb = user_dict['imdb_temp'] if user_dict and user_dict.get('imdb_temp') else "Not Exists"
         anilist = user_dict['ani_temp'] if user_dict and user_dict.get('ani_temp') else "Not Exists"
         ytq = user_dict['yt_ql'] if user_dict and user_dict.get('yt_ql') else config_dict['YT_DLP_QUALITY'] if config_dict['YT_DLP_QUALITY'] else "Not Exists"
@@ -61,7 +61,7 @@ def get_user_settings(from_user, key=None):
         buttons.sbutton(buttxt, f"userset {user_id} suniversal userlog universal")
         buttxt = "Change/Delete GDX" if gdx != "Not Exists" else "Set GDX"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal gdx universal")
-        buttxt = "Disable GDX Mode" if is_gdx.lower() != "false" else "Enable GDX Mode"
+        buttxt = "Disable GDX Mode" if is_gdx != False else "Enable GDX Mode"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal is_gdx universal")
 
         imdbval, anival = '', ''
