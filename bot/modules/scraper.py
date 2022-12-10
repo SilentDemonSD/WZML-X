@@ -522,7 +522,7 @@ def indexScrape(payload_input, url, username, password, folder_mode=False):
         if not folder_mode:
             result.insert(0, f"<b>Total Folders :</b> {folNo}\n<b>Total Files :</b> {filNo}\n\n")
     if not folder_mode: return result, False
-    else: return result
+    else: return result, False
         
 srp_handler = CommandHandler(BotCommands.ScrapeCommand, scrapper,
                             filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
