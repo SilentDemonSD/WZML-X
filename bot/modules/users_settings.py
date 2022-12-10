@@ -68,8 +68,6 @@ def get_user_settings(from_user, key=None):
         buttons.sbutton(buttxt, f"userset {user_id} suniversal userlog universal")
         buttxt = "Change/Delete GDX" if gdx != "Not Exists" else "Set GDX"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal gdx universal")
-        buttxt = "Disable GDX Mode" if is_gdx.lower != "false" else "Enable GDX Mode"
-        buttons.sbutton(buttxt, f"userset {user_id} suniversal is_gdx universal")
 
         imdbval, anival = '', ''
         if imdb != "Not Exists":
