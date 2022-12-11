@@ -47,7 +47,7 @@ def get_user_settings(from_user, key=None):
 
         if ospath.exists(thumbpath):
             thumbmsg = "Exists"
-            buttons.sbutton("Change/Delete Thumbnail", f"userset {user_id} sthumb")
+            buttons.sbutton("Change/Delete Thumbnail", f"userset {user_id} sthumb universal")
             buttons.sbutton("Show Thumbnail", f"userset {user_id} showthumb")
         else:
             thumbmsg = "Not Exists"
@@ -251,7 +251,7 @@ def edit_user_settings(update, context):
         if ospath.exists(thumbpath):
             menu = True
             buttons.sbutton("Delete", f"userset {user_id} dthumb")
-        buttons.sbutton("Back", f"userset {user_id} back {data[4]}")
+        buttons.sbutton("Back", f"userset {user_id} back {data[3]}")
         buttons.sbutton("Close", f"userset {user_id} close")
         editMessage('Send a photo to save it as custom Thumbnail.', message, buttons.build_menu(2) if menu else buttons.build_menu(1))
         partial_fnc = partial(set_thumb, omsg=message)
@@ -287,7 +287,7 @@ def edit_user_settings(update, context):
         handler_dict[user_id] = True
         buttons = ButtonMaker()
         if data[3] == 'caption':
-            buttons.sbutton("Set Font Style", f"userset {user_id} font")
+            buttons.sbutton("Set Font Style", f"userset {user_id} font leech")
         if user_id in user_data and user_data[user_id].get(data[3]):
             menu = True
             buttons.sbutton("Delete", f"userset {user_id} sremove {data[3]} {data[4]}")
@@ -329,7 +329,7 @@ def edit_user_settings(update, context):
         buttons.sbutton("Underline", f"userset {user_id} Underline")
         buttons.sbutton("Bold", f"userset {user_id} Bold")
         buttons.sbutton("Regular", f"userset {user_id} Regular")
-        buttons.sbutton("Back", f"userset {user_id} back {data[4]}")
+        buttons.sbutton("Back", f"userset {user_id} back {data[3]}")
         buttons.sbutton("Close", f"userset {user_id} close")
         btns = buttons.build_menu(2)
         if user_id in user_data and user_data[user_id].get('cfont'): cf = user_data[user_id]['cfont']
