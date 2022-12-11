@@ -70,7 +70,7 @@ def __onDownloadStarted(api, gid):
                 limit = None
                 size = download.total_length
                 arch = any([listener.isZip, listener.isLeech, listener.extract])
-                if STORAGE_THRESHOLD is not None:
+                if STORAGE_THRESHOLD:
                     acpt = check_storage_threshold(size, arch, True)
                     if not acpt:
                         msg = f'You must leave {STORAGE_THRESHOLD}GB free storage.'
@@ -79,18 +79,18 @@ def __onDownloadStarted(api, gid):
                             msg += f'\n#Buy Paid Service'
                         listener.onDownloadError(msg)
                         return api.remove([download], force=True, files=True)
-                if ZIP_UNZIP_LIMIT is not None and arch:
+                if ZIP_UNZIP_LIMIT and arch:
                     mssg = f'Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB'
                     limit = ZIP_UNZIP_LIMIT
-                if LEECH_LIMIT is not None and arch:
+                if LEECH_LIMIT and arch:
                     mssg = f'Leech limit is {LEECH_LIMIT}GB'
                     limit = LEECH_LIMIT
-                elif TORRENT_DIRECT_LIMIT is not None:
+                elif TORRENT_DIRECT_LIMIT:
                     mssg = f'Torrent/Direct limit is {TORRENT_DIRECT_LIMIT}GB'
                     limit = TORRENT_DIRECT_LIMIT
                 if config_dict['PAID_SERVICE'] is True:
                     mssg += f'\n#Buy Paid Service'
-                if limit is not None:
+                if limit:
                     LOGGER.info('Checking File/Folder Size...')
                     LOGGER.info(limit)
                     LOGGER.info(size)
