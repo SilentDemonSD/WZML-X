@@ -404,7 +404,8 @@ class MirrorLeechListener:
                 msg += f'\n<b>├ It Tooks:</b> {get_readable_time(time() - self.message.date.timestamp())}'
                 msg += f'\n<b>╰ #Leech_by: </b>{self.tag}\n\n'
 
-
+            if not self.isPrivate:
+                buttons.sbutton('Save This Message', 'save', 'footer')
 
             if not files:
                 if config_dict['PICS']:
