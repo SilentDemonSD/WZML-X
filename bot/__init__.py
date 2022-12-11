@@ -41,6 +41,8 @@ user_data = {}
 aria2_options = {}
 qbit_options = {}
 TIME_GAP_STORE = {}
+daily_tasks = {} # {user_id: [datetime(date), daily_tasks: int, leech, mirror]}
+
 GLOBAL_EXTENSION_FILTER = ['.aria2']
 
 try:
@@ -312,6 +314,9 @@ else:
 
 SEARCH_LIMIT = environ.get('SEARCH_LIMIT', '')
 SEARCH_LIMIT = 0 if len(SEARCH_LIMIT) == 0 else int(SEARCH_LIMIT)
+
+DAILY_TASK_LIMIT = environ.get('DAILY_TASK_LIMIT', '')
+DAILY_TASK_LIMIT = '' if len(DAILY_TASK_LIMIT) == 0 else int(DAILY_TASK_LIMIT)
 
 CMD_PERFIX = environ.get('CMD_PERFIX', '')
 
@@ -748,6 +753,7 @@ config_dict = {'ANILIST_ENABLED': ANILIST_ENABLED,
                'ZIP_UNZIP_LIMIT': ZIP_UNZIP_LIMIT,
                'LEECH_LIMIT': LEECH_LIMIT,
                'MEGA_LIMIT': MEGA_LIMIT,
+               'DAILY_TASK_LIMIT': DAILY_TASK_LIMIT,
                'TIME_GAP': TIME_GAP,
                'FINISHED_PROGRESS_STR': FINISHED_PROGRESS_STR,
                'UN_FINISHED_PROGRESS_STR': UN_FINISHED_PROGRESS_STR,
