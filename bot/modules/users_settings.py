@@ -34,7 +34,6 @@ def get_user_settings(from_user, key=None):
         button = buttons.build_menu(1)
     elif key == 'universal':
         userlog = user_dict['userlog'] if user_dict and user_dict.get('userlog') else "Not Exists"
-        usertd = user_dict['usertd'] if user_dict and user_dict.get('usertd') else "Not Exists"
         imdb = user_dict['imdb_temp'] if user_dict and user_dict.get('imdb_temp') else "Not Exists"
         anilist = user_dict['ani_temp'] if user_dict and user_dict.get('ani_temp') else "Not Exists"
         ytq = user_dict['yt_ql'] if user_dict and user_dict.get('yt_ql') else config_dict['YT_DLP_QUALITY'] if config_dict['YT_DLP_QUALITY'] else "Not Exists"
@@ -87,6 +86,7 @@ def get_user_settings(from_user, key=None):
         prefix = user_dict['mprefix'] if user_dict and user_dict.get('mprefix') else "Not Exists"
         suffix = user_dict['msuffix'] if user_dict and user_dict.get('msuffix') else "Not Exists"
         remname = user_dict['mremname'] if user_dict and user_dict.get('mremname') else "Not Exists"
+        usertd = user_dict['usertd'] if user_dict and user_dict.get('usertd') else "Not Exists"
 
         buttxt = "Change/Delete Prefix" if prefix != "Not Exists" else "Set Prefix"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal mprefix mirror")
