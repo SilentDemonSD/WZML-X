@@ -159,7 +159,7 @@ def load_config():
         user_data['link_logs'] = [int(id_.strip()) for id_ in aid]
 
     SAVE_MSG = environ.get('SAVE_MSG', '')
-    SAVE_MSG SAVE_MSG.lower() == 'true'
+    SAVE_MSG = SAVE_MSG.lower() == 'true'
 
     EXTENSION_FILTER = environ.get('EXTENSION_FILTER', '')
     if len(EXTENSION_FILTER) > 0:
