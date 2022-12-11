@@ -14,7 +14,9 @@ def add_gd_download(link, path, listener, newname, is_gdtot, is_unified, is_udri
         return sendMessage(res, listener.bot, listener.message)
     if newname:
         name = newname
-    if config_dict['STOP_DUPLICATE'] and not listener.isLeech:
+    user_id = listener.message.from_user.id
+    IS_USRTD = user_data[user_id].get('is_usertd') if user_id in user_data and user_data[user_id].get('is_usertd') else False
+    if config_dict['STOP_DUPLICATE'] and not listener.isLeech and IS_USRTD == False:
         LOGGER.info('Checking File/Folder if already in Drive...')
         if listener.isZip:
             gname = f"{name}.zip"
@@ -35,7 +37,6 @@ def add_gd_download(link, path, listener, newname, is_gdtot, is_unified, is_udri
                     cap = f"File/Folder is already available in Drive. Here are the search results:\n\n{cap}"
                     sendFile(listener.bot, listener.message, f_name, cap)
                     return
-    user_id = listener.message.from_user.id
     TORRENT_DIRECT_LIMIT = config_dict['TORRENT_DIRECT_LIMIT']
     ZIP_UNZIP_LIMIT = config_dict['ZIP_UNZIP_LIMIT']
     LEECH_LIMIT = config_dict['LEECH_LIMIT']
