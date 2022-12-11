@@ -213,7 +213,7 @@ class GoogleDriveHelper:
         self.__updater = setInterval(self.__update_interval, self._progress)
         GDriveID = ''
         IS_USRTD = user_data[user_id].get('is_usertd') if user_id in user_data and user_data[user_id].get('is_usertd') else False
-#         IS_PAID = is_paid(user_id)
+        #IS_PAID = is_paid(user_id)
         if IS_USRTD:
             LOGGER.info("Using USER TD!")
             userDest = user_data[user_id].get('usertd') if user_id in user_data and user_data[user_id].get('usertd') else ''
@@ -482,7 +482,7 @@ class GoogleDriveHelper:
             else:
                 msg = f"Error.\n{err}"
             return msg, ""
-        return msg, buttons.build_menu(2)
+        return msg, buttons
 
     def __cloneFolder(self, name, local_path, folder_id, dest_id, user_id):
         LOGGER.info(f"Syncing: {local_path}")
