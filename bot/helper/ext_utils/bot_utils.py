@@ -10,7 +10,7 @@ from requests import head as rhead
 from urllib.request import urlopen
 
 from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot import download_dict, download_dict_lock, botStartTime, DOWNLOAD_DIR, user_data, config_dict
+from bot import download_dict, download_dict_lock, daily_tasks, botStartTime, DOWNLOAD_DIR, user_data, config_dict
 from bot.helper.telegram_helper.button_build import ButtonMaker
 
 import shutil
@@ -537,6 +537,17 @@ def is_sudo(user_id):
     if user_id in user_data:
         return user_data[user_id].get('is_sudo')
     return False
+
+def getdailytasks(user_id):
+    if user_id in daily_tasks:
+        if daily_tasks[user_id][0] < datetime.today():
+            daily_tasks[user_id] = [datetime.today(), 0]
+            return 0
+        else:
+            return daily_tasks[user_id][1]
+    else:
+        daily_tasks[user_id] = [datetime.today(), 0]
+        return 0
 
 def is_paid(user_id):
     if config_dict['PAID_SERVICE'] is True:
