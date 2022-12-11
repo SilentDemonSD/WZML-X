@@ -25,7 +25,6 @@ def __onDownloadStarted(api, gid):
                         deleteMessage(listener.bot, meta)
                         break
                     download = download.live
-        return
     else:
         LOGGER.info(f'onDownloadStarted: {download.name} - Gid: {gid}')
     try:
