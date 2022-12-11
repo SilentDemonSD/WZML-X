@@ -158,6 +158,9 @@ def load_config():
         aid = LINK_LOGS.split(' ')
         user_data['link_logs'] = [int(id_.strip()) for id_ in aid]
 
+    SAVE_MSG = environ.get('SAVE_MSG', '')
+    SAVE_MSG SAVE_MSG.lower() == 'true'
+
     EXTENSION_FILTER = environ.get('EXTENSION_FILTER', '')
     if len(EXTENSION_FILTER) > 0:
         fx = EXTENSION_FILTER.split()
@@ -661,6 +664,7 @@ def load_config():
                         'STATUS_LIMIT': STATUS_LIMIT,
                         'STATUS_UPDATE_INTERVAL': STATUS_UPDATE_INTERVAL,
                         'STOP_DUPLICATE': STOP_DUPLICATE,
+                        'SAVE_MSG': SAVE_MSG,
                         'SUDO_USERS': SUDO_USERS,
                         'TGH_THUMB': TGH_THUMB,
                         'TELEGRAM_API': TELEGRAM_API,
