@@ -94,7 +94,8 @@ def __onDownloadStarted(api, gid):
                     LOGGER.info('Checking File/Folder Size...')
                     LOGGER.info(limit)
                     LOGGER.info(size)
-                    if size > int(limit) * 1024**3:
+                    LOGGER.info(mssg)
+                    if size > limit * 1024**3:
                         listener.onDownloadError(f'{mssg}.\nYour File/Folder size is {get_readable_file_size(size)}')
                         return api.remove([download], force=True, files=True)
     except Exception as e:
@@ -224,6 +225,9 @@ def add_aria2c_download(link: str, path, listener, filename, auth, ratio, seed_t
         download = aria2.add_magnet(link, args)
     elif match(r'https?://.+\/\d+\:\/', link) and link[-1] == '/':
         links, error = indexScrape({"page_token": "", "page_index": 0}, link, "none", "none", folder_mode=True)
+        if error:
+            LOGGER.info(f"Download Error: {links}")
+            return sendMessage(links, listener.bot, listener.message)
         for link in links:
             download = aria2.add_uris([link], args)
     else:
