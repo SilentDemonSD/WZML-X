@@ -538,9 +538,11 @@ def is_sudo(user_id):
         return user_data[user_id].get('is_sudo')
     return False
 
-def getdailytasks(user_id):
+def getdailytasks(user_id, task=False):
     if user_id in daily_tasks:
-        if daily_tasks[user_id][0] < datetime.today():
+        userdate = daily_tasks[user_id][0]
+        nowdate = datetime.today()
+        if userdate.year <= nowdate.year and userdate.month <= nowdate.month and userdate.day < nowdate.day:
             daily_tasks[user_id] = [datetime.today(), 0]
             return 0
         else:
