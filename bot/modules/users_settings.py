@@ -147,7 +147,7 @@ def get_user_settings(from_user, key=None):
         if not ex_date: ex_date = 'Not Specified'
         text += f"├ User Plan : <b>{uplan}</b>"
         text += f"╰ Expiry Date : <b>{ex_date}</b>"
-    else: text += f"╰ User Plan : <b>{uplan}</b>"
+    elif key: text += f"╰ User Plan : <b>{uplan}</b>"
     return text, button
 
 def update_user_settings(message, from_user, key):
