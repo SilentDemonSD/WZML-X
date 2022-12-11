@@ -47,10 +47,10 @@ def get_user_settings(from_user, key=None):
             buttons.sbutton("Send As Document", f"userset {user_id} doc")
             
         if not user_dict and config_dict['USR_TD_DEFAULT'] or user_dict and user_dict.get('is_usertd'):
-            ltype = "True"
+            usertdstatus = "True"
             buttons.sbutton("Disable User TD", f"userset {user_id} usertdxoff")
         else:
-            ltype = "False"
+            usertdstatus = "False"
             buttons.sbutton("Enable User TD", f"userset {user_id} usertdxon")
 
         if ospath.exists(thumbpath):
@@ -89,6 +89,7 @@ def get_user_settings(from_user, key=None):
 ├ Custom Thumbnail : <b>{thumbmsg}</b>
 ├ YT-DLP Quality is : <b>{escape(ytq)}</b>
 ├ UserLog : <b>{userlog}</b>
+├ User TD STATUS : <b>{usertdstatus}</b>
 ├ USER TeamDrive : <b>{usertd}</b>
 ├ IMDB : <b>{imdbval if imdbval else imdb}</b>
 ├ AniList : <b>{anival if anival else anilist}</b>
