@@ -551,7 +551,7 @@ def is_paid(user_id):
                             return False
             return True
         else: return False
-    else: return True
+    else: return False
 
 ONE, TWO, THREE = range(3)
 def pop_up_stats(update, context):
