@@ -265,7 +265,7 @@ try:
                 app.stop()
                 exit(1)
             TG_SPLIT_SIZE = 4194304000
-            LOGGER.info("Telegram Premium detected! Leech Limit upgraded to 4GB")
+            LOGGER.info("Telegram Premium Detected! Leech Limit upgraded to 4GB")
         elif (not DATABASE_URL) or (not RSS_CHAT_ID):
             premium_session.stop()
             LOGGER.info(f"Not using rss. if you want to use fill RSS_CHAT_ID and DATABASE_URL variables.")
@@ -670,8 +670,8 @@ config_dict = {'ANILIST_ENABLED': ANILIST_ENABLED,
                'DRIVEFIRE_CRYPT': DRIVEFIRE_CRYPT,
                'DOWNLOAD_DIR': DOWNLOAD_DIR,
                'DATABASE_URL': DATABASE_URL,
-               'DEF_IMDB_TEMP': DEF_IMDB_TEMP,
-               'DEF_ANI_TEMP': DEF_ANI_TEMP,  
+               'IMDB_TEMPLATE': DEF_IMDB_TEMP,
+               'ANIME_TEMPLATE': DEF_ANI_TEMP,  
                'DISABLE_DRIVE_LINK': DISABLE_DRIVE_LINK,
                'OWNER_ID': OWNER_ID,
                'EQUAL_SPLITS': EQUAL_SPLITS,

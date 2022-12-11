@@ -49,7 +49,7 @@ default_values = {'AUTO_DELETE_MESSAGE_DURATION': 30,
                   'TIMEZONE': 'Asia/Kolkata',
                   'SEARCH_LIMIT': 0,
                   'RSS_DELAY': 900,
-                  'DEF_ANI_TEMP': '''<b>{ro_title}</b>({na_title})
+                  'ANIME_TEMPLATE': '''<b>{ro_title}</b>({na_title})
                                      <b>Format</b>: <code>{format}</code>
                                      <b>Status</b>: <code>{status}</code>
                                      <b>Start Date</b>: <code>{startdate}</code>
@@ -64,7 +64,7 @@ default_values = {'AUTO_DELETE_MESSAGE_DURATION': 30,
                                      <b>Studios</b>: {studios}
 
                                      <b>Description</b>: <i>{description}</i>''',
-                  'DEF_IMDB_TEMP': '''<b>Title: </b> {title} [{year}]
+                  'IMDB_TEMPLATE': '''<b>Title: </b> {title} [{year}]
                                       <b>Also Known As:</b> {aka}
                                       <b>Rating ⭐️:</b> <i>{rating}</i>
                                       <b>Release Info: </b> <a href="{url_releaseinfo}">{release_date}</a>
@@ -732,8 +732,8 @@ def load_config():
                         'PIXABAY_SEARCH': PIXABAY_SEARCH,
                         'NAME_FONT': NAME_FONT,
                         'CAPTION_FONT': CAPTION_FONT,
-                        'DEF_IMDB_TEMP': DEF_IMDB_TEMP,
-                        'DEF_ANI_TEMP': DEF_ANI_TEMP,
+                        'IMDB_TEMPLATE': DEF_IMDB_TEMP,
+                        'ANIME_TEMPLATE': DEF_ANI_TEMP,
                         'DISABLE_DRIVE_LINK': DISABLE_DRIVE_LINK,
                         'SOURCE_LINK': SOURCE_LINK,
                         'START_BTN1_NAME': START_BTN1_NAME,
