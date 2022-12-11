@@ -59,6 +59,7 @@ def pictures(update, context):
         buttons.sbutton("<<", f"pics {user_id} turn -1")
         buttons.sbutton(">>", f"pics {user_id} turn 1")
         buttons.sbutton("Remove Photo", f"pics {user_id} remov 0")
+        buttons.sbutton("Close", f"pics {user_id}")
         deleteMessage(context.bot, to_edit)
         sendPhoto(f'🌄 <b>Picture No. : 1 / {len(config_dict["PICS"])}</b>', context.bot, update.message, config_dict['PICS'][0], buttons.build_menu(2))
 
@@ -79,6 +80,7 @@ def pics_callback(update, context):
         buttons.sbutton("<<", f"pics {data[1]} turn {ind-1}")
         buttons.sbutton(">>", f"pics {data[1]} turn {ind+1}")
         buttons.sbutton("Remove Photo", f"pics {data[1]} remov {ind}")
+        buttons.sbutton("Close", f"pics {data[1]}")
         editPhoto(pic_info, message, config_dict['PICS'][ind], buttons.build_menu(2))
     elif data[2] == "remov":
         config_dict['PICS'].pop(int(data[3]))
@@ -97,6 +99,11 @@ def pics_callback(update, context):
         buttons.sbutton(">>", f"pics {data[1]} turn {ind+1}")
         buttons.sbutton("Remove Photo", f"pics {data[1]} remov {ind}")
         editPhoto(pic_info, message, config_dict['PICS'][ind], buttons.build_menu(2))
+    else:
+        query.answer()
+        query.message.delete()
+        query.message.reply_to_message.delete()
+
 
 picture_add_handler = CommandHandler('addpic', picture_add,
                                     filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
