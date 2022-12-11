@@ -251,7 +251,7 @@ def edit_user_settings(update, context):
         if ospath.exists(thumbpath):
             menu = True
             buttons.sbutton("Delete", f"userset {user_id} dthumb")
-        buttons.sbutton("Back", f"userset {user_id} back")
+        buttons.sbutton("Back", f"userset {user_id} back {data[4]}")
         buttons.sbutton("Close", f"userset {user_id} close")
         editMessage('Send a photo to save it as custom Thumbnail.', message, buttons.build_menu(2) if menu else buttons.build_menu(1))
         partial_fnc = partial(set_thumb, omsg=message)
