@@ -329,7 +329,7 @@ def edit_user_settings(update, context):
         buttons.sbutton("Underline", f"userset {user_id} Underline")
         buttons.sbutton("Bold", f"userset {user_id} Bold")
         buttons.sbutton("Regular", f"userset {user_id} Regular")
-        buttons.sbutton("Back", f"userset {user_id} back")
+        buttons.sbutton("Back", f"userset {user_id} back {data[4]}")
         buttons.sbutton("Close", f"userset {user_id} close")
         btns = buttons.build_menu(2)
         if user_id in user_data and user_data[user_id].get('cfont'): cf = user_data[user_id]['cfont']
