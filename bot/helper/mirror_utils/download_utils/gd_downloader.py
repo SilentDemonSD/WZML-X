@@ -40,7 +40,7 @@ def add_gd_download(link, path, listener, newname, is_gdtot, is_unified, is_udri
     if any([ZIP_UNZIP_LIMIT, STORAGE_THRESHOLD, TORRENT_DIRECT_LIMIT, LEECH_LIMIT]) and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id):
         arch = any([listener.extract, listener.isZip])
         limit = None
-        if STORAGE_THRESHOLD is not None:
+        if STORAGE_THRESHOLD:
             acpt = check_storage_threshold(size, arch)
             if not acpt:
                 msg = f'You must leave {STORAGE_THRESHOLD}GB free storage.'
@@ -48,13 +48,13 @@ def add_gd_download(link, path, listener, newname, is_gdtot, is_unified, is_udri
                 if config_dict['PAID_SERVICE'] is True:
                     msg += f'\n#Buy Paid Service'
                 return sendMessage(msg, listener.bot, listener.message)
-        if ZIP_UNZIP_LIMIT is not None and arch:
+        if ZIP_UNZIP_LIMIT and arch:
             mssg = f'Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB'
             limit = ZIP_UNZIP_LIMIT
-        if LEECH_LIMIT is not None and listener.isLeech:
+        if LEECH_LIMIT and listener.isLeech:
             mssg = f'Leech limit is {LEECH_LIMIT}GB'
             limit = LEECH_LIMIT
-        elif TORRENT_DIRECT_LIMIT is not None:
+        elif TORRENT_DIRECT_LIMIT:
             mssg = f'Torrent/Direct limit is {TORRENT_DIRECT_LIMIT}GB'
             limit = TORRENT_DIRECT_LIMIT
         if config_dict['PAID_SERVICE'] is True:

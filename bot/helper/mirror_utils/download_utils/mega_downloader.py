@@ -198,10 +198,10 @@ def add_mega_download(mega_link: str, path: str, listener, name: str):
                     msg += f'\n#Buy Paid Service'
                 return sendMessage(msg, listener.bot, listener.message)
         limit = None
-        if ZIP_UNZIP_LIMIT is not None and arch:
+        if ZIP_UNZIP_LIMIT and arch:
             msg3 = f'Failed, Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(api.getSize(node))}.'
             limit = ZIP_UNZIP_LIMIT
-        if LEECH_LIMIT is not None and arch:
+        if LEECH_LIMIT and arch:
             msg3 = f'Failed, Leech limit is {LEECH_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(api.getSize(node))}.'
             limit = LEECH_LIMIT
         if MEGA_LIMIT is not None:

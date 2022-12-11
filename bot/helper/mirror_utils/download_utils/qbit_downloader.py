@@ -202,10 +202,10 @@ def __check_limits(client, tor):
                 __onDownloadError(msg, client, tor)
                 return
                 limit = None
-        if ZIP_UNZIP_LIMIT is not None and arch:
+        if ZIP_UNZIP_LIMIT and arch:
             mssg = f'Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB'
             limit = ZIP_UNZIP_LIMIT
-        if LEECH_LIMIT is not None and listener.isLeech:
+        if LEECH_LIMIT and listener.isLeech:
             mssg = f'Leech limit is {LEECH_LIMIT}GB'
             limit = LEECH_LIMIT
         elif TORRENT_DIRECT_LIMIT is not None:
