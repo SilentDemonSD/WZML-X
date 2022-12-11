@@ -284,6 +284,8 @@ def load_config():
     USER_TASKS_LIMIT = environ.get('USER_TASKS_LIMIT', '')
     USER_TASKS_LIMIT = '' if len(USER_TASKS_LIMIT) == 0 else int(USER_TASKS_LIMIT)
 
+    DAILY_TASK_LIMIT = environ.get('DAILY_TASK_LIMIT', '')
+    DAILY_TASK_LIMIT = '' if len(DAILY_TASK_LIMIT) == 0 else int(DAILY_TASK_LIMIT)
 
     INCOMPLETE_TASK_NOTIFIER = environ.get('INCOMPLETE_TASK_NOTIFIER', '')
     INCOMPLETE_TASK_NOTIFIER = INCOMPLETE_TASK_NOTIFIER.lower() == 'true'
@@ -715,6 +717,7 @@ def load_config():
                         'TOTAL_TASKS_LIMIT': TOTAL_TASKS_LIMIT,
                         'USER_TASKS_LIMIT': USER_TASKS_LIMIT,
                         'STORAGE_THRESHOLD': STORAGE_THRESHOLD,
+                        'DAILY_TASK_LIMIT': DAILY_TASK_LIMIT,
                         'TORRENT_DIRECT_LIMIT': TORRENT_DIRECT_LIMIT,
                         'ZIP_UNZIP_LIMIT': ZIP_UNZIP_LIMIT,
                         'CLONE_LIMIT': CLONE_LIMIT,
