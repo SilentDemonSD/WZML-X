@@ -26,17 +26,13 @@ def add_gd_download(link, path, listener, newname, is_gdtot, is_unified, is_udri
             except:
                 gname = None
         if gname is not None:
-            if config_dict['TELEGRAPH_STYLE']:
-                gmsg, button = GoogleDriveHelper().drive_list(gname, True)
-                if gmsg:
-                    msg = "File/Folder is already available in Drive.\nHere are the search results:"
-                    return sendMarkup(msg, listener.bot, listener.message, button)
-            else:
-                cap, f_name = GoogleDriveHelper().drive_list(gname, True)
-                if cap:
-                    cap = f"File/Folder is already available in Drive. Here are the search results:\n\n{cap}"
-                    sendFile(listener.bot, listener.message, f_name, cap)
-                    return
+            gmsg, button = GoogleDriveHelper().drive_list(gname, True)
+            if gmsg:
+                if config_dict['TELEGRAPH_STYLE']:
+                    return sendMarkup("File/Folder is already available in Drive.\nHere are the search results:", listener.bot, listener.message, button)
+                else:
+                    return sendFile(listener.bot, listener.message, button, f"File/Folder is already available in Drive. Here are the search results:\n\n{gmsg}")
+                    
     TORRENT_DIRECT_LIMIT = config_dict['TORRENT_DIRECT_LIMIT']
     ZIP_UNZIP_LIMIT = config_dict['ZIP_UNZIP_LIMIT']
     LEECH_LIMIT = config_dict['LEECH_LIMIT']

@@ -175,7 +175,7 @@ def add_mega_download(mega_link: str, path: str, listener, name: str):
                 if config_dict['TELEGRAPH_STYLE']:
                     sendMarkup("File/Folder is already available in Drive.\nHere are the search results:", listener.bot, listener.message, button)
                 else:
-                    sendFile(listener.bot, listener.message, f_name, f"File/Folder is already available in Drive. Here are the search results:\n\n{smsg}")
+                    sendFile(listener.bot, listener.message, button, f"File/Folder is already available in Drive. Here are the search results:\n\n{smsg}")
                 api.removeListener(mega_listener)
                 if folder_api is not None:
                     folder_api.removeListener(mega_listener)

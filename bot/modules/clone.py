@@ -176,7 +176,7 @@ def _clone(message, bot):
                 if config_dict['TELEGRAPH_STYLE']:
                     return sendMarkup("Someone already mirrored it for you !\nHere you go:", bot, message, button)
                 else:
-                    return sendFile(bot, message, f_name, f"File/Folder is already available in Drive. Here are the search results:\n\n{smsg}")
+                    return sendFile(bot, message, button, f"File/Folder is already available in Drive. Here are the search results:\n\n{smsg}")
 
         config_dict['CLONE_LIMIT']
         if CLONE_LIMIT != '' and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id):

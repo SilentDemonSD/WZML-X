@@ -63,7 +63,7 @@ def __onDownloadStarted(api, gid):
                         if config_dict['TELEGRAPH_STYLE']:
                             return sendMarkup("Here are the search results:", listener.bot, listener.message, button)
                         else:
-                            return sendFile(listener.bot, listener.message, f_name, f"Here are the search results:\n\n{smsg}")
+                            return sendFile(listener.bot, listener.message, button, f"Here are the search results:\n\n{smsg}")
                             
             if any([ZIP_UNZIP_LIMIT, LEECH_LIMIT, TORRENT_DIRECT_LIMIT, STORAGE_THRESHOLD]) and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id):
                 sleep(1)

@@ -106,7 +106,7 @@ class TelegramDownloadHelper:
                         if config_dict['TELEGRAPH_STYLE']:
                             return sendMarkup("File/Folder is already available in Drive.\nHere are the search results:", self.__listener.bot, self.__listener.message, button)
                         else:
-                            return sendFile(self.__listener.bot, self.__listener.message, f_name, f"File/Folder is already available in Drive. Here are the search results:\n\n{smsg}")
+                            return sendFile(self.__listener.bot, self.__listener.message, button, f"File/Folder is already available in Drive. Here are the search results:\n\n{smsg}")
                 if config_dict['STORAGE_THRESHOLD']:
                     arch = any([self.__listener.isZip, self.__listener.extract])
                     acpt = check_storage_threshold(size, arch)
