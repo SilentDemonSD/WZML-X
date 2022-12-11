@@ -208,6 +208,8 @@ def _clone(message, bot):
                     b_uname = bot.get_me().username
                     botstart = f"http://t.me/{b_uname}"
                     buttons.buildbutton("View links in PM", f"{botstart}")
+                    if config_dict['SAVE_MSG']:
+                        buttons.sbutton('Save This Message', 'save', 'footer')
                     if config_dict['PICS']:
                         sendPhoto(msg + botpm, bot, message, rchoice(config_dict['PICS']), buttons.build_menu(2))
                     else:
@@ -252,6 +254,8 @@ def _clone(message, bot):
                             b_uname = bot.get_me().username
                             botstart = f"http://t.me/{b_uname}"
                             buttons.buildbutton("View links in PM", f"{botstart}")
+                            if config_dict['SAVE_MSG']:
+                                buttons.sbutton('Save This Message', 'save', 'footer')
                             if config_dict['PICS']:
                                 sendPhoto(msg + botpm, bot, message, rchoice(config_dict['PICS']), buttons.build_menu(2))
                             else:
@@ -317,6 +321,8 @@ def _clone(message, bot):
    
             LOGGER.info(f'Cloning Done: {name}')
         if not config_dict['FORCE_BOT_PM']:
+            if config_dict['SAVE_MSG'] and message.chat.type != 'private':
+                buttons.sbutton('Save This Message', 'save', 'footer')
             if config_dict['PICS']:
                 msg = sendPhoto(result + cc + pmwarn + logwarn + warnmsg, bot, message, rchoice(config_dict['PICS']), button)
             else:
