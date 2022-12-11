@@ -254,8 +254,6 @@ def _clone(message, bot):
                             b_uname = bot.get_me().username
                             botstart = f"http://t.me/{b_uname}"
                             buttons.buildbutton("View links in PM", f"{botstart}")
-                            if config_dict['SAVE_MSG']:
-                                buttons.sbutton('Save This Message', 'save', 'footer')
                             if config_dict['PICS']:
                                 sendPhoto(msg + botpm, bot, message, rchoice(config_dict['PICS']), buttons.build_menu(2))
                             else:
@@ -268,7 +266,7 @@ def _clone(message, bot):
                             if config_dict['PICS']:
                                 sendPhoto(result + cc, bot, message, rchoice(config_dict['PICS']), button)
                             else:
-                                sendMarkup(result + cc, bot, message, button)       
+                                sendMarkup(result + cc, bot, message, button.build_menu(2))       
                         message.delete()
                         reply_to = message.reply_to_message
                         if reply_to is not None and AUTO_DELETE_UPLOAD_MESSAGE_DURATION == -1:
@@ -315,18 +313,18 @@ def _clone(message, bot):
             cc = f'\n<b>╰👤 #Clone_By: </b>{tag}\n\n'
         else:
             cc = f'\n<b>╰ #Clone_By: </b>{tag}\n\n'
-        if button in ["cancelled", ""]:
+        if button.build_menu(2) in ["cancelled", ""]:
             sendMessage(f"{tag} {result}", bot, message)
         else:
    
             LOGGER.info(f'Cloning Done: {name}')
         if not config_dict['FORCE_BOT_PM']:
             if config_dict['SAVE_MSG'] and message.chat.type != 'private':
-                buttons.sbutton('Save This Message', 'save', 'footer')
+                button.sbutton('Save This Message', 'save', 'footer')
             if config_dict['PICS']:
-                msg = sendPhoto(result + cc + pmwarn + logwarn + warnmsg, bot, message, rchoice(config_dict['PICS']), button)
+                msg = sendPhoto(result + cc + pmwarn + logwarn + warnmsg, bot, message, rchoice(config_dict['PICS']), button.build_menu(2))
             else:
-                msg = sendMarkup(result + cc + pmwarn + logwarn + warnmsg, bot, message, button)
+                msg = sendMarkup(result + cc + pmwarn + logwarn + warnmsg, bot, message, button.build_menu(2))
             Thread(target=auto_delete_upload_message, args=(bot, message, msg)).start()
         if (is_gdtot or is_unified or is_udrive or is_sharer or is_sharedrive):
             gd.deletefile(link)
@@ -334,12 +332,12 @@ def _clone(message, bot):
         if 'mirror_logs' in user_data:
             try:
                 for chatid in user_data['mirror_logs']:
-                    bot.sendMessage(chat_id=chatid, text=result + cc, reply_markup=button, parse_mode=ParseMode.HTML)
+                    bot.sendMessage(chat_id=chatid, text=result + cc, reply_markup=button.build_menu(2), parse_mode=ParseMode.HTML)
             except Exception as e:
                 LOGGER.warning(e)
         if config_dict['BOT_PM'] and message.chat.type != 'private':
             try:
-                bot.sendMessage(message.from_user.id, text=result + cc, reply_markup=button,
+                bot.sendMessage(message.from_user.id, text=result + cc, reply_markup=button.build_menu(2),
                                 parse_mode=ParseMode.HTML)
             except Exception as e:
                 LOGGER.warning(e)
