@@ -181,6 +181,9 @@ if len(LINK_LOGS) != 0:
     aid = LINK_LOGS.split(' ')
     user_data['link_logs'] = [int(id_.strip()) for id_ in aid]
 
+SAVE_MSG = environ.get('SAVE_MSG', '')
+SAVE_MSG = SAVE_MSG.lower() == 'true'
+
 EXTENSION_FILTER = environ.get('EXTENSION_FILTER', '')
 if len(EXTENSION_FILTER) > 0:
     fx = EXTENSION_FILTER.split()
@@ -719,6 +722,7 @@ config_dict = {'ANILIST_ENABLED': ANILIST_ENABLED,
                'STATUS_LIMIT': STATUS_LIMIT,
                'STATUS_UPDATE_INTERVAL': STATUS_UPDATE_INTERVAL,
                'STOP_DUPLICATE': STOP_DUPLICATE,
+               'SAVE_MSG': SAVE_MSG,
                'SUDO_USERS': SUDO_USERS,
                'TELEGRAM_API': TELEGRAM_API,
                'TELEGRAM_HASH': TELEGRAM_HASH,
