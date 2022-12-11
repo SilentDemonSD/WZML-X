@@ -45,13 +45,6 @@ def get_user_settings(from_user, key=None):
         else:
             ltype = "MEDIA"
             buttons.sbutton("Send As Document", f"userset {user_id} doc")
-            
-        if not user_dict and config_dict['USR_TD_DEFAULT'] or user_dict and user_dict.get('is_usertd'):
-            usertdstatus = "True"
-            buttons.sbutton("Disable User TD", f"userset {user_id} usertdxoff")
-        else:
-            usertdstatus = "False"
-            buttons.sbutton("Enable User TD", f"userset {user_id} usertdxon")
 
         if ospath.exists(thumbpath):
             thumbmsg = "Exists"
@@ -65,8 +58,6 @@ def get_user_settings(from_user, key=None):
         buttons.sbutton(buttxt, f"userset {user_id} suniversal yt_ql universal")
         buttxt = "Change/Delete UserLog" if userlog != "Not Exists" else "Set UserLog"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal userlog universal")
-        buttxt = "Change/Delete User TD" if usertd != "Not Exists" else "Set User TD"
-        buttons.sbutton(buttxt, f"userset {user_id} suniversal usertd universal")
 
         imdbval, anival = '', ''
         if imdb != "Not Exists":
@@ -89,11 +80,8 @@ def get_user_settings(from_user, key=None):
 ├ Custom Thumbnail : <b>{thumbmsg}</b>
 ├ YT-DLP Quality is : <b>{escape(ytq)}</b>
 ├ UserLog : <b>{userlog}</b>
-├ User TD STATUS : <b>{usertdstatus}</b>
-├ USER TeamDrive : <b>{usertd}</b>
 ├ IMDB : <b>{imdbval if imdbval else imdb}</b>
 ├ AniList : <b>{anival if anival else anilist}</b>
-╰ User Plan : <b>{uplan}</b>
 '''
     elif key == 'mirror':
         prefix = user_dict['mprefix'] if user_dict and user_dict.get('mprefix') else "Not Exists"
@@ -106,16 +94,25 @@ def get_user_settings(from_user, key=None):
         buttons.sbutton(buttxt, f"userset {user_id} suniversal msuffix mirror")
         buttxt = "Change/Delete Remname" if remname != "Not Exists" else "Set Remname"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal mremname mirror")
+        if not user_dict and config_dict['USR_TD_DEFAULT'] or user_dict and user_dict.get('is_usertd'):
+            usertdstatus = "Enabled"
+            buttons.sbutton("Disable User TD", f"userset {user_id} usertdxoff")
+        else:
+            usertdstatus = "Disabled"
+            buttons.sbutton("Enable User TD", f"userset {user_id} usertdxon")
+        buttxt = "Change/Delete User TD" if usertd != "Not Exists" else "Set User TD"
+        buttons.sbutton(buttxt, f"userset {user_id} suniversal usertd mirror")
 
         buttons.sbutton("Back", f"userset {user_id} mback")
         buttons.sbutton("Close", f"userset {user_id} close")
         button = buttons.build_menu(2)
-        text = f'''<u>Mirror Settings for <a href='tg://user?id={user_id}'>{name}</a></u>
+        text = f'''<u>Mirror/Clone Settings for <a href='tg://user?id={user_id}'>{name}</a></u>
 
 ╭ Prefix : <b>{escape(prefix)}</b>
 ├ Suffix : <b>{suffix}</b>
 ├ Remname : <b>{escape(remname)}</b>
-╰ User Plan : <b>{uplan}</b>
+├ User TD STATUS : <b>{usertdstatus}</b>
+├ USER TeamDrive : <b>{usertd}</b>
 '''
     elif key == 'leech':
         prefix = user_dict['prefix'] if user_dict and user_dict.get('prefix') else "Not Exists"
@@ -144,12 +141,13 @@ def get_user_settings(from_user, key=None):
 ├ Caption : <b>{escape(caption)}</b>
 ├ CapFont : {cfont}
 ├ Remname : <b>{escape(remname)}</b>
-╰ User Plan : <b>{uplan}</b>
 '''
     if uplan == "Paid User" and key:
         ex_date = user_dict.get('expiry_date', False)
         if not ex_date: ex_date = 'Not Specified'
+        text += f"├ User Plan : <b>{uplan}</b>"
         text += f"╰ Expiry Date : <b>{ex_date}</b>"
+    else: text += f"╰ User Plan : <b>{uplan}</b>"
     return text, button
 
 def update_user_settings(message, from_user, key):
@@ -217,14 +215,14 @@ def edit_user_settings(update, context):
             DbManger().update_user_data(user_id)
     elif data[2] == "usertdxon":
         update_user_ldata(user_id, 'is_usertd', True)
-        query.answer(text="Your Files Will Be Mirrored/Cloned ON Your Personal TD!", show_alert=True)
-        update_user_settings(message, query.from_user, 'universal')
+        query.answer(text="Now, Your Files Will Be Mirrored/Cloned ON Your Personal TD!", show_alert=True)
+        update_user_settings(message, query.from_user, 'mirror')
         if DATABASE_URL:
             DbManger().update_user_data(user_id)
     elif data[2] == "usertdxoff":
         update_user_ldata(user_id, 'is_usertd', False)
-        query.answer(text="Your Files Will Be Mirrorred/Cloned ON Global TD!", show_alert=True)
-        update_user_settings(message, query.from_user, 'universal')
+        query.answer(text="Now, Your Files Will Be Mirrorred/Cloned ON Global TD!", show_alert=True)
+        update_user_settings(message, query.from_user, 'mirror')
         if DATABASE_URL:
             DbManger().update_user_data(user_id)
     elif data[2] == "dthumb":
