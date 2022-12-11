@@ -92,6 +92,8 @@ def __onDownloadStarted(api, gid):
                     mssg += f'\n#Buy Paid Service'
                 if limit is not None:
                     LOGGER.info('Checking File/Folder Size...')
+                    LOGGER.info(limit)
+                    LOGGER.info(size)
                     if size > int(limit) * 1024**3:
                         listener.onDownloadError(f'{mssg}.\nYour File/Folder size is {get_readable_file_size(size)}')
                         return api.remove([download], force=True, files=True)
