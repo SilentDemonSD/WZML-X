@@ -323,8 +323,8 @@ class MirrorLeechListener:
             botstart = f"http://t.me/{b_uname}"
             buttons.buildbutton("View links in PM", f"{botstart}")
 
-            if PICS:
-                sendPhoto(msg + botpm, self.bot, self.message, choice(PICS), buttons.build_menu(2))
+            if config_dict['PICS']:
+                sendPhoto(msg + botpm, self.bot, self.message, choice(config_dict['PICS']), buttons.build_menu(2))
             else:
                 sendMarkup(msg + botpm, self.bot, self.message, buttons.build_menu(2))
             try:
@@ -407,8 +407,8 @@ class MirrorLeechListener:
 
 
             if not files:
-                if PICS:
-                    uploadmsg = sendPhoto(msg, self.bot, self.message, choice(PICS), buttons.build_menu(2))
+                if config_dict['PICS']:
+                    uploadmsg = sendPhoto(msg, self.bot, self.message, choice(config_dict['PICS']), buttons.build_menu(2))
                 else:
                     uploadmsg = sendMarkup(msg, self.bot, self.message, buttons.build_menu(2))
             else:
@@ -418,8 +418,8 @@ class MirrorLeechListener:
                     if len(fmsg.encode() + msg.encode()) > 2000:
                         sleep(1.5)
                         if not config_dict['FORCE_BOT_PM']:
-                            if PICS:
-                                uploadmsg = sendPhoto(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, choice(PICS), buttons.build_menu(2))
+                            if config_dict['PICS']:
+                                uploadmsg = sendPhoto(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, choice(config_dict['PICS']), buttons.build_menu(2))
                             else:
                                 uploadmsg = sendMarkup(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, buttons.build_menu(2))
                             Thread(target=auto_delete_upload_message, args=(bot, self.message, uploadmsg)).start()
@@ -427,8 +427,8 @@ class MirrorLeechListener:
                 if fmsg != '':
                     sleep(1.5)
                     if not config_dict['FORCE_BOT_PM']:
-                        if PICS:
-                            uploadmsg = sendPhoto(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, choice(PICS), buttons.build_menu(2))
+                        if config_dict['PICS']:
+                            uploadmsg = sendPhoto(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, choice(config_dict['PICS']), buttons.build_menu(2))
                         else:
                             uploadmsg = sendMarkup(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, buttons.build_menu(2))
                         Thread(target=auto_delete_upload_message, args=(bot, self.message, uploadmsg)).start()
@@ -558,8 +558,8 @@ class MirrorLeechListener:
                 buttons.buildbutton(f"{config_dict['BUTTON_SIX_NAME']}", f"{config_dict['BUTTON_SIX_URL']}")
 
             if not config_dict['FORCE_BOT_PM'] or self.message.chat.type == 'private':
-                if PICS:
-                    uploadmsg = sendPhoto(msg + pmwarn + logwarn + warnmsg, self.bot, self.message, choice(PICS), buttons.build_menu(2))
+                if config_dict['PICS']:
+                    uploadmsg = sendPhoto(msg + pmwarn + logwarn + warnmsg, self.bot, self.message, choice(config_dict['PICS']), buttons.build_menu(2))
                 else:
                     uploadmsg = sendMarkup(msg + pmwarn + logwarn + warnmsg, self.bot, self.message, buttons.build_menu(2))
                 Thread(target=auto_delete_upload_message, args=(bot, self.message, uploadmsg)).start()

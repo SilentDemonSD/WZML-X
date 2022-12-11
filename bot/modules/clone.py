@@ -208,8 +208,8 @@ def _clone(message, bot):
                     b_uname = bot.get_me().username
                     botstart = f"http://t.me/{b_uname}"
                     buttons.buildbutton("View links in PM", f"{botstart}")
-                    if PICS:
-                        sendPhoto(msg + botpm, bot, message, rchoice(PICS), buttons.build_menu(2))
+                    if config_dict['PICS']:
+                        sendPhoto(msg + botpm, bot, message, rchoice(config_dict['PICS']), buttons.build_menu(2))
                     else:
                         sendMarkup(msg + botpm, bot, message, buttons.build_menu(2))
                 else:
@@ -217,8 +217,8 @@ def _clone(message, bot):
                         cc = f'\n<b>╰👤 #Clone_By: </b>{tag}\n\n'
                     else:
                         cc = f'\n<b>╰ #Clone_By: </b>{tag}\n\n'
-                    if PICS:
-                        sendPhoto(result + cc, bot, message, rchoice(PICS), button)
+                    if config_dict['PICS']:
+                        sendPhoto(result + cc, bot, message, rchoice(config_dict['PICS']), button)
                     else:
                         sendMarkup(result + cc, bot, message, button)
                 message.delete()
@@ -252,8 +252,8 @@ def _clone(message, bot):
                             b_uname = bot.get_me().username
                             botstart = f"http://t.me/{b_uname}"
                             buttons.buildbutton("View links in PM", f"{botstart}")
-                            if PICS:
-                                sendPhoto(msg + botpm, bot, message, rchoice(PICS), buttons.build_menu(2))
+                            if config_dict['PICS']:
+                                sendPhoto(msg + botpm, bot, message, rchoice(config_dict['PICS']), buttons.build_menu(2))
                             else:
                                 sendMarkup(msg + botpm, bot, message, buttons.build_menu(2))
                         else:
@@ -261,8 +261,8 @@ def _clone(message, bot):
                                 cc = f'\n<b>╰👤 #Clone_By: </b>{tag}\n\n'
                             else:
                                 cc = f'\n<b>╰ #Clone_By: </b>{tag}\n\n'
-                            if PICS:
-                                sendPhoto(result + cc, bot, message, rchoice(PICS), button)
+                            if config_dict['PICS']:
+                                sendPhoto(result + cc, bot, message, rchoice(config_dict['PICS']), button)
                             else:
                                 sendMarkup(result + cc, bot, message, button)       
                         message.delete()
@@ -317,8 +317,8 @@ def _clone(message, bot):
    
             LOGGER.info(f'Cloning Done: {name}')
         if not config_dict['FORCE_BOT_PM']:
-            if PICS:
-                msg = sendPhoto(result + cc + pmwarn + logwarn + warnmsg, bot, message, rchoice(PICS), button)
+            if config_dict['PICS']:
+                msg = sendPhoto(result + cc + pmwarn + logwarn + warnmsg, bot, message, rchoice(config_dict['PICS']), button)
             else:
                 msg = sendMarkup(result + cc + pmwarn + logwarn + warnmsg, bot, message, button)
             Thread(target=auto_delete_upload_message, args=(bot, message, msg)).start()
