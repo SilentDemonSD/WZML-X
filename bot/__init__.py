@@ -37,11 +37,10 @@ QbInterval = []
 DRIVES_NAMES = []
 DRIVES_IDS = []
 INDEX_URLS = []
-user_data = {}
+user_data = {} # {user_id: [datetime(date), daily_tasks: int, leech, mirror]}
 aria2_options = {}
 qbit_options = {}
 TIME_GAP_STORE = {}
-daily_tasks = {} # {user_id: [datetime(date), daily_tasks: int, leech, mirror]}
 
 GLOBAL_EXTENSION_FILTER = ['.aria2']
 
@@ -317,6 +316,12 @@ SEARCH_LIMIT = 0 if len(SEARCH_LIMIT) == 0 else int(SEARCH_LIMIT)
 
 DAILY_TASK_LIMIT = environ.get('DAILY_TASK_LIMIT', '')
 DAILY_TASK_LIMIT = '' if len(DAILY_TASK_LIMIT) == 0 else int(DAILY_TASK_LIMIT)
+
+DAILY_MIRROR_LIMIT = environ.get('DAILY_MIRROR_LIMIT', '')
+DAILY_MIRROR_LIMIT = '' if len(DAILY_MIRROR_LIMIT) == 0 else int(DAILY_MIRROR_LIMIT)
+
+DAILY_LEECH_LIMIT = environ.get('DAILY_LEECH_LIMIT', '')
+DAILY_LEECH_LIMIT = '' if len(DAILY_LEECH_LIMIT) == 0 else int(DAILY_LEECH_LIMIT)
 
 CMD_PERFIX = environ.get('CMD_PERFIX', '')
 
@@ -754,6 +759,8 @@ config_dict = {'ANILIST_ENABLED': ANILIST_ENABLED,
                'LEECH_LIMIT': LEECH_LIMIT,
                'MEGA_LIMIT': MEGA_LIMIT,
                'DAILY_TASK_LIMIT': DAILY_TASK_LIMIT,
+               'DAILY_MIRROR_LIMIT': DAILY_MIRROR_LIMIT,
+               'DAILY_LEECH_LIMIT': DAILY_LEECH_LIMIT,
                'TIME_GAP': TIME_GAP,
                'FINISHED_PROGRESS_STR': FINISHED_PROGRESS_STR,
                'UN_FINISHED_PROGRESS_STR': UN_FINISHED_PROGRESS_STR,
