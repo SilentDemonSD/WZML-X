@@ -539,44 +539,44 @@ def is_sudo(user_id):
         return user_data[user_id].get('is_sudo')
     return False
 
-def getdailytasks(user_id, increase_task=False, upleech=0, upmirror=0):
+def getdailytasks(user_id, increase_task=False, upleech=0, upmirror=0, check_mirror=False, check_leech=False):
     task, lsize, msize = 0, 0, 0
     if user_id in user_data and user_data[user_id].get('dly_tasks'):
         userdate = user_data[user_id]['dly_tasks'][0]
         nowdate = datetime.today()
         if userdate.year <= nowdate.year and userdate.month <= nowdate.month and userdate.day < nowdate.day:
             if increase_task: task = 1
-            if upleech != 0: lsize += upleech #bytes
-            if upmirror != 0: msize += upmirror #bytes
+            elif upleech != 0: lsize += upleech #bytes
+            elif upmirror != 0: msize += upmirror #bytes
             update_user_ldata(user_id, 'dly_tasks', [datetime.today(), task, lsize, msize])
             if DATABASE_URL:
                 DbManger().update_user_data(user_id)
-            if upleech != 0: return lsize
-            if upmirror != 0: return msize
+            if check_leech: return lsize
+            if check_mirror: return msize
             return task
         else:
             task = user_data[user_id]['dly_tasks'][1]
             lsize = user_data[user_id]['dly_tasks'][2]
             msize = user_data[user_id]['dly_tasks'][3]
             if increase_task: task += 1
-            if upleech != 0: lsize += upleech
-            if upmirror != 0: msize += upmirror
+            elif upleech != 0: lsize += upleech
+            elif upmirror != 0: msize += upmirror
             if increase_task or upleech or upmirror:
                 update_user_ldata(user_id, 'dly_tasks', [datetime.today(), task, lsize, msize])
                 if DATABASE_URL:
                     DbManger().update_user_data(user_id)
-            if upleech != 0: return lsize
-            if upmirror != 0: return msize
+            if check_leech: return lsize
+            if check_mirror: return msize
             return task
     else:
         if increase_task: task = 1
-        if upleech != 0: lsize += upleech
-        if upmirror != 0: msize += upmirror
+        elif upleech != 0: lsize += upleech
+        elif upmirror != 0: msize += upmirror
         update_user_ldata(user_id, 'dly_tasks', [datetime.today(), task, lsize, msize])
         if DATABASE_URL:
             DbManger().update_user_data(user_id)
-        if upleech != 0: return lsize
-        if upmirror != 0: return msize
+        if check_leech: return lsize
+        if check_mirror: return msize
         return task
 
 def is_paid(user_id):
