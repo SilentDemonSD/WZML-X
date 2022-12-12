@@ -82,7 +82,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
             if DAILY_TASK_LIMIT:
                 if DAILY_TASK_LIMIT == getdailytasks(user_id):
                     return sendMessage(f"<b>Daily Total Task Limit : {DAILY_TASK_LIMIT} \nYou have exhausted all your Daily Task Limits\n#Daily_task_limit_exceed</b>\n#Buy Paid Service", bot ,message)
-                else: getdailytasks(user_id, increase_task=True)
+                else: ttask = getdailytasks(user_id, increase_task=True); LOGGER.info(f"User : {user_id} Daily Tasks : {ttask}")
         else:
             if TOTAL_TASKS_LIMIT == total_task:
                 return sendMessage(f"<b>Bot Total Task Limit : {TOTAL_TASKS_LIMIT}\nTasks Processing : {total_task}\n#total limit exceed </b>", bot ,message)
@@ -91,7 +91,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
             if DAILY_TASK_LIMIT:
                 if DAILY_TASK_LIMIT == getdailytasks(user_id):
                     return sendMessage(f"<b>Daily Total Task Limit : {DAILY_TASK_LIMIT} \nYou have exhausted all your Daily Task Limits\n#Daily_task_limit_exceed</b>", bot ,message)
-                else: getdailytasks(user_id, increase_task=True)
+                else: ttask = getdailytasks(user_id, increase_task=True); LOGGER.info(f"User : {user_id} Daily Tasks : {ttask}")
         time_gap = timegap_check(message)
         if time_gap:
             return
