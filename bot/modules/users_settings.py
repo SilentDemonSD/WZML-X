@@ -117,12 +117,18 @@ def get_user_settings(from_user, key=None):
         buttons.sbutton(buttxt, f"userset {user_id} suniversal msuffix mirror")
         buttxt = "Change/Delete Remname" if remname != "Not Exists" else "Set Remname"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal mremname mirror")
-        if not user_dict and config_dict['USR_TD_DEFAULT'] or user_dict and user_dict.get('is_usertd'):
-            usertdstatus = "Enabled"
-            buttons.sbutton("Disable User TD", f"userset {user_id} usertdxoff")
+        
+#         if not user_dict and config_dict['USR_TD_DEFAULT'] or user_dict and user_dict.get('is_usertd'):
+        if config_dict['USR_TD']:
+            if user_dict and user_dict.get('is_usertd'):
+                usertdstatus = "Enabled"
+                buttons.sbutton("Disable User TD", f"userset {user_id} usertdxoff")
+            else:
+                usertdstatus = "Disabled"
+                buttons.sbutton("Enable User TD", f"userset {user_id} usertdxon")
         else:
-            usertdstatus = "Disabled"
-            buttons.sbutton("Enable User TD", f"userset {user_id} usertdxon")
+            usertdstatus = "User TD Feature Disabled By Owner!"
+            buttons.sbutton("Enable User TD", f"userset {user_id} usertdxdisable")
         buttxt = "Change/Delete User TD" if usertd != "Not Exists" else "Set User TD"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal usertd mirror")
 
@@ -252,6 +258,8 @@ def edit_user_settings(update, context):
         update_user_settings(message, query.from_user, 'mirror')
         if DATABASE_URL:
             DbManger().update_user_data(user_id)
+    elif data[2] == "usertdxdisable":
+        query.answer(text="User TD Feature Disabled By Owner!", show_alert=True)
     elif data[2] == "uboton":
         update_user_ldata(user_id, 'ubot_pm', True)
         query.answer(text="Now, Your Files will be send to your PM!", show_alert=True)
