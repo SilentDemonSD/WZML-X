@@ -10,7 +10,7 @@ from requests import head as rhead
 from urllib.request import urlopen
 
 from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot import download_dict, download_dict_lock, daily_tasks, botStartTime, DOWNLOAD_DIR, user_data, config_dict
+from bot import download_dict, download_dict_lock, botStartTime, DOWNLOAD_DIR, user_data, config_dict
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.db_handler import DbManger
 
@@ -539,7 +539,7 @@ def is_sudo(user_id):
         return user_data[user_id].get('is_sudo')
     return False
 
-def getdailytasks(user_id, increase_task=False, check_leech=False, check_mirror=False):
+def getdailytasks(user_id, increase_task=False, upleech=0, upmirror=0):
     task = 0
     if user_id in user_data and user_data[user_id].get('dly_tasks'):
         userdate = user_data[user_id]['dly_tasks'][0]
@@ -572,10 +572,8 @@ def is_paid(user_id):
             if ex_date:
                 odate = datetime.strptime(ex_date, '%d-%m-%Y')
                 ndate = datetime.today()
-                if odate.year <= ndate.year:
-                    if odate.month <= ndate.month:
-                        if odate.day < ndate.day:
-                            return False
+                if odate.year <= ndate.year and odate.month <= ndate.month and odate.day < ndate.day:
+                    return False
             return True
         else: return False
     else: return False
