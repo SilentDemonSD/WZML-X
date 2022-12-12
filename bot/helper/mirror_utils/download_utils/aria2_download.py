@@ -103,14 +103,16 @@ def __onDownloadStarted(api, gid):
                     mssg += f'\n#Buy Paid Service'
                 listener.onDownloadError(mssg)
                 return api.remove([download], force=True, files=True)
-            else: msize = getdailytasks(user_id, upmirror=size, check_mirror=True); LOGGER.info(f"User : {user_id} Daily Mirror Size : {get_readable_file_size(msize)}")
-            if DAILY_LEECH_LIMIT and listener.isLeech and DAILY_LEECH_LIMIT <= getdailytasks(user_id, check_leech=True) and size >= (DAILY_LEECH_LIMIT - getdailytasks(user_id, check_leech=True)):
+            elif not listener.isLeech: msize = getdailytasks(user_id, upmirror=size, check_mirror=True); LOGGER.info(f"User : {user_id} Daily Mirror Size : {get_readable_file_size(msize)}")
+            LOGGER.info(DAILY_LEECH_LIMIT)
+            LOGGER.info(DAILY_LEECH_LIMIT - getdailytasks(user_id, check_leech=True))
+            if DAILY_LEECH_LIMIT and listener.isLeech and DAILY_LEECH_LIMIT <= getdailytasks(user_id, check_leech=True) and size >= abs(DAILY_LEECH_LIMIT - getdailytasks(user_id, check_leech=True)):
                 mssg = f'<b>Daily Leech Limit is {get_readable_file_size(DAILY_LEECH_LIMIT)}</b>\nYou have exhausted all your Daily Leech Limit or File Size of your Leech is greater than your free Limits. <i>TRY AGAIN TOMORROW</i>'
                 if config_dict['PAID_SERVICE'] is True:
                     mssg += f'\n#Buy Paid Service'
                 listener.onDownloadError(mssg)
                 return api.remove([download], force=True, files=True)
-            else: lsize = getdailytasks(user_id, upleech=size, check_leech=True); LOGGER.info(f"User : {user_id} Daily Leech Size : {get_readable_file_size(lsize)}")
+            elif listener.isLeech: lsize = getdailytasks(user_id, upleech=size, check_leech=True); LOGGER.info(f"User : {user_id} Daily Leech Size : {get_readable_file_size(lsize)}")
 
     except Exception as e:
         LOGGER.error(f"{e} onDownloadStart: {gid} stop duplicate and size check didn't pass")
