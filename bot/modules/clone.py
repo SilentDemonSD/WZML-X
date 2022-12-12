@@ -35,7 +35,14 @@ def _clone(message, bot):
                 warnmsg = f'<b>This message will be deleted in <i>{auto_delete_message} minutes</i> from this group.</b>\n'
     else:
         warnmsg = ''
-    if config_dict['BOT_PM'] and message.chat.type != 'private':
+        
+    user_id = message.from_user.id
+    if config_dict['FORCE_BOT_PM']:
+        BOT_PM_X = True
+    else:
+        BOT_PM_X = user_data[user_id].get('ubot_pm')
+    
+    if BOT_PM_X and message.chat.type != 'private':
         if config_dict['EMOJI_THEME']:
             pmwarn = f"<b>😉I have sent files in PM.</b>\n"
         else:
@@ -73,7 +80,7 @@ def _clone(message, bot):
         except Exception:
             pass
             
-    if config_dict['BOT_PM'] and message.chat.type != 'private':
+    if BOT_PM_X and message.chat.type != 'private':
         try:
             msg1 = f'Added your Requested link to Download\n'
             send = bot.sendMessage(message.from_user.id, text=msg1)
@@ -92,7 +99,6 @@ def _clone(message, bot):
 
 
     total_task = len(download_dict)
-    user_id = message.from_user.id
     USER_TASKS_LIMIT = config_dict['USER_TASKS_LIMIT']
     TOTAL_TASKS_LIMIT = config_dict['TOTAL_TASKS_LIMIT']
     if user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id):
@@ -197,7 +203,7 @@ def _clone(message, bot):
             msg = sendMessage(f"Cloning: <code>{link}</code>", bot, message)
             result, button = gd.clone(link, user_id)
             deleteMessage(bot, msg)
-            if config_dict['BOT_PM'] and config_dict['FORCE_BOT_PM']:
+            if BOT_PM_X:
                 if message.chat.type != 'private':
                     if config_dict['EMOJI_THEME']:
                         msg = f"<b>🗂️ Name: </b><{config_dict['NAME_FONT']}>{escape(name)}</{config_dict['NAME_FONT']}>\n"
@@ -243,7 +249,7 @@ def _clone(message, bot):
                     Interval[0].cancel()
                     del Interval[0]
                     delete_all_messages()
-                    if config_dict['BOT_PM'] and config_dict['FORCE_BOT_PM']:
+                    if BOT_PM_X:
                         if message.chat.type != 'private':
                             if config_dict['EMOJI_THEME']:
                                 msg = f"<b>🗂️ Name: </b><{config_dict['NAME_FONT']}>{escape(name)}</{config_dict['NAME_FONT']}>\n"
@@ -318,7 +324,7 @@ def _clone(message, bot):
         else:
    
             LOGGER.info(f'Cloning Done: {name}')
-        if not config_dict['FORCE_BOT_PM']:
+        if not BOT_PM_X:
             if config_dict['SAVE_MSG'] and message.chat.type != 'private':
                 button.sbutton('Save This Message', 'save', 'footer')
             if config_dict['PICS']:
@@ -335,7 +341,7 @@ def _clone(message, bot):
                     bot.sendMessage(chat_id=chatid, text=result + cc, reply_markup=button.build_menu(2), parse_mode=ParseMode.HTML)
             except Exception as e:
                 LOGGER.warning(e)
-        if config_dict['BOT_PM'] and message.chat.type != 'private':
+        if BOT_PM_X and message.chat.type != 'private':
             try:
                 bot.sendMessage(message.from_user.id, text=result + cc, reply_markup=button.build_menu(2),
                                 parse_mode=ParseMode.HTML)
