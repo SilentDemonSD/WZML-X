@@ -105,7 +105,8 @@ def get_user_settings(from_user, key=None):
         remname = user_dict['mremname'] if user_dict and user_dict.get('mremname') else "Not Exists"
         usertd = user_dict['usertd'] if user_dict and user_dict.get('usertd') else "Not Exists"
         dailytlup = get_readable_file_size(config_dict['DAILY_MIRROR_LIMIT'] * 1024**3) if config_dict['DAILY_MIRROR_LIMIT'] else "Unlimited"
-        dailyup = get_readable_file_size(user_dict.get('dly_tasks')[2]) if user_dict and user_dict.get('dly_tasks') and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) and config_dict['DAILY_MIRROR_LIMIT'] else "Unlimited"
+        dailyup = get_readable_file_size(user_dict.get('dly_tasks')[3]) if user_dict and user_dict.get('dly_tasks') and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) and config_dict['DAILY_MIRROR_LIMIT'] else "Unlimited"
+
         buttxt = "Change/Delete Prefix" if prefix != "Not Exists" else "Set Prefix"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal mprefix mirror")
         buttxt = "Change/Delete Suffix" if suffix != "Not Exists" else "Set Suffix"
@@ -140,7 +141,7 @@ def get_user_settings(from_user, key=None):
         remname = user_dict['remname'] if user_dict and user_dict.get('remname') else "Not Exists"
         cfont = user_dict['cfont'][0] if user_dict and user_dict.get('cfont') else "Not Exists"
         dailytlle = get_readable_file_size(config_dict['DAILY_LEECH_LIMIT'] * 1024**3) if config_dict['DAILY_LEECH_LIMIT'] else "Unlimited"
-        dailyll = get_readable_file_size(user_dict.get('dly_tasks')[3]) if user_dict and user_dict.get('dly_tasks') and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) and config_dict['DAILY_LEECH_LIMIT'] else "Unlimited" if user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) else "Unlimited"
+        dailyll = get_readable_file_size(user_dict.get('dly_tasks')[2]) if user_dict and user_dict.get('dly_tasks') and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) and config_dict['DAILY_LEECH_LIMIT'] else "Unlimited"
 
         buttxt = "Change/Delete Prefix" if prefix != "Not Exists" else "Set Prefix"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal prefix leech")
