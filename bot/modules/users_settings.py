@@ -64,6 +64,13 @@ def get_user_settings(from_user, key=None):
         buttons.sbutton(buttxt, f"userset {user_id} suniversal yt_ql universal")
         buttxt = "Change/Delete UserLog" if userlog != "Not Exists" else "Set UserLog"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal userlog universal")
+        
+        if user_dict and user_dict.get('ubot_pm'):
+            ubotpm = "Enabled"
+            buttons.sbutton("Disable User PM", f"userset {user_id} ubotoff")
+        else:
+            ubotpm = "Disabled"
+            buttons.sbutton("Enable User PM", f"userset {user_id} uboton")
 
         imdbval, anival = '', ''
         if imdb != "Not Exists":
@@ -86,8 +93,9 @@ def get_user_settings(from_user, key=None):
 ├ Custom Thumbnail : <b>{thumbmsg}</b>
 ├ YT-DLP Quality is : <b>{escape(ytq)}</b>
 ├ UserLog : <b>{userlog}</b>
-├ Daily Task Limit : <b>{dailytl} / day</b> (<b>Usage:</b> {dailytas} Left)
+├ Daily Tasks : <b>{dailytas} out of {dailytl} / day</b>
 ├ Last Bot Used : <b>{lastused}</b>
+├ User Bot PM : <b>{ubotpm}</b>
 ├ IMDB : <b>{imdbval if imdbval else imdb}</b>
 ├ AniList : <b>{anival if anival else anilist}</b>
 '''
@@ -232,6 +240,18 @@ def edit_user_settings(update, context):
         update_user_ldata(user_id, 'is_usertd', False)
         query.answer(text="Now, Your Files Will Be Mirrorred/Cloned ON Global TD!", show_alert=True)
         update_user_settings(message, query.from_user, 'mirror')
+        if DATABASE_URL:
+            DbManger().update_user_data(user_id)
+    elif data[2] == "uboton":
+        update_user_ldata(user_id, 'ubot_pm', True)
+        query.answer(text="Now, Your Files will be send to your PM!", show_alert=True)
+        update_user_settings(message, query.from_user, 'universal')
+        if DATABASE_URL:
+            DbManger().update_user_data(user_id)
+    elif data[2] == "ubotoff":
+        update_user_ldata(user_id, 'ubot_pm', False)
+        query.answer(text="Now, Your Files will not be send to your PM anymore!", show_alert=True)
+        update_user_settings(message, query.from_user, 'universal')
         if DATABASE_URL:
             DbManger().update_user_data(user_id)
     elif data[2] == "dthumb":
