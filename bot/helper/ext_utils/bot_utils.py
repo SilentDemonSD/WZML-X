@@ -552,7 +552,11 @@ def getdailytasks(user_id, increase_task=False, check_leech=False, check_mirror=
             return task
         else:
             task = user_data[user_id]['dly_tasks'][1]
-            if increase_task: task += 1
+            if increase_task:
+                task += 1
+                update_user_ldata(user_id, 'dly_tasks', [datetime.today(), task])
+                if DATABASE_URL:
+                    DbManger().update_user_data(user_id)
             return task
     else:
         if increase_task: task = 1
