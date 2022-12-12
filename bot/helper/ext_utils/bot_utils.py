@@ -12,6 +12,7 @@ from urllib.request import urlopen
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot import download_dict, download_dict_lock, daily_tasks, botStartTime, DOWNLOAD_DIR, user_data, config_dict
 from bot.helper.telegram_helper.button_build import ButtonMaker
+from bot.helper.ext_utils.db_handler import DbManger
 
 import shutil
 import psutil
@@ -538,18 +539,27 @@ def is_sudo(user_id):
         return user_data[user_id].get('is_sudo')
     return False
 
-def getdailytasks(user_id, task=False):
-    if user_id in daily_tasks:
-        userdate = daily_tasks[user_id][0]
+def getdailytasks(user_id, increase_task=False, check_leech=False, check_mirror=False):
+    task = 0
+    if user_id in user_data and user_data[user_id].get('dly_tasks'):
+        userdate = user_data[user_id]['dly_tasks'][0]
         nowdate = datetime.today()
         if userdate.year <= nowdate.year and userdate.month <= nowdate.month and userdate.day < nowdate.day:
-            daily_tasks[user_id] = [datetime.today(), 0]
-            return 0
+            if increase_task: task = 1
+            update_user_ldata(user_id, 'dly_tasks', [datetime.today(), task])
+            if DATABASE_URL:
+                DbManger().update_user_data(user_id)
+            return task
         else:
-            return daily_tasks[user_id][1]
+            task = user_data[user_id]['dly_tasks'][1]
+            if increase_task: task += 1
+            return task
     else:
-        daily_tasks[user_id] = [datetime.today(), 0]
-        return 0
+        if increase_task: task = 1
+        update_user_ldata(user_id, 'dly_tasks', [datetime.today(), task])
+        if DATABASE_URL:
+            DbManger().update_user_data(user_id)
+        return task
 
 def is_paid(user_id):
     if config_dict['PAID_SERVICE'] is True:
