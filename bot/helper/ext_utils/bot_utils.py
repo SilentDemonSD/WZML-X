@@ -540,29 +540,43 @@ def is_sudo(user_id):
     return False
 
 def getdailytasks(user_id, increase_task=False, upleech=0, upmirror=0):
-    task = 0
+    task, lsize, msize = 0, 0, 0
     if user_id in user_data and user_data[user_id].get('dly_tasks'):
         userdate = user_data[user_id]['dly_tasks'][0]
         nowdate = datetime.today()
         if userdate.year <= nowdate.year and userdate.month <= nowdate.month and userdate.day < nowdate.day:
             if increase_task: task = 1
-            update_user_ldata(user_id, 'dly_tasks', [datetime.today(), task])
+            if upleech != 0: lsize += upleech #bytes
+            if upmirror != 0: msize += upmirror #bytes
+            update_user_ldata(user_id, 'dly_tasks', [datetime.today(), task, lsize, msize])
             if DATABASE_URL:
                 DbManger().update_user_data(user_id)
+            if upleech != 0: return lsize
+            if upmirror != 0: return msize
             return task
         else:
             task = user_data[user_id]['dly_tasks'][1]
-            if increase_task:
-                task += 1
-                update_user_ldata(user_id, 'dly_tasks', [datetime.today(), task])
+            lsize = user_data[user_id]['dly_tasks'][2]
+            msize = user_data[user_id]['dly_tasks'][3]
+            if increase_task: task += 1
+            if upleech != 0: lsize += upleech
+            if upmirror != 0: msize += upmirror
+            if increase_task or upleech or upmirror:
+                update_user_ldata(user_id, 'dly_tasks', [datetime.today(), task, lsize, msize])
                 if DATABASE_URL:
                     DbManger().update_user_data(user_id)
+            if upleech != 0: return lsize
+            if upmirror != 0: return msize
             return task
     else:
         if increase_task: task = 1
-        update_user_ldata(user_id, 'dly_tasks', [datetime.today(), task])
+        if upleech != 0: lsize += upleech
+        if upmirror != 0: msize += upmirror
+        update_user_ldata(user_id, 'dly_tasks', [datetime.today(), task, lsize, msize])
         if DATABASE_URL:
             DbManger().update_user_data(user_id)
+        if upleech != 0: return lsize
+        if upmirror != 0: return msize
         return task
 
 def is_paid(user_id):
