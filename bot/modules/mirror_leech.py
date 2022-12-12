@@ -72,26 +72,23 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
     user_id = message.from_user.id
     USER_TASKS_LIMIT = config_dict['USER_TASKS_LIMIT']
     TOTAL_TASKS_LIMIT = config_dict['TOTAL_TASKS_LIMIT']
-    DAILY_TASK_LIMIT = config_dict['DAILY_TASK_LIMIT']
+    if config_dict['DAILY_TASK_LIMIT'] and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) and config_dict['DAILY_TASK_LIMIT'] >= getdailytasks(user_id):
+        msg = f"<b>Daily Total Task Limit : {config_dict['DAILY_TASK_LIMIT']} \nYou have exhausted all your Daily Task Limits\n#Daily_task_limit_exceed</b>
+        if config_dict['PAID_SERVICE'] is True: msg += "\n#Buy Paid Service"
+        return sendMessage(msg, bot ,message)
+    else: ttask = getdailytasks(user_id, increase_task=True); LOGGER.info(f"User : {user_id} Daily Tasks : {ttask}")
+
     if user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id):
         if config_dict['PAID_SERVICE'] is True:
             if TOTAL_TASKS_LIMIT == total_task:
                 return sendMessage(f"<b>Bot Total Task Limit : {TOTAL_TASKS_LIMIT}\nTasks Processing : {total_task}\n#Total_limit_exceed </b>\n#Buy Paid Service", bot ,message)
             if USER_TASKS_LIMIT == get_user_task(user_id):
-                return sendMessage(f"<b>Bot Total Task Limit : {USER_TASKS_LIMIT} \nYour Tasks : {get_user_task(user_id)}\n#User_limit_exceed</b>\n#Buy Paid Service", bot ,message)
-            if DAILY_TASK_LIMIT:
-                if DAILY_TASK_LIMIT == getdailytasks(user_id):
-                    return sendMessage(f"<b>Daily Total Task Limit : {DAILY_TASK_LIMIT} \nYou have exhausted all your Daily Task Limits\n#Daily_task_limit_exceed</b>\n#Buy Paid Service", bot ,message)
-                else: ttask = getdailytasks(user_id, increase_task=True); LOGGER.info(f"User : {user_id} Daily Tasks : {ttask}")
+                return sendMessage(f"<b>Bot Total Task Limit : {USER_TASKS_LIMIT} \nYour Tasks : {get_user_task(user_id)}\n#User_limit_exceed</b>\n#Buy Paid Service", bot ,message)        
         else:
             if TOTAL_TASKS_LIMIT == total_task:
                 return sendMessage(f"<b>Bot Total Task Limit : {TOTAL_TASKS_LIMIT}\nTasks Processing : {total_task}\n#total limit exceed </b>", bot ,message)
             if USER_TASKS_LIMIT == get_user_task(user_id):
                 return sendMessage(f"<b>Bot Total Task Limit : {USER_TASKS_LIMIT} \nYour Tasks : {get_user_task(user_id)}\n#user limit exceed</b>", bot ,message)
-            if DAILY_TASK_LIMIT:
-                if DAILY_TASK_LIMIT == getdailytasks(user_id):
-                    return sendMessage(f"<b>Daily Total Task Limit : {DAILY_TASK_LIMIT} \nYou have exhausted all your Daily Task Limits\n#Daily_task_limit_exceed</b>", bot ,message)
-                else: ttask = getdailytasks(user_id, increase_task=True); LOGGER.info(f"User : {user_id} Daily Tasks : {ttask}")
         time_gap = timegap_check(message)
         if time_gap:
             return
