@@ -72,7 +72,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
     user_id = message.from_user.id
     USER_TASKS_LIMIT = config_dict['USER_TASKS_LIMIT']
     TOTAL_TASKS_LIMIT = config_dict['TOTAL_TASKS_LIMIT']
-    if config_dict['DAILY_TASK_LIMIT'] and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) and config_dict['DAILY_TASK_LIMIT'] >= getdailytasks(user_id):
+    if config_dict['DAILY_TASK_LIMIT'] and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) and config_dict['DAILY_TASK_LIMIT'] <= getdailytasks(user_id):
         msg = f"<b>Daily Total Task Limit : {config_dict['DAILY_TASK_LIMIT']} \nYou have exhausted all your Daily Task Limits\n#Daily_task_limit_exceed</b>"
         if config_dict['PAID_SERVICE'] is True: msg += "\n#Buy Paid Service"
         return sendMessage(msg, bot ,message)
