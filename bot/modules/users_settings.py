@@ -25,6 +25,8 @@ def get_user_settings(from_user, key=None):
     buttons = ButtonMaker()
     thumbpath = f"Thumbnails/{user_id}.jpg"
     user_dict = user_data.get(user_id, False)
+    if not user_dict:
+        update_user_ldata(user_id, 'ubot_pm', config_dict['BOT_PM'])
     uplan = "Paid User" if is_paid(user_id) else "Normal User"
     if key is None:
         buttons.sbutton("Universal Settings", f"userset {user_id} universal")
