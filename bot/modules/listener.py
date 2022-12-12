@@ -236,7 +236,12 @@ class MirrorLeechListener:
         user_id_ = self.message.from_user.id
         file_ = escape(name)
         up_path, file_, _ = change_filename(file_, user_id_, all_edit=False, mirror_type=(False if self.isLeech else True))
-
+        
+        if config_dict['FORCE_BOT_PM']:
+            BOT_PM_X = True
+        else:
+            BOT_PM_X = user_data[user_id_].get('ubot_pm')
+        
         NAME_FONT = config_dict['NAME_FONT']
         if config_dict['EMOJI_THEME']:
             slmsg = f"🗂️ Name: <{NAME_FONT}>{file_}</{NAME_FONT}>\n\n"
@@ -281,7 +286,7 @@ class MirrorLeechListener:
                     warnmsg = f'<b>This message will be deleted in <i>{auto_delete_message} minutes</i> from this group.</b>\n'
         else:
             warnmsg = ''
-        if config_dict['BOT_PM'] and self.message.chat.type != 'private':
+        if BOT_PM_X and self.message.chat.type != 'private':
             if config_dict['EMOJI_THEME']:
                 pmwarn = f"<b>😉 I have sent files in PM.</b>\n"
             else:
@@ -312,7 +317,7 @@ class MirrorLeechListener:
             DbManger().rm_complete_task(self.message.link)
 
 
-        if config_dict['BOT_PM'] and config_dict['FORCE_BOT_PM'] and not self.isPrivate:
+        if BOT_PM_X and not self.isPrivate:
             if config_dict['EMOJI_THEME']:
                 msg = f"<b>🗂️ Name: </b><{config_dict['NAME_FONT']}>{file_}</{config_dict['NAME_FONT']}>\n"
             else:
@@ -378,7 +383,7 @@ class MirrorLeechListener:
                         pass
             else:
                 pass
-            if config_dict['BOT_PM'] and not config_dict['FORCE_BOT_PM'] and self.message.chat.type != 'private':
+            if BOT_PM_X and self.message.chat.type != 'private':
                 bot_d = bot.get_me()
                 b_uname = bot_d.username
                 botstart = f"http://t.me/{b_uname}"
@@ -418,7 +423,7 @@ class MirrorLeechListener:
                     fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
                     if len(fmsg.encode() + msg.encode()) > 2000:
                         sleep(1.5)
-                        if not config_dict['FORCE_BOT_PM']:
+                        if not BOT_PM_X:
                             if config_dict['PICS']:
                                 uploadmsg = sendPhoto(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, choice(config_dict['PICS']), buttons.build_menu(2))
                             else:
@@ -427,7 +432,7 @@ class MirrorLeechListener:
                         fmsg = ''
                 if fmsg != '':
                     sleep(1.5)
-                    if not config_dict['FORCE_BOT_PM']:
+                    if not BOT_PM_X:
                         if config_dict['PICS']:
                             uploadmsg = sendPhoto(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, choice(config_dict['PICS']), buttons.build_menu(2))
                         else:
@@ -541,7 +546,7 @@ class MirrorLeechListener:
                         pass
                     
 
-                    if config_dict['BOT_PM'] and not config_dict['FORCE_BOT_PM'] and self.message.chat.type != 'private':
+                    if BOT_PM_X and self.message.chat.type != 'private':
                         bot_d = bot.get_me()
                         b_uname = bot_d.username
                         botstart = f"http://t.me/{b_uname}"
@@ -558,7 +563,7 @@ class MirrorLeechListener:
             if config_dict['BUTTON_SIX_NAME'] != '' and config_dict['BUTTON_SIX_URL'] != '':
                 buttons.buildbutton(f"{config_dict['BUTTON_SIX_NAME']}", f"{config_dict['BUTTON_SIX_URL']}")
 
-            if config_dict['BOT_PM'] and self.message.chat.type != 'private':
+            if BOT_PM_X and self.message.chat.type != 'private':
                 try:
                     bot.sendMessage(chat_id=self.user_id, text=msg,
                                     reply_markup=buttons.build_menu(2),
@@ -569,7 +574,7 @@ class MirrorLeechListener:
             if not self.isPrivate and config_dict['SAVE_MSG']:
                 buttons.sbutton('Save This Message', 'save', 'footer')
 
-            if not config_dict['FORCE_BOT_PM'] or self.message.chat.type == 'private':
+            if not BOT_PM_X or self.message.chat.type == 'private':
                 if config_dict['PICS']:
                     uploadmsg = sendPhoto(msg + pmwarn + logwarn + warnmsg, self.bot, self.message, choice(config_dict['PICS']), buttons.build_menu(2))
                 else:
