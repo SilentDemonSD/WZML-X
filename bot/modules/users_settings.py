@@ -65,12 +65,16 @@ def get_user_settings(from_user, key=None):
         buttxt = "Change/Delete UserLog" if userlog != "Not Exists" else "Set UserLog"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal userlog universal")
         
-        if user_dict and user_dict.get('ubot_pm'):
-            ubotpm = "Enabled"
-            buttons.sbutton("Disable User PM", f"userset {user_id} ubotoff")
+        if not config_dict['FORCE_BOT_PM']:
+            if user_dict and user_dict.get('ubot_pm'):
+                ubotpm = "Enabled"
+                buttons.sbutton("Disable User PM", f"userset {user_id} ubotoff")
+            else:
+                ubotpm = "Disabled"
+                buttons.sbutton("Enable User PM", f"userset {user_id} uboton")
         else:
-            ubotpm = "Disabled"
-            buttons.sbutton("Enable User PM", f"userset {user_id} uboton")
+            ubotpm = "Disabled By Owner"
+            buttons.sbutton("Disable User PM", f"userset {user_id} ubotdisable")
 
         imdbval, anival = '', ''
         if imdb != "Not Exists":
@@ -260,6 +264,8 @@ def edit_user_settings(update, context):
         update_user_settings(message, query.from_user, 'universal')
         if DATABASE_URL:
             DbManger().update_user_data(user_id)
+    elif data[2] == "ubotdisable":
+        query.answer(text="Always BOT PM Mode is ON By Bot Owner!", show_alert=True)
     elif data[2] == "dthumb":
         handler_dict[user_id] = False
         path = f"Thumbnails/{user_id}.jpg"
