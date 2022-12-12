@@ -14,7 +14,7 @@ from bot import download_dict, download_dict_lock, get_client, config_dict, \
 from bot.helper.mirror_utils.status_utils.qbit_download_status import QbDownloadStatus
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, deleteMessage, sendStatusMessage, update_all_messages, sendFile
-from bot.helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time, setInterval, bt_selection_buttons, getDownloadByGid, new_thread, is_sudo, is_paid
+from bot.helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time, setInterval, bt_selection_buttons, getDownloadByGid, new_thread, is_sudo, is_paid, getdailytasks
 from bot.helper.ext_utils.fs_utils import clean_unwanted, get_base_name, check_storage_threshold
 from bot.helper.telegram_helper import button_build
 
@@ -218,6 +218,20 @@ def __check_limits(client, tor):
             if size > limit * 1024**3:
                 fmsg = f"{mssg}.\nYour File/Folder size is {get_readable_file_size(size)}"
                 __onDownloadError(fmsg, client, tor)
+    DAILY_MIRROR_LIMIT = config_dict['DAILY_MIRROR_LIMIT'] * 1024**3 if config_dict['DAILY_MIRROR_LIMIT'] else config_dict['DAILY_MIRROR_LIMIT']
+    DAILY_LEECH_LIMIT = config_dict['DAILY_LEECH_LIMIT'] * 1024**3 if config_dict['DAILY_LEECH_LIMIT'] else config_dict['DAILY_LEECH_LIMIT']
+    if DAILY_MIRROR_LIMIT and not listener.isLeech and (size >= (DAILY_MIRROR_LIMIT - getdailytasks(user_id, check_mirror=True)) or DAILY_MIRROR_LIMIT <= getdailytasks(user_id, check_mirror=True)):
+        mssg = f'Daily Mirror Limit is {get_readable_file_size(DAILY_MIRROR_LIMIT)}\nYou have exhausted all your Daily Mirror Limit or File Size of your Mirror is greater than your free Limits.\nTRY AGAIN TOMORROW'
+        if config_dict['PAID_SERVICE'] is True:
+            mssg += f'\n#Buy Paid Service'
+        __onDownloadError(mssg, client, tor)
+    elif not listener.isLeech: msize = getdailytasks(user_id, upmirror=size, check_mirror=True); LOGGER.info(f"User : {user_id} Daily Mirror Size : {get_readable_file_size(msize)}")
+    if DAILY_LEECH_LIMIT and listener.isLeech and (size >= (DAILY_LEECH_LIMIT - getdailytasks(user_id, check_leech=True)) or DAILY_LEECH_LIMIT <= getdailytasks(user_id, check_leech=True)):
+        mssg = f'Daily Leech Limit is {get_readable_file_size(DAILY_LEECH_LIMIT)}\nYou have exhausted all your Daily Leech Limit or File Size of your Leech is greater than your free Limits.\nTRY AGAIN TOMORROW'
+        if config_dict['PAID_SERVICE'] is True:
+            mssg += f'\n#Buy Paid Service'
+        __onDownloadError(mssg, client, tor)
+    elif listener.isLeech: lsize = getdailytasks(user_id, upleech=size, check_leech=True); LOGGER.info(f"User : {user_id} Daily Leech Size : {get_readable_file_size(lsize)}")
 
 @new_thread
 def __onDownloadComplete(client, tor):
