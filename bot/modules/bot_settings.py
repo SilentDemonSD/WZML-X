@@ -287,6 +287,12 @@ def load_config():
     DAILY_TASK_LIMIT = environ.get('DAILY_TASK_LIMIT', '')
     DAILY_TASK_LIMIT = '' if len(DAILY_TASK_LIMIT) == 0 else int(DAILY_TASK_LIMIT)
 
+    DAILY_MIRROR_LIMIT = environ.get('DAILY_MIRROR_LIMIT', '')
+    DAILY_MIRROR_LIMIT = '' if len(DAILY_MIRROR_LIMIT) == 0 else int(DAILY_MIRROR_LIMIT)
+
+    DAILY_LEECH_LIMIT = environ.get('DAILY_LEECH_LIMIT', '')
+    DAILY_LEECH_LIMIT = '' if len(DAILY_LEECH_LIMIT) == 0 else int(DAILY_LEECH_LIMIT)
+
     INCOMPLETE_TASK_NOTIFIER = environ.get('INCOMPLETE_TASK_NOTIFIER', '')
     INCOMPLETE_TASK_NOTIFIER = INCOMPLETE_TASK_NOTIFIER.lower() == 'true'
     if not INCOMPLETE_TASK_NOTIFIER and DATABASE_URL:
@@ -718,6 +724,8 @@ def load_config():
                         'USER_TASKS_LIMIT': USER_TASKS_LIMIT,
                         'STORAGE_THRESHOLD': STORAGE_THRESHOLD,
                         'DAILY_TASK_LIMIT': DAILY_TASK_LIMIT,
+                        'DAILY_MIRROR_LIMIT': DAILY_MIRROR_LIMIT,
+                        'DAILY_LEECH_LIMIT': DAILY_LEECH_LIMIT,
                         'TORRENT_DIRECT_LIMIT': TORRENT_DIRECT_LIMIT,
                         'ZIP_UNZIP_LIMIT': ZIP_UNZIP_LIMIT,
                         'CLONE_LIMIT': CLONE_LIMIT,
