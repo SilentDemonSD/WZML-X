@@ -438,7 +438,7 @@ class MirrorLeechListener:
                         else:
                             uploadmsg = sendMarkup(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, buttons.build_menu(2))
                         Thread(target=auto_delete_upload_message, args=(bot, self.message, uploadmsg)).start()
-                if config_dict['LEECH_LOG_INDEXING']:
+                if config_dict['LEECH_LOG_INDEXING'] and config_dict['LEECH_LOG']:
                     for i in user_data['is_leech_log']:
                         indexmsg = ''
                         for index, (link, name) in enumerate(files.items(), start=1):
