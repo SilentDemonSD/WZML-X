@@ -3,7 +3,7 @@ from time import sleep, time
 from os import remove, path as ospath
 from bot import aria2, download_dict_lock, download_dict, LOGGER, config_dict, user_data, aria2_options, aria2c_global, OWNER_ID
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
-from bot.helper.ext_utils.bot_utils import is_magnet, getDownloadByGid, new_thread, bt_selection_buttons, get_readable_file_size, is_sudo, is_paid
+from bot.helper.ext_utils.bot_utils import is_magnet, getDownloadByGid, new_thread, bt_selection_buttons, get_readable_file_size, is_sudo, is_paid, getdailytasks
 from bot.helper.mirror_utils.status_utils.aria_download_status import AriaDownloadStatus
 from bot.helper.telegram_helper.message_utils import sendMarkup, sendStatusMessage, sendMessage, deleteMessage, update_all_messages, sendFile
 from bot.helper.ext_utils.fs_utils import get_base_name, check_storage_threshold, clean_unwanted
@@ -33,6 +33,8 @@ def __onDownloadStarted(api, gid):
         ZIP_UNZIP_LIMIT = config_dict['ZIP_UNZIP_LIMIT']
         LEECH_LIMIT = config_dict['LEECH_LIMIT']
         STORAGE_THRESHOLD = config_dict['STORAGE_THRESHOLD']
+        DAILY_MIRROR_LIMIT = config_dict['DAILY_MIRROR_LIMIT']
+        DAILY_LEECH_LIMIT = config_dict['DAILY_LEECH_LIMIT']
         if any([STOP_DUPLICATE, TORRENT_DIRECT_LIMIT, ZIP_UNZIP_LIMIT, LEECH_LIMIT, STORAGE_THRESHOLD]):
             sleep(1)
             if dl := getDownloadByGid(gid):
@@ -79,10 +81,10 @@ def __onDownloadStarted(api, gid):
                             msg += f'\n#Buy Paid Service'
                         listener.onDownloadError(msg)
                         return api.remove([download], force=True, files=True)
-                if ZIP_UNZIP_LIMIT and arch:
+                elif ZIP_UNZIP_LIMIT and arch:
                     mssg = f'Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB'
                     limit = ZIP_UNZIP_LIMIT
-                if LEECH_LIMIT and arch:
+                elif LEECH_LIMIT and arch:
                     mssg = f'Leech limit is {LEECH_LIMIT}GB'
                     limit = LEECH_LIMIT
                 elif TORRENT_DIRECT_LIMIT:
@@ -92,12 +94,24 @@ def __onDownloadStarted(api, gid):
                     mssg += f'\n#Buy Paid Service'
                 if limit:
                     LOGGER.info('Checking File/Folder Size...')
-                    LOGGER.info(limit)
-                    LOGGER.info(size)
-                    LOGGER.info(mssg)
                     if size > limit * 1024**3:
                         listener.onDownloadError(f'{mssg}.\nYour File/Folder size is {get_readable_file_size(size)}')
                         return api.remove([download], force=True, files=True)
+            if DAILY_MIRROR_LIMIT and not listener.isLeech and DAILY_MIRROR_LIMIT <= getdailytasks(user_id, check_mirror=True):
+                mssg = f'Daily Mirror limit is {DAILY_MIRROR_LIMIT}\nYou have exhausted all your Daily Mirror Limit. TRY AGAIN TOMORROW.'
+                if config_dict['PAID_SERVICE'] is True:
+                    mssg += f'\n#Buy Paid Service'
+                listener.onDownloadError(mssg)
+                return api.remove([download], force=True, files=True)
+            else: msize = getdailytasks(user_id, upmirror=size, check_mirror=True); LOGGER.info(f"User : {user_id} Daily Mirror Size : {get_readable_file_size(msize)}")
+            if DAILY_LEECH_LIMIT and listener.isLeech and and DAILY_LEECH_LIMIT <= getdailytasks(user_id, check_leech=True):
+                mssg = f'Daily Leech limit is {DAILY_LEECH_LIMIT}\nYou have exhausted all your Daily Mirror Limit. TRY AGAIN TOMORROW.'
+                if config_dict['PAID_SERVICE'] is True:
+                    mssg += f'\n#Buy Paid Service'
+                listener.onDownloadError(mssg)
+                return api.remove([download], force=True, files=True)
+            else: lsize = getdailytasks(user_id, upleech=size, check_leech=True); LOGGER.info(f"User : {user_id} Daily Leech Size : {get_readable_file_size(lsize)}")
+
     except Exception as e:
         LOGGER.error(f"{e} onDownloadStart: {gid} stop duplicate and size check didn't pass")
 
