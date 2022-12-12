@@ -175,10 +175,10 @@ def imdb_callback(update, context):
         buttons = []
         if imdb['trailer']:
             if isinstance(imdb['trailer'], list):
-                buttons.append([InlineKeyboardButton("▶️ IMDb Trailer ", callback_data=str(imdb['trailer'][-1]))])
+                buttons.append([InlineKeyboardButton("▶️ IMDb Trailer ", url=str(imdb['trailer'][-1]))])
                 imdb['trailer'] = list_to_str(imdb['trailer'])
-            else: buttons.append([InlineKeyboardButton("▶️ IMDb Trailer ", callback_data=str(imdb['trailer']))])
-        buttons.append([InlineKeyboardButton("🚫 Close 🚫", callback_data=f"imdb {user_id} close")])
+            else: buttons.append([InlineKeyboardButton("▶️ IMDb Trailer ", url=str(imdb['trailer']))])
+        #buttons.append([InlineKeyboardButton("🚫 Close 🚫", callback_data=f"imdb {user_id} close")])
         template = ''
         if int(data[1]) in user_data and user_data[int(data[1])].get('imdb_temp'):
             template = user_data[int(data[1])].get('imdb_temp')
