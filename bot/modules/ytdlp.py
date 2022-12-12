@@ -26,6 +26,12 @@ def _ytdl(bot, message, isZip=False, isLeech=False):
     select = False
     multi = 0
     buttons = ButtonMaker()
+    
+    if config_dict['FORCE_BOT_PM']:
+        BOT_PM_X = True
+    else:
+        BOT_PM_X = user_data[user_id].get('ubot_pm')
+    
     if config_dict['FSUB']:
         try:
             user = bot.get_chat_member(f"{config_dict['FSUB_CHANNEL_ID']}", message.from_user.id)
@@ -44,7 +50,7 @@ def _ytdl(bot, message, isZip=False, isLeech=False):
                 return reply_message
         except Exception:
             pass
-    if config_dict['BOT_PM'] and message.chat.type != 'private':
+    if BOT_PM_X and message.chat.type != 'private':
         try:
             msg1 = f'Added your Requested link to Download\n'
             send = bot.sendMessage(message.from_user.id, text=msg1)
