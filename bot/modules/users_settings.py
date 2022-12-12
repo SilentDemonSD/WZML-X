@@ -58,7 +58,7 @@ def get_user_settings(from_user, key=None):
             buttons.sbutton("Show Thumbnail", f"userset {user_id} showthumb")
         else:
             thumbmsg = "Not Exists"
-            buttons.sbutton("Set Thumbnail", f"userset {user_id} sthumb")
+            buttons.sbutton("Set Thumbnail", f"userset {user_id} sthumb universal")
 
         buttxt = "Change/Delete YT-DLP Quality" if ytq != "Not Exists" else "Set YT-DLP Quality"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal yt_ql universal")
