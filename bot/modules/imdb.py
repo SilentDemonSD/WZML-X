@@ -5,12 +5,14 @@ from pycountry import countries as conn
 from telegram import Update, ParseMode
 from telegram.ext import run_async, CallbackContext, CommandHandler, CallbackQueryHandler
 from telegram.error import TelegramError
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram.errors.exceptions.bad_request_400 import MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty
 
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, sendPhoto, deleteMessage
 from bot.helper.ext_utils.bot_utils import get_readable_time
 from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot import LOGGER, dispatcher, IMDB_ENABLED, DEF_IMDB_TEMP, config_dict, user_data, LIST_ITEMS
+from bot import app, LOGGER, dispatcher, IMDB_ENABLED, DEF_IMDB_TEMP, config_dict, user_data, LIST_ITEMS
 
 imdb = IMDb() 
 
@@ -220,13 +222,13 @@ def imdb_callback(update, context):
             cap = "No Results"
         if imdb.get('poster'):
             try:
-                sendPhoto(cap, context.bot, query.message.reply_to_message, imdb['poster'], buttons.build_menu(1))
-            except Exception:
+                app.send_photo(chat_id=query.message.reply_to_message.chat_id,  caption=cap, photo=imdb['poster'], reply_markup=buttons.build_menu(1))
+            except (MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty):
                 poster = imdb.get('poster').replace('.jpg', "._V1_UX360.jpg")
                 sendPhoto(cap, context.bot, query.message.reply_to_message, poster, buttons.build_menu(1))
-            #except Exception as e:
-                #LOGGER.exception(e)
-                #sendMarkup(cap, context.bot, query.message.reply_to_message, buttons.build_menu(1))
+            except Exception as e:
+                LOGGER.exception(e)
+                sendMarkup(cap, context.bot, query.message.reply_to_message, buttons.build_menu(1))
         else:
             sendPhoto(cap, context.bot, query.message.reply_to_message, 'https://telegra.ph/file/5af8d90a479b0d11df298.jpg', buttons.build_menu(1))
         message.delete()
