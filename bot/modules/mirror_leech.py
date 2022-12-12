@@ -31,6 +31,11 @@ from .listener import MirrorLeechListener
 
 def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeech=False):
     buttons = ButtonMaker()
+    user_id = message.from_user.id
+    if config_dict['FORCE_BOT_PM']:
+        BOT_PM_X = True
+    else:
+        BOT_PM_X = user_data[user_id].get('ubot_pm')
 
     if config_dict['FSUB']:
         try:
@@ -50,7 +55,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
                 return reply_message
         except Exception:
             pass
-    if config_dict['BOT_PM'] and message.chat.type != 'private':
+    if BOT_PM_X and message.chat.type != 'private':
         try:
             msg1 = f'Added your Requested link to Download\n'
             send = bot.sendMessage(message.from_user.id, text=msg1)
@@ -69,7 +74,6 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
             return reply_message
 
     total_task = len(download_dict)
-    user_id = message.from_user.id
     USER_TASKS_LIMIT = config_dict['USER_TASKS_LIMIT']
     TOTAL_TASKS_LIMIT = config_dict['TOTAL_TASKS_LIMIT']
     if config_dict['DAILY_TASK_LIMIT'] and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) and config_dict['DAILY_TASK_LIMIT'] <= getdailytasks(user_id):
