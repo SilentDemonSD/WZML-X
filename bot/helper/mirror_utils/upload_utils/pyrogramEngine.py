@@ -152,7 +152,7 @@ class TgUploader:
                                                                       disable_notification=True,
                                                                       reply_markup=self.__button,
                                                                       progress=self.__upload_progress)
-                        if not self.isPrivate and config_dict['BOT_PM']:
+                        if not self.isPrivate and BOT_PM_X:
                             try:
                                 app.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                             except Exception as err:
