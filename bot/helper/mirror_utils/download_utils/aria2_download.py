@@ -104,7 +104,7 @@ def __onDownloadStarted(api, gid):
                 listener.onDownloadError(mssg)
                 return api.remove([download], force=True, files=True)
             else: msize = getdailytasks(user_id, upmirror=size, check_mirror=True); LOGGER.info(f"User : {user_id} Daily Mirror Size : {get_readable_file_size(msize)}")
-            if DAILY_LEECH_LIMIT and listener.isLeech and and DAILY_LEECH_LIMIT <= getdailytasks(user_id, check_leech=True):
+            if DAILY_LEECH_LIMIT and listener.isLeech and DAILY_LEECH_LIMIT <= getdailytasks(user_id, check_leech=True):
                 mssg = f'Daily Leech limit is {DAILY_LEECH_LIMIT}\nYou have exhausted all your Daily Mirror Limit. TRY AGAIN TOMORROW.'
                 if config_dict['PAID_SERVICE'] is True:
                     mssg += f'\n#Buy Paid Service'
