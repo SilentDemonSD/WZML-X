@@ -14,7 +14,7 @@ from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.db_handler import DbManger
-from bot.helper.ext_utils.bot_utils import update_user_ldata, is_paid, is_sudo
+from bot.helper.ext_utils.bot_utils import update_user_ldata, is_paid, is_sudo, get_readable_file_size
 
 handler_dict = {}
 example_dict = {'prefix':'1. <code>@your_channel_username or Anything</code>', 'mprefix':'1. <code>@your_channel_username or Anything</code>', 'suffix':'1. <code>~ WZML</code>\n2. <code>~ @channelname</code>', 'msuffix':'1. <code>~ WZML</code>\n2. <code>~ @channelname</code>', 'caption': '1.'+escape("<b>{filename}</b>\nJoin Now : @WeebZone_updates")+'\nCheck all available fillings options <a href="">HERE</a> and Make Custom Caption.', 'userlog':'1. <code>-100xxxxxx or Channel ID</code>', 'usertd':'1. Example: <code>1TSYgS-88SkhkSuoS-KHSi7%^&s9HKj https://1.xyz.workers.dev/0:/Leecher</code>', 'remname':'<b>Syntax:</b> previousname:newname:times|previousname:newname:times\n\n1. Fork:Star|Here:Now:1|WZML\n\n<b>Output :</b> Star Now : Click Here.txt', 'mremname':'<b>Syntax:</b> previousname:newname:times|previousname:newname:times\n\n1. Fork:Star|Here:Now:1|WZML\n\n<b>Output :</b> Star Now : Click Here.txt', 'imdb_temp':'Check all available fillings options <a href="">HERE</a> and Make Custom Template.', 'ani_temp':'Check all available fillings options <a href="">HERE</a> and Make Custom AniList Template.', 'yt_ql': f'''1. <code>{escape('bv*[height<=1080][ext=mp4]+ba[ext=m4a]/b[height<=1080]')}</code> this will give 1080p-mp4.\n2. <code>{escape('bv*[height<=720][ext=webm]+ba/b[height<=720]')}</code> this will give 720p-webm.\nCheck all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#filtering-formats">HERE</a>.'''}
@@ -141,7 +141,7 @@ def get_user_settings(from_user, key=None):
         remname = user_dict['remname'] if user_dict and user_dict.get('remname') else "Not Exists"
         cfont = user_dict['cfont'][0] if user_dict and user_dict.get('cfont') else "Not Exists"
         dailytlle = config_dict['DAILY_LEECH_LIMIT'] if config_dict['DAILY_LEECH_LIMIT'] else "Unlimited"
-        dailyll = user_dict.get('dly_tasks')[1] if user_dict and user_dict.get('dly_tasks') and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) and config_dict['DAILY_LEECH_LIMIT'] else config_dict.get('DAILY_LEECH_LIMIT', "Unlimited") if user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) else "Unlimited"
+        dailyll = user_dict.get('dly_tasks')[3] if user_dict and user_dict.get('dly_tasks') and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) and config_dict['DAILY_LEECH_LIMIT'] else config_dict.get('DAILY_LEECH_LIMIT', "Unlimited") if user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) else "Unlimited"
 
         buttxt = "Change/Delete Prefix" if prefix != "Not Exists" else "Set Prefix"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal prefix leech")
@@ -163,7 +163,7 @@ def get_user_settings(from_user, key=None):
 ├ Caption : <b>{escape(caption)}</b>
 ├ CapFont : {cfont}
 ├ Remname : <b>{escape(remname)}</b>
-├ Daily Leech : <b>{dailyll} / {dailytlle} per day</b>
+├ Daily Leech : <b>{get_readable_file_size(dailyll)} / {get_readable_file_size(dailytlle)} per day</b>
 '''
     if uplan == "Paid User" and key:
         ex_date = user_dict.get('expiry_date', False)
