@@ -74,7 +74,7 @@ def get_user_settings(from_user, key=None):
                 ubotpm = "Disabled"
                 buttons.sbutton("Enable User PM", f"userset {user_id} uboton")
         else:
-            ubotpm = "Disabled By Owner"
+            ubotpm = "Force Enabled By Owner"
             buttons.sbutton("Disable User PM", f"userset {user_id} ubotdisable")
 
         imdbval, anival = '', ''
