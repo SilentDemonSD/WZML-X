@@ -28,8 +28,8 @@ def get_user_settings(from_user, key=None):
     uplan = "Paid User" if is_paid(user_id) else "Normal User"
     if key is None:
         buttons.sbutton("Universal Settings", f"userset {user_id} universal")
-        buttons.sbutton("Leech Settings", f"userset {user_id} leech")
         buttons.sbutton("Mirror Settings", f"userset {user_id} mirror")
+        buttons.sbutton("Leech Settings", f"userset {user_id} leech")
         buttons.sbutton("Close", f"userset {user_id} close")
         text = "User Settings:"
         button = buttons.build_menu(1)
@@ -93,7 +93,7 @@ def get_user_settings(from_user, key=None):
 ├ Custom Thumbnail : <b>{thumbmsg}</b>
 ├ YT-DLP Quality is : <b>{escape(ytq)}</b>
 ├ UserLog : <b>{userlog}</b>
-├ Daily Tasks : <b>{dailytas} out of {dailytl} / day</b>
+├ Daily Tasks : <b>{dailytas} / {dailytl} per day</b>
 ├ Last Bot Used : <b>{lastused}</b>
 ├ User Bot PM : <b>{ubotpm}</b>
 ├ IMDB : <b>{imdbval if imdbval else imdb}</b>
@@ -104,6 +104,8 @@ def get_user_settings(from_user, key=None):
         suffix = user_dict['msuffix'] if user_dict and user_dict.get('msuffix') else "Not Exists"
         remname = user_dict['mremname'] if user_dict and user_dict.get('mremname') else "Not Exists"
         usertd = user_dict['usertd'] if user_dict and user_dict.get('usertd') else "Not Exists"
+        dailytlup = config_dict['DAILY_MIRROR_LIMIT'] if config_dict['DAILY_MIRROR_LIMIT'] else "Unlimited"
+        dailyup = user_dict.get('dly_tasks')[2] if user_dict and user_dict.get('dly_tasks') and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) and config_dict['DAILY_MIRROR_LIMIT'] else config_dict.get('DAILY_MIRROR_LIMIT', "Unlimited") if user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) else "Unlimited"
 
         buttxt = "Change/Delete Prefix" if prefix != "Not Exists" else "Set Prefix"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal mprefix mirror")
@@ -130,6 +132,7 @@ def get_user_settings(from_user, key=None):
 ├ Remname : <b>{escape(remname)}</b>
 ├ User TD STATUS : <b>{usertdstatus}</b>
 ├ USER TeamDrive : <b>{usertd}</b>
+├ Daily Upload : <b>{dailyup} / {dailytlup} per day</b>
 '''
     elif key == 'leech':
         prefix = user_dict['prefix'] if user_dict and user_dict.get('prefix') else "Not Exists"
@@ -137,6 +140,8 @@ def get_user_settings(from_user, key=None):
         caption = user_dict['caption'] if user_dict and user_dict.get('caption') else "Not Exists"
         remname = user_dict['remname'] if user_dict and user_dict.get('remname') else "Not Exists"
         cfont = user_dict['cfont'][0] if user_dict and user_dict.get('cfont') else "Not Exists"
+        dailytlle = config_dict['DAILY_LEECH_LIMIT'] if config_dict['DAILY_LEECH_LIMIT'] else "Unlimited"
+        dailyll = user_dict.get('dly_tasks')[1] if user_dict and user_dict.get('dly_tasks') and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) and config_dict['DAILY_LEECH_LIMIT'] else config_dict.get('DAILY_LEECH_LIMIT', "Unlimited") if user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) else "Unlimited"
 
         buttxt = "Change/Delete Prefix" if prefix != "Not Exists" else "Set Prefix"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal prefix leech")
@@ -158,6 +163,7 @@ def get_user_settings(from_user, key=None):
 ├ Caption : <b>{escape(caption)}</b>
 ├ CapFont : {cfont}
 ├ Remname : <b>{escape(remname)}</b>
+├ Daily Leech : <b>{dailyll} / {dailytlle} per day</b>
 '''
     if uplan == "Paid User" and key:
         ex_date = user_dict.get('expiry_date', False)
