@@ -119,7 +119,7 @@ def get_user_settings(from_user, key=None):
         buttons.sbutton(buttxt, f"userset {user_id} suniversal mremname mirror")
         
         if config_dict['ENABLE_USR_TD']:
-            if user_dict.get('usertd') != "Not Exists" or len(user_dict.get('usertd')) > 0:
+            if user_dict.get('usertd') != "Not Exists" or user_dict.get('usertd') != False:
                 if user_dict and user_dict.get('is_usertd'):
                     usertdstatus = "Enabled"
                     buttons.sbutton("Disable User TD", f"userset {user_id} usertdxoff")
