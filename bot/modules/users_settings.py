@@ -40,7 +40,10 @@ def get_user_settings(from_user, key=None):
         ytq = user_dict['yt_ql'] if user_dict and user_dict.get('yt_ql') else config_dict['YT_DLP_QUALITY'] if config_dict['YT_DLP_QUALITY'] else "Not Exists"
         dailytl = config_dict['DAILY_TASK_LIMIT'] if config_dict['DAILY_TASK_LIMIT'] else "Unlimited"
         dailytas = config_dict['DAILY_TASK_LIMIT'] - user_dict.get('dly_tasks')[1] if user_dict and user_dict.get('dly_tasks') and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) and config_dict['DAILY_TASK_LIMIT'] else config_dict.get('DAILY_TASK_LIMIT', "Unlimited") if user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) else "Unlimited"
-        lastused = f"{datetime.now() - user_dict['dly_tasks'][0]} ago" if user_dict and user_dict.get('dly_tasks') else "Bot Not Used"
+        if user_dict and user_dict.get('dly_tasks'):
+            t = str(datetime.now() - user_dict['dly_tasks'][0]).split(':')
+            lastused = f"{t[0]}h {t[1]}m {t[2].split('.')[0]}s ago"
+        else: lastused = "Bot Not Used"
 
         if not user_dict and config_dict['AS_DOCUMENT'] or user_dict and user_dict.get('as_doc'):
             ltype = "DOCUMENT"
@@ -83,8 +86,8 @@ def get_user_settings(from_user, key=None):
 ├ Custom Thumbnail : <b>{thumbmsg}</b>
 ├ YT-DLP Quality is : <b>{escape(ytq)}</b>
 ├ UserLog : <b>{userlog}</b>
-├ Daily Task Limit : <b>{dailytl} / day</b> (Usage Left : {dailytas})
-├ Last Bot Used : {lastused}
+├ Daily Task Limit : <b>{dailytl} / day</b> (<b>Usage:</b> {dailytas} Left)
+├ Last Bot Used : <b>{lastused}</b>
 ├ IMDB : <b>{imdbval if imdbval else imdb}</b>
 ├ AniList : <b>{anival if anival else anilist}</b>
 '''
