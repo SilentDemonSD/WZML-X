@@ -1,5 +1,4 @@
 from base64 import b64encode
-from datetime import datetime
 from pyrogram import enums
 from re import match as re_match, search as re_search, split as re_split
 from time import sleep, time
@@ -81,20 +80,18 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
             if USER_TASKS_LIMIT == get_user_task(user_id):
                 return sendMessage(f"<b>Bot Total Task Limit : {USER_TASKS_LIMIT} \nYour Tasks : {get_user_task(user_id)}\n#User_limit_exceed</b>\n#Buy Paid Service", bot ,message)
             if DAILY_TASK_LIMIT:
-                tasks = getdailytasks(user_id)
-                if DAILY_TASK_LIMIT == tasks:
+                if DAILY_TASK_LIMIT == getdailytasks(user_id):
                     return sendMessage(f"<b>Daily Total Task Limit : {DAILY_TASK_LIMIT} \nYou have exhausted all your Daily Task Limits\n#Daily_task_limit_exceed</b>\n#Buy Paid Service", bot ,message)
-                else: daily_tasks[user_id] = [datetime.today(), int(tasks)+1]
+                else: getdailytasks(user_id, increase_task=True)
         else:
             if TOTAL_TASKS_LIMIT == total_task:
                 return sendMessage(f"<b>Bot Total Task Limit : {TOTAL_TASKS_LIMIT}\nTasks Processing : {total_task}\n#total limit exceed </b>", bot ,message)
             if USER_TASKS_LIMIT == get_user_task(user_id):
                 return sendMessage(f"<b>Bot Total Task Limit : {USER_TASKS_LIMIT} \nYour Tasks : {get_user_task(user_id)}\n#user limit exceed</b>", bot ,message)
             if DAILY_TASK_LIMIT:
-                tasks = getdailytasks(user_id)
-                if DAILY_TASK_LIMIT == tasks:
+                if DAILY_TASK_LIMIT == getdailytasks(user_id):
                     return sendMessage(f"<b>Daily Total Task Limit : {DAILY_TASK_LIMIT} \nYou have exhausted all your Daily Task Limits\n#Daily_task_limit_exceed</b>", bot ,message)
-                else: daily_tasks[user_id] = [datetime.today(), int(tasks)+1]
+                else: getdailytasks(user_id, increase_task=True)
         time_gap = timegap_check(message)
         if time_gap:
             return
