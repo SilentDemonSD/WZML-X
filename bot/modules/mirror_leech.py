@@ -23,13 +23,13 @@ from bot.helper.mirror_utils.download_utils.direct_link_generator import direct_
 from bot.helper.mirror_utils.download_utils.telegram_downloader import TelegramDownloadHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, delete_all_messages, update_all_messages, auto_delete_upload_message, auto_delete_message, chat_restrict
+from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, delete_all_messages, update_all_messages, auto_delete_upload_message, auto_delete_message
 from bot.helper.ext_utils.telegraph_helper import telegraph
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from .listener import MirrorLeechListener
 
 
-def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeech=False, extra):
+def _mirror_leech(bot, message, extra, isZip=False, extract=False, isQbit=False, isLeech=False):
     buttons = ButtonMaker()
     user_id = message.from_user.id
     if config_dict['FORCE_BOT_PM']:
@@ -295,18 +295,14 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
             auth = "Basic " + b64encode(auth.encode()).decode('ascii')
         else:
             auth = ''
-        Thread(target=add_aria2c_download, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener, name,                                             auth, ratio, seed_time)).start()
+        Thread(target=add_aria2c_download, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener, name, auth, ratio, seed_time)).start()
+    listener = [bot, message, isZip, extract, isQbit, isLeech, pswd, tag, select, seed]
+    extras = [link, name, ratio, seed_time, c_index, time()]
     if len(CATEGORY_NAMES) > 1 and not isLeech:
-        link = 'telegram_file'
-        listener = [bot, message, isZip, extract, isQbit, isLeech, pswd, tag, select, seed]
-        extras = [link, name, ratio, seed_time, c_index, time()]
         btn_listener[msg_id] = [listener, extras, timeout]
-        chat_restrict(message)
         text, btns = get_category_buttons('mir', timeout, msg_id, c_index)
         engine = sendMarkup(text, bot, message, btns)
         _auto_start_dl(engine, msg_id, timeout)
-    else:
-        chat_restrict(message)
     if multi > 1:
         sleep(4)
         nextmsg = type('nextmsg', (object, ), {'chat_id': message.chat_id, 'message_id': message.reply_to_message.message_id + 1})

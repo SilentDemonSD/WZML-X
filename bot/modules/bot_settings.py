@@ -5,13 +5,12 @@ from time import time, sleep
 from os import remove, rename, path as ospath, environ
 from subprocess import run as srun, Popen
 from dotenv import load_dotenv
-from bot import (config_dict, dispatcher, user_data, DATABASE_URL, tgBotMaxFileSize, DRIVES_IDS, DRIVES_NAMES, INDEX_URLS, aria2
-                GLOBAL_EXTENSION_FILTER, LOGGER, status_reply_dict_lock, Interval, aria2_options, aria2c_global, download_dict, qbit_options, get_client, CATEGORY_NAMES, CATEGORY_IDS, CATEGORY_INDEX)
+from bot import config_dict, dispatcher, user_data, DATABASE_URL, tgBotMaxFileSize, DRIVES_IDS, DRIVES_NAMES, INDEX_URLS, aria2, GLOBAL_EXTENSION_FILTER, LOGGER, status_reply_dict_lock, Interval, aria2_options, aria2c_global, download_dict, qbit_options, get_client, CATEGORY_NAMES, CATEGORY_IDS, CATEGORY_INDEX
 from bot.helper.telegram_helper.message_utils import sendFile, sendMarkup, editMessage, update_all_messages
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.ext_utils.bot_utils import new_thread, setInterval
+from bot.helper.ext_utils.bot_utils import new_thread, setInterval, new_thread
 from bot.helper.ext_utils.db_handler import DbManger
 from bot.modules.search import initiate_search_tools
 
@@ -360,6 +359,7 @@ def load_config():
                     INDEX_URLS.append(temp[2])
                 else:
                     INDEX_URLS.append('')
+    
     CATEGORY_NAMES.clear()
     CATEGORY_IDS.clear()
     CATEGORY_INDEX.clear()
@@ -369,17 +369,17 @@ def load_config():
         CATEGORY_IDS.append(GDRIVE_ID)
         CATEGORY_INDEX.append(INDEX_URL)
 
-    if path.exists('categories.txt'):
+    if ospath.exists('categories.txt'):
         with open('categories.txt', 'r+') as f:
             lines = f.readlines()
             for lines in lines:
-                temp = line.strip()split()
+                temp = line.strip().split()
                 CATEGORY_IDS.append(temp[1])
-                CATEGORY_NAMES.append(temp[0].replace("_". " "))
-            if len(temp) > 2:
-                CATEGORY_INDEX.append(temp[2])
-            else:
-                CATEGORY_INDEX.append('')
+                CATEGORY_NAMES.append(temp[0].replace("_", " "))
+                if len(temp) > 2:
+                    CATEGORY_INDEX.append(temp[2])
+                else:
+                    CATEGORY_INDEX.append('')
 
     SEARCH_PLUGINS = environ.get('SEARCH_PLUGINS', '')
     if len(SEARCH_PLUGINS) == 0:

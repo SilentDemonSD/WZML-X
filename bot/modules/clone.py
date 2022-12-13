@@ -9,7 +9,7 @@ from pyrogram import enums
 
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.ext_utils.timegap import timegap_check
-from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, deleteMessage, delete_all_messages, update_all_messages, sendStatusMessage, auto_delete_upload_message, auto_delete_message, sendFile, sendPhoto, chat_restrict
+from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, deleteMessage, delete_all_messages, update_all_messages, sendStatusMessage, auto_delete_upload_message, auto_delete_message, sendFile, sendPhoto
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.mirror_utils.status_utils.clone_status import CloneStatus
@@ -188,17 +188,11 @@ def _clone(message, bot, listener):
         if len(CATEGORY_NAMES) > 1:
             text, btns = get_category_buttons('clone', timeout, msg_id, c_index)
             btn_listener[msg_id] = listener
-            chat_restrict(message)
             engine = sendMarkup(text, bot, message, btns)
             _auto_start_dl(engine, msg_id, timeout)
         else:
-            chat_restrict(message)
             start_clone(listener)
-                        
         config_dict['CLONE_LIMIT']
-                    return sendFile(bot, message, button, f"File/Folder is already available in Drive. Here are the search results:\n\n{smsg}")
-
-        CLONE_LIMIT = config_dict['CLONE_LIMIT']
         if CLONE_LIMIT != '' and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id):
             LOGGER.info('Checking File/Folder Size...')
             if size > CLONE_LIMIT * 1024**3:
