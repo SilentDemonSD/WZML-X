@@ -7,7 +7,7 @@ from re import split as re_split
 
 from bot import *
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, auto_delete_upload_message, auto_delete_message
-from bot.helper.ext_utils.bot_utils import get_readable_file_size, is_url, get_user_task, is_sudo, is_paid, get_category_buttons, new_thread
+from bot.helper.ext_utils.bot_utils import get_readable_file_size, is_url, get_user_task, is_sudo, is_paid, get_category_buttons, new_thread, get_bot_pm
 from bot.helper.ext_utils.timegap import timegap_check
 from bot.helper.mirror_utils.download_utils.yt_dlp_download_helper import YoutubeDLHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -27,10 +27,7 @@ def _ytdl(bot, message, extra, isZip=False, isLeech=False):
     multi = 0
     buttons = ButtonMaker()
     
-    if config_dict['FORCE_BOT_PM']:
-        BOT_PM_X = True
-    else:
-        BOT_PM_X = user_data[user_id].get('ubot_pm')
+    BOT_PM_X = get_bot_pm(user_id)
     
     if config_dict['FSUB']:
         try:
