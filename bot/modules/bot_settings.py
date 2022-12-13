@@ -10,7 +10,7 @@ from bot.helper.telegram_helper.message_utils import sendFile, sendMarkup, editM
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.ext_utils.bot_utils import new_thread, setInterval
+from bot.helper.ext_utils.bot_utils import new_thread, setInterval, new_thread
 from bot.helper.ext_utils.db_handler import DbManger
 from bot.modules.search import initiate_search_tools
 
