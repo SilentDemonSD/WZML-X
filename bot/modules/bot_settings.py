@@ -375,10 +375,10 @@ def load_config():
                 temp = line.strip()split()
                 CATEGORY_IDS.append(temp[1])
                 CATEGORY_NAMES.append(temp[0].replace("_". " "))
-            if len(temp) > 2:
-                CATEGORY_INDEX.append(temp[2])
-            else:
-                CATEGORY_INDEX.append('')
+                if len(temp) > 2:
+                    CATEGORY_INDEX.append(temp[2])
+                else:
+                    CATEGORY_INDEX.append('')
 
     SEARCH_PLUGINS = environ.get('SEARCH_PLUGINS', '')
     if len(SEARCH_PLUGINS) == 0:
