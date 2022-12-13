@@ -37,10 +37,7 @@ def _clone(message, bot, listener):
         warnmsg = ''
         
     user_id = message.from_user.id
-    if config_dict['FORCE_BOT_PM']:
-        BOT_PM_X = True
-    else:
-        BOT_PM_X = user_data[user_id].get('ubot_pm')
+    BOT_PM_X = get_bot_pm(user_id)
     
     if BOT_PM_X and message.chat.type != 'private':
         if config_dict['EMOJI_THEME']:
