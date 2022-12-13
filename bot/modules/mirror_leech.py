@@ -296,10 +296,9 @@ def _mirror_leech(bot, message, extra, isZip=False, extract=False, isQbit=False,
         else:
             auth = ''
         Thread(target=add_aria2c_download, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener, name, auth, ratio, seed_time)).start()
+    listener = [bot, message, isZip, extract, isQbit, isLeech, pswd, tag, select, seed]
+    extras = [link, name, ratio, seed_time, c_index, time()]
     if len(CATEGORY_NAMES) > 1 and not isLeech:
-        link = 'telegram_file'
-        listener = [bot, message, isZip, extract, isQbit, isLeech, pswd, tag, select, seed]
-        extras = [link, name, ratio, seed_time, c_index, time()]
         btn_listener[msg_id] = [listener, extras, timeout]
         text, btns = get_category_buttons('mir', timeout, msg_id, c_index)
         engine = sendMarkup(text, bot, message, btns)
