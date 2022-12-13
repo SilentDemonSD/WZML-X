@@ -141,6 +141,16 @@ def get_user_task(user_id):
         if userid == user_id: user_task += 1
     return user_task
 
+def get_bot_pm(user_id):
+    if config_dict['FORCE_BOT_PM']:
+        return True
+    else:
+        user_dict = user_data.get(user_id, False)
+        if not user_dict:
+            update_user_ldata(user_id, 'ubot_pm', config_dict['BOT_PM'])
+        botpm = user_dict['ubot_pm']
+        return botpm
+
 def progress_bar(percentage):
     """Returns a progress bar for download"""
     if isinstance(percentage, str):
