@@ -350,7 +350,7 @@ def mir_confirm(update, context):
     editMessage(text, message, btns)
 
 def mirror(update, context):
-    _mirror_leech(context.bot, update.message)
+    _mirror_leech(extra, context.bot, update.message)
 
 def unzip_mirror(update, context):
     _mirror_leech(context.bot, update.message, extract=True)
