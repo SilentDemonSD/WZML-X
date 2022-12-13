@@ -6,7 +6,7 @@ from time import sleep
 from re import split as re_split
 
 from bot import *
-from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, auto_delete_upload_message, auto_delete_message, chat_restrict
+from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, auto_delete_upload_message, auto_delete_message
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, is_url, get_user_task, is_sudo, is_paid, get_category_buttons
 from bot.helper.ext_utils.timegap import timegap_check
 from bot.helper.mirror_utils.download_utils.yt_dlp_download_helper import YoutubeDLHelper
@@ -269,12 +269,10 @@ Check all yt-dlp api options from this <a href='https://github.com/yt-dlp/yt-dlp
     if len(CATEGORY_NAMES) > and not isLeech:
         timeout = 30
         btn_listener[msg_id] = [extra, listener, timeout]
-        chat_restrict(message)
         text, btns = get_category_buttons('ytdlp', timeout, msg_id, c_index)
         engine = sendMarkup(text, bot, message, btns)
         _auto_start_dl(engine, msg_id, timeout)
     else:
-        chat_restrict(message)
         _ytdl(extra, listener)
     if multi > 1:
         sleep(4)
