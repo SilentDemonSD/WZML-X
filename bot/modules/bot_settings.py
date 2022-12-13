@@ -373,7 +373,7 @@ def load_config():
         with open('categories.txt', 'r+') as f:
             lines = f.readlines()
             for lines in lines:
-                temp = line.strip()split()
+                temp = line.strip().split()
                 CATEGORY_IDS.append(temp[1])
                 CATEGORY_NAMES.append(temp[0].replace("_". " "))
                 if len(temp) > 2:
