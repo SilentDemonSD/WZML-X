@@ -266,7 +266,7 @@ Check all yt-dlp api options from this <a href='https://github.com/yt-dlp/yt-dlp
         Thread(target=_auto_cancel, args=(bmsg, msg_id)).start()
     listener = [bot, message, isZip, isLeech, pswd, tag, link]
     extra = [name, opt, qual, select, c_index, time()]
-    if len(CATEGORY_NAMES) > and not isLeech:
+    if len(CATEGORY_NAMES) > 1 and not isLeech:
         timeout = 30
         btn_listener[msg_id] = [extra, listener, timeout]
         text, btns = get_category_buttons('ytdlp', timeout, msg_id, c_index)
