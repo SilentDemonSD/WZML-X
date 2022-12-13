@@ -14,7 +14,7 @@ from threading import Thread
 from telegram import ParseMode, InlineKeyboardButton
 
 from bot import *
-from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_gdtot_link, is_mega_link, is_gdrive_link, get_content_type, get_readable_time, change_filename
+from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_gdtot_link, is_mega_link, is_gdrive_link, get_content_type, get_readable_time, change_filename, is_paid
 from bot.helper.ext_utils.fs_utils import get_base_name, get_path_size, split_file, clean_download, clean_target
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException, NotSupportedExtractionArchive
 from bot.helper.mirror_utils.status_utils.extract_status import ExtractStatus
@@ -47,6 +47,7 @@ class MirrorLeechListener:
         self.dir = f"{DOWNLOAD_DIR}{self.uid}"
         self.select = select
         self.isPrivate = message.chat.type in ['private', 'group']
+        self.__user_settings()
         self.suproc = None
         self.user_id = self.message.from_user.id
         self.reply_to = self.message.reply_to_message
@@ -235,7 +236,12 @@ class MirrorLeechListener:
         user_id_ = self.message.from_user.id
         file_ = escape(name)
         up_path, file_, _ = change_filename(file_, user_id_, all_edit=False, mirror_type=(False if self.isLeech else True))
-
+        
+        if config_dict['FORCE_BOT_PM']:
+            BOT_PM_X = True
+        else:
+            BOT_PM_X = user_data[user_id_].get('ubot_pm')
+        
         NAME_FONT = config_dict['NAME_FONT']
         if config_dict['EMOJI_THEME']:
             slmsg = f"🗂️ Name: <{NAME_FONT}>{file_}</{NAME_FONT}>\n\n"
@@ -280,7 +286,7 @@ class MirrorLeechListener:
                     warnmsg = f'<b>This message will be deleted in <i>{auto_delete_message} minutes</i> from this group.</b>\n'
         else:
             warnmsg = ''
-        if config_dict['BOT_PM'] and self.message.chat.type != 'private':
+        if BOT_PM_X and self.message.chat.type != 'private':
             if config_dict['EMOJI_THEME']:
                 pmwarn = f"<b>😉 I have sent files in PM.</b>\n"
             else:
@@ -311,7 +317,7 @@ class MirrorLeechListener:
             DbManger().rm_complete_task(self.message.link)
 
 
-        if config_dict['BOT_PM'] and config_dict['FORCE_BOT_PM'] and not self.isPrivate:
+        if BOT_PM_X and not self.isPrivate:
             if config_dict['EMOJI_THEME']:
                 msg = f"<b>🗂️ Name: </b><{config_dict['NAME_FONT']}>{file_}</{config_dict['NAME_FONT']}>\n"
             else:
@@ -322,8 +328,8 @@ class MirrorLeechListener:
             botstart = f"http://t.me/{b_uname}"
             buttons.buildbutton("View links in PM", f"{botstart}")
 
-            if PICS:
-                sendPhoto(msg + botpm, self.bot, self.message, choice(PICS), buttons.build_menu(2))
+            if config_dict['PICS']:
+                sendPhoto(msg + botpm, self.bot, self.message, choice(config_dict['PICS']), buttons.build_menu(2))
             else:
                 sendMarkup(msg + botpm, self.bot, self.message, buttons.build_menu(2))
             try:
@@ -377,7 +383,7 @@ class MirrorLeechListener:
                         pass
             else:
                 pass
-            if config_dict['BOT_PM'] and not config_dict['FORCE_BOT_PM'] and self.message.chat.type != 'private':
+            if BOT_PM_X and self.message.chat.type != 'private':
                 bot_d = bot.get_me()
                 b_uname = bot_d.username
                 botstart = f"http://t.me/{b_uname}"
@@ -403,11 +409,12 @@ class MirrorLeechListener:
                 msg += f'\n<b>├ It Tooks:</b> {get_readable_time(time() - self.message.date.timestamp())}'
                 msg += f'\n<b>╰ #Leech_by: </b>{self.tag}\n\n'
 
-
+            if not self.isPrivate and config_dict['SAVE_MSG']:
+                buttons.sbutton('Save This Message', 'save', 'footer')
 
             if not files:
-                if PICS:
-                    uploadmsg = sendPhoto(msg, self.bot, self.message, choice(PICS), buttons.build_menu(2))
+                if config_dict['PICS']:
+                    uploadmsg = sendPhoto(msg, self.bot, self.message, choice(config_dict['PICS']), buttons.build_menu(2))
                 else:
                     uploadmsg = sendMarkup(msg, self.bot, self.message, buttons.build_menu(2))
             else:
@@ -416,22 +423,22 @@ class MirrorLeechListener:
                     fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
                     if len(fmsg.encode() + msg.encode()) > 2000:
                         sleep(1.5)
-                        if not config_dict['FORCE_BOT_PM']:
-                            if PICS:
-                                uploadmsg = sendPhoto(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, choice(PICS), buttons.build_menu(2))
+                        if not BOT_PM_X:
+                            if config_dict['PICS']:
+                                uploadmsg = sendPhoto(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, choice(config_dict['PICS']), buttons.build_menu(2))
                             else:
                                 uploadmsg = sendMarkup(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, buttons.build_menu(2))
                             Thread(target=auto_delete_upload_message, args=(bot, self.message, uploadmsg)).start()
                         fmsg = ''
                 if fmsg != '':
                     sleep(1.5)
-                    if not config_dict['FORCE_BOT_PM']:
-                        if PICS:
-                            uploadmsg = sendPhoto(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, choice(PICS), buttons.build_menu(2))
+                    if not BOT_PM_X:
+                        if config_dict['PICS']:
+                            uploadmsg = sendPhoto(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, choice(config_dict['PICS']), buttons.build_menu(2))
                         else:
                             uploadmsg = sendMarkup(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, buttons.build_menu(2))
                         Thread(target=auto_delete_upload_message, args=(bot, self.message, uploadmsg)).start()
-                if config_dict['LEECH_LOG_INDEXING']:
+                if config_dict['LEECH_LOG_INDEXING'] and config_dict['LEECH_LOG']:
                     for i in user_data['is_leech_log']:
                         indexmsg = ''
                         for index, (link, name) in enumerate(files.items(), start=1):
@@ -477,7 +484,17 @@ class MirrorLeechListener:
             else:
                 buttons.buildbutton("☁️ Drive Link", link)
             LOGGER.info(f'Done Uploading {file_}')
-            if INDEX_URL:= config_dict['INDEX_URL']:
+            IndexURL = ''
+            IS_USRTD = user_data[user_id_].get('is_usertd') if user_id_ in user_data and user_data[user_id_].get('is_usertd') else False
+            if IS_USRTD:
+                LOGGER.info("Using USER TD!")
+                userDest = user_data[user_id_].get('usertd') if user_id_ in user_data and user_data[user_id_].get('usertd') else ''
+                if len(userDest) != 0:
+                    arrForUser = userDest.split()
+                    if len(arrForUser) > 1:
+                        IndexURL = arrForUser[1].rstrip('/')
+            INDEXURL = IndexURL if len(IndexURL) != 0 else config_dict['INDEX_URL']
+            if INDEX_URL:= INDEXURL:
                 url_path = rutils.quote(f'{file_}')
                 share_url = f'{INDEX_URL}/{url_path}'
                 if typ == "Folder":
@@ -529,7 +546,7 @@ class MirrorLeechListener:
                         pass
                     
 
-                    if config_dict['BOT_PM'] and not config_dict['FORCE_BOT_PM'] and self.message.chat.type != 'private':
+                    if BOT_PM_X and self.message.chat.type != 'private':
                         bot_d = bot.get_me()
                         b_uname = bot_d.username
                         botstart = f"http://t.me/{b_uname}"
@@ -548,6 +565,21 @@ class MirrorLeechListener:
             if not config_dict['FORCE_BOT_PM'] or self.message.chat.type == 'private':
                 if PICS:
                     uploadmsg = sendPhoto(msg + pmwarn + logwarn + warnmsg, self.bot, self.message, choice(PICS), buttons.build_menu(2))
+
+            if BOT_PM_X and self.message.chat.type != 'private':
+                try:
+                    bot.sendMessage(chat_id=self.user_id, text=msg,
+                                    reply_markup=buttons.build_menu(2),
+                                    parse_mode=ParseMode.HTML)
+                except Exception as e:
+                    LOGGER.warning(e)
+
+            if not self.isPrivate and config_dict['SAVE_MSG']:
+                buttons.sbutton('Save This Message', 'save', 'footer')
+
+            if not BOT_PM_X or self.message.chat.type == 'private':
+                if config_dict['PICS']:
+                    uploadmsg = sendPhoto(msg + pmwarn + logwarn + warnmsg, self.bot, self.message, choice(config_dict['PICS']), buttons.build_menu(2))
                 else:
                     uploadmsg = sendMarkup(msg + pmwarn + logwarn + warnmsg, self.bot, self.message, buttons.build_menu(2))
                 Thread(target=auto_delete_upload_message, args=(bot, self.message, uploadmsg)).start()
@@ -560,14 +592,7 @@ class MirrorLeechListener:
                                         parse_mode=ParseMode.HTML)
                 except Exception as e:
                     LOGGER.warning(e)
-            if config_dict['BOT_PM'] and self.message.chat.type != 'private':
-                try:
-                    bot.sendMessage(chat_id=self.user_id, text=msg,
-                                    reply_markup=buttons.build_menu(2),
-                                    parse_mode=ParseMode.HTML)
-                except Exception as e:
-                    LOGGER.warning(e)
-                    return
+
             if self.seed:
                 if self.isZip:
                     clean_target(f"{self.dir}/{name}")
@@ -633,3 +658,7 @@ class MirrorLeechListener:
             update_all_messages()
 
         if not self.isPrivate and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL:            DbManger().rm_complete_task(self.message.link)
+
+    def __user_settings(self):
+        user_id = self.message.from_user.id
+        user_dict = user_data.get(user_id, False)            

@@ -50,7 +50,7 @@ default_values = {'AUTO_DELETE_MESSAGE_DURATION': 30,
                   'TIMEZONE': 'Asia/Kolkata',
                   'SEARCH_LIMIT': 0,
                   'RSS_DELAY': 900,
-                  'DEF_ANI_TEMP': '''<b>{ro_title}</b>({na_title})
+                  'ANIME_TEMPLATE': '''<b>{ro_title}</b>({na_title})
                                      <b>Format</b>: <code>{format}</code>
                                      <b>Status</b>: <code>{status}</code>
                                      <b>Start Date</b>: <code>{startdate}</code>
@@ -65,7 +65,7 @@ default_values = {'AUTO_DELETE_MESSAGE_DURATION': 30,
                                      <b>Studios</b>: {studios}
 
                                      <b>Description</b>: <i>{description}</i>''',
-                  'DEF_IMDB_TEMP': '''<b>Title: </b> {title} [{year}]
+                  'IMDB_TEMPLATE': '''<b>Title: </b> {title} [{year}]
                                       <b>Also Known As:</b> {aka}
                                       <b>Rating ⭐️:</b> <i>{rating}</i>
                                       <b>Release Info: </b> <a href="{url_releaseinfo}">{release_date}</a>
@@ -158,6 +158,9 @@ def load_config():
     if len(LINK_LOGS) != 0: 
         aid = LINK_LOGS.split(' ')
         user_data['link_logs'] = [int(id_.strip()) for id_ in aid]
+
+    SAVE_MSG = environ.get('SAVE_MSG', '')
+    SAVE_MSG = SAVE_MSG.lower() == 'true'
 
     EXTENSION_FILTER = environ.get('EXTENSION_FILTER', '')
     if len(EXTENSION_FILTER) > 0:
@@ -282,6 +285,14 @@ def load_config():
     USER_TASKS_LIMIT = environ.get('USER_TASKS_LIMIT', '')
     USER_TASKS_LIMIT = '' if len(USER_TASKS_LIMIT) == 0 else int(USER_TASKS_LIMIT)
 
+    DAILY_TASK_LIMIT = environ.get('DAILY_TASK_LIMIT', '')
+    DAILY_TASK_LIMIT = '' if len(DAILY_TASK_LIMIT) == 0 else int(DAILY_TASK_LIMIT)
+
+    DAILY_MIRROR_LIMIT = environ.get('DAILY_MIRROR_LIMIT', '')
+    DAILY_MIRROR_LIMIT = '' if len(DAILY_MIRROR_LIMIT) == 0 else int(DAILY_MIRROR_LIMIT)
+
+    DAILY_LEECH_LIMIT = environ.get('DAILY_LEECH_LIMIT', '')
+    DAILY_LEECH_LIMIT = '' if len(DAILY_LEECH_LIMIT) == 0 else int(DAILY_LEECH_LIMIT)
 
     INCOMPLETE_TASK_NOTIFIER = environ.get('INCOMPLETE_TASK_NOTIFIER', '')
     INCOMPLETE_TASK_NOTIFIER = INCOMPLETE_TASK_NOTIFIER.lower() == 'true'
@@ -682,6 +693,7 @@ def load_config():
                         'STATUS_LIMIT': STATUS_LIMIT,
                         'STATUS_UPDATE_INTERVAL': STATUS_UPDATE_INTERVAL,
                         'STOP_DUPLICATE': STOP_DUPLICATE,
+                        'SAVE_MSG': SAVE_MSG,
                         'SUDO_USERS': SUDO_USERS,
                         'TGH_THUMB': TGH_THUMB,
                         'TELEGRAM_API': TELEGRAM_API,
@@ -732,6 +744,9 @@ def load_config():
                         'TOTAL_TASKS_LIMIT': TOTAL_TASKS_LIMIT,
                         'USER_TASKS_LIMIT': USER_TASKS_LIMIT,
                         'STORAGE_THRESHOLD': STORAGE_THRESHOLD,
+                        'DAILY_TASK_LIMIT': DAILY_TASK_LIMIT,
+                        'DAILY_MIRROR_LIMIT': DAILY_MIRROR_LIMIT,
+                        'DAILY_LEECH_LIMIT': DAILY_LEECH_LIMIT,
                         'TORRENT_DIRECT_LIMIT': TORRENT_DIRECT_LIMIT,
                         'ZIP_UNZIP_LIMIT': ZIP_UNZIP_LIMIT,
                         'CLONE_LIMIT': CLONE_LIMIT,
@@ -753,8 +768,8 @@ def load_config():
                         'PIXABAY_SEARCH': PIXABAY_SEARCH,
                         'NAME_FONT': NAME_FONT,
                         'CAPTION_FONT': CAPTION_FONT,
-                        'DEF_IMDB_TEMP': DEF_IMDB_TEMP,
-                        'DEF_ANI_TEMP': DEF_ANI_TEMP,
+                        'IMDB_TEMPLATE': DEF_IMDB_TEMP,
+                        'ANIME_TEMPLATE': DEF_ANI_TEMP,
                         'DISABLE_DRIVE_LINK': DISABLE_DRIVE_LINK,
                         'SOURCE_LINK': SOURCE_LINK,
                         'START_BTN1_NAME': START_BTN1_NAME,

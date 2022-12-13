@@ -4,6 +4,7 @@ from PIL import Image
 from telegram.ext import CommandHandler, CallbackQueryHandler, MessageHandler, Filters
 from time import sleep, time
 from functools import partial
+from datetime import datetime
 from html import escape
 from threading import Thread
 
@@ -13,10 +14,10 @@ from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.db_handler import DbManger
-from bot.helper.ext_utils.bot_utils import update_user_ldata, is_paid, is_sudo
+from bot.helper.ext_utils.bot_utils import update_user_ldata, is_paid, is_sudo, get_readable_file_size
 
 handler_dict = {}
-example_dict = {'prefix':'1. <code>@your_channel_username or Anything</code>', 'mprefix':'1. <code>@your_channel_username or Anything</code>', 'suffix':'1. <code>~ WZML</code>\n2. <code>~ @channelname</code>', 'msuffix':'1. <code>~ WZML</code>\n2. <code>~ @channelname</code>', 'caption': '1.'+escape("<b>{filename}</b>\nJoin Now : @WeebZone_updates")+'\nCheck all available fillings options <a href="">HERE</a> and Make Custom Caption.', 'userlog':'1. <code>-100xxxxxx or Channel ID</code>', 'remname':'<b>Syntax:</b> previousname:newname:times|previousname:newname:times\n\n1. Fork:Star|Here:Now:1|WZML\n\n<b>Output :</b> Star Now : Click Here.txt', 'mremname':'<b>Syntax:</b> previousname:newname:times|previousname:newname:times\n\n1. Fork:Star|Here:Now:1|WZML\n\n<b>Output :</b> Star Now : Click Here.txt', 'imdb_temp':'Check all available fillings options <a href="">HERE</a> and Make Custom Template.', 'ani_temp':'Check all available fillings options <a href="">HERE</a> and Make Custom AniList Template.', 'yt_ql': f'''1. <code>{escape('bv*[height<=1080][ext=mp4]+ba[ext=m4a]/b[height<=1080]')}</code> this will give 1080p-mp4.\n2. <code>{escape('bv*[height<=720][ext=webm]+ba/b[height<=720]')}</code> this will give 720p-webm.\nCheck all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#filtering-formats">HERE</a>.'''}
+example_dict = {'prefix':'1. <code>@your_channel_username or Anything</code>', 'mprefix':'1. <code>@your_channel_username or Anything</code>', 'suffix':'1. <code>~ WZML</code>\n2. <code>~ @channelname</code>', 'msuffix':'1. <code>~ WZML</code>\n2. <code>~ @channelname</code>', 'caption': '1.'+escape("<b>{filename}</b>\nJoin Now : @WeebZone_updates")+'\nCheck all available fillings options <a href="">HERE</a> and Make Custom Caption.', 'userlog':'1. <code>-100xxxxxx or Channel ID</code>', 'usertd':'1. Example: <code>1TSYgS-88SkhkSuoS-KHSi7%^&s9HKj https://1.xyz.workers.dev/0:/Leecher</code>', 'remname':'<b>Syntax:</b> previousname:newname:times|previousname:newname:times\n\n1. Fork:Star|Here:Now:1|WZML\n\n<b>Output :</b> Star Now : Click Here.txt', 'mremname':'<b>Syntax:</b> previousname:newname:times|previousname:newname:times\n\n1. Fork:Star|Here:Now:1|WZML\n\n<b>Output :</b> Star Now : Click Here.txt', 'imdb_temp':'Check all available fillings options <a href="">HERE</a> and Make Custom Template.', 'ani_temp':'Check all available fillings options <a href="">HERE</a> and Make Custom AniList Template.', 'yt_ql': f'''1. <code>{escape('bv*[height<=1080][ext=mp4]+ba[ext=m4a]/b[height<=1080]')}</code> this will give 1080p-mp4.\n2. <code>{escape('bv*[height<=720][ext=webm]+ba/b[height<=720]')}</code> this will give 720p-webm.\nCheck all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#filtering-formats">HERE</a>.'''}
 
 def get_user_settings(from_user, key=None):
     user_id = from_user.id
@@ -24,11 +25,13 @@ def get_user_settings(from_user, key=None):
     buttons = ButtonMaker()
     thumbpath = f"Thumbnails/{user_id}.jpg"
     user_dict = user_data.get(user_id, False)
+    if not user_dict:
+        update_user_ldata(user_id, 'ubot_pm', config_dict['BOT_PM'])
     uplan = "Paid User" if is_paid(user_id) else "Normal User"
     if key is None:
         buttons.sbutton("Universal Settings", f"userset {user_id} universal")
-        buttons.sbutton("Leech Settings", f"userset {user_id} leech")
         buttons.sbutton("Mirror Settings", f"userset {user_id} mirror")
+        buttons.sbutton("Leech Settings", f"userset {user_id} leech")
         buttons.sbutton("Close", f"userset {user_id} close")
         text = "User Settings:"
         button = buttons.build_menu(1)
@@ -37,6 +40,13 @@ def get_user_settings(from_user, key=None):
         imdb = user_dict['imdb_temp'] if user_dict and user_dict.get('imdb_temp') else "Not Exists"
         anilist = user_dict['ani_temp'] if user_dict and user_dict.get('ani_temp') else "Not Exists"
         ytq = user_dict['yt_ql'] if user_dict and user_dict.get('yt_ql') else config_dict['YT_DLP_QUALITY'] if config_dict['YT_DLP_QUALITY'] else "Not Exists"
+        dailytl = config_dict['DAILY_TASK_LIMIT'] if config_dict['DAILY_TASK_LIMIT'] else "Unlimited"
+        dailytas = user_dict.get('dly_tasks')[1] if user_dict and user_dict.get('dly_tasks') and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) and config_dict['DAILY_TASK_LIMIT'] else config_dict.get('DAILY_TASK_LIMIT', "Unlimited") if user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) else "Unlimited"        
+        
+        if user_dict and user_dict.get('dly_tasks'):
+            t = str(datetime.now() - user_dict['dly_tasks'][0]).split(':')
+            lastused = f"{t[0]}h {t[1]}m {t[2].split('.')[0]}s ago"
+        else: lastused = "Bot Not Used"
 
         if not user_dict and config_dict['AS_DOCUMENT'] or user_dict and user_dict.get('as_doc'):
             ltype = "DOCUMENT"
@@ -47,16 +57,27 @@ def get_user_settings(from_user, key=None):
 
         if ospath.exists(thumbpath):
             thumbmsg = "Exists"
-            buttons.sbutton("Change/Delete Thumbnail", f"userset {user_id} sthumb")
+            buttons.sbutton("Change/Delete Thumbnail", f"userset {user_id} sthumb universal")
             buttons.sbutton("Show Thumbnail", f"userset {user_id} showthumb")
         else:
             thumbmsg = "Not Exists"
-            buttons.sbutton("Set Thumbnail", f"userset {user_id} sthumb")
+            buttons.sbutton("Set Thumbnail", f"userset {user_id} sthumb universal")
 
         buttxt = "Change/Delete YT-DLP Quality" if ytq != "Not Exists" else "Set YT-DLP Quality"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal yt_ql universal")
         buttxt = "Change/Delete UserLog" if userlog != "Not Exists" else "Set UserLog"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal userlog universal")
+        
+        if not config_dict['FORCE_BOT_PM']:
+            if user_dict and user_dict.get('ubot_pm'):
+                ubotpm = "Enabled"
+                buttons.sbutton("Disable User PM", f"userset {user_id} ubotoff")
+            else:
+                ubotpm = "Disabled"
+                buttons.sbutton("Enable User PM", f"userset {user_id} uboton")
+        else:
+            ubotpm = "Force Enabled By Owner"
+            buttons.sbutton("Disable User PM", f"userset {user_id} ubotdisable")
 
         imdbval, anival = '', ''
         if imdb != "Not Exists":
@@ -79,14 +100,19 @@ def get_user_settings(from_user, key=None):
 ├ Custom Thumbnail : <b>{thumbmsg}</b>
 ├ YT-DLP Quality is : <b>{escape(ytq)}</b>
 ├ UserLog : <b>{userlog}</b>
+├ Daily Tasks : <b>{dailytas} / {dailytl} per day</b>
+├ Last Bot Used : <b>{lastused}</b>
+├ User Bot PM : <b>{ubotpm}</b>
 ├ IMDB : <b>{imdbval if imdbval else imdb}</b>
 ├ AniList : <b>{anival if anival else anilist}</b>
-╰ User Plan : <b>{uplan}</b>
 '''
     elif key == 'mirror':
         prefix = user_dict['mprefix'] if user_dict and user_dict.get('mprefix') else "Not Exists"
         suffix = user_dict['msuffix'] if user_dict and user_dict.get('msuffix') else "Not Exists"
         remname = user_dict['mremname'] if user_dict and user_dict.get('mremname') else "Not Exists"
+        usertd = user_dict['usertd'] if user_dict and user_dict.get('usertd') else "Not Exists"
+        dailytlup = get_readable_file_size(config_dict['DAILY_MIRROR_LIMIT'] * 1024**3) if config_dict['DAILY_MIRROR_LIMIT'] else "Unlimited"
+        dailyup = get_readable_file_size(user_dict.get('dly_tasks')[3]) if user_dict and user_dict.get('dly_tasks') and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) and config_dict['DAILY_MIRROR_LIMIT'] else "Unlimited"
 
         buttxt = "Change/Delete Prefix" if prefix != "Not Exists" else "Set Prefix"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal mprefix mirror")
@@ -94,16 +120,35 @@ def get_user_settings(from_user, key=None):
         buttons.sbutton(buttxt, f"userset {user_id} suniversal msuffix mirror")
         buttxt = "Change/Delete Remname" if remname != "Not Exists" else "Set Remname"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal mremname mirror")
+        
+        if config_dict['ENABLE_USR_TD']:
+            if user_dict.get('usertd'):
+                if user_dict and user_dict.get('is_usertd'):
+                    usertdstatus = "Enabled"
+                    buttons.sbutton("Disable User TD", f"userset {user_id} usertdxoff")
+                else:
+                    usertdstatus = "Disabled"
+                    buttons.sbutton("Enable User TD", f"userset {user_id} usertdxon")
+            else:
+                usertdstatus = "Disabled"
+                buttons.sbutton("Enable User TD", f"userset {user_id} usertdxnotset")
+        else:
+            usertdstatus = "User TD Feature Disabled By Owner!"
+            buttons.sbutton("Enable User TD", f"userset {user_id} usertdxdisable")
+        buttxt = "Change/Delete User TD" if usertd != "Not Exists" else "Set User TD"
+        buttons.sbutton(buttxt, f"userset {user_id} suniversal usertd mirror")
 
         buttons.sbutton("Back", f"userset {user_id} mback")
         buttons.sbutton("Close", f"userset {user_id} close")
         button = buttons.build_menu(2)
-        text = f'''<u>Mirror Settings for <a href='tg://user?id={user_id}'>{name}</a></u>
+        text = f'''<u>Mirror/Clone Settings for <a href='tg://user?id={user_id}'>{name}</a></u>
 
 ╭ Prefix : <b>{escape(prefix)}</b>
 ├ Suffix : <b>{suffix}</b>
 ├ Remname : <b>{escape(remname)}</b>
-╰ User Plan : <b>{uplan}</b>
+├ User TD STATUS : <b>{usertdstatus}</b>
+├ USER TeamDrive : <b>{usertd}</b>
+├ Daily Upload : <b>{dailyup} / {dailytlup} per day</b>
 '''
     elif key == 'leech':
         prefix = user_dict['prefix'] if user_dict and user_dict.get('prefix') else "Not Exists"
@@ -111,6 +156,8 @@ def get_user_settings(from_user, key=None):
         caption = user_dict['caption'] if user_dict and user_dict.get('caption') else "Not Exists"
         remname = user_dict['remname'] if user_dict and user_dict.get('remname') else "Not Exists"
         cfont = user_dict['cfont'][0] if user_dict and user_dict.get('cfont') else "Not Exists"
+        dailytlle = get_readable_file_size(config_dict['DAILY_LEECH_LIMIT'] * 1024**3) if config_dict['DAILY_LEECH_LIMIT'] else "Unlimited"
+        dailyll = get_readable_file_size(user_dict.get('dly_tasks')[2]) if user_dict and user_dict.get('dly_tasks') and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) and config_dict['DAILY_LEECH_LIMIT'] else "Unlimited"
 
         buttxt = "Change/Delete Prefix" if prefix != "Not Exists" else "Set Prefix"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal prefix leech")
@@ -132,12 +179,14 @@ def get_user_settings(from_user, key=None):
 ├ Caption : <b>{escape(caption)}</b>
 ├ CapFont : {cfont}
 ├ Remname : <b>{escape(remname)}</b>
-╰ User Plan : <b>{uplan}</b>
+├ Daily Leech : <b>{dailyll} / {dailytlle} per day</b>
 '''
     if uplan == "Paid User" and key:
         ex_date = user_dict.get('expiry_date', False)
         if not ex_date: ex_date = 'Not Specified'
+        text += f"├ User Plan : <b>{uplan}</b>"
         text += f"╰ Expiry Date : <b>{ex_date}</b>"
+    elif key: text += f"╰ User Plan : <b>{uplan}</b>"
     return text, button
 
 def update_user_settings(message, from_user, key):
@@ -203,6 +252,36 @@ def edit_user_settings(update, context):
         update_user_settings(message, query.from_user, 'universal')
         if DATABASE_URL:
             DbManger().update_user_data(user_id)
+    elif data[2] == "usertdxon":
+        update_user_ldata(user_id, 'is_usertd', True)
+        query.answer(text="Now, Your Files Will Be Mirrored/Cloned ON Your Personal TD!", show_alert=True)
+        update_user_settings(message, query.from_user, 'mirror')
+        if DATABASE_URL:
+            DbManger().update_user_data(user_id)
+    elif data[2] == "usertdxoff":
+        update_user_ldata(user_id, 'is_usertd', False)
+        query.answer(text="Now, Your Files Will Be Mirrorred/Cloned ON Global TD!", show_alert=True)
+        update_user_settings(message, query.from_user, 'mirror')
+        if DATABASE_URL:
+            DbManger().update_user_data(user_id)
+    elif data[2] == "usertdxnotset":
+        query.answer(text="Set User TD First!", show_alert=True)
+    elif data[2] == "usertdxdisable":
+        query.answer(text="User TD Feature Disabled By Owner!", show_alert=True)
+    elif data[2] == "uboton":
+        update_user_ldata(user_id, 'ubot_pm', True)
+        query.answer(text="Now, Your Files will be send to your PM!", show_alert=True)
+        update_user_settings(message, query.from_user, 'universal')
+        if DATABASE_URL:
+            DbManger().update_user_data(user_id)
+    elif data[2] == "ubotoff":
+        update_user_ldata(user_id, 'ubot_pm', False)
+        query.answer(text="Now, Your Files will not be send to your PM anymore!", show_alert=True)
+        update_user_settings(message, query.from_user, 'universal')
+        if DATABASE_URL:
+            DbManger().update_user_data(user_id)
+    elif data[2] == "ubotdisable":
+        query.answer(text="Always BOT PM Mode is ON By Bot Owner!", show_alert=True)
     elif data[2] == "dthumb":
         handler_dict[user_id] = False
         path = f"Thumbnails/{user_id}.jpg"
@@ -229,7 +308,7 @@ def edit_user_settings(update, context):
         if ospath.exists(thumbpath):
             menu = True
             buttons.sbutton("Delete", f"userset {user_id} dthumb")
-        buttons.sbutton("Back", f"userset {user_id} back")
+        buttons.sbutton("Back", f"userset {user_id} back {data[3]}")
         buttons.sbutton("Close", f"userset {user_id} close")
         editMessage('Send a photo to save it as custom Thumbnail.', message, buttons.build_menu(2) if menu else buttons.build_menu(1))
         partial_fnc = partial(set_thumb, omsg=message)
@@ -265,7 +344,7 @@ def edit_user_settings(update, context):
         handler_dict[user_id] = True
         buttons = ButtonMaker()
         if data[3] == 'caption':
-            buttons.sbutton("Set Font Style", f"userset {user_id} font")
+            buttons.sbutton("Set Font Style", f"userset {user_id} font leech")
         if user_id in user_data and user_data[user_id].get(data[3]):
             menu = True
             buttons.sbutton("Delete", f"userset {user_id} sremove {data[3]} {data[4]}")
@@ -307,7 +386,7 @@ def edit_user_settings(update, context):
         buttons.sbutton("Underline", f"userset {user_id} Underline")
         buttons.sbutton("Bold", f"userset {user_id} Bold")
         buttons.sbutton("Regular", f"userset {user_id} Regular")
-        buttons.sbutton("Back", f"userset {user_id} back")
+        buttons.sbutton("Back", f"userset {user_id} back {data[3]}")
         buttons.sbutton("Close", f"userset {user_id} close")
         btns = buttons.build_menu(2)
         if user_id in user_data and user_data[user_id].get('cfont'): cf = user_data[user_id]['cfont']

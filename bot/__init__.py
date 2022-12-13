@@ -39,9 +39,11 @@ DRIVES_IDS = []
 INDEX_URLS = []
 CATEGORY_NAMES = []
 user_data = {}
+user_data = {} # {user_id: [datetime(date), daily_tasks: int, leech, mirror]}
 aria2_options = {}
 qbit_options = {}
 TIME_GAP_STORE = {}
+
 GLOBAL_EXTENSION_FILTER = ['.aria2']
 
 try:
@@ -183,6 +185,9 @@ if len(LINK_LOGS) != 0:
     aid = LINK_LOGS.split(' ')
     user_data['link_logs'] = [int(id_.strip()) for id_ in aid]
 
+SAVE_MSG = environ.get('SAVE_MSG', '')
+SAVE_MSG = SAVE_MSG.lower() == 'true'
+
 EXTENSION_FILTER = environ.get('EXTENSION_FILTER', '')
 if len(EXTENSION_FILTER) > 0:
     fx = EXTENSION_FILTER.split()
@@ -267,7 +272,7 @@ try:
                 app.stop()
                 exit(1)
             TG_SPLIT_SIZE = 4194304000
-            LOGGER.info("Telegram Premium detected! Leech Limit upgraded to 4GB")
+            LOGGER.info("Telegram Premium Detected! Leech Limit upgraded to 4GB")
         elif (not DATABASE_URL) or (not RSS_CHAT_ID):
             premium_session.stop()
             LOGGER.info(f"Not using rss. if you want to use fill RSS_CHAT_ID and DATABASE_URL variables.")
@@ -311,6 +316,15 @@ else:
 
 SEARCH_LIMIT = environ.get('SEARCH_LIMIT', '')
 SEARCH_LIMIT = 0 if len(SEARCH_LIMIT) == 0 else int(SEARCH_LIMIT)
+
+DAILY_TASK_LIMIT = environ.get('DAILY_TASK_LIMIT', '')
+DAILY_TASK_LIMIT = '' if len(DAILY_TASK_LIMIT) == 0 else int(DAILY_TASK_LIMIT)
+
+DAILY_MIRROR_LIMIT = environ.get('DAILY_MIRROR_LIMIT', '')
+DAILY_MIRROR_LIMIT = '' if len(DAILY_MIRROR_LIMIT) == 0 else int(DAILY_MIRROR_LIMIT)
+
+DAILY_LEECH_LIMIT = environ.get('DAILY_LEECH_LIMIT', '')
+DAILY_LEECH_LIMIT = '' if len(DAILY_LEECH_LIMIT) == 0 else int(DAILY_LEECH_LIMIT)
 
 CMD_PERFIX = environ.get('CMD_PERFIX', '')
 
@@ -373,6 +387,9 @@ SET_BOT_COMMANDS = SET_BOT_COMMANDS.lower() == 'true'
 
 IS_TEAM_DRIVE = environ.get('IS_TEAM_DRIVE', '')
 IS_TEAM_DRIVE = IS_TEAM_DRIVE.lower() == 'true'
+
+ENABLE_USR_TD = environ.get('ENABLE_USR_TD', '')
+ENABLE_USR_TD = ENABLE_USR_TD.lower() == 'false'
 
 USE_SERVICE_ACCOUNTS = environ.get('USE_SERVICE_ACCOUNTS', '')
 USE_SERVICE_ACCOUNTS = USE_SERVICE_ACCOUNTS.lower() == 'true'
@@ -669,14 +686,15 @@ config_dict = {'ANILIST_ENABLED': ANILIST_ENABLED,
                'DRIVEFIRE_CRYPT': DRIVEFIRE_CRYPT,
                'DOWNLOAD_DIR': DOWNLOAD_DIR,
                'DATABASE_URL': DATABASE_URL,
-               'DEF_IMDB_TEMP': DEF_IMDB_TEMP,
-               'DEF_ANI_TEMP': DEF_ANI_TEMP,
+               'ENABLE_USR_TD': ENABLE_USR_TD,
+               'IMDB_TEMPLATE': DEF_IMDB_TEMP,
+               'ANIME_TEMPLATE': DEF_ANI_TEMP,  
                'DISABLE_DRIVE_LINK': DISABLE_DRIVE_LINK,
                'OWNER_ID': OWNER_ID,
                'EQUAL_SPLITS': EQUAL_SPLITS,
                'EXTENSION_FILTER': EXTENSION_FILTER,
                'EMOJI_THEME': EMOJI_THEME,
-               'GDRIVE_ID': GDRIVE_ID,
+               'GDRIVE_ID': GDRIVE_ID,               
                'IGNORE_PENDING_REQUESTS': IGNORE_PENDING_REQUESTS,
                'INCOMPLETE_TASK_NOTIFIER': INCOMPLETE_TASK_NOTIFIER,
                'INDEX_URL': INDEX_URL,
@@ -718,6 +736,7 @@ config_dict = {'ANILIST_ENABLED': ANILIST_ENABLED,
                'STATUS_LIMIT': STATUS_LIMIT,
                'STATUS_UPDATE_INTERVAL': STATUS_UPDATE_INTERVAL,
                'STOP_DUPLICATE': STOP_DUPLICATE,
+               'SAVE_MSG': SAVE_MSG,
                'SUDO_USERS': SUDO_USERS,
                'TELEGRAM_API': TELEGRAM_API,
                'TELEGRAM_HASH': TELEGRAM_HASH,
@@ -725,7 +744,7 @@ config_dict = {'ANILIST_ENABLED': ANILIST_ENABLED,
                'UPSTREAM_REPO': UPSTREAM_REPO,
                'UPSTREAM_BRANCH': UPSTREAM_BRANCH,
                'UPTOBOX_TOKEN': UPTOBOX_TOKEN,
-               'USE_SERVICE_ACCOUNTS': USE_SERVICE_ACCOUNTS,
+               'USE_SERVICE_ACCOUNTS': USE_SERVICE_ACCOUNTS,               
                'UNIFIED_EMAIL': UNIFIED_EMAIL,
                'UNIFIED_PASS': UNIFIED_PASS,
                'VIEW_LINK': VIEW_LINK,
@@ -742,6 +761,9 @@ config_dict = {'ANILIST_ENABLED': ANILIST_ENABLED,
                'ZIP_UNZIP_LIMIT': ZIP_UNZIP_LIMIT,
                'LEECH_LIMIT': LEECH_LIMIT,
                'MEGA_LIMIT': MEGA_LIMIT,
+               'DAILY_TASK_LIMIT': DAILY_TASK_LIMIT,
+               'DAILY_MIRROR_LIMIT': DAILY_MIRROR_LIMIT,
+               'DAILY_LEECH_LIMIT': DAILY_LEECH_LIMIT,
                'TIME_GAP': TIME_GAP,
                'FINISHED_PROGRESS_STR': FINISHED_PROGRESS_STR,
                'UN_FINISHED_PROGRESS_STR': UN_FINISHED_PROGRESS_STR,

@@ -11,8 +11,7 @@ from bot import botStartTime
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time
 
 from bot import LOGGER, status_reply_dict, status_reply_dict_lock, \
-                Interval, bot, rss_session, \
-                PICS, app, config_dict
+                Interval, bot, rss_session, app, config_dict
 from bot.helper.ext_utils.bot_utils import get_readable_message, setInterval
 
 
@@ -207,12 +206,12 @@ def update_all_messages(force=False):
     with status_reply_dict_lock:
         for chat_id in status_reply_dict:
             if status_reply_dict[chat_id] and msg != status_reply_dict[chat_id][0].text:
-                if buttons == "" and PICS:
-                    rmsg = editPhoto(msg, status_reply_dict[chat_id][0], choice(PICS))
+                if buttons == "" and config_dict['PICS']:
+                    rmsg = editPhoto(msg, status_reply_dict[chat_id][0], choice(config_dict['PICS']))
                 elif buttons == "":
                     rmsg = editMessage(msg, status_reply_dict[chat_id][0])
-                elif PICS:
-                    rmsg = editPhoto(msg, status_reply_dict[chat_id][0], choice(PICS), buttons)
+                elif config_dict['PICS']:
+                    rmsg = editPhoto(msg, status_reply_dict[chat_id][0], choice(config_dict['PICS']), buttons)
                 else:
                     rmsg = editMessage(msg, status_reply_dict[chat_id][0], buttons)
                 if rmsg == "Message to edit not found":
@@ -230,12 +229,12 @@ def sendStatusMessage(msg, bot):
             message = status_reply_dict[msg.chat.id][0]
             deleteMessage(bot, message)
             del status_reply_dict[msg.chat.id]
-        if buttons == "" and PICS:
-            message = sendPhoto(progress, bot, msg, choice(PICS))
+        if buttons == "" and config_dict['PICS']:
+            message = sendPhoto(progress, bot, msg, choice(config_dict['PICS']))
         elif buttons == "":
             message = sendMessage(progress, bot, msg)
-        elif PICS:
-            message = sendPhoto(progress, bot, msg, choice(PICS), buttons)
+        elif config_dict['PICS']:
+            message = sendPhoto(progress, bot, msg, choice(config_dict['PICS']), buttons)
         else:
             message = sendMarkup(progress, bot, msg, buttons)
         status_reply_dict[msg.chat.id] = [message, time()]
