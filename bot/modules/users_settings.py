@@ -25,6 +25,8 @@ def get_user_settings(from_user, key=None):
     buttons = ButtonMaker()
     thumbpath = f"Thumbnails/{user_id}.jpg"
     user_dict = user_data.get(user_id, False)
+    if not user_dict:
+        update_user_ldata(user_id, 'ubot_pm', config_dict['BOT_PM'])
     uplan = "Paid User" if is_paid(user_id) else "Normal User"
     if key is None:
         buttons.sbutton("Universal Settings", f"userset {user_id} universal")
@@ -39,7 +41,8 @@ def get_user_settings(from_user, key=None):
         anilist = user_dict['ani_temp'] if user_dict and user_dict.get('ani_temp') else "Not Exists"
         ytq = user_dict['yt_ql'] if user_dict and user_dict.get('yt_ql') else config_dict['YT_DLP_QUALITY'] if config_dict['YT_DLP_QUALITY'] else "Not Exists"
         dailytl = config_dict['DAILY_TASK_LIMIT'] if config_dict['DAILY_TASK_LIMIT'] else "Unlimited"
-        dailytas = user_dict.get('dly_tasks')[1] if user_dict and user_dict.get('dly_tasks') and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) and config_dict['DAILY_TASK_LIMIT'] else config_dict.get('DAILY_TASK_LIMIT', "Unlimited") if user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) else "Unlimited"
+        dailytas = user_dict.get('dly_tasks')[1] if user_dict and user_dict.get('dly_tasks') and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) and config_dict['DAILY_TASK_LIMIT'] else config_dict.get('DAILY_TASK_LIMIT', "Unlimited") if user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) else "Unlimited"        
+        
         if user_dict and user_dict.get('dly_tasks'):
             t = str(datetime.now() - user_dict['dly_tasks'][0]).split(':')
             lastused = f"{t[0]}h {t[1]}m {t[2].split('.')[0]}s ago"
@@ -65,12 +68,16 @@ def get_user_settings(from_user, key=None):
         buttxt = "Change/Delete UserLog" if userlog != "Not Exists" else "Set UserLog"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal userlog universal")
         
-        if user_dict and user_dict.get('ubot_pm'):
-            ubotpm = "Enabled"
-            buttons.sbutton("Disable User PM", f"userset {user_id} ubotoff")
+        if not config_dict['FORCE_BOT_PM']:
+            if user_dict and user_dict.get('ubot_pm'):
+                ubotpm = "Enabled"
+                buttons.sbutton("Disable User PM", f"userset {user_id} ubotoff")
+            else:
+                ubotpm = "Disabled"
+                buttons.sbutton("Enable User PM", f"userset {user_id} uboton")
         else:
-            ubotpm = "Disabled"
-            buttons.sbutton("Enable User PM", f"userset {user_id} uboton")
+            ubotpm = "Force Enabled By Owner"
+            buttons.sbutton("Disable User PM", f"userset {user_id} ubotdisable")
 
         imdbval, anival = '', ''
         if imdb != "Not Exists":
@@ -113,12 +120,21 @@ def get_user_settings(from_user, key=None):
         buttons.sbutton(buttxt, f"userset {user_id} suniversal msuffix mirror")
         buttxt = "Change/Delete Remname" if remname != "Not Exists" else "Set Remname"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal mremname mirror")
-        if not user_dict and config_dict['USR_TD_DEFAULT'] or user_dict and user_dict.get('is_usertd'):
-            usertdstatus = "Enabled"
-            buttons.sbutton("Disable User TD", f"userset {user_id} usertdxoff")
+        
+        if config_dict['ENABLE_USR_TD']:
+            if user_dict.get('usertd'):
+                if user_dict and user_dict.get('is_usertd'):
+                    usertdstatus = "Enabled"
+                    buttons.sbutton("Disable User TD", f"userset {user_id} usertdxoff")
+                else:
+                    usertdstatus = "Disabled"
+                    buttons.sbutton("Enable User TD", f"userset {user_id} usertdxon")
+            else:
+                usertdstatus = "Disabled"
+                buttons.sbutton("Enable User TD", f"userset {user_id} usertdxnotset")
         else:
-            usertdstatus = "Disabled"
-            buttons.sbutton("Enable User TD", f"userset {user_id} usertdxon")
+            usertdstatus = "User TD Feature Disabled By Owner!"
+            buttons.sbutton("Enable User TD", f"userset {user_id} usertdxdisable")
         buttxt = "Change/Delete User TD" if usertd != "Not Exists" else "Set User TD"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal usertd mirror")
 
@@ -248,6 +264,10 @@ def edit_user_settings(update, context):
         update_user_settings(message, query.from_user, 'mirror')
         if DATABASE_URL:
             DbManger().update_user_data(user_id)
+    elif data[2] == "usertdxnotset":
+        query.answer(text="Set User TD First!", show_alert=True)
+    elif data[2] == "usertdxdisable":
+        query.answer(text="User TD Feature Disabled By Owner!", show_alert=True)
     elif data[2] == "uboton":
         update_user_ldata(user_id, 'ubot_pm', True)
         query.answer(text="Now, Your Files will be send to your PM!", show_alert=True)
@@ -260,6 +280,8 @@ def edit_user_settings(update, context):
         update_user_settings(message, query.from_user, 'universal')
         if DATABASE_URL:
             DbManger().update_user_data(user_id)
+    elif data[2] == "ubotdisable":
+        query.answer(text="Always BOT PM Mode is ON By Bot Owner!", show_alert=True)
     elif data[2] == "dthumb":
         handler_dict[user_id] = False
         path = f"Thumbnails/{user_id}.jpg"

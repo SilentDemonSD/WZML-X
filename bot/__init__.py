@@ -385,8 +385,8 @@ SET_BOT_COMMANDS = SET_BOT_COMMANDS.lower() == 'true'
 IS_TEAM_DRIVE = environ.get('IS_TEAM_DRIVE', '')
 IS_TEAM_DRIVE = IS_TEAM_DRIVE.lower() == 'true'
 
-USR_TD_DEFAULT = environ.get('USR_TD_DEFAULT', '')
-USR_TD_DEFAULT = USR_TD_DEFAULT.lower() == 'false'
+ENABLE_USR_TD = environ.get('ENABLE_USR_TD', '')
+ENABLE_USR_TD = ENABLE_USR_TD.lower() == 'false'
 
 USE_SERVICE_ACCOUNTS = environ.get('USE_SERVICE_ACCOUNTS', '')
 USE_SERVICE_ACCOUNTS = USE_SERVICE_ACCOUNTS.lower() == 'true'
@@ -683,6 +683,7 @@ config_dict = {'ANILIST_ENABLED': ANILIST_ENABLED,
                'DRIVEFIRE_CRYPT': DRIVEFIRE_CRYPT,
                'DOWNLOAD_DIR': DOWNLOAD_DIR,
                'DATABASE_URL': DATABASE_URL,
+               'ENABLE_USR_TD': ENABLE_USR_TD,
                'IMDB_TEMPLATE': DEF_IMDB_TEMP,
                'ANIME_TEMPLATE': DEF_ANI_TEMP,  
                'DISABLE_DRIVE_LINK': DISABLE_DRIVE_LINK,
@@ -740,8 +741,7 @@ config_dict = {'ANILIST_ENABLED': ANILIST_ENABLED,
                'UPSTREAM_REPO': UPSTREAM_REPO,
                'UPSTREAM_BRANCH': UPSTREAM_BRANCH,
                'UPTOBOX_TOKEN': UPTOBOX_TOKEN,
-               'USE_SERVICE_ACCOUNTS': USE_SERVICE_ACCOUNTS,
-               'USR_TD_DEFAULT' : USR_TD_DEFAULT,
+               'USE_SERVICE_ACCOUNTS': USE_SERVICE_ACCOUNTS,               
                'UNIFIED_EMAIL': UNIFIED_EMAIL,
                'UNIFIED_PASS': UNIFIED_PASS,
                'VIEW_LINK': VIEW_LINK,
