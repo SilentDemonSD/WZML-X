@@ -359,6 +359,7 @@ def load_config():
                     INDEX_URLS.append(temp[2])
                 else:
                     INDEX_URLS.append('')
+    
     CATEGORY_NAMES.clear()
     CATEGORY_IDS.clear()
     CATEGORY_INDEX.clear()
@@ -368,7 +369,7 @@ def load_config():
         CATEGORY_IDS.append(GDRIVE_ID)
         CATEGORY_INDEX.append(INDEX_URL)
 
-    if path.exists('categories.txt'):
+    if ospath.exists('categories.txt'):
         with open('categories.txt', 'r+') as f:
             lines = f.readlines()
             for lines in lines:
