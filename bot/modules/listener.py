@@ -237,10 +237,7 @@ class MirrorLeechListener:
         file_ = escape(name)
         up_path, file_, _ = change_filename(file_, user_id_, all_edit=False, mirror_type=(False if self.isLeech else True))
         
-        if config_dict['FORCE_BOT_PM']:
-            BOT_PM_X = True
-        else:
-            BOT_PM_X = user_data[user_id_].get('ubot_pm')
+        BOT_PM_X = get_bot_pm(user_id_)     
         
         NAME_FONT = config_dict['NAME_FONT']
         if config_dict['EMOJI_THEME']:
