@@ -545,7 +545,6 @@ class MirrorLeechListener:
                 buttons.buildbutton(f"{config_dict['BUTTON_FIVE_NAME']}", f"{config_dict['BUTTON_FIVE_URL']}")
             if config_dict['BUTTON_SIX_NAME'] != '' and config_dict['BUTTON_SIX_URL'] != '':
                 buttons.buildbutton(f"{config_dict['BUTTON_SIX_NAME']}", f"{config_dict['BUTTON_SIX_URL']}")
-
             if not config_dict['FORCE_BOT_PM'] or self.message.chat.type == 'private':
                 if PICS:
                     uploadmsg = sendPhoto(msg + pmwarn + logwarn + warnmsg, self.bot, self.message, choice(PICS), buttons.build_menu(2))

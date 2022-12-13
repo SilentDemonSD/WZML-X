@@ -9,7 +9,7 @@ from pyrogram import enums
 
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.ext_utils.timegap import timegap_check
-from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, deleteMessage, delete_all_messages, update_all_messages, sendStatusMessage, auto_delete_upload_message, auto_delete_message, sendFile, sendPhoto
+from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, deleteMessage, delete_all_messages, update_all_messages, sendStatusMessage, auto_delete_upload_message, auto_delete_message, sendFile, sendPhoto, chat_restrict
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.mirror_utils.status_utils.clone_status import CloneStatus
@@ -20,7 +20,7 @@ from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from telegram import ParseMode
 from bot.helper.telegram_helper.button_build import ButtonMaker
 
-def _clone(message, bot):
+def _clone(message, bot, listener):
     if AUTO_DELETE_UPLOAD_MESSAGE_DURATION != -1:
         reply_to = message.reply_to_message
         if reply_to is not None:
@@ -176,13 +176,26 @@ def _clone(message, bot):
                     return sendMarkup("Someone already mirrored it for you !\nHere you go:", bot, message, button)
                 else:
                     return sendFile(bot, message, f_name, f"File/Folder is already available in Drive. Here are the search results:\n\n{smsg}")
-
+        timeout = 30
+        listener = [bot, message, c_index, timeout, time(), tag, link]
+        if len(CATEGORY_NAMES) > 1:
+            text, btns = get_category_buttons('clone', timeout, msg_id, c_index)
+            btn_listener[msg_id] = listener
+            chat_restrict(message)
+            engine = sendMarkup(text, bot, message, btns)
+            _auto_start_dl(engine, msg_id, timeout)
+        else:
+            chat_restrict(message)
+            start_clone(listener)
+                        
         config_dict['CLONE_LIMIT']
         if CLONE_LIMIT != '' and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id):
             LOGGER.info('Checking File/Folder Size...')
             if size > CLONE_LIMIT * 1024**3:
                 msg2 = f'Failed, Clone limit is {CLONE_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(size)}.'
                 return sendMessage(msg2, bot, message)
+        medium = f"Clone {CATEGORY_NAMES[c_index]}"
+        delete_links(bot, message)
         if multi > 1:
             sleep(4)
             nextmsg = type('nextmsg', (object, ), {'chat_id': message.chat_id, 'message_id': message.reply_to_message.message_id + 1})
@@ -339,6 +352,39 @@ def _clone(message, bot):
                 return
     else:
         sendMessage("Send Gdrive or GDToT/AppDrive/DriveApp/GDFlix/DriveAce/DriveLinks/DriveBit/DriveSharer/Anidrive/Driveroot/Driveflix/Indidrive/drivehub(in)/HubDrive/DriveHub(ws)/KatDrive/Kolop/DriveFire/DriveBuzz/SharerPw/ShareDrive link along with command or by replying to the link by command\n\n<b>Multi links only by replying to first link/file:</b>\n<code>/cmd</code> 10(number of links/files)", bot, message)
+
+@new_thread
+def confirm_clone(update, context):
+    query = update.callback_query
+    user_id = query.from_user.id
+    message = query.message
+    data = query.data
+    data = data.split()
+    msg_id = int(data[2])
+    try:
+        listenerInfo = btn_listener[msg_id]
+    except KeyError:
+        return editMessage(f"<b>Download has been cancelled or already started!</b>", message)
+    if user_id != listenerInfo[1].from_user.id:
+        return query.answer("You are not the owner of this task!", show_alert=True)
+    elif data[1] == 'scat':
+        c_index = int(data[3])
+        if listenerInfo[2] == c_index:
+            return query.answer(f"{CATEGORY_NAMES[c_index]} is selected already!", show_alert=True)
+        query.answer()
+        listenerInfo[2] = c_index
+    elif data[1] == 'cancel':
+        query.answer()
+        del btn_listener[msg_id]
+        return editMessage(f"<b>Download has been cancelled!</b>", message)
+    elif data[1] == 'start':
+        query.answer()
+        del btn_listener[msg_id]
+        message.delete()
+        return _clone(listenerInfo)
+    timeout = listenerInfo[3] - (time() - listenerInfo[4])
+    text, btns = get_category_buttons('clone', timeout, msg_id, listenerInfo[2])
+    editMessage(text, message, btns)
 
 @new_thread
 def cloneNode(update, context):

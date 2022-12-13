@@ -23,13 +23,13 @@ from bot.helper.mirror_utils.download_utils.direct_link_generator import direct_
 from bot.helper.mirror_utils.download_utils.telegram_downloader import TelegramDownloadHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, delete_all_messages, update_all_messages, auto_delete_upload_message, auto_delete_message
+from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, delete_all_messages, update_all_messages, auto_delete_upload_message, auto_delete_message, chat_restrict
 from bot.helper.ext_utils.telegraph_helper import telegraph
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from .listener import MirrorLeechListener
 
 
-def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeech=False):
+def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeech=False, extra):
     buttons = ButtonMaker()
 
     if config_dict['FSUB']:
@@ -287,9 +287,18 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
             auth = "Basic " + b64encode(auth.encode()).decode('ascii')
         else:
             auth = ''
-        Thread(target=add_aria2c_download, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener, name,
-                                                 auth, ratio, seed_time)).start()
-
+        Thread(target=add_aria2c_download, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener, name,                                             auth, ratio, seed_time)).start()
+    if len(CATEGORY_NAMES) > 1 and not isLeech:
+        link = 'telegram_file'
+        listener = [bot, message, isZip, extract, isQbit, isLeech, pswd, tag, select, seed]
+        extras = [link, name, ratio, seed_time, c_index, time()]
+        btn_listener[msg_id] = [listener, extras, timeout]
+        chat_restrict(message)
+        text, btns = get_category_buttons('mir', timeout, msg_id, c_index)
+        engine = sendMarkup(text, bot, message, btns)
+        _auto_start_dl(engine, msg_id, timeout)
+    else:
+        chat_restrict(message)
     if multi > 1:
         sleep(4)
         nextmsg = type('nextmsg', (object, ), {'chat_id': message.chat_id, 'message_id': message.reply_to_message.message_id + 1})
@@ -301,6 +310,40 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
         sleep(4)
         Thread(target=_mirror_leech, args=(bot, nextmsg, isZip, extract, isQbit, isLeech)).start()
 
+@new_thread
+def mir_confirm(update, context):
+    query = update.callback_query
+    user_id = query.from_user.id
+    message = query.message
+    data = query.data
+    data = data.split()
+    msg_id = int(data[2])
+    try:
+        listenerInfo = btn_listener[msg_id]
+    except KeyError:
+        return editMessage(f"<b>Download has been cancelled or already started!</b>", message)
+    listener = listenerInfo[0]
+    extra = listenerInfo[1]
+    if user_id != listener[1].from_user.id and not CustomFilters.owner_query(user_id):
+        return query.answer("You are not the owner of this download!", show_alert=True)
+    elif data[1] == 'scat':
+        c_index = int(data[3])
+        if extra[4] == c_index:
+            return query.answer(f"{CATEGORY_NAMES[c_index]} is already selected!", show_alert=True)
+        query.answer()
+        extra[4] = c_index
+    elif data[1] == 'cancel':
+        query.answer()
+        del btn_listener[msg_id]
+        return editMessage(f"<b>Download has been cancelled!", message)
+    elif data[1] == 'start':
+        query.answer()
+        message.delete()
+        del btn_listener[msg_id]
+        return _mirror_leech(extra, listener)
+    timeout = listenerInfo[2] - (time() - extra[5])
+    text, btns = get_category_buttons('mir', timeout, msg_id, extra[4])
+    editMessage(text, message, btns)
 
 def mirror(update, context):
     _mirror_leech(context.bot, update.message)

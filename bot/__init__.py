@@ -37,6 +37,7 @@ QbInterval = []
 DRIVES_NAMES = []
 DRIVES_IDS = []
 INDEX_URLS = []
+CATEGORY_NAMES = []
 user_data = {}
 aria2_options = {}
 qbit_options = {}
@@ -61,6 +62,7 @@ download_dict = {}
 # key: rss_title
 # value: {link, last_feed, last_title, filter}
 rss_dict = {}
+btn_listener = {}
 
 
 BOT_TOKEN = environ.get('BOT_TOKEN', '')
@@ -763,13 +765,12 @@ config_dict = {'ANILIST_ENABLED': ANILIST_ENABLED,
                'WEB_PINCODE': WEB_PINCODE,
                'YT_DLP_QUALITY': YT_DLP_QUALITY}
 
-
 if GDRIVE_ID:
     DRIVES_NAMES.append("Main")
     DRIVES_IDS.append(GDRIVE_ID)
     INDEX_URLS.append(INDEX_URL)
 
-if ospath.exists('list_drives.txt'):
+if path.exists('list_drives.txt'):
     with open('list_drives.txt', 'r+') as f:
         lines = f.readlines()
         for line in lines:
@@ -780,6 +781,23 @@ if ospath.exists('list_drives.txt'):
                 INDEX_URLS.append(temp[2])
             else:
                 INDEX_URLS.append('')
+
+if GDRIVE_ID:
+    CATEGORY_NAMES.append("Root")
+    CATEGORY_IDS.append(GDRIVE_ID)
+    CATEGORY_INDEX.append(INDEX_URL)
+
+if ospath.exists('categories.txt'):
+    with open('categories.txt', 'r+') as f:
+        lines = f.readlines()
+        for line in lines:
+            temp = line.strip().split()
+            CATEGORY_IDS.append(temp[1])
+            CATEGORY_NAMES.append(temp[0].replace("_", " "))
+            if len(temp) > 2:
+                CATEGORY_INDEX.append(temp[2])
+            else:
+                CATEGORY_INDEX.append('')
 
 if BASE_URL:
     Popen(f"gunicorn web.wserver:app --bind 0.0.0.0:{SERVER_PORT}", shell=True)

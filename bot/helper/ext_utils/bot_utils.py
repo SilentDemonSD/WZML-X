@@ -326,6 +326,18 @@ def get_readable_message():
             return msg + bmsg, button
         return msg + bmsg, sbutton
 
+def get_category_buttons(query_data, timeout, c_index, msg_id)
+    text = '<b>Selct the category in which you want to upload</b>'
+    text += f"\n<b>Upload</b>: To Drive in {CATEGORY_NAMES[c_index]} folder"
+    text += f"<u>\n\nYou have {get_readable_time(timeout)} to select mode</u>"
+    buttons = ButtonMaker()
+    for i, _name in enumerate(CATEGORY_NAMES):
+        buttons.sbutton(f'{_name}{"✅" if _name == CATEGORY_NAMES[c_index] else ""}', f"{query_data} scat {msg_id} {i}")
+    buttons.sbutton('Cancel', f"{query_data} cancel {msg_id}", 'footer')
+    buttons.sbutton(f'Start ({get_readable_time(timeout)})', f'{query_data} start {msg_id}', 'footer')
+    return text, buttons.build_menu(3)
+
+
 def turn(data):
     STATUS_LIMIT = config_dict['STATUS_LIMIT']
     try:

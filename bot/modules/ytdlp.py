@@ -6,8 +6,8 @@ from time import sleep
 from re import split as re_split
 
 from bot import *
-from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, auto_delete_upload_message, auto_delete_message
-from bot.helper.ext_utils.bot_utils import get_readable_file_size, is_url, get_user_task, is_sudo, is_paid
+from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, auto_delete_upload_message, auto_delete_message, chat_restrict
+from bot.helper.ext_utils.bot_utils import get_readable_file_size, is_url, get_user_task, is_sudo, is_paid, get_category_buttons
 from bot.helper.ext_utils.timegap import timegap_check
 from bot.helper.mirror_utils.download_utils.yt_dlp_download_helper import YoutubeDLHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -18,7 +18,7 @@ from .listener import MirrorLeechListener
 
 listener_dict = {}
 
-def _ytdl(bot, message, isZip=False, isLeech=False):
+def _ytdl(bot, message, isZip=False, isLeech=False, extra):
     mssg = message.text
     user_id = message.from_user.id
     msg_id = message.message_id
@@ -61,7 +61,10 @@ def _ytdl(bot, message, isZip=False, isLeech=False):
             reply_message = sendMarkup(startwarn, bot, message, buttons.build_menu(2))
             Thread(target=auto_delete_message, args=(bot, message, reply_message)).start()
             return reply_message
-
+    listener = MirrorLeechListener(bot, message, isZip, isLeech=isLeech, pswd=pswd, tag=tag, c_index=c_index)
+    listener.medium = 'Leech' if isLeech else f"Drive {CATEGORY_NAMES[c_index]}"
+    if isZip:
+        listener.medium += ' As Zip'
     total_task = len(download_dict)
     user_id = message.from_user.id
     USER_TASKS_LIMIT = config_dict['USER_TASKS_LIMIT']
@@ -255,6 +258,18 @@ Check all yt-dlp api options from this <a href='https://github.com/yt-dlp/yt-dlp
             bmsg = sendMarkup('Choose Video Quality:', bot, message, YTBUTTONS)
 
         Thread(target=_auto_cancel, args=(bmsg, msg_id)).start()
+    listener = [bot, message, isZip, isLeech, pswd, tag, link]
+    extra = [name, opt, qual, select, c_index, time()]
+    if len(CATEGORY_NAMES) > and not isLeech:
+        timeout = 30
+        btn_listener[msg_id] = [extra, listener, timeout]
+        chat_restrict(message)
+        text, btns = get_category_buttons('ytdlp', timeout, msg_id, c_index)
+        engine = sendMarkup(text, bot, message, btns)
+        _auto_start_dl(engine, msg_id, timeout)
+    else:
+        chat_restrict(message)
+        _ytdl(extra, listener)
     if multi > 1:
         sleep(4)
         nextmsg = type('nextmsg', (object, ), {'chat_id': message.chat_id, 'message_id': message.reply_to_message.message_id + 1})
@@ -343,6 +358,41 @@ def select_format(update, context):
         Thread(target=ydl.add_download, args=(link, f'{DOWNLOAD_DIR}{task_id}', name, qual, playlist, opt)).start()
         query.message.delete()
     del listener_dict[task_id]
+
+@new_thread
+def ytdl_confirm(update, context):
+    query = update.callback_query
+    user_id = query.from_user.id
+    message = query.message
+    data = query.data
+    data = data.split()
+    msg_id = int(data[2])
+    try:
+        listnerInfo = btn_listener[msg_id]
+    except KeyError:
+        return editMessage(f"<b>Download has been cancelled or already started!</b>", message)
+    extra = listnerInfo[0]
+    listener = listnerInfo[1]
+    if user_id != listener[1].from_user.id and not CustomFilters.owner_query(user_id):
+        return query.answer("You are not the owner of this download", show_alert=True)
+    elif data[1] == 'scat':
+        c_index = int(data[3])
+        if extra[4] == c_index:
+            return query.answer(f"{CATEGORY_NAMES[c_index]} is Selected Already", show_alert=True)
+        query.answer()
+        extra[4] = c_index
+    elif data[1] == "cancel":
+        query.answer()
+        del btn_listener[msg_id]
+        return editMessage('<b>Download has been cancelled</b>', message)
+    else:
+        query.answer()
+        message.delete()
+        del btn_listener[msg_id]
+        return _ytdl(extra, listener)
+    timeout = listnerInfo[2] - (time() - extra[5])
+    text, btns = get_category_btns('ytdlp', timeout, msg_id, extra[4])
+    editMessage(text, message, btns)
 
 def _auto_cancel(msg, task_id):
     sleep(120)

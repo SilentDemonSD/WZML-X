@@ -5,7 +5,8 @@ from time import time, sleep
 from os import remove, rename, path as ospath, environ
 from subprocess import run as srun, Popen
 from dotenv import load_dotenv
-from bot import config_dict, dispatcher, user_data, DATABASE_URL, tgBotMaxFileSize, DRIVES_IDS, DRIVES_NAMES, INDEX_URLS, aria2, GLOBAL_EXTENSION_FILTER, LOGGER, status_reply_dict_lock, Interval, aria2_options, aria2c_global, download_dict, qbit_options, get_client
+from bot import (config_dict, dispatcher, user_data, DATABASE_URL, tgBotMaxFileSize, DRIVES_IDS, DRIVES_NAMES, INDEX_URLS, aria2
+                GLOBAL_EXTENSION_FILTER, LOGGER, status_reply_dict_lock, Interval, aria2_options, aria2c_global, download_dict, qbit_options, get_client, CATEGORY_NAMES, CATEGORY_IDS, CATEGORY_INDEX)
 from bot.helper.telegram_helper.message_utils import sendFile, sendMarkup, editMessage, update_all_messages
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -348,6 +349,26 @@ def load_config():
                     INDEX_URLS.append(temp[2])
                 else:
                     INDEX_URLS.append('')
+    CATEGORY_NAMES.clear()
+    CATEGORY_IDS.clear()
+    CATEGORY_INDEX.clear()
+
+    if GDRIVE_ID:
+        CATEGORY_NAMES.append("Main")
+        CATEGORY_IDS.append(GDRIVE_ID)
+        CATEGORY_INDEX.append(INDEX_URL)
+
+    if path.exists('categories.txt'):
+        with open('categories.txt', 'r+') as f:
+            lines = f.readlines()
+            for lines in lines:
+                temp = line.strip()split()
+                CATEGORY_IDS.append(temp[1])
+                CATEGORY_NAMES.append(temp[0].replace("_". " "))
+            if len(temp) > 2:
+                CATEGORY_INDEX.append(temp[2])
+            else:
+                CATEGORY_INDEX.append('')
 
     SEARCH_PLUGINS = environ.get('SEARCH_PLUGINS', '')
     if len(SEARCH_PLUGINS) == 0:
@@ -885,11 +906,20 @@ def edit_variable(update, context, omsg, key):
             DRIVES_IDS[0] = value
         else:
             DRIVES_IDS.insert(0, value)
+        if CATEGORY_NAMES and CATEGORY_NAMES[0] == 'Root':
+            CATEGORY_IDS[0] = value
+        else:
+            CATEGORY_IDS.insert(0, value)
+
     elif key == 'INDEX_URL':
         if DRIVES_NAMES and DRIVES_NAMES[0] == 'Main':
             INDEX_URLS[0] = value
         else:
             INDEX_URLS.insert(0, value)
+        if CATEGORY_NAMES and CATEGORY_NAMES[0] == 'Root':
+            CATEGORY_INDEX[0] = value
+        else:
+            CATEGORY_INDEX.insert(0, value)
     elif value.isdigit():
         value = int(value)
     config_dict[key] = value
@@ -986,6 +1016,24 @@ def update_private_file(update, context, omsg):
                         INDEX_URLS.append(temp[2])
                     else:
                         INDEX_URLS.append('')
+        elif file_name == 'categories.txt':
+            CATEGORY_IDS.clear()
+            CATEGORY_NAMES.clear()
+            CATEGORY_INDEX.clear()
+            if GDRIVE_ID:= config_dict['GDRIVE_ID']:
+                CATEGORY_NAMES.append("Root")
+                CATEGORY_IDS.append(GDRIVE_ID)
+                CATEGORY_INDEX.append(config_dict['INDEX_URL'])
+            with open('categories.txt', 'r+') as f:
+                lines = f.readlines()
+                for line in lines:
+                    temp = line.strip().split()
+                    CATEGORY_IDS.append(temp[1])
+                    CATEGORY_NAMES.append(temp[0].replace("_", " "))
+                    if len(temp) > 2:
+                        CATEGORY_INDEX.append(temp[2])
+                    else:
+                        CATEGORY_INDEX.append('')
         elif file_name in ['.netrc', 'netrc']:
             if file_name == 'netrc':
                 rename('netrc', '.netrc')
@@ -1068,9 +1116,15 @@ def edit_bot_settings(update, context):
                 DRIVES_NAMES.pop(0)
                 DRIVES_IDS.pop(0)
                 INDEX_URLS.pop(0)
+            if CATEGORY_NAMES and CATEGORY_NAMES[0] == 'Root':
+                CATEGORY_NAMES.pop(0)
+                CATEGORY_IDS.pop(0)
+                CATEGORY_INDEX.pop(0)
         elif data[2] == 'INDEX_URL':
             if DRIVES_NAMES and DRIVES_NAMES[0] == 'Main':
                 INDEX_URLS[0] = ''
+            if CATEGORY_NAMES and CATEGORY_NAMES[0] == 'Root':
+                CATEGORY_INDEX[0] = ''
         elif data[2] == 'INCOMPLETE_TASK_NOTIFIER' and DATABASE_URL:
             DbManger().trunc_table('tasks')
         config_dict[data[2]] = value
