@@ -305,7 +305,7 @@ class TgUploader:
         user_id = self.__listener.message.from_user.id
         user_dict = user_data.get(user_id, False)
         if user_dict:
-            self.__as_doc = user_dict.get('as_doc', False)
+            self.__as_doc = user_dict.get('as_doc', config_dict['AS_DOCUMENT'])
         if not ospath.lexists(self.__thumb):
             self.__thumb = None
 
