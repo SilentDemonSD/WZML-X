@@ -14,7 +14,7 @@ from threading import Thread
 from telegram import ParseMode, InlineKeyboardButton
 
 from bot import *
-from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_gdtot_link, is_mega_link, is_gdrive_link, get_content_type, get_readable_time, change_filename, is_paid
+from bot.helper.ext_utils.bot_utils import *
 from bot.helper.ext_utils.fs_utils import get_base_name, get_path_size, split_file, clean_download, clean_target
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException, NotSupportedExtractionArchive
 from bot.helper.mirror_utils.status_utils.extract_status import ExtractStatus
