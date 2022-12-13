@@ -792,7 +792,7 @@ if GDRIVE_ID:
     DRIVES_IDS.append(GDRIVE_ID)
     INDEX_URLS.append(INDEX_URL)
 
-if path.exists('list_drives.txt'):
+if ospath.exists('list_drives.txt'):
     with open('list_drives.txt', 'r+') as f:
         lines = f.readlines()
         for line in lines:
