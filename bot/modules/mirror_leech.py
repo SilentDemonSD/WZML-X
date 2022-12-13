@@ -111,6 +111,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
     seed_time = None
     select = False
     seed = False
+    c_index = 0
     multi = 0
     link = ''
 
