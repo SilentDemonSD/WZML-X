@@ -192,11 +192,7 @@ def _clone(message, bot, listener):
             _auto_start_dl(engine, msg_id, timeout)
         else:
             start_clone(listener)
-                        
         config_dict['CLONE_LIMIT']
-                    return sendFile(bot, message, button, f"File/Folder is already available in Drive. Here are the search results:\n\n{smsg}")
-
-        CLONE_LIMIT = config_dict['CLONE_LIMIT']
         if CLONE_LIMIT != '' and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id):
             LOGGER.info('Checking File/Folder Size...')
             if size > CLONE_LIMIT * 1024**3:
