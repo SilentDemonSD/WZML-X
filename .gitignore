@@ -1,6 +1,7 @@
 config.env
 Thumbnails/*
 list_drives.txt
+categories.txt
 cookies.txt
 downloads
 *auth_token.txt
