@@ -29,7 +29,7 @@ from bot.helper.telegram_helper.button_build import ButtonMaker
 from .listener import MirrorLeechListener
 
 
-def _mirror_leech(bot, message, extra, isZip=False, extract=False, isQbit=False, isLeech=False):
+def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeech=False):
     buttons = ButtonMaker()
     user_id = message.from_user.id
     if config_dict['FORCE_BOT_PM']:
