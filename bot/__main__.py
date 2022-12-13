@@ -24,8 +24,10 @@ from .helper.telegram_helper.button_build import ButtonMaker
 from bot.modules.wayback import getRandomUserAgent
 from .modules import authorize, list, cancel_mirror, mirror_status, mirror_leech, clone, ytdlp, shell, eval, bot_settings, \
                      delete, count, users_settings, search, rss, wayback, speedtest, anilist, imdb, bt_select, mediainfo, hash, \
-                     scraper, pictures
+                     scraper, pictures, save_msg
 from datetime import datetime
+
+version = "4.4.0"
 
 def progress_bar(percentage):
     p_used = config_dict['FINISHED_PROGRESS_STR']
@@ -80,6 +82,7 @@ def stats(update, context):
             stats = f'<b>╭─《🌐 BOT STATISTICS 🌐》</b>\n' \
                     f'<b>├ 🛠 Updated On: </b>{last_commit}\n'\
                     f'<b>├ ⌛ Uptime: </b>{currentTime}\n'\
+                    f'<b>├ 🤖 Version: </b>{version}\n'\
                     f'<b>├ 🟢 OS Uptime: </b>{osUptime}\n'\
                     f'<b>├ 🖥️ CPU:</b> [{progress_bar(cpuUsage)}] {cpuUsage}%\n'\
                     f'<b>├ 🎮 RAM:</b> [{progress_bar(mem_p)}] {mem_p}%\n'\
@@ -92,6 +95,7 @@ def stats(update, context):
             stats = f'<b>╭─《🌐 BOT STATISTICS 🌐》</b>\n' \
                     f'<b>├  Updated On: </b>{last_commit}\n'\
                     f'<b>├  Uptime: </b>{currentTime}\n'\
+                    f'<b>├  Version: </b>{version}\n'\
                     f'<b>├  OS Uptime: </b>{osUptime}\n'\
                     f'<b>├  CPU:</b> [{progress_bar(cpuUsage)}] {cpuUsage}%\n'\
                     f'<b>├  RAM:</b> [{progress_bar(mem_p)}] {mem_p}%\n'\
@@ -139,8 +143,8 @@ def stats(update, context):
                      f'<b>├  Total Tasks: </b>{total_task}\n'\
                      f'<b>╰  User Tasks: </b>{user_task}\n\n'
 
-    if PICS:
-        sendPhoto(stats, context.bot, update.message, rchoice(PICS))
+    if config_dict['PICS']:
+        sendPhoto(stats, context.bot, update.message, rchoice(config_dict['PICS']))
     else:
         sendMessage(stats, context.bot, update.message)
 
@@ -157,14 +161,14 @@ def start(update, context):
         start_string = f'''This bot can mirror all your links to Google Drive!
 Type /{BotCommands.HelpCommand} to get a list of available commands
 '''
-        if PICS:
-            sendPhoto(start_string, context.bot, update.message, rchoice(PICS), reply_markup)
+        if config_dict['PICS']:
+            sendPhoto(start_string, context.bot, update.message, rchoice(config_dict['PICS']), reply_markup)
         else:
             sendMarkup(start_string, context.bot, update.message, reply_markup)
     else:
         text = f"Not Authorized user, deploy your own mirror bot"
-        if PICS:
-            sendPhoto(text, context.bot, update.message, rchoice(PICS), reply_markup)
+        if config_dict['PICS']:
+            sendPhoto(text, context.bot, update.message, rchoice(config_dict['PICS']), reply_markup)
         else:
             sendMarkup(text, context.bot, update.message, reply_markup)
 
@@ -367,15 +371,13 @@ if config_dict['SET_BOT_COMMANDS']:
 
 def main():
 
-    version = "4.3.0"
-
     if config_dict['WALLCRAFT_CATEGORY']:
         for page in range(1,20):
             r2 = rget(f"https://wallpaperscraft.com/catalog/{config_dict['WALLCRAFT_CATEGORY']}/1280x720/page{page}")
             soup2 = BeautifulSoup(r2.text, "html.parser")
             x = soup2.select('img[src^="https://images.wallpaperscraft.com/image/single"]')
             for img in x:
-              PICS.append((img['src']).replace("300x168", "1280x720"))
+              config_dict['PICS'].append((img['src']).replace("300x168", "1280x720"))
 
     if config_dict['WALLTIP_SEARCH']:
         for page in range(1,3):
@@ -386,7 +388,7 @@ def main():
             imgsrc = [x.find('img') for x in aTag]
             scrList =  [img['data-original'] for img in imgsrc]
             for o in scrList:
-                PICS.append(o)
+                config_dict['PICS'].append(o)
 
     if config_dict['WALLFLARE_SEARCH']:
         try:
@@ -395,7 +397,7 @@ def main():
                 soup2 = BeautifulSoup(r2.text, "html.parser")
                 x = soup2.select('img[data-src^="https://c4.wallpaperflare.com/wallpaper"]')  
                 for img in x:
-                    PICS.append(img['data-src'])
+                    config_dict['PICS'].append(img['data-src'])
         except Exception as err:
             LOGGER.info(f"WallFlare Error: {err}")
 
@@ -408,7 +410,7 @@ def main():
             jdata = resp.json()
             for x in range(0, 200):
                 largeImageURL = jdata['hits'][x]['largeImageURL']
-                PICS.append(largeImageURL)
+                config_dict['PICS'].append(largeImageURL)
         except Exception as err:
             LOGGER.info(f"Pixabay API Error: {err}")
 

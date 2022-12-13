@@ -2,7 +2,7 @@ from logging import getLogger, WARNING
 from time import time
 from threading import RLock, Lock
 
-from bot import LOGGER, download_dict, download_dict_lock, config_dict, app
+from bot import LOGGER, download_dict, download_dict_lock, config_dict, app, user_data
 from bot.helper.ext_utils.bot_utils import get_readable_file_size
 from ..status_utils.telegram_download_status import TelegramDownloadStatus
 from bot.helper.telegram_helper.message_utils import sendMarkup, sendMessage, sendStatusMessage, sendStatusMessage, sendFile
@@ -84,6 +84,7 @@ class TelegramDownloadHelper:
 
     def add_download(self, message, path, filename):
         _dmsg = app.get_messages(message.chat.id, reply_to_message_ids=message.message_id)
+        user_id = message.from_user.id
         media = _dmsg.document or _dmsg.video or _dmsg.audio or None
         if media is not None:
             with global_lock:
@@ -97,14 +98,15 @@ class TelegramDownloadHelper:
 
             if download:
                 size = media.file_size
-                if config_dict['STOP_DUPLICATE'] and not self.__listener.isLeech:
+                IS_USRTD = user_data[user_id].get('is_usertd') if user_id in user_data and user_data[user_id].get('is_usertd') else False
+                if config_dict['STOP_DUPLICATE'] and not self.__listener.isLeech and IS_USRTD == False:
                     LOGGER.info('Checking File/Folder if already in Drive...')
                     smsg, button = GoogleDriveHelper().drive_list(name, True, True)
                     if smsg:
                         if config_dict['TELEGRAPH_STYLE']:
                             return sendMarkup("File/Folder is already available in Drive.\nHere are the search results:", self.__listener.bot, self.__listener.message, button)
                         else:
-                            return sendFile(self.__listener.bot, self.__listener.message, f_name, f"File/Folder is already available in Drive. Here are the search results:\n\n{smsg}")
+                            return sendFile(self.__listener.bot, self.__listener.message, button, f"File/Folder is already available in Drive. Here are the search results:\n\n{smsg}")
                 if config_dict['STORAGE_THRESHOLD']:
                     arch = any([self.__listener.isZip, self.__listener.extract])
                     acpt = check_storage_threshold(size, arch)
