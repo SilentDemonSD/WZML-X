@@ -8,7 +8,7 @@ from mega import (MegaApi, MegaListener, MegaRequest, MegaTransfer, MegaError)
 from bot import LOGGER, download_dict, download_dict_lock, config_dict, \
                 user_data, OWNER_ID
 from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, sendStatusMessage, sendStatusMessage, sendFile
-from bot.helper.ext_utils.bot_utils import get_readable_file_size, setInterval, get_mega_link_type, is_sudo, is_paid, getdailytasks
+from bot.helper.ext_utils.bot_utils import get_readable_file_size, setInterval, get_mega_link_type, is_sudo, is_paid
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.ext_utils.fs_utils import get_base_name, check_storage_threshold
 from bot.helper.mirror_utils.status_utils.mega_download_status import MegaDownloadStatus
@@ -141,7 +141,6 @@ def add_mega_download(mega_link: str, path: str, listener, name: str):
     folder_api = None
     mega_listener = MegaAppListener(executor.continue_event, listener)
     api.addListener(mega_listener)
-    user_id = listener.message.from_user.id
     if MEGA_EMAIL_ID and MEGA_PASSWORD:
         executor.do(api.login, (MEGA_EMAIL_ID, MEGA_PASSWORD))
     if get_mega_link_type(mega_link) == "file":
@@ -159,8 +158,7 @@ def add_mega_download(mega_link: str, path: str, listener, name: str):
             folder_api.removeListener(mega_listener)
         return
     mname = name or node.getName()
-    IS_USRTD = user_data[user_id].get('is_usertd') if user_id in user_data and user_data[user_id].get('is_usertd') else False
-    if config_dict['STOP_DUPLICATE'] and not listener.isLeech and IS_USRTD == False:
+    if config_dict['STOP_DUPLICATE'] and not listener.isLeech:
         LOGGER.info('Checking File/Folder if already in Drive')
         if listener.isZip:
             mname = f"{mname}.zip"
@@ -175,7 +173,7 @@ def add_mega_download(mega_link: str, path: str, listener, name: str):
                 if config_dict['TELEGRAPH_STYLE']:
                     sendMarkup("File/Folder is already available in Drive.\nHere are the search results:", listener.bot, listener.message, button)
                 else:
-                    sendFile(listener.bot, listener.message, button, f"File/Folder is already available in Drive. Here are the search results:\n\n{smsg}")
+                    sendFile(listener.bot, listener.message, f_name, f"File/Folder is already available in Drive. Here are the search results:\n\n{smsg}")
                 api.removeListener(mega_listener)
                 if folder_api is not None:
                     folder_api.removeListener(mega_listener)
@@ -186,9 +184,6 @@ def add_mega_download(mega_link: str, path: str, listener, name: str):
     STORAGE_THRESHOLD = config_dict['STORAGE_THRESHOLD']
     ZIP_UNZIP_LIMIT = config_dict['ZIP_UNZIP_LIMIT']
     LEECH_LIMIT = config_dict['LEECH_LIMIT']
-    DAILY_MIRROR_LIMIT = config_dict['DAILY_MIRROR_LIMIT'] * 1024**3 if config_dict['DAILY_MIRROR_LIMIT'] else config_dict['DAILY_MIRROR_LIMIT']
-    DAILY_LEECH_LIMIT = config_dict['DAILY_LEECH_LIMIT'] * 1024**3 if config_dict['DAILY_LEECH_LIMIT'] else config_dict['DAILY_LEECH_LIMIT']
-
     if any([STORAGE_THRESHOLD, ZIP_UNZIP_LIMIT, MEGA_LIMIT, LEECH_LIMIT]) and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id):
         size = api.getSize(node)
         arch = any([listener.isZip, listener.isLeech, listener.extract])
@@ -201,10 +196,10 @@ def add_mega_download(mega_link: str, path: str, listener, name: str):
                     msg += f'\n#Buy Paid Service'
                 return sendMessage(msg, listener.bot, listener.message)
         limit = None
-        if ZIP_UNZIP_LIMIT and arch:
+        if ZIP_UNZIP_LIMIT is not None and arch:
             msg3 = f'Failed, Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(api.getSize(node))}.'
             limit = ZIP_UNZIP_LIMIT
-        if LEECH_LIMIT and arch:
+        if LEECH_LIMIT is not None and arch:
             msg3 = f'Failed, Leech limit is {LEECH_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(api.getSize(node))}.'
             limit = LEECH_LIMIT
         if MEGA_LIMIT is not None:
@@ -216,19 +211,7 @@ def add_mega_download(mega_link: str, path: str, listener, name: str):
             LOGGER.info('Checking File/Folder Size...')
             if size > limit * 1024**3:
                 return sendMessage(msg3, listener.bot, listener.message)
-    if DAILY_MIRROR_LIMIT and not listener.isLeech and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) and (size >= (DAILY_MIRROR_LIMIT - getdailytasks(user_id, check_mirror=True)) or DAILY_MIRROR_LIMIT <= getdailytasks(user_id, check_mirror=True)):
-        mssg = f'Daily Mirror Limit is {get_readable_file_size(DAILY_MIRROR_LIMIT)}\nYou have exhausted all your Daily Mirror Limit or File Size of your Mirror is greater than your free Limits.\nTRY AGAIN TOMORROW'
-        if config_dict['PAID_SERVICE'] is True:
-            mssg += f'\n#Buy Paid Service'
-        return sendMessage(mssg, listener.bot, listener.message)
-    elif not listener.isLeech: msize = getdailytasks(user_id, upmirror=size, check_mirror=True); LOGGER.info(f"User : {user_id} Daily Mirror Size : {get_readable_file_size(msize)}")
-    if DAILY_LEECH_LIMIT and listener.isLeech and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) and (size >= (DAILY_LEECH_LIMIT - getdailytasks(user_id, check_leech=True)) or DAILY_LEECH_LIMIT <= getdailytasks(user_id, check_leech=True)):
-        mssg = f'Daily Leech Limit is {get_readable_file_size(DAILY_LEECH_LIMIT)}\nYou have exhausted all your Daily Leech Limit or File Size of your Leech is greater than your free Limits.\nTRY AGAIN TOMORROW'
-        if config_dict['PAID_SERVICE'] is True:
-            mssg += f'\n#Buy Paid Service'
-        return sendMessage(mssg, listener.bot, listener.message)
-    elif listener.isLeech: lsize = getdailytasks(user_id, upleech=size, check_leech=True); LOGGER.info(f"User : {user_id} Daily Leech Size : {get_readable_file_size(lsize)}")
-
+    
     with download_dict_lock:
         download_dict[listener.uid] = MegaDownloadStatus(mega_listener, listener)
     listener.onDownloadStart()

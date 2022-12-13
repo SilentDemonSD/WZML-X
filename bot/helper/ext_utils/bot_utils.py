@@ -12,7 +12,6 @@ from urllib.request import urlopen
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot import download_dict, download_dict_lock, botStartTime, DOWNLOAD_DIR, user_data, config_dict
 from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.ext_utils.db_handler import DbManger
 
 import shutil
 import psutil
@@ -551,57 +550,17 @@ def is_sudo(user_id):
         return user_data[user_id].get('is_sudo')
     return False
 
-def getdailytasks(user_id, increase_task=False, upleech=0, upmirror=0, check_mirror=False, check_leech=False):
-    task, lsize, msize = 0, 0, 0
-    if user_id in user_data and user_data[user_id].get('dly_tasks'):
-        userdate = user_data[user_id]['dly_tasks'][0]
-        nowdate = datetime.today()
-        if userdate.year <= nowdate.year and userdate.month <= nowdate.month and userdate.day < nowdate.day:
-            if increase_task: task = 1
-            elif upleech != 0: lsize += upleech #bytes
-            elif upmirror != 0: msize += upmirror #bytes
-            update_user_ldata(user_id, 'dly_tasks', [datetime.today(), task, lsize, msize])
-            if DATABASE_URL:
-                DbManger().update_user_data(user_id)
-            if check_leech: return lsize
-            if check_mirror: return msize
-            return task
-        else:
-            task = user_data[user_id]['dly_tasks'][1]
-            lsize = user_data[user_id]['dly_tasks'][2]
-            msize = user_data[user_id]['dly_tasks'][3]
-            if increase_task: task += 1
-            elif upleech != 0: lsize += upleech
-            elif upmirror != 0: msize += upmirror
-            if increase_task or upleech or upmirror:
-                update_user_ldata(user_id, 'dly_tasks', [datetime.today(), task, lsize, msize])
-                if DATABASE_URL:
-                    DbManger().update_user_data(user_id)
-            if check_leech: return lsize
-            if check_mirror: return msize
-            return task
-    else:
-        if increase_task: task = 1
-        elif upleech != 0: lsize += upleech
-        elif upmirror != 0: msize += upmirror
-        update_user_ldata(user_id, 'dly_tasks', [datetime.today(), task, lsize, msize])
-        if DATABASE_URL:
-            DbManger().update_user_data(user_id)
-        if check_leech: return lsize
-        if check_mirror: return msize
-        return task
-
 def is_paid(user_id):
-    if config_dict['PAID_SERVICE'] is True:
-        if user_id in user_data and user_data[user_id].get('is_paid'):
-            ex_date = user_data[user_id].get('expiry_date')
-            if ex_date:
-                odate = datetime.strptime(ex_date, '%d-%m-%Y')
-                ndate = datetime.today()
-                if odate.year <= ndate.year and odate.month <= ndate.month and odate.day < ndate.day:
-                    return False
-            return True
-        else: return False
+    if user_id in user_data and user_data[user_id].get('is_paid'):
+        ex_date = user_data[user_id].get('expiry_date')
+        if ex_date:
+            odate = datetime.strptime(ex_date, '%d-%m-%Y')
+            ndate = datetime.today()
+            if odate.year <= ndate.year:
+                if odate.month <= ndate.month:
+                    if odate.day < ndate.day:
+                        return False
+        return True
     else: return False
 
 ONE, TWO, THREE = range(3)

@@ -5,7 +5,7 @@ from telegram.ext import CommandHandler, CallbackQueryHandler
 
 from bot import dispatcher, status_reply_dict, status_reply_dict_lock, \
                 download_dict, download_dict_lock, botStartTime, config_dict, \
-                OWNER_ID, Interval
+                OWNER_ID, Interval, PICS
 from bot.helper.telegram_helper.message_utils import sendMessage, deleteMessage, auto_delete_message, sendStatusMessage, update_all_messages, delete_all_messages, editMessage, editCaption 
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time, turn, pop_up_stats, setInterval, new_thread
 from bot.helper.telegram_helper.filters import CustomFilters
@@ -43,7 +43,7 @@ def status_pages(update, context):
     data = query.data
     data = data.split()
     if data[1] == "refresh":
-        if config_dict['PICS']: editCaption(f"{user_name}, Refreshing Status...", msg)
+        if PICS: editCaption(f"{user_name}, Refreshing Status...", msg)
         else: editMessage(f"{user_name}, Refreshing Status...", msg)
         sleep(2)
         update_all_messages()

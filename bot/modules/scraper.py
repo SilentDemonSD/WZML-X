@@ -397,19 +397,15 @@ def scrapper(update, context):
         pgNo = 0
         gd_txt += f"🗃 <b><i>Index Link Scrape :</i></b>\n\n"
         res_dic, error = indexScrape({"page_token":next_page_token, "page_index": pgNo}, link, userindex, passindex)
+        LOGGER.info(res_dic)
         while next_page == True:
-            res_dic2, error = indexScrape({"page_token":next_page_token, "page_index": pgNo}, link, userindex, passindex)
-            res_dic.extend(res_dic2)
+            gd_txt += indexScrape({"page_token":next_page_token, "page_index": pgNo}, link, userindex, passindex)
             pgNo += 1
 
-        for txt in res_dic:
-            gd_txt += txt
-            if len(gd_txt) > 4000:
-                editMessage(gd_txt, sent)
-                sent = sendMessage("<i>Running More Scrape ...</i>", context.bot, update.message)
-                gd_txt = ""
-        if gd_txt != '':
-            editMessage(gd_txt, sent)
+        editMessage(gd_txt, sent)
+        if len(gd_txt) > 4000:
+            sent = sendMessage("<i>Running More Scrape ...</i>", context.bot, update.message)
+            gd_txt = ""
     else:
         res = rget(link)
         soup = BeautifulSoup(res.text, 'html.parser')
@@ -467,7 +463,7 @@ def ouo_parse(dict_key, button, loop_soup):
         data_dict[dict_key].append([button.text.strip(), decrypted_link.strip()])  
     except: looper(dict_key, str(button))  
 
-def indexScrape(payload_input, url, username, password, folder_mode=False): 
+def indexScrape(payload_input, url, username, password): 
     global next_page 
     global next_page_token
     folNo, filNo = 0, 0
@@ -505,24 +501,18 @@ def indexScrape(payload_input, url, username, password, folder_mode=False):
             if files_type == "application/vnd.google-apps.folder":
                 folNo += 1
                 direct_download_link = url + quote(files_name) + '/'
-                if not folder_mode:
-                    result.append(f"{i+1}. <b>{files_name}</b>\n⇒ <a href='{direct_download_link}'>Index Link</a>\n\n")
-                    data, error = indexScrape({"page_token":next_page_token, "page_index": 0}, direct_download_link, username, password)
-                    result.extend(["---------------------------------------------\n\n"] + data + ["---------------------------------------------\n\n"]) 
+                result.append(f"{i+1}. <b>{files_name}</b>\n⇒ <a href='{direct_download_link}'>Index Link</a>\n\n")
+                result.extend(["---------------------------------------------\n\n"] + indexScrape({"page_token":next_page_token, "page_index": 0}, direct_download_link, username, password) + ["---------------------------------------------\n\n"]) 
             else:
                 filNo += 1
                 file_size = int(decrypted_response["data"]["files"][i]["size"])
                 direct_download_link = url + quote(files_name)
-                if folder_mode: result.append(direct_download_link)
-                else: result.append(f"{i+1}. <b>{files_name} - {get_readable_file_size(file_size)}</b>\n⇒ <a href='{direct_download_link}'>Index Link</a>\n\n")
+                result.append(f"{i+1}. <b>{files_name} - {get_readable_file_size(file_size)}</b>\n⇒ <a href='{direct_download_link}'>Index Link</a>\n\n")
             if filNo > 30 or folNo > 2:
-                if not folder_mode:
-                    result.append(f"Exceeded Usage! Link Contains More than 2 Folders or More than 30 Files")
+                result.append(f"Exceeded Usage! Link Contains More than 2 Folders or More than 30 Files")
                 break
-        if not folder_mode:
-            result.insert(0, f"<b>Total Folders :</b> {folNo}\n<b>Total Files :</b> {filNo}\n\n")
-    if not folder_mode: return result, False
-    else: return result, False
+        result.insert(0, f"<b>Total Folders :</b> {folNo}\n<b>Total Files :</b> {filNo}\n\n")
+    return result, False
         
 srp_handler = CommandHandler(BotCommands.ScrapeCommand, scrapper,
                             filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)

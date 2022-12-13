@@ -38,17 +38,26 @@ def select_type(update, context):
     Thread(target=_list_drive, args=(context.bot, key, msg, item_type)).start()
 
 def _list_drive(bot, key, bmsg, item_type):
-    LOGGER.info(f"listing: {key}")
-    gdrive = GoogleDriveHelper()
-    msg, button = gdrive.drive_list(key, isRecursive=True, itemType=item_type)
-    if button:
-        if config_dict['TELEGRAPH_STYLE']:
+    if config_dict['TELEGRAPH_STYLE']:
+
+        LOGGER.info(f"listing: {key}")
+        gdrive = GoogleDriveHelper()
+        msg, button = gdrive.drive_list(key, isRecursive=True, itemType=item_type)
+        if button:
             editMessage(msg, bmsg, button)
         else:
-            deleteMessage(bot, bmsg)
-            sendFile(bot, bmsg.reply_to_message, button, msg)
+            editMessage(f'No result found for <i>{key}</i>', bmsg)
+
     else:
-        editMessage(f'No result found for <i>{key}</i>', bmsg)
+
+        LOGGER.info(f"listing: {key}")
+        gdrive = GoogleDriveHelper()
+        cap, f_name = gdrive.drive_list(key, isRecursive=True, itemType=item_type)
+        if cap:
+            deleteMessage(bot, bmsg)
+            sendFile(bot, bmsg.reply_to_message, f_name, cap)
+        else:
+            editMessage(f'No result found for <i>{key}</i>', bmsg)
 
 list_handler = CommandHandler(BotCommands.ListCommand, list_buttons,
                               filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
