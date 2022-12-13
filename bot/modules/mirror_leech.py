@@ -32,7 +32,8 @@ from .listener import MirrorLeechListener
 def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeech=False):
     buttons = ButtonMaker()
     user_id = message.from_user.id
-    BOT_PM_X = get_bot_pm(user_id)  
+    BOT_PM_X = get_bot_pm(user_id)
+    msg_id = message.message_id
 
     if config_dict['FSUB']:
         try:
