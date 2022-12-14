@@ -209,6 +209,7 @@ def start_clone(listner):
         tag = listner[5]
         link = listner[6]
         user_id = message.from_user.id
+        BOT_PM_X = get_bot_pm(user_id)
 
         gd = GoogleDriveHelper(user_id=user_id)
         res, size, name, files = gd.helper(link)
