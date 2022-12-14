@@ -23,7 +23,7 @@ from bot.helper.mirror_utils.download_utils.direct_link_generator import direct_
 from bot.helper.mirror_utils.download_utils.telegram_downloader import TelegramDownloadHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, delete_all_messages, update_all_messages, auto_delete_upload_message, auto_delete_message
+from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, sendMarkup, delete_all_messages, update_all_messages, auto_delete_upload_message, auto_delete_message
 from bot.helper.ext_utils.telegraph_helper import telegraph
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from .listener import MirrorLeechListener
@@ -320,6 +320,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
         nextmsg.from_user.id = message.from_user.id
         multi -= 1
         sleep(4)
+    if len(CATEGORY_NAMES) <= 1:
         Thread(target=_mirror_leech, args=(bot, nextmsg, isZip, extract, isQbit, isLeech)).start()
 
 @new_thread
