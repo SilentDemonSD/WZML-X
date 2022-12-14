@@ -232,7 +232,6 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
 
     if len(CATEGORY_NAMES) > 1 and not isLeech:
         btn_listener[msg_id] = [catlistener, extras, timeout]
-        LOGGER.info(btn_listener[msg_id])
         text, btns = get_category_buttons('mir', timeout, msg_id, c_index)
         engine = sendMarkup(text, bot, message, btns)
         _auto_start_dl(engine, msg_id, timeout)
