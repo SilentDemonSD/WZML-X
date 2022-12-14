@@ -161,12 +161,13 @@ def _clone(message, bot):
                 link = shareDrive(link)
             if is_filepress:
                 link = filepress(link)
-            LOGGER.info(f"Processing GdToT: {link}")
+            LOGGER.info(f"Processing Generated GDrive: {link}")
             deleteMessage(bot, msg)
         except DirectDownloadLinkException as e:
             deleteMessage(bot, msg)
             return sendMessage(str(e), bot, message)
-    if not is_gdrive_link(link)  or (link.strip().isdigit() and multi == 0):
+
+    if not is_gdrive_link(link) or (link.strip().isdigit() and multi == 0):
         return sendMessage("Send Gdrive or GDToT/AppDrive/DriveApp/GDFlix/DriveAce/DriveLinks/DriveBit/DriveSharer/Anidrive/Driveroot/Driveflix/Indidrive/drivehub(in)/HubDrive/DriveHub(ws)/KatDrive/Kolop/DriveFire/DriveBuzz/SharerPw/ShareDrive link along with command or by replying to the link by command\n\n<b>Multi links only by replying to first link/file:</b>\n<code>/cmd</code> 10(number of links/files)", bot, message)
 
     timeout = 60
@@ -221,7 +222,7 @@ def start_clone(listner):
                 if config_dict['TELEGRAPH_STYLE']:
                     return sendMarkup("Someone already mirrored it for you !\nHere you go:", bot, message, button)
                 else:
-                    return sendFile(bot, message, f_name, f"File/Folder is already available in Drive. Here are the search results:\n\n{smsg}")
+                    return sendFile(bot, message, button, f"File/Folder is already available in Drive. Here are the search results:\n\n{smsg}")
 
         CLONE_LIMIT = config_dict['CLONE_LIMIT']
         if CLONE_LIMIT != '' and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id):
@@ -229,9 +230,7 @@ def start_clone(listner):
             if size > (CLONE_LIMIT * 1024**3):
                 msg2 = f'Failed, Clone limit is {CLONE_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(size)}.'
                 return sendMessage(msg2, bot, message)
-        medium = f"Clone {CATEGORY_NAMES[c_index]}"
-        delete_links(bot, message)
-
+        #medium = f"Clone {CATEGORY_NAMES[c_index]}"
 
         if files <= 20:
             msg = sendMessage(f"Cloning: <code>{link}</code>", bot, message)
