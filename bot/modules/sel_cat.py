@@ -122,7 +122,7 @@ def confirm_category(update, context):
 
 
 confirm_category_handler = CallbackQueryHandler(confirm_category, pattern="change", run_async=True)
-change_category_handler = CommandHandler(confirm_category, pattern="change", run_async=True)
-                        filters=(CustomFilters.authorized_chat | CustomFilters.authorized_user), run_async=True
+change_category_handler = CommandHandler("catsel", change_category
+                         filters=(CustomFilters.authorized_chat | CustomFilters.authorized_user), run_async=True)
 dispatcher.add_handler(confirm_category_handler)
 dispatcher.add_handler(change_category_handler)
