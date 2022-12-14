@@ -98,12 +98,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
 
     mesg = message.text.split('\n')
     message_args = mesg[0].split(maxsplit=1)
-    is_gdtot = False
-    is_unified = False
-    is_udrive = False
-    is_sharer = False
-    is_sharedrive = False
-    is_filepress = False
+
     index = 1
     ratio = None
     seed_time = None
@@ -233,15 +228,15 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
         Thread(target=auto_delete_message, args=(bot, message, reply_message)).start()
         return reply_message
 
-    LOGGER.info(link)
+    LOGGER.info(f"Link: {link}")
 
     if len(CATEGORY_NAMES) > 1 and not isLeech:
         btn_listener[msg_id] = [catlistener, extras, timeout]
         LOGGER.info(btn_listener[msg_id])
         text, btns = get_category_buttons('mir', timeout, msg_id, c_index)
         engine = sendMarkup(text, bot, message, btns)
-        return _auto_start_dl(engine, msg_id, timeout)
-    else: return start_ml(extras, catlistener)
+        _auto_start_dl(engine, msg_id, timeout)
+    else: start_ml(extras, catlistener)
 
     if multi > 1:
         sleep(4)
@@ -266,6 +261,12 @@ def _auto_start_dl(msg, msg_id, time_out):
         pass
 
 def start_ml(extra, s_listener):
+    is_gdtot = False
+    is_unified = False
+    is_udrive = False
+    is_sharer = False
+    is_sharedrive = False
+    is_filepress = False
     bot = s_listener[0]
     message = s_listener[1]
     isZip = s_listener[2]
@@ -382,7 +383,7 @@ def mir_confirm(update, context):
         query.answer()
         message.delete()
         del btn_listener[msg_id]
-        return _mirror_leech(extra, listener)
+        return start_ml(extra, listener)
     timeout = listenerInfo[2] - (time() - extra[5])
     text, btns = get_category_buttons('mir', timeout, msg_id, extra[4])
     editMessage(text, message, btns)
