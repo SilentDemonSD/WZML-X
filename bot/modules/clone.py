@@ -210,30 +210,30 @@ def start_clone(listner):
                     msg = f"<b>🗂️ Name: </b><{config_dict['NAME_FONT']}>{escape(name)}</{config_dict['NAME_FONT']}>\n"
                 else:
                     msg = f"<b>Name: </b><{config_dict['NAME_FONT']}>{escape(name)}</{config_dict['NAME_FONT']}>\n"
-                    botpm = f"\n<b>Hey {tag}!, I have sent your cloned links in PM.</b>\n"
-                    buttons = ButtonMaker()
-                    b_uname = bot.get_me().username
-                    botstart = f"http://t.me/{b_uname}"
-                    buttons.buildbutton("View links in PM", f"{botstart}")
+                botpm = f"\n<b>Hey {tag}!, I have sent your cloned links in PM.</b>\n"
+                buttons = ButtonMaker()
+                b_uname = bot.get_me().username
+                botstart = f"http://t.me/{b_uname}"
+                buttons.buildbutton("View links in PM", f"{botstart}")
                 if config_dict['SAVE_MSG']:
                     buttons.sbutton('Save This Message', 'save', 'footer')
                 if config_dict['PICS']:
                     sendPhoto(msg + botpm, bot, message, rchoice(config_dict['PICS']), buttons.build_menu(2))
+                else:
+                    sendMarkup(msg + botpm, bot, message, buttons.build_menu(2))
             else:
-                sendMarkup(msg + botpm, bot, message, buttons.build_menu(2))
-        else:
-            if config_dict['EMOJI_THEME']:
-                cc = f'\n<b>╰👤 #Clone_By: </b>{tag}\n\n'
-            else:
-                cc = f'\n<b>╰ #Clone_By: </b>{tag}\n\n'
-            if config_dict['PICS']:
-                sendPhoto(result + cc, bot, message, rchoice(config_dict['PICS']), button)
-            else:
-                sendMarkup(result + cc, bot, message, button)
-        message.delete()
-        reply_to = message.reply_to_message
-        if reply_to is not None and AUTO_DELETE_UPLOAD_MESSAGE_DURATION == -1:
-            reply_to.delete()
+                if config_dict['EMOJI_THEME']:
+                    cc = f'\n<b>╰👤 #Clone_By: </b>{tag}\n\n'
+                else:
+                    cc = f'\n<b>╰ #Clone_By: </b>{tag}\n\n'
+                if config_dict['PICS']:
+                    sendPhoto(result + cc, bot, message, rchoice(config_dict['PICS']), button)
+                else:
+                    sendMarkup(result + cc, bot, message, button)
+            message.delete()
+            reply_to = message.reply_to_message
+            if reply_to is not None and AUTO_DELETE_UPLOAD_MESSAGE_DURATION == -1:
+                reply_to.delete()
     else:
         drive = GoogleDriveHelper(name, user_id=user_id)
         gid = ''.join(SystemRandom().choices(ascii_letters + digits, k=12))
