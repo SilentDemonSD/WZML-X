@@ -161,6 +161,9 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
         link = re_split(r"pswd:|\|", link)[0]
         link = link.strip()
 
+    catlistener = [bot, message, isZip, extract, isQbit, isLeech, pswd, tag, select, seed]
+    extras = [link, name, ratio, seed_time, c_index, time()]
+
     reply_to = message.reply_to_message
     if reply_to is not None:
         file_ = reply_to.document or reply_to.video or reply_to.audio or reply_to.photo or None
@@ -177,6 +180,12 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
             elif isinstance(file_, list):
                 link = file_[-1].get_file().file_path
             elif not isQbit and file_.mime_type != "application/x-bittorrent":
+                if len(CATEGORY_NAMES) > 1 and not isLeech:
+                    btn_listener[msg_id] = [catlistener, extras, timeout]
+                    LOGGER.info(btn_listener[msg_id])
+                    text, btns = get_category_buttons('mir', timeout, msg_id, c_index)
+                    engine = sendMarkup(text, bot, message, btns)
+                    _auto_start_dl(engine, msg_id, timeout)
                 listener = MirrorLeechListener(bot, message, isZip, extract, isQbit, isLeech, pswd, tag)
                 Thread(target=TelegramDownloadHelper(listener).add_download, args=(message, f'{DOWNLOAD_DIR}{listener.uid}/', name)).start()
                 if multi > 1:
@@ -296,10 +305,8 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
         else:
             auth = ''
         Thread(target=add_aria2c_download, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener, name, auth, ratio, seed_time)).start()
-    listener = [bot, message, isZip, extract, isQbit, isLeech, pswd, tag, select, seed]
-    extras = [link, name, ratio, seed_time, c_index, time()]
     if len(CATEGORY_NAMES) > 1 and not isLeech:
-        btn_listener[msg_id] = [listener, extras, timeout]
+        btn_listener[msg_id] = [catlistener, extras, timeout]
         LOGGER.info(btn_listener[msg_id])
         text, btns = get_category_buttons('mir', timeout, msg_id, c_index)
         engine = sendMarkup(text, bot, message, btns)
@@ -314,6 +321,35 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
         multi -= 1
         sleep(4)
         Thread(target=_mirror_leech, args=(bot, nextmsg, isZip, extract, isQbit, isLeech)).start()
+
+@new_thread
+def _auto_start_dl(msg, msg_id, time_out):
+    sleep(time_out)
+    try:
+        info = btn_listener[msg_id]
+        del btn_listener[msg_id]
+        editMessage("Timed out! Task has been Started.", msg)
+        start_ml(info[1], info[0])
+    except:
+        pass
+
+def start_mirror_leech(extra, s_listener):
+    bot = s_listener[0]
+    message = s_listener[1]
+    isZip = s_listener[2]
+    extract = s_listener[3]
+    isQbit = s_listener[4]
+    isLeech = s_listener[5]
+    pswd = s_listener[6]
+    tag = s_listener[7]
+    select = s_listener[8]
+    seed = s_listener[9]
+    link = extra[0]
+    name = extra[1]
+    ratio = extra[2]
+    seed_time = extra[3]
+    c_index = int(extra[4])
+
 
 @new_thread
 def mir_confirm(update, context):
