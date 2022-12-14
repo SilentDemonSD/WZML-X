@@ -32,7 +32,7 @@ def category_change(update, context):
         This command mainly for change category incase you decided to change category from already added donwload.
         But you can always use /{BotCommands.MirrorCommand[0]} with to select category before download start.
         '''
-        sendMessage(msg), context.bot, update.message)
+        sendMessage(msg, context.bot, update.message)
         return
     if not CustomFilters.owner_query(user_id) and dl.message.from_user.id != user_id:
         sendMessage("This task is not for you!", context.bot, update.message)
