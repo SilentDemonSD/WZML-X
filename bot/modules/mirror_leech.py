@@ -240,8 +240,8 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
         LOGGER.info(btn_listener[msg_id])
         text, btns = get_category_buttons('mir', timeout, msg_id, c_index)
         engine = sendMarkup(text, bot, message, btns)
-        _auto_start_dl(engine, msg_id, timeout)
-    else: start_ml(extras, listener)
+        return _auto_start_dl(engine, msg_id, timeout)
+    else: return start_ml(extras, listener)
 
     if not is_mega_link(link) and not isQbit and not is_magnet(link) \
         and not is_gdrive_link(link) and not link.endswith('.torrent'):
@@ -378,7 +378,7 @@ def mir_confirm(update, context):
     elif data[1] == 'cancel':
         query.answer()
         del btn_listener[msg_id]
-        return editMessage(f"<b>Download has been cancelled!", message)
+        return editMessage(f"<b>Download has been cancelled!</b>", message)
     elif data[1] == 'start':
         query.answer()
         message.delete()
