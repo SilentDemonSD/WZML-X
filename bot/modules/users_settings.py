@@ -17,7 +17,31 @@ from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.ext_utils.bot_utils import update_user_ldata, is_paid, is_sudo, get_readable_file_size
 
 handler_dict = {}
-example_dict = {'prefix':'1. <code>@your_channel_username or Anything</code>', 'mprefix':'1. <code>@your_channel_username or Anything</code>', 'suffix':'1. <code>~ WZML</code>\n2. <code>~ @channelname</code>', 'msuffix':'1. <code>~ WZML</code>\n2. <code>~ @channelname</code>', 'caption': '1.'+escape("<b>{filename}</b>\nJoin Now : @WeebZone_updates")+'\nCheck all available fillings options <a href="">HERE</a> and Make Custom Caption.', 'userlog':'1. <code>-100xxxxxx or Channel ID</code>', 'usertd':'1. Example: <code>1TSYgS-88SkhkSuoS-KHSi7%^&s9HKj https://1.xyz.workers.dev/0:/Leecher</code>', 'remname':'<b>Syntax:</b> previousname:newname:times|previousname:newname:times\n\n1. Fork:Star|Here:Now:1|WZML\n\n<b>Output :</b> Star Now : Click Here.txt', 'mremname':'<b>Syntax:</b> previousname:newname:times|previousname:newname:times\n\n1. Fork:Star|Here:Now:1|WZML\n\n<b>Output :</b> Star Now : Click Here.txt', 'imdb_temp':'Check all available fillings options <a href="">HERE</a> and Make Custom Template.', 'ani_temp':'Check all available fillings options <a href="">HERE</a> and Make Custom AniList Template.', 'yt_ql': f'''1. <code>{escape('bv*[height<=1080][ext=mp4]+ba[ext=m4a]/b[height<=1080]')}</code> this will give 1080p-mp4.\n2. <code>{escape('bv*[height<=720][ext=webm]+ba/b[height<=720]')}</code> this will give 720p-webm.\nCheck all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#filtering-formats">HERE</a>.'''}
+example_dict = {'prefix':'1. <code>@your_channel_username or Anything</code>', 
+                'mprefix':'1. <code>@your_channel_username or Anything</code>', 
+                'suffix':'1. <code>~ WZML</code>\n2. <code>~ @channelname</code>', 
+                'msuffix':'1. <code>~ WZML</code>\n2. <code>~ @channelname</code>', 
+                'caption': '1.'+escape("<b>{filename}</b>\nJoin Now : @WeebZone_updates")+'\nCheck all available fillings options <a href="">HERE</a> and Make Custom Caption.', 
+                'userlog':'1. <code>-100xxxxxx or Channel ID</code>', 
+                'usertd':'1. Example: <code>1TSYgS-88SkhkSuoS-KHSi7%^&s9HKj https://1.xyz.workers.dev/0:/Leecher</code>', 
+                'remname':'<b>Syntax:</b> previousname:newname:times|previousname:newname:times\n\n1. Fork:Star|Here:Now:1|WZML\n\n<b>Output :</b> Star Now : Click Here.txt', 
+                'mremname':'<b>Syntax:</b> previousname:newname:times|previousname:newname:times\n\n1. Fork:Star|Here:Now:1|WZML\n\n<b>Output :</b> Star Now : Click Here.txt', 
+                'imdb_temp':'Check all available fillings options <a href="">HERE</a> and Make Custom Template.', 
+                'ani_temp':'Check all available fillings options <a href="">HERE</a> and Make Custom AniList Template.', 
+                'yt_ql': f'''1. <code>{escape('bv*[height<=1080][ext=mp4]+ba[ext=m4a]/b[height<=1080]')}</code> this will give 1080p-mp4.\n2. <code>{escape('bv*[height<=720][ext=webm]+ba/b[height<=720]')}</code> this will give 720p-webm.\nCheck all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#filtering-formats">HERE</a>.'''}
+fname_dict = {'prefix': 'Leech Prefix', 
+            'mprefix':'Mirror Prefix', 
+            'suffix':'Leech Suffix', 
+            'msuffix':'Mirror Suffix', 
+            'caption': 'Caption', 
+            'userlog':'UserLog', 
+            'usertd':'UserTD', 
+            'remname':'Leech Remname', 
+            'mremname':'Mirror Remname', 
+            'imdb_temp':'IMDB Template', 
+            'ani_temp':'Anime Template', 
+            'yt_ql': 'YT-DLP Quality'
+}
 
 def get_user_settings(from_user, key=None):
     user_id = from_user.id
@@ -344,13 +368,13 @@ def edit_user_settings(update, context):
         handler_dict[user_id] = True
         buttons = ButtonMaker()
         if data[3] == 'caption':
-            buttons.sbutton("Set Font Style", f"userset {user_id} font leech")
+            buttons.sbutton("Set Font Style", f"userset {user_id} font leech", 'header')
         if user_id in user_data and user_data[user_id].get(data[3]):
             menu = True
-            buttons.sbutton("Delete", f"userset {user_id} sremove {data[3]} {data[4]}")
+            buttons.sbutton("Remove", f"userset {user_id} sremove {data[3]} {data[4]}")
         buttons.sbutton("Back", f"userset {user_id} back {data[4]}")
         buttons.sbutton("Close", f"userset {user_id} close")
-        editMessage(f'<u>Send {data[3].capitalize()} text :</u>\n\nExamples:\n{example_dict[data[3]]}', message, buttons.build_menu(2) if menu else buttons.build_menu(1))
+        editMessage(f"<u>Send {fname_dict[3]}'s text :</u>\n\nExamples:\n{example_dict[data[3]]}", message, buttons.build_menu(2))
         partial_fnc = partial(set_addons, data=data[3], omsg=message, key=data[4])
         UNI_HANDLER = f"{data[3]}_handler"
         UNI_HANDLER = MessageHandler(filters=Filters.text & Filters.chat(message.chat.id) & Filters.user(user_id),
