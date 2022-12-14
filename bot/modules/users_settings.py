@@ -360,7 +360,6 @@ def edit_user_settings(update, context):
             query.answer("You not Not Paid User to Use this Feature. \n#Buy Paid Service", show_alert=True)
             return
         query.answer()
-        menu = False
         if handler_dict.get(user_id):
             handler_dict[user_id] = False
             sleep(0.5)
@@ -370,11 +369,10 @@ def edit_user_settings(update, context):
         if data[3] == 'caption':
             buttons.sbutton("Set Font Style", f"userset {user_id} font leech", 'header')
         if user_id in user_data and user_data[user_id].get(data[3]):
-            menu = True
             buttons.sbutton("Remove", f"userset {user_id} sremove {data[3]} {data[4]}")
         buttons.sbutton("Back", f"userset {user_id} back {data[4]}")
         buttons.sbutton("Close", f"userset {user_id} close", 'footer')
-        editMessage(f"<u>Send {fname_dict[data[3]]}'s text :</u>\n\nExamples:\n{example_dict[data[3]]}", message, buttons.build_menu(2) if menu else buttons.build_menu(1))
+        editMessage(f"<u>Send {fname_dict[data[3]]}'s text :</u>\n\nExamples:\n{example_dict[data[3]]}", message, buttons.build_menu(2))
         partial_fnc = partial(set_addons, data=data[3], omsg=message, key=data[4])
         UNI_HANDLER = f"{data[3]}_handler"
         UNI_HANDLER = MessageHandler(filters=Filters.text & Filters.chat(message.chat.id) & Filters.user(user_id),
@@ -390,7 +388,7 @@ def edit_user_settings(update, context):
         update_user_ldata(user_id, data[3], False)
         if DATABASE_URL: 
             DbManger().update_userval(user_id, 'prefix')
-        query.answer(text=f"{data[3].capitalize()} Deleted!", show_alert=True)
+        query.answer(text=f"{fname_dict[data[3]]} Removed!", show_alert=True)
         update_user_settings(message, query.from_user, data[4])
     elif data[2] == "cfont":
         handler_dict[user_id] = False
