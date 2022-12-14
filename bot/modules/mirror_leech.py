@@ -235,6 +235,14 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
 
     LOGGER.info(link)
 
+    if len(CATEGORY_NAMES) > 1 and not isLeech:
+        btn_listener[msg_id] = [catlistener, extras, timeout]
+        LOGGER.info(btn_listener[msg_id])
+        text, btns = get_category_buttons('mir', timeout, msg_id, c_index)
+        engine = sendMarkup(text, bot, message, btns)
+        _auto_start_dl(engine, msg_id, timeout)
+    else: start_ml(extras, listener)
+
     if not is_mega_link(link) and not isQbit and not is_magnet(link) \
         and not is_gdrive_link(link) and not link.endswith('.torrent'):
         content_type = get_content_type(link)
@@ -305,12 +313,6 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
         else:
             auth = ''
         Thread(target=add_aria2c_download, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener, name, auth, ratio, seed_time)).start()
-    if len(CATEGORY_NAMES) > 1 and not isLeech:
-        btn_listener[msg_id] = [catlistener, extras, timeout]
-        LOGGER.info(btn_listener[msg_id])
-        text, btns = get_category_buttons('mir', timeout, msg_id, c_index)
-        engine = sendMarkup(text, bot, message, btns)
-        _auto_start_dl(engine, msg_id, timeout)
     if multi > 1:
         sleep(4)
         nextmsg = type('nextmsg', (object, ), {'chat_id': message.chat_id, 'message_id': message.reply_to_message.message_id + 1})
@@ -320,7 +322,6 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
         nextmsg.from_user.id = message.from_user.id
         multi -= 1
         sleep(4)
-    if len(CATEGORY_NAMES) <= 1:
         Thread(target=_mirror_leech, args=(bot, nextmsg, isZip, extract, isQbit, isLeech)).start()
 
 @new_thread
@@ -334,7 +335,7 @@ def _auto_start_dl(msg, msg_id, time_out):
     except:
         pass
 
-def start_mirror_leech(extra, s_listener):
+def start_ml(extra, s_listener):
     bot = s_listener[0]
     message = s_listener[1]
     isZip = s_listener[2]
