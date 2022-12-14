@@ -66,11 +66,11 @@ def __onDownloadStarted(api, gid):
                             return sendMarkup("Here are the search results:", listener.bot, listener.message, button)
                         else:
                             return sendFile(listener.bot, listener.message, button, f"Here are the search results:\n\n{smsg}")
-                            
+
+            size = download.total_length          
             if any([ZIP_UNZIP_LIMIT, LEECH_LIMIT, TORRENT_DIRECT_LIMIT, STORAGE_THRESHOLD]) and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id):
                 sleep(1)
                 limit = None
-                size = download.total_length
                 arch = any([listener.isZip, listener.isLeech, listener.extract])
                 if STORAGE_THRESHOLD:
                     acpt = check_storage_threshold(size, arch, True)

@@ -189,8 +189,8 @@ def add_mega_download(mega_link: str, path: str, listener, name: str):
     DAILY_MIRROR_LIMIT = config_dict['DAILY_MIRROR_LIMIT'] * 1024**3 if config_dict['DAILY_MIRROR_LIMIT'] else config_dict['DAILY_MIRROR_LIMIT']
     DAILY_LEECH_LIMIT = config_dict['DAILY_LEECH_LIMIT'] * 1024**3 if config_dict['DAILY_LEECH_LIMIT'] else config_dict['DAILY_LEECH_LIMIT']
 
+    size = api.getSize(node)
     if any([STORAGE_THRESHOLD, ZIP_UNZIP_LIMIT, MEGA_LIMIT, LEECH_LIMIT]) and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id):
-        size = api.getSize(node)
         arch = any([listener.isZip, listener.isLeech, listener.extract])
         if STORAGE_THRESHOLD is not None:
             acpt = check_storage_threshold(size, arch)
