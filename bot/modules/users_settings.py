@@ -23,7 +23,7 @@ example_dict = {'prefix':'1. <code>@your_channel_username or Anything</code>',
                 'msuffix':'1. <code>~ WZML</code>\n2. <code>~ @channelname</code>', 
                 'caption': '1.'+escape("<b>{filename}</b>\nJoin Now : @WeebZone_updates")+'\nCheck all available fillings options <a href="">HERE</a> and Make Custom Caption.', 
                 'userlog':'1. <code>-100xxxxxx or Channel ID</code>', 
-                'usertd':'1. Example: <code>1TSYgS-88SkhkSuoS-KHSi7%^&s9HKj https://1.xyz.workers.dev/0:/Leecher</code>', 
+                'usertd':'1. <code>1TSYgS-88SkhkSuoS-KHSi7%^&s9HKj https://1.xyz.workers.dev/0:/Leecher</code>', 
                 'remname':'<b>Syntax:</b> previousname:newname:times|previousname:newname:times\n\n1. Fork:Star|Here:Now:1|WZML\n\n<b>Output :</b> Star Now : Click Here.txt', 
                 'mremname':'<b>Syntax:</b> previousname:newname:times|previousname:newname:times\n\n1. Fork:Star|Here:Now:1|WZML\n\n<b>Output :</b> Star Now : Click Here.txt', 
                 'imdb_temp':'Check all available fillings options <a href="">HERE</a> and Make Custom Template.', 
@@ -116,7 +116,7 @@ def get_user_settings(from_user, key=None):
         else:
             buttons.sbutton("Set AniList", f"userset {user_id} suniversal ani_temp universal")
         buttons.sbutton("Back", f"userset {user_id} mback")
-        buttons.sbutton("Close", f"userset {user_id} close")
+        buttons.sbutton("Close", f"userset {user_id} close", 'footer')
         button = buttons.build_menu(2)
         text = f'''<u>Universal Settings for <a href='tg://user?id={user_id}'>{name}</a></u>
 
@@ -163,7 +163,7 @@ def get_user_settings(from_user, key=None):
         buttons.sbutton(buttxt, f"userset {user_id} suniversal usertd mirror")
 
         buttons.sbutton("Back", f"userset {user_id} mback")
-        buttons.sbutton("Close", f"userset {user_id} close")
+        buttons.sbutton("Close", f"userset {user_id} close", 'footer')
         button = buttons.build_menu(2)
         text = f'''<u>Mirror/Clone Settings for <a href='tg://user?id={user_id}'>{name}</a></u>
 
@@ -171,7 +171,7 @@ def get_user_settings(from_user, key=None):
 ├ Suffix : <b>{suffix}</b>
 ├ Remname : <b>{escape(remname)}</b>
 ├ User TD STATUS : <b>{usertdstatus}</b>
-├ USER TeamDrive : <b>{usertd}</b>
+├ User TeamDrive : <b>{usertd}</b>
 ├ Daily Upload : <b>{dailyup} / {dailytlup} per day</b>
 '''
     elif key == 'leech':
@@ -179,7 +179,7 @@ def get_user_settings(from_user, key=None):
         suffix = user_dict['suffix'] if user_dict and user_dict.get('suffix') else "Not Exists"
         caption = user_dict['caption'] if user_dict and user_dict.get('caption') else "Not Exists"
         remname = user_dict['remname'] if user_dict and user_dict.get('remname') else "Not Exists"
-        cfont = user_dict['cfont'][0] if user_dict and user_dict.get('cfont') else "Not Exists"
+        cfont = user_dict['cfont'][0] if user_dict and user_dict.get('cfont') else "<b>Not Exists</b>"
         dailytlle = get_readable_file_size(config_dict['DAILY_LEECH_LIMIT'] * 1024**3) if config_dict['DAILY_LEECH_LIMIT'] else "Unlimited"
         dailyll = get_readable_file_size(user_dict.get('dly_tasks')[2]) if user_dict and user_dict.get('dly_tasks') and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) and config_dict['DAILY_LEECH_LIMIT'] else "Unlimited"
 
@@ -194,7 +194,7 @@ def get_user_settings(from_user, key=None):
         if cfont != "Not Exists": buttons.sbutton("Delete CapFont", f"userset {user_id} cfont")
 
         buttons.sbutton("Back", f"userset {user_id} mback")
-        buttons.sbutton("Close", f"userset {user_id} close")
+        buttons.sbutton("Close", f"userset {user_id} close", 'footer')
         button = buttons.build_menu(2)
         text = f'''<u>Leech Settings for <a href='tg://user?id={user_id}'>{name}</a></u>
 
@@ -367,12 +367,12 @@ def edit_user_settings(update, context):
         handler_dict[user_id] = True
         buttons = ButtonMaker()
         if data[3] == 'caption':
-            buttons.sbutton("Set Font Style", f"userset {user_id} font leech", 'header')
+            buttons.sbutton("Set Custom Font Style", f"userset {user_id} font leech", 'header')
         if user_id in user_data and user_data[user_id].get(data[3]):
             buttons.sbutton("Remove", f"userset {user_id} sremove {data[3]} {data[4]}")
         buttons.sbutton("Back", f"userset {user_id} back {data[4]}")
         buttons.sbutton("Close", f"userset {user_id} close", 'footer')
-        editMessage(f"<u>Send {fname_dict[data[3]]}'s text :</u>\n\nExamples:\n{example_dict[data[3]]}", message, buttons.build_menu(2))
+        editMessage(f"<u>Send {fname_dict[data[3]]}'s text. Timeout: 60sec</u>\n\nExamples:\n{example_dict[data[3]]}", message, buttons.build_menu(2))
         partial_fnc = partial(set_addons, data=data[3], omsg=message, key=data[4])
         UNI_HANDLER = f"{data[3]}_handler"
         UNI_HANDLER = MessageHandler(filters=Filters.text & Filters.chat(message.chat.id) & Filters.user(user_id),
