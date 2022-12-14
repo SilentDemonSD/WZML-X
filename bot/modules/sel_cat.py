@@ -24,32 +24,32 @@ def category_change(update, context):
                 dl = download_dict[mirror_msg.message_id]
             else:
                 dl = None
-            if not dl:
-                sendMessage("This is not an active task make sure you reply to an active task!", context.bot, update.message)
-                return
-            elif len(context.args) == 0:
-                msg = f'''Reply to an active /{cmd} which was used to start the download or add gid along with {cmd}
-                This command mainly for change category incase you decided to change category from already added donwload.
-                But you can always use /{mir} with to select category before download start.
-                '''
-                sendMessage(msg.format_map({'cmd': BotCommands.SelectCategory,'mir': BotCommands.MirrorCommand[0]}), context.bot, update.message)
-                return
-            if not CustomFilters.owner_query(user_id) and dl.message.from_user.id != user_id:
-                sendMessage("This task is not for you!", context.bot, update.message)
-                return
-            if dl.status() not in [MirrorStatus.STATUS_DOWNLOADING, MirrorStatus.STATUS_PAUSED, MirrorStatus.STATUS_WAITING]:
-                sendMessage(f'Task should be on {MirrorStatus.STATUS_DOWNLOADING} or {MirrorStatus.STATUS_PAUSED} or {MirrorStatus.STATUS_WAITING}', context.bot, update.message)
-                return
-            listener = dl.listener() if dl and hasattr(dl, 'listener') else None
-            if listener and len(CATEGORY_NAMES) > 1 and not listener.isLeech:
-                msg_id = update.message.message_id
-                timeout = 30
-                btn_listener[msg_id] = [dl.gid(), timeout, time(), listener, listener.c_index]
-                text, btns = get_category_buttons('change', timeout, msg_id, listener.c_index)
-                engine = sendMarkup(text, context.bot, update.message, btns)
-                _auto_select(engine, msg_id, timeout)
-            else:
-                sendMessage("I cannot change the category for this task!", context.bot, update.message)
+        if not dl:
+            sendMessage("This is not an active task make sure you reply to an active task!", context.bot, update.message)
+            return
+    elif len(context.args) == 0:
+        msg = f'''Reply to an active /{cmd} which was used to start the download or add gid along with {cmd}
+        This command mainly for change category incase you decided to change category from already added donwload.
+        But you can always use /{mir} with to select category before download start.
+        '''
+        sendMessage(msg.format_map({'cmd': BotCommands.SelectCategory,'mir': BotCommands.MirrorCommand[0]}), context.bot, update.message)
+        return
+    if not CustomFilters.owner_query(user_id) and dl.message.from_user.id != user_id:
+        sendMessage("This task is not for you!", context.bot, update.message)
+        return
+    if dl.status() not in [MirrorStatus.STATUS_DOWNLOADING, MirrorStatus.STATUS_PAUSED, MirrorStatus.STATUS_WAITING]:
+        sendMessage(f'Task should be on {MirrorStatus.STATUS_DOWNLOADING} or {MirrorStatus.STATUS_PAUSED} or {MirrorStatus.STATUS_WAITING}', context.bot, update.message)
+        return
+    listener = dl.listener() if dl and hasattr(dl, 'listener') else None
+    if listener and len(CATEGORY_NAMES) > 1 and not listener.isLeech:
+        msg_id = update.message.message_id
+        timeout = 60
+        btn_listener[msg_id] = [dl.gid(), timeout, time(), listener, listener.c_index]
+        text, btns = get_category_buttons('change', timeout, msg_id, listener.c_index)
+        engine = sendMarkup(text, context.bot, update.message, btns)
+        _auto_select(engine, msg_id, timeout)
+    else:
+        sendMessage("Cannot change the category for this task!", context.bot, update.message)
 
 @new_thread
 def _auto_select(msg, msg_id, timeout):
