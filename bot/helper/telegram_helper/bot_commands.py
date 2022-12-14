@@ -66,6 +66,7 @@ class _BotCommands:
         self.WayBackCommand = getCommand(f'WAYBACK_COMMAND', f'wayback{CMD_PERFIX}')
         self.AddleechlogCommand = getCommand(f'ADDLEECHLOG_CMD', f'addleechlog{CMD_PERFIX}')
         self.RmleechlogCommand = getCommand(f'RMLEECHLOG_CMD', f'rmleechlog{CMD_PERFIX}')
+        self.SelectCategory = getCommand(f'CATSEL_CMD', f'catsel{CMD_PERFIX}')
         self.EvalCommand = f'eval{CMD_PERFIX}'
         self.ExecCommand = f'exec{CMD_PERFIX}'
         self.ClearLocalsCommand = f'clearlocals{CMD_PERFIX}'
