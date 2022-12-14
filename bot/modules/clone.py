@@ -20,7 +20,7 @@ from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from telegram import ParseMode
 from bot.helper.telegram_helper.button_build import ButtonMaker
 
-def _clone(message, bot, listener):
+def _clone(message, bot):
     if AUTO_DELETE_UPLOAD_MESSAGE_DURATION != -1:
         reply_to = message.reply_to_message
         if reply_to is not None:
@@ -94,7 +94,6 @@ def _clone(message, bot, listener):
             message = sendMarkup(startwarn, bot, message, buttons.build_menu(2))
             return
 
-
     total_task = len(download_dict)
     USER_TASKS_LIMIT = config_dict['USER_TASKS_LIMIT']
     TOTAL_TASKS_LIMIT = config_dict['TOTAL_TASKS_LIMIT']
@@ -120,6 +119,8 @@ def _clone(message, bot, listener):
     reply_to = message.reply_to_message
     link = ''
     multi = 0
+    c_index = 0
+    msg_id = message.message_id
 
     if len(args) > 1:
         link = args[1].strip()
@@ -137,7 +138,6 @@ def _clone(message, bot, listener):
             tag = f"@{reply_to.from_user.username}"
         else:
             tag = reply_to.from_user.mention_html(reply_to.from_user.first_name)
-    
 
     is_gdtot = is_gdtot_link(link)
     is_unified = is_unified_link(link)
@@ -166,7 +166,48 @@ def _clone(message, bot, listener):
         except DirectDownloadLinkException as e:
             deleteMessage(bot, msg)
             return sendMessage(str(e), bot, message)
-    if is_gdrive_link(link):
+    if not is_gdrive_link(link)  or (link.strip().isdigit() and multi == 0):
+        return sendMessage("Send Gdrive or GDToT/AppDrive/DriveApp/GDFlix/DriveAce/DriveLinks/DriveBit/DriveSharer/Anidrive/Driveroot/Driveflix/Indidrive/drivehub(in)/HubDrive/DriveHub(ws)/KatDrive/Kolop/DriveFire/DriveBuzz/SharerPw/ShareDrive link along with command or by replying to the link by command\n\n<b>Multi links only by replying to first link/file:</b>\n<code>/cmd</code> 10(number of links/files)", bot, message)
+
+    timeout = 60
+    listener = [bot, message, c_index, timeout, time(), tag, link]
+    if len(CATEGORY_NAMES) > 1:
+        text, btns = get_category_buttons('clone', timeout, msg_id, c_index)
+        btn_listener[msg_id] = listener
+        engine = sendMarkup(text, bot, message, btns)
+        _auto_start_dl(engine, msg_id, timeout)
+    else:
+        start_clone(listener)
+
+    if multi > 1:
+        sleep(4)
+        nextmsg = type('nextmsg', (object, ), {'chat_id': message.chat_id, 'message_id': message.reply_to_message.message_id + 1})
+        cmsg = message.text.split()
+        cmsg[1] = f"{multi - 1}"
+        nextmsg = sendMessage(" ".join(cmsg), bot, nextmsg)
+        nextmsg.from_user.id = message.from_user.id
+        sleep(4)
+        Thread(target=_clone, args=(nextmsg, bot)).start()
+
+@new_thread
+def _auto_start_dl(msg, msg_id, time_out):
+    sleep(time_out)
+    try:
+        info = btn_listener[msg_id]
+        del btn_listener[msg_id]
+        editMessage("Timed out! Task has been started.", msg)
+        start_clone(info)
+    except:
+        pass
+
+@new_thread
+def start_clone(listner):
+        bot = listner[0]
+        message = listner[1]
+        c_index = listner[2]
+        tag = listner[5]
+        link = listner[6]
+
         gd = GoogleDriveHelper()
         res, size, name, files = gd.helper(link)
         IS_USRTD = user_data[user_id].get('is_usertd') if user_id in user_data and user_data[user_id].get('is_usertd') else False
@@ -180,35 +221,20 @@ def _clone(message, bot, listener):
                     return sendMarkup("Someone already mirrored it for you !\nHere you go:", bot, message, button)
                 else:
                     return sendFile(bot, message, f_name, f"File/Folder is already available in Drive. Here are the search results:\n\n{smsg}")
-        timeout = 30
-        listener = [bot, message, c_index, timeout, time(), tag, link]
-        if len(CATEGORY_NAMES) > 1:
-            text, btns = get_category_buttons('clone', timeout, msg_id, c_index)
-            btn_listener[msg_id] = listener
-            engine = sendMarkup(text, bot, message, btns)
-            _auto_start_dl(engine, msg_id, timeout)
-        else:
-            start_clone(listener)
-        config_dict['CLONE_LIMIT']
+
+        CLONE_LIMIT = config_dict['CLONE_LIMIT']
         if CLONE_LIMIT != '' and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id):
             LOGGER.info('Checking File/Folder Size...')
-            if size > CLONE_LIMIT * 1024**3:
+            if size > (CLONE_LIMIT * 1024**3):
                 msg2 = f'Failed, Clone limit is {CLONE_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(size)}.'
                 return sendMessage(msg2, bot, message)
         medium = f"Clone {CATEGORY_NAMES[c_index]}"
         delete_links(bot, message)
-        if multi > 1:
-            sleep(4)
-            nextmsg = type('nextmsg', (object, ), {'chat_id': message.chat_id, 'message_id': message.reply_to_message.message_id + 1})
-            cmsg = message.text.split()
-            cmsg[1] = f"{multi - 1}"
-            nextmsg = sendMessage(" ".join(cmsg), bot, nextmsg)
-            nextmsg.from_user.id = message.from_user.id
-            sleep(4)
-            Thread(target=_clone, args=(nextmsg, bot)).start()
+
+
         if files <= 20:
             msg = sendMessage(f"Cloning: <code>{link}</code>", bot, message)
-            result, button = gd.clone(link, user_id)
+            result, button = gd.clone(link, c_index)
             deleteMessage(bot, msg)
             if BOT_PM_X:
                 if message.chat.type != 'private':
@@ -247,7 +273,7 @@ def _clone(message, bot, listener):
             with download_dict_lock:
                 download_dict[message.message_id] = clone_status
             sendStatusMessage(message, bot)
-            result, button = drive.clone(link, user_id)
+            result, button = drive.clone(link, c_index)
             with download_dict_lock:
                 del download_dict[message.message_id]
                 count = len(download_dict)
@@ -355,8 +381,6 @@ def _clone(message, bot, listener):
             except Exception as e:
                 LOGGER.warning(e)
                 return
-    else:
-        sendMessage("Send Gdrive or GDToT/AppDrive/DriveApp/GDFlix/DriveAce/DriveLinks/DriveBit/DriveSharer/Anidrive/Driveroot/Driveflix/Indidrive/drivehub(in)/HubDrive/DriveHub(ws)/KatDrive/Kolop/DriveFire/DriveBuzz/SharerPw/ShareDrive link along with command or by replying to the link by command\n\n<b>Multi links only by replying to first link/file:</b>\n<code>/cmd</code> 10(number of links/files)", bot, message)
 
 @new_thread
 def confirm_clone(update, context):
@@ -399,5 +423,6 @@ def cloneNode(update, context):
 authfilter = CustomFilters.authorized_chat if config_dict['CLONE_ENABLED'] is True else CustomFilters.owner_filter
 clone_handler = CommandHandler(BotCommands.CloneCommand, cloneNode,
                                     filters=authfilter | CustomFilters.authorized_user, run_async=True)
-
+clone_confirm_handler = CallbackQueryHandler(confirm_clone, pattern="clone")
+dispatcher.add_handler(clone_confirm_handler)
 dispatcher.add_handler(clone_handler)

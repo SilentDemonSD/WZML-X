@@ -324,7 +324,7 @@ def start_ml(extra, s_listener):
             msg = "Qb commands for torrents only. if you are trying to dowload torrent then report."
             return sendMessage(msg, bot, message)
 
-    listener = MirrorLeechListener(bot, message, isZip, extract, isQbit, isLeech, pswd, tag, select, seed)
+    listener = MirrorLeechListener(bot, message, isZip, extract, isQbit, isLeech, pswd, tag, select, seed, c_index)
 
     if is_gdrive_link(link):
         if not isZip and not extract and not isLeech:
