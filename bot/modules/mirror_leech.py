@@ -341,6 +341,7 @@ def start_ml(extra, s_listener):
         Thread(target=add_qb_torrent, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener,
                                             ratio, seed_time)).start()
     else:
+        mesg = message.text.split('\n')
         if len(mesg) > 1:
             ussr = mesg[1]
             if len(mesg) > 2:
