@@ -28,11 +28,11 @@ def category_change(update, context):
             sendMessage("This is not an active task make sure you reply to an active task!", context.bot, update.message)
             return
     elif len(context.args) == 0:
-        msg = f'''Reply to an active /{cmd} which was used to start the download or add gid along with {cmd}
+        msg = f'''Reply to an active /{BotCommands.SelectCategory} which was used to start the download or add gid along with {cmd}
         This command mainly for change category incase you decided to change category from already added donwload.
-        But you can always use /{mir} with to select category before download start.
+        But you can always use /{BotCommands.MirrorCommand[0]} with to select category before download start.
         '''
-        sendMessage(msg.format_map({'cmd': BotCommands.SelectCategory,'mir': BotCommands.MirrorCommand[0]}), context.bot, update.message)
+        sendMessage(msg), context.bot, update.message)
         return
     if not CustomFilters.owner_query(user_id) and dl.message.from_user.id != user_id:
         sendMessage("This task is not for you!", context.bot, update.message)
