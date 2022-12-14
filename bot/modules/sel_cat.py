@@ -18,7 +18,7 @@ def category_change(update, context):
             sendMessage(f"GID <code>{gid}</code> Not Found!", context.bot, update.message)
             return
     elif update.message.reply_to_message:
-        mirror_msg = update.message.reply_to_message:
+        mirror_msg = update.message.reply_to_message
         with download_dict_lock:
             if mirror_msg.message_id in download_dict:
                 dl = download_dict[mirror_msg.message_id]
