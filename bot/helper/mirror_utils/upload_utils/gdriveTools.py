@@ -31,7 +31,7 @@ SERVICE_ACCOUNTS_NUMBER = 100
 
 class GoogleDriveHelper:
 
-    def __init__(self, name=None, path=None, size=0, listener=None):
+    def __init__(self, name=None, path=None, size=0, listener=None, user_id=None):
         self.__G_DRIVE_TOKEN_FILE = "token.pickle"
         self.__OAUTH_SCOPE = ['https://www.googleapis.com/auth/drive']
         self.__G_DRIVE_DIR_MIME_TYPE = "application/vnd.google-apps.folder"
@@ -61,6 +61,7 @@ class GoogleDriveHelper:
         self.transferred_size = 0
         self.__service_account_index = 0
         self.__service = self.__authorize()
+        self.user_id = user_id
 
 
     def speed(self):

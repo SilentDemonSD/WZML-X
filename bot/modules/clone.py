@@ -241,7 +241,7 @@ def _clone(message, bot, listener):
                 if reply_to is not None and AUTO_DELETE_UPLOAD_MESSAGE_DURATION == -1:
                     reply_to.delete()
         else:
-            drive = GoogleDriveHelper(name)
+            drive = GoogleDriveHelper(name, user_id=user_id)
             gid = ''.join(SystemRandom().choices(ascii_letters + digits, k=12))
             clone_status = CloneStatus(drive, size, message, gid)
             with download_dict_lock:

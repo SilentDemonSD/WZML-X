@@ -220,7 +220,7 @@ class MirrorLeechListener:
             up_path = f'{up_dir}/{up_name}'
             size = get_path_size(up_path)
             LOGGER.info(f"Upload Name: {up_name}")
-            drive = GoogleDriveHelper(up_name, up_dir, size, self)
+            drive = GoogleDriveHelper(up_name, up_dir, size, self, self.user_id)
             upload_status = UploadStatus(drive, size, gid, self)
             with download_dict_lock:
                 download_dict[self.uid] = upload_status
