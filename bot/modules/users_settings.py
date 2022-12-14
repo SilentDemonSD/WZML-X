@@ -374,7 +374,7 @@ def edit_user_settings(update, context):
             buttons.sbutton("Remove", f"userset {user_id} sremove {data[3]} {data[4]}")
         buttons.sbutton("Back", f"userset {user_id} back {data[4]}")
         buttons.sbutton("Close", f"userset {user_id} close")
-        editMessage(f"<u>Send {fname_dict[3]}'s text :</u>\n\nExamples:\n{example_dict[data[3]]}", message, buttons.build_menu(2))
+        editMessage(f"<u>Send {fname_dict[3]}'s text :</u>\n\nExamples:\n{example_dict[data[3]]}", message, buttons.build_menu(2) if menu else buttons.build_menu(1))
         partial_fnc = partial(set_addons, data=data[3], omsg=message, key=data[4])
         UNI_HANDLER = f"{data[3]}_handler"
         UNI_HANDLER = MessageHandler(filters=Filters.text & Filters.chat(message.chat.id) & Filters.user(user_id),
