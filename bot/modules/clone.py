@@ -410,7 +410,7 @@ def confirm_clone(update, context):
         query.answer()
         del btn_listener[msg_id]
         message.delete()
-        return _clone(listenerInfo)
+        return start_clone(listenerInfo)
     timeout = listenerInfo[3] - (time() - listenerInfo[4])
     text, btns = get_category_buttons('clone', timeout, msg_id, listenerInfo[2])
     editMessage(text, message, btns)
