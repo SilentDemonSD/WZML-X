@@ -338,7 +338,7 @@ def get_readable_message():
             return msg + bmsg, button
         return msg + bmsg, sbutton
 
-def get_category_buttons(query_data, timeout, c_index, msg_id):
+def get_category_buttons(query_data, timeout, msg_id, c_index):
     text = '<b>Selct the category in which you want to upload</b>'
     text += f"\n<b>Upload</b>: To Drive in {CATEGORY_NAMES[c_index]} folder"
     text += f"<u>\n\nYou have {get_readable_time(timeout)} to select mode</u>"
