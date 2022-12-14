@@ -112,7 +112,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
     multi = 0
     link = ''
     c_index = 0
-    timeout = 30
+    timeout = 60
 
     if len(message_args) > 1:
         args = mesg[0].split(maxsplit=3)
@@ -241,8 +241,46 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
         text, btns = get_category_buttons('mir', timeout, msg_id, c_index)
         engine = sendMarkup(text, bot, message, btns)
         return _auto_start_dl(engine, msg_id, timeout)
-    else: return start_ml(extras, listener)
+    else: return start_ml(extras, catlistener)
 
+    if multi > 1:
+        sleep(4)
+        nextmsg = type('nextmsg', (object, ), {'chat_id': message.chat_id, 'message_id': message.reply_to_message.message_id + 1})
+        msg = message.text.split(maxsplit=mi+1)
+        msg[mi] = f"{multi - 1}"
+        nextmsg = sendMessage(" ".join(msg), bot, nextmsg)
+        nextmsg.from_user.id = message.from_user.id
+        multi -= 1
+        sleep(4)
+        Thread(target=_mirror_leech, args=(bot, nextmsg, isZip, extract, isQbit, isLeech)).start()
+
+@new_thread
+def _auto_start_dl(msg, msg_id, time_out):
+    sleep(time_out)
+    try:
+        info = btn_listener[msg_id]
+        del btn_listener[msg_id]
+        editMessage("Timed out! Task has been Started.", msg)
+        start_ml(info[1], info[0])
+    except:
+        pass
+
+def start_ml(extra, s_listener):
+    bot = s_listener[0]
+    message = s_listener[1]
+    isZip = s_listener[2]
+    extract = s_listener[3]
+    isQbit = s_listener[4]
+    isLeech = s_listener[5]
+    pswd = s_listener[6]
+    tag = s_listener[7]
+    select = s_listener[8]
+    seed = s_listener[9]
+    link = extra[0]
+    name = extra[1]
+    ratio = extra[2]
+    seed_time = extra[3]
+    c_index = int(extra[4])
     if not is_mega_link(link) and not isQbit and not is_magnet(link) \
         and not is_gdrive_link(link) and not link.endswith('.torrent'):
         content_type = get_content_type(link)
@@ -313,45 +351,6 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
         else:
             auth = ''
         Thread(target=add_aria2c_download, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener, name, auth, ratio, seed_time)).start()
-    if multi > 1:
-        sleep(4)
-        nextmsg = type('nextmsg', (object, ), {'chat_id': message.chat_id, 'message_id': message.reply_to_message.message_id + 1})
-        msg = message.text.split(maxsplit=mi+1)
-        msg[mi] = f"{multi - 1}"
-        nextmsg = sendMessage(" ".join(msg), bot, nextmsg)
-        nextmsg.from_user.id = message.from_user.id
-        multi -= 1
-        sleep(4)
-        Thread(target=_mirror_leech, args=(bot, nextmsg, isZip, extract, isQbit, isLeech)).start()
-
-@new_thread
-def _auto_start_dl(msg, msg_id, time_out):
-    sleep(time_out)
-    try:
-        info = btn_listener[msg_id]
-        del btn_listener[msg_id]
-        editMessage("Timed out! Task has been Started.", msg)
-        start_ml(info[1], info[0])
-    except:
-        pass
-
-def start_ml(extra, s_listener):
-    bot = s_listener[0]
-    message = s_listener[1]
-    isZip = s_listener[2]
-    extract = s_listener[3]
-    isQbit = s_listener[4]
-    isLeech = s_listener[5]
-    pswd = s_listener[6]
-    tag = s_listener[7]
-    select = s_listener[8]
-    seed = s_listener[9]
-    link = extra[0]
-    name = extra[1]
-    ratio = extra[2]
-    seed_time = extra[3]
-    c_index = int(extra[4])
-
 
 @new_thread
 def mir_confirm(update, context):
