@@ -161,12 +161,12 @@ def _clone(message, bot):
 def _auto_start_dl(msg, msg_id, time_out):
     sleep(time_out)
     try:
-    info = btn_listener[msg_id]
-    del btn_listener[msg_id]
-    editMessage("Timed out! Task has been started.", msg)
-    start_clone(info)
+        info = btn_listener[msg_id]
+        del btn_listener[msg_id]
+        editMessage("Timed out! Task has been started.", msg)
+        start_clone(info)
     except:
-    pass
+        pass
 
 @new_thread
 def start_clone(listner):
