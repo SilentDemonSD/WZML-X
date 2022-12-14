@@ -207,8 +207,9 @@ def start_clone(listner):
         c_index = listner[2]
         tag = listner[5]
         link = listner[6]
+        user_id = message.from_user.id
 
-        gd = GoogleDriveHelper()
+        gd = GoogleDriveHelper(user_id=user_id)
         res, size, name, files = gd.helper(link)
         IS_USRTD = user_data[user_id].get('is_usertd') if user_id in user_data and user_data[user_id].get('is_usertd') else False
         if res != "":
