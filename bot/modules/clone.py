@@ -187,17 +187,17 @@ def start_clone(listner):
         LOGGER.info('Checking File/Folder if already in Drive...')
         smsg, button = gd.drive_list(name, True, True)
         if smsg:
-        if config_dict['TELEGRAPH_STYLE']:
-            return sendMarkup("Someone already mirrored it for you !\nHere you go:", bot, message, button)
-        else:
-            return sendFile(bot, message, button, f"File/Folder is already available in Drive. Here are the search results:\n\n{smsg}")
+            if config_dict['TELEGRAPH_STYLE']:
+                return sendMarkup("Someone already mirrored it for you !\nHere you go:", bot, message, button)
+            else:
+                return sendFile(bot, message, button, f"File/Folder is already available in Drive. Here are the search results:\n\n{smsg}")
 
     CLONE_LIMIT = config_dict['CLONE_LIMIT']
     if CLONE_LIMIT != '' and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id):
         LOGGER.info('Checking File/Folder Size...')
         if size > (CLONE_LIMIT * 1024**3):
-        msg2 = f'Failed, Clone limit is {CLONE_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(size)}.'
-        return sendMessage(msg2, bot, message)
+            msg2 = f'Failed, Clone limit is {CLONE_LIMIT}GB.\nYour File/Folder size is {get_readable_file_size(size)}.'
+            return sendMessage(msg2, bot, message)
     #medium = f"Clone {CATEGORY_NAMES[c_index]}"
 
     if files <= 20:
@@ -205,31 +205,31 @@ def start_clone(listner):
         result, button = gd.clone(link, c_index)
         deleteMessage(bot, msg)
         if BOT_PM_X:
-        if message.chat.type != 'private':
-            if config_dict['EMOJI_THEME']:
-            msg = f"<b>🗂️ Name: </b><{config_dict['NAME_FONT']}>{escape(name)}</{config_dict['NAME_FONT']}>\n"
+            if message.chat.type != 'private':
+                if config_dict['EMOJI_THEME']:
+                    msg = f"<b>🗂️ Name: </b><{config_dict['NAME_FONT']}>{escape(name)}</{config_dict['NAME_FONT']}>\n"
+                else:
+                    msg = f"<b>Name: </b><{config_dict['NAME_FONT']}>{escape(name)}</{config_dict['NAME_FONT']}>\n"
+                    botpm = f"\n<b>Hey {tag}!, I have sent your cloned links in PM.</b>\n"
+                    buttons = ButtonMaker()
+                    b_uname = bot.get_me().username
+                    botstart = f"http://t.me/{b_uname}"
+                    buttons.buildbutton("View links in PM", f"{botstart}")
+                if config_dict['SAVE_MSG']:
+                    buttons.sbutton('Save This Message', 'save', 'footer')
+                if config_dict['PICS']:
+                    sendPhoto(msg + botpm, bot, message, rchoice(config_dict['PICS']), buttons.build_menu(2))
             else:
-            msg = f"<b>Name: </b><{config_dict['NAME_FONT']}>{escape(name)}</{config_dict['NAME_FONT']}>\n"
-            botpm = f"\n<b>Hey {tag}!, I have sent your cloned links in PM.</b>\n"
-            buttons = ButtonMaker()
-            b_uname = bot.get_me().username
-            botstart = f"http://t.me/{b_uname}"
-            buttons.buildbutton("View links in PM", f"{botstart}")
-            if config_dict['SAVE_MSG']:
-            buttons.sbutton('Save This Message', 'save', 'footer')
-            if config_dict['PICS']:
-            sendPhoto(msg + botpm, bot, message, rchoice(config_dict['PICS']), buttons.build_menu(2))
-            else:
-            sendMarkup(msg + botpm, bot, message, buttons.build_menu(2))
+                sendMarkup(msg + botpm, bot, message, buttons.build_menu(2))
         else:
             if config_dict['EMOJI_THEME']:
-            cc = f'\n<b>╰👤 #Clone_By: </b>{tag}\n\n'
+                cc = f'\n<b>╰👤 #Clone_By: </b>{tag}\n\n'
             else:
-            cc = f'\n<b>╰ #Clone_By: </b>{tag}\n\n'
+                cc = f'\n<b>╰ #Clone_By: </b>{tag}\n\n'
             if config_dict['PICS']:
-            sendPhoto(result + cc, bot, message, rchoice(config_dict['PICS']), button)
+                sendPhoto(result + cc, bot, message, rchoice(config_dict['PICS']), button)
             else:
-            sendMarkup(result + cc, bot, message, button)
+                sendMarkup(result + cc, bot, message, button)
         message.delete()
         reply_to = message.reply_to_message
         if reply_to is not None and AUTO_DELETE_UPLOAD_MESSAGE_DURATION == -1:
@@ -239,41 +239,41 @@ def start_clone(listner):
         gid = ''.join(SystemRandom().choices(ascii_letters + digits, k=12))
         clone_status = CloneStatus(drive, size, message, gid)
         with download_dict_lock:
-        download_dict[message.message_id] = clone_status
-        sendStatusMessage(message, bot)
-        result, button = drive.clone(link, c_index)
+            download_dict[message.message_id] = clone_status
+            sendStatusMessage(message, bot)
+            result, button = drive.clone(link, c_index)
         with download_dict_lock:
-        del download_dict[message.message_id]
-        count = len(download_dict)
-        try:
-        if count == 0:
-            Interval[0].cancel()
-            del Interval[0]
-            delete_all_messages()
-            if BOT_PM_X:
-            if message.chat.type != 'private':
-                if config_dict['EMOJI_THEME']:
-                msg = f"<b>🗂️ Name: </b><{config_dict['NAME_FONT']}>{escape(name)}</{config_dict['NAME_FONT']}>\n"
-                else:
-                msg = f"<b>Name: </b><{config_dict['NAME_FONT']}>{escape(name)}</{config_dict['NAME_FONT']}>\n"
-                botpm = f"\n<b>Hey {tag}!, I have sent your cloned links in PM.</b>\n"
-                buttons = ButtonMaker()
-                b_uname = bot.get_me().username
-                botstart = f"http://t.me/{b_uname}"
-                buttons.buildbutton("View links in PM", f"{botstart}")
-                if config_dict['PICS']:
-                sendPhoto(msg + botpm, bot, message, rchoice(config_dict['PICS']), buttons.build_menu(2))
-                else:
-                sendMarkup(msg + botpm, bot, message, buttons.build_menu(2))
+            del download_dict[message.message_id]
+            count = len(download_dict)
+            try:
+            if count == 0:
+                Interval[0].cancel()
+                del Interval[0]
+                delete_all_messages()
+                if BOT_PM_X:
+                    if message.chat.type != 'private':
+                        if config_dict['EMOJI_THEME']:
+                            msg = f"<b>🗂️ Name: </b><{config_dict['NAME_FONT']}>{escape(name)}</{config_dict['NAME_FONT']}>\n"
+                        else:
+                            msg = f"<b>Name: </b><{config_dict['NAME_FONT']}>{escape(name)}</{config_dict['NAME_FONT']}>\n"
+                        botpm = f"\n<b>Hey {tag}!, I have sent your cloned links in PM.</b>\n"
+                        buttons = ButtonMaker()
+                        b_uname = bot.get_me().username
+                        botstart = f"http://t.me/{b_uname}"
+                        buttons.buildbutton("View links in PM", f"{botstart}")
+                    if config_dict['PICS']:
+                        sendPhoto(msg + botpm, bot, message, rchoice(config_dict['PICS']), buttons.build_menu(2))
+                    else:
+                        sendMarkup(msg + botpm, bot, message, buttons.build_menu(2))
             else:
                 if config_dict['EMOJI_THEME']:
-                cc = f'\n<b>╰👤 #Clone_By: </b>{tag}\n\n'
+                    cc = f'\n<b>╰👤 #Clone_By: </b>{tag}\n\n'
                 else:
-                cc = f'\n<b>╰ #Clone_By: </b>{tag}\n\n'
+                    cc = f'\n<b>╰ #Clone_By: </b>{tag}\n\n'
                 if config_dict['PICS']:
-                sendPhoto(result + cc, bot, message, rchoice(config_dict['PICS']), button)
+                    sendPhoto(result + cc, bot, message, rchoice(config_dict['PICS']), button)
                 else:
-                sendMarkup(result + cc, bot, message, button.build_menu(2))       
+                    sendMarkup(result + cc, bot, message, button.build_menu(2))       
             message.delete()
             reply_to = message.reply_to_message
             if reply_to is not None and AUTO_DELETE_UPLOAD_MESSAGE_DURATION == -1:
@@ -301,20 +301,20 @@ def start_clone(listner):
             source_link = f"<code>{message_args[1]}</code>\n"
             lower = f"‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒\n"
             for link_log in user_data['link_logs']:
-            bot.sendMessage(link_log, text=slmsg + upper + source_link + lower, parse_mode=ParseMode.HTML )
+                bot.sendMessage(link_log, text=slmsg + upper + source_link + lower, parse_mode=ParseMode.HTML )
         except IndexError:
             pass
         if reply_to is not None:
             try:
-            reply_text = reply_to.text
-            if is_url(reply_text):
-                upper = f"‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒\n"
-                source_link = f"<code>{reply_text.strip()}</code>\n"
-                lower = f"‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒\n"
-                for link_log in user_data['link_logs']:
-                bot.sendMessage(chat_id=link_log, text=slmsg + upper + source_link + lower, parse_mode=ParseMode.HTML )
+                reply_text = reply_to.text
+                if is_url(reply_text):
+                    upper = f"‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒\n"
+                    source_link = f"<code>{reply_text.strip()}</code>\n"
+                    lower = f"‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒\n"
+                    for link_log in user_data['link_logs']:
+                        bot.sendMessage(chat_id=link_log, text=slmsg + upper + source_link + lower, parse_mode=ParseMode.HTML )
             except TypeError:
-                        pass  
+                pass  
 
     if config_dict['EMOJI_THEME']:
         cc = f'\n<b>╰👤 #Clone_By: </b>{tag}\n\n'
