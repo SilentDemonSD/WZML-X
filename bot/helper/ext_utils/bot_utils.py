@@ -150,6 +150,26 @@ def get_bot_pm(user_id):
         botpm = user_data[user_id].get('ubot_pm')
         return botpm
 
+def getGDriveUploadUtils(user_id, u_index, c_index):
+    GDRIVEID = config_dict['GDRIVE_ID']
+    INDEXURL = config_dict['INDEX_URL']
+    if u_index is not None:
+        GDriveID, IndexURL = [], []
+        if user_id in user_data and user_data[user_id].get('is_usertd'):
+            LOGGER.info("Using USER TD!")
+            userDest = (user_data[user_id].get('usertd')).split('\n')
+            if len(userDest) != 0:
+                for i, _ in enumerate(userDest): #Extra Codes !!
+                    arrForUser = userDest[i].split()
+                    GDriveID.append(arrForUser[1]) #all User GDRIVEIDs
+                    IndexURL.append(arrForUser[2].rstrip('/') if len(arrForUser) > 2 else '') #all User INDEX_URLs
+        GDRIVEID = GDriveID[u_index]
+        INDEXURL = IndexURL[u_index]
+    elif c_index is not None:
+        GDRIVEID = CATEGORY_IDS[c_index]
+        INDEXURL = CATEGORY_INDEX[c_index]
+    return GDRIVEID, INDEXURL
+
 def progress_bar(percentage):
     """Returns a progress bar for download"""
     if isinstance(percentage, str):
