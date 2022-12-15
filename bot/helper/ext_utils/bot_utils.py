@@ -368,10 +368,11 @@ def get_category_buttons(query_data, timeout, msg_id, c_index, u_index, user_id)
     buttons = ButtonMaker()
     for i, _name in enumerate(CATEGORY_NAMES):
         buttons.sbutton(f'{_name} {"✅" if u_index is None and _name == CATEGORY_NAMES[c_index] else ""}', f"{query_data} scat {msg_id} {i}")
-    GDNames, _, _ = getUserTDs(user_id)
-    if len(GDNames) != 0:
-        for j, _gname in enumerate(GDNames):
-            buttons.sbutton(f'{_gname} {"✅" if u_index is not None and _gname == GDNames[u_index] else ""}', f"{query_data} ucat {msg_id} {j}")
+    if user_data[user_id].get('is_usertd') and user_data[user_id].get('usertd'):
+        GDNames, _, _ = getUserTDs(user_id)
+        if len(GDNames) != 0:
+            for j, _gname in enumerate(GDNames):
+                buttons.sbutton(f'{_gname} {"✅" if u_index is not None and _gname == GDNames[u_index] else ""}', f"{query_data} ucat {msg_id} {j}")
     buttons.sbutton('Cancel', f"{query_data} cancel {msg_id}", 'footer')
     bname = "Update" if query_data == 'change' else "Start"
     buttons.sbutton(f'{bname} ({get_readable_time(timeout)})', f'{query_data} start {msg_id}', 'footer')
