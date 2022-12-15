@@ -154,21 +154,26 @@ def getGDriveUploadUtils(user_id, u_index, c_index):
     GDRIVEID = config_dict['GDRIVE_ID']
     INDEXURL = config_dict['INDEX_URL']
     if u_index is not None:
-        GDriveID, IndexURL = [], []
-        if user_id in user_data and user_data[user_id].get('is_usertd'):
-            LOGGER.info("Using USER TD!")
-            userDest = (user_data[user_id].get('usertd')).split('\n')
-            if len(userDest) != 0:
-                for i, _ in enumerate(userDest): #Extra Codes !!
-                    arrForUser = userDest[i].split()
-                    GDriveID.append(arrForUser[1]) #all User GDRIVEIDs
-                    IndexURL.append(arrForUser[2].rstrip('/') if len(arrForUser) > 2 else '') #all User INDEX_URLs
+        _, GDriveID, IndexURL = getUserTDs(user_id)
         GDRIVEID = GDriveID[u_index]
         INDEXURL = IndexURL[u_index]
-    elif c_index is not None:
+    elif c_index != 0:
         GDRIVEID = CATEGORY_IDS[c_index]
         INDEXURL = CATEGORY_INDEX[c_index]
     return GDRIVEID, INDEXURL
+
+def getUserTDs(user_id):
+    GDriveID, IndexURL, GDNames = [], [], []
+    if user_id in user_data and user_data[user_id].get('is_usertd'):
+        LOGGER.info("Using USER TD!")
+        userDest = (user_data[user_id].get('usertd')).split('\n')
+        if len(userDest) != 0:
+            for i, _ in enumerate(userDest):
+                arrForUser = userDest[i].split()
+                GDNames.append(arrForUser[0]) #all Names 
+                GDriveID.append(arrForUser[1]) #all User GDRIVEIDs
+                IndexURL.append(arrForUser[2].rstrip('/') if len(arrForUser) > 2 else '') #all User INDEX_URLs
+    return GDNames, GDriveID, IndexURL
 
 def progress_bar(percentage):
     """Returns a progress bar for download"""
@@ -356,13 +361,16 @@ def get_readable_message():
             return msg + bmsg, button
         return msg + bmsg, sbutton
 
-def get_category_buttons(query_data, timeout, msg_id, c_index):
+def get_category_buttons(query_data, timeout, msg_id, c_index, u_index):
     text = '<b>Selct the category in which you want to upload</b>'
     text += f"\n<b>Upload</b>: To Drive in {CATEGORY_NAMES[c_index]} folder"
     text += f"<u>\n\nYou have {get_readable_time(timeout)} to select mode</u>"
     buttons = ButtonMaker()
     for i, _name in enumerate(CATEGORY_NAMES):
-        buttons.sbutton(f'{_name} {"✅" if _name == CATEGORY_NAMES[c_index] else ""}', f"{query_data} scat {msg_id} {i}")
+        buttons.sbutton(f'{_name} {"✅" if u_index is None and _name == CATEGORY_NAMES[c_index] else ""}', f"{query_data} scat {msg_id} {i}")
+    GDNames, _, _ = getUserTDs(user_id)
+    for j, _gname in enumerate(GDNames):
+        buttons.sbutton(f'{_gname} {"✅" if u_index is not None and _gname == GDNames[u_index] else ""}', f"{query_data} ucat {msg_id} {j}")
     buttons.sbutton('Cancel', f"{query_data} cancel {msg_id}", 'footer')
     bname = "Update" if query_data == 'change' else "Start"
     buttons.sbutton(f'{bname} ({get_readable_time(timeout)})', f'{query_data} start {msg_id}', 'footer')
