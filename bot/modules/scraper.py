@@ -160,6 +160,43 @@ def scrapper(update, context):
                 prsd = ""
         if prsd != "":
             sendMessage(prsd, context.bot, update.message)
+    elif "tamiltvtoons" in link:
+         sent = sendMessage('Running Scrape ...', context.bot, update.message)
+         gd_txt, no = "", 0
+         r = rget(link)
+         soup = BeautifulSoup (r.text, "html.parser")
+         links = soup.select('a[href*="short2url"]')
+         gd_txt = f"Total Links Found : {len(links)}\n\n"
+         editMessage(gd_txt, sent)
+         for a in links:
+             client = requests.session()
+             download = get(a['href'], stream=True, allow_redirects=False)
+             url = download.headers["location"]
+             DOMAIN = "https://technemo.xyz/blog"
+             url = url[:-1] if url[-1] == '/' else url
+             code = url.split("/")[-1]
+             final_url = f"{DOMAIN}/{code}"
+             ref = "https://mytop5.club/"
+             h = {"referer": ref}
+             resp = client.get(final_url, headers=h)
+             soup = BeautifulSoup(resp.content, "html.parser")
+             inputs = soup.find_all("input")
+             data = { input.get('name'): input.get('value') for input in inputs }
+             h = { "x-requested-with": "XMLHttpRequest" }
+             time.sleep(10)
+             r = client.post(f"{DOMAIN}/links/go", data=data, headers=h)
+             glink = r.json()['url']
+             t = rget(glink)
+             soupt = BeautifulSoup(t.text, "html.parser")
+             title = soupt.title
+             no += 1
+             gd_txt += f"{no}.{(title.text).replace('GDToT | ' , '')}\n{glink}\n\n"
+             editMessage(gd_txt, sent)
+             asleep(1.5)
+             if len(gd_txt) > 4000:
+                   sent = sendMessage("<i>Running More Scrape ...</i>", context.bot, update.message)
+                   gd_txt = ""
+                
     elif "taemovies" in link:
         sent = sendMessage('Running Scrape ...', context.bot, update.message)
         gd_txt, no = "", 0
