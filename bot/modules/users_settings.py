@@ -28,7 +28,8 @@ example_dict = {'prefix':'1. <code>@your_channel_username or Anything</code>',
                 'mremname':'<b>Syntax:</b> previousname:newname:times|previousname:newname:times\n\n1. Fork:Star|Here:Now:1|WZML\n\n<b>Output :</b> Star Now : Click Here.txt', 
                 'imdb_temp':'Check all available fillings options <a href="">HERE</a> and Make Custom Template.', 
                 'ani_temp':'Check all available fillings options <a href="">HERE</a> and Make Custom AniList Template.', 
-                'yt_ql': f'''1. <code>{escape('bv*[height<=1080][ext=mp4]+ba[ext=m4a]/b[height<=1080]')}</code> this will give 1080p-mp4.\n2. <code>{escape('bv*[height<=720][ext=webm]+ba/b[height<=720]')}</code> this will give 720p-webm.\nCheck all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#filtering-formats">HERE</a>.'''}
+                'yt_ql': f'''1. <code>{escape('bv*[height<=1080][ext=mp4]+ba[ext=m4a]/b[height<=1080]')}</code> this will give 1080p-mp4.\n2. <code>{escape('bv*[height<=720][ext=webm]+ba/b[height<=720]')}</code> this will give 720p-webm.\nCheck all available qualities options <a href="https://github.com/yt-dlp/yt-dlp#filtering-formats">HERE</a>.'''
+               }
 fname_dict = {'prefix': 'Leech Prefix', 
             'mprefix':'Mirror Prefix', 
             'suffix':'Leech Suffix', 
@@ -41,7 +42,7 @@ fname_dict = {'prefix': 'Leech Prefix',
             'imdb_temp':'IMDB Template', 
             'ani_temp':'Anime Template', 
             'yt_ql': 'YT-DLP Quality'
-}
+            }
 
 def get_user_settings(from_user, key=None):
     user_id = from_user.id
@@ -146,8 +147,8 @@ def get_user_settings(from_user, key=None):
         buttons.sbutton(buttxt, f"userset {user_id} suniversal mremname mirror")
         
         if config_dict['ENABLE_USR_TD']:
-            if user_dict.get('usertd'):
-                if user_dict and user_dict.get('is_usertd'):
+            if user_dict and user_dict.get('usertd'):
+                if user_dict.get('is_usertd'):
                     usertdstatus = "Enabled"
                     buttons.sbutton("Disable User TD", f"userset {user_id} usertdxoff")
                 else:
