@@ -160,6 +160,8 @@ def getGDriveUploadUtils(user_id, u_index, c_index):
     elif c_index != 0:
         GDRIVEID = CATEGORY_IDS[c_index]
         INDEXURL = CATEGORY_INDEX[c_index]
+    LOGGER.info(GDRIVEID)
+    LOGGER.info(INDEXURL)
     return GDRIVEID, INDEXURL
 
 def getUserTDs(user_id):
