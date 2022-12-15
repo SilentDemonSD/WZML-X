@@ -178,7 +178,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
             elif not isQbit and file_.mime_type != "application/x-bittorrent":
                 if len(CATEGORY_NAMES) > 1 and not isLeech:
                     btn_listener[msg_id] = [catlistener, extras, timeout]
-                    text, btns = get_category_buttons('mir', timeout, msg_id, c_index, u_index)
+                    text, btns = get_category_buttons('mir', timeout, msg_id, c_index, u_index, user_id)
                     engine = sendMarkup(text, bot, message, btns)
                     _auto_start_dl(engine, msg_id, timeout)
                 listener = MirrorLeechListener(bot, message, isZip, extract, isQbit, isLeech, pswd, tag)
@@ -232,7 +232,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
 
     if len(CATEGORY_NAMES) > 1 and not isLeech:
         btn_listener[msg_id] = [catlistener, extras, timeout]
-        text, btns = get_category_buttons('mir', timeout, msg_id, c_index, u_index)
+        text, btns = get_category_buttons('mir', timeout, msg_id, c_index, u_index, user_id)
         engine = sendMarkup(text, bot, message, btns)
         _auto_start_dl(engine, msg_id, timeout)
     else: start_ml(extras, catlistener)
