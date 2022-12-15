@@ -32,7 +32,7 @@ from bot.helper.ext_utils.telegraph_helper import telegraph
 
 
 class MirrorLeechListener:
-    def __init__(self, bot, message, isZip=False, extract=False, isQbit=False, isLeech=False, pswd=None, tag=None, select=False, seed=False, c_index=0):
+    def __init__(self, bot, message, isZip=False, extract=False, isQbit=False, isLeech=False, pswd=None, tag=None, select=False, seed=False, c_index=0, u_index=None):
         self.bot = bot
         self.message = message
         self.uid = message.message_id
@@ -52,6 +52,7 @@ class MirrorLeechListener:
         self.user_id = self.message.from_user.id
         self.reply_to = self.message.reply_to_message
         self.c_index = c_index
+        self.u_index = u_index
 
     def clean(self):
         try:
@@ -226,7 +227,7 @@ class MirrorLeechListener:
             with download_dict_lock:
                 download_dict[self.uid] = upload_status
             update_all_messages()
-            drive.upload(up_name, self.c_index)
+            drive.upload(up_name, self.u_index, self.c_index)
 
 
     def onUploadComplete(self, link: str, size, files, folders, typ, name):
