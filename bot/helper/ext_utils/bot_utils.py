@@ -145,11 +145,9 @@ def get_bot_pm(user_id):
     if config_dict['FORCE_BOT_PM']:
         return True
     else:
-        user_dict = user_data.get(user_id, False)
-        if not user_dict:
+        if not (user_id in user_dict and user_dict[user_id].get('ubot_pm')):
             update_user_ldata(user_id, 'ubot_pm', config_dict['BOT_PM'])
-            user_dict = user_data.get(user_id)
-        botpm = user_dict.get('ubot_pm')
+        botpm = user_data[user_id].get('ubot_pm')
         return botpm
 
 def progress_bar(percentage):
@@ -344,9 +342,10 @@ def get_category_buttons(query_data, timeout, msg_id, c_index):
     text += f"<u>\n\nYou have {get_readable_time(timeout)} to select mode</u>"
     buttons = ButtonMaker()
     for i, _name in enumerate(CATEGORY_NAMES):
-        buttons.sbutton(f'{_name}{"✅" if _name == CATEGORY_NAMES[c_index] else ""}', f"{query_data} scat {msg_id} {i}")
+        buttons.sbutton(f'{_name} {"✅" if _name == CATEGORY_NAMES[c_index] else ""}', f"{query_data} scat {msg_id} {i}")
     buttons.sbutton('Cancel', f"{query_data} cancel {msg_id}", 'footer')
-    buttons.sbutton(f'Start ({get_readable_time(timeout)})', f'{query_data} start {msg_id}', 'footer')
+    bname = "Update" if query_data == 'change' else "Start"
+    buttons.sbutton(f'{bname} ({get_readable_time(timeout)})', f'{query_data} start {msg_id}', 'footer')
     return text, buttons.build_menu(3)
 
 
