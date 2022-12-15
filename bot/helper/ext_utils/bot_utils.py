@@ -145,7 +145,7 @@ def get_bot_pm(user_id):
     if config_dict['FORCE_BOT_PM']:
         return True
     else:
-        if not (user_id in user_dict and user_dict[user_id].get('ubot_pm')):
+        if not (user_id in user_data and user_data[user_id].get('ubot_pm')):
             update_user_ldata(user_id, 'ubot_pm', config_dict['BOT_PM'])
         botpm = user_data[user_id].get('ubot_pm')
         return botpm
