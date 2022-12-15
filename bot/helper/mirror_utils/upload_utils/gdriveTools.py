@@ -19,7 +19,7 @@ from google.auth.transport.requests import Request
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot import config_dict, DRIVES_NAMES, DRIVES_IDS, INDEX_URLS, GLOBAL_EXTENSION_FILTER, user_data
 from bot.helper.ext_utils.telegraph_helper import telegraph
-from bot.helper.ext_utils.bot_utils import get_readable_file_size, setInterval, change_filename, is_paid
+from bot.helper.ext_utils.bot_utils import get_readable_file_size, setInterval, change_filename, is_paid, getGDriveUploadUtils
 from bot.helper.ext_utils.fs_utils import get_mime_type
 from bot.helper.ext_utils.shortenurl import short_url
 
@@ -206,25 +206,13 @@ class GoogleDriveHelper:
         finally:
             return msg
 
-    def upload(self, file_name: str, c_index):
+    def upload(self, file_name: str, u_index, c_index):
         self.__is_uploading = True
-        user_id = self.user_id
         file_path = f"{self.__path}/{file_name}"
         size = get_readable_file_size(self.__size)
         LOGGER.info(f"Uploading File: {file_path}")
         self.__updater = setInterval(self.__update_interval, self._progress)
-        GDriveID = ''
-        IS_USRTD = user_data[user_id].get('is_usertd') if user_id in user_data and user_data[user_id].get('is_usertd') else False
-        #IS_PAID = is_paid(user_id)
-        if IS_USRTD:
-            LOGGER.info("Using USER TD!")
-            userDest = user_data[user_id].get('usertd') if user_id in user_data and user_data[user_id].get('usertd') else ''
-            if len(userDest) != 0:
-                arrForUser = userDest.split()
-                GDriveID = arrForUser[0]
-            
-        GDRIVEID = GDriveID if len(GDriveID) != 0 else config_dict['GDRIVE_ID']
-     
+        GDRIVEID, _ = getGDriveUploadUtils(self.user_id, u_index, c_index)
         try:
             if ospath.isfile(file_path):
                 mime_type = get_mime_type(file_path)
@@ -375,7 +363,7 @@ class GoogleDriveHelper:
         return download_url
 
 
-    def clone(self, link, c_index):
+    def clone(self, link, u_index, c_index):
         self.__is_cloning = True
         self.__start_time = time()
         self.__total_files = 0
@@ -387,21 +375,7 @@ class GoogleDriveHelper:
             return msg
         msg = ""
         LOGGER.info(f"File ID: {file_id}")
-        GDriveID = ''
-        IndexURL = ''
-        user_id = self.user_id
-        IS_USRTD = user_data[user_id].get('is_usertd') if user_id in user_data and user_data[user_id].get('is_usertd') else False
-#         IS_PAID = is_paid(user_id)
-        if IS_USRTD:
-            LOGGER.info("Using USER TD!")
-            userDest = user_data[user_id].get('usertd') if user_id in user_data and user_data[user_id].get('usertd') else ''
-            if len(userDest) != 0:
-                arrForUser = userDest.split()
-                GDriveID = arrForUser[0]
-                if len(arrForUser) > 1:
-                    IndexURL = arrForUser[1].rstrip('/')
-        GDRIVEID = GDriveID if len(GDriveID) != 0 else config_dict['GDRIVE_ID']
-        INDEXURL = IndexURL if len(IndexURL) != 0 else config_dict['INDEX_URL']
+        GDRIVEID, INDEXURL = getGDriveUploadUtils(self.user_id, u_index, c_index)
         try:
             meta = self.__getFileMetadata(file_id)
             mime_type = meta.get("mimeType")
