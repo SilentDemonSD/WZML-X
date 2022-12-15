@@ -191,7 +191,7 @@ def get_user_settings(from_user, key=None):
         buttons.sbutton(buttxt, f"userset {user_id} suniversal caption leech")
         buttxt = "Change/Delete Remname" if remname != "Not Exists" else "Set Remname"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal remname leech")
-        if cfont != "Not Exists": buttons.sbutton("Delete CapFont", f"userset {user_id} cfont")
+        if cfont != "<b>Not Exists</b>": buttons.sbutton("Remove CapFont", f"userset {user_id} cfont")
 
         buttons.sbutton("Back", f"userset {user_id} mback")
         buttons.sbutton("Close", f"userset {user_id} close", 'footer')
@@ -395,7 +395,7 @@ def edit_user_settings(update, context):
         update_user_ldata(user_id, 'cfont', False)
         if DATABASE_URL: 
             DbManger().update_userval(user_id, 'cfont')
-        query.answer(text="Your Caption Font is Successfully Deleted!", show_alert=True)
+        query.answer(text="Caption Font Removed!", show_alert=True)
         update_user_settings(message, query.from_user, 'leech')
     elif data[2] == "font":
         handler_dict[user_id] = False
