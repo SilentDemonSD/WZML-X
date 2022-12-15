@@ -396,7 +396,7 @@ def mir_confirm(update, context):
         del btn_listener[msg_id]
         return start_ml(extra, listener)
     timeout = listenerInfo[2] - (time() - extra[6])
-    text, btns = get_category_buttons('mir', timeout, msg_id, extra[4], extra[5])
+    text, btns = get_category_buttons('mir', timeout, msg_id, extra[4], extra[5], listener[1].from_user.id)
     editMessage(text, message, btns)
 
 def mirror(update, context):
