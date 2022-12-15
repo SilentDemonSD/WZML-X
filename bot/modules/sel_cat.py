@@ -104,7 +104,7 @@ def confirm_category(update, context):
         listener.mode = medium
         del btn_listener[msg_id]
         return editMessage(f"<b>Task has been cancelled!</b>", message)
-    elif data[1] == 'done':
+    elif data[1] == 'start':
         query.answer()
         del btn_listener[msg_id]
         medium = f"Drive {CATEGORY_NAMES[{listener.c_index}]}"
