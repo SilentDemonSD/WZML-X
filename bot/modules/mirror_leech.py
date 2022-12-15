@@ -107,6 +107,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
     multi = 0
     link = ''
     c_index = 0
+    u_index = None
     timeout = 60
 
     if len(message_args) > 1:
@@ -157,7 +158,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
         link = link.strip()
 
     catlistener = [bot, message, isZip, extract, isQbit, isLeech, pswd, tag, select, seed]
-    extras = [link, name, ratio, seed_time, c_index, time()]
+    extras = [link, name, ratio, seed_time, c_index, u_index, time()]
 
     reply_to = message.reply_to_message
     if reply_to is not None:
@@ -178,7 +179,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
                 if len(CATEGORY_NAMES) > 1 and not isLeech:
                     btn_listener[msg_id] = [catlistener, extras, timeout]
                     LOGGER.info(btn_listener[msg_id])
-                    text, btns = get_category_buttons('mir', timeout, msg_id, c_index)
+                    text, btns = get_category_buttons('mir', timeout, msg_id, c_index, u_index)
                     engine = sendMarkup(text, bot, message, btns)
                     _auto_start_dl(engine, msg_id, timeout)
                 listener = MirrorLeechListener(bot, message, isZip, extract, isQbit, isLeech, pswd, tag)
@@ -232,7 +233,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
 
     if len(CATEGORY_NAMES) > 1 and not isLeech:
         btn_listener[msg_id] = [catlistener, extras, timeout]
-        text, btns = get_category_buttons('mir', timeout, msg_id, c_index)
+        text, btns = get_category_buttons('mir', timeout, msg_id, c_index, u_index)
         engine = sendMarkup(text, bot, message, btns)
         _auto_start_dl(engine, msg_id, timeout)
     else: start_ml(extras, catlistener)
@@ -281,6 +282,7 @@ def start_ml(extra, s_listener):
     ratio = extra[2]
     seed_time = extra[3]
     c_index = int(extra[4])
+    u_index = int(extra[5]) if extra[5] else None
     if not is_mega_link(link) and not isQbit and not is_magnet(link) \
         and not is_gdrive_link(link) and not link.endswith('.torrent'):
         content_type = get_content_type(link)
@@ -324,7 +326,7 @@ def start_ml(extra, s_listener):
             msg = "Qb commands for torrents only. if you are trying to dowload torrent then report."
             return sendMessage(msg, bot, message)
 
-    listener = MirrorLeechListener(bot, message, isZip, extract, isQbit, isLeech, pswd, tag, select, seed, c_index)
+    listener = MirrorLeechListener(bot, message, isZip, extract, isQbit, isLeech, pswd, tag, select, seed, c_index, u_index)
 
     if is_gdrive_link(link):
         if not isZip and not extract and not isLeech:
@@ -375,6 +377,12 @@ def mir_confirm(update, context):
             return query.answer(f"{CATEGORY_NAMES[c_index]} is already selected!", show_alert=True)
         query.answer()
         extra[4] = c_index
+    elif data[1] == 'ucat':
+        u_index = int(data[3])
+        if extra[5] == u_index:
+            return query.answer(f"Already selected!", show_alert=True)
+        query.answer()
+        extra[5] = u_index
     elif data[1] == 'cancel':
         query.answer()
         del btn_listener[msg_id]
@@ -385,7 +393,7 @@ def mir_confirm(update, context):
         del btn_listener[msg_id]
         return start_ml(extra, listener)
     timeout = listenerInfo[2] - (time() - extra[5])
-    text, btns = get_category_buttons('mir', timeout, msg_id, extra[4])
+    text, btns = get_category_buttons('mir', timeout, msg_id, extra[4], extra[5])
     editMessage(text, message, btns)
 
 def mirror(update, context):
