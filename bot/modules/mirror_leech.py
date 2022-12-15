@@ -178,7 +178,6 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
             elif not isQbit and file_.mime_type != "application/x-bittorrent":
                 if len(CATEGORY_NAMES) > 1 and not isLeech:
                     btn_listener[msg_id] = [catlistener, extras, timeout]
-                    LOGGER.info(btn_listener[msg_id])
                     text, btns = get_category_buttons('mir', timeout, msg_id, c_index, u_index)
                     engine = sendMarkup(text, bot, message, btns)
                     _auto_start_dl(engine, msg_id, timeout)
@@ -373,15 +372,19 @@ def mir_confirm(update, context):
         return query.answer("You are not the owner of this download!", show_alert=True)
     elif data[1] == 'scat':
         c_index = int(data[3])
+        u_index = None
         if extra[4] == c_index:
             return query.answer(f"{CATEGORY_NAMES[c_index]} is already selected!", show_alert=True)
         query.answer()
         extra[4] = c_index
+        extra[5] = u_index
     elif data[1] == 'ucat':
         u_index = int(data[3])
+        c_index = 0
         if extra[5] == u_index:
             return query.answer(f"Already selected!", show_alert=True)
         query.answer()
+        extra[4] = c_index
         extra[5] = u_index
     elif data[1] == 'cancel':
         query.answer()
@@ -392,7 +395,7 @@ def mir_confirm(update, context):
         message.delete()
         del btn_listener[msg_id]
         return start_ml(extra, listener)
-    timeout = listenerInfo[2] - (time() - extra[5])
+    timeout = listenerInfo[2] - (time() - extra[6])
     text, btns = get_category_buttons('mir', timeout, msg_id, extra[4], extra[5])
     editMessage(text, message, btns)
 
