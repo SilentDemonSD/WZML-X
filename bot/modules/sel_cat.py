@@ -107,7 +107,7 @@ def confirm_category(update, context):
     elif data[1] == 'start':
         query.answer()
         del btn_listener[msg_id]
-        medium = f"Drive {CATEGORY_NAMES[{listener.c_index}]}"
+        medium = f"Drive {CATEGORY_NAMES[listener.c_index]}"
         if listener.isLeech:
             medium = 'Telegram'
         if listener.isZip:
