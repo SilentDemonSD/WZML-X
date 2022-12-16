@@ -282,6 +282,8 @@ def start_ml(extra, s_listener):
     seed_time = extra[3]
     c_index = int(extra[4])
     u_index = int(extra[5]) if extra[5] else None
+    LOGGER.info(c_index)
+    LOGGER.info(u_index)
     if not is_mega_link(link) and not isQbit and not is_magnet(link) \
         and not is_gdrive_link(link) and not link.endswith('.torrent'):
         content_type = get_content_type(link)
