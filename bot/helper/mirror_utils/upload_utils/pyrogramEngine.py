@@ -123,12 +123,12 @@ class TgUploader:
                                 try:
                                     app.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                                 except Exception as err:
-                                    LOGGER.error(f"Failed To Send Video in PM:\n{err}")
+                                    app.forward_messages(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                             if len(dumpid) != 0:
                                 try:
                                     app.copy_message(chat_id=LEECH_X, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                                 except Exception as err:
-                                    LOGGER.error(f"Failed To Send Video in dump:\n{err}")
+                                    app.forward_messages(chat_id=LEECH_X, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
 
                     else:
                         self.__sent_msg = self.__sent_msg.reply_video(video=up_path,
@@ -145,7 +145,7 @@ class TgUploader:
                             try:
                                 app.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                             except Exception as err:
-                                LOGGER.error(f"Failed To Send Vedio in PM:\n{err}")
+                                app.forward_messages(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                 elif is_audio:
                     duration , artist, title = get_media_info(up_path)
                     if 'is_leech_log' in user_data and user_data.get('is_leech_log'):
@@ -164,12 +164,12 @@ class TgUploader:
                                 try:
                                     app.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                                 except Exception as err:
-                                    LOGGER.error(f"Failed To Send Audio in PM:\n{err}")
+                                    app.forward_messages(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                             if len(dumpid) != 0:
                                 try:
                                     app.copy_message(chat_id=LEECH_X, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                                 except Exception as err:
-                                    LOGGER.error(f"Failed To Send Audio in dump:\n{err}")
+                                    app.forward_messages(chat_id=LEECH_X, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                     else:
                         self.__sent_msg = self.__sent_msg.reply_audio(audio=up_path,
                                                                       quote=True,
@@ -184,7 +184,7 @@ class TgUploader:
                             try:
                                 app.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                             except Exception as err:
-                                LOGGER.error(f"Failed To Send Audio in PM:\n{err}")
+                                app.forward_messages(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
 
                 elif file_.upper().endswith(IMAGE_SUFFIXES):
                     if 'is_leech_log' in user_data and user_data.get('is_leech_log'):
@@ -200,12 +200,12 @@ class TgUploader:
                                 try:
                                     app.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                                 except Exception as err:
-                                    LOGGER.error(f"Failed To Send Image in PM:\n{err}")
+                                    app.forward_messages(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                             if len(dumpid) != 0:
                                 try:
                                     app.copy_message(chat_id=LEECH_X, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                                 except Exception as err:
-                                    LOGGER.error(f"Failed To Send Image in dump:\n{err}")
+                                    app.forward_messages(chat_id=LEECH_X, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                     else:
                         self.__sent_msg = self.__sent_msg.reply_photo(photo=up_path,
                                                                       quote=True,
@@ -216,7 +216,7 @@ class TgUploader:
                             try:
                                 app.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                             except Exception as err:
-                                LOGGER.error(f"Failed To Send Image in PM:\n{err}")
+                                app.forward_messages(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                 else:
                     notMedia = True
             if self.__as_doc or notMedia:
@@ -240,12 +240,12 @@ class TgUploader:
                             try:
                                 app.copy_message(chat_id=LEECH_X, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                             except Exception as err:
-                                LOGGER.error(f"Failed To Send Document in dump:\n{err}")
+                                app.forward_messages(chat_id=LEECH_X, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                         if config_dict['BOT_PM']:
                             try:
                                 app.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                             except Exception as err:
-                                LOGGER.error(f"Failed To Send Document in PM:\n{err}")
+                                app.forward_messages(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                 else:
                     self.__sent_msg = self.__sent_msg.reply_document(document=up_path,
                                                                      quote=True,
@@ -257,7 +257,7 @@ class TgUploader:
                             try:
                                 app.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                             except Exception as err:
-                                LOGGER.error(f"Failed To Send Document in PM:\n{err}")
+                                app.forward_messages(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
         except FloodWait as f:
             LOGGER.warning(str(f))
             sleep(f.value)
