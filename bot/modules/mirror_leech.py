@@ -255,6 +255,7 @@ def _auto_start_dl(msg, msg_id, time_out):
         info = btn_listener[msg_id]
         del btn_listener[msg_id]
         editMessage("Timed out! Task has been Started.", msg)
+        LOGGER.info(info[1])
         start_ml(info[1], info[0])
     except:
         pass
@@ -280,8 +281,9 @@ def start_ml(extra, s_listener):
     name = extra[1]
     ratio = extra[2]
     seed_time = extra[3]
+    LOGGER.info(extra)
     c_index = int(extra[4])
-    u_index = int(extra[5]) if extra[5] else None
+    u_index = extra[5]
     LOGGER.info(c_index)
     LOGGER.info(u_index)
     if not is_mega_link(link) and not isQbit and not is_magnet(link) \
