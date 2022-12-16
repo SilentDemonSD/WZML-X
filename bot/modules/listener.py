@@ -483,7 +483,7 @@ class MirrorLeechListener:
             else:
                 buttons.buildbutton("☁️ Drive Link", link)
             LOGGER.info(f'Done Uploading {file_}')
-            _, INDEXURL = getGDriveUploadUtils(user_id_, self.c_index, self.u_index)
+            _, INDEXURL = getGDriveUploadUtils(user_id_, self.u_index, self.c_index)
             if INDEX_URL:= INDEXURL:
                 url_path = rutils.quote(f'{file_}')
                 share_url = f'{INDEX_URL}/{url_path}'
