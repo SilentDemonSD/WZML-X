@@ -212,8 +212,6 @@ class GoogleDriveHelper:
         size = get_readable_file_size(self.__size)
         LOGGER.info(f"Uploading File: {file_path}")
         self.__updater = setInterval(self.__update_interval, self._progress)
-        LOGGER.info(u_index)
-        LOGGER.info(c_index)
         GDRIVEID, _ = getGDriveUploadUtils(self.user_id, u_index, c_index)
         try:
             if ospath.isfile(file_path):

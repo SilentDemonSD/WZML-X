@@ -32,7 +32,6 @@ from .listener import MirrorLeechListener
 def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeech=False):
     buttons = ButtonMaker()
     user_id = message.from_user.id
-    BOT_PM_X = get_bot_pm(user_id)
     msg_id = message.message_id
 
     if config_dict['FSUB']:
@@ -53,7 +52,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
                 return reply_message
         except Exception:
             pass
-    if BOT_PM_X and message.chat.type != 'private':
+    if get_bot_pm(user_id) and message.chat.type != 'private':
         try:
             msg1 = f'Added your Requested link to Download\n'
             send = bot.sendMessage(message.from_user.id, text=msg1)
@@ -157,6 +156,8 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
         link = re_split(r"pswd:|\|", link)[0]
         link = link.strip()
 
+    CATUSR = getUserTDs(user_id)[0] 
+    if len(CATUSR) >= 1: u_index = 0
     catlistener = [bot, message, isZip, extract, isQbit, isLeech, pswd, tag, select, seed]
     extras = [link, name, ratio, seed_time, c_index, u_index, time()]
 
@@ -230,7 +231,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
 
     LOGGER.info(f"Link: {link}")
 
-    if len(CATEGORY_NAMES) > 1 and not isLeech:
+    if (len(CATEGORY_NAMES) > 1 or len(CATUSR) > 1) and not isLeech:
         btn_listener[msg_id] = [catlistener, extras, timeout]
         text, btns = get_category_buttons('mir', timeout, msg_id, c_index, u_index, user_id)
         engine = sendMarkup(text, bot, message, btns)
@@ -329,9 +330,9 @@ def start_ml(extra, s_listener):
 
     if is_gdrive_link(link):
         if not isZip and not extract and not isLeech:
-            gmsg = f"Use /{BotCommands.CloneCommand} to clone Google Drive file/folder\n\n"
-            gmsg += f"Use /{BotCommands.ZipMirrorCommand} to make zip of Google Drive folder\n\n"
-            gmsg += f"Use /{BotCommands.UnzipMirrorCommand} to extracts Google Drive archive file"
+            gmsg = f"Use /{BotCommands.CloneCommand[0]} to clone Google Drive file/folder\n\n"
+            gmsg += f"Use /{BotCommands.ZipMirrorCommand[0]} to make zip of Google Drive folder\n\n"
+            gmsg += f"Use /{BotCommands.UnzipMirrorCommand[0]} to extracts Google Drive archive file"
             sendMessage(gmsg, bot, message)
         else:
             Thread(target=add_gd_download, args=(link, f'{DOWNLOAD_DIR}{listener.uid}', listener, name, is_gdtot, is_unified, is_udrive, is_sharer, is_sharedrive, is_filepress)).start()
@@ -382,7 +383,7 @@ def mir_confirm(update, context):
         u_index = int(data[3])
         c_index = 0
         if extra[5] == u_index:
-            return query.answer(f"Already selected!", show_alert=True)
+            return query.answer(f"{getUserTDs(listener[1].from_user.id)[0][u_index]} is already selected!", show_alert=True)
         query.answer()
         extra[4] = c_index
         extra[5] = u_index
