@@ -317,6 +317,9 @@ def load_config():
     WEB_PINCODE = environ.get('WEB_PINCODE', '')
     WEB_PINCODE = WEB_PINCODE.lower() == 'true'
 
+    ENABLE_USR_TD = environ.get('ENABLE_USR_TD', '')
+    ENABLE_USR_TD = ENABLE_USR_TD.lower() == 'false'
+
     AS_DOCUMENT = environ.get('AS_DOCUMENT', '')
     AS_DOCUMENT = AS_DOCUMENT.lower() == 'true'
 
@@ -672,6 +675,7 @@ def load_config():
                         'OWNER_ID': OWNER_ID,
                         'CMD_PERFIX': CMD_PERFIX,
                         'EQUAL_SPLITS': EQUAL_SPLITS,
+                        'ENABLE_USR_TD': ENABLE_USR_TD,
                         'EXTENSION_FILTER': EXTENSION_FILTER,
                         'GDRIVE_ID': GDRIVE_ID,
                         'IGNORE_PENDING_REQUESTS': IGNORE_PENDING_REQUESTS,
