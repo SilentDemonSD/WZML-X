@@ -206,7 +206,7 @@ def start_clone(listner):
 
     if files <= 20:
         msg = sendMessage(f"Cloning: <code>{link}</code>", bot, message)
-        result, button = gd.clone(link, c_index)
+        result, button = gd.clone(link, u_index, c_index)
         deleteMessage(bot, msg)
         if BOT_PM_X:
             if message.chat.type != 'private':
@@ -245,7 +245,7 @@ def start_clone(listner):
         with download_dict_lock:
             download_dict[message.message_id] = clone_status
             sendStatusMessage(message, bot)
-            result, button = drive.clone(link, c_index)
+            result, button = drive.clone(link, u_index, c_index)
         with download_dict_lock:
             del download_dict[message.message_id]
             count = len(download_dict)
@@ -422,7 +422,7 @@ def confirm_clone(update, context):
         message.delete()
         return start_clone(listenerInfo)
     timeout = listenerInfo[4] - (time() - listenerInfo[5])
-    text, btns = get_category_buttons('clone', timeout, msg_id, listenerInfo[2], listenerInfo[3], listener[1].from_user.id)
+    text, btns = get_category_buttons('clone', timeout, msg_id, listenerInfo[2], listenerInfo[3], listenerInfo[1].from_user.id)
     editMessage(text, message, btns)
 
 @new_thread
