@@ -524,7 +524,7 @@ def change_filename(file_, user_id_, dirpath=None, up_path=None, all_edit=True, 
         if not REMNAME.startswith('|'):
             REMNAME = f"|{REMNAME}"
         slit = REMNAME.split("|")
-        __newFileName = file_
+        __newFileName = ospath.splitext(file_)[0]
         for rep in range(1, len(slit)):
             args = slit[rep].split(":")
             if len(args) == 3:
@@ -533,7 +533,7 @@ def change_filename(file_, user_id_, dirpath=None, up_path=None, all_edit=True, 
                 __newFileName = __newFileName.replace(args[0], args[1])
             elif len(args) == 1:
                 __newFileName = __newFileName.replace(args[0], '')
-        file_ = __newFileName
+        file_ = __newFileName + ospath.splitext(file_)[1]
         LOGGER.info("Remname : "+file_)
     if PREFIX:
         if not file_.startswith(PREFIX):
@@ -551,7 +551,10 @@ def change_filename(file_, user_id_, dirpath=None, up_path=None, all_edit=True, 
             )
         file_ = _newExtFileName
     elif SUFFIX:
-        file_ = f"{ospath.splitext(file_)[0]}{SUFFIX}{ospath.splitext(file_)[1]}"
+        if '.' in file_:
+            file_ = f"{ospath.splitext(file_)[0]}{SUFFIX}{ospath.splitext(file_)[1]}"
+        else:
+            file_ = f"{file_}{SUFFIX}"
 
     if (PREFIX or REMNAME or SUFFIX) and all_edit:
         new_path = ospath.join(dirpath, file_)
