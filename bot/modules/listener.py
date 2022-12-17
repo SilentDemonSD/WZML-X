@@ -477,7 +477,7 @@ class MirrorLeechListener:
                 msg += f'\n<b>├ It Tooks:</b> {get_readable_time(time() - self.message.date.timestamp())}'
                 msg += f'\n<b>╰ #Mirror_By: </b>{self.tag}\n\n' 
             buttons = ButtonMaker()
-            link = short_url(link)
+            link = short_url(link, user_id_)
             if config_dict['DISABLE_DRIVE_LINK'] and self.message.chat.type != 'private':
                 pass
             else:
@@ -489,14 +489,14 @@ class MirrorLeechListener:
                 share_url = f'{INDEX_URL}/{url_path}'
                 if typ == "Folder":
                     share_url += '/'
-                    share_url = short_url(share_url)
+                    share_url = short_url(share_url, user_id_)
                     buttons.buildbutton("⚡ Index Link", share_url)
                 else:
-                    share_url = short_url(share_url)
+                    share_url = short_url(share_url, user_id_)
                     buttons.buildbutton("⚡ Index Link", share_url)
                     if config_dict['VIEW_LINK']:
                         share_urls = f'{INDEX_URL}/{url_path}?a=view'
-                        share_urls = short_url(share_urls)
+                        share_urls = short_url(share_urls, user_id_)
                         buttons.buildbutton("🌐 View Link", share_urls)
                     if config_dict['SOURCE_LINK']:
                         try:

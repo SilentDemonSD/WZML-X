@@ -58,7 +58,7 @@ def mediainfo(update, context):
     try: os.remove(file)
     except: pass
     help = telegraph.create_page(title='MediaInfo', content=reply)["path"]
-    editMessage(short_url(f"https://telegra.ph/{help}"), sent)
+    editMessage(short_url(f"https://telegra.ph/{help}", update.message.from_user.id), sent)
 
 
 authfilter = CustomFilters.authorized_chat if config_dict['MEDIAINFO_ENABLED'] is True else CustomFilters.owner_filter

@@ -401,12 +401,12 @@ class GoogleDriveHelper:
                     msg += f'\n<b>├ SubFolders: </b>{self.__total_folders}'
                     msg += f'\n<b>├ Files: </b>{self.__total_files}'
                 buttons = ButtonMaker()
-                durl = short_url(durl)
+                durl = short_url(durl, self.user_id)
                 buttons.buildbutton("☁️ Drive Link", durl)
                 if INDEX_URL := INDEXURL:
                     url_path = rquote(f'{f_name}', safe='')
                     url = f'{INDEX_URL}/{url_path}/'
-                    url = short_url(url)
+                    url = short_url(url, self.user_id)
                     buttons.buildbutton("⚡ Index Link", url)
             else:
                 file = self.__copyFile(meta.get('id'), GDRIVEID, meta.get('name'))
@@ -416,7 +416,7 @@ class GoogleDriveHelper:
                     msg += f'<b>╭ Name: </b><code>{file.get("name")}</code>'
                 durl = self.__G_DRIVE_BASE_DOWNLOAD_URL.format(file.get("id"))
                 buttons = ButtonMaker()
-                durl = short_url(durl)
+                durl = short_url(durl, self.user_id)
                 buttons.buildbutton("☁️ Drive Link", durl)
                 if mime_type is None:
                     mime_type = 'File'
@@ -429,11 +429,11 @@ class GoogleDriveHelper:
                 if INDEX_URL := INDEXURL:
                     url_path = rquote(f'{file.get("name")}', safe='')
                     url = f'{INDEX_URL}/{url_path}'
-                    url = short_url(url)
+                    url = short_url(url, self.user_id)
                     buttons.buildbutton("⚡ Index Link", url)
                     if config_dict['VIEW_LINK']:
                         urls = f'{INDEX_URL}/{url_path}?a=view'
-                        urls = short_url(urls)
+                        urls = short_url(urls, self.user_id)
                         buttons.buildbutton("🌐 View Link", urls)
             if config_dict['BUTTON_FOUR_NAME'] != '' and config_dict['BUTTON_FOUR_URL'] != '':
                 buttons.buildbutton(f"{config_dict['BUTTON_FOUR_NAME']}", f"{config_dict['BUTTON_FOUR_URL']}")

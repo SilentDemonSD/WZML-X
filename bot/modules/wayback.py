@@ -26,7 +26,7 @@ def wayback(update, context):
     sent = sendMessage('Running WayBack. Wait about 20 secs.', context.bot, update.message)
     retLink = saveWebPage(link)
     if not retLink: return editMessage('Cannot archieved. Try again later.', sent)
-    editMessage(f'Saved webpage: {short_url(retLink)}', sent)
+    editMessage(f'Saved webpage: {short_url(retLink, update.message.from_user.id)}', sent)
 
 
 def saveWebPage(pageurl:str):

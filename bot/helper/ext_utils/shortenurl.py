@@ -6,8 +6,11 @@ from urllib.parse import quote, unquote
 from urllib3 import disable_warnings
 
 from bot import LOGGER, config_dict
+from bot.helper.ext_utils.bot_utils import is_paid
 
-def short_url(longurl):
+def short_url(longurl, user_id):
+    if is_paid(user_id):
+        return longurl
     API_LIST = config_dict['SHORTENER_API']
     SHORT_LIST = config_dict['SHORTENER']
     if len(SHORT_LIST) == 0 and len(API_LIST) == 0:
