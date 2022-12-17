@@ -314,7 +314,7 @@ def edit_user_settings(update, context):
             query.answer(text="Thumbnail Removed!", show_alert=True)
             osremove(path)
             update_user_ldata(user_id, 'thumb', '')
-            update_user_settings(message, query.from_user, 'universal')
+            update_user_settings(message, query.from_user, 'leech')
             if DATABASE_URL:
                 DbManger().update_thumb(user_id)
         else:
