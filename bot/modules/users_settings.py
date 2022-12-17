@@ -322,7 +322,6 @@ def edit_user_settings(update, context):
             update_user_settings(message, query.from_user, 'leech')
     elif data[2] == "sthumb":
         query.answer()
-        menu = False
         if handler_dict.get(user_id):
             handler_dict[user_id] = False
             sleep(0.5)
@@ -331,11 +330,10 @@ def edit_user_settings(update, context):
         buttons = ButtonMaker()
         thumbpath = f"Thumbnails/{user_id}.jpg"
         if ospath.exists(thumbpath):
-            menu = True
             buttons.sbutton("Delete", f"userset {user_id} dthumb")
         buttons.sbutton("Back", f"userset {user_id} back {data[3]}")
-        buttons.sbutton("Close", f"userset {user_id} close")
-        editMessage('Send a photo to save it as custom Thumbnail.', message, buttons.build_menu(2) if menu else buttons.build_menu(1))
+        buttons.sbutton("Close", f"userset {user_id} close", 'footer')
+        editMessage('Send a photo to save it as custom Thumbnail.', message, buttons.build_menu(2))
         partial_fnc = partial(set_thumb, omsg=message)
         photo_handler = MessageHandler(filters=Filters.photo & Filters.chat(message.chat.id) & Filters.user(user_id),
                                        callback=partial_fnc, run_async=True)
