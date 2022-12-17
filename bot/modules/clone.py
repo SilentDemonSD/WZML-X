@@ -22,9 +22,9 @@ from bot.helper.telegram_helper.button_build import ButtonMaker
 
 def _clone(message, bot):
     user_id = message.from_user.id
-    BOT_PM_X = get_bot_pm(user_id)
-
     buttons = ButtonMaker()
+    #if force_sub(message):
+        #return
     if config_dict['FSUB']:
         try:
             user = bot.get_chat_member(f"{config_dict['FSUB_CHANNEL_ID']}", message.from_user.id)
@@ -44,7 +44,7 @@ def _clone(message, bot):
         except Exception:
             pass
             
-    if BOT_PM_X and message.chat.type != 'private':
+    if get_bot_pm(user_id) and message.chat.type != 'private':
         try:
             msg1 = f'Added your Requested link to Download\n'
             send = bot.sendMessage(message.from_user.id, text=msg1)
@@ -87,6 +87,7 @@ def _clone(message, bot):
     link = ''
     multi = 0
     c_index = 0
+    u_index = None
     msg_id = message.message_id
 
     if len(args) > 1:
@@ -118,17 +119,17 @@ def _clone(message, bot):
             LOGGER.info(f"Processing: {link}")
             if is_unified:
                 link = unified(link)
-            if is_gdtot:
+            elif is_gdtot:
                 link = gdtot(link)
-            if is_udrive:
+            elif is_udrive:
                 link = udrive(link)
-            if is_sharer:
+            elif is_sharer:
                 link = sharer_pw_dl(link)
-            if is_sharedrive:
+            elif is_sharedrive:
                 link = shareDrive(link)
-            if is_filepress:
+            elif is_filepress:
                 link = filepress(link)
-            LOGGER.info(f"Processing Generated GDrive: {link}")
+            LOGGER.info(f"Generated GDrive Link: {link}")
             deleteMessage(bot, msg)
         except DirectDownloadLinkException as e:
             deleteMessage(bot, msg)
@@ -138,9 +139,11 @@ def _clone(message, bot):
         return sendMessage("Send Gdrive or GDToT/AppDrive/DriveApp/GDFlix/DriveAce/DriveLinks/DriveBit/DriveSharer/Anidrive/Driveroot/Driveflix/Indidrive/drivehub(in)/HubDrive/DriveHub(ws)/KatDrive/Kolop/DriveFire/DriveBuzz/SharerPw/ShareDrive link along with command or by replying to the link by command\n\n<b>Multi links only by replying to first link/file:</b>\n<code>/cmd</code> 10(number of links/files)", bot, message)
 
     timeout = 60
-    listener = [bot, message, c_index, timeout, time(), tag, link]
-    if len(CATEGORY_NAMES) > 1:
-        text, btns = get_category_buttons('clone', timeout, msg_id, c_index)
+    CATUSR = getUserTDs(user_id)[0] 
+    if len(CATUSR) >= 1: u_index = 0
+    listener = [bot, message, c_index, u_index, timeout, time(), tag, link]
+    if len(CATEGORY_NAMES) > 1 or len(CATUSR) > 1:
+        text, btns = get_category_buttons('clone', timeout, msg_id, c_index, u_index, user_id)
         btn_listener[msg_id] = listener
         engine = sendMarkup(text, bot, message, btns)
         _auto_start_dl(engine, msg_id, timeout)
@@ -173,8 +176,9 @@ def start_clone(listner):
     bot = listner[0]
     message = listner[1]
     c_index = listner[2]
-    tag = listner[5]
-    link = listner[6]
+    u_index = listner[3]
+    tag = listner[6]
+    link = listner[7]
     user_id = message.from_user.id
     BOT_PM_X = get_bot_pm(user_id)
 
@@ -394,10 +398,20 @@ def confirm_clone(update, context):
         return query.answer("You are not the owner of this task!", show_alert=True)
     elif data[1] == 'scat':
         c_index = int(data[3])
+        u_index = None
         if listenerInfo[2] == c_index:
             return query.answer(f"{CATEGORY_NAMES[c_index]} is selected already!", show_alert=True)
         query.answer()
         listenerInfo[2] = c_index
+        listenerInfo[3] = u_index
+    elif data[1] == 'ucat':
+        u_index = int(data[3])
+        c_index = 0
+        if listenerInfo[3] == u_index:
+            return query.answer(f"{getUserTDs(listener[1].from_user.id)[0][u_index]} is already selected!", show_alert=True)
+        query.answer()
+        listenerInfo[2] = c_index
+        listenerInfo[3] = u_index
     elif data[1] == 'cancel':
         query.answer()
         del btn_listener[msg_id]
@@ -407,8 +421,8 @@ def confirm_clone(update, context):
         del btn_listener[msg_id]
         message.delete()
         return start_clone(listenerInfo)
-    timeout = listenerInfo[3] - (time() - listenerInfo[4])
-    text, btns = get_category_buttons('clone', timeout, msg_id, listenerInfo[2])
+    timeout = listenerInfo[4] - (time() - listenerInfo[5])
+    text, btns = get_category_buttons('clone', timeout, msg_id, listenerInfo[2], listenerInfo[3], listener[1].from_user.id)
     editMessage(text, message, btns)
 
 @new_thread
