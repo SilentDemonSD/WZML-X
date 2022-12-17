@@ -61,7 +61,6 @@ def get_user_settings(from_user, key=None):
         text = "User Settings:"
         button = buttons.build_menu(1)
     elif key == 'universal':
-        userlog = user_dict['userlog'] if user_dict and user_dict.get('userlog') else "Not Exists"
         imdb = user_dict['imdb_temp'] if user_dict and user_dict.get('imdb_temp') else "Not Exists"
         anilist = user_dict['ani_temp'] if user_dict and user_dict.get('ani_temp') else "Not Exists"
         ytq = user_dict['yt_ql'] if user_dict and user_dict.get('yt_ql') else config_dict['YT_DLP_QUALITY'] if config_dict['YT_DLP_QUALITY'] else "Not Exists"
@@ -73,25 +72,8 @@ def get_user_settings(from_user, key=None):
             lastused = f"{t[0]}h {t[1]}m {t[2].split('.')[0]}s ago"
         else: lastused = "Bot Not Used"
 
-        if not user_dict and config_dict['AS_DOCUMENT'] or user_dict and user_dict.get('as_doc'):
-            ltype = "DOCUMENT"
-            buttons.sbutton("Send As Media", f"userset {user_id} med")
-        else:
-            ltype = "MEDIA"
-            buttons.sbutton("Send As Document", f"userset {user_id} doc")
-
-        if ospath.exists(thumbpath):
-            thumbmsg = "Exists"
-            buttons.sbutton("Change/Delete Thumbnail", f"userset {user_id} sthumb universal")
-            buttons.sbutton("Show Thumbnail", f"userset {user_id} showthumb")
-        else:
-            thumbmsg = "Not Exists"
-            buttons.sbutton("Set Thumbnail", f"userset {user_id} sthumb universal")
-
         buttxt = "Change/Delete YT-DLP Quality" if ytq != "Not Exists" else "Set YT-DLP Quality"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal yt_ql universal")
-        buttxt = "Change/Delete UserLog" if userlog != "Not Exists" else "Set UserLog"
-        buttons.sbutton(buttxt, f"userset {user_id} suniversal userlog universal")
         
         if not config_dict['FORCE_BOT_PM']:
             if user_dict and user_dict.get('ubot_pm'):
@@ -121,10 +103,7 @@ def get_user_settings(from_user, key=None):
         button = buttons.build_menu(2)
         text = f'''<u>Universal Settings for <a href='tg://user?id={user_id}'>{name}</a></u>
 
-╭ Leech Type : <b>{ltype}</b>
-├ Custom Thumbnail : <b>{thumbmsg}</b>
-├ YT-DLP Quality is : <b>{escape(ytq)}</b>
-├ UserLog : <b>{userlog}</b>
+╭ YT-DLP Quality is : <b>{escape(ytq)}</b>
 ├ Daily Tasks : <b>{dailytas} / {dailytl} per day</b>
 ├ Last Bot Used : <b>{lastused}</b>
 ├ User Bot PM : <b>{ubotpm}</b>
@@ -181,9 +160,27 @@ def get_user_settings(from_user, key=None):
         caption = user_dict['caption'] if user_dict and user_dict.get('caption') else "Not Exists"
         remname = user_dict['remname'] if user_dict and user_dict.get('remname') else "Not Exists"
         cfont = user_dict['cfont'][0] if user_dict and user_dict.get('cfont') else "<b>Not Exists</b>"
+        userlog = user_dict['userlog'] if user_dict and user_dict.get('userlog') else "Not Exists"
         dailytlle = get_readable_file_size(config_dict['DAILY_LEECH_LIMIT'] * 1024**3) if config_dict['DAILY_LEECH_LIMIT'] else "Unlimited"
         dailyll = get_readable_file_size(user_dict.get('dly_tasks')[2]) if user_dict and user_dict.get('dly_tasks') and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) and config_dict['DAILY_LEECH_LIMIT'] else "Unlimited"
 
+        if not user_dict and config_dict['AS_DOCUMENT'] or user_dict and user_dict.get('as_doc'):
+            ltype = "DOCUMENT"
+            buttons.sbutton("Send As Media", f"userset {user_id} med")
+        else:
+            ltype = "MEDIA"
+            buttons.sbutton("Send As Document", f"userset {user_id} doc")
+
+        if ospath.exists(thumbpath):
+            thumbmsg = "Exists"
+            buttons.sbutton("Change/Delete Thumbnail", f"userset {user_id} sthumb leech")
+            buttons.sbutton("Show Thumbnail", f"userset {user_id} showthumb")
+        else:
+            thumbmsg = "Not Exists"
+            buttons.sbutton("Set Thumbnail", f"userset {user_id} sthumb leech")
+
+        buttxt = "Change/Delete UserLog" if userlog != "Not Exists" else "Set UserLog"
+        buttons.sbutton(buttxt, f"userset {user_id} suniversal userlog leech")
         buttxt = "Change/Delete Prefix" if prefix != "Not Exists" else "Set Prefix"
         buttons.sbutton(buttxt, f"userset {user_id} suniversal prefix leech")
         buttxt = "Change/Delete Suffix" if suffix != "Not Exists" else "Set Suffix"
@@ -199,7 +196,10 @@ def get_user_settings(from_user, key=None):
         button = buttons.build_menu(2)
         text = f'''<u>Leech Settings for <a href='tg://user?id={user_id}'>{name}</a></u>
 
-╭ Prefix : <b>{escape(prefix)}</b>
+╭ Leech Type : <b>{ltype}</b>
+├ Custom Thumbnail : <b>{thumbmsg}</b>
+├ UserLog : <b>{userlog}</b>
+├ Prefix : <b>{escape(prefix)}</b>
 ├ Suffix : <b>{suffix}</b>
 ├ Caption : <b>{escape(caption)}</b>
 ├ CapFont : {cfont}
@@ -209,7 +209,7 @@ def get_user_settings(from_user, key=None):
     if uplan == "Paid User" and key:
         ex_date = user_dict.get('expiry_date', False)
         if not ex_date: ex_date = 'Not Specified'
-        text += f"├ User Plan : <b>{uplan}</b>"
+        text += f"├ User Plan : <b>{uplan}</b>\n"
         text += f"╰ Expiry Date : <b>{ex_date}</b>"
     elif key: text += f"╰ User Plan : <b>{uplan}</b>"
     return text, button
@@ -268,13 +268,13 @@ def edit_user_settings(update, context):
     elif data[2] == "doc":
         update_user_ldata(user_id, 'as_doc', True)
         query.answer(text="Your File Will Deliver As Document!", show_alert=True)
-        update_user_settings(message, query.from_user, 'universal')
+        update_user_settings(message, query.from_user, 'leech')
         if DATABASE_URL:
             DbManger().update_user_data(user_id)
     elif data[2] == "med":
         update_user_ldata(user_id, 'as_doc', False)
         query.answer(text="Your File Will Deliver As Media!", show_alert=True)
-        update_user_settings(message, query.from_user, 'universal')
+        update_user_settings(message, query.from_user, 'leech')
         if DATABASE_URL:
             DbManger().update_user_data(user_id)
     elif data[2] == "usertdxon":
@@ -319,7 +319,7 @@ def edit_user_settings(update, context):
                 DbManger().update_thumb(user_id)
         else:
             query.answer(text="Old Settings", show_alert=True)
-            update_user_settings(message, query.from_user, 'universal')
+            update_user_settings(message, query.from_user, 'leech')
     elif data[2] == "sthumb":
         query.answer()
         menu = False
@@ -343,7 +343,7 @@ def edit_user_settings(update, context):
         while handler_dict[user_id]:
             if time() - start_time > 60:
                 handler_dict[user_id] = False
-                update_user_settings(message, query.from_user, 'universal')
+                update_user_settings(message, query.from_user, 'leech')
         dispatcher.remove_handler(photo_handler)
     elif data[2] == 'back':
         query.answer()
