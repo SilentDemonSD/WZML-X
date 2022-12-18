@@ -120,6 +120,10 @@ def load_config():
     if len(TGH_THUMB) == 0:
         TGH_THUMB = 'https://te.legra.ph/file/3325f4053e8d68eab07b5.jpg'
 
+    SA_MAIL = environ.get('SA_MAIL', '')
+    if len(SA_MAIL) == 0:
+        SA_MAIL = '#SA'
+        
     AUTHORIZED_CHATS = environ.get('AUTHORIZED_CHATS', '')
     if len(AUTHORIZED_CHATS) != 0:
         aid = AUTHORIZED_CHATS.split()
@@ -690,6 +694,7 @@ def load_config():
                         'RSS_CHAT_ID': RSS_CHAT_ID,
                         'RSS_COMMAND': RSS_COMMAND,
                         'RSS_DELAY': RSS_DELAY,
+                        'SA_MAIL': SA_MAIL,
                         'SEARCH_API_LINK': SEARCH_API_LINK,
                         'SEARCH_LIMIT': SEARCH_LIMIT,
                         'SEARCH_PLUGINS': SEARCH_PLUGINS,
