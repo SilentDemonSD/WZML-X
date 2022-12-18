@@ -6,6 +6,7 @@ from time import sleep, time
 from functools import partial
 from datetime import datetime
 from html import escape
+from telegram import ParseMode
 from threading import Thread
 
 from bot import bot, user_data, dispatcher, LOGGER, config_dict, DATABASE_URL, OWNER_ID
@@ -14,7 +15,7 @@ from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.db_handler import DbManger
-from bot.helper.ext_utils.bot_utils import update_user_ldata, is_paid, is_sudo, get_readable_file_size
+from bot.helper.ext_utils.bot_utils import update_user_ldata, is_paid, is_sudo, get_readable_file_size, getUserTDs
 
 handler_dict = {}
 example_dict = {'prefix':'1. <code>@your_channel_username or Anything</code>', 
@@ -103,7 +104,7 @@ def get_user_settings(from_user, key=None):
         button = buttons.build_menu(2)
         text = f'''<u>Universal Settings for <a href='tg://user?id={user_id}'>{name}</a></u>
 
-╭ YT-DLP Quality is : <b>{escape(ytq)}</b>
+╭ YT-DLP Quality : <b>{escape(ytq)}</b>
 ├ Daily Tasks : <b>{dailytas} / {dailytl} per day</b>
 ├ Last Bot Used : <b>{lastused}</b>
 ├ User Bot PM : <b>{ubotpm}</b>
@@ -114,7 +115,7 @@ def get_user_settings(from_user, key=None):
         prefix = user_dict['mprefix'] if user_dict and user_dict.get('mprefix') else "Not Exists"
         suffix = user_dict['msuffix'] if user_dict and user_dict.get('msuffix') else "Not Exists"
         remname = user_dict['mremname'] if user_dict and user_dict.get('mremname') else "Not Exists"
-        usertd = user_dict['usertd'] if user_dict and user_dict.get('usertd') else "Not Exists"
+        usertd = user_dict['usertd']; GDrive, _, _ = getUserTDs(user_id) if user_dict and user_dict.get('usertd') else "Not Exists"
         dailytlup = get_readable_file_size(config_dict['DAILY_MIRROR_LIMIT'] * 1024**3) if config_dict['DAILY_MIRROR_LIMIT'] else "Unlimited"
         dailyup = get_readable_file_size(user_dict.get('dly_tasks')[3]) if user_dict and user_dict.get('dly_tasks') and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) and config_dict['DAILY_MIRROR_LIMIT'] else "Unlimited"
 
@@ -139,8 +140,13 @@ def get_user_settings(from_user, key=None):
         else:
             usertdstatus = "User TD Feature Disabled By Owner!"
             buttons.sbutton("Enable User TD", f"userset {user_id} usertdxdisable")
-        buttxt = "Change/Delete User TD" if usertd != "Not Exists" else "Set User TD"
-        buttons.sbutton(buttxt, f"userset {user_id} suniversal usertd mirror")
+        usertds = ''
+        if usertd != "Not Exists"
+            usertds = "Exists"
+            buttons.sbutton("Change/Delete User TD(s)", f"userset {user_id} suniversal usertd mirror")
+            buttons.sbutton("Show User TD(s)", f"userset {user_id} showusertds")
+        else:
+            buttons.sbutton("Set User TD(s)", f"userset {user_id} suniversal usertd mirror")
 
         buttons.sbutton("Back", f"userset {user_id} mback")
         buttons.sbutton("Close", f"userset {user_id} close", 'footer')
@@ -150,8 +156,8 @@ def get_user_settings(from_user, key=None):
 ╭ Prefix : <b>{escape(prefix)}</b>
 ├ Suffix : <b>{suffix}</b>
 ├ Remname : <b>{escape(remname)}</b>
-├ User TD STATUS : <b>{usertdstatus}</b>
-├ User TeamDrive : <b>{usertd}</b>
+├ User TD Mode : <b>{usertdstatus}</b>
+├ User TeamDrive(s) : <b>{usertds if usertds else usertd} (Total : {len(GDrive)})</b>
 ├ Daily Upload : <b>{dailyup} / {dailytlup} per day</b>
 '''
     elif key == 'leech':
@@ -487,6 +493,20 @@ def edit_user_settings(update, context):
             msg = f"AniList Template for: {query.from_user.mention_html()} (<code>{str(user_id)}</code>)\n\n{escape(anilist)}"
             ani = sendMessage(msg, context.bot, message)
             Thread(args=(context.bot, update.message, ani)).start()
+    else data[2] == "showusertds":
+       if user_id not in user_data and not user_data[user_id].get('usertd'):
+            return query.answer(text="Old settings!")
+       if user_id in user_data and user_data[user_id].get('usertd'):
+           GNames, GIDs, GIndex = getUserTDs(user_id)
+           msg = f"<b>User TDs Info :</b>\n\n"
+           for i, _ in enumerate(GNames):
+               msg += f"{i+1}. <i>Name :</i> {GNames[i]}\n"
+               msg += f"   <i>GDrive ID :</i> <code>{GIDs[i]}</code>\n"
+               msg += f"   <i>Index URL :</i> {GIndex[i] if GIndex[i] else 'Not Provided'}\n\n"
+           try:
+               bot.sendMessage(chat_id=user_id, text=msg, parse_mode=ParseMode.HTML)
+               query.answer("UserTD details send in Private (PM) Successfully")
+           except: query.answer("Start the Bot in Private and Try Again to get your UserTD Details!")
     else:
         query.answer()
         handler_dict[user_id] = False
