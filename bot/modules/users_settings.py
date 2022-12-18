@@ -508,8 +508,8 @@ def edit_user_settings(update, context):
                msg += f"   <i>Index URL :</i> {GIndex[i] if GIndex[i] else 'Not Provided'}\n\n"
            try:
                bot.sendMessage(chat_id=user_id, text=msg, parse_mode=ParseMode.HTML)
-               query.answer("UserTD details send in Private (PM) Successfully")
-           except: query.answer("Start the Bot in Private and Try Again to get your UserTD Details!")
+               query.answer("UserTD details send in Private (PM) Successfully", show_alert=True)
+           except: query.answer("Start the Bot in Private and Try Again to get your UserTD Details!", show_alert=True)
     else:
         query.answer()
         handler_dict[user_id] = False
