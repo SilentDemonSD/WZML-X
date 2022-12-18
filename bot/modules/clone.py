@@ -88,7 +88,6 @@ def _clone(message, bot):
     multi = 0
     c_index = 0
     u_index = None
-    delfile = False
     msg_id = message.message_id
 
     if len(args) > 1:
@@ -108,42 +107,13 @@ def _clone(message, bot):
         else:
             tag = reply_to.from_user.mention_html(reply_to.from_user.first_name)
 
-    is_gdtot = is_gdtot_link(link)
-    is_unified = is_unified_link(link)
-    is_udrive = is_udrive_link(link)
-    is_sharer = is_sharer_link(link)
-    is_sharedrive = is_sharedrive_link(link)
-    is_filepress = is_filepress_link(link)
-    if (is_gdtot or is_unified or is_udrive or is_sharer or is_sharedrive or is_filepress):
-        try:
-            msg = sendMessage(f"Processing: <code>{link}</code>", bot, message)
-            LOGGER.info(f"Processing: {link}")
-            if is_unified:
-                link = unified(link)
-            elif is_gdtot:
-                link = gdtot(link)
-            elif is_udrive:
-                link = udrive(link)
-            elif is_sharer:
-                link = sharer_pw_dl(link)
-            elif is_sharedrive:
-                link = shareDrive(link)
-            elif is_filepress:
-                link = filepress(link)
-            delfile = True
-            LOGGER.info(f"Generated GDrive Link: {link}")
-            deleteMessage(bot, msg)
-        except DirectDownloadLinkException as e:
-            deleteMessage(bot, msg)
-            return sendMessage(str(e), bot, message)
-
-    if not is_gdrive_link(link) or (link.strip().isdigit() and multi == 0):
+    if not (is_gdrive_link(link) or (link.strip().isdigit() and multi == 0) or is_gdtot_link(link) or is_unified_link(link) or is_udrive_link(link) or is_sharer_link(link) or is_sharedrive_link(link) or is_filepress_link(link)):
         return sendMessage("Send Gdrive or GDToT/AppDrive/DriveApp/GDFlix/DriveAce/DriveLinks/DriveBit/DriveSharer/Anidrive/Driveroot/Driveflix/Indidrive/drivehub(in)/HubDrive/DriveHub(ws)/KatDrive/Kolop/DriveFire/DriveBuzz/SharerPw/ShareDrive link along with command or by replying to the link by command\n\n<b>Multi links only by replying to first link/file:</b>\n<code>/cmd</code> 10(number of links/files)", bot, message)
 
     timeout = 60
     CATUSR = getUserTDs(user_id)[0] 
     if len(CATUSR) >= 1: u_index = 0
-    listener = [bot, message, c_index, u_index, timeout, time(), tag, link, delfile]
+    listener = [bot, message, c_index, u_index, timeout, time(), tag, link]
     if (len(CATEGORY_NAMES) > 1 and len(CATUSR) == 0) or (len(CATEGORY_NAMES) >= 1 and len(CATUSR) > 1):
         text, btns = get_category_buttons('clone', timeout, msg_id, c_index, u_index, user_id)
         btn_listener[msg_id] = listener
@@ -184,6 +154,34 @@ def start_clone(listelem):
     delfile = listelem[8]
     user_id = message.from_user.id
     BOT_PM_X = get_bot_pm(user_id)
+
+    is_gdtot = is_gdtot_link(link)
+    is_unified = is_unified_link(link)
+    is_udrive = is_udrive_link(link)
+    is_sharer = is_sharer_link(link)
+    is_sharedrive = is_sharedrive_link(link)
+    is_filepress = is_filepress_link(link)
+    if (is_gdtot or is_unified or is_udrive or is_sharer or is_sharedrive or is_filepress):
+        try:
+            msg = sendMessage(f"Processing: <code>{link}</code>", bot, message)
+            LOGGER.info(f"Processing: {link}")
+            if is_unified:
+                link = unified(link)
+            elif is_gdtot:
+                link = gdtot(link)
+            elif is_udrive:
+                link = udrive(link)
+            elif is_sharer:
+                link = sharer_pw_dl(link)
+            elif is_sharedrive:
+                link = shareDrive(link)
+            elif is_filepress:
+                link = filepress(link)
+            LOGGER.info(f"Generated GDrive Link: {link}")
+            deleteMessage(bot, msg)
+        except DirectDownloadLinkException as e:
+            deleteMessage(bot, msg)
+            return sendMessage(str(e), bot, message)
 
     gd = GoogleDriveHelper(user_id=user_id)
     res, size, name, files = gd.helper(link)
@@ -369,7 +367,7 @@ def start_clone(listelem):
         else:
             msg = sendMarkup(result + cc + pmwarn + logwarn + warnmsg, bot, message, button.build_menu(2))
         Thread(target=auto_delete_upload_message, args=(bot, message, msg)).start()
-    if delfile:
+    if (is_gdtot or is_unified or is_udrive or is_sharer or is_sharedrive or is_filepress):
         gd.deletefile(link)
 
     if 'mirror_logs' in user_data:
@@ -417,10 +415,7 @@ def confirm_clone(update, context):
         listenerInfo[3] = u_index
     elif data[1] == 'cancel':
         query.answer()
-        listelem = btn_listener[msg_id]
         del btn_listener[msg_id]
-        if listelem[8]:
-            GoogleDriveHelper(user_id=listelem[1].from_user.id).deletefile(listelem[7])
         return editMessage(f"<b>Download has been cancelled!</b>", message)
     elif data[1] == 'start':
         query.answer()
