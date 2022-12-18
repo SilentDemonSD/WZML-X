@@ -411,7 +411,7 @@ def confirm_clone(update, context):
         u_index = int(data[3])
         c_index = 0
         if listenerInfo[3] == u_index:
-            return query.answer(f"{getUserTDs(listener[1].from_user.id)[0][u_index]} is already selected!", show_alert=True)
+            return query.answer(f"{getUserTDs(listenerInfo[1].from_user.id)[0][u_index]} is already selected!", show_alert=True)
         query.answer()
         listenerInfo[2] = c_index
         listenerInfo[3] = u_index
