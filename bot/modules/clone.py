@@ -151,7 +151,6 @@ def start_clone(listelem):
     u_index = listelem[3]
     tag = listelem[6]
     link = listelem[7]
-    delfile = listelem[8]
     user_id = message.from_user.id
     BOT_PM_X = get_bot_pm(user_id)
 
