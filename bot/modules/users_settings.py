@@ -493,7 +493,7 @@ def edit_user_settings(update, context):
             msg = f"AniList Template for: {query.from_user.mention_html()} (<code>{str(user_id)}</code>)\n\n{escape(anilist)}"
             ani = sendMessage(msg, context.bot, message)
             Thread(args=(context.bot, update.message, ani)).start()
-    else data[2] == "showusertds":
+    elif data[2] == "showusertds":
        if user_id not in user_data and not user_data[user_id].get('usertd'):
             return query.answer(text="Old settings!")
        if user_id in user_data and user_data[user_id].get('usertd'):
