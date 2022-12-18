@@ -20,6 +20,7 @@ from .listener import MirrorLeechListener
 listener_dict = {}
 
 def _ytdl(bot, message, isZip=False, isLeech=False):
+    LOGGER.info(message)
     mssg = message.text
     user_id = message.from_user.id
     msg_id = message.message_id
