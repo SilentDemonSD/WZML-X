@@ -144,7 +144,7 @@ def _clone(message, bot):
     CATUSR = getUserTDs(user_id)[0] 
     if len(CATUSR) >= 1: u_index = 0
     listener = [bot, message, c_index, u_index, timeout, time(), tag, link, delfile]
-    if len(CATEGORY_NAMES) > 1 or len(CATUSR) > 1:
+    if (len(CATEGORY_NAMES) > 1 and len(CATUSR) == 0) or (len(CATEGORY_NAMES) >= 1 and len(CATUSR) > 1):
         text, btns = get_category_buttons('clone', timeout, msg_id, c_index, u_index, user_id)
         btn_listener[msg_id] = listener
         engine = sendMarkup(text, bot, message, btns)
