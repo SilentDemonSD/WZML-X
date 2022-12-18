@@ -500,7 +500,7 @@ def edit_user_settings(update, context):
        if user_id not in user_data and not user_data[user_id].get('usertd'):
             return query.answer(text="Old settings!")
        if user_id in user_data and user_data[user_id].get('usertd'):
-           GNames, GIDs, GIndex = getUserTDs(user_id)
+           GNames, GIDs, GIndex = getUserTDs(user_id, force=True)
            msg = f"<b>User TDs Info :</b>\n\n"
            for i, _ in enumerate(GNames):
                msg += f"{i+1}. <i>Name :</i> {GNames[i]}\n"
