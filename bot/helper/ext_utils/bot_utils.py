@@ -551,10 +551,7 @@ def change_filename(file_, user_id_, dirpath=None, up_path=None, all_edit=True, 
             )
         file_ = _newExtFileName
     elif SUFFIX:
-        if '.' in file_:
-            file_ = f"{ospath.splitext(file_)[0]}{SUFFIX}{ospath.splitext(file_)[1]}"
-        else:
-            file_ = f"{file_}{SUFFIX}"
+        file_ = f"{ospath.splitext(file_)[0]}{SUFFIX}{ospath.splitext(file_)[1]}" if '.' in file_ else f"{file_}{SUFFIX}"
 
     if (PREFIX or REMNAME or SUFFIX) and all_edit:
         new_path = ospath.join(dirpath, file_)
@@ -609,7 +606,7 @@ def getdailytasks(user_id, increase_task=False, upleech=0, upmirror=0, check_mir
             if DATABASE_URL:
                 DbManger().update_user_data(user_id)
             if check_leech: return lsize
-            if check_mirror: return msize
+            elif check_mirror: return msize
             return task
         else:
             task = user_data[user_id]['dly_tasks'][1]
@@ -623,17 +620,17 @@ def getdailytasks(user_id, increase_task=False, upleech=0, upmirror=0, check_mir
                 if DATABASE_URL:
                     DbManger().update_user_data(user_id)
             if check_leech: return lsize
-            if check_mirror: return msize
+            elif check_mirror: return msize
             return task
     else:
-        if increase_task: task = 1
+        if increase_task: task += 1
         elif upleech != 0: lsize += upleech
         elif upmirror != 0: msize += upmirror
         update_user_ldata(user_id, 'dly_tasks', [datetime.today(), task, lsize, msize])
         if DATABASE_URL:
             DbManger().update_user_data(user_id)
         if check_leech: return lsize
-        if check_mirror: return msize
+        elif check_mirror: return msize
         return task
 
 def is_paid(user_id):
