@@ -20,7 +20,6 @@ from .listener import MirrorLeechListener
 listener_dict = {}
 
 def _ytdl(bot, message, isZip=False, isLeech=False):
-    LOGGER.info(message)
     mssg = message.text
     user_id = message.from_user.id
     msg_id = message.message_id
@@ -176,7 +175,7 @@ Check all yt-dlp api options from this <a href='https://github.com/yt-dlp/yt-dlp
         engine = sendMarkup(text, bot, message, btns)
         _auto_start_dl(engine, msg_id, timeout)
     else:
-        _ytdl(extra, listener)
+        start_ytdlp(extra, listener)
     if multi > 1:
         sleep(4)
         nextmsg = type('nextmsg', (object, ), {'chat_id': message.chat_id, 'message_id': message.reply_to_message.message_id + 1})
