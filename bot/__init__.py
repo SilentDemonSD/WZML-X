@@ -136,6 +136,9 @@ if len(DOWNLOAD_DIR) == 0:
 elif not DOWNLOAD_DIR.endswith("/"):
     DOWNLOAD_DIR = f'{DOWNLOAD_DIR}/'
 
+SA_MAIL = environ.get('SA_MAIL', '')
+if len(SA_MAIL) == 0:
+    SA_MAIL = '#SA'    
 
 TGH_THUMB = environ.get('TGH_THUMB', '')
 if len(TGH_THUMB) == 0:
@@ -729,6 +732,7 @@ config_dict = {'ANILIST_ENABLED': ANILIST_ENABLED,
                'GD_INFO': GD_INFO,
                'FSUB': FSUB,
                'FSUB_CHANNEL_ID': FSUB_CHANNEL_ID,
+               'SA_MAIL': SA_MAIL,
                'SHORTENER': SHORTENER,
                'SHORTENER_API': SHORTENER_API,
                'SEARCH_API_LINK': SEARCH_API_LINK,
