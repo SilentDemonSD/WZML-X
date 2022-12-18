@@ -141,8 +141,8 @@ def get_user_settings(from_user, key=None):
             usertdstatus = "User TD Feature Disabled By Owner!"
             buttons.sbutton("Enable User TD", f"userset {user_id} usertdxdisable")
         usertds = ''
-        if usertd != "Not Exists"
-            usertds = "Exists"
+        if usertd != "Not Exists":
+            usertds = f"Exists ( Total : {len(GDrive)} )"
             buttons.sbutton("Change/Delete User TD(s)", f"userset {user_id} suniversal usertd mirror")
             buttons.sbutton("Show User TD(s)", f"userset {user_id} showusertds")
         else:
@@ -157,7 +157,7 @@ def get_user_settings(from_user, key=None):
 ├ Suffix : <b>{suffix}</b>
 ├ Remname : <b>{escape(remname)}</b>
 ├ User TD Mode : <b>{usertdstatus}</b>
-├ User TeamDrive(s) : <b>{usertds if usertds else usertd} (Total : {len(GDrive)})</b>
+├ User TeamDrive(s) : <b>{usertds if usertds else usertd}</b>
 ├ Daily Upload : <b>{dailyup} / {dailytlup} per day</b>
 '''
     elif key == 'leech':
