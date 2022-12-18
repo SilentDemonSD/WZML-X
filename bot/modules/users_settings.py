@@ -115,7 +115,10 @@ def get_user_settings(from_user, key=None):
         prefix = user_dict['mprefix'] if user_dict and user_dict.get('mprefix') else "Not Exists"
         suffix = user_dict['msuffix'] if user_dict and user_dict.get('msuffix') else "Not Exists"
         remname = user_dict['mremname'] if user_dict and user_dict.get('mremname') else "Not Exists"
-        usertd = (user_dict['usertd']; GDrive, _, _ = getUserTDs(user_id)) if user_dict and user_dict.get('usertd') else "Not Exists"
+        if user_dict and user_dict.get('usertd'):
+            usertd = user_dict['usertd']
+            GDrive, _, _ = getUserTDs(user_id)
+        else: usertd = "Not Exists"
         dailytlup = get_readable_file_size(config_dict['DAILY_MIRROR_LIMIT'] * 1024**3) if config_dict['DAILY_MIRROR_LIMIT'] else "Unlimited"
         dailyup = get_readable_file_size(user_dict.get('dly_tasks')[3]) if user_dict and user_dict.get('dly_tasks') and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) and config_dict['DAILY_MIRROR_LIMIT'] else "Unlimited"
 
