@@ -417,7 +417,10 @@ def confirm_clone(update, context):
         listenerInfo[3] = u_index
     elif data[1] == 'cancel':
         query.answer()
+        listelem = btn_listener[msg_id]
         del btn_listener[msg_id]
+        if listelem[8]:
+            GoogleDriveHelper(user_id=listelem[1].from_user.id).deletefile(listelem[7])
         return editMessage(f"<b>Download has been cancelled!</b>", message)
     elif data[1] == 'start':
         query.answer()
