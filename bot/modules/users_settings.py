@@ -24,7 +24,7 @@ example_dict = {'prefix':'1. <code>@your_channel_username or Anything</code>',
                 'msuffix':'1. <code>~ WZML</code>\n2. <code>~ @channelname</code>', 
                 'caption': '1.'+escape("<b>{filename}</b>\nJoin Now : @WeebZone_updates")+'\nCheck all available fillings options <a href="">HERE</a> and Make Custom Caption.', 
                 'userlog':'1. <code>-100xxxxxx or Channel ID</code>', 
-                'usertd':'1. <code>1TSYgS-88SkhkSuoS-KHSi7%^&s9HKj https://1.xyz.workers.dev/0:/Leecher</code>', 
+                'usertd':'1. <code>UserTD_Name 1TSYgS-88SkhkSuoS-KHSi7%^&s9HKj https://1.xyz.workers.dev/0:/Leecher</code>\n<b> Do not forget to add '+config_dict['SA_MAIL']+' to your TD as Content Manager</b>',
                 'remname':'<b>Syntax:</b> previousname:newname:times|previousname:newname:times\n\n1. Fork:Star|Here:Now:1|WZML\n\n<b>Output :</b> Star Now : Click Here.txt', 
                 'mremname':'<b>Syntax:</b> previousname:newname:times|previousname:newname:times\n\n1. Fork:Star|Here:Now:1|WZML\n\n<b>Output :</b> Star Now : Click Here.txt', 
                 'imdb_temp':'Check all available fillings options <a href="">HERE</a> and Make Custom Template.', 
@@ -146,10 +146,16 @@ def get_user_settings(from_user, key=None):
         usertds = ''
         if usertd != "Not Exists":
             usertds = f"Exists ( Total : {len(GDrive)} )"
-            buttons.sbutton("Change/Delete User TD(s)", f"userset {user_id} suniversal usertd mirror")
+            if config_dict['ENABLE_USR_TD']:
+              buttons.sbutton("Change/Delete User TD(s)", f"userset {user_id} suniversal usertd mirror")
+            else:
+              buttons.sbutton("Change/Delete User TD(s)", f"userset {user_id} usertdxdisable")  
             buttons.sbutton("Show User TD(s)", f"userset {user_id} showusertds")
         else:
-            buttons.sbutton("Set User TD(s)", f"userset {user_id} suniversal usertd mirror")
+            if config_dict['ENABLE_USR_TD']:
+              buttons.sbutton("Set User TD(s)", f"userset {user_id} suniversal usertd mirror")
+            else:
+              buttons.sbutton("Set User TD(s)", f"userset {user_id} usertdxdisable")
 
         buttons.sbutton("Back", f"userset {user_id} mback")
         buttons.sbutton("Close", f"userset {user_id} close", 'footer')
