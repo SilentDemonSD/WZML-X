@@ -162,9 +162,9 @@ def getGDriveUploadUtils(user_id, u_index, c_index):
         INDEXURL = CATEGORY_INDEX[c_index]
     return GDRIVEID, INDEXURL
 
-def getUserTDs(user_id):
+def getUserTDs(user_id, force=False):
     GDriveID, IndexURL, GDNames = [], [], []
-    if user_id in user_data and user_data[user_id].get('is_usertd') and user_data[user_id].get('usertd'):
+    if user_id in user_data and (user_data[user_id].get('is_usertd') or force) and user_data[user_id].get('usertd'):
         LOGGER.info("Using USER TD!")
         userDest = (user_data[user_id].get('usertd')).split('\n')
         if len(userDest) != 0:
