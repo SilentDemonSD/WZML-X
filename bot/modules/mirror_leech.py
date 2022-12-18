@@ -176,7 +176,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
                     link = reply_to.text.strip()
             elif isinstance(file_, list):
                 link = file_[-1].get_file().file_path
-            elif not isQbit and file_.mime_type != "application/x-bittorrent":
+            elif not isQbit and not isLeech and file_.mime_type != "application/x-bittorrent":
                 if (len(CATEGORY_NAMES) > 1 and len(CATUSR) == 0) or (len(CATEGORY_NAMES) >= 1 and len(CATUSR) > 1) and not isLeech:
                     btn_listener[msg_id] = [catlistener, extras, timeout]
                     text, btns = get_category_buttons('mir', timeout, msg_id, c_index, u_index, user_id)
