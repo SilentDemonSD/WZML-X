@@ -88,6 +88,7 @@ def _clone(message, bot):
     multi = 0
     c_index = 0
     u_index = None
+    delfile = False
     msg_id = message.message_id
 
     if len(args) > 1:
@@ -129,6 +130,7 @@ def _clone(message, bot):
                 link = shareDrive(link)
             elif is_filepress:
                 link = filepress(link)
+            delfile = True
             LOGGER.info(f"Generated GDrive Link: {link}")
             deleteMessage(bot, msg)
         except DirectDownloadLinkException as e:
@@ -141,7 +143,7 @@ def _clone(message, bot):
     timeout = 60
     CATUSR = getUserTDs(user_id)[0] 
     if len(CATUSR) >= 1: u_index = 0
-    listener = [bot, message, c_index, u_index, timeout, time(), tag, link]
+    listener = [bot, message, c_index, u_index, timeout, time(), tag, link, delfile]
     if len(CATEGORY_NAMES) > 1 or len(CATUSR) > 1:
         text, btns = get_category_buttons('clone', timeout, msg_id, c_index, u_index, user_id)
         btn_listener[msg_id] = listener
@@ -179,6 +181,7 @@ def start_clone(listner):
     u_index = listner[3]
     tag = listner[6]
     link = listner[7]
+    delfile = listener[8]
     user_id = message.from_user.id
     BOT_PM_X = get_bot_pm(user_id)
 
@@ -366,7 +369,7 @@ def start_clone(listner):
         else:
             msg = sendMarkup(result + cc + pmwarn + logwarn + warnmsg, bot, message, button.build_menu(2))
         Thread(target=auto_delete_upload_message, args=(bot, message, msg)).start()
-    if (is_gdtot or is_unified or is_udrive or is_sharer or is_sharedrive):
+    if delfile:
         gd.deletefile(link)
 
     if 'mirror_logs' in user_data:
