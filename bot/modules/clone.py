@@ -174,14 +174,14 @@ def _auto_start_dl(msg, msg_id, time_out):
         pass
 
 @new_thread
-def start_clone(listner):
-    bot = listner[0]
-    message = listner[1]
-    c_index = listner[2]
-    u_index = listner[3]
-    tag = listner[6]
-    link = listner[7]
-    delfile = listener[8]
+def start_clone(listelem):
+    bot = listelem[0]
+    message = listelem[1]
+    c_index = listelem[2]
+    u_index = listelem[3]
+    tag = listelem[6]
+    link = listelem[7]
+    delfile = listelem[8]
     user_id = message.from_user.id
     BOT_PM_X = get_bot_pm(user_id)
 
