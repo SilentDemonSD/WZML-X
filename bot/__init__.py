@@ -415,7 +415,7 @@ MIRROR_ENABLED = environ.get('MIRROR_ENABLED', '')
 MIRROR_ENABLED = MIRROR_ENABLED.lower() == 'true'
 
 QB_MIRROR_ENABLED = environ.get('QB_MIRROR_ENABLED', '')
-QB_MIRROR_ENABLED = MIRROR_ENABLED.lower() == 'true'
+QB_MIRROR_ENABLED = QB_MIRROR_ENABLED.lower() == 'true'
 
 LEECH_ENABLED = environ.get('LEECH_ENABLED', '')
 LEECH_ENABLED = LEECH_ENABLED.lower() == 'true'
