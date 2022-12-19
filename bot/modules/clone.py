@@ -99,11 +99,14 @@ def _clone(message, bot):
                 cargs = x.split(':')
                 dname = cargs[1].strip() if cargs[1] else None
                 utds, _, _ = getUserTDs(user_id)
+                LOGGER.info(dname)
                 if len(utds) != 0:
                     ltds = [td.lower() for td in utds]
+                    LOGGER.info(ltds)
                     if dname and dname.lower() in ltds:
                         shwbtns = False
                         u_index = ltds.index(dname.lower())
+                        LOGGER.info(u_index)
                 elif len(CATEGORY_NAMES) > 1:
                     ltds = [td.lower() for td in CATEGORY_NAMES]
                     if dname and dname.lower() in ltds:
