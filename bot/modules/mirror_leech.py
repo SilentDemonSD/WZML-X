@@ -107,10 +107,11 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
     link = ''
     c_index = 0
     u_index = None
+    shwbtns = True
     timeout = 60
 
     if len(message_args) > 1:
-        args = mesg[0].split(maxsplit=3)
+        args = mesg[0].split(maxsplit=4)
         for x in args:
             x = x.strip()
             if x == 's':
@@ -126,6 +127,21 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
                 ratio = dargs[1] if dargs[1] else None
                 if len(dargs) == 3:
                     seed_time = dargs[2] if dargs[2] else None
+            elif x.startswith('c:'):
+                index += 1
+                cargs = x.split(':')
+                dname = cargs[1] if cargs[1] else None
+                utds, _, _ = getUserTDs(user_id)
+                if len(utds) != 0:
+                    ltds = [td.lower() for td in utds]
+                    if dname and dname.lower() in ltds:
+                        shwbtns = False
+                        u_index = ltds.index(dname.lower())
+                elif len(CATEGORY_NAMES) > 1:
+                    ltds = [td.lower() for td in CATEGORY_NAMES]
+                    if dname and dname.lower() in ltds:
+                        shwbtns = False
+                        c_index = ltds.index(dname.lower())
             elif x.isdigit():
                 multi = int(x)
                 mi = index
@@ -231,7 +247,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
 
     LOGGER.info(f"Link: {link}")
 
-    if ((len(CATEGORY_NAMES) > 1 and len(CATUSR) == 0) or (len(CATEGORY_NAMES) >= 1 and len(CATUSR) > 1)) and not isLeech:
+    if ((len(CATEGORY_NAMES) > 1 and len(CATUSR) == 0) or (len(CATEGORY_NAMES) >= 1 and len(CATUSR) > 1)) and not isLeech and shwbtns:
         btn_listener[msg_id] = [catlistener, extras, timeout]
         text, btns = get_category_buttons('mir', timeout, msg_id, c_index, u_index, user_id)
         engine = sendMarkup(text, bot, message, btns)
