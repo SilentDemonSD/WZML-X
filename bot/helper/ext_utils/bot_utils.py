@@ -522,7 +522,7 @@ def change_filename(file_, user_id_, dirpath=None, up_path=None, all_edit=True, 
         file_ = ' '.join(file_.split()[1:])
     if REMNAME:
         if not REMNAME.startswith('|'):
-            REMNAME = f"|{REMNAME}"
+            REMNAME = f"|{REMNAME.replace('\s', ' ')}"
         slit = REMNAME.split("|")
         __newFileName = ospath.splitext(file_)[0]
         for rep in range(1, len(slit)):
