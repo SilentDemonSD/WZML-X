@@ -112,6 +112,10 @@ def _clone(message, bot):
                 multi = int(link)
                 mi = index
                 link = ''
+        if multi == 0:
+            message_args = args[1].split(maxsplit=index)
+            if len(message_args) > index:
+                link = message_args[index].strip()
         if message.from_user.username:
             tag = f"@{message.from_user.username}"
         else:
@@ -124,7 +128,7 @@ def _clone(message, bot):
             tag = f"@{reply_to.from_user.username}"
         else:
             tag = reply_to.from_user.mention_html(reply_to.from_user.first_name)
-
+    LOGGER.info(link)
     if not (is_gdrive_link(link) or (link.strip().isdigit() and multi == 0) or is_gdtot_link(link) or is_unified_link(link) or is_udrive_link(link) or is_sharer_link(link) or is_sharedrive_link(link) or is_filepress_link(link)):
         return sendMessage("Send Gdrive or GDToT/AppDrive/DriveApp/GDFlix/DriveAce/DriveLinks/DriveBit/DriveSharer/Anidrive/Driveroot/Driveflix/Indidrive/drivehub(in)/HubDrive/DriveHub(ws)/KatDrive/Kolop/DriveFire/DriveBuzz/SharerPw/ShareDrive link along with command or by replying to the link by command\n\n<b>Multi links only by replying to first link/file:</b>\n<code>/cmd</code> 10(number of links/files)", bot, message)
 
