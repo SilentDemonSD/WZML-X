@@ -80,7 +80,7 @@ def _clone(message, bot):
             return
         TIME_GAP_STORE[message.from_user.id] = time()
 
-    args = message.text.split(maxsplit=1)
+    mesg = message.text
     reply_to = message.reply_to_message
     link = ''
     index = 1
@@ -90,9 +90,10 @@ def _clone(message, bot):
     shwbtns = True
     msg_id = message.message_id
 
-    if len(args) > 1:
-        args = args[1].split(maxsplit=2)
+    if len(mesg.split(maxsplit=1)) > 1:
+        args = mesg.split(maxsplit=2)
         for x in args:
+            x = x.strip()
             if x.startswith('c:'):
                 index += 1
                 cargs = x.split(':')
@@ -108,12 +109,12 @@ def _clone(message, bot):
                     if dname and dname.lower() in ltds:
                         shwbtns = False
                         c_index = ltds.index(dname.lower())
-            elif x.strip().isdigit():
+            elif x.isdigit():
                 multi = int(link)
                 mi = index
                 link = ''
         if multi == 0:
-            message_args = args[1].split(maxsplit=index)
+            message_args = mesg.split(maxsplit=index)
             if len(message_args) > index:
                 link = message_args[index].strip()
         if message.from_user.username:
