@@ -233,7 +233,7 @@ class MirrorLeechListener:
     def onUploadComplete(self, link: str, size, files, folders, typ, name):
         buttons = ButtonMaker()
         mesg = self.message.text.split('\n')
-        message_args = mesg[0].split(' ', maxsplit=1)
+        message_args = mesg[0].split(maxsplit=1)
         reply_to = self.message.reply_to_message
         user_id_ = self.message.from_user.id
         file_ = escape(name)
@@ -357,7 +357,7 @@ class MirrorLeechListener:
                         buttons.buildbutton(f"🔗 Source Link", f"https://telegra.ph/{link}")
                     elif is_url(mesg):
                         source_link = mesg
-                        if source_link.startswith(("|", "pswd: ")):
+                        if source_link.startswith(("|", "pswd: ", "c:")):
                             pass
                         else:
                             buttons.buildbutton(f"🔗 Source Link", source_link)
@@ -509,7 +509,7 @@ class MirrorLeechListener:
                                 buttons.buildbutton(f"🔗 Source Link", f"https://telegra.ph/{link}")
                             elif is_url(mesg):
                                 source_link = mesg
-                                if source_link.startswith(("|", "pswd: ")):
+                                if source_link.startswith(("|", "pswd: ", "c:")):
                                     pass
                                 else:
                                     buttons.buildbutton(f"🔗 Source Link", source_link)
