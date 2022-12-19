@@ -450,7 +450,7 @@ def ytdl_confirm(update, context):
         del btn_listener[msg_id]
         return _ytdl(extra, listener)
     timeout = listnerInfo[2] - (time() - extra[6])
-    text, btns = get_category_btns('ytdlp', timeout, msg_id, extra[4], extra[5], listener[1].from_user.id)
+    text, btns = get_category_buttons('ytdlp', timeout, msg_id, extra[4], extra[5], listener[1].from_user.id)
     editMessage(text, message, btns)
 
 def _auto_cancel(msg, task_id):
