@@ -522,7 +522,8 @@ def change_filename(file_, user_id_, dirpath=None, up_path=None, all_edit=True, 
         file_ = ' '.join(file_.split()[1:])
     if REMNAME:
         if not REMNAME.startswith('|'):
-            REMNAME = f"|{REMNAME.replace('\s', ' ')}"
+            REMNAME = f"|{REMNAME}"
+        REMNAME = REMNAME.replace('\s', ' ')
         slit = REMNAME.split("|")
         __newFileName = ospath.splitext(file_)[0]
         for rep in range(1, len(slit)):
@@ -536,9 +537,11 @@ def change_filename(file_, user_id_, dirpath=None, up_path=None, all_edit=True, 
         file_ = __newFileName + ospath.splitext(file_)[1]
         LOGGER.info("Remname : "+file_)
     if PREFIX:
+        PREFIX = PREFIX.replace('\s', ' ')
         if not file_.startswith(PREFIX):
             file_ = f"{PREFIX}{file_}"
     if SUFFIX and not mirror_type:
+        SUFFIX = SUFFIX.replace('\s', ' ')
         sufLen = len(SUFFIX)
         fileDict = file_.split('.')
         _extIn = 1 + len(fileDict[-1])
@@ -551,6 +554,7 @@ def change_filename(file_, user_id_, dirpath=None, up_path=None, all_edit=True, 
             )
         file_ = _newExtFileName
     elif SUFFIX:
+        SUFFIX = SUFFIX.replace('\s', ' ')
         file_ = f"{ospath.splitext(file_)[0]}{SUFFIX}{ospath.splitext(file_)[1]}" if '.' in file_ else f"{file_}{SUFFIX}"
 
     if (PREFIX or REMNAME or SUFFIX) and all_edit:
@@ -561,7 +565,7 @@ def change_filename(file_, user_id_, dirpath=None, up_path=None, all_edit=True, 
     cap_mono = ""
     cfont = config_dict['CAPTION_FONT'] if not FSTYLE else FSTYLE
     if CAPTION and all_edit:
-        CAPTION = CAPTION.replace('\|', '%%')
+        CAPTION = CAPTION.replace('\|', '%%').replace('\s', ' ')
         slit = CAPTION.split("|")
         cap_mono = slit[0].format(
             filename = file_,
