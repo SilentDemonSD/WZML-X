@@ -407,6 +407,9 @@ def load_config():
     MIRROR_ENABLED = environ.get('MIRROR_ENABLED', '')
     MIRROR_ENABLED = MIRROR_ENABLED.lower() == 'true'
 
+    QB_MIRROR_ENABLED = environ.get('QB_MIRROR_ENABLED', '')
+    QB_MIRROR_ENABLED = QB_MIRROR_ENABLED.lower() == 'true'
+
     LEECH_ENABLED = environ.get('LEECH_ENABLED', '')
     LEECH_ENABLED = LEECH_ENABLED.lower() == 'true'
 
@@ -716,6 +719,7 @@ def load_config():
                         'VIEW_LINK': VIEW_LINK,
                         'LEECH_ENABLED': LEECH_ENABLED,
                         'MIRROR_ENABLED': MIRROR_ENABLED,
+                        'QB_MIRROR_ENABLED': QB_MIRROR_ENABLED,
                         'WATCH_ENABLED': WATCH_ENABLED,
                         'CLONE_ENABLED': CLONE_ENABLED,
                         'ANILIST_ENABLED': ANILIST_ENABLED,
