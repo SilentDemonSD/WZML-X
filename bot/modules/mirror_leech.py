@@ -132,7 +132,6 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
                 cargs = x.split(':')
                 dname = cargs[1].strip() if cargs[1] else None
                 utds, _, _ = getUserTDs(user_id)
-                LOGGER.info(dname)
                 if len(utds) != 0:
                     ltds = [td.lower() for td in utds]
                     if dname and dname.lower() in ltds:
@@ -140,11 +139,9 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
                         u_index = ltds.index(dname.lower())
                 elif len(CATEGORY_NAMES) > 1:
                     ltds = [td.lower() for td in CATEGORY_NAMES]
-                    LOGGER.info(ltds)
                     if dname and dname.lower() in ltds:
                         shwbtns = False
                         c_index = ltds.index(dname.lower())
-                        LOGGER.info(c_index)
             elif x.isdigit():
                 multi = int(x)
                 mi = index
@@ -222,6 +219,8 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
             help_msg += "\n<code>/qbcmd</code> {link} pswd: xx [zip/unzip]"
             help_msg += "\n\n<b>By replying to link/file:</b>"
             help_msg += "\n<code>/qbcmd</code> pswd: xx [zip/unzip]"
+            help_msg += "\n\n<b>Category selection:</b>"
+            help_msg += "\n<code>/cmd</code> c:{cat_name} {link} or by replying to {file/link} where cat_name is Specified Drive name (same as specified but not case sensitive)"
             help_msg += "\n\n<b>Bittorrent selection:</b>"
             help_msg += "\n<code>/cmd</code> <b>s</b> {link} or by replying to {file/link}"
             help_msg += "\n\n<b>Qbittorrent seed</b>:"
@@ -236,6 +235,8 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
             help_msg += "\n<code>/cmd</code> |newname pswd: xx [zip/unzip]"
             help_msg += "\n\n<b>Direct link authorization:</b>"
             help_msg += "\n<code>/cmd</code> {link} |newname pswd: xx\nusername\npassword"
+            help_msg += "\n\n<b>Category selection:</b>"
+            help_msg += "\n<code>/cmd</code> c:{cat_name} {link} or by replying to {file/link} where cat_name is Specified Drive name (same as specified but not case sensitive)"
             help_msg += "\n\n<b>Bittorrent selection:</b>"
             help_msg += "\n<code>/cmd</code> <b>s</b> {link} or by replying to {file/link}"
             help_msg += "\n\n<b>Bittorrent seed</b>:"
