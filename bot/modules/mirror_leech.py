@@ -130,9 +130,9 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
             elif x.startswith('c:'):
                 index += 1
                 cargs = x.split(':')
-                dname = cargs[1] if cargs[1] else None
+                dname = cargs[1].strip() if cargs[1] else None
                 utds, _, _ = getUserTDs(user_id)
-                LOGGER.info(utds)
+                LOGGER.info(dname)
                 if len(utds) != 0:
                     ltds = [td.lower() for td in utds]
                     if dname and dname.lower() in ltds:
