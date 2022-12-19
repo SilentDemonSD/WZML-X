@@ -75,30 +75,48 @@ def _clone(message, bot):
                 return sendMessage(f"<b>Bᴏᴛ Tᴏᴛᴀʟ Tᴀsᴋ Lɪᴍɪᴛ : {TOTAL_TASKS_LIMIT}\nTᴀsᴋs Pʀᴏᴄᴇssɪɴɢ : {total_task}\n#total limit exceed </b>", bot ,message)
             if USER_TASKS_LIMIT == get_user_task(user_id):
                 return sendMessage(f"<b>Bᴏᴛ Usᴇʀ Tᴀsᴋ Lɪᴍɪᴛ : {USER_TASKS_LIMIT} \nYᴏᴜʀ Tᴀsᴋs : {get_user_task(user_id)}\n#user limit exceed</b>", bot ,message)
-
-    if user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id):
         time_gap = timegap_check(message)
         if time_gap:
             return
         TIME_GAP_STORE[message.from_user.id] = time()
 
-    args = message.text.split()
+    args = message.text.split(maxsplit=1)
     reply_to = message.reply_to_message
     link = ''
+    index = 1
     multi = 0
     c_index = 0
     u_index = None
+    shwbtns = True
     msg_id = message.message_id
 
     if len(args) > 1:
-        link = args[1].strip()
-        if link.strip().isdigit():
-            multi = int(link)
-            link = ''
-        elif message.from_user.username:
+        args = args[1].split(maxsplit=2)
+        for x in args:
+            if x.startswith('c:'):
+                index += 1
+                cargs = x.split(':')
+                dname = cargs[1].strip() if cargs[1] else None
+                utds, _, _ = getUserTDs(user_id)
+                if len(utds) != 0:
+                    ltds = [td.lower() for td in utds]
+                    if dname and dname.lower() in ltds:
+                        shwbtns = False
+                        u_index = ltds.index(dname.lower())
+                elif len(CATEGORY_NAMES) > 1:
+                    ltds = [td.lower() for td in CATEGORY_NAMES]
+                    if dname and dname.lower() in ltds:
+                        shwbtns = False
+                        c_index = ltds.index(dname.lower())
+            elif x.strip().isdigit():
+                multi = int(link)
+                mi = index
+                link = ''
+        if message.from_user.username:
             tag = f"@{message.from_user.username}"
         else:
             tag = message.from_user.mention_html(message.from_user.first_name)
+
     if reply_to:
         if len(link) == 0:
             link = reply_to.text.split(maxsplit=1)[0].strip()
@@ -114,7 +132,7 @@ def _clone(message, bot):
     CATUSR = getUserTDs(user_id)[0] 
     if len(CATUSR) >= 1: u_index = 0
     listener = [bot, message, c_index, u_index, timeout, time(), tag, link]
-    if (len(CATEGORY_NAMES) > 1 and len(CATUSR) == 0) or (len(CATEGORY_NAMES) >= 1 and len(CATUSR) > 1):
+    if ((len(CATEGORY_NAMES) > 1 and len(CATUSR) == 0) or (len(CATEGORY_NAMES) >= 1 and len(CATUSR) > 1)) and shwbtns:
         text, btns = get_category_buttons('clone', timeout, msg_id, c_index, u_index, user_id)
         btn_listener[msg_id] = listener
         engine = sendMarkup(text, bot, message, btns)
@@ -126,7 +144,7 @@ def _clone(message, bot):
         sleep(4)
         nextmsg = type('nextmsg', (object, ), {'chat_id': message.chat_id, 'message_id': message.reply_to_message.message_id + 1})
         cmsg = message.text.split()
-        cmsg[1] = f"{multi - 1}"
+        cmsg[mi] = f"{multi - 1}"
         nextmsg = sendMessage(" ".join(cmsg), bot, nextmsg)
         nextmsg.from_user.id = message.from_user.id
         sleep(4)
