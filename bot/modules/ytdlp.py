@@ -486,7 +486,9 @@ ytdl_zip_leech_handler = CommandHandler(BotCommands.YtdlZipLeechCommand, ytdlZip
 
 
 quality_handler = CallbackQueryHandler(select_format, pattern="qu", run_async=True)
+ytdl_confirm_handler = CallbackQueryHandler(ytdl_confirm, pattern="ytdlp")
 
+dispatcher.add_handler(ytdl_confirm_handler)
 dispatcher.add_handler(ytdl_handler)
 dispatcher.add_handler(ytdl_zip_handler)
 dispatcher.add_handler(ytdl_leech_handler)
