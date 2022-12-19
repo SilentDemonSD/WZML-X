@@ -408,8 +408,10 @@ def manga(update: Update, _):
         buttons = [
                 [InlineKeyboardButton("More Info", url=info)]
             ]
-        image = json.get("bannerImage", False)
+        bimage = json.get("bannerImage", False)
+        image = f"https://img.anili.st/media/{json.get('id')}"
         msg += f"_{json.get('description', None)}_"
+        msg = msg.replace('<br', '')
         if image:
             try:
                 update.effective_message.reply_photo(photo = image, caption = msg, parse_mode=ParseMode.MARKDOWN, reply_markup=InlineKeyboardMarkup(buttons))
