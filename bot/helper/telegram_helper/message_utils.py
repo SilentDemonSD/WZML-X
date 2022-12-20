@@ -186,6 +186,14 @@ def forcesub(bot, message, tag):
             btn.buildbutton(key, value)
         return sendMessage(f'💡 {tag},\nYou have to join our channel!\n🔻 Click on the below button to Join And Try Again!', bot, message, btn.build_menu(2))
 
+def isAdmin(message, user_id=None):
+    if message.chat.type != message.chat.PRIVATE:
+        if user_id:
+            member = message.chat.get_member(user_id)
+        else:
+            member = message.chat.get_member(message.from_user.id)
+        return member.status in [member.ADMINISTRATOR, member.CREATOR] or member.is_anonymous
+
 def auto_delete_message(bot, cmd_message, bot_message):
     if config_dict['AUTO_DELETE_MESSAGE_DURATION'] != -1:
         sleep(config_dict['AUTO_DELETE_MESSAGE_DURATION'])

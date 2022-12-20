@@ -9,7 +9,7 @@ from pyrogram import enums
 
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.ext_utils.timegap import timegap_check
-from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, sendMarkup, deleteMessage, delete_all_messages, update_all_messages, sendStatusMessage, auto_delete_upload_message, auto_delete_message, sendFile, sendPhoto
+from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, sendMarkup, deleteMessage, delete_all_messages, update_all_messages, sendStatusMessage, auto_delete_upload_message, auto_delete_message, sendFile, sendPhoto, forcesub, isAdmin
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.mirror_utils.status_utils.clone_status import CloneStatus
@@ -25,6 +25,9 @@ def _clone(message, bot):
     buttons = ButtonMaker()
     #if force_sub(message):
         #return
+
+
+
     if config_dict['FSUB']:
         try:
             user = bot.get_chat_member(f"{config_dict['FSUB_CHANNEL_ID']}", message.from_user.id)
@@ -123,6 +126,10 @@ def _clone(message, bot):
             tag = f"@{message.from_user.username}"
         else:
             tag = message.from_user.mention_html(message.from_user.first_name)
+
+    if not isAdmin(message):
+        if forcesub(bot, message, tag):
+            return
 
     if reply_to:
         if len(link) == 0:
