@@ -107,6 +107,8 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
     link = ''
     c_index = 0
     u_index = None
+    CATUSR = getUserTDs(user_id)[0] 
+    if len(CATUSR) >= 1: u_index = 0
     shwbtns = True
     timeout = 60
 
@@ -131,7 +133,7 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
                 index += 1
                 cargs = x.split(':')
                 dname = cargs[1].strip() if cargs[1] else None
-                utds, _, _ = getUserTDs(user_id)
+                utds = getUserTDs(user_id)[0]
                 if len(utds) != 0:
                     ltds = [td.lower() for td in utds]
                     if dname and dname.lower() in ltds:
@@ -172,8 +174,6 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
         link = re_split(r"pswd:|\|", link)[0]
         link = link.strip()
 
-    CATUSR = getUserTDs(user_id)[0] 
-    if len(CATUSR) >= 1: u_index = 0
     catlistener = [bot, message, isZip, extract, isQbit, isLeech, pswd, tag, select, seed]
     extras = [link, name, ratio, seed_time, c_index, u_index, time()]
 
