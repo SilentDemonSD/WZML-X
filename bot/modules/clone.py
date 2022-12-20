@@ -21,8 +21,6 @@ from telegram import ParseMode
 from bot.helper.telegram_helper.button_build import ButtonMaker
 
 def _clone(message, bot):
-    if forcesub(bot, message, tag):
-        return
     user_id = message.from_user.id
     buttons = ButtonMaker()
     #if force_sub(message):
