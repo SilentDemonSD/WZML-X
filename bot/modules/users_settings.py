@@ -10,7 +10,7 @@ from telegram import ParseMode
 from threading import Thread
 
 from bot import bot, user_data, dispatcher, LOGGER, config_dict, DATABASE_URL, OWNER_ID
-from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, sendPhoto
+from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, sendPhoto
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
@@ -235,7 +235,7 @@ def update_user_settings(message, from_user, key):
 
 def user_settings(update, context):
     msg, button = get_user_settings(update.message.from_user)
-    buttons_msg  = sendMarkup(msg, context.bot, update.message, button)
+    buttons_msg  = sendMessage(msg, context.bot, update.message, button)
 
 def set_addons(update, context, data, omsg, key):
     message = update.message
@@ -351,7 +351,7 @@ def edit_user_settings(update, context):
         editMessage('Send a photo to save it as custom Thumbnail.', message, buttons.build_menu(2))
         partial_fnc = partial(set_thumb, omsg=message)
         photo_handler = MessageHandler(filters=Filters.photo & Filters.chat(message.chat.id) & Filters.user(user_id),
-                                       callback=partial_fnc, run_async=True)
+                                       callback=partial_fnc)
         dispatcher.add_handler(photo_handler)
         while handler_dict[user_id]:
             if time() - start_time > 60:
@@ -390,7 +390,7 @@ def edit_user_settings(update, context):
         partial_fnc = partial(set_addons, data=data[3], omsg=message, key=data[4])
         UNI_HANDLER = f"{data[3]}_handler"
         UNI_HANDLER = MessageHandler(filters=Filters.text & Filters.chat(message.chat.id) & Filters.user(user_id),
-                                       callback=partial_fnc, run_async=True)
+                                       callback=partial_fnc)
         dispatcher.add_handler(UNI_HANDLER)
         while handler_dict[user_id]:
             if time() - start_time > 60:
@@ -560,12 +560,12 @@ def sendPaidDetails(update, context):
 
 
 pdetails_handler = CommandHandler(command=BotCommands.PaidUsersCommand, callback=sendPaidDetails,
-                                    filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
+                                    filters=CustomFilters.owner_filter | CustomFilters.sudo_user)
 users_settings_handler = CommandHandler(BotCommands.UsersCommand, send_users_settings,
-                                            filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
+                                            filters=CustomFilters.owner_filter | CustomFilters.sudo_user)
 user_set_handler  = CommandHandler(BotCommands.UserSetCommand, user_settings,
-                                   filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
-but_set_handler = CallbackQueryHandler(edit_user_settings, pattern="userset", run_async=True)
+                                   filters=CustomFilters.authorized_chat | CustomFilters.authorized_user)
+but_set_handler = CallbackQueryHandler(edit_user_settings, pattern="userset")
 
 dispatcher.add_handler(user_set_handler )
 dispatcher.add_handler(but_set_handler)

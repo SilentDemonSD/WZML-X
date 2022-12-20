@@ -162,23 +162,23 @@ def removePaid(update, context):
 
 
 authorize_handler = CommandHandler(BotCommands.AuthorizeCommand, authorize,
-                                   filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
+                                   filters=CustomFilters.owner_filter | CustomFilters.sudo_user)
 unauthorize_handler = CommandHandler(BotCommands.UnAuthorizeCommand, unauthorize,
-                                   filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
+                                   filters=CustomFilters.owner_filter | CustomFilters.sudo_user)
 addsudo_handler = CommandHandler(BotCommands.AddSudoCommand, addSudo,
-                                   filters=CustomFilters.owner_filter, run_async=True)
+                                   filters=CustomFilters.owner_filter)
 removesudo_handler = CommandHandler(BotCommands.RmSudoCommand, removeSudo,
-                                   filters=CustomFilters.owner_filter, run_async=True)
+                                   filters=CustomFilters.owner_filter)
 
 
 addleechlog_handler = CommandHandler(BotCommands.AddleechlogCommand, addleechlog,
-                                    filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
+                                    filters=CustomFilters.owner_filter | CustomFilters.sudo_user)
 rmleechlog_handler = CommandHandler(BotCommands.RmleechlogCommand, rmleechlog,
-                                    filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
+                                    filters=CustomFilters.owner_filter | CustomFilters.sudo_user)
 addpaid_handler = CommandHandler(BotCommands.AddPaidCommand, addPaid,
-                                    filters=CustomFilters.owner_filter, run_async=True)
+                                    filters=CustomFilters.owner_filter)
 removepaid_handler = CommandHandler(BotCommands.RmPaidCommand, removePaid,
-                                    filters=CustomFilters.owner_filter, run_async=True)
+                                    filters=CustomFilters.owner_filter)
 
 
 dispatcher.add_handler(authorize_handler)

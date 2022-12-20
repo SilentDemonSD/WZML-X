@@ -7,7 +7,7 @@ from requests import request
 from re import split as re_split
 
 from bot import *
-from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, auto_delete_upload_message, auto_delete_message, isAdmin, forcesub
+from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, auto_delete_upload_message, auto_delete_message, isAdmin, forcesub
 from bot.helper.ext_utils.bot_utils import *
 from bot.helper.ext_utils.timegap import timegap_check
 from bot.helper.mirror_utils.download_utils.yt_dlp_download_helper import YoutubeDLHelper
@@ -52,7 +52,7 @@ def _ytdl(bot, message, isZip=False, isLeech=False):
             buttons.buildbutton("Click Here to Start Me", f"{botstart}")
             startwarn = f"Dear {uname},\n\n<b>I found that you haven't started me in PM (Private Chat) yet.</b>\n\n" \
                         f"From now on i will give link and leeched files in PM and log channel only"
-            reply_message = sendMarkup(startwarn, bot, message, buttons.build_menu(2))
+            reply_message = sendMessage(startwarn, bot, message, buttons.build_menu(2))
             Thread(target=auto_delete_message, args=(bot, message, reply_message)).start()
             return reply_message
 
@@ -84,7 +84,9 @@ def _ytdl(bot, message, isZip=False, isLeech=False):
     if len(args) > 1:
         for x in args:
             x = x.strip()
-            if x == 's':
+            if x in ['|', 'pswd:', 'opt:']:
+                break
+            elif x == 's':
                select = True
                index += 1
             elif x.strip().isdigit():
@@ -162,7 +164,7 @@ Check all yt-dlp api options from this <a href='https://github.com/yt-dlp/yt-dlp
         timeout = 60
         btn_listener[msg_id] = [extra, listener, timeout]
         text, btns = get_category_buttons('ytdlp', timeout, msg_id, c_index, u_index, user_id)
-        engine = sendMarkup(text, bot, message, btns)
+        engine = sendMessage(text, bot, message, btns)
         _auto_start_dl(engine, msg_id, timeout)
     else:
         start_ytdlp(extra, listener)
@@ -335,7 +337,7 @@ def start_ytdlp(extra, ytdlp_listener):
             buttons.sbutton("Cancel", f"qu {msg_id} cancel")
             YTBUTTONS = buttons.build_menu(3)
             listener_dict[msg_id] = [listener, user_id, link, name, YTBUTTONS, opt, formats_dict]
-            bmsg = sendMarkup('Choose Playlist Videos Quality:', bot, message, YTBUTTONS)
+            bmsg = sendMessage('Choose Playlist Videos Quality:', bot, message, YTBUTTONS)
         else:
             formats = result.get('formats')
             if formats is not None:
@@ -385,7 +387,7 @@ def start_ytdlp(extra, ytdlp_listener):
             buttons.sbutton("Cancel", f"qu {msg_id} cancel")
             YTBUTTONS = buttons.build_menu(2)
             listener_dict[msg_id] = [listener, user_id, link, name, YTBUTTONS, opt, formats_dict]
-            bmsg = sendMarkup('Choose Video Quality:', bot, message, YTBUTTONS)
+            bmsg = sendMessage('Choose Video Quality:', bot, message, YTBUTTONS)
         Thread(target=_auto_cancel, args=(bmsg, msg_id)).start()
 
 @new_thread
@@ -466,16 +468,16 @@ def ytdlZipleech(update, context):
 
 authfilter = CustomFilters.authorized_chat if config_dict['WATCH_ENABLED'] is True else CustomFilters.owner_filter
 ytdl_handler = CommandHandler(BotCommands.YtdlCommand, ytdl,
-                                    filters=authfilter | CustomFilters.authorized_user, run_async=True)
+                                    filters=authfilter | CustomFilters.authorized_user)
 ytdl_zip_handler = CommandHandler(BotCommands.YtdlZipCommand, ytdlZip,
-                                    filters=authfilter | CustomFilters.authorized_user, run_async=True)
+                                    filters=authfilter | CustomFilters.authorized_user)
 ytdl_leech_handler = CommandHandler(BotCommands.YtdlLeechCommand, ytdlleech,
-                                    filters=authfilter | CustomFilters.authorized_user, run_async=True)
+                                    filters=authfilter | CustomFilters.authorized_user)
 ytdl_zip_leech_handler = CommandHandler(BotCommands.YtdlZipLeechCommand, ytdlZipleech,
-                                    filters=authfilter | CustomFilters.authorized_user, run_async=True)
+                                    filters=authfilter | CustomFilters.authorized_user)
 
 
-quality_handler = CallbackQueryHandler(select_format, pattern="qu", run_async=True)
+quality_handler = CallbackQueryHandler(select_format, pattern="qu")
 ytdl_confirm_handler = CallbackQueryHandler(ytdl_confirm, pattern="ytdlp")
 
 dispatcher.add_handler(ytdl_confirm_handler)

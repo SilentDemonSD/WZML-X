@@ -7,7 +7,7 @@ from mega import (MegaApi, MegaListener, MegaRequest, MegaTransfer, MegaError)
 
 from bot import LOGGER, download_dict, download_dict_lock, config_dict, \
                 user_data, OWNER_ID
-from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, sendStatusMessage, sendStatusMessage, sendFile
+from bot.helper.telegram_helper.message_utils import sendMessage, sendStatusMessage, sendStatusMessage, sendFile
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, setInterval, get_mega_link_type, is_sudo, is_paid, getdailytasks
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.ext_utils.fs_utils import get_base_name, check_storage_threshold
@@ -173,7 +173,7 @@ def add_mega_download(mega_link: str, path: str, listener, name: str):
             smsg, button = GoogleDriveHelper().drive_list(mname, True)
             if smsg:
                 if config_dict['TELEGRAPH_STYLE']:
-                    sendMarkup("File/Folder is already available in Drive.\nHere are the search results:", listener.bot, listener.message, button)
+                    sendMessage("File/Folder is already available in Drive.\nHere are the search results:", listener.bot, listener.message, button)
                 else:
                     sendFile(listener.bot, listener.message, button, f"File/Folder is already available in Drive. Here are the search results:\n\n{smsg}")
                 api.removeListener(mega_listener)

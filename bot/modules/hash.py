@@ -94,5 +94,5 @@ def hash(update, context):
 
 
 hash_handler = CommandHandler(BotCommands.HashCommand, hash,
-    filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
+    filters=CustomFilters.authorized_chat | CustomFilters.authorized_user)
 dispatcher.add_handler(hash_handler)

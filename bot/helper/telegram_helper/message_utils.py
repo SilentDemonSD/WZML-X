@@ -16,38 +16,21 @@ from bot import LOGGER, status_reply_dict, status_reply_dict_lock, \
 from bot.helper.ext_utils.bot_utils import get_readable_message, setInterval
 
 
-def sendMessage(text, bot, message):
+def sendMessage(text, bot, message, reply_markup=None):
     try:
-        return bot.sendMessage(message.chat_id,
-                            reply_to_message_id=message.message_id,
-                            text=text, allow_sending_without_reply=True, parse_mode='HTML', disable_web_page_preview=True)
+        return bot.sendMessage(message.chat_id, reply_to_message_id=message.message_id,
+                               text=text, reply_markup=reply_markup)
     except RetryAfter as r:
         LOGGER.warning(str(r))
         sleep(r.retry_after * 1.5)
-        return sendMessage(text, bot, message)
-    except Exception as e:
-        LOGGER.error(str(e))
-        return
-
-def sendMarkup(text, bot, message, reply_markup: InlineKeyboardMarkup):
-    try:
-        return bot.sendMessage(message.chat_id,
-                            reply_to_message_id=message.message_id,
-                            text=text, reply_markup=reply_markup, allow_sending_without_reply=True,
-                            parse_mode='HTML', disable_web_page_preview=True)
-    except RetryAfter as r:
-        LOGGER.warning(str(r))
-        sleep(r.retry_after * 1.5)
-        return sendMarkup(text, bot, message, reply_markup)
+        return sendMessage(text, bot, message, reply_markup)
     except Exception as e:
         LOGGER.error(str(e))
         return
 
 def editMessage(text, message, reply_markup=None):
     try:
-        bot.editMessageText(text=text, message_id=message.message_id,
-                              chat_id=message.chat.id,reply_markup=reply_markup,
-                              parse_mode='HTML', disable_web_page_preview=True)
+        bot.editMessageText(text=text, message_id=message.message_id, chat_id=message.chat.id, reply_markup=reply_markup)
     except RetryAfter as r:
         LOGGER.warning(str(r))
         sleep(r.retry_after * 1.5)
@@ -71,7 +54,7 @@ def editCaption(text, message, reply_markup=None):
 def sendRss(text, bot):
     if not rss_session:
         try:
-            return bot.sendMessage(config_dict['RSS_CHAT_ID'], text, parse_mode='HTML', disable_web_page_preview=True)
+            return bot.sendMessage(config_dict['RSS_CHAT_ID'], text)
         except RetryAfter as r:
             LOGGER.warning(str(r))
             sleep(r.retry_after * 1.5)
@@ -186,7 +169,7 @@ def forcesub(bot, message, tag):
         for key, value in join_button.items():
             btn.buildbutton(key, value)
             msg = f'💡 {tag},\nYou have to join our channel!\n🔻 Join And Try Again!'
-            reply_message = sendMarkup(msg, bot, message, btn.build_menu(2))
+            reply_message = sendMessage(msg, bot, message, btn.build_menu(2))
             return reply_message
 
 
@@ -198,20 +181,24 @@ def isAdmin(message, user_id=None):
             member = message.chat.get_member(message.from_user.id)
         return member.status in [member.ADMINISTRATOR, member.CREATOR] or member.is_anonymous
 
-def auto_delete_message(bot, cmd_message, bot_message):
+def auto_delete_message(bot, cmd_message=None, bot_message=None):
     if config_dict['AUTO_DELETE_MESSAGE_DURATION'] != -1:
         sleep(config_dict['AUTO_DELETE_MESSAGE_DURATION'])
-        deleteMessage(bot, cmd_message)
-        deleteMessage(bot, bot_message)
+        if cmd_message is not None:
+            deleteMessage(bot, cmd_message)
+        if bot_message is not None:
+            deleteMessage(bot, bot_message)
 
 
-def auto_delete_upload_message(bot, cmd_message, bot_message):
+def auto_delete_upload_message(bot, cmd_message=None, bot_message=None):
     if cmd_message.chat.type == 'private':
         pass
     elif config_dict['AUTO_DELETE_UPLOAD_MESSAGE_DURATION'] != -1:
         sleep(config_dict['AUTO_DELETE_UPLOAD_MESSAGE_DURATION'])
-        deleteMessage(bot, cmd_message)
-        deleteMessage(bot, bot_message)
+        if cmd_message is not None:
+            deleteMessage(bot, cmd_message)
+        if bot_message is not None:
+            deleteMessage(bot, bot_message)
 
 def delete_all_messages():
     with status_reply_dict_lock:
@@ -235,11 +222,7 @@ def update_all_messages(force=False):
     with status_reply_dict_lock:
         for chat_id in status_reply_dict:
             if status_reply_dict[chat_id] and msg != status_reply_dict[chat_id][0].text:
-                if buttons == "" and config_dict['PICS']:
-                    rmsg = editPhoto(msg, status_reply_dict[chat_id][0], choice(config_dict['PICS']))
-                elif buttons == "":
-                    rmsg = editMessage(msg, status_reply_dict[chat_id][0])
-                elif config_dict['PICS']:
+                if config_dict['PICS']:
                     rmsg = editPhoto(msg, status_reply_dict[chat_id][0], choice(config_dict['PICS']), buttons)
                 else:
                     rmsg = editMessage(msg, status_reply_dict[chat_id][0], buttons)
@@ -258,14 +241,10 @@ def sendStatusMessage(msg, bot):
             message = status_reply_dict[msg.chat.id][0]
             deleteMessage(bot, message)
             del status_reply_dict[msg.chat.id]
-        if buttons == "" and config_dict['PICS']:
-            message = sendPhoto(progress, bot, msg, choice(config_dict['PICS']))
-        elif buttons == "":
-            message = sendMessage(progress, bot, msg)
-        elif config_dict['PICS']:
+        if config_dict['PICS']:
             message = sendPhoto(progress, bot, msg, choice(config_dict['PICS']), buttons)
         else:
-            message = sendMarkup(progress, bot, msg, buttons)
+            message = sendMessage(progress, bot, msg, buttons)
         status_reply_dict[msg.chat.id] = [message, time()]
         if not Interval:
             Interval.append(setInterval(config_dict['STATUS_UPDATE_INTERVAL'], update_all_messages))

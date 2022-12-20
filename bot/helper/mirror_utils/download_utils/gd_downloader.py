@@ -3,7 +3,7 @@ from string import ascii_letters, digits
 from bot import download_dict, download_dict_lock, LOGGER, user_data, config_dict, OWNER_ID
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.mirror_utils.status_utils.gd_download_status import GdDownloadStatus
-from bot.helper.telegram_helper.message_utils import sendMessage, sendStatusMessage, sendMarkup, sendFile
+from bot.helper.telegram_helper.message_utils import sendMessage, sendStatusMessage, sendFile
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, is_sudo, is_paid, getdailytasks
 from bot.helper.ext_utils.fs_utils import get_base_name, check_storage_threshold
 
@@ -29,7 +29,7 @@ def add_gd_download(link, path, listener, newname, is_gdtot, is_unified, is_udri
             gmsg, button = GoogleDriveHelper().drive_list(gname, True)
             if gmsg:
                 if config_dict['TELEGRAPH_STYLE']:
-                    return sendMarkup("File/Folder is already available in Drive.\nHere are the search results:", listener.bot, listener.message, button)
+                    return sendMessage("File/Folder is already available in Drive.\nHere are the search results:", listener.bot, listener.message, button)
                 else:
                     return sendFile(listener.bot, listener.message, button, f"File/Folder is already available in Drive. Here are the search results:\n\n{gmsg}")
                     

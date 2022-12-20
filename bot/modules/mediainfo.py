@@ -63,7 +63,7 @@ def mediainfo(update, context):
 
 authfilter = CustomFilters.authorized_chat if config_dict['MEDIAINFO_ENABLED'] is True else CustomFilters.owner_filter
 mediainfo_handler = CommandHandler(BotCommands.MediaInfoCommand, mediainfo,
-                                    filters=authfilter | CustomFilters.authorized_user, run_async=True)
+                                    filters=authfilter | CustomFilters.authorized_user)
 
 
 dispatcher.add_handler(mediainfo_handler)

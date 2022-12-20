@@ -75,6 +75,6 @@ def getRandomUserAgent():
 
 authfilter = CustomFilters.authorized_chat if config_dict['WAYBACK_ENABLED'] is True else CustomFilters.owner_filter
 wayback_handler = CommandHandler(BotCommands.WayBackCommand, wayback,
-                                    filters=authfilter | CustomFilters.authorized_user, run_async=True)
+                                    filters=authfilter | CustomFilters.authorized_user)
 
 dispatcher.add_handler(wayback_handler)

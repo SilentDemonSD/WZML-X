@@ -25,7 +25,7 @@ from bot.helper.ext_utils.shortenurl import short_url
 from bot.helper.mirror_utils.status_utils.tg_upload_status import TgUploadStatus
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.mirror_utils.upload_utils.pyrogramEngine import TgUploader
-from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, delete_all_messages, update_all_messages, auto_delete_upload_message, sendPhoto
+from bot.helper.telegram_helper.message_utils import sendMessage, delete_all_messages, update_all_messages, auto_delete_upload_message, sendPhoto
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.ext_utils.telegraph_helper import telegraph
@@ -330,7 +330,7 @@ class MirrorLeechListener:
             if config_dict['PICS']:
                 sendPhoto(msg + botpm, self.bot, self.message, choice(config_dict['PICS']), buttons.build_menu(2))
             else:
-                sendMarkup(msg + botpm, self.bot, self.message, buttons.build_menu(2))
+                sendMessage(msg + botpm, self.bot, self.message, buttons.build_menu(2))
             try:
                 self.message.delete()
             except Exception as e:
@@ -415,7 +415,7 @@ class MirrorLeechListener:
                 if config_dict['PICS']:
                     uploadmsg = sendPhoto(msg, self.bot, self.message, choice(config_dict['PICS']), buttons.build_menu(2))
                 else:
-                    uploadmsg = sendMarkup(msg, self.bot, self.message, buttons.build_menu(2))
+                    uploadmsg = sendMessage(msg, self.bot, self.message, buttons.build_menu(2))
             else:
                 fmsg = ''
                 for index, (link, name) in enumerate(files.items(), start=1):
@@ -426,7 +426,7 @@ class MirrorLeechListener:
                             if config_dict['PICS']:
                                 uploadmsg = sendPhoto(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, choice(config_dict['PICS']), buttons.build_menu(2))
                             else:
-                                uploadmsg = sendMarkup(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, buttons.build_menu(2))
+                                uploadmsg = sendMessage(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, buttons.build_menu(2))
                             Thread(target=auto_delete_upload_message, args=(bot, self.message, uploadmsg)).start()
                         fmsg = ''
                 if fmsg != '':
@@ -435,7 +435,7 @@ class MirrorLeechListener:
                         if config_dict['PICS']:
                             uploadmsg = sendPhoto(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, choice(config_dict['PICS']), buttons.build_menu(2))
                         else:
-                            uploadmsg = sendMarkup(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, buttons.build_menu(2))
+                            uploadmsg = sendMessage(msg + fmsg + pmwarn + logleechwarn + warnmsg, self.bot, self.message, buttons.build_menu(2))
                         Thread(target=auto_delete_upload_message, args=(bot, self.message, uploadmsg)).start()
                 if config_dict['LEECH_LOG_INDEXING'] and config_dict['LEECH_LOG']:
                     for i in user_data['is_leech_log']:
@@ -568,7 +568,7 @@ class MirrorLeechListener:
                 if config_dict['PICS']:
                     uploadmsg = sendPhoto(msg + pmwarn + logwarn + warnmsg, self.bot, self.message, choice(config_dict['PICS']), buttons.build_menu(2))
                 else:
-                    uploadmsg = sendMarkup(msg + pmwarn + logwarn + warnmsg, self.bot, self.message, buttons.build_menu(2))
+                    uploadmsg = sendMessage(msg + pmwarn + logwarn + warnmsg, self.bot, self.message, buttons.build_menu(2))
                 Thread(target=auto_delete_upload_message, args=(bot, self.message, uploadmsg)).start()
             
             if 'mirror_logs' in user_data:

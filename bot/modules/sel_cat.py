@@ -5,7 +5,7 @@ from bot import CATEGORY_NAMES, btn_listener, dispatcher, download_dict, downloa
 from bot.helper.ext_utils.bot_utils import MirrorStatus, get_category_buttons, getDownloadByGid, new_thread, getUserTDs
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import editMessage, sendMarkup, sendMessage
+from bot.helper.telegram_helper.message_utils import editMessage, sendMessage
 
 def category_change(update, context):
     user_id = update.message.from_user.id
@@ -44,7 +44,7 @@ def category_change(update, context):
         timeout = 60
         btn_listener[msg_id] = [dl.gid(), timeout, time(), listener, listener.c_index, listener.u_index]
         text, btns = get_category_buttons('change', timeout, msg_id, listener.c_index, listener.u_index, listener.user_id)
-        engine = sendMarkup(text, context.bot, update.message, btns)
+        engine = sendMessage(text, context.bot, update.message, btns)
         _auto_select(engine, msg_id, timeout)
     else:
         sendMessage("Cannot change the category for this task!", context.bot, update.message)
@@ -139,9 +139,9 @@ def confirm_category(update, context):
     editMessage(text, message, btns)
 
 
-confirm_category_handler = CallbackQueryHandler(confirm_category, pattern="change", run_async=True)
+confirm_category_handler = CallbackQueryHandler(confirm_category, pattern="change")
 change_category_handler = CommandHandler(BotCommands.SelectCategory, category_change,
-                         filters=(CustomFilters.authorized_chat | CustomFilters.authorized_user), run_async=True)
+                         filters=(CustomFilters.authorized_chat | CustomFilters.authorized_user))
 
 dispatcher.add_handler(confirm_category_handler)
 dispatcher.add_handler(change_category_handler)

@@ -4,7 +4,7 @@ from telegraph import upload_file
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, ConversationHandler
 
 from bot import user_data, dispatcher, LOGGER, config_dict, DATABASE_URL, OWNER_ID
-from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, sendPhoto, deleteMessage, editPhoto
+from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, sendPhoto, deleteMessage, editPhoto
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.ext_utils.db_handler import DbManger
@@ -107,10 +107,10 @@ def pics_callback(update, context):
 
 
 picture_add_handler = CommandHandler('addpic', picture_add,
-                                    filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
+                                    filters=CustomFilters.owner_filter | CustomFilters.sudo_user)
 pictures_handler = CommandHandler('pics', pictures,
-                                    filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
-pic_call_handler = CallbackQueryHandler(pics_callback, pattern="pics", run_async=True)
+                                    filters=CustomFilters.owner_filter | CustomFilters.sudo_user)
+pic_call_handler = CallbackQueryHandler(pics_callback, pattern="pics")
 
 dispatcher.add_handler(picture_add_handler)
 dispatcher.add_handler(pictures_handler)

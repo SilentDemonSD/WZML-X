@@ -9,7 +9,7 @@ import requests
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ParseMode
 from telegram.ext import run_async, CallbackContext, CommandHandler, CallbackQueryHandler
 from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, sendPhoto
+from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, sendPhoto
 from bot.helper.ext_utils.bot_utils import get_readable_time
 from bot import LOGGER, dispatcher, IMAGE_URL, ANILIST_ENABLED, DEF_ANI_TEMP, config_dict, user_data
 
@@ -431,14 +431,14 @@ def weebhelp(update, context):
 
 anifilters = CustomFilters.authorized_chat if ANILIST_ENABLED else CustomFilters.owner_filter
 ANIME_HANDLER = CommandHandler("anime", anilist,
-                                        filters=anifilters | CustomFilters.authorized_user, run_async=True)
+                                        filters=anifilters | CustomFilters.authorized_user)
 CHARACTER_HANDLER = CommandHandler("character", character,
-                                        filters=anifilters | CustomFilters.authorized_user, run_async=True)
+                                        filters=anifilters | CustomFilters.authorized_user)
 MANGA_HANDLER = CommandHandler("manga", manga,
-                                        filters=anifilters | CustomFilters.authorized_user, run_async=True)
+                                        filters=anifilters | CustomFilters.authorized_user)
 WEEBHELP_HANDLER = CommandHandler("weebhelp", weebhelp,
-                                        filters=anifilters | CustomFilters.authorized_user, run_async=True)
-anibut_handler = CallbackQueryHandler(setAnimeButtons, pattern="anime", run_async=True)
+                                        filters=anifilters | CustomFilters.authorized_user)
+anibut_handler = CallbackQueryHandler(setAnimeButtons, pattern="anime")
 
 dispatcher.add_handler(ANIME_HANDLER)
 dispatcher.add_handler(CHARACTER_HANDLER)

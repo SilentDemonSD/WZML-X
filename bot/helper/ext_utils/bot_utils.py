@@ -210,8 +210,7 @@ def get_progress_bar_string(status):
     if cPart >= 0:
         p_str += config_dict['MULTI_WORKING_PROGRESS_STR'][cPart]
     p_str += config_dict['UN_FINISHED_PROGRESS_STR']  * (12 - cFull)
-    p_str = f"[{p_str}]"
-    return p_str
+    return f"[{p_str}]"
 
 
 def get_readable_message():

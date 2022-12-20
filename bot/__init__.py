@@ -3,7 +3,7 @@ from logging import getLogger, FileHandler, StreamHandler, INFO, basicConfig, er
 from socket import setdefaulttimeout
 from urllib.request import urlretrieve
 from faulthandler import enable as faulthandler_enable
-from telegram.ext import Updater as tgUpdater
+from telegram.ext import Updater as tgUpdater, Defaults
 from qbittorrentapi import Client as qbClient
 from aria2p import API as ariaAPI, Client as ariaClient
 from os import remove as osremove, path as ospath, environ, mkdir
@@ -331,7 +331,7 @@ DAILY_MIRROR_LIMIT = '' if len(DAILY_MIRROR_LIMIT) == 0 else int(DAILY_MIRROR_LI
 DAILY_LEECH_LIMIT = environ.get('DAILY_LEECH_LIMIT', '')
 DAILY_LEECH_LIMIT = '' if len(DAILY_LEECH_LIMIT) == 0 else int(DAILY_LEECH_LIMIT)
 
-CMD_PERFIX = environ.get('CMD_PERFIX', '')
+CMD_SUFFIX = environ.get('CMD_SUFFIX', '')
 
 TORRENT_TIMEOUT = environ.get('TORRENT_TIMEOUT', '')
 TORRENT_TIMEOUT = '' if len(TORRENT_TIMEOUT) == 0 else int(TORRENT_TIMEOUT)
@@ -682,7 +682,7 @@ config_dict = {'ANILIST_ENABLED': ANILIST_ENABLED,
                'CREDIT_NAME': CREDIT_NAME,
                'CLONE_ENABLED': CLONE_ENABLED,
                'CLONE_LIMIT': CLONE_LIMIT,
-               'CMD_PERFIX': CMD_PERFIX,
+               'CMD_SUFFIX': CMD_SUFFIX,
                'DRIVEFIRE_CRYPT': DRIVEFIRE_CRYPT,
                'DOWNLOAD_DIR': DOWNLOAD_DIR,
                'DATABASE_URL': DATABASE_URL,
@@ -890,7 +890,8 @@ else:
             del qb_opt[k]
     qb_client.app_set_preferences(qb_opt)
 
-updater = tgUpdater(token=BOT_TOKEN, request_kwargs={'read_timeout': 20, 'connect_timeout': 15})
+tgDefaults = Defaults(parse_mode='HTML', disable_web_page_preview=True, allow_sending_without_reply=True, run_async=True)
+updater = tgUpdater(token=BOT_TOKEN, defaults=tgDefaults, request_kwargs={'read_timeout': 20, 'connect_timeout': 15})
 bot = updater.bot
 dispatcher = updater.dispatcher
 job_queue = updater.job_queue

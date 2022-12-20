@@ -525,5 +525,5 @@ def indexScrape(payload_input, url, username, password, folder_mode=False):
     else: return result, False
         
 srp_handler = CommandHandler(BotCommands.ScrapeCommand, scrapper,
-                            filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
+                            filters=CustomFilters.authorized_chat | CustomFilters.authorized_user)
 dispatcher.add_handler(srp_handler)

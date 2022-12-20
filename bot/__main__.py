@@ -18,7 +18,7 @@ from .helper.ext_utils.telegraph_helper import telegraph
 from .helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time
 from .helper.ext_utils.db_handler import DbManger
 from .helper.telegram_helper.bot_commands import BotCommands
-from .helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, sendLogFile, sendPhoto
+from .helper.telegram_helper.message_utils import sendMessage, editMessage, sendLogFile, sendPhoto
 from .helper.telegram_helper.filters import CustomFilters
 from .helper.telegram_helper.button_build import ButtonMaker
 from bot.modules.wayback import getRandomUserAgent
@@ -164,13 +164,13 @@ Type /{BotCommands.HelpCommand} to get a list of available commands
         if config_dict['PICS']:
             sendPhoto(start_string, context.bot, update.message, rchoice(config_dict['PICS']), reply_markup)
         else:
-            sendMarkup(start_string, context.bot, update.message, reply_markup)
+            sendMessage(start_string, context.bot, update.message, reply_markup)
     else:
         text = f"Not Authorized user, deploy your own mirror bot"
         if config_dict['PICS']:
             sendPhoto(text, context.bot, update.message, rchoice(config_dict['PICS']), reply_markup)
         else:
-            sendMarkup(text, context.bot, update.message, reply_markup)
+            sendMessage(text, context.bot, update.message, reply_markup)
 
 
 def restart(update, context):
@@ -326,7 +326,7 @@ def bot_help(update, context):
     else:
         button.buildbutton("User", f"https://telegra.ph/{help_user}")
         button.buildbutton("Admin", f"https://telegra.ph/{help_admin}")
-    sendMarkup(help_string, context.bot, update.message, button.build_menu(2))
+    sendMessage(help_string, context.bot, update.message, button.build_menu(2))
 
 
 if config_dict['SET_BOT_COMMANDS']:
@@ -441,25 +441,25 @@ def main():
                         if len(msg.encode()) > 4000:
                             if '😎 Restarted Successfully❗' in msg and cid == chat_id:
                                 try:
-                                    bot.editMessageText(msg, chat_id, msg_id, parse_mode='HTML', disable_web_page_preview=True)
+                                    bot.editMessageText(msg, chat_id, msg_id)
                                 except:
                                     pass
                                 osremove(".restartmsg")
                             else:
                                 try:
-                                    bot.sendMessage(cid, msg, parse_mode='HTML', disable_web_page_preview=True)
+                                    bot.sendMessage(cid, msg)
                                 except Exception as e:
                                     LOGGER.error(e)
                             msg = ''
                 if '😎 Restarted Successfully❗' in msg and cid == chat_id:
                     try:
-                        bot.editMessageText(msg, chat_id, msg_id, parse_mode='HTML', disable_web_page_preview=True)
+                        bot.editMessageText(msg, chat_id, msg_id)
                     except:
                         pass
                     osremove(".restartmsg")
                 else:
                     try:
-                        bot.sendMessage(cid, msg, parse_mode='HTML', disable_web_page_preview=True)
+                        bot.sendMessage(cid, msg)
                     except Exception as e:
                         LOGGER.error(e)
 
@@ -479,17 +479,17 @@ def main():
 
 
 
-    start_handler = CommandHandler(BotCommands.StartCommand, start, run_async=True)
+    start_handler = CommandHandler(BotCommands.StartCommand, start)
     log_handler = CommandHandler(BotCommands.LogCommand, log,
-                               filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
+                               filters=CustomFilters.owner_filter | CustomFilters.sudo_user)
     restart_handler = CommandHandler(BotCommands.RestartCommand, restart,
-                               filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
+                               filters=CustomFilters.owner_filter | CustomFilters.sudo_user)
     ping_handler = CommandHandler(BotCommands.PingCommand, ping,
-                               filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
+                               filters=CustomFilters.authorized_chat | CustomFilters.authorized_user)
     help_handler = CommandHandler(BotCommands.HelpCommand, bot_help,
-                               filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
+                               filters=CustomFilters.authorized_chat | CustomFilters.authorized_user)
     stats_handler = CommandHandler(BotCommands.StatsCommand, stats,
-                               filters=CustomFilters.authorized_chat | CustomFilters.authorized_user, run_async=True)
+                               filters=CustomFilters.authorized_chat | CustomFilters.authorized_user)
 
 
     dispatcher.add_handler(start_handler)

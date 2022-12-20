@@ -9,7 +9,7 @@ from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from pyrogram.errors.exceptions.bad_request_400 import MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty
 
 from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, sendPhoto, deleteMessage
+from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, sendPhoto, deleteMessage
 from bot.helper.ext_utils.bot_utils import get_readable_time
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot import app, LOGGER, dispatcher, IMDB_ENABLED, DEF_IMDB_TEMP, config_dict, user_data, LIST_ITEMS
@@ -240,8 +240,8 @@ def imdb_callback(update, context):
 
 imdbfilters = CustomFilters.authorized_chat if IMDB_ENABLED else CustomFilters.owner_filter
 IMDB_HANDLER = CommandHandler("imdb", imdb_search,
-                              filters=imdbfilters | CustomFilters.authorized_user, run_async=True)
-imdbCall_handler = CallbackQueryHandler(imdb_callback, pattern="imdb", run_async=True)
+                              filters=imdbfilters | CustomFilters.authorized_user)
+imdbCall_handler = CallbackQueryHandler(imdb_callback, pattern="imdb")
 
 dispatcher.add_handler(IMDB_HANDLER)
 dispatcher.add_handler(imdbCall_handler)

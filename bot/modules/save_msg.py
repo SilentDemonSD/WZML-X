@@ -13,5 +13,5 @@ def save_message(update, context):
         except:
             query.answer('Start the Bot in Private and Try Again', show_alert=True)
 
-msgsave_handler = CallbackQueryHandler(save_message, pattern="save", run_async=True)
+msgsave_handler = CallbackQueryHandler(save_message, pattern="save")
 dispatcher.add_handler(msgsave_handler)
