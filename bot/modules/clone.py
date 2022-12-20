@@ -267,8 +267,8 @@ def start_clone(listelem):
         clone_status = CloneStatus(drive, size, message, gid)
         with download_dict_lock:
             download_dict[message.message_id] = clone_status
-            sendStatusMessage(message, bot)
-            result, button = drive.clone(link, u_index, c_index)
+        sendStatusMessage(message, bot)
+        result, button = drive.clone(link, u_index, c_index)
         with download_dict_lock:
             del download_dict[message.message_id]
             count = len(download_dict)
