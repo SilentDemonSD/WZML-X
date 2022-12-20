@@ -51,6 +51,9 @@ def short_url(longurl, user_id):
         elif "cutt.ly" in SHORTENER:
             disable_warnings()
             return cget(f'http://cutt.ly/api/api.php?key={SHORTENER_API}&short={longurl}', verify=False).json()['url']['shortLink']
+        elif "linkspy.cc" in SHORTENER:
+            disable_warnings()
+            return cget(f'https://linkspy.cc/api.php?hash={SHORTENER_API}&url={longurl}', verify=False).json()['shortUrl']
         elif "shrinkme.io" in SHORTENER:
             disable_warnings()
             return cget(f'https://shrinkme.io/api?api={SHORTENER_API}&url={quote(longurl)}&format=text').text           
