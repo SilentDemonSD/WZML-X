@@ -186,7 +186,7 @@ def forcesub(bot, message, tag):
         for key, value in join_button.items():
             btn.buildbutton(key, value)
         msg = f'💡 {tag},\nYou have to join our channel!\n🔻 Join And Try Again!'
-        return sendMessage(msg, bot, message, buttons.build_menu(2))
+        return sendMessage(msg, bot, message, btn.build_menu(2))
 
 def isAdmin(message, user_id=None):
     if message.chat.type != message.chat.PRIVATE:
