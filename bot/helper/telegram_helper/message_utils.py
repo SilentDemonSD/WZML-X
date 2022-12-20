@@ -11,7 +11,7 @@ from bot import botStartTime
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time
 
 from bot import LOGGER, status_reply_dict, status_reply_dict_lock, \
-                Interval, bot, rss_session, app, config_dict
+                Interval, bot, rss_session, app, config_dict, FSUB_IDS
 from bot.helper.ext_utils.bot_utils import get_readable_message, setInterval
 
 
@@ -168,6 +168,23 @@ def sendFile(bot, message, name, caption=""):
     except Exception as e:
         LOGGER.error(str(e))
         return
+
+def forcesub(bot, message, tag):
+    if not (FSUB_IDS := config_dict['FSUB_IDS']):
+        return
+    join_button = {}
+    for channel_id in FSUB_IDS.split():
+        if not str(channel_id).startswith('-100'):
+            continue
+        chat = bot.get_chat(channel_id)
+        member = chat.get_member(message.from_user.id)
+        if member.status in [member.LEFT, member.KICKED] :
+            join_button[chat.title] = chat.link or chat.invite_link
+    if join_button:
+        btn = ButtonMaker()
+        for key, value in join_button.items():
+            btn.buildbutton(key, value)
+        return sendMessage(f'💡 {tag},\nYou have to join our channel!\n🔻 Click on the below button to Join And Try Again!', bot, message, btn.build_menu(2))
 
 def auto_delete_message(bot, cmd_message, bot_message):
     if config_dict['AUTO_DELETE_MESSAGE_DURATION'] != -1:
