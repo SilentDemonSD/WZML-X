@@ -34,6 +34,14 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
     user_id = message.from_user.id
     msg_id = message.message_id
 
+    if not isAdmin(message):
+        if message.from_user.username:
+            tag = f"@{message.from_user.username}"
+        else:
+            tag = message.from_user.mention_html(message.from_user.first_name)
+        if forcesub(bot, message, tag):
+            return
+
     if config_dict['FSUB']:
         try:
             user = bot.get_chat_member(f"{config_dict['FSUB_CHANNEL_ID']}", message.from_user.id)
@@ -185,8 +193,6 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
                 tag = f"@{reply_to.from_user.username}"
             else:
                 tag = reply_to.from_user.mention_html(reply_to.from_user.first_name)
-            if forcesub(bot, message, tag):
-                return
         if len(link) == 0 or not is_url(link) and not is_magnet(link):
             if file_ is None:
                 reply_text = reply_to.text.split(maxsplit=1)[0].strip()

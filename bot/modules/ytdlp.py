@@ -29,7 +29,15 @@ def _ytdl(bot, message, isZip=False, isLeech=False):
     c_index = 0
     u_index = None
     buttons = ButtonMaker()
-    
+
+    if not isAdmin(message):
+        if message.from_user.username:
+            tag = f"@{message.from_user.username}"
+        else:
+            tag = message.from_user.mention_html(message.from_user.first_name)
+        if forcesub(bot, message, tag):
+            return
+
     if config_dict['FSUB']:
         try:
             user = bot.get_chat_member(f"{config_dict['FSUB_CHANNEL_ID']}", message.from_user.id)
