@@ -43,8 +43,6 @@ default_values = {'AUTO_DELETE_MESSAGE_DURATION': 30,
                   'FINISHED_PROGRESS_STR': '█',
                   'UN_FINISHED_PROGRESS_STR': '▒',
                   'MULTI_WORKING_PROGRESS_STR': '▁ ▂ ▃ ▄ ▅ ▆ ▇'.split(' '),
-                  'CHANNEL_USERNAME': 'WeebZone_updates',
-                  'FSUB_CHANNEL_ID': '-1001512307861',
                   'IMAGE_URL': 'https://graph.org/file/6b22ef7b8a733c5131d3f.jpg',
                   'TIMEZONE': 'Asia/Kolkata',
                   'SEARCH_LIMIT': 0,
@@ -449,9 +447,6 @@ def load_config():
     SOURCE_LINK = environ.get('SOURCE_LINK', '')
     SOURCE_LINK = SOURCE_LINK.lower() == 'true'
 
-    FSUB = environ.get('FSUB', '')
-    FSUB = FSUB.lower() == 'true'
-
     FSUB_IDS = environ.get('FSUB_IDS', '')
     if len(FSUB_IDS) == 0:
         FSUB_IDS = ''
@@ -619,13 +614,6 @@ def load_config():
         UN_FINISHED_PROGRESS_STR = '▒' # '□'
         MULTI_WORKING_PROGRESS_STR = '▁ ▂ ▃ ▄ ▅ ▆ ▇'.split(' ')
 
-    CHANNEL_USERNAME = environ.get('CHANNEL_USERNAME', '')
-    if len(CHANNEL_USERNAME) == 0:
-        CHANNEL_USERNAME = 'WeebZone_updates'
-
-    FSUB_CHANNEL_ID = environ.get('FSUB_CHANNEL_ID', '')
-    if len(FSUB_CHANNEL_ID) == 0:
-        FSUB_CHANNEL_ID = '-1001512307861'
 
     IMAGE_URL = environ.get('IMAGE_URL', '')
     if len(IMAGE_URL) == 0:
@@ -744,10 +732,8 @@ def load_config():
                         'AUTHOR_NAME': AUTHOR_NAME,
                         'AUTHOR_URL': AUTHOR_URL,
                         'GD_INFO': GD_INFO,
-                        'FSUB': FSUB,
                         'FSUB_IDS': FSUB_IDS,
                         'CHANNEL_USERNAME': CHANNEL_USERNAME,
-                        'FSUB_CHANNEL_ID': FSUB_CHANNEL_ID,
                         'SHORTENER': SHORTENER,
                         'SHORTENER_API': SHORTENER_API,
                         'UNIFIED_EMAIL': UNIFIED_EMAIL,

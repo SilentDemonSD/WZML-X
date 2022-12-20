@@ -459,9 +459,6 @@ FORCE_BOT_PM = FORCE_BOT_PM.lower() == 'true'
 SOURCE_LINK = environ.get('SOURCE_LINK', '')
 SOURCE_LINK = SOURCE_LINK.lower() == 'true'
 
-FSUB = environ.get('FSUB', '')
-FSUB = FSUB.lower() == 'true'
-
 FSUB_IDS = environ.get('FSUB_IDS', '')
 if len(FSUB_IDS) == 0:
     FSUB_IDS = ''
@@ -602,14 +599,6 @@ if len(MULTI_WORKING_PROGRESS_STR) != 7:
     LOGGER.warning("Multi Progress doesn't contain 7 Symbols. Check Agian, Using Default for Now !")
     MULTI_WORKING_PROGRESS_STR = '▁ ▂ ▃ ▄ ▅ ▆ ▇'.split(' ')
 
-CHANNEL_USERNAME = environ.get('CHANNEL_USERNAME', '')
-if len(CHANNEL_USERNAME) == 0:
-    CHANNEL_USERNAME = 'WeebZone_updates'
-
-FSUB_CHANNEL_ID = environ.get('FSUB_CHANNEL_ID', '')
-if len(FSUB_CHANNEL_ID) == 0:
-    FSUB_CHANNEL_ID = '-1001512307861'
-
 IMAGE_URL = environ.get('IMAGE_URL', '')
 if len(IMAGE_URL) == 0:
     IMAGE_URL = 'https://graph.org/file/6b22ef7b8a733c5131d3f.jpg'
@@ -691,7 +680,6 @@ config_dict = {'ANILIST_ENABLED': ANILIST_ENABLED,
                'BUTTON_SIX_URL': BUTTON_SIX_URL,
                'CAPTION_FONT': CAPTION_FONT,
                'CREDIT_NAME': CREDIT_NAME,
-               'CHANNEL_USERNAME': CHANNEL_USERNAME,
                'CLONE_ENABLED': CLONE_ENABLED,
                'CLONE_LIMIT': CLONE_LIMIT,
                'CMD_PERFIX': CMD_PERFIX,
@@ -738,8 +726,6 @@ config_dict = {'ANILIST_ENABLED': ANILIST_ENABLED,
                'TGH_THUMB': TGH_THUMB,
                'TITLE_NAME': TITLE_NAME,
                'GD_INFO': GD_INFO,
-               'FSUB': FSUB,
-               'FSUB_CHANNEL_ID': FSUB_CHANNEL_ID,
                'FSUB_IDS': FSUB_IDS,
                'SA_MAIL': SA_MAIL,
                'SHORTENER': SHORTENER,
