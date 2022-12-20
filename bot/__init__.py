@@ -394,7 +394,7 @@ IS_TEAM_DRIVE = environ.get('IS_TEAM_DRIVE', '')
 IS_TEAM_DRIVE = IS_TEAM_DRIVE.lower() == 'true'
 
 ENABLE_USR_TD = environ.get('ENABLE_USR_TD', '')
-ENABLE_USR_TD = ENABLE_USR_TD.lower() == 'false'
+ENABLE_USR_TD = ENABLE_USR_TD.lower() == 'true'
 
 USE_SERVICE_ACCOUNTS = environ.get('USE_SERVICE_ACCOUNTS', '')
 USE_SERVICE_ACCOUNTS = USE_SERVICE_ACCOUNTS.lower() == 'true'
