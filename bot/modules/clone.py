@@ -444,7 +444,7 @@ def cloneNode(update, context):
 
 authfilter = CustomFilters.authorized_chat if config_dict['CLONE_ENABLED'] is True else CustomFilters.owner_filter
 clone_handler = CommandHandler(BotCommands.CloneCommand, cloneNode,
-                                    filters=authfilter | CustomFilters.authorized_user)
+                                    filters=authfilter | CustomFilters.authorized_user, run_async=True)
 clone_confirm_handler = CallbackQueryHandler(confirm_clone, pattern="clone")
 dispatcher.add_handler(clone_confirm_handler)
 dispatcher.add_handler(clone_handler)
