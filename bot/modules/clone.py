@@ -25,13 +25,13 @@ def _clone(message, bot):
     buttons = ButtonMaker()
     #if force_sub(message):
         #return
-    # if not isAdmin(message):
-    #     if message.from_user.username:
-    #         tag = f"@{message.from_user.username}"
-    #     else:
-    #         tag = message.from_user.mention_html(message.from_user.first_name)
-    #     if forcesub(bot, message, tag):
-    #         return
+    if not isAdmin(message):
+        if message.from_user.username:
+            tag = f"@{message.from_user.username}"
+        else:
+            tag = message.from_user.mention_html(message.from_user.first_name)
+        if forcesub(bot, message, tag):
+            return
 
 
     if config_dict['FSUB']:
