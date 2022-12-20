@@ -89,6 +89,8 @@ def _clone(message, bot):
     u_index = None
     shwbtns = True
     msg_id = message.message_id
+    CATUSR = getUserTDs(user_id)[0] 
+    if len(CATUSR) >= 1: u_index = 0
 
     if len(mesg.split(maxsplit=1)) > 1:
         args = mesg.split(maxsplit=2)
@@ -98,15 +100,12 @@ def _clone(message, bot):
                 index += 1
                 cargs = x.split(':')
                 dname = cargs[1].strip() if cargs[1] else None
-                utds, _, _ = getUserTDs(user_id)
-                LOGGER.info(dname)
+                utds = getUserTDs(user_id)[0]
                 if len(utds) != 0:
                     ltds = [td.lower() for td in utds]
-                    LOGGER.info(ltds)
                     if dname and dname.lower() in ltds:
                         shwbtns = False
                         u_index = ltds.index(dname.lower())
-                        LOGGER.info(u_index)
                 elif len(CATEGORY_NAMES) > 1:
                     ltds = [td.lower() for td in CATEGORY_NAMES]
                     if dname and dname.lower() in ltds:
@@ -132,13 +131,11 @@ def _clone(message, bot):
             tag = f"@{reply_to.from_user.username}"
         else:
             tag = reply_to.from_user.mention_html(reply_to.from_user.first_name)
-    LOGGER.info(link)
+
     if not (is_gdrive_link(link) or (link.strip().isdigit() and multi == 0) or is_gdtot_link(link) or is_unified_link(link) or is_udrive_link(link) or is_sharer_link(link) or is_sharedrive_link(link) or is_filepress_link(link)):
         return sendMessage("Send Gdrive or GDToT/AppDrive/DriveApp/GDFlix/DriveAce/DriveLinks/DriveBit/DriveSharer/Anidrive/Driveroot/Driveflix/Indidrive/drivehub(in)/HubDrive/DriveHub(ws)/KatDrive/Kolop/DriveFire/DriveBuzz/SharerPw/ShareDrive link along with command or by replying to the link by command\n\n<b>Multi links only by replying to first link/file:</b>\n<code>/cmd</code> 10(number of links/files)", bot, message)
 
     timeout = 60
-    CATUSR = getUserTDs(user_id)[0] 
-    if len(CATUSR) >= 1: u_index = 0
     listener = [bot, message, c_index, u_index, timeout, time(), tag, link]
     if ((len(CATEGORY_NAMES) > 1 and len(CATUSR) == 0) or (len(CATEGORY_NAMES) >= 1 and len(CATUSR) > 1)) and shwbtns:
         text, btns = get_category_buttons('clone', timeout, msg_id, c_index, u_index, user_id)
