@@ -462,6 +462,10 @@ SOURCE_LINK = SOURCE_LINK.lower() == 'true'
 FSUB = environ.get('FSUB', '')
 FSUB = FSUB.lower() == 'true'
 
+FSUB_IDS = environ.get('FSUB_IDS', '')
+if len(FSUB_IDS) == 0:
+    FSUB_IDS = ''
+
 PAID_SERVICE = environ.get('PAID_SERVICE', '')
 PAID_SERVICE = PAID_SERVICE.lower() == 'true'
 
