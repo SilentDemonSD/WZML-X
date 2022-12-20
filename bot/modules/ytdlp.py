@@ -38,24 +38,6 @@ def _ytdl(bot, message, isZip=False, isLeech=False):
         if forcesub(bot, message, tag):
             return
 
-    if config_dict['FSUB']:
-        try:
-            user = bot.get_chat_member(f"{config_dict['FSUB_CHANNEL_ID']}", message.from_user.id)
-            LOGGER.info(user.status)
-            if user.status not in ("member", "creator", "administrator", "supergroup"):
-                if message.from_user.username:
-                    uname = f'<a href="tg://user?id={message.from_user.id}">{message.from_user.username}</a>'
-                else:
-                    uname = f'<a href="tg://user?id={message.from_user.id}">{message.from_user.first_name}</a>'
-                buttons = ButtonMaker()
-                chat_u = config_dict['CHANNEL_USERNAME'].replace("@", "")
-                buttons.buildbutton("👉🏻 CHANNEL LINK 👈🏻", f"https://t.me/{chat_u}")
-                help_msg = f"Dᴇᴀʀ {uname},\nYᴏᴜ ɴᴇᴇᴅ ᴛᴏ ᴊᴏɪɴ ᴍʏ Cʜᴀɴɴᴇʟ ᴛᴏ ᴜsᴇ Bᴏᴛ \n\nCʟɪᴄᴋ ᴏɴ ᴛʜᴇ ʙᴇʟᴏᴡ Bᴜᴛᴛᴏɴ ᴛᴏ ᴊᴏɪɴ ᴍʏ Cʜᴀɴɴᴇʟ."
-                reply_message = sendMarkup(help_msg, bot, message, buttons.build_menu(2))
-                Thread(target=auto_delete_message, args=(bot, message, reply_message)).start()
-                return reply_message
-        except Exception:
-            pass
     if get_bot_pm(user_id) and message.chat.type != 'private':
         try:
             msg1 = f'Added your Requested link to Download\n'
