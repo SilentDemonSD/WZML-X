@@ -30,8 +30,6 @@ from .listener import MirrorLeechListener
 
 
 def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeech=False):
-    if forcesub(bot, message, tag):
-        return
     buttons = ButtonMaker()
     user_id = message.from_user.id
     msg_id = message.message_id
@@ -187,6 +185,8 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
                 tag = f"@{reply_to.from_user.username}"
             else:
                 tag = reply_to.from_user.mention_html(reply_to.from_user.first_name)
+            if forcesub(bot, message, tag):
+                return
         if len(link) == 0 or not is_url(link) and not is_magnet(link):
             if file_ is None:
                 reply_text = reply_to.text.split(maxsplit=1)[0].strip()
