@@ -30,6 +30,8 @@ from .listener import MirrorLeechListener
 
 
 def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeech=False):
+    if forcesub(bot, message, tag):
+        return
     buttons = ButtonMaker()
     user_id = message.from_user.id
     msg_id = message.message_id
