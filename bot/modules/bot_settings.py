@@ -452,6 +452,10 @@ def load_config():
     FSUB = environ.get('FSUB', '')
     FSUB = FSUB.lower() == 'true'
 
+    FSUB_IDS = environ.get('FSUB_IDS', '')
+    if len(FSUB_IDS) == 0:
+        FSUB_IDS = ''
+
     PAID_SERVICE = environ.get('PAID_SERVICE', '')
     PAID_SERVICE = PAID_SERVICE.lower() == 'true'
 
@@ -741,6 +745,7 @@ def load_config():
                         'AUTHOR_URL': AUTHOR_URL,
                         'GD_INFO': GD_INFO,
                         'FSUB': FSUB,
+                        'FSUB_IDS': FSUB_IDS,
                         'CHANNEL_USERNAME': CHANNEL_USERNAME,
                         'FSUB_CHANNEL_ID': FSUB_CHANNEL_ID,
                         'SHORTENER': SHORTENER,
@@ -948,6 +953,8 @@ def edit_variable(update, context, omsg, key):
             CATEGORY_INDEX[0] = value
         else:
             CATEGORY_INDEX.insert(0, value)
+    elif value.isdigit() and key != 'FSUB_IDS':
+        value = int(value)
     elif value.isdigit():
         value = int(value)
     config_dict[key] = value
