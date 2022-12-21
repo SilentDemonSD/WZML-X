@@ -1538,7 +1538,7 @@ def bypass_main(link: str):
 def bypass(update, context):
   bypass_main(update.message.text)
 def bypasslinks(update, context):
-    sendmessage(supported_sites_list, update.message.id, context.bot)
+    sendMessage(supported_sites_list, update.message.id, context.bot)
 
 
 by_handler = CommandHandler(BotCommands.bypassCommand, bypass,
