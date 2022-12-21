@@ -16,7 +16,7 @@ import hashlib
 import json
 from dotenv import load_dotenv
 from bot.helper.telegram_helper.filters import CustomFilters
-load_dotenv()
+
 fich_list = [
         '1fichier.com/',
         'afterupload.com/',
@@ -29,8 +29,6 @@ fich_list = [
         'tenvoi.com/',
         'dl4free.com/'
     ]
-
-
 
 def dwnld(url: str, file_path='', attempts=2):
     """Downloads a URL content into a file
@@ -1469,7 +1467,6 @@ sbembed.com, watchsb.com, streamsb.net, sbplay.org, uloz.to"""
 fmed_list = ['fembed.net', 'fembed.com', 'femax20.com', 'fcdn.stream', 'feurl.com', 'layarkacaxxi.icu',
              'naniplay.nanime.in', 'naniplay.nanime.biz', 'naniplay.com', 'mm9842.com']
 
-
 def bypass_main(link: str):
     """ direct links generator """
     if 'yadi.sk' in link or 'disk.yandex.com' in link:
@@ -1533,17 +1530,15 @@ def bypass_main(link: str):
     else:
         return f'No Direct link function found for {link} see supported links at /bypasslinks. if your just fucking with me you got shit coming your way'
 
-
-#####################################################################################################        
 def bypass(update, context):
   bypass_main(update.message.text)
 def bypasslinks(update, context):
-    sendMessage(supported_sites_list, update.message.id, context.bot)
+    sendMessage(supported_sites_list, update.message, context.bot)
 
-
-by_handler = CommandHandler(BotCommands.bypassCommand, bypass,
+bypass_handler = CommandHandler(BotCommands.bypassCommand, bypass,
                             filters=CustomFilters.owner_filter | CustomFilters.authorized_user)
 by_link_handler = CommandHandler(BotCommands.bypasslinksCommand, bypasslinks,
                             filters=CustomFilters.owner_filter | CustomFilters.authorized_user)
-dispatcher.add_handler(by_handler)
+
+dispatcher.add_handler(bypass_handler)
 dispatcher.add_handler(by_link_handler)
