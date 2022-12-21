@@ -1457,7 +1457,7 @@ def megaup(url):
 
 #      sendMessage("Les fucken go your download has completed", bot, message)
 
-
+>>>>>>>>>>>>>>>>>> Fix This 🛠
 supported_sites_list = """disk.yandex.com\nmediafire.com\nuptobox.com\nosdn.net\ngithub.com\nhxfile.co\nanonfiles.com\nletsupload.io\n1drv.ms(onedrive)\n\
 pixeldrain.com\nantfiles.com\nstreamtape.com\nbayfiles.com\nracaty.net\n1fichier.com\nsolidfiles.com\nkrakenfiles.com\n\
 upload.ee\nmdisk.me\nwetransfer.com\ngofile.io\ndropbox.com\nzippyshare.com\nmegaup.net\n\
@@ -1467,8 +1467,10 @@ sbembed.com, watchsb.com, streamsb.net, sbplay.org, uloz.to"""
 fmed_list = ['fembed.net', 'fembed.com', 'femax20.com', 'fcdn.stream', 'feurl.com', 'layarkacaxxi.icu',
              'naniplay.nanime.in', 'naniplay.nanime.biz', 'naniplay.com', 'mm9842.com']
 
-def bypass_main(link: str):
-    """ direct links generator """
+def bypass(update, context):
+    msg_args = (update.message.text).split()
+    if msg_args > 1:
+        link = msg_args[1]
     if 'yadi.sk' in link or 'disk.yandex.com' in link:
         return yandex_disk(link)
     elif 'mediafire.com' in link:
@@ -1518,9 +1520,9 @@ def bypass_main(link: str):
     elif 'zippyshare.com' in link:
         return zippyshare(link)
     elif 'rapidgator' in link:
-      page=codecs.open("captcha_page.html", "r", "utf-8")
-      uri=find_download_link(page)
-      dwnld(uri, "/home/bypass", attempts=3)
+        page=codecs.open("captcha_page.html", "r", "utf-8")
+        uri=find_download_link(page)
+        dwnld(uri, "/home/bypass", attempts=3)
     elif 'megaup.net' in link:
         return megaup(link)
     elif any(x in link for x in fmed_list):
@@ -1528,17 +1530,10 @@ def bypass_main(link: str):
     elif any(x in link for x in ['sbembed.com', 'watchsb.com', 'streamsb.net', 'sbplay.org']):
         return sbembed(link)
     else:
-        return f'No Direct link function found for {link} see supported links at /bypasslinks. if your just fucking with me you got shit coming your way'
+        #return f'No Direct link function found for {link} see supported links at /bypasslinks. if your just fucking with me you got shit coming your way'
+        sendMessage(supported_sites_list, context.bot, update.message)
 
-def bypass(update, context):
-  bypass_main(update.message.text)
-def bypasslinks(update, context):
-    sendMessage(supported_sites_list, context.bot, update.message)
-
-bypass_handler = CommandHandler(BotCommands.bypassCommand, bypass,
-                            filters=CustomFilters.owner_filter | CustomFilters.authorized_user)
-by_link_handler = CommandHandler(BotCommands.bypasslinksCommand, bypasslinks,
+bypass_handler = CommandHandler(BotCommands.BypassCommand, bypass,
                             filters=CustomFilters.owner_filter | CustomFilters.authorized_user)
 
 dispatcher.add_handler(bypass_handler)
-dispatcher.add_handler(by_link_handler)
