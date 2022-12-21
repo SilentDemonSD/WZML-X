@@ -43,6 +43,7 @@ class MirrorStatus:
         STATUS_SPLITTING = "✂️ Split"
         STATUS_CHECKING = "📝 CheckUp"
         STATUS_SEEDING = "🌧 Seed"
+        STATUS_CONVERTING = "↔️ Convert"
     else:
         STATUS_UPLOADING = "Upload"
         STATUS_DOWNLOADING = "Download"
@@ -54,6 +55,7 @@ class MirrorStatus:
         STATUS_SPLITTING = "Split"
         STATUS_CHECKING = "CheckUp"
         STATUS_SEEDING = "Seed"
+        STATUS_CONVERTING = "↔️ Convert"
 
 class EngineStatus:
     STATUS_ARIA = "Aria2c📶"
@@ -226,7 +228,7 @@ def get_readable_message():
         for index, download in enumerate(list(download_dict.values())[COUNT:], start=1):
             msg += f"<b>╭ <a href='{download.message.link}'>{download.status()}</a>: </b>"
             msg += f"<code>{escape(str(download.name()))}</code>"
-            if download.status() not in [MirrorStatus.STATUS_SEEDING, MirrorStatus.STATUS_SPLITTING]:
+            if download.status() not in [MirrorStatus.STATUS_SEEDING, MirrorStatus.STATUS_SPLITTING, MirrorStatus.STATUS_CONVERTING]:
                 if config_dict['EMOJI_THEME']:
                     msg += f"\n<b>├</b>{get_progress_bar_string(download)} {download.progress()}"
                     msg += f"\n<b>├🔄 Process:</b> {get_readable_file_size(download.processed_bytes())} of {download.size()}"

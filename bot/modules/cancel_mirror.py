@@ -35,6 +35,10 @@ def cancel_mirror(update, context):
        (user_id not in user_data or not user_data[user_id].get('is_sudo')):
         return sendMessage("This task is not for you!", context.bot, update.message)
 
+    if dl.status() == MirrorStatus.STATUS_CONVERTING:
+        sendMessage("Converting... Can't cancel this task!", context.bot, message)
+        return
+
     dl.download().cancel_download()
 
 def cancel_all(status):
