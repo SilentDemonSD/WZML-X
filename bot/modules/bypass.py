@@ -1344,119 +1344,119 @@ def megaup(url):
         return dwnld(res["url"], '/home/bypass', attempts=3)
     else:
         return res["msg"]
-def uloz(url, parts=10, target_dir="", conn_timeout=DEFAULT_CONN_TIMEOUT):
-        """Download file from Uloz.to using multiple parallel downloads.
-            Arguments:
-                url (str): URL of the Uloz.to file to download
-                parts (int): Number of parts that will be downloaded in parallel (default: 10)
-                target_dir (str): Directory where the download should be saved (default: current directory)
-        """
-  try:
-      tor = TorRunner()
-      page = Page(url, target_dir, parts, tor, conn_timeout)
-      page.parse()
+# def uloz(url, parts=10, target_dir="", conn_timeout=DEFAULT_CONN_TIMEOUT):
+#         """Download file from Uloz.to using multiple parallel downloads.
+#             Arguments:
+#                 url (str): URL of the Uloz.to file to download
+#                 parts (int): Number of parts that will be downloaded in parallel (default: 10)
+#                 target_dir (str): Directory where the download should be saved (default: current directory)
+#         """
+#     try:
+#         tor = TorRunner()
+#         page = Page(url, target_dir, parts, tor, conn_timeout)
+#         page.parse()
 
-  except RuntimeError as e:
-      sendMessage('Your download: ' + str(e) + "was unfortunately fucked sorry for the inconvenience" bot, message)
+#     except RuntimeError as e:
+#         sendMessage('Your download: ' + str(e) + "was unfortunately fucked sorry for the inconvenience" bot, message)
 
-  # Do check - only if .udown status file not exists get question
-  output_filename = os.path.join(target_dir, page.filename)
+#     # Do check - only if .udown status file not exists get question
+#     output_filename = os.path.join(target_dir, page.filename)
 
-  info = DownloadInfo()
-  info.filename = page.filename
-  info.url = page.url
-      download_url = page.quickDownloadURL
-      captcha_solve_func = None
-      captcha_download_links_generator = page.captcha_download_links_generator(
-          solver=captcha_solver, stop_event=stop_captcha,
-      )
-      download_url = next(captcha_download_links_generator)
+#     info = DownloadInfo()
+#     info.filename = page.filename
+#     info.url = page.url
+#         download_url = page.quickDownloadURL
+#         captcha_solve_func = None
+#         captcha_download_links_generator = page.captcha_download_links_generator(
+#             solver=captcha_solver, stop_event=stop_captcha,
+#         )
+#         download_url = next(captcha_download_links_generator)
 
-  head = requests.head(download_url, allow_redirects=True)
-  total_size = int(head.headers['Content-Length'])
+#     head = requests.head(download_url, allow_redirects=True)
+#     total_size = int(head.headers['Content-Length'])
 
-  try:
-      file_data = SegFileLoader(output_filename, total_size, parts)
-      writers = file_data.make_writers()
-  except Exception as e:
-      sendMessage(f"Ah fuck: Can not create '{output_filename}' error: {e} ", bot, message)
-      sys.exit(1)
+#     try:
+#         file_data = SegFileLoader(output_filename, total_size, parts)
+#         writers = file_data.make_writers()
+#     except Exception as e:
+#         sendMessage(f"Ah fuck: Can not create '{output_filename}' error: {e} ", bot, message)
+#         sys.exit(1)
 
-  info.total_size = total_size
-  info.part_size = file_data.part_size
-  info.parts = file_data.parts
+#     info.total_size = total_size
+#     info.part_size = file_data.part_size
+#     info.parts = file_data.parts
 
-  downloads: List[DownloadPart] = [DownloadPart(w) for w in writers]
+#     downloads: List[DownloadPart] = [DownloadPart(w) for w in writers]
 
-  # 2. All info gathered, initialize frontend
+#     # 2. All info gathered, initialize frontend
 
-  # fill placeholder before download started
-  frontend_thread.start()
+#     # fill placeholder before download started
+#     frontend_thread.start()
 
-  # Prepare queue for recycling download URLs
-  download_url_queue = Queue(maxsize=0)
+#     # Prepare queue for recycling download URLs
+#     download_url_queue = Queue(maxsize=0)
 
-  # limited must use TOR and solve links or captcha
-  if isLimited:
-      # Reuse already solved links
-      download_url_queue.put(download_url)
+#     # limited must use TOR and solve links or captcha
+#     if isLimited:
+#         # Reuse already solved links
+#         download_url_queue.put(download_url)
 
-      # Start CAPTCHA breaker in separate process
-      captcha_thread = threading.Thread(
-          target=_captcha_breaker, args=(page, parts)
-      )
+#        # Start CAPTCHA breaker in separate process
+#         captcha_thread = threading.Thread(
+#             target=_captcha_breaker, args=(page, parts)
+#         )
 
-  cpb_started = False
-  page.alreadyDownloaded = 0
+#     cpb_started = False
+#     page.alreadyDownloaded = 0
 
-  # 3. Start all downloads fill threads
-  for part in downloads:
-      if terminating:
-          return
+#     # 3. Start all downloads fill threads
+#     for part in downloads:
+#         if terminating:
+#             return
 
-      if part.writer.written == part.writer.size:
-          part.completed = True
-          part.set_status("Already downloaded Fuckhead Stop overloading")
-          page.alreadyDownloaded += 1
-          continue
+#         if part.writer.written == part.writer.size:
+#             part.completed = True
+#             part.set_status("Already downloaded Fuckhead Stop overloading")
+#             page.alreadyDownloaded += 1
+#            continue
 
-      if isLimited:
-          if not cpb_started:
-              captcha_thread.start()
-              cpb_started = True
-          part.download_url = download_url_queue.get()
-      else:
-          part.download_url = download_url
+#         if isLimited:
+#             if not cpb_started:
+#                captcha_thread.start()
+#                cpb_started = True
+#             part.download_url = download_url_queue.get()
+#         else:
+#            part.download_url = download_url
 
-      # Start download process in another process (parallel):
-      t = threading.Thread(target=_download_part, args=(part,))
-      t.start()
-      threads.append(t)
+#           # Start download process in another process (parallel):
+#         t = threading.Thread(target=_download_part, args=(part,))
+#           t.start()
+#           threads.append(t)
 
-  if isLimited:
-      # no need for another CAPTCHAs
-      stop_captcha.set()
+#      if isLimited:
+#         # no need for another CAPTCHAs
+#         stop_captcha.set()
 
-  # 4. Wait for all downloads to finish
-  success = True
-  for (t, part) in zip(threads, downloads):
-      while t.is_alive(self):
-          t.join(1)
-      if part.error:
-          success = False
+#     # 4. Wait for all downloads to finish
+#     success = True
+#     for (t, part) in zip(threads, downloads):
+#        while t.is_alive(self):
+#             t.join(1)
+#         if part.error:
+#             success = False
 
-  stop_captcha.set()
-  stop_frontend.set()
-  if captcha_thread:
-      captcha_thread.join()
-  if frontend_thread:
-      frontend_thread.join()
+#     stop_captcha.set()
+#     stop_frontend.set()
+#     if captcha_thread:
+#          captcha_thread.join()
+#      if frontend_thread:
+#          frontend_thread.join()
 
-  # result end status
-  if not success:
-    sendMessage("Your download was fucked for some reason god knows why", bot, message)
+#      # result end status
+#      if not success:
+#        sendMessage("Your download was fucked for some reason god knows why", bot, message)
 
-  sendMessage("Les fucken go your download has completed", bot, message)
+#      sendMessage("Les fucken go your download has completed", bot, message)
 
 
 supported_sites_list = """disk.yandex.com\nmediafire.com\nuptobox.com\nosdn.net\ngithub.com\nhxfile.co\nanonfiles.com\nletsupload.io\n1drv.ms(onedrive)\n\
