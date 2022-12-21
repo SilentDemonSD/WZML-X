@@ -68,6 +68,7 @@ class _BotCommands:
         self.RmleechlogCommand = getCommand(f'RMLEECHLOG_CMD', f'rmleechlog{CMD_SUFFIX}')
         self.SelectCategory = getCommand(f'CATSEL_CMD', f'catsel{CMD_SUFFIX}')
         self.bypassCommand = f'bypass{CMD_SUFFIX}'
+        self.bypasslinksCommand = f'bypasslinks{CMD_SUFFIX}'
         self.EvalCommand = f'eval{CMD_SUFFIX}'
         self.ExecCommand = f'exec{CMD_SUFFIX}'
         self.ClearLocalsCommand = f'clearlocals{CMD_SUFFIX}'
