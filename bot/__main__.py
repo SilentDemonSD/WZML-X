@@ -24,7 +24,7 @@ from .helper.telegram_helper.button_build import ButtonMaker
 from bot.modules.wayback import getRandomUserAgent
 from .modules import authorize, list, cancel_mirror, mirror_status, mirror_leech, clone, ytdlp, shell, eval, bot_settings, \
                      delete, count, users_settings, search, rss, wayback, speedtest, anilist, imdb, bt_select, mediainfo, hash, \
-                     scraper, pictures, save_msg, sel_cat, bypass
+                     scraper, pictures, save_msg, sel_cat
 from datetime import datetime
 
 version = "4.4.0"
