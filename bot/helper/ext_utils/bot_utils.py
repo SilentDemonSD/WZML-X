@@ -65,7 +65,7 @@ class EngineStatus:
     STATUS_TG = "Pyrogram💥"
     STATUS_YT = "YT-dlp🌟"
     STATUS_EXT = "Extract | pExtract⚔️"
-    STATUS_SPLIT = "FFmpeg✂️"
+    STATUS_SPLIT_MERGE = "FFmpeg🍿"
     STATUS_ZIP = "p7zip🛠"
 
     

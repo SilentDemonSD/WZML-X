@@ -43,4 +43,4 @@ class SplitStatus:
         self.__listener.onUploadError('splitting stopped by user!')
 
     def eng(self):
-        return EngineStatus.STATUS_SPLIT
+        return EngineStatus.STATUS_SPLIT_MERGE

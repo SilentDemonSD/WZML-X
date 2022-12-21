@@ -1,4 +1,4 @@
-from bot.helper.ext_utils.bot_utils import MirrorStatus, get_readable_file_size
+from bot.helper.ext_utils.bot_utils import MirrorStatus, get_readable_file_size, EngineStatus
 
 
 class ConvertStatus:
@@ -37,7 +37,7 @@ class ConvertStatus:
         return self
 
     def engine(self):
-        return "ffmpeg"
+        return EngineStatus.STATUS_SPLIT_MERGE
 
     def source(self):
         reply_to = self.message.reply_to_message
