@@ -41,11 +41,6 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
             tag = message.from_user.mention_html(message.from_user.first_name)
         if forcesub(bot, message, tag):
             return
-        if DATABASE_URL and config_dict['STOP_DUPLICATE_TASKS']:
-            if exist:
-            _msg = f'<b>Download is already added by {exist["tag"]}</b>\n\nCheck the download status in @{exist["botname"]}\n\n<b>Link</b>: <code>{exist["_id"]}</code>'
-            delete_links(bot, message)
-            return sendMessage(_msg, bot, message)
 
     if get_bot_pm(user_id) and message.chat.type != 'private':
         try:
