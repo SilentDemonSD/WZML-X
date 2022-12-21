@@ -1533,7 +1533,7 @@ def bypass_main(link: str):
 def bypass(update, context):
   bypass_main(update.message.text)
 def bypasslinks(update, context):
-    sendMessage(supported_sites_list, update.message, context.bot)
+    sendMessage(supported_sites_list, context.bot, update.message)
 
 bypass_handler = CommandHandler(BotCommands.bypassCommand, bypass,
                             filters=CustomFilters.owner_filter | CustomFilters.authorized_user)
