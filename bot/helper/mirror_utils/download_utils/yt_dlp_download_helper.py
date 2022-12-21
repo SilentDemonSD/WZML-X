@@ -142,7 +142,7 @@ class YoutubeDLHelper:
 
     def __onDownloadError(self, error):
         self.__is_cancelled = True
-        self.listener.onDownloadError(error, button)
+        self.listener.onDownloadError(error)
 
     def extractMetaData(self, link, name, args, get_info=False):
         if args:
