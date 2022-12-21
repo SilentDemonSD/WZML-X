@@ -1537,10 +1537,12 @@ def bypass_main(link: str):
 def bypass(update, context):
   bypass_main(update.message.text)
 def bypasslinks(update, context):
-  sendmessage(supported_sites_list, update.message.id, context.bot)
-    by_handler = CommandHandler(BotCommands.bypassCommand, bypass,
-                                    filters=CustomFilters.owner_filter | CustomFilters.authorized_user)
-    by_link_handler = CommandHandler(BotCommands.bypasslinksCommand, bypasslinks,
-                                    filters=CustomFilters.owner_filter | CustomFilters.authorized_user)
+    sendmessage(supported_sites_list, update.message.id, context.bot)
+
+
+by_handler = CommandHandler(BotCommands.bypassCommand, bypass,
+                            filters=CustomFilters.owner_filter | CustomFilters.authorized_user)
+by_link_handler = CommandHandler(BotCommands.bypasslinksCommand, bypasslinks,
+                            filters=CustomFilters.owner_filter | CustomFilters.authorized_user)
 dispatcher.add_handler(by_handler)
 dispatcher.add_handler(by_link_handler)
