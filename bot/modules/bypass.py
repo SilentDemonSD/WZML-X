@@ -1469,8 +1469,9 @@ fmed_list = ['fembed.net', 'fembed.com', 'femax20.com', 'fcdn.stream', 'feurl.co
 
 def bypass(update, context):
     msg_args = (update.message.text).split()
-    if msg_args > 1:
+    if len(msg_args) > 1:
         link = msg_args[1]
+    else: sendMessage(supported_sites_list, context.bot, update.message)
     if 'yadi.sk' in link or 'disk.yandex.com' in link:
         return yandex_disk(link)
     elif 'mediafire.com' in link:
@@ -1530,8 +1531,7 @@ def bypass(update, context):
     elif any(x in link for x in ['sbembed.com', 'watchsb.com', 'streamsb.net', 'sbplay.org']):
         return sbembed(link)
     else:
-        #return f'No Direct link function found for {link} see supported links at /bypasslinks. if your just fucking with me you got shit coming your way'
-        sendMessage(supported_sites_list, context.bot, update.message)
+        return f'No Direct link function found for {link} see supported links at /bypasslinks. if your just fucking with me you got shit coming your way'
 
 bypass_handler = CommandHandler(BotCommands.BypassCommand, bypass,
                             filters=CustomFilters.owner_filter | CustomFilters.authorized_user)
