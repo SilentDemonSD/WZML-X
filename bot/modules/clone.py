@@ -23,8 +23,6 @@ from bot.helper.telegram_helper.button_build import ButtonMaker
 def _clone(message, bot):
     user_id = message.from_user.id
     buttons = ButtonMaker()
-    #if force_sub(message):
-        #return
     if not isAdmin(message):
         if message.from_user.username:
             tag = f"@{message.from_user.username}"

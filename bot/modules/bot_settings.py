@@ -295,6 +295,12 @@ def load_config():
     DAILY_LEECH_LIMIT = environ.get('DAILY_LEECH_LIMIT', '')
     DAILY_LEECH_LIMIT = '' if len(DAILY_LEECH_LIMIT) == 0 else int(DAILY_LEECH_LIMIT)
 
+    MAX_PLAYLIST = environ.get('MAX_PLAYLIST', '')
+    MAX_PLAYLIST = '' if len(MAX_PLAYLIST) == 0 else int(MAX_PLAYLIST)
+
+    YTDLP_LIMIT = environ.get('YTDLP_LIMIT', '')
+    YTDLP_LIMIT = '' if len(YTDLP_LIMIT) == 0 else float(YTDLP_LIMIT)
+
     INCOMPLETE_TASK_NOTIFIER = environ.get('INCOMPLETE_TASK_NOTIFIER', '')
     INCOMPLETE_TASK_NOTIFIER = INCOMPLETE_TASK_NOTIFIER.lower() == 'true'
     if not INCOMPLETE_TASK_NOTIFIER and DATABASE_URL:
@@ -787,6 +793,8 @@ def load_config():
                         'BUTTON_SIX_NAME': BUTTON_SIX_NAME,
                         'BUTTON_SIX_URL': TELEGRAPH_STYLE,
                         'WEB_PINCODE': WEB_PINCODE,
+                        'YTDLP_LIMIT': YTDLP_LIMIT,
+                        'MAX_PLAYLIST': MAX_PLAYLIST,
                         'YT_DLP_QUALITY': YT_DLP_QUALITY})
 
 

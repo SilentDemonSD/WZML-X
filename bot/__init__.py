@@ -360,6 +360,11 @@ TOTAL_TASKS_LIMIT = '' if len(TOTAL_TASKS_LIMIT) == 0 else int(TOTAL_TASKS_LIMIT
 USER_TASKS_LIMIT = environ.get('USER_TASKS_LIMIT', '')
 USER_TASKS_LIMIT = '' if len(USER_TASKS_LIMIT) == 0 else int(USER_TASKS_LIMIT)
 
+MAX_PLAYLIST = environ.get('MAX_PLAYLIST', '')
+MAX_PLAYLIST = '' if len(MAX_PLAYLIST) == 0 else int(MAX_PLAYLIST)
+
+YTDLP_LIMIT = environ.get('YTDLP_LIMIT', '')
+YTDLP_LIMIT = '' if len(YTDLP_LIMIT) == 0 else float(YTDLP_LIMIT)
 
 RSS_USER_SESSION_STRING = environ.get('RSS_USER_SESSION_STRING', '')
 rss_session = Client(name='rss_session', api_id=(TELEGRAM_API), api_hash=TELEGRAM_HASH, session_string=RSS_USER_SESSION_STRING, parse_mode=enums.ParseMode.HTML, no_updates=True) if len(RSS_USER_SESSION_STRING) != 0 else None
@@ -786,6 +791,8 @@ config_dict = {'ANILIST_ENABLED': ANILIST_ENABLED,
                'START_BTN2_NAME': START_BTN2_NAME,
                'START_BTN2_URL': START_BTN2_URL,
                'WEB_PINCODE': WEB_PINCODE,
+               'YTDLP_LIMIT': YTDLP_LIMIT,
+               'MAX_PLAYLIST': MAX_PLAYLIST,
                'YT_DLP_QUALITY': YT_DLP_QUALITY}
 
 if GDRIVE_ID:

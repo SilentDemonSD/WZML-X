@@ -71,12 +71,11 @@ def _ytdl(bot, message, isZip=False, isLeech=False):
                 return sendMessage(f"<b>Bᴏᴛ Tᴏᴛᴀʟ Tᴀsᴋ Lɪᴍɪᴛ : {TOTAL_TASKS_LIMIT}\nTᴀsᴋs Pʀᴏᴄᴇssɪɴɢ : {total_task}\n#total limit exceed </b>", bot ,message)
             if USER_TASKS_LIMIT == get_user_task(user_id):
                 return sendMessage(f"<b>Bᴏᴛ Usᴇʀ Tᴀsᴋ Lɪᴍɪᴛ : {USER_TASKS_LIMIT} \nYᴏᴜʀ Tᴀsᴋs : {get_user_task(user_id)}\n#user limit exceed</b>", bot ,message)
-
-    if user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id):
         time_gap = timegap_check(message)
         if time_gap:
             return
         TIME_GAP_STORE[message.from_user.id] = time()
+        
     index = 1
     link = ''
 
