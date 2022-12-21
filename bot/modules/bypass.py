@@ -1457,7 +1457,7 @@ def megaup(url):
 
 #      sendMessage("Les fucken go your download has completed", bot, message)
 
->>>>>>>>>>>>>>>>>> Fix This 🛠
+#>>>>>>>>>>>>>>>>>> Fix This 🛠
 supported_sites_list = """disk.yandex.com\nmediafire.com\nuptobox.com\nosdn.net\ngithub.com\nhxfile.co\nanonfiles.com\nletsupload.io\n1drv.ms(onedrive)\n\
 pixeldrain.com\nantfiles.com\nstreamtape.com\nbayfiles.com\nracaty.net\n1fichier.com\nsolidfiles.com\nkrakenfiles.com\n\
 upload.ee\nmdisk.me\nwetransfer.com\ngofile.io\ndropbox.com\nzippyshare.com\nmegaup.net\n\
