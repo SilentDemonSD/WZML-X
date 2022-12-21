@@ -247,6 +247,7 @@ def add_aria2c_download(link: str, path, listener, filename, auth, ratio, seed_t
             dls.append(aria2.add_uris([link], args))
         download = dls[0]
     else:
+        LOGGER.info(link)
         download = aria2.add_uris([link], args)
     if download.error_message:
         error = str(download.error_message).replace('<', ' ').replace('>', ' ')
