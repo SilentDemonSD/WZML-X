@@ -140,7 +140,7 @@ class YoutubeDLHelper:
     def __onDownloadComplete(self):
         self.listener.onDownloadComplete()
 
-    def __onDownloadError(self, error, button=None):
+    def __onDownloadError(self, error):
         self.__is_cancelled = True
         self.listener.onDownloadError(error, button)
 
