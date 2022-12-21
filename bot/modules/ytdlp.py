@@ -160,7 +160,7 @@ Check all yt-dlp api options from this <a href='https://github.com/yt-dlp/yt-dlp
     if len(CATUSR) >= 1: u_index = 0
     listener = [bot, message, isZip, isLeech, pswd, tag, link]
     extra = [name, opt, qual, select, c_index, u_index, time()]
-    if ((len(CATEGORY_NAMES) > 1 and len(CATUSR) == 0) or (len(CATEGORY_NAMES) >= 1 and len(CATUSR) > 1)) and not isLeech and multi == 0::
+    if ((len(CATEGORY_NAMES) > 1 and len(CATUSR) == 0) or (len(CATEGORY_NAMES) >= 1 and len(CATUSR) > 1)) and not isLeech and multi == 0:
         timeout = 60
         btn_listener[msg_id] = [extra, listener, timeout]
         text, btns = get_category_buttons('ytdlp', timeout, msg_id, c_index, u_index, user_id)
