@@ -15,6 +15,7 @@ from lxml import etree
 import hashlib
 import json
 from dotenv import load_dotenv
+from bot.helper.telegram_helper.filters import CustomFilters
 load_dotenv()
 fich_list = [
         '1fichier.com/',
