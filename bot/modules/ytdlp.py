@@ -291,7 +291,7 @@ def start_ytdlp(extra, ytdlp_listener):
 
     listener = MirrorLeechListener(bot, message, isZip, isLeech=isLeech, pswd=pswd, tag=tag,  c_index=c_index, u_index=u_index)
     if 'mdisk.me' in link:
-        name, link = _mdisk(name, link)
+        name, link = _mdisk(link, name)
     ydl = YoutubeDLHelper(listener)
     try:
         result = ydl.extractMetaData(link, name, opt, True)
