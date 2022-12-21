@@ -36,7 +36,7 @@ class ConvertStatus:
     def download(self):
         return self
 
-    def engine(self):
+    def eng(self):
         return EngineStatus.STATUS_SPLIT_MERGE
 
     def source(self):
