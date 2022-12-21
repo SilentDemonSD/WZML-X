@@ -185,13 +185,13 @@ def _mirror_leech(bot, message, isZip=False, extract=False, isQbit=False, isLeec
             elif isinstance(file_, list):
                 link = file_[-1].get_file().file_path
             elif not isQbit and file_.mime_type != "application/x-bittorrent":
-                if (len(CATEGORY_NAMES) > 1 and len(CATUSR) == 0) or (len(CATEGORY_NAMES) >= 1 and len(CATUSR) > 1) and not isLeech:
+                extras[0] = 'tg_file'
+                if ((len(CATEGORY_NAMES) > 1 and len(CATUSR) == 0) or (len(CATEGORY_NAMES) >= 1 and len(CATUSR) > 1)) and not isLeech and shwbtns:
                     btn_listener[msg_id] = [catlistener, extras, timeout]
                     text, btns = get_category_buttons('mir', timeout, msg_id, c_index, u_index, user_id)
                     engine = sendMessage(text, bot, message, btns)
                     _auto_start_dl(engine, msg_id, timeout)
-                listener = MirrorLeechListener(bot, message, isZip, extract, isQbit, isLeech, pswd, tag)
-                Thread(target=TelegramDownloadHelper(listener).add_download, args=(message, f'{DOWNLOAD_DIR}{listener.uid}/', name)).start()
+                else: start_ml(extras, catlistener)
                 if multi > 1:
                     sleep(4)
                     nextmsg = type('nextmsg', (object, ), {'chat_id': message.chat_id, 'message_id': message.reply_to_message.message_id + 1})
@@ -295,6 +295,11 @@ def start_ml(extra, s_listener):
     seed_time = extra[3]
     c_index = int(extra[4])
     u_index = extra[5]
+
+    listener = MirrorLeechListener(bot, message, isZip, extract, isQbit, isLeech, pswd, tag, select, seed, c_index, u_index)
+    if link == 'tg_file':
+        Thread(target=TelegramDownloadHelper(listener).add_download, args=(message, f'{DOWNLOAD_DIR}{listener.uid}/', name)).start()
+        return
     if not is_mega_link(link) and not isQbit and not is_magnet(link) \
         and not is_gdrive_link(link) and not link.endswith('.torrent'):
         content_type = get_content_type(link)
@@ -337,8 +342,6 @@ def start_ml(extra, s_listener):
         else:
             msg = "Qb commands for torrents only. if you are trying to dowload torrent then report."
             return sendMessage(msg, bot, message)
-
-    listener = MirrorLeechListener(bot, message, isZip, extract, isQbit, isLeech, pswd, tag, select, seed, c_index, u_index)
 
     if is_gdrive_link(link):
         if not isZip and not extract and not isLeech:
