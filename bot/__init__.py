@@ -107,6 +107,86 @@ if DATABASE_URL:
 else:
     config_dict = {}
 
+try:
+    TOKEN_PICKLE_URL = environ.get('TOKEN_PICKLE_URL')
+    if len(TOKEN_PICKLE_URL) == 0:
+        raise KeyError
+    try:
+        res = rget(TOKEN_PICKLE_URL)
+        if res.status_code == 200:
+            with open('token.pickle', 'wb+') as f:
+                f.write(res.content)
+        else:
+            log_error(f"Failed to download token.pickle, link got HTTP response: {res.status_code}")
+    except Exception as e:
+        log_error(f"TOKEN_PICKLE_URL: {e}")
+except:
+    pass
+try:
+    CATRGORIES_TEXT_URL = environ.get('CATRGORIES_TEXT_URL')
+    if len(CATRGORIES_TEXT_URL) == 0:
+        raise KeyError
+    try:
+        res = rget(CATRGORIES_TEXT_URL)
+        if res.status_code == 200:
+            with open('categories.txt', 'wb+') as f:
+                f.write(res.content)
+        else:
+            log_error(f"Failed to download categories.txt, link got HTTP response: {res.status_code}")
+    except Exception as e:
+        log_error(f"CATRGORIES_TEXT_URL: {e}")
+except:
+    pass
+try:
+    ACCOUNTS_ZIP_URL = environ.get('ACCOUNTS_ZIP_URL')
+    if len(ACCOUNTS_ZIP_URL) == 0:
+        raise KeyError
+    try:
+        res = rget(ACCOUNTS_ZIP_URL)
+        if res.status_code == 200:
+            with open('accounts.zip', 'wb+') as f:
+                f.write(res.content)
+        else:
+            log_error(f"Failed to download accounts.zip, link got HTTP response: {res.status_code}")
+    except Exception as e:
+        log_error(f"ACCOUNTS_ZIP_URL: {e}")
+        raise KeyError
+    srun(["unzip", "-q", "-o", "accounts.zip"])
+    srun(["chmod", "-R", "777", "accounts"])
+    osremove("accounts.zip")
+except:
+    pass
+try:
+    MULTI_SEARCH_URL = environ.get('MULTI_SEARCH_URL')
+    if len(MULTI_SEARCH_URL) == 0:
+        raise KeyError
+    try:
+        res = rget(MULTI_SEARCH_URL)
+        if res.status_code == 200:
+            with open('drive_folder', 'wb+') as f:
+                f.write(res.content)
+        else:
+            log_error(f"Failed to download drive_folder, link got HTTP response: {res.status_code}")
+    except Exception as e:
+        log_error(f"MULTI_SEARCH_URL: {e}")
+except:
+    pass
+try:
+    NETRC_URL = environ.get('NETRC_URL')
+    if len(NETRC_URL) == 0:
+        raise KeyError
+    try:
+        res = rget(NETRC_URL)
+        if res.status_code == 200:
+            with open('.netrc', 'wb+') as f:
+                f.write(res.content)
+        else:
+            log_error(f"Failed to download .netrc {res.status_code}")
+    except Exception as e:
+        log_error(f"NETRC_URL: {e}")
+except:
+    pass
+
 OWNER_ID = environ.get('OWNER_ID', '')
 if len(OWNER_ID) == 0:
     log_error("OWNER_ID variable is missing! Exiting now")
@@ -793,7 +873,13 @@ config_dict = {'ANILIST_ENABLED': ANILIST_ENABLED,
                'WEB_PINCODE': WEB_PINCODE,
                'YTDLP_LIMIT': YTDLP_LIMIT,
                'MAX_PLAYLIST': MAX_PLAYLIST,
-               'YT_DLP_QUALITY': YT_DLP_QUALITY}
+               'YT_DLP_QUALITY': YT_DLP_QUALITY,
+               'TOKEN_PICKLE_URL': TOKEN_PICKLE_URL,
+               'MULTI_SEARCH_URL': MULTI_SEARCH_URL,
+               'ACCOUNTS_ZIP_URL': ACCOUNTS_ZIP_URL,
+               'COOKIES_TEXT_URL': COOKIES_TEXT_URL,
+               'CATRGORIES_TEXT_URL': CATRGORIES_TEXT_URL,
+               'NETRC_URL': NETRC_URL}
 
 if GDRIVE_ID:
     DRIVES_NAMES.append("Main")

@@ -658,7 +658,31 @@ def load_config():
     YT_DLP_QUALITY = environ.get('YT_DLP_QUALITY', '')
     if len(YT_DLP_QUALITY) == 0:
         YT_DLP_QUALITY = ''
+    
+    TOKEN_PICKLE_URL = environ.get('TOKEN_PICKLE_URL', '')
+    if len(TOKEN_PICKLE_URL) == 0: 
+        TOKEN_PICKLE_URL = ''
+    
+    CATRGORIES_TEXT_URL = environ.get('CATRGORIES_TEXT_URL', '')
+    if len(CATRGORIES_TEXT_URL) == 0: 
+        CATRGORIES_TEXT_URL = ''
+    
+    COOKIES_TEXT_URL = environ.get('COOKIES_TEXT_URL', '')
+    if len(COOKIES_TEXT_URL) == 0: 
+        COOKIES_TEXT_URL = ''
+    
+    ACCOUNTS_ZIP_URL = environ.get('ACCOUNTS_ZIP_URL', '')
+    if len(ACCOUNTS_ZIP_URL) == 0: 
+        ACCOUNTS_ZIP_URL = ''
+    
+    MULTI_SEARCH_URL = environ.get('MULTI_SEARCH_URL', '')
+    if len(MULTI_SEARCH_URL) == 0: 
+        MULTI_SEARCH_URL = ''
 
+    NETRC_URL = environ.get('NETRC_URL', '')
+    if len(NETRC_URL) == 0: 
+        NETRC_URL = ''
+    
     BASE_URL = environ.get('BASE_URL', '').rstrip("/")
     if len(BASE_URL) == 0:
         BASE_URL = ''
@@ -795,6 +819,12 @@ def load_config():
                         'WEB_PINCODE': WEB_PINCODE,
                         'YTDLP_LIMIT': YTDLP_LIMIT,
                         'MAX_PLAYLIST': MAX_PLAYLIST,
+                        'TOKEN_PICKLE_URL': TOKEN_PICKLE_URL,
+                        'ACCOUNTS_ZIP_URL': ACCOUNTS_ZIP_URL,
+                        'MULTI_SEARCH_URL': MULTI_SEARCH_URL,
+                        'COOKIES_TEXT_URL': COOKIES_TEXT_URL,
+                        'CATRGORIES_TEXT_URL': CATRGORIES_TEXT_URL,
+                        'NETRC_URL': NETRC_URL,
                         'YT_DLP_QUALITY': YT_DLP_QUALITY})
 
 
