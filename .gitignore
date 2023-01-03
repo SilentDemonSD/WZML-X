@@ -1,7 +1,9 @@
 config.env
 Thumbnails/*
 list_drives.txt
+categories.txt
 cookies.txt
+terabox.txt
 downloads
 *auth_token.txt
 *.pyc
@@ -15,4 +17,4 @@ log.txt
 authorized_chats.txt
 sudo_users.txt
 accounts/*
-
+cookies/*

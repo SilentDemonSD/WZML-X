@@ -41,5 +41,5 @@ class CustomFilters:
 
     @staticmethod
     def owner_query(uid):
-        return uid == OWNER_ID or uid in user_data and user_data[uid].get('is_sudo')
+        return (uid == OWNER_ID) or (uid in user_data and user_data[uid].get('is_sudo'))
 

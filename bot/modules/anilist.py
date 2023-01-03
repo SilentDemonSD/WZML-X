@@ -1,53 +1,20 @@
 from requests import post as rpost
+from markdown import markdown
 from random import choice
 from datetime import datetime
 from calendar import month_name
 from pycountry import countries as conn
 from urllib.parse import quote as q
 
-import requests
-from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ParseMode
-from telegram.ext import run_async, CallbackContext, CommandHandler, CallbackQueryHandler
+from telegram import ParseMode
+from telegram.ext import CallbackContext, CommandHandler, CallbackQueryHandler
 from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, sendPhoto
+from bot.helper.telegram_helper.message_utils import sendMessage, sendPhoto, editMessage
+from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.bot_utils import get_readable_time
-from bot import LOGGER, dispatcher, IMAGE_URL, ANILIST_ENABLED, DEF_ANI_TEMP, config_dict, user_data
+from bot import LOGGER, dispatcher, IMAGE_URL, ANILIST_ENABLED, DEF_ANI_TEMP, user_data
 
 GENRES_EMOJI = {"Action": "👊", "Adventure": choice(['🪂', '🧗‍♀']), "Comedy": "🤣", "Drama": " 🎭", "Ecchi": choice(['💋', '🥵']), "Fantasy": choice(['🧞', '🧞‍♂', '🧞‍♀','🌗']), "Hentai": "🔞", "Horror": "☠", "Mahou Shoujo": "☯", "Mecha": "🤖", "Music": "🎸", "Mystery": "🔮", "Psychological": "♟", "Romance": "💞", "Sci-Fi": "🛸", "Slice of Life": choice(['☘','🍁']), "Sports": "⚽️", "Supernatural": "🫧", "Thriller": choice(['🥶', '🔪','🤯'])}
-
-#### ----- No USE
-airing_query = '''
-    query ($id: Int,$search: String) { 
-        Media (id: $id, type: ANIME,search: $search) { 
-            id
-            episodes
-            title {
-                romaji
-                english
-                native
-            }
-            nextAiringEpisode {
-            airingAt
-            timeUntilAiring
-            episode
-        } 
-    }
-}
-'''
-
-fav_query = """
-query ($id: Int) { 
-    Media (id: $id, type: ANIME) { 
-        id
-        title {
-            romaji
-            english
-            native
-        }
-    }
-}
-"""
-#### ----- No USE
 
 ANIME_GRAPHQL_QUERY = """
 query ($id: Int, $idMal: Int, $search: String) {
@@ -181,19 +148,20 @@ query ($id: Int, $idMal: Int, $search: String) {
 """
 
 character_query = """
-    query ($query: String) {
-        Character (search: $query) {
-            id
-            name {
-                first
-                last
-                full
-            }
-            siteUrl
-            image {
-                large
-            }
-            description
+query ($id: Int, $search: String) {
+    Character (id: $id, search: $search) {
+        id
+        name {
+            first
+            last
+            full
+            native
+        }
+        siteUrl
+        image {
+            large
+        }
+        description
     }
 }
 """
@@ -223,13 +191,13 @@ query ($id: Int,$search: String) {
 """
 
 url = 'https://graphql.anilist.co'
+sptext = ""
 
-
-def anilist(update: Update, context: CallbackContext, aniid=None, u_id=None):
+def anilist(update, context: CallbackContext, aniid=None, u_id=None):
     if not aniid:
-        message = update.effective_message
-        user_id = update.message.from_user.id
-        squery = (message.text).split(' ', 1)
+        msg = update.message
+        user_id = msg.from_user.id
+        squery = (msg.text).split(' ', 1)
         if len(squery) == 1:
             sendMessage("<i>Provide AniList ID / Anime Name / MyAnimeList ID</i>", context.bot, update.message)
             return
@@ -287,16 +255,15 @@ def anilist(update: Update, context: CallbackContext, aniid=None, u_id=None):
         bannerimg = animeResp['bannerImage'] or ''
         coverimg = animeResp['coverImage']['large'] or ''
         title_img = f"https://img.anili.st/media/{siteid}"
-        buttons = [
-            [InlineKeyboardButton("AniList Info 🎬", url=siteurl)],
-            [InlineKeyboardButton("Reviews 📑", callback_data=f"anime {user_id} rev {siteid}"),
-            InlineKeyboardButton("Tags 🎯", callback_data=f"anime {user_id} tags {siteid}"),
-            InlineKeyboardButton("Relations 🧬", callback_data=f"anime {user_id} rel {siteid}")],
-            [InlineKeyboardButton("Streaming Sites 📊", callback_data=f"anime {user_id} sts {siteid}"),
-            InlineKeyboardButton("Characters 👥️️", callback_data=f"anime {user_id} cha {siteid}")]
-        ]
+        btns = ButtonMaker()
+        btns.buildbutton("AniList Info 🎬", siteurl, 'header')
+        btns.sbutton("Reviews 📑", f"anime {user_id} rev {siteid}")
+        btns.sbutton("Tags 🎯", f"anime {user_id} tags {siteid}")
+        btns.sbutton("Relations 🧬", f"anime {user_id} rel {siteid}")
+        btns.sbutton("Streaming Sites 📊", f"anime {user_id} sts {siteid}")
+        btns.sbutton("Characters 👥️️", f"anime {user_id} cha {siteid}")
         if trailer:
-            buttons[0].insert(1, InlineKeyboardButton("Trailer 🎞", url=trailer))
+            btns.buildbutton("Trailer 🎞", trailer, 'header')
         aniListTemp = ''
         if user_id in user_data:
             aniListTemp = user_data[user_id].get('ani_temp', '')
@@ -308,10 +275,10 @@ def anilist(update: Update, context: CallbackContext, aniid=None, u_id=None):
             template = DEF_ANI_TEMP
             LOGGER.error(f"AniList Error: {e}")
         if aniid:
-            return template, buttons
+            return template, btns.build_menu(3)
         else:
-            try: message.reply_photo(photo = title_img, caption = template, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(buttons))
-            except: message.reply_photo(photo = 'https://te.legra.ph/file/8a5155c0fc61cc2b9728c.jpg', caption = template, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(buttons))
+            try: msg.reply_photo(photo = title_img, caption = template, parse_mode=ParseMode.HTML, reply_markup=btns.build_menu(3))
+            except: msg.reply_photo(photo = 'https://te.legra.ph/file/8a5155c0fc61cc2b9728c.jpg', caption = template, parse_mode=ParseMode.HTML, reply_markup=btns.build_menu(3))
   
 def setAnimeButtons(update, context):
     query = update.callback_query
@@ -320,76 +287,112 @@ def setAnimeButtons(update, context):
     data = query.data
     data = data.split()
     siteid = data[3]
-    btn = [
-        [InlineKeyboardButton("⌫ Back", callback_data = f"anime {data[1]} home {siteid}")]
-    ]
+    btns = ButtonMaker()
+    btns.sbutton("⌫ Back", f"anime {data[1]} home {siteid}")
     if user_id != int(data[1]):
         query.answer(text="Not Yours!", show_alert=True)
+        return
     elif data[2] == "tags":
         query.answer()
         aniTag = rpost(url, json={'query': ANIME_GRAPHQL_QUERY, 'variables': {'id' : siteid}}).json()['data'].get('Media', None)
         msg = "<b>Tags :</b>\n\n"
         msg += "\n".join(f"""<a href="https://anilist.co/search/anime?genres={q(x['name'])}">{x['name']}</a> {x['rank']}%""" for x in aniTag['tags'])
-        message.edit_caption(caption=msg, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(btn))
     elif data[2] == "sts":
         query.answer()
         links = rpost(url, json={'query': ANIME_GRAPHQL_QUERY, 'variables': {'id' : siteid}}).json()['data'].get('Media', None)
         msg = "<b>External & Streaming Links :</b>\n\n"
         msg += "\n".join(f"""<a href="{x['url']}">{x['site']}</a>""" for x in links['externalLinks'])
-        message.edit_caption(caption=msg, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(btn))
     elif data[2] == "rev":
         query.answer()
         animeResp = rpost(url, json={'query': ANIME_GRAPHQL_QUERY, 'variables': {'id' : siteid}}).json()['data'].get('Media', None)
         msg = "<b>Reviews :</b>\n\n"
         reList = animeResp['reviews']['nodes']
         msg += "\n\n".join(f"""<a href="{x['siteUrl']}">{x['summary']}</a>\n<b>Score :</b> <code>{x['score']} / 100</code>\n<i>By {x['user']['name']}</i>""" for x in reList[:8])
-        message.edit_caption(caption=msg, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(btn))
     elif data[2] == "rel":
         query.answer()
         animeResp = rpost(url, json={'query': ANIME_GRAPHQL_QUERY, 'variables': {'id' : siteid}}).json()['data'].get('Media', None)
         msg = "<b>Relations :</b>\n\n"
         msg += "\n\n".join(f"""<a href="{x['node']['siteUrl']}">{x['node']['title']['english']}</a> ({x['node']['title']['romaji']})\n<b>Format</b>: <code>{x['node']['format'].capitalize()}</code>\n<b>Status</b>: <code>{x['node']['status'].capitalize()}</code>\n<b>Average Score</b>: <code>{x['node']['averageScore']}%</code>\n<b>Source</b>: <code>{x['node']['source'].capitalize()}</code>\n<b>Relation Type</b>: <code>{x.get('relationType', 'N/A').capitalize()}</code>""" for x in animeResp['relations']['edges'])
-        message.edit_caption(caption=msg, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(btn))
     elif data[2] == "cha":
         query.answer()
         animeResp = rpost(url, json={'query': ANIME_GRAPHQL_QUERY, 'variables': {'id' : siteid}}).json()['data'].get('Media', None)
         msg = "<b>List of Characters :</b>\n\n"
         msg += "\n\n".join(f"""• <a href="{x['node']['siteUrl']}">{x['node']['name']['full']}</a> ({x['node']['name']['native']})\n<b>Role :</b> {x['role'].capitalize()}""" for x in (animeResp['characters']['edges'])[:8])
-        message.edit_caption(caption=msg, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(btn))
     elif data[2] == "home":
         query.answer()
         msg, btns = anilist(update, context.bot, siteid, data[1])
-        message.edit_caption(caption=msg, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(btns))
-
-def character(update: Update, _):
-    message = update.effective_message
-    search = message.text.split(' ', 1)
-    if len(search) == 1:
-        update.effective_message.reply_text('Format : /character < character name >') 
+        message.edit_caption(caption=msg, parse_mode=ParseMode.HTML, reply_markup=btns)
         return
-    search = search[1]
-    variables = {'query': search}
-    json = requests.post(url, json={'query': character_query, 'variables': variables}).json()['data'].get('Character', None)
+    message.edit_caption(caption=msg, parse_mode=ParseMode.HTML, reply_markup=btns.build_menu(1))
+
+def character(update, context, aniid=None, u_id=None):
+    global sptext
+    rlp_mk = None
+    if not aniid:
+        search = update.message.text.split(' ', 1)
+        if len(search) == 1:
+            sendMessage('<b>Format :</b>\n<code>/character</code> <i>[search AniList Character]</i>', context.bot, update.message) 
+            return
+        vars = {'search': search[1]}
+        user_id = update.message.from_user.id 
+    else:
+        vars = {'id': aniid}
+        user_id = int(u_id)
+    json = rpost(url, json={'query': character_query, 'variables': vars}).json()['data'].get('Character', None)
     if json:
-        msg = f"*{json.get('name').get('full')}*(`{json.get('name').get('native')}`)\n"
-        description = f"{json['description']}"
+        msg = f"<b>{json.get('name').get('full')}</b> (<code>{json.get('name').get('native')}</code>)\n\n"
+        description = json['description']
         site_url = json.get('siteUrl')
-        msg += shorten(description, site_url)
+        siteid = json.get('id')
+        if '~!' in description and '!~' in description: #Spoiler
+            btn = ButtonMaker()
+            sptext = description.split('~!', 1)[1].rsplit('!~', 1)[0].replace('~!', '').replace('!~', '')
+            btn.sbutton("🔍 View Spoiler", f"cha {user_id} spoil {siteid}")
+            rlp_mk = btn.build_menu(1)
+            description = description.split('~!', 1)[0]
+        if len(description) > 700:  
+            description = f"{description[:700]}...."
+        msg += markdown(description).replace('<p>', '').replace('</p>', '')
         image = json.get('image', None)
         if image:
-            image = image.get('large')
-            update.effective_message.reply_photo(photo = image, caption = msg, parse_mode=ParseMode.MARKDOWN)
-        else: update.effective_message.reply_text(msg, parse_mode=ParseMode.MARKDOWN)
+            img = image.get('large')
+        if aniid:
+            return msg, rlp_mk
+        else:
+            if img: update.effective_message.reply_photo(photo = img, caption = msg, reply_markup=rlp_mk)
+            else: sendMessage(msg, context.bot, update.message)
 
-def manga(update: Update, _):
+def setCharacButtons(update, context):
+    global sptext
+    query = update.callback_query
+    message = query.message
+    user_id = query.from_user.id
+    data = query.data
+    data = data.split()
+    btns = ButtonMaker()
+    btns.sbutton("⌫ Back", f"cha {data[1]} home {data[3]}")
+    if user_id != int(data[1]):
+        query.answer(text="Not Yours!", show_alert=True)
+        return
+    elif data[2] == "spoil":
+        query.answer("Alert !! Shh")
+        if len(sptext) > 900:
+            sptext = f"{sptext[:900]}..."
+        message.edit_caption(caption=f"<b>Spoiler Ahead :</b>\n\n<tg-spoiler>{markdown(sptext).replace('<p>', '').replace('</p>', '')}</tg-spoiler>", parse_mode=ParseMode.HTML, reply_markup=btns.build_menu(1))
+    elif data[2] == "home":
+        query.answer()
+        msg, btns = character(update, context.bot, data[3], data[1])
+        message.edit_caption(caption=msg, parse_mode=ParseMode.HTML, reply_markup=btns)
+
+def manga(update, context):
     message = update.effective_message
     search = message.text.split(' ', 1)
     if len(search) == 1:
-        update.effective_message.reply_text('Format : /manga < manga name >') 
+        sendMessage('<b>Format :</b>\n<code>/manga</code> <i>[search manga]</i>',  context.bot, update.message) 
         return
     search = search[1]
     variables = {'search': search}
-    json = requests.post(url, json={'query': manga_query, 'variables': variables}).json()['data'].get('Media', None)
+    json = rpost(url, json={'query': manga_query, 'variables': variables}).json()['data'].get('Media', None)
     msg = ''
     if json:
         title, title_native = json['title'].get('romaji', False), json['title'].get('native', False)
@@ -402,21 +405,22 @@ def manga(update: Update, _):
         if status: msg += f"\n*Status* - `{status}`"
         if score: msg += f"\n*Score* - `{score}`"
         msg += '\n*Genres* - '
-        for x in json.get('genres', []): msg += f"{x}, "
+        for x in json.get('genres', []): msg += f"#{x}, "
         msg = msg[:-2]
         info = json['siteUrl']
-        buttons = [
-                [InlineKeyboardButton("More Info", url=info)]
-            ]
-        image = json.get("bannerImage", False)
-        msg += f"_{json.get('description', None)}_"
+        buttons = ButtonMaker()
+        buttons.buildbutton("AniList Info", info)
+        bimage = json.get("bannerImage", False)
+        image = f"https://img.anili.st/media/{json.get('id')}"
+        msg += f"\n\n_{json.get('description', None)}_"
+        msg = msg.replace('<br>', '').replace('<i>', '').replace('</i>', '')
         if image:
             try:
-                update.effective_message.reply_photo(photo = image, caption = msg, parse_mode=ParseMode.MARKDOWN, reply_markup=InlineKeyboardMarkup(buttons))
+                update.effective_message.reply_photo(photo = image, caption = msg, parse_mode=ParseMode.MARKDOWN, reply_markup=buttons.build_menu(1))
             except:
                 msg += f" [〽️]({image})"
-                update.effective_message.reply_text(msg, parse_mode=ParseMode.MARKDOWN, reply_markup=InlineKeyboardMarkup(buttons))
-        else: update.effective_message.reply_text(msg, parse_mode=ParseMode.MARKDOWN, reply_markup=InlineKeyboardMarkup(buttons))
+                update.effective_message.reply_text(msg, parse_mode=ParseMode.MARKDOWN, reply_markup=buttons.build_menu(1))
+        else: update.effective_message.reply_text(msg, parse_mode=ParseMode.MARKDOWN, reply_markup=buttons.build_menu(1))
 
 def weebhelp(update, context):
     help_string = '''
@@ -429,17 +433,19 @@ def weebhelp(update, context):
 
 anifilters = CustomFilters.authorized_chat if ANILIST_ENABLED else CustomFilters.owner_filter
 ANIME_HANDLER = CommandHandler("anime", anilist,
-                                        filters=anifilters | CustomFilters.authorized_user, run_async=True)
+                                        filters=anifilters | CustomFilters.authorized_user)
 CHARACTER_HANDLER = CommandHandler("character", character,
-                                        filters=anifilters | CustomFilters.authorized_user, run_async=True)
+                                        filters=anifilters | CustomFilters.authorized_user)
 MANGA_HANDLER = CommandHandler("manga", manga,
-                                        filters=anifilters | CustomFilters.authorized_user, run_async=True)
+                                        filters=anifilters | CustomFilters.authorized_user)
 WEEBHELP_HANDLER = CommandHandler("weebhelp", weebhelp,
-                                        filters=anifilters | CustomFilters.authorized_user, run_async=True)
-anibut_handler = CallbackQueryHandler(setAnimeButtons, pattern="anime", run_async=True)
+                                        filters=anifilters | CustomFilters.authorized_user)
+anibut_handler = CallbackQueryHandler(setAnimeButtons, pattern="anime")
+chabut_handler = CallbackQueryHandler(setCharacButtons, pattern="cha")
 
 dispatcher.add_handler(ANIME_HANDLER)
 dispatcher.add_handler(CHARACTER_HANDLER)
 dispatcher.add_handler(MANGA_HANDLER)
 dispatcher.add_handler(WEEBHELP_HANDLER)
 dispatcher.add_handler(anibut_handler)
+dispatcher.add_handler(chabut_handler)

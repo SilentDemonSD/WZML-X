@@ -4,11 +4,10 @@ from time import time, sleep
 from pyrogram.errors import FloodWait, RPCError
 from PIL import Image
 from threading import RLock
-from bot import user_data, GLOBAL_EXTENSION_FILTER, \
-                app, tgBotMaxFileSize, premium_session, config_dict
-from bot.helper.ext_utils.fs_utils import take_ss, get_media_info, get_media_streams, get_path_size, clean_unwanted
-from bot.helper.ext_utils.bot_utils import get_readable_file_size, change_filename
-from pyrogram.types import Message
+from bot import user_data, GLOBAL_EXTENSION_FILTER, app, tgBotMaxFileSize, premium_session, config_dict
+from bot.helper.ext_utils.fs_utils import take_ss, get_media_info, get_media_streams, clean_unwanted
+from bot.helper.ext_utils.bot_utils import get_readable_file_size, change_filename, get_bot_pm
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 LOGGER = getLogger(__name__)
 getLogger("pyrogram").setLevel(ERROR)
@@ -36,6 +35,7 @@ class TgUploader:
         self.__leech_log = user_data.get('is_leech_log')
         self.__app = app
         self.__user_id = listener.message.from_user.id
+        self.__button = InlineKeyboardMarkup([[InlineKeyboardButton(text='Save Message', callback_data="save")]]) if config_dict['SAVE_MSG'] else None
         self.isPrivate = listener.message.chat.type in ['private', 'group']
 
     def upload(self, o_files):
@@ -65,6 +65,9 @@ class TgUploader:
                     sleep(1)
         if self.__listener.seed and not self.__listener.newDir:
             clean_unwanted(self.__path)
+        if self.__total_files == 0:
+            self.__listener.onUploadError('No files to upload. Make sure if you filled USER_SESSION_STRING then you should use supergroup. In case you filled EXTENSION_FILTER then check if all file have this extension')
+            return
         if self.__total_files <= self.__corrupted:
             self.__listener.onUploadError('Files Corrupted. Check logs!')
             return
@@ -81,6 +84,9 @@ class TgUploader:
 
         dumpid = user_data[user_id_].get('userlog') if user_id_ in user_data and user_data[user_id_].get('userlog') else ''
         LEECH_X = int(dumpid) if len(dumpid) != 0 else user_data.get('is_log_leech', [''])[0]
+        
+        BOT_PM_X = get_bot_pm(user_id_)
+        
         notMedia = False
         thumb = self.__thumb
         self.__is_corrupted = False
@@ -118,8 +124,9 @@ class TgUploader:
                                                                   thumb=thumb,
                                                                   supports_streaming=True,
                                                                   disable_notification=True,
+                                                                  reply_markup=self.__button,
                                                                   progress=self.__upload_progress)
-                            if config_dict['BOT_PM']:
+                            if BOT_PM_X:
                                 try:
                                     app.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                                 except Exception as err:
@@ -140,8 +147,9 @@ class TgUploader:
                                                                       thumb=thumb,
                                                                       supports_streaming=True,
                                                                       disable_notification=True,
+                                                                      reply_markup=self.__button,
                                                                       progress=self.__upload_progress)
-                        if not self.isPrivate and config_dict['BOT_PM']:
+                        if not self.isPrivate and BOT_PM_X:
                             try:
                                 app.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                             except Exception as err:
@@ -159,8 +167,9 @@ class TgUploader:
                                                                   title=title,
                                                                   thumb=thumb,
                                                                   disable_notification=True,
+                                                                  reply_markup=self.__button,
                                                                   progress=self.__upload_progress)
-                            if config_dict['BOT_PM']:
+                            if BOT_PM_X:
                                 try:
                                     app.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                                 except Exception as err:
@@ -179,8 +188,9 @@ class TgUploader:
                                                                       title=title,
                                                                       thumb=thumb,
                                                                       disable_notification=True,
+                                                                      reply_markup=self.__button,
                                                                       progress=self.__upload_progress)
-                        if not self.isPrivate and config_dict['BOT_PM']:
+                        if not self.isPrivate and BOT_PM_X:
                             try:
                                 app.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                             except Exception as err:
@@ -195,8 +205,9 @@ class TgUploader:
                                                                 photo=up_path,
                                                                 caption=cap_mono,
                                                                 disable_notification=True,
+                                                                reply_markup=self.__button,
                                                                 progress=self.__upload_progress)
-                            if config_dict['BOT_PM']:
+                            if BOT_PM_X:
                                 try:
                                     app.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                                 except Exception as err:
@@ -211,8 +222,9 @@ class TgUploader:
                                                                       quote=True,
                                                                       caption=cap_mono,
                                                                       disable_notification=True,
+                                                                      reply_markup=self.__button,
                                                                       progress=self.__upload_progress)
-                        if not self.isPrivate and config_dict['BOT_PM']:
+                        if not self.isPrivate and BOT_PM_X:
                             try:
                                 app.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                             except Exception as err:
@@ -235,13 +247,14 @@ class TgUploader:
                                                                 thumb=thumb,
                                                                 caption=cap_mono,
                                                                 disable_notification=True,
+                                                                reply_markup=self.__button,
                                                                 progress=self.__upload_progress)
                         if len(dumpid) != 0:
                             try:
                                 app.copy_message(chat_id=LEECH_X, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                             except Exception as err:
                                 LOGGER.error(f"Failed To Send Document in dump:\n{err}")
-                        if config_dict['BOT_PM']:
+                        if BOT_PM_X:
                             try:
                                 app.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                             except Exception as err:
@@ -252,8 +265,9 @@ class TgUploader:
                                                                      thumb=thumb,
                                                                      caption=cap_mono,
                                                                      disable_notification=True,
+                                                                     reply_markup=self.__button,
                                                                      progress=self.__upload_progress)
-                    if not self.isPrivate and config_dict['BOT_PM']:
+                    if not self.isPrivate and BOT_PM_X:
                             try:
                                 app.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                             except Exception as err:
@@ -291,7 +305,7 @@ class TgUploader:
         user_id = self.__listener.message.from_user.id
         user_dict = user_data.get(user_id, False)
         if user_dict:
-            self.__as_doc = user_dict.get('as_doc', False)
+            self.__as_doc = user_dict.get('as_doc', config_dict['AS_DOCUMENT'])
         if not ospath.lexists(self.__thumb):
             self.__thumb = None
 

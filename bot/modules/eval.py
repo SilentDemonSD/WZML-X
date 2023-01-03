@@ -111,9 +111,9 @@ def clear(update, context):
     send("Cleared locals.", bot, update)
 
 
-eval_handler = CommandHandler(BotCommands.EvalCommand, evaluate, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
-exec_handler = CommandHandler(BotCommands.ExecCommand, execute, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
-clear_handler = CommandHandler(BotCommands.ClearLocalsCommand, clear, filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
+eval_handler = CommandHandler(BotCommands.EvalCommand, evaluate, filters=CustomFilters.owner_filter | CustomFilters.sudo_user)
+exec_handler = CommandHandler(BotCommands.ExecCommand, execute, filters=CustomFilters.owner_filter | CustomFilters.sudo_user)
+clear_handler = CommandHandler(BotCommands.ClearLocalsCommand, clear, filters=CustomFilters.owner_filter | CustomFilters.sudo_user)
 
 dispatcher.add_handler(eval_handler)
 dispatcher.add_handler(exec_handler)

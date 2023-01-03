@@ -9,17 +9,13 @@ from psutil import cpu_percent, disk_usage, net_io_counters, virtual_memory
 from requests import head as rhead
 from urllib.request import urlopen
 
+from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot import download_dict, download_dict_lock, botStartTime, DOWNLOAD_DIR, user_data, config_dict
 from bot.helper.telegram_helper.button_build import ButtonMaker
-
-import shutil
-import psutil
-from telegram.error import RetryAfter
+from bot import LOGGER, CATEGORY_IDS, CATEGORY_INDEX, CATEGORY_NAMES, DATABASE_URL, dispatcher, download_dict, \
+                download_dict_lock, botStartTime, DOWNLOAD_DIR, user_data, config_dict
 from telegram.ext import CallbackQueryHandler
-from telegram.message import Message
-from telegram.update import Update
-from bot import *
+
 
 MAGNET_REGEX = r"magnet:\?xt=urn:btih:[a-zA-Z0-9]*"
 
@@ -35,24 +31,28 @@ class MirrorStatus:
         STATUS_UPLOADING = "📤 Upload"
         STATUS_DOWNLOADING = "📥 Download"
         STATUS_CLONING = "♻️ Clone"
-        STATUS_WAITING = "💤 Queue"
+        STATUS_QUEUEDL = "💤 QueueDl"
+        STATUS_QUEUEUP = "💤 QueueUp"
         STATUS_PAUSED = "⛔️ Pause"
         STATUS_ARCHIVING = "🔐 Archive"
         STATUS_EXTRACTING = "📂 Extract"
         STATUS_SPLITTING = "✂️ Split"
         STATUS_CHECKING = "📝 CheckUp"
         STATUS_SEEDING = "🌧 Seed"
+        STATUS_CONVERTING = "↔️ Convert"
     else:
         STATUS_UPLOADING = "Upload"
         STATUS_DOWNLOADING = "Download"
         STATUS_CLONING = "Clone"
-        STATUS_WAITING = "Queue"
+        STATUS_QUEUEDL = "QueueDl"
+        STATUS_QUEUEUP = "QueueUp"
         STATUS_PAUSED = "Pause"
         STATUS_ARCHIVING = "Archive"
         STATUS_EXTRACTING = "Extract"
         STATUS_SPLITTING = "Split"
         STATUS_CHECKING = "CheckUp"
         STATUS_SEEDING = "Seed"
+        STATUS_CONVERTING = "↔️ Convert"
 
 class EngineStatus:
     STATUS_ARIA = "Aria2c📶"
@@ -62,8 +62,9 @@ class EngineStatus:
     STATUS_TG = "Pyrogram💥"
     STATUS_YT = "YT-dlp🌟"
     STATUS_EXT = "Extract | pExtract⚔️"
-    STATUS_SPLIT = "FFmpeg✂️"
+    STATUS_SPLIT_MERGE = "FFmpeg🍿"
     STATUS_ZIP = "p7zip🛠"
+    STATUS_QUEUE = "Sleep💤"
 
     
 SIZE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
@@ -140,6 +141,61 @@ def get_user_task(user_id):
         if userid == user_id: user_task += 1
     return user_task
 
+def get_bot_pm(user_id):
+    if config_dict['FORCE_BOT_PM']:
+        return True
+    else:
+        if not (user_id in user_data and user_data[user_id].get('ubot_pm')):
+            update_user_ldata(user_id, 'ubot_pm', config_dict['BOT_PM'])
+        botpm = user_data[user_id].get('ubot_pm')
+        return botpm
+
+def getGDriveUploadUtils(user_id, u_index, c_index):
+    GDRIVEID = config_dict['GDRIVE_ID']
+    INDEXURL = config_dict['INDEX_URL']
+    if u_index is not None:
+        _, GDriveID, IndexURL = getUserTDs(user_id)
+        GDRIVEID = GDriveID[u_index]
+        INDEXURL = IndexURL[u_index]
+    elif c_index != 0:
+        GDRIVEID = CATEGORY_IDS[c_index]
+        INDEXURL = CATEGORY_INDEX[c_index]
+    return GDRIVEID, INDEXURL
+
+def getUserTDs(user_id, force=False):
+    GDriveID, IndexURL, GDNames = [], [], []
+    if user_id in user_data and (user_data[user_id].get('is_usertd') or force) and user_data[user_id].get('usertd'):
+        LOGGER.info("Using USER TD!")
+        userDest = (user_data[user_id].get('usertd')).split('\n')
+        if len(userDest) != 0:
+            for i, _ in enumerate(userDest):
+                arrForUser = userDest[i].split()
+                GDNames.append(arrForUser[0])
+                GDriveID.append(arrForUser[1])
+                IndexURL.append(arrForUser[2].rstrip('/') if len(arrForUser) > 2 else '')
+    return GDNames, GDriveID, IndexURL
+
+def handleIndex(index, dic):
+    """Handle IndexError for any List (Runs Index Loop) +ve & -ve Supported"""
+    while True:
+        if abs(index) >= len(dic):
+            if index < 0: index = len(dic) - abs(index)
+            elif index > 0: index = index - len(dic)
+        else: break
+    return index
+
+def userlistype(user_id):
+    user_dict = user_data.get(user_id, False)
+    if user_dict and user_dict.get("ulist_typ"):
+        tegr = user_dict.get("ulist_typ") == "Telegraph"
+        html = user_dict.get("ulist_typ") == "HTML"
+        tgdi = user_dict.get("ulist_typ") == "Tele_Msg"
+    else:
+        tegr = config_dict['LIST_MODE'].lower() == "telegraph"
+        html = config_dict['LIST_MODE'].lower() == "html"
+        tgdi = config_dict['LIST_MODE'].lower() == "tg_direct"
+    return tegr, html, tgdi
+
 def progress_bar(percentage):
     """Returns a progress bar for download"""
     if isinstance(percentage, str):
@@ -175,8 +231,7 @@ def get_progress_bar_string(status):
     if cPart >= 0:
         p_str += config_dict['MULTI_WORKING_PROGRESS_STR'][cPart]
     p_str += config_dict['UN_FINISHED_PROGRESS_STR']  * (12 - cFull)
-    p_str = f"[{p_str}]"
-    return p_str
+    return f"[{p_str}]"
 
 
 def get_readable_message():
@@ -192,9 +247,9 @@ def get_readable_message():
         for index, download in enumerate(list(download_dict.values())[COUNT:], start=1):
             msg += f"<b>╭ <a href='{download.message.link}'>{download.status()}</a>: </b>"
             msg += f"<code>{escape(str(download.name()))}</code>"
-            if download.status() not in [MirrorStatus.STATUS_SEEDING, MirrorStatus.STATUS_SPLITTING]:
+            if download.status() not in [MirrorStatus.STATUS_SEEDING, MirrorStatus.STATUS_SPLITTING, MirrorStatus.STATUS_CONVERTING, MirrorStatus.STATUS_QUEUEDL, MirrorStatus.STATUS_QUEUEUP]:
                 if config_dict['EMOJI_THEME']:
-                    msg += f"\n<b>├</b>{get_progress_bar_string(download)} {download.progress()}"
+                    msg += f"\n<b>├ </b>{get_progress_bar_string(download)} {download.progress()}"
                     msg += f"\n<b>├🔄 Process:</b> {get_readable_file_size(download.processed_bytes())} of {download.size()}"
                     msg += f"\n<b>├⚡ Speed:</b> {download.speed()}"
                     msg += f"\n<b>├⏳ ETA:</b> {download.eta()}"
@@ -202,7 +257,7 @@ def get_readable_message():
                     msg += f"\n<b>├⛓️ Engine :</b> {download.eng()}"
 
                 else:
-                    msg += f"\n<b>├</b>{get_progress_bar_string(download)} {download.progress()}"
+                    msg += f"\n<b>├ </b>{get_progress_bar_string(download)} {download.progress()}"
                     msg += f"\n<b>├ Process:</b> {get_readable_file_size(download.processed_bytes())} of {download.size()}"
                     msg += f"\n<b>├ Speed:</b> {download.speed()}"
                     msg += f"\n<b>├ ETA:</b> {download.eta()}"
@@ -326,6 +381,26 @@ def get_readable_message():
             return msg + bmsg, button
         return msg + bmsg, sbutton
 
+def get_category_buttons(query_data, timeout, msg_id, c_index, u_index, user_id):
+    text = '<b>Selct the category in which you want to upload</b>'
+    buttons = ButtonMaker()
+    if user_id in user_data and user_data[user_id].get('is_usertd') and u_index is not None:
+        GDNames, _, _ = getUserTDs(user_id)
+        text += f"\n<b>Upload</b>: To Drive in {GDNames[u_index]} folder"
+        if len(GDNames) != 0:
+            for j, _gname in enumerate(GDNames):
+                buttons.sbutton(f'{_gname} {"✅" if u_index is not None and _gname == GDNames[u_index] else ""}', f"{query_data} ucat {msg_id} {j}")
+    else:
+        text += f"\n<b>Upload</b>: To Drive in {CATEGORY_NAMES[c_index]} folder"
+        for i, _name in enumerate(CATEGORY_NAMES):
+            buttons.sbutton(f'{_name} {"✅" if u_index is None and _name == CATEGORY_NAMES[c_index] else ""}', f"{query_data} scat {msg_id} {i}")
+    text += f"<u>\n\nYou have {get_readable_time(timeout)} to select mode</u>"
+    buttons.sbutton('Cancel', f"{query_data} cancel {msg_id}", 'footer')
+    bname = "Update" if query_data == 'change' else "Start"
+    buttons.sbutton(f'{bname} ({get_readable_time(timeout)})', f'{query_data} start {msg_id}', 'footer')
+    return text, buttons.build_menu(3)
+
+
 def turn(data):
     STATUS_LIMIT = config_dict['STATUS_LIMIT']
     try:
@@ -378,21 +453,11 @@ def is_gdtot_link(url: str):
     url = re_match(r'https?://.+\.gdtot\.\S+', url)
     return bool(url)
 
-def is_unified_link(url: str):
-    url1 = re_match(r'https?://(anidrive|driveroot|driveflix|indidrive|drivehub)\.in/\S+', url)
-    url = re_match(r'https?://(appdrive|driveapp|driveace|gdflix|drivelinks|drivebit|drivesharer|drivepro)\.\S+', url)
-    if bool(url1) == True:
-        return bool(url1)
-    elif bool(url) == True:
-        return bool(url)
-    else:
-        return False
-
 def is_udrive_link(url: str):
     if 'drivehub.ws' in url:
         return 'drivehub.ws' in url
     else:
-        url = re_match(r'https?://(hubdrive|katdrive|kolop|drivefire|drivebuzz)\.\S+', url)
+        url = re_match(r'https?://(hubdrive|katdrive|kolop|drivefire)\.\S+', url)
         return bool(url)
     
 def is_sharer_link(url: str):
@@ -468,8 +533,9 @@ def change_filename(file_, user_id_, dirpath=None, up_path=None, all_edit=True, 
     if REMNAME:
         if not REMNAME.startswith('|'):
             REMNAME = f"|{REMNAME}"
+        REMNAME = REMNAME.replace('\s', ' ')
         slit = REMNAME.split("|")
-        __newFileName = file_
+        __newFileName = ospath.splitext(file_)[0]
         for rep in range(1, len(slit)):
             args = slit[rep].split(":")
             if len(args) == 3:
@@ -478,12 +544,14 @@ def change_filename(file_, user_id_, dirpath=None, up_path=None, all_edit=True, 
                 __newFileName = __newFileName.replace(args[0], args[1])
             elif len(args) == 1:
                 __newFileName = __newFileName.replace(args[0], '')
-        file_ = __newFileName
+        file_ = __newFileName + ospath.splitext(file_)[1]
         LOGGER.info("Remname : "+file_)
     if PREFIX:
+        PREFIX = PREFIX.replace('\s', ' ')
         if not file_.startswith(PREFIX):
             file_ = f"{PREFIX}{file_}"
     if SUFFIX and not mirror_type:
+        SUFFIX = SUFFIX.replace('\s', ' ')
         sufLen = len(SUFFIX)
         fileDict = file_.split('.')
         _extIn = 1 + len(fileDict[-1])
@@ -496,7 +564,8 @@ def change_filename(file_, user_id_, dirpath=None, up_path=None, all_edit=True, 
             )
         file_ = _newExtFileName
     elif SUFFIX:
-        file_ = f"{ospath.splitext(file_)[0]}{SUFFIX}{ospath.splitext(file_)[1]}"
+        SUFFIX = SUFFIX.replace('\s', ' ')
+        file_ = f"{ospath.splitext(file_)[0]}{SUFFIX}{ospath.splitext(file_)[1]}" if '.' in file_ else f"{file_}{SUFFIX}"
 
     if (PREFIX or REMNAME or SUFFIX) and all_edit:
         new_path = ospath.join(dirpath, file_)
@@ -506,7 +575,7 @@ def change_filename(file_, user_id_, dirpath=None, up_path=None, all_edit=True, 
     cap_mono = ""
     cfont = config_dict['CAPTION_FONT'] if not FSTYLE else FSTYLE
     if CAPTION and all_edit:
-        CAPTION = CAPTION.replace('\|', '%%')
+        CAPTION = CAPTION.replace('\|', '%%').replace('\s', ' ')
         slit = CAPTION.split("|")
         cap_mono = slit[0].format(
             filename = file_,
@@ -538,17 +607,57 @@ def is_sudo(user_id):
         return user_data[user_id].get('is_sudo')
     return False
 
+def getdailytasks(user_id, increase_task=False, upleech=0, upmirror=0, check_mirror=False, check_leech=False):
+    task, lsize, msize = 0, 0, 0
+    if user_id in user_data and user_data[user_id].get('dly_tasks'):
+        userdate = user_data[user_id]['dly_tasks'][0]
+        nowdate = datetime.today()
+        if userdate.year <= nowdate.year and userdate.month <= nowdate.month and userdate.day < nowdate.day:
+            if increase_task: task = 1
+            elif upleech != 0: lsize += upleech #bytes
+            elif upmirror != 0: msize += upmirror #bytes
+            update_user_ldata(user_id, 'dly_tasks', [datetime.today(), task, lsize, msize])
+            if DATABASE_URL:
+                DbManger().update_user_data(user_id)
+            if check_leech: return lsize
+            elif check_mirror: return msize
+            return task
+        else:
+            task = user_data[user_id]['dly_tasks'][1]
+            lsize = user_data[user_id]['dly_tasks'][2]
+            msize = user_data[user_id]['dly_tasks'][3]
+            if increase_task: task += 1
+            elif upleech != 0: lsize += upleech
+            elif upmirror != 0: msize += upmirror
+            if increase_task or upleech or upmirror:
+                update_user_ldata(user_id, 'dly_tasks', [datetime.today(), task, lsize, msize])
+                if DATABASE_URL:
+                    DbManger().update_user_data(user_id)
+            if check_leech: return lsize
+            elif check_mirror: return msize
+            return task
+    else:
+        if increase_task: task += 1
+        elif upleech != 0: lsize += upleech
+        elif upmirror != 0: msize += upmirror
+        update_user_ldata(user_id, 'dly_tasks', [datetime.today(), task, lsize, msize])
+        if DATABASE_URL:
+            DbManger().update_user_data(user_id)
+        if check_leech: return lsize
+        elif check_mirror: return msize
+        return task
+
 def is_paid(user_id):
-    if user_id in user_data and user_data[user_id].get('is_paid'):
-        ex_date = user_data[user_id].get('expiry_date')
-        if ex_date:
-            odate = datetime.strptime(ex_date, '%d-%m-%Y')
-            ndate = datetime.today()
-            if odate.year <= ndate.year:
-                if odate.month <= ndate.month:
-                    if odate.day < ndate.day:
-                        return False
-        return True
+    if config_dict['PAID_SERVICE'] is True:
+        if user_id in user_data and user_data[user_id].get('is_paid'):
+            ex_date = user_data[user_id].get('expiry_date')
+            if ex_date:
+                odate = datetime.strptime(ex_date, '%d-%m-%Y')
+                ndate = datetime.today()
+                if odate.year <= ndate.year and odate.month <= ndate.month and odate.day < ndate.day:
+                    return False
+            return True
+        else: return False
     else: return False
 
 ONE, TWO, THREE = range(3)

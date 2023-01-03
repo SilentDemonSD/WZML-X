@@ -2,15 +2,16 @@ from re import findall, IGNORECASE
 from imdb import IMDb
 from pycountry import countries as conn
 
-from telegram import Update, ParseMode
-from telegram.ext import run_async, CallbackContext, CommandHandler, CallbackQueryHandler
-from telegram.error import TelegramError
+from telegram import Update
+from telegram.ext import CallbackContext, CommandHandler, CallbackQueryHandler
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram.errors.exceptions.bad_request_400 import MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty
 
 from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import sendMessage, sendMarkup, editMessage, sendPhoto, deleteMessage
+from bot.helper.telegram_helper.message_utils import sendMessage, editMessage
 from bot.helper.ext_utils.bot_utils import get_readable_time
 from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot import LOGGER, dispatcher, IMDB_ENABLED, DEF_IMDB_TEMP, config_dict, user_data, LIST_ITEMS
+from bot import app, LOGGER, dispatcher, IMDB_ENABLED, DEF_IMDB_TEMP, user_data, LIST_ITEMS
 
 imdb = IMDb() 
 
@@ -170,13 +171,13 @@ def imdb_callback(update, context):
     elif data[2] == "movie":
         query.answer()
         imdb = get_poster(query=data[3], id=True)
-        buttons = ButtonMaker()
+        buttons = []
         if imdb['trailer']:
             if isinstance(imdb['trailer'], list):
-                buttons.buildbutton("▶️ IMDb Trailer ", str(imdb['trailer'][-1]))
+                buttons.append([InlineKeyboardButton("▶️ IMDb Trailer ", url=str(imdb['trailer'][-1]))])
                 imdb['trailer'] = list_to_str(imdb['trailer'])
-            else: buttons.buildbutton("▶️ IMDb Trailer ", str(imdb['trailer']))
-        buttons.sbutton("🚫 Close 🚫", f"imdb {user_id} close")
+            else: buttons.append([InlineKeyboardButton("▶️ IMDb Trailer ", url=str(imdb['trailer']))])
+        #buttons.append([InlineKeyboardButton("🚫 Close 🚫", callback_data=f"imdb {user_id} close")])
         template = ''
         if int(data[1]) in user_data and user_data[int(data[1])].get('imdb_temp'):
             template = user_data[int(data[1])].get('imdb_temp')
@@ -220,15 +221,15 @@ def imdb_callback(update, context):
             cap = "No Results"
         if imdb.get('poster'):
             try:
-                sendPhoto(cap, context.bot, query.message.reply_to_message, imdb['poster'], buttons.build_menu(1))
-            except Exception:
+                app.send_photo(chat_id=query.message.reply_to_message.chat_id,  caption=cap, photo=imdb['poster'], reply_to_message_id=query.message.reply_to_message.message_id, reply_markup=InlineKeyboardMarkup(buttons))
+            except (MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty):
                 poster = imdb.get('poster').replace('.jpg', "._V1_UX360.jpg")
-                sendPhoto(cap, context.bot, query.message.reply_to_message, poster, buttons.build_menu(1))
-            #except Exception as e:
-                #LOGGER.exception(e)
-                #sendMarkup(cap, context.bot, query.message.reply_to_message, buttons.build_menu(1))
+                app.send_photo(chat_id=query.message.reply_to_message.chat_id,  caption=cap, photo=poster, reply_markup=InlineKeyboardMarkup(buttons))
+            except Exception as e:
+                LOGGER.exception(e)
+                app.send_message(chat_id=query.message.reply_to_message.chat_id, text=cap, reply_markup=InlineKeyboardMarkup(buttons))
         else:
-            sendPhoto(cap, context.bot, query.message.reply_to_message, 'https://telegra.ph/file/5af8d90a479b0d11df298.jpg', buttons.build_menu(1))
+            app.send_photo(chat_id=query.message.reply_to_message.chat_id,  caption=cap, photo='https://telegra.ph/file/5af8d90a479b0d11df298.jpg', reply_markup=InlineKeyboardMarkup(buttons))
         message.delete()
     else:
         query.answer()
@@ -238,8 +239,8 @@ def imdb_callback(update, context):
 
 imdbfilters = CustomFilters.authorized_chat if IMDB_ENABLED else CustomFilters.owner_filter
 IMDB_HANDLER = CommandHandler("imdb", imdb_search,
-                              filters=imdbfilters | CustomFilters.authorized_user, run_async=True)
-imdbCall_handler = CallbackQueryHandler(imdb_callback, pattern="imdb", run_async=True)
+                              filters=imdbfilters | CustomFilters.authorized_user)
+imdbCall_handler = CallbackQueryHandler(imdb_callback, pattern="imdb")
 
 dispatcher.add_handler(IMDB_HANDLER)
 dispatcher.add_handler(imdbCall_handler)

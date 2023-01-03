@@ -6,8 +6,11 @@ from urllib.parse import quote, unquote
 from urllib3 import disable_warnings
 
 from bot import LOGGER, config_dict
+from bot.helper.ext_utils.bot_utils import is_paid
 
-def short_url(longurl):
+def short_url(longurl, user_id):
+    if is_paid(user_id):
+        return longurl
     API_LIST = config_dict['SHORTENER_API']
     SHORT_LIST = config_dict['SHORTENER']
     if len(SHORT_LIST) == 0 and len(API_LIST) == 0:
@@ -48,6 +51,9 @@ def short_url(longurl):
         elif "cutt.ly" in SHORTENER:
             disable_warnings()
             return cget(f'http://cutt.ly/api/api.php?key={SHORTENER_API}&short={longurl}', verify=False).json()['url']['shortLink']
+        elif "linkspy.cc" in SHORTENER:
+            disable_warnings()
+            return cget(f'https://linkspy.cc/api.php?hash={SHORTENER_API}&url={longurl}', verify=False).json()['shortUrl']
         elif "shrinkme.io" in SHORTENER:
             disable_warnings()
             return cget(f'https://shrinkme.io/api?api={SHORTENER_API}&url={quote(longurl)}&format=text').text           

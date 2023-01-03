@@ -75,45 +75,6 @@ def removeSudo(update, context):
         msg = "Give ID or Reply To message of whom you want to remove from Sudo"
     sendMessage(msg, context.bot, update.message)
 
-def addleechlog(update, context):
-    reply_message = update.message.reply_to_message
-    if len(context.args) == 1:
-        id_ = int(context.args[0])
-    elif reply_message:
-        id_ = reply_message.from_user.id
-    else:
-        id_ = update.effective_chat.id
-    if 'is_leech_log' in user_data and id_ in user_data['is_leech_log']:
-        msg = 'Already Authorized!'
-    else:
-        #update_user_ldata('is_leech_log', id_, list=True) #ToDo
-        if 'is_leech_log' in user_data:
-            user_data['is_leech_log'].append(id_)
-        else:
-            user_data['is_leech_log'] = [id_]
-        if DATABASE_URL:
-            DbManger().update_user_data(id_)
-        msg = 'Authorized'
-    sendMessage(msg, context.bot, update.message)
-
-def rmleechlog(update, context):
-    reply_message = update.message.reply_to_message
-    if len(context.args) == 1:
-        id_ = int(context.args[0])
-    elif reply_message:
-        id_ = reply_message.from_user.id
-    else:
-        id_ = update.effective_chat.id
-    if 'is_leech_log' in user_data and id_ in user_data['is_leech_log']:
-        #update_user_ldata(id_, 'is_leech_log', False)
-        user_data['is_leech_log'].remove(id_)
-        if DATABASE_URL:
-            DbManger().update_user_data(id_)
-        msg = 'Unauthorized'
-    else:
-        msg = 'Already Unauthorized!'
-    sendMessage(msg, context.bot, update.message)
-
 def addPaid(update, context):
     id_, ex_date = "", ""
     reply_message = update.message.reply_to_message
@@ -162,30 +123,22 @@ def removePaid(update, context):
 
 
 authorize_handler = CommandHandler(BotCommands.AuthorizeCommand, authorize,
-                                   filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
+                                   filters=CustomFilters.owner_filter | CustomFilters.sudo_user)
 unauthorize_handler = CommandHandler(BotCommands.UnAuthorizeCommand, unauthorize,
-                                   filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
+                                   filters=CustomFilters.owner_filter | CustomFilters.sudo_user)
 addsudo_handler = CommandHandler(BotCommands.AddSudoCommand, addSudo,
-                                   filters=CustomFilters.owner_filter, run_async=True)
+                                   filters=CustomFilters.owner_filter)
 removesudo_handler = CommandHandler(BotCommands.RmSudoCommand, removeSudo,
-                                   filters=CustomFilters.owner_filter, run_async=True)
-
-
-addleechlog_handler = CommandHandler(BotCommands.AddleechlogCommand, addleechlog,
-                                    filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
-rmleechlog_handler = CommandHandler(BotCommands.RmleechlogCommand, rmleechlog,
-                                    filters=CustomFilters.owner_filter | CustomFilters.sudo_user, run_async=True)
+                                   filters=CustomFilters.owner_filter)
 addpaid_handler = CommandHandler(BotCommands.AddPaidCommand, addPaid,
-                                    filters=CustomFilters.owner_filter, run_async=True)
+                                    filters=CustomFilters.owner_filter)
 removepaid_handler = CommandHandler(BotCommands.RmPaidCommand, removePaid,
-                                    filters=CustomFilters.owner_filter, run_async=True)
+                                    filters=CustomFilters.owner_filter)
 
 
 dispatcher.add_handler(authorize_handler)
 dispatcher.add_handler(unauthorize_handler)
 dispatcher.add_handler(addsudo_handler)
 dispatcher.add_handler(removesudo_handler)
-dispatcher.add_handler(addleechlog_handler)
-dispatcher.add_handler(rmleechlog_handler)
 dispatcher.add_handler(addpaid_handler)
 dispatcher.add_handler(removepaid_handler)

@@ -79,9 +79,9 @@ Copyright (C) 2022 WeebZone
 <details>
     <summary><b>Click Here For Description</b></summary>
 
-|![](https://avatars.githubusercontent.com/u/113664541)|![](https://avatars.githubusercontent.com/u/105407900)|![](https://avatars.githubusercontent.com/u/94453305)|![](https://avatars.githubusercontent.com/u/77075674)|![](https://avatars.githubusercontent.com/u/56303690)|![](https://avatars.githubusercontent.com/u/91935990)|
-|---|---|---|---|---|---|
-|[`CodeWithWeeb`](https://github.com/weebzone)|[`SilentDemonSD`](https://github.com/SilentDemonSD)|[`Ajay Choudhary`](https://github.com/ajay0916)|[`Anasty17`](https://github.com/anasty17)|[`Arshsisodiya`](https://github.com/arshsisodiya/helios-mirror) |[`ToxyTech`](https://github.com/dipeshpatil123)|
-| `me` add modules and fixes & many more|Co-Author|Co-Author & Tester|Base Repo|For there BOT_PM and LOG feature| For Task Limit|
+|![](https://avatars.githubusercontent.com/u/113664541)|![](https://avatars.githubusercontent.com/u/105407900)|![](https://avatars.githubusercontent.com/u/94453305)|![](https://avatars.githubusercontent.com/u/84721324)|![](https://avatars.githubusercontent.com/u/106424420)|![](https://avatars.githubusercontent.com/u/77075674)|![](https://avatars.githubusercontent.com/u/56303690)|![](https://avatars.githubusercontent.com/u/91935990)|
+|---|---|---|---|---|---|---|---|
+|[`CodeWithWeeb`](https://github.com/weebzone)|[`SilentDemonSD`](https://github.com/SilentDemonSD)|[`Ajay Choudhary`](https://github.com/ajay0916)|[`Maverick`](https://github.com/MajnuRangeela)|[`Dark Lord`](https://github.com/DarkLordlk)|[`Anasty17`](https://github.com/anasty17)|[`Arshsisodiya`](https://github.com/arshsisodiya/helios-mirror) |[`ToxyTech`](https://github.com/dipeshpatil123)|
+| `me` add modules and fixes & many more|Co-Author|Co-Author & Tester|Co-Author|Co-Author|Base Repo|For there BOT_PM and LOG feature| For Task Limit|
 
 </details>
