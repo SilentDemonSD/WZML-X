@@ -46,7 +46,7 @@ if DATABASE_URL is not None:
 UPDATE_PACKAGES = environ.get('UPDATE_PACKAGES', 'False')
 if UPDATE_PACKAGES.lower() == 'true':
     packages = [dist.project_name for dist in working_set]
-    scall("pip install --upgrade " + ' '.join(packages), shell=True)
+    scall("pip install " + ' '.join(packages), shell=True)
 
 UPSTREAM_REPO = environ.get('UPSTREAM_REPO', '')
 if len(UPSTREAM_REPO) == 0:
