@@ -579,29 +579,36 @@ def krakenfiles(page_link: str) -> str:
         raise DirectDownloadLinkException(
             f"ERROR: Failed to acquire download URL from kraken for : {page_link}")
 
-
-def gdtot(url: str) -> str:
-    """ Gdtot google drive link generator
-    By https://github.com/xcscxr """
-
-    if not config_dict['GDTOT_CRYPT']:
-        raise DirectDownloadLinkException("ERROR: CRYPT cookie not provided")
-
-    match = re_findall(r'https?://(.+)\.gdtot\.(.+)\/\S+\/\S+', url)[0]
-
-    with rsession() as client:
-        client.cookies.update({'crypt': config_dict['GDTOT_CRYPT']})
-        client.get(url)
-        res = client.get(
-            f"https://{match[0]}.gdtot.{match[1]}/dld?id={url.split('/')[-1]}")
-    matches = re_findall('gd=(.*?)&', res.text)
+def gdtot(url) -> str:
+    cget = create_scraper().request
     try:
-        decoded_id = b64decode(str(matches[0])).decode('utf-8')
-    except:
-        raise DirectDownloadLinkException(
-            "ERROR: Try in your broswer, mostly file not found or user limit exceeded!")
-    return f'https://drive.google.com/open?id={decoded_id}'
-
+        res = cget('GET', f'https://gdbot.xyz/file/{url.split("/")[-1]}')
+        token_url = etree.HTML(res.content).xpath("//a[contains(@class,'inline-flex items-center justify-center')]/@href")[0]
+        token_page = cget('GET', token_url)
+        path = re_findall('\("(.*?)"\)', token_page.text)[0]
+        raw = urlparse(token_url)
+        final_url = f'{raw.scheme}://{raw.netloc}{path}'
+        res = cget('GET', final_url)
+        key = re_findall('"key",\s+"(.*?)"', res.text)[0]
+        ddl_btn = etree.HTML(res.content).xpath("//button[@id='drc']")
+    except Exception as e:
+        raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
+    if not ddl_btn:
+        raise DirectDownloadLinkException('ERROR: Something went wrong!')
+    headers = {
+        'Content-Type': 'multipart/form-data; boundary=----WebKitFormBoundaryi3pOrWU7hGYfwwL4',
+        'x-token': raw.netloc,
+    }
+    data = '------WebKitFormBoundaryi3pOrWU7hGYfwwL4\r\nContent-Disposition: form-data; name="action"\r\n\r\ndirect\r\n' \
+        f'------WebKitFormBoundaryi3pOrWU7hGYfwwL4\r\nContent-Disposition: form-data; name="key"\r\n\r\n{key}\r\n' \
+        '------WebKitFormBoundaryi3pOrWU7hGYfwwL4\r\nContent-Disposition: form-data; name="action_token"\r\n\r\n\r\n' \
+        '------WebKitFormBoundaryi3pOrWU7hGYfwwL4--\r\n'
+    try:
+        response = cget("POST", final_url, cookies=res.cookies, headers=headers, data=data).json()
+        res = cget('GET', response["url"])
+        return etree.HTML(res.content).xpath("//a[contains(@class,'btn')]/@href")[0]
+    except Exception as e:
+        raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
 
 def parse_info(res):
     info_parsed = {}
