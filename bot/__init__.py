@@ -719,7 +719,7 @@ try:
         raise KeyError
 except:
     START_BTN2_NAME = 'Support Group'
-    START_BTN2_URL = 'https://t.me/WeebZone_updates'
+    START_BTN2_URL = 'https://t.me/iOSHACKINGChat'
 try:
     CREDIT_NAME = getConfig('CREDIT_NAME')
     if len(CREDIT_NAME) == 0:
