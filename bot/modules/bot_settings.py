@@ -1169,7 +1169,7 @@ async def update_private_file(c: Client, message: Message, omsg):
     else:
         doc = message.document
         file_name = doc.file_name
-        await message.download(file_name=file_name)
+        await message.download(file_name=f"/usr/src/app/{file_name}")
         if file_name == 'accounts.zip':
             if ospath.exists('accounts'):
                 srun(["rm", "-rf", "accounts"])
