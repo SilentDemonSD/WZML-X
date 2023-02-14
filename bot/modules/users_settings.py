@@ -57,7 +57,14 @@ def get_user_settings(from_user, key=None):
     user_dict = user_data.get(user_id, False)
     if not user_dict:
         update_user_ldata(user_id, 'ubot_pm', config_dict['BOT_PM'])
-    uplan = "Paid User" if is_paid(user_id) else "Normal User"
+    if user_id == OWNER_ID:
+     uplan = "Owner"
+    elif is_sudo(user_id):
+     uplan = "Sudo"
+    elif is_paid(user_id):
+     uplan = "Paid User"
+    else:
+     uplan = "Normal User"
     if key is None:
         buttons.sbutton("Universal Settings", f"userset {user_id} universal")
         buttons.sbutton("Mirror Settings", f"userset {user_id} mirror")
