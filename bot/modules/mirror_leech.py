@@ -395,7 +395,7 @@ def mir_confirm(update, context):
         query.answer()
         extra[4] = c_index
         extra[5] = u_index
-    elif data[1] == 'cancel_':
+    elif data[1] == 'cancel':
         query.answer()
         del btn_listener[msg_id]
         return editMessage(f"<b>Download has been cancelled!</b>", message)
