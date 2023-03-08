@@ -944,7 +944,7 @@ def edit_variable(update, context, omsg, key):
             DRIVES_IDS[0] = value
         else:
             DRIVES_IDS.insert(0, value)
-        if CATEGORY_NAMES and CATEGORY_NAMES[0] == '😁Root':
+        if CATEGORY_NAMES and CATEGORY_NAMES[0] == 'Root':
             CATEGORY_IDS[0] = value
         else:
             CATEGORY_IDS.insert(0, value)
@@ -954,7 +954,7 @@ def edit_variable(update, context, omsg, key):
             INDEX_URLS[0] = value
         else:
             INDEX_URLS.insert(0, value)
-        if CATEGORY_NAMES and CATEGORY_NAMES[0] == '😅Root':
+        if CATEGORY_NAMES and CATEGORY_NAMES[0] == 'Root':
             CATEGORY_INDEX[0] = value
         else:
             CATEGORY_INDEX.insert(0, value)
