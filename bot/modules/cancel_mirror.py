@@ -88,11 +88,9 @@ def cancel_all_update(update, context):
         query.answer(text="You don't have permission to use these buttons!", show_alert=True)
 
 
-cancel_mirror_handler = CommandHandler(f"cancel_{BotCommands.CancelMirror}", cancel_mirror,
-                                        filters=(CustomFilters.authorized_chat | CustomFilters.authorized_user))
 
-###cancel_mirror_handler = CommandHandler(BotCommands.CancelMirror, cancel_mirror,
-                           ###        filters=(CustomFilters.authorized_chat | CustomFilters.authorized_user))
+cancel_mirror_handler = CommandHandler(BotCommands.CancelMirror, cancel_mirror,
+                                   filters=(CustomFilters.authorized_chat | CustomFilters.authorized_user))
 cancel_all_handler = CommandHandler(BotCommands.CancelAllCommand, cancell_all_buttons,
                                    filters=CustomFilters.owner_filter | CustomFilters.sudo_user)
 
