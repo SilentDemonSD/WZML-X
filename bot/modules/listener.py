@@ -55,7 +55,7 @@ class MirrorLeechListener:
     def clean(self):
         try:
             with status_reply_dict_lock:
-                Interval[0].cancel()
+                Interval[0].cancel_()
                 Interval.clear()
             aria2.purge()
             delete_all_messages()
