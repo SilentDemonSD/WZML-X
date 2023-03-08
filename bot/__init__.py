@@ -834,7 +834,7 @@ if ospath.exists('list_drives.txt'):
                 INDEX_URLS.append('')
 
 if GDRIVE_ID:
-    CATEGORY_NAMES.append("😂Root")
+    CATEGORY_NAMES.append("📱𝔸ℙℙ📱")
     CATEGORY_IDS.append(GDRIVE_ID)
     CATEGORY_INDEX.append(INDEX_URL)
 
