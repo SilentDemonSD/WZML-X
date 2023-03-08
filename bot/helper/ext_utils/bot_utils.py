@@ -389,11 +389,11 @@ def get_category_buttons(query_data, timeout, msg_id, c_index, u_index, user_id)
         text += f"\n<b>Upload</b>: To Drive in {GDNames[u_index]} folder"
         if len(GDNames) != 0:
             for j, _gname in enumerate(GDNames):
-                buttons.sbutton(f'{_gname} {"✅" if u_index is not None and _gname == GDNames[u_index] else ""}', f"{query_data} ucat {msg_id} {j}")
+                buttons.sbutton(f'{_gname} {"💠" if u_index is not None and _gname == GDNames[u_index] else ""}', f"{query_data} ucat {msg_id} {j}")
     else:
         text += f"\n<b>Upload</b>: To Drive in {CATEGORY_NAMES[c_index]} folder"
         for i, _name in enumerate(CATEGORY_NAMES):
-            buttons.sbutton(f'{_name} {"✅" if u_index is None and _name == CATEGORY_NAMES[c_index] else ""}', f"{query_data} scat {msg_id} {i}")
+            buttons.sbutton(f'{_name} {"💠" if u_index is None and _name == CATEGORY_NAMES[c_index] else ""}', f"{query_data} scat {msg_id} {i}")
     text += f"<u>\n\nYou have {get_readable_time(timeout)} to select mode</u>"
     buttons.sbutton('Cancel', f"{query_data} cancel {msg_id}", 'footer')
     bname = "Update" if query_data == 'change' else "Start"
