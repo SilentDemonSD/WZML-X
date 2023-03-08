@@ -288,7 +288,7 @@ def get_readable_message():
                 else:
                     if config_dict['EMOJI_THEME']:
                        # msg += f'\n<b>├👤 User:</b> ️<code>{download.message.from_user.first_name}</code> | <b>Id:</b> <code>{download.message.from_user.id}</code>'
-                        msg += f"\n<b>╰❌ </b><code>/{BotCommands.CancelMirror} {download.gid()}</code>"
+                        msg += f"\n<b>╰❌ </b><code>/{BotCommands.CancelMirror}_{download.gid()}</code>"
                     else:
                         msg += f'\n<b>├ User:</b> ️<code>{download.message.from_user.first_name}</code> | <b>Id:</b> <code>{download.message.from_user.id}</code>'
                         msg += f"\n<b>╰ Cancel: </b><code>/{BotCommands.CancelMirror} {download.gid()}</code>"
