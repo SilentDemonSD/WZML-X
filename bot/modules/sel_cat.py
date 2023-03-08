@@ -102,7 +102,7 @@ def confirm_category(update, context):
         query.answer()
         listener.c_index = c_index
         listener.u_index = u_index
-    elif data[1] == 'cancel':
+    elif data[1] == 'cancel_':
         query.answer()
         listener.c_index = categoryInfo[4]
         listener.u_index = categoryInfo[5]
