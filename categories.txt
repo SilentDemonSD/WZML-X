@@ -1,0 +1,4 @@
+app 0AFK0ZyJFbmMvUk9PVA https://tharindu.tharindu311.workers.dev/0:
+movie 0ALQF56lXbhuSUk9PVA https://tharindu.tharindu311.workers.dev/1:
+seires 0AGtDoC0MRGr_Uk9PVA https://tharindu.tharindu311.workers.dev/2:
+zip 0AO7CySiLe0WhUk9PVA https://tharindu.tharindu311.workers.dev/3:

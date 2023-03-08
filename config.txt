@@ -1,0 +1,269 @@
+# RECOMMNED SETUP 
+## Setup only Required Config & DATABASE_URL
+## Rest of variable can be setup using BOT by /bsetting command
+
+# REQUIRED CONFIG
+BOT_TOKEN = "6061934198:AAE4-l_ZowwgTbZMIvrIF_-GR6EGLJqMyfg"
+OWNER_ID = "909401151"
+TELEGRAM_API = "1117970"
+TELEGRAM_HASH = "533277850ec5ec321470adffc6045c09"
+
+# OPTIONAL CONFIG
+GDRIVE_ID = "0AFK0ZyJFbmMvUk9PVA"
+DOWNLOAD_DIR = "/usr/src/app/downloads"
+STATUS_UPDATE_INTERVAL = "20"                       
+AUTO_DELETE_MESSAGE_DURATION = "60"       
+AUTO_DELETE_UPLOAD_MESSAGE_DURATION = "-1" 
+DATABASE_URL = ""
+AUTHORIZED_CHATS = ""
+SUDO_USERS = ""
+IGNORE_PENDING_REQUESTS = ""
+IS_TEAM_DRIVE = "true"
+USE_SERVICE_ACCOUNTS = "False"
+SA_MAIL = ""                                          # SA Email id To display in USER TD Section
+INDEX_URL = ""                                        # Not end with /
+STATUS_LIMIT = "2"                                    # Recommended Value : 2 (If Using PICS)
+STOP_DUPLICATE = "False"
+CMD_SUFFIX = ""
+UPTOBOX_TOKEN = ""
+TORRENT_TIMEOUT = ""
+EXTENSION_FILTER = ""
+INCOMPLETE_TASK_NOTIFIER = ""
+TGH_THUMB = ""                                        # Give Telegraph URL(graph.org) for Logs/File Thumbnail
+
+# TURN ON/OFF FUCTIONS
+LEECH_ENABLED = ""                                    # Default is False (only use by owner/sudo) Make it True (for authorized chats)
+MIRROR_ENABLED = ""                                   # Default is False (only use by owner/sudo) Make it True (for authorized chats)
+QB_MIRROR_ENABLED = ""                                # Default is False (only use by owner/sudo) Make it True (for authorized chats)
+WATCH_ENABLED = ""                                    # Default is False (only use by owner/sudo) Make it True (for authorized chats)
+CLONE_ENABLED = ""                                    # Default is False (only use by owner/sudo) Make it True (for authorized chats)
+ANILIST_ENABLED = ""                                  # Default is False (only use by owner/sudo) Make it True (for authorized chats)
+WAYBACK_ENABLED = ""                                  # Default is False (only use by owner/sudo) Make it True (for authorized chats)
+MEDIAINFO_ENABLED = ""                                # Default is False (only use by owner/sudo) Make it True (for authorized chats)
+SET_BOT_COMMANDS = "" 
+
+# UPDATE
+UPSTREAM_REPO = ""
+UPSTREAM_BRANCH = ""
+UPDATE_PACKAGES = "False"
+
+# PM SUPPORT
+BOT_PM = ""                                           # If this True/False any User can Enable/Disable BOT_PM by using Usetting
+FORCE_BOT_PM = ""                                     # If this True then NO User can Enable/Disable BOT_PM by using Usetting 
+
+# LEECH
+LEECH_LOG = "-1001837914538"                                        # Must be Started with -100xxxxxxx
+LEECH_LOG_URL = "https://t.me/+67_QR6egFHJmYWRl"                                    # Use Invite link for PUBLIC/PRIVATE Leech log 
+LEECH_LOG_INDEXING = ""                               # Default is False make it True if you want leech file indexing in leech log channel
+
+# MIRROR
+ENABLE_USR_TD = "true"                                    # If this TRUE then User can create its own TD Category
+MIRROR_LOGS = ""                                      # Must be Started with -100xxxxxxx
+MIRROR_LOG_URL = ""                                   # Use Invite link for PUBLIC/PRIVATE Mirror log 
+LINK_LOGS = ""                                        # Must be Started with -100xxxxxxx
+
+# OTHERS UTILS
+TG_SPLIT_SIZE = ""                                    # Each User can set its own using usetting
+EQUAL_SPLITS = ""                                     # Each User can Enable/Disable using usetting
+AS_DOCUMENT = ""                                      # Each User can Change Document/Media using usetting
+PAID_SERVICE = ""                                     # Default is False
+TIMEZONE = "Asia/Colombo"                             # Checkout for Different timezone list https://bit.ly/2JtQfVI
+
+# TELEGRAPH UI (graph.org)
+TITLE_NAME = "𝕋𝕙𝕒𝕣𝕚𝕟𝕕𝕦"
+AUTHOR_NAME = "𝕋𝕙𝕒𝕣𝕚𝕟𝕕𝕦"
+AUTHOR_URL = ""
+GD_INFO = ""
+
+# MULTI FORCE SUBSCRIBE
+FSUB_IDS = ""                                         # Each id Should be seperated by Space & ID must be started with -100xxxxxxx
+
+# QBITORRENT
+BASE_URL = ""
+SERVER_PORT = ""
+WEB_PINCODE = ""
+QB_SEED = ""
+
+# QUEUE SYSTEM                                         NOTE: if you want to fill QUEUE_DOWNLOAD or QUEUE_UPLOAD, then QUEUE_ALL value must be greater than or equal to the greatest one and less than or equal to summation of QUEUE_UPLOAD and QUEUE_DOWNLOAD
+QUEUE_ALL = ""                                        # Number(int) of parallel tasks of downloads from (mega, telegram, yt-dlp, gdrive) + all uploads
+QUEUE_DOWNLOAD = ""                                   # Number(int) of parallel tasks of downloads from (mega, telegram, yt-dlp, gdrive)
+QUEUE_UPLOAD = ""                                     # Number(int) of all parallel uploading tasks
+
+# RSS (DATABASE_URL is Necessary for Rss)
+RSS_DELAY = ""                                        # Default is 900
+RSS_COMMAND = ""                                      # Command for the desired action eg. /mirror or /leech 
+RSS_CHAT_ID = ""                                      # Chat ID (Started with -100xxxxxxx) where rss links will be sent 
+USER_SESSION_STRING = ""                              # Use it for 4GB leeching
+
+# MEGA
+MEGA_API_KEY = "1yhQxRqQ"
+MEGA_EMAIL_ID = ""
+MEGA_PASSWORD = ""
+
+# SHORTENER 
+SHORTENER = ""                                        # Seperate multiple shortner with space
+SHORTENER_API = ""                                    # Seperate multiple shortner API with space
+
+# CRYPTS
+SAME_ACC_COOKIES = ""                                 # If using Different Account For Crypts set it to False (Deafult is True)
+GDTOT_CRYPT = ""                                      # Crypt for GDTOT
+HUBDRIVE_CRYPT = ""                                   # Crypt for HUBDRIVE
+KATDRIVE_CRYPT = ""                                   # Crypt for KATDRIVE
+KOLOP_CRYPT = ""                                      # Crypt for KOLOP + DRIVEHUB
+DRIVEFIRE_CRYPT = ""                                  # Crypt for DRIVEFIRE
+SHAREDRIVE_PHPCKS = ""                                # PHPCKS for SHAREDRIVE
+XSRF_TOKEN = ""                                       # XSRF for SHARER.PW
+laravel_session = ""                                  # laravel_session for SHARER.PW
+
+# BOT LIMITS
+TOTAL_TASKS_LIMIT = ""                                # Limit Total Max Task At a time (int value)
+USER_TASKS_LIMIT = ""                                 # Limit User Max Task At a time (int value)
+DAILY_TASK_LIMIT = ""                                 # Max task a user can do in one day (int value)
+STORAGE_THRESHOLD = ""                                # Free Space that must be left in bot (int value without GB/MB)
+TORRENT_DIRECT_LIMIT = ""                             # Limit the size of torrent download (int value without GB/MB)
+ZIP_UNZIP_LIMIT = ""                                  # Limit the size of Zip/Unzip (int value without GB/MB)
+CLONE_LIMIT = ""                                      # Limit the size of Clone (int value without GB/MB)
+LEECH_LIMIT = ""                                      # Limit the size of Leech (int value without GB/MB)
+YTDLP_LIMIT = ""                                      # Limit the size of ytdlp download (int value without GB/MB)
+MAX_PLAYLIST = ""                                     # Limit number of files for ytdlp playlist in leech (int value)
+MEGA_LIMIT = ""                                       # Limit the size of MEGA links (int value without GB/MB)
+DAILY_MIRROR_LIMIT = ""                               # Max size upto which user can Mirror in one day (int value without GB/MB)
+DAILY_LEECH_LIMIT = ""                                # Max size upto which user can Leech in one day (int value without GB/MB)
+TIME_GAP = "-1"                                       # Restrict User for accepting the consecutive link at a time (int value in seconds, -1 means no restriction) 
+
+# PROGRESS SYMBOLS
+FINISHED_PROGRESS_STR = '█'                           # Get Any from https://coolsymbol.com
+UN_FINISHED_PROGRESS_STR = '▒'                        # Get Any from https://coolsymbol.com
+MULTI_WORKING_PROGRESS_STR = '▁ ▂ ▃ ▄ ▅ ▆ ▇'         # Must have 7 Different Symbols for Dynamic Progress Bar
+
+# THEME
+EMOJI_THEME = "true"                                      #Default is False
+SHOW_LIMITS_IN_STATS = "true"                             #Default is false 
+
+# VIEW STYLE
+LIST_MODE = "Tg_Direct"                                        # List/Seach Result in Telegraph/HTML/Tg_Direct (Default is Telegraph)
+
+# BRANDING
+CREDIT_NAME = "𝕋𝕙𝕒𝕣𝕚𝕟𝕕𝕦" 
+
+# DYNAMIC IMAGES
+PICS = ""                                             # Add multiple telgraph image links that are seperated by spaces
+WALLFLARE_SEARCH = ""                                 # Put Keyword to Download Images from wallpaperflare.com, Seperate Multiple Words by + instead of space, eg: attack+on+titan
+WALLTIP_SEARCH = ""                                   # Put Keyword to Download Images from wallpapertip.com, Seperate Multiple Words by - instead of space, eg: attack-on-titan
+WALLCRAFT_CATEGORY = ""                               # Put Category Name, Available: 3D, abstract, animals, anime, art, black, cars, city, dark, fantasy, flowers, food, holidays, love, macro, minimalism, motorcycles, music, nature, others, milies, space, sport, technologies, textures, vector, words
+PIXABAY_API_KEY = "34005531-ebe1c3805fbd40c4ac0ffc02e"                                  # Sign Up Pixabay.com and Get API Key to Automatically Add 200 Images in Photos List
+PIXABAY_CATEGORY = ""                                 # Put Category Name, Available: backgrounds, fashion, nature, science, education, feelings, health, people, religion, places, animals, industry, computer, food, sports, transportation, travel, buildings, business, music
+PIXABAY_SEARCH = ""                                   # Put Keyword to Download Images from Pixabay.com Limit : 100 characters
+
+# FONT STYLE
+NAME_FONT = "i"                                        # Default Name of File on Upload message, Available Options : b, code, i, u, strike, spoiler
+CAPTION_FONT = "u"                                     # Default Caption of Leeched files, Available Options : b, code, i, u, strike, spoiler
+
+# TEMPLATE ( Put in One Line )
+ANIME_TEMPLATE = "<b>{ro_title}</b>({na_title})\n<b>Format</b>: <code>{format}</code>\n<b>Status</b>: <code>{status}</code>\n<b>Start Date</b>: <code>{startdate}</code>\n<b>End Date</b>: <code>{enddate}</code>\n<b>Season</b>: <code>{season}</code>\n<b>Country</b>: {country}\n<b>Episodes</b>: <code>{episodes}</code>\n<b>Duration</b>: <code>{duration}</code>\n<b>Average Score</b>: <code>{avgscore}</code>\n<b>Genres</b>: {genres}\n<b>Hashtag</b>: {hashtag}\n<b>Studios</b>: {studios}\n\n<b>Description</b>: <i>{description}</i>"
+IMDB_TEMPLATE = "<b>Title: </b> {title} [{year}]\n<b>Also Known As:</b> {aka}\n<b>Rating ⭐️:</b> <i>{rating}</i>\n<b>Release Info: </b> <a href='{url_releaseinfo}'>{release_date}</a>\n<b>Genre: </b>{genres}\n<b>IMDb URL:</b> {url}\n<b>Language: </b>{languages}\n<b>Country of Origin : </b> {countries}\n\n<b>Story Line: </b><code>{plot}</code>\n\n<a href='{url_cast}'>Read More ...</a>"
+
+# DIFFERENT BOT BUTTONS 
+SAVE_MSG = ""
+DISABLE_DRIVE_LINK = "" 
+VIEW_LINK = "true"
+SOURCE_LINK = "true"
+START_BTN1_NAME = ""
+START_BTN1_URL = ""
+START_BTN2_NAME = ""
+START_BTN2_URL = ""
+BUTTON_FOUR_NAME = ""
+BUTTON_FOUR_URL = ""
+BUTTON_FIVE_NAME = ""
+BUTTON_FIVE_URL = ""
+BUTTON_SIX_NAME = ""
+BUTTON_SIX_URL = ""
+
+# TORRENT SEARCH 
+SEARCH_API_LINK = "https://api.jmdkh.eu.org/"
+SEARCH_LIMIT = ""
+SEARCH_PLUGINS = '["https://raw.githubusercontent.com/qbittorrent/search-plugins/master/nova3/engines/rarbg.py",
+                   "https://raw.githubusercontent.com/qbittorrent/search-plugins/master/nova3/engines/piratebay.py",
+                   "https://raw.githubusercontent.com/qbittorrent/search-plugins/master/nova3/engines/legittorrents.py",
+                   "https://raw.githubusercontent.com/qbittorrent/search-plugins/master/nova3/engines/limetorrents.py",
+                   "https://raw.githubusercontent.com/qbittorrent/search-plugins/master/nova3/engines/torrentscsv.py",
+                   "https://raw.githubusercontent.com/qbittorrent/search-plugins/master/nova3/engines/zooqle.py",
+                   "https://raw.githubusercontent.com/qbittorrent/search-plugins/master/nova3/engines/eztv.py",
+                   "https://raw.githubusercontent.com/MaurizioRicci/qBittorrent_search_engines/master/kickass_torrent.py",
+                   "https://raw.githubusercontent.com/MaurizioRicci/qBittorrent_search_engines/master/yts_am.py",
+                   "https://raw.githubusercontent.com/MadeOfMagicAndWires/qBit-plugins/master/engines/linuxtracker.py",
+                   "https://raw.githubusercontent.com/MadeOfMagicAndWires/qBit-plugins/master/engines/nyaasi.py",
+                   "https://raw.githubusercontent.com/LightDestory/qBittorrent-Search-Plugins/master/src/engines/ettv.py",
+                   "https://raw.githubusercontent.com/LightDestory/qBittorrent-Search-Plugins/master/src/engines/glotorrents.py",
+                   "https://raw.githubusercontent.com/LightDestory/qBittorrent-Search-Plugins/master/src/engines/thepiratebay.py",
+                   "https://raw.githubusercontent.com/nindogo/qbtSearchScripts/master/magnetdl.py",
+                   "https://raw.githubusercontent.com/khensolomon/leyts/master/yts.py"]'
+
+
+
+
+
+#MIRROR RELATED : (Commands)
+START_COMMAND = ""      #Default is "start"
+MIRROR_COMMAND = ""     #Default is "mirror"
+ZIP_COMMAND = ""        #Default is "zipmirror"
+UNZIP_COMMAND = ""      #Default is "unzipmirror"
+CANCEL_COMMAND = ""     #Default is "cancel"
+LIST_COMMAND = ""       #Default is "list"
+SEARCH_COMMAND = ""     #Default is "search"
+STATUS_COMMAND = ""     #Default is "status"
+STATS_COMMAND = ""      #Default is "stats"
+HELP_COMMAND = ""       #Default is "help"
+CLONE_COMMAND = ""      #Default is "clone"
+COUNT_COMMAND = ""      #Default is "count"
+YTDL_COMMAND = ""       #Default is "ytdl"
+YTDLZIP_COMMAND = ""    #Default is "ytdlzip"
+QBMIRROR_COMMAND = ""   #Default is "qbmirror"
+QBZIP_COMMAND = ""      #Default is "qbzipmirror"
+QBUNZIP_COMMAND = ""    #Default is "qbunzipmirror"
+BTSELECT_COMMAND = ""   #Deafault is "btsel"
+
+#LEECH RELATED : (Commands)
+LEECH_COMMAND = ""          #Default is "leech"
+LEECHSET_COMMAND = ""       #Default is "leechset"
+SETTHUMB_COMMAND = ""       #Default is "setthumb"
+UNZIPLEECH_COMMAND = ""     #Default is "unzipleech"
+ZIPLEECH_COMMAND = ""       #Default is "zipleech"
+QBLEECH_COMMAND = ""        #Default is "qbleech"
+QBUNZIPLEECH_COMMAND = ""   #Default is "qbunzipleech"
+QBZIPLEECH_COMMAND = ""     #Default is "qbzipleech"
+YTDLLEECH_COMMAND = ""      #Default is "ytdlleech"
+YTDLZIPLEECH_COMMAND = ""   #Default is "ytdlleechzip"
+
+#SUDO COMMANDS
+AUTH_COMMAND = ""           #Default is "authorize"
+UNAUTH_COMMAND = ""         #Default is "unauthorize"
+ADDSUDO_COMMAND = ""        #Default is "addsudo"
+RMSUDO_COMMAND = ""         #Default is "rmsudo"
+RESTART_COMMAND = ""        #Default is "restart"
+SPEED_COMMAND = ""          #Default is "speedtest"
+USERS_COMMAND = ""          #Default is "users"
+PAID_COMMAND = ""           #Default is "paid"
+ADDPAID_COMMAND = ""        #Default is "addpaid"
+RMPAID_COMMAND = ""         #Default is "rmpaid"
+CANCEL_ALL_COMMAND = ""     #Default is  "cancelall
+LOG_COMMAND = ""            #Default is "log"
+DELETE_COMMAND = ""         #Default is "del"
+USAGE_COMMAND = ""          #Default is "usage"
+RSSLIST_COMMAND = ""
+RSSGET_COMMAND = ""
+RSSSUB_COMMAND = ""
+RSSUNSUB_COMMAND = ""
+RSSSET_COMMAND = ""
+SHELL_COMMAND = ""
+EXEHELP_COMMAND = ""
+
+#EXTRA COMMANDS
+SCRAPE_COMMAND = ""         #Default is "scrape"
+PING_COMMAND = ""           #Default is "ping"
+SPEEDTEST_COMMAND = ""      #Default is "speedtest"
+MEDIAINFO_COMMAND = ""      #Default is "mediainfo"
+HASH_COMMAND = ""           #Default is "hash"
+WAYBACK_COMMAND = ""        #Default is "wayback"
+BOT_SETTING = ""            #Default is "bsetting"
+USERSET_COMMAND = ""        #Default is "usetting"
