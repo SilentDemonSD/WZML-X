@@ -11,7 +11,6 @@ def getCommand(name: str, command: str):
 
 class _BotCommands:
     def __init__(self):
-        self.CancelMirror = "mirror_cancel"
         self.StartCommand = getCommand(f'START_COMMAND', f'start{CMD_SUFFIX}')
         self.MirrorCommand = getCommand(f'MIRROR_COMMAND', f'mirror{CMD_SUFFIX}'), f'm{CMD_SUFFIX}'
         self.UnzipMirrorCommand = getCommand(f'UNZIP_COMMAND', f'unzipmirror{CMD_SUFFIX}'), f'uzm{CMD_SUFFIX}'
@@ -34,7 +33,7 @@ class _BotCommands:
         self.MediaInfoCommand = getCommand(f'MEDIAINFO_COMMAND', f'mediainfo{CMD_SUFFIX}'), f'mi{CMD_SUFFIX}'
         self.UserSetCommand  = getCommand(f'USERSET_COMMAND', f'usetting{CMD_SUFFIX}'), f'us{CMD_SUFFIX}'
         self.BotSetCommand = getCommand(f'BOT_SETTING', f'bsetting{CMD_SUFFIX}'), f'bs{CMD_SUFFIX}'
-        self.CancelMirror = getCommand(f'CANCEL_COMMAND', f'cancel{CMD_SUFFIX}')
+        self.CancelMirror = getCommand(f'CANCEL_COMMAND', f'cancel_{CMD_SUFFIX}')
         self.CancelAllCommand = getCommand(f'CANCEL_ALL_COMMAND', f'cancelall{CMD_SUFFIX}')
         self.ListCommand = getCommand(f'LIST_COMMAND', f'list{CMD_SUFFIX}')
         self.SearchCommand = getCommand(f'SEARCH_COMMAND', f'search{CMD_SUFFIX}')
