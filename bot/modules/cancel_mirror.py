@@ -9,7 +9,7 @@ from bot.helper.telegram_helper.message_utils import sendMessage, auto_delete_me
 from bot.helper.ext_utils.bot_utils import getDownloadByGid, getAllDownload, new_thread, MirrorStatus
 from bot.helper.telegram_helper import button_build
 
-from telegram.ext import CommandHandler, Updater
+
 
 def cancel(update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text="Cancellation successful")
