@@ -83,7 +83,7 @@ class setInterval:
             self.action()
             nextTime = time() + self.interval
 
-    def cancel(self):
+    def cancel_(self):
         self.stopEvent.set()
 
 def get_readable_file_size(size_in_bytes) -> str:
@@ -279,7 +279,7 @@ def get_readable_message():
                         chatid = str(download.message.chat.id)[4:]
                         if config_dict['EMOJI_THEME']:
                             #msg += f'\n<b>├🌐 Source: </b><a href="https://t.me/c/{chatid}/{download.message.message_id}">{download.message.from_user.first_name}</a> | <b>Id :</b> <code>{download.message.from_user.id}</code>'
-                            msg += f"\n<b>╰❌ </b><code>/{BotCommands.CancelMirror} {download.gid()}</code>"
+                            msg += f"\n<b>╰❌ </b><code>/{BotCommands.CancelMirror}_{download.gid()}</code>"
                         else:
                             msg += f'\n<b>├ Source: </b><a href="https://t.me/c/{chatid}/{download.message.message_id}">{download.message.from_user.first_name}</a> | <b>Id :</b> <code>{download.message.from_user.id}</code>'
                             msg += f"\n<b>╰ Cancel: </b><code>/{BotCommands.CancelMirror} {download.gid()}</code>"                 
