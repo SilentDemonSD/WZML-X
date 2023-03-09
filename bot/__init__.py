@@ -268,7 +268,10 @@ if len(TG_SPLIT_SIZE) == 0 or int(TG_SPLIT_SIZE) > tgBotMaxFileSize:
     TG_SPLIT_SIZE = tgBotMaxFileSize
 else:
     TG_SPLIT_SIZE = int(TG_SPLIT_SIZE)
-
+    RSS_CHAT_ID = ('RSS_CHAT_ID')
+if not RSS_CHAT_ID:
+    print("Error: RSS_CHAT_ID environment variable not set")
+    exit(1)
 try:
     USER_SESSION_STRING = environ.get('USER_SESSION_STRING', '')
     if len(USER_SESSION_STRING) != 0:
