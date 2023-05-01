@@ -22,7 +22,6 @@ lxml
 markdown
 mediainfo
 pillow
-playwright
 psutil
 pybase64
 pycountry
@@ -41,4 +40,3 @@ urllib3
 waybackpy
 xattr
 yt-dlp
-
