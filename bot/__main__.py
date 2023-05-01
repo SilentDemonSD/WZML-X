@@ -24,7 +24,7 @@ from bot import config_dict, botStartTime, Interval, QbInterval, LOGGER, DATABAS
                 app, main_loop
 from .modules import authorize, list, cancel_mirror, mirror_status, mirror_leech, clone, ytdlp, shell, eval, bot_settings, \
                      delete, count, users_settings, search, rss, wayback, speedtest, anilist, imdb, bt_select, mediainfo, hash, \
-                     scraper, pictures, save_msg, sel_cat
+                     scraper, pictures, save_msg, sel_cat, broadcast, drive_clean, users
 
 version = "5.0.0"
 
