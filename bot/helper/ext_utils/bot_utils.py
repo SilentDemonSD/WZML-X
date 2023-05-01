@@ -251,8 +251,8 @@ def get_readable_message():
                 globals()['COUNT'] -= int(STATUS_LIMIT)
                 globals()['PAGE_NO'] -= 1
         for index, download in enumerate(list(download_dict.values())[int(COUNT):], start=1):
-                msg += f"<b><a href='{download.message.link}'>{download.status()}</a>: </b>"
-                msg += f"<code>{escape(str(download.name()))}</code>"
+            msg += f"<b><a href='{download.message.link}'>{download.status()}</a>: </b>"
+            msg += f"<code>{escape(str(download.name()))}</code>"
             if download.status() not in [MirrorStatus.STATUS_SEEDING, MirrorStatus.STATUS_SPLITTING, MirrorStatus.STATUS_CONVERTING, MirrorStatus.STATUS_QUEUEDL, MirrorStatus.STATUS_QUEUEUP]:
                 if config_dict['EMOJI_THEME']:
                     msg += f"\n<b></b>{get_progress_bar_string(download)} {download.progress()}"
@@ -261,6 +261,7 @@ def get_readable_message():
                     msg += f"\n<b>⏳ ETA:</b> {download.eta()}"
                     msg += f"<b> | Elapsed: </b>{get_readable_time(time() - download.message.date.timestamp())}"
                     msg += f"\n<b>⛓️ Engine:</b> {download.eng()}"
+                    
                 else:
                     msg += f"\n<b></b>{get_progress_bar_string(download)} {download.progress()}"
                     msg += f"\n<b>Done:</b> {get_readable_file_size(download.processed_bytes())} of {download.size()}"
