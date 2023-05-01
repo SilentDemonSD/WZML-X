@@ -61,7 +61,7 @@ class EngineStatus:
         STATUS_YT = "YT-Dlp 🌟"
         STATUS_EXT = "pExtract ⚔️"
         STATUS_SPLIT_MERGE = "FFmpeg 🍿"
-        STATUS_ZIP = f"p7zip 🛠 | <b>Level:</b> {config_dict['ZIP_LEVEL']}"
+        STATUS_ZIP = f"p7zip 🛠"
         STATUS_QUEUE = "Sleep 💤"
     else:
         STATUS_ARIA = "Aria2c"
@@ -72,7 +72,7 @@ class EngineStatus:
         STATUS_YT = "YT-Dlp"
         STATUS_EXT = "pExtract"
         STATUS_SPLIT_MERGE = "FFmpeg"
-        STATUS_ZIP = f"p7zip | <b>Level: </b> {config_dict['ZIP_LEVEL']}"
+        STATUS_ZIP = f"p7zip"
         STATUS_QUEUE = "Sleep"
 
     
@@ -695,7 +695,7 @@ def bot_sys_stats():
     mem = virtual_memory().percent
     disk = disk_usage("/").percent
     return f"""
-Modified by @ItsBitDefender
+Made with by {config_dict['CREDIT_NAME']}
 
 Tasks Running: {tasks}
 
