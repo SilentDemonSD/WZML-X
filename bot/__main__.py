@@ -364,7 +364,9 @@ if config_dict['SET_BOT_COMMANDS']:
         (f'{BotCommands.PingCommand}','Ping the bot'),
         (f'{BotCommands.RestartCommand}','Restart the bot'),
         (f'{BotCommands.LogCommand}','Get the bot Log'),
-        (f'{BotCommands.HelpCommand}','Get detailed help')
+        (f'{BotCommands.HelpCommand}','Get detailed help'),
+        (f'{BotCommands.LimitCommand}','Get Bot Limitation')
+
     ]
 
 
