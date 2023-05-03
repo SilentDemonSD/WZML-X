@@ -94,16 +94,16 @@ class MirrorLeechListener:
             if self.pswd is not None:
                 if self.isLeech and int(size) > TG_SPLIT_SIZE:
                     LOGGER.info(f'Zip: orig_path: {m_path}, zip_path: {path}.0*')
-                    self.suproc = Popen(["7z", f"-v{TG_SPLIT_SIZE}b", "a", f"-mx={config_dict['ZIP_LEVEL']}", f"-p{self.pswd}", path, m_path])
+                    self.suproc = Popen(["7z", f"-v{TG_SPLIT_SIZE}b", "a", "-mx=0", f"-p{self.pswd}", path, m_path])
                 else:
                     LOGGER.info(f'Zip: orig_path: {m_path}, zip_path: {path}')
-                    self.suproc = Popen(["7z", "a", f"-mx={config_dict['ZIP_LEVEL']}", f"-p{self.pswd}", path, m_path])
+                    self.suproc = Popen(["7z", "a", "-mx=0", f"-p{self.pswd}", path, m_path])
             elif self.isLeech and int(size) > TG_SPLIT_SIZE:
                 LOGGER.info(f'Zip: orig_path: {m_path}, zip_path: {path}.0*')
-                self.suproc = Popen(["7z", f"-v{TG_SPLIT_SIZE}b", "a", f"-mx={config_dict['ZIP_LEVEL']}", path, m_path])
+                self.suproc = Popen(["7z", f"-v{TG_SPLIT_SIZE}b", "a", "-mx=0", path, m_path])
             else:
                 LOGGER.info(f'Zip: orig_path: {m_path}, zip_path: {path}')
-                self.suproc = Popen(["7z", "a", f"-mx={config_dict['ZIP_LEVEL']}", path, m_path])
+                self.suproc = Popen(["7z", "a", "-mx=0", path, m_path])
             self.suproc.wait()
             if self.suproc.returncode == -9:
                 return
