@@ -684,7 +684,15 @@ UPDATE_PACKAGES = environ.get('UPDATE_PACKAGES', '')
 if len(UPDATE_PACKAGES) == 0:
     UPDATE_PACKAGES = 'False'
 
-
+SAFE_MODE = environ.get('SAFE_MODE', '')
+if len(SAFE_MODE) == 0:
+    log_warning('SAFE_MODE Is Not Enabled')
+    SAFE_MODE = ''
+else:
+    BOT_PM = 'True'
+    FORCE_BOT_PM = 'True'
+    SAFE_MODE = 'True'
+    
 config_dict = {'ANILIST_ENABLED': ANILIST_ENABLED,
                'AS_DOCUMENT': AS_DOCUMENT,
                'AUTHORIZED_CHATS': AUTHORIZED_CHATS,
@@ -814,7 +822,8 @@ config_dict = {'ANILIST_ENABLED': ANILIST_ENABLED,
                'WEB_PINCODE': WEB_PINCODE,
                'YTDLP_LIMIT': YTDLP_LIMIT,
                'MAX_PLAYLIST': MAX_PLAYLIST,
-               'YT_DLP_QUALITY': YT_DLP_QUALITY}
+               'YT_DLP_QUALITY': YT_DLP_QUALITY,
+               'SAFE_MODE': SAFE_MODE}
 
 if GDRIVE_ID:
     DRIVES_NAMES.append("Main")
@@ -863,9 +872,8 @@ srun("./aria.sh", shell=True)
 if ospath.exists('accounts.zip'):
     if ospath.exists('accounts'):
         srun(["rm", "-rf", "accounts"])
-    srun(["unzip", "-q", "-o", "accounts.zip", "-x", "accounts/emails.txt"])
+    srun(["7z", "x", "accounts.zip", "-oaccounts", "-aoa", "*.json"])
     srun(["chmod", "-R", "777", "accounts"])
-    osremove('accounts.zip')
 if not ospath.exists('accounts'):
     config_dict['USE_SERVICE_ACCOUNTS'] = False
 sleep(0.5)
