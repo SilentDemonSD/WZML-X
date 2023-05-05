@@ -36,7 +36,7 @@ speedtest-cli
 telegraph
 tenacity
 tgCrypto
-urllib3
+urllib3==1.26.15
 waybackpy
 xattr
 yt-dlp
