@@ -688,10 +688,6 @@ SAFE_MODE = environ.get('SAFE_MODE', '')
 if len(SAFE_MODE) == 0:
     log_warning('SAFE_MODE Is Not Enabled')
     SAFE_MODE = ''
-else:
-    BOT_PM = 'True'
-    FORCE_BOT_PM = 'True'
-    SAFE_MODE = 'True'
     
 LEECH_CAPTION = environ.get('LEECH_CAPTION')
 if len(LEECH_CAPTION) == 0:
