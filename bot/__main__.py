@@ -26,7 +26,7 @@ from .modules import authorize, list, cancel_mirror, mirror_status, mirror_leech
                      delete, count, users_settings, search, rss, wayback, speedtest, anilist, imdb, bt_select, mediainfo, hash, \
                      scraper, pictures, save_msg, sel_cat, users, drive_clean, broadcast
 
-version = "5.0.2"
+version = "Master Branch 5.0.2"
 
 def progress_bar(percentage):
     p_used = config_dict['FINISHED_PROGRESS_STR']
