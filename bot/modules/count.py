@@ -29,7 +29,7 @@ def countNode(update, context):
         gd = GoogleDriveHelper()
         result = gd.count(link)
         deleteMessage(context.bot, msg)
-        cc = f'\n<b>╰👤 cc: </b>{tag}'
+        cc = f'\n<b>Count By: </b>{tag}'
         sendMessage(result + cc, context.bot, update.message)
     else:
         msg = 'Send Gdrive link along with command or by replying to the link by command'

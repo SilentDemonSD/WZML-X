@@ -613,9 +613,9 @@ FINISHED_PROGRESS_STR = environ.get('FINISHED_PROGRESS_STR', '')
 UN_FINISHED_PROGRESS_STR = environ.get('UN_FINISHED_PROGRESS_STR', '')
 MULTI_WORKING_PROGRESS_STR = environ.get('MULTI_WORKING_PROGRESS_STR', '')
 if len(FINISHED_PROGRESS_STR) == 0 or len(FINISHED_PROGRESS_STR) == 0 or len(MULTI_WORKING_PROGRESS_STR) == 0:
-    FINISHED_PROGRESS_STR = '█' # '■'
-    UN_FINISHED_PROGRESS_STR = '▒' # '□'
-    MULTI_WORKING_PROGRESS_STR = '▁ ▂ ▃ ▄ ▅ ▆ ▇'
+    FINISHED_PROGRESS_STR = '■'
+    UN_FINISHED_PROGRESS_STR = '□'
+    MULTI_WORKING_PROGRESS_STR = '□ □ □ □ □ □ □'
 MULTI_WORKING_PROGRESS_STR = (MULTI_WORKING_PROGRESS_STR.replace("'", '').replace('"', '').replace('[', '').replace(']', '').replace(",", "")).split(' ')
 
 if len(MULTI_WORKING_PROGRESS_STR) != 7:
@@ -684,7 +684,15 @@ UPDATE_PACKAGES = environ.get('UPDATE_PACKAGES', '')
 if len(UPDATE_PACKAGES) == 0:
     UPDATE_PACKAGES = 'False'
 
-
+SAFE_MODE = environ.get('SAFE_MODE', '')
+if len(SAFE_MODE) == 0:
+    log_warning('SAFE_MODE Is Not Enabled')
+    SAFE_MODE = ''
+    
+LEECH_CAPTION = environ.get('LEECH_CAPTION')
+if len(LEECH_CAPTION) == 0:
+    LEECH_CAPTION = ''
+    
 config_dict = {'ANILIST_ENABLED': ANILIST_ENABLED,
                'AS_DOCUMENT': AS_DOCUMENT,
                'AUTHORIZED_CHATS': AUTHORIZED_CHATS,
@@ -814,7 +822,9 @@ config_dict = {'ANILIST_ENABLED': ANILIST_ENABLED,
                'WEB_PINCODE': WEB_PINCODE,
                'YTDLP_LIMIT': YTDLP_LIMIT,
                'MAX_PLAYLIST': MAX_PLAYLIST,
-               'YT_DLP_QUALITY': YT_DLP_QUALITY}
+               'YT_DLP_QUALITY': YT_DLP_QUALITY,
+               'LEECH_CAPTION': LEECH_CAPTION,
+               'SAFE_MODE': SAFE_MODE}
 
 if GDRIVE_ID:
     DRIVES_NAMES.append("Main")
@@ -863,9 +873,8 @@ srun("./aria.sh", shell=True)
 if ospath.exists('accounts.zip'):
     if ospath.exists('accounts'):
         srun(["rm", "-rf", "accounts"])
-    srun(["unzip", "-q", "-o", "accounts.zip", "-x", "accounts/emails.txt"])
+    srun(["7z", "x", "accounts.zip", "-oaccounts", "-aoa", "*.json"])
     srun(["chmod", "-R", "777", "accounts"])
-    osremove('accounts.zip')
 if not ospath.exists('accounts'):
     config_dict['USE_SERVICE_ACCOUNTS'] = False
 sleep(0.5)

@@ -15,12 +15,12 @@ def authorize(update, context):
     else:
         id_ = update.effective_chat.id
     if id_ in user_data and user_data[id_].get('is_auth'):
-        msg = 'Already Authorized!'
+        msg = 'Already Authorized 🔰'
     else:
         update_user_ldata(id_, 'is_auth', True)
         if DATABASE_URL:
             DbManger().update_user_data(id_)
-        msg = 'Authorized'
+        msg = 'Successfully Authorized 🔰'
     sendMessage(msg, context.bot, update.message)
 
 def unauthorize(update, context):
@@ -35,9 +35,9 @@ def unauthorize(update, context):
         update_user_ldata(id_, 'is_auth', False)
         if DATABASE_URL:
             DbManger().update_user_data(id_)
-        msg = 'Unauthorized'
+        msg = 'Unauthorized 🚫'
     else:
-        msg = 'Already Unauthorized!'
+        msg = 'Already Unauthorized 🚫'
     sendMessage(msg, context.bot, update.message)
 
 def addSudo(update, context):
@@ -49,12 +49,12 @@ def addSudo(update, context):
         id_ = reply_message.from_user.id
     if id_:
         if is_sudo(id_):
-            msg = 'Already Sudo! 🤔'
+            msg = 'Already Sudo 🔰'
         else:
             update_user_ldata(id_, 'is_sudo', True)
             if DATABASE_URL:
                 DbManger().update_user_data(id_)
-            msg = 'Promoted as Sudo 🤣'
+            msg = 'Promoted as Sudo 🔰'
     else:
         msg = "Give ID or Reply To message of whom you want to Promote."
     sendMessage(msg, context.bot, update.message)
@@ -70,7 +70,7 @@ def removeSudo(update, context):
         update_user_ldata(id_, 'is_sudo', False)
         if DATABASE_URL:
             DbManger().update_user_data(id_)
-        msg = 'Demoted'
+        msg = 'Demoted 🚫'
     else:
         msg = "Give ID or Reply To message of whom you want to remove from Sudo"
     sendMessage(msg, context.bot, update.message)

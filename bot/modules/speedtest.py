@@ -21,34 +21,34 @@ def speedtest(update, context):
     path = (result['share'])
     currentTime = get_readable_time(time() - botStartTime)
     string_speed = f'''
-╭─《 🚀 SPEEDTEST INFO 》
-├ <b>Upload:</b> <code>{speed_convert(result['upload'], False)}</code>
-├ <b>Download:</b>  <code>{speed_convert(result['download'], False)}</code>
-├ <b>Ping:</b> <code>{result['ping']} ms</code>
-├ <b>Time:</b> <code>{result['timestamp']}</code>
-├ <b>Data Sent:</b> <code>{get_readable_file_size(int(result['bytes_sent']))}</code>
-╰ <b>Data Received:</b> <code>{get_readable_file_size(int(result['bytes_received']))}</code>
+🚀 SPEEDTEST INFO:
+<b>Upload:</b> <code>{speed_convert(result['upload'], False)}</code>
+<b>Download:</b>  <code>{speed_convert(result['download'], False)}</code>
+<b>Ping:</b> <code>{result['ping']} ms</code>
+<b>Time:</b> <code>{result['timestamp']}</code>
+<b>Data Sent:</b> <code>{get_readable_file_size(int(result['bytes_sent']))}</code>
+<b>Data Received:</b> <code>{get_readable_file_size(int(result['bytes_received']))}</code>
 
-╭─《 🌐 SPEEDTEST SERVER 》
-├ <b>Name:</b> <code>{result['server']['name']}</code>
-├ <b>Country:</b> <code>{result['server']['country']}, {result['server']['cc']}</code>
-├ <b>Sponsor:</b> <code>{result['server']['sponsor']}</code>
-├ <b>Latency:</b> <code>{result['server']['latency']}</code>
-├ <b>Latitude:</b> <code>{result['server']['lat']}</code>
-╰ <b>Longitude:</b> <code>{result['server']['lon']}</code>
+🌍 SPEEDTEST SERVER:
+<b>Name:</b> <code>{result['server']['name']}</code>
+<b>Country:</b> <code>{result['server']['country']}, {result['server']['cc']}</code>
+<b>Sponsor:</b> <code>{result['server']['sponsor']}</code>
+<b>Latency:</b> <code>{result['server']['latency']}</code>
+<b>Latitude:</b> <code>{result['server']['lat']}</code>
+<b>Longitude:</b> <code>{result['server']['lon']}</code>
 
-╭─《 👤 CLIENT DETAILS 》
-├ <b>IP Address:</b> <code>{result['client']['ip']}</code>
-├ <b>Latitude:</b> <code>{result['client']['lat']}</code>
-├ <b>Longitude:</b> <code>{result['client']['lon']}</code>
-├ <b>Country:</b> <code>{result['client']['country']}</code>
-├ <b>ISP:</b> <code>{result['client']['isp']}</code>
-╰ <b>ISP Rating:</b> <code>{result['client']['isprating']}</code>
+👨‍💻 CLIENT DETAILS:
+<b>IP Address:</b> <code>{result['client']['ip']}</code>
+<b>Latitude:</b> <code>{result['client']['lat']}</code>
+<b>Longitude:</b> <code>{result['client']['lon']}</code>
+<b>Country:</b> <code>{result['client']['country']}</code>
+<b>ISP:</b> <code>{result['client']['isp']}</code>
+<b>ISP Rating:</b> <code>{result['client']['isprating']}</code>
 '''
     try:
-        pho = sendPhoto(text=string_speed, bot=context.bot, message=update.message, photo=path)
+        sendMessage(text=string_speed, bot=context.bot, message=update.message)
         deleteMessage(context.bot, speed)
-        Thread(target=auto_delete_message, args=(context.bot, update.message, pho)).start()
+        Thread(target=auto_delete_message, args=(context.bot, update.message)).start()
     except Exception as g:
         logging.error(str(g))
         editMessage(string_speed, speed)

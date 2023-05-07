@@ -24,9 +24,9 @@ from bot import config_dict, botStartTime, Interval, QbInterval, LOGGER, DATABAS
                 app, main_loop
 from .modules import authorize, list, cancel_mirror, mirror_status, mirror_leech, clone, ytdlp, shell, eval, bot_settings, \
                      delete, count, users_settings, search, rss, wayback, speedtest, anilist, imdb, bt_select, mediainfo, hash, \
-                     scraper, pictures, save_msg, sel_cat
+                     scraper, pictures, save_msg, sel_cat, users, drive_clean, broadcast
 
-version = "5.0.0"
+version = "Master Branch 5.0.2"
 
 def progress_bar(percentage):
     p_used = config_dict['FINISHED_PROGRESS_STR']
@@ -48,10 +48,10 @@ now=datetime.now(timezone(f'{timez}'))
 def stats(update, context):
     if ospath.exists('.git'):
         if config_dict['EMOJI_THEME']:
-            last_commit = check_output(["git log -1 --date=short --pretty=format:'%cd \n<b>├</b> 🛠<b>From:</b> %cr'"], shell=True).decode()
+            last_commit = check_output(["git log -1 --date=short --pretty=format:'%cd \n🛠 From: %cr'"], shell=True).decode()
             botVersion = check_output(["git log -1 --date=format:v%y.%m%d.%H%M --pretty=format:%cd"], shell=True).decode()
         else:
-            last_commit = check_output(["git log -1 --date=short --pretty=format:'%cd \n<b>├  From:</b> %cr'"], shell=True).decode()
+            last_commit = check_output(["git log -1 --date=short --pretty=format:'%cd \nFrom: %cr'"], shell=True).decode()
             botVersion = check_output(["git log -1 --date=format:v%y.%m%d.%H%M --pretty=format:%cd"], shell=True).decode()
     else:
         botVersion = 'No UPSTREAM_REPO'
@@ -78,30 +78,30 @@ def stats(update, context):
     mem_a = get_readable_file_size(memory.available)
     mem_u = get_readable_file_size(memory.used)
     if config_dict['EMOJI_THEME']:
-            stats = f'<b>╭─《🌐 BOT STATISTICS 🌐》</b>\n' \
-                    f'<b>├ 🛠 Updated On: </b>{last_commit}\n'\
-                    f'<b>├ ⌛ Uptime: </b>{currentTime}\n'\
-                    f'<b>├ 🤖 Version: </b>{version}\n'\
-                    f'<b>├ 🟢 OS Uptime: </b>{osUptime}\n'\
-                    f'<b>├ 🖥️ CPU:</b> [{progress_bar(cpuUsage)}] {cpuUsage}%\n'\
-                    f'<b>├ 🎮 RAM:</b> [{progress_bar(mem_p)}] {mem_p}%\n'\
-                    f'<b>├ 💾 Disk:</b> [{progress_bar(disk)}] {disk}%\n'\
-                    f'<b>├ 💿 Disk Free:</b> {free}\n'\
-                    f'<b>├ 🔺 Upload Data:</b> {sent}\n'\
-                    f'<b>╰ 🔻 Download Data:</b> {recv}\n\n'
+            stats = f'<b>       📊 Bot Statistics </b>\n' \
+                    f'🛠 Updated On: {last_commit}\n'\
+                    f'⏰️ Uptime: {currentTime}\n'\
+                    f'🤖 Version: {version}\n'\
+                    f'🟢 OS Uptime: {osUptime}\n'\
+                    f'🖥︄ CPU: [{progress_bar(cpuUsage)}] {cpuUsage}%\n'\
+                    f'🎮 RAM: [{progress_bar(mem_p)}] {mem_p}%\n'\
+                    f'💾 Disk: [{progress_bar(disk)}] {disk}%\n'\
+                    f'💿 Disk Free: {free}\n'\
+                    f'🔺 Upload Data: {sent}\n'\
+                    f'🔻 Download Data: {recv}\n\n'
 
     else:
-            stats = f'<b>╭─《🌐 BOT STATISTICS 🌐》</b>\n' \
-                    f'<b>├  Updated On: </b>{last_commit}\n'\
-                    f'<b>├  Uptime: </b>{currentTime}\n'\
-                    f'<b>├  Version: </b>{version}\n'\
-                    f'<b>├  OS Uptime: </b>{osUptime}\n'\
-                    f'<b>├  CPU:</b> [{progress_bar(cpuUsage)}] {cpuUsage}%\n'\
-                    f'<b>├  RAM:</b> [{progress_bar(mem_p)}] {mem_p}%\n'\
-                    f'<b>├  Disk:</b> [{progress_bar(disk)}] {disk}%\n'\
-                    f'<b>├  Disk Free:</b> {free}\n'\
-                    f'<b>├  Upload Data:</b> {sent}\n'\
-                    f'<b>╰  Download Data:</b> {recv}\n\n'
+            stats = f'<b>    📊 Bot Statistics </b>\n' \
+                    f'Updated On: {last_commit}\n'\
+                    f'Uptime: {currentTime}\n'\
+                    f'Version: {version}\n'\
+                    f'OS Uptime: {osUptime}\n'\
+                    f'CPU: [{progress_bar(cpuUsage)}] {cpuUsage}%\n'\
+                    f'RAM: [{progress_bar(mem_p)}] {mem_p}%\n'\
+                    f'Disk: [{progress_bar(disk)}] {disk}%\n'\
+                    f'Disk Free: {free}\n'\
+                    f'Upload Data: {sent}\n'\
+                    f'Download Data: {recv}\n\n'
 
 
 
@@ -124,23 +124,23 @@ def stats(update, context):
         user_task = 'No Limit Set' if USER_TASKS_LIMIT == '' else f'{USER_TASKS_LIMIT} Tasks/user'
 
         if config_dict['EMOJI_THEME']: 
-            stats += f'<b>╭─《 ⚠️ BOT LIMITS ⚠️ 》</b>\n'\
-                     f'<b>├ 🧲 Torrent/Direct: </b>{torrent_direct}\n'\
-                     f'<b>├ 🔐 Zip/Unzip: </b>{zip_unzip}\n'\
-                     f'<b>├ 🔷 Leech: </b>{leech_limit}\n'\
-                     f'<b>├ ♻️ Clone: </b>{clone_limit}\n'\
-                     f'<b>├ 🔰 Mega: </b>{mega_limit}\n'\
-                     f'<b>├ 💣 Total Tasks: </b>{total_task}\n'\
-                     f'<b>╰ 🔫 User Tasks: </b>{user_task}\n\n'
+            stats += f'<b>🔢 Bot Limitations </b>\n'\
+                     f'🧲 Torrent/Direct: {torrent_direct}\n'\
+                     f'🔐 Zip/Unzip: {zip_unzip}\n'\
+                     f'🔷 Leech: {leech_limit}\n'\
+                     f'♻️ Clone: {clone_limit}\n'\
+                     f'🔰 Mega: {mega_limit}\n'\
+                     f'💣 Total Tasks: {total_task}\n'\
+                     f'🔫 User Tasks: {user_task}\n\n'
         else: 
-            stats += f'<b>╭─《 ⚠️ BOT LIMITS ⚠️ 》</b>\n'\
-                     f'<b>├  Torrent/Direct: </b>{torrent_direct}\n'\
-                     f'<b>├  Zip/Unzip: </b>{zip_unzip}\n'\
-                     f'<b>├  Leech: </b>{leech_limit}\n'\
-                     f'<b>├  Clone: </b>{clone_limit}\n'\
-                     f'<b>├  Mega: </b>{mega_limit}\n'\
-                     f'<b>├  Total Tasks: </b>{total_task}\n'\
-                     f'<b>╰  User Tasks: </b>{user_task}\n\n'
+            stats += f'<b>🔢 Bot Limitations </b>\n'\
+                     f'Torrent/Direct: {torrent_direct}\n'\
+                     f'Zip/Unzip: {zip_unzip}\n'\
+                     f'Leech: {leech_limit}\n'\
+                     f'Clone: {clone_limit}\n'\
+                     f'Mega: {mega_limit}\n'\
+                     f'Total Tasks: {total_task}\n'\
+                     f'User Tasks: {user_task}\n\n'
 
     if config_dict['PICS']:
         sendPhoto(stats, context.bot, update.message, rchoice(config_dict['PICS']))
@@ -150,8 +150,8 @@ def stats(update, context):
 def start(update, context):
     buttons = ButtonMaker()
     if config_dict['EMOJI_THEME']:
-        buttons.buildbutton(f"😎 {config_dict['START_BTN1_NAME']}", f"{config_dict['START_BTN1_URL']}")
-        buttons.buildbutton(f"🔥 {config_dict['START_BTN2_NAME']}", f"{config_dict['START_BTN2_URL']}")
+        buttons.buildbutton(f"{config_dict['START_BTN1_NAME']}", f"{config_dict['START_BTN1_URL']}")
+        buttons.buildbutton(f"{config_dict['START_BTN2_NAME']}", f"{config_dict['START_BTN2_URL']}")
     else:
         buttons.buildbutton(f"{config_dict['START_BTN1_NAME']}", f"{config_dict['START_BTN1_URL']}")
         buttons.buildbutton(f"{config_dict['START_BTN2_NAME']}", f"{config_dict['START_BTN2_URL']}")
@@ -173,7 +173,7 @@ Type /{BotCommands.HelpCommand} to get a list of available commands
 
 
 def restart(update, context):
-    restart_message = sendMessage("Restarting...", context.bot, update.message)
+    restart_message = sendMessage("Bot Restarting...", context.bot, update.message)
     if Interval:
         Interval[0].cancel()
         Interval.clear()
@@ -192,7 +192,7 @@ def restart(update, context):
 def ping(update, context):
     if config_dict['EMOJI_THEME']:
         start_time = int(round(time() * 1000))
-        reply = sendMessage("Starting_Ping ⛔", context.bot, update.message)
+        reply = sendMessage("Starting_Ping", context.bot, update.message)
         end_time = int(round(time() * 1000))
         editMessage(f'{end_time - start_time} ms 🔥', reply)
     else:
@@ -321,7 +321,7 @@ def bot_help(update, context):
     button = ButtonMaker()
     if config_dict['EMOJI_THEME']:
         button.buildbutton("👤 User", f"https://telegra.ph/{help_user}")
-        button.buildbutton("🛡️ Admin", f"https://telegra.ph/{help_admin}")
+        button.buildbutton("🔰 Admin", f"https://telegra.ph/{help_admin}")
     else:
         button.buildbutton("User", f"https://telegra.ph/{help_user}")
         button.buildbutton("Admin", f"https://telegra.ph/{help_admin}")
@@ -364,12 +364,17 @@ if config_dict['SET_BOT_COMMANDS']:
         (f'{BotCommands.PingCommand}','Ping the bot'),
         (f'{BotCommands.RestartCommand}','Restart the bot'),
         (f'{BotCommands.LogCommand}','Get the bot Log'),
-        (f'{BotCommands.HelpCommand}','Get detailed help')
+        (f'{BotCommands.HelpCommand}','Get detailed help'),
+        (f'{BotCommands.LimitCommand}','Get Bot Limitation')
     ]
 
 
 def main():
-
+    try:
+        bot.sendMessage(chat_id=config_dict['OWNER_ID'], text="I am now online 🌐")
+    except:
+        pass
+        
     if config_dict['WALLCRAFT_CATEGORY']:
         for page in range(1,20):
             r2 = rget(f"https://wallpaperscraft.com/catalog/{config_dict['WALLCRAFT_CATEGORY']}/1280x720/page{page}")
@@ -425,20 +430,20 @@ def main():
                 if ospath.isfile(".restartmsg"):
                     with open(".restartmsg") as f:
                         chat_id, msg_id = map(int, f)
-                    msg = f"😎 Restarted Successfully❗\n"
+                    msg = f"Bot Restarted Successfully❗\n"
                 else:
-                    msg = f"😎 Bot Restarted!\n"
-                msg += f"📅 DATE: {date}\n"
-                msg += f"⌚ TIME: {time}\n"
-                msg += f"🌐 TIMEZONE: {timez}\n"
-                msg += f"🤖 VERSION: {version}"
+                    msg = f"Bot Restarted!\n"
+                msg += f"Date: {date}\n"
+                msg += f"Time: {time}\n"
+                msg += f"Time Zone: {timez}\n"
+                msg += f"Repo Version: {version}"
 
                 for tag, links in data.items():
                     msg += f"\n{tag}: "
                     for index, link in enumerate(links, start=1):
                         msg += f" <a href='{link}'>{index}</a> |"
                         if len(msg.encode()) > 4000:
-                            if '😎 Restarted Successfully❗' in msg and cid == chat_id:
+                            if 'Bot Restarted Successfully❗' in msg and cid == chat_id:
                                 try:
                                     bot.editMessageText(msg, chat_id, msg_id)
                                 except:
@@ -450,7 +455,7 @@ def main():
                                 except Exception as e:
                                     LOGGER.error(e)
                             msg = ''
-                if '😎 Restarted Successfully❗' in msg and cid == chat_id:
+                if 'Bot Restarted Successfully❗' in msg and cid == chat_id:
                     try:
                         bot.editMessageText(msg, chat_id, msg_id)
                     except:
@@ -466,17 +471,17 @@ def main():
         with open(".restartmsg") as f:
             chat_id, msg_id = map(int, f)
         try:
-            msg = f"😎 Restarted Successfully❗\n"
-            msg += f"📅 DATE: {date}\n"
-            msg += f"⌚ TIME: {time}\n"
-            msg += f"🌐 TIMEZONE: {timez}\n"
-            msg += f"🤖 VERSION: {version}"            
+            msg = f"Bot Restarted Successfully❗\n"
+            msg += f"Date: {date}\n"
+            msg += f"Time: {time}\n"
+            msg += f"Time Zone: {timez}\n"
+            msg += f"Repo Version: {version}"            
             bot.edit_message_text(msg, chat_id, msg_id)
         except Exception as e:
             LOGGER.info(e)
         osremove(".restartmsg")
 
-
+     
 
     start_handler = CommandHandler(BotCommands.StartCommand, start)
     log_handler = CommandHandler(BotCommands.LogCommand, log,
@@ -498,7 +503,7 @@ def main():
     dispatcher.add_handler(stats_handler)
     dispatcher.add_handler(log_handler)
     updater.start_polling(drop_pending_updates=IGNORE_PENDING_REQUESTS)
-    LOGGER.info("💥𝐁𝐨𝐭 𝐒𝐭𝐚𝐫𝐭𝐞𝐝❗")
+    LOGGER.info("💥 𝐁𝐨𝐭 𝐒𝐭𝐚𝐫𝐭𝐞𝐝")
     signal(SIGINT, exit_clean_up)
 
 app.start()

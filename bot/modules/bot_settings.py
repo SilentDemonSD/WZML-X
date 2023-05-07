@@ -41,9 +41,9 @@ default_values = {'AUTO_DELETE_MESSAGE_DURATION': 30,
                   'CREDIT_NAME': 'WeebZone',
                   'NAME_FONT': 'code',
                   'CAPTION_FONT': 'code',
-                  'FINISHED_PROGRESS_STR': '█',
-                  'UN_FINISHED_PROGRESS_STR': '▒',
-                  'MULTI_WORKING_PROGRESS_STR': '▁ ▂ ▃ ▄ ▅ ▆ ▇'.split(' '),
+                  'FINISHED_PROGRESS_STR': '■',
+                  'UN_FINISHED_PROGRESS_STR': '□',
+                  'MULTI_WORKING_PROGRESS_STR': '□ □ □ □ □ □ □ □'.split(' '),
                   'IMAGE_URL': 'https://graph.org/file/6b22ef7b8a733c5131d3f.jpg',
                   'TIMEZONE': 'Asia/Kolkata',
                   'LIST_MODE': "Telegraph",
@@ -363,6 +363,14 @@ def load_config():
 
     SERVER_PORT = environ.get('SERVER_PORT', '')
     SERVER_PORT = 80 if len(SERVER_PORT) == 0 else int(SERVER_PORT)
+    
+    LEECH_CAPTION = environ.get('LEECH_CAPTION')
+    if len(LEECH_CAPTION) == 0:
+        LEECH_CAPTION = ''
+    
+    SAFE_MODE = environ.get('SAFE_MODE', '')
+    if len(SAFE_MODE) == 0:
+        SAFE_MODE = ''
 
     DRIVES_IDS.clear()
     DRIVES_NAMES.clear()
@@ -809,6 +817,8 @@ def load_config():
                         'WEB_PINCODE': WEB_PINCODE,
                         'YTDLP_LIMIT': YTDLP_LIMIT,
                         'MAX_PLAYLIST': MAX_PLAYLIST,
+                        'LEECH_CAPTION':LEECH_CAPTION,
+                        'SAFE_MODE': SAFE_MODE,
                         'YT_DLP_QUALITY': YT_DLP_QUALITY})
 
 

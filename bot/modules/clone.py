@@ -5,11 +5,11 @@ from threading import Thread
 from time import sleep, time
 
 from bot.helper.ext_utils.bot_utils import is_sudo, is_paid, get_user_task, get_category_buttons, get_readable_file_size, getUserTDs, \
-                    new_thread, get_bot_pm, is_url, is_gdrive_link, is_gdtot_link, is_udrive_link, is_sharer_link, \
+                    new_thread, get_bot_pm, is_url, is_gdrive_link, is_gdtot_link, is_udrive_link, is_sharer_link, is_unified_link, \
                     is_sharedrive_link, is_filepress_link, userlistype
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from bot.helper.ext_utils.timegap import timegap_check
-from bot.helper.mirror_utils.download_utils.direct_link_generator import gdtot, udrive, sharer_pw_dl, shareDrive, filepress
+from bot.helper.mirror_utils.download_utils.direct_link_generator import gdtot, udrive, sharer_pw_dl, shareDrive, filepress, unified
 from bot.helper.mirror_utils.status_utils.clone_status import CloneStatus
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -56,14 +56,14 @@ def _clone(message, bot):
     if user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id):
         if config_dict['PAID_SERVICE'] is True:
             if TOTAL_TASKS_LIMIT == total_task:
-                return sendMessage(f"<b>BOT TOTAL TASK LIMIT : {TOTAL_TASKS_LIMIT}\nTASKS PROCESSING : {total_task}\n#total limit exceed </b>\n#Buy Paid Service", bot ,message)
+                return sendMessage(f"<b>Bot Total Task Limit : {TOTAL_TASKS_LIMIT}\nTasks Processing : {total_task}\nTotal Task Limit Exceed </b>\nBuy Paid Service", bot ,message)
             if USER_TASKS_LIMIT == get_user_task(user_id):
-                return sendMessage(f"<b>BOT USER TASK LIMIT : {USER_TASKS_LIMIT} \nYOUR TASK : {get_user_task(user_id)}\n#user limit exceed</b>\n#Buy Paid Service", bot ,message)
+                return sendMessage(f"<b>Bot User Task Limit : {USER_TASKS_LIMIT} \nYOUR TASK : {get_user_task(user_id)}\nUser Task Limit Exceed</b>\nBuy Paid Service", bot ,message)
         else:
             if TOTAL_TASKS_LIMIT == total_task:
-                return sendMessage(f"<b>BOT TOTAL TASK LIMIT : {TOTAL_TASKS_LIMIT}\nTASKS PROCESSING : {total_task}\n#total limit exceed </b>", bot ,message)
+                return sendMessage(f"<b>Bot Total Task Limit : {TOTAL_TASKS_LIMIT}\nTasks Processing : {total_task}\nTotal Task Limit Exceed </b>", bot ,message)
             if USER_TASKS_LIMIT == get_user_task(user_id):
-                return sendMessage(f"<b>BOT USER TASK LIMIT : {USER_TASKS_LIMIT} \nYOUR TASK : {get_user_task(user_id)}\n#user limit exceed</b>", bot ,message)
+                return sendMessage(f"<b>Bot User Task Limit : {USER_TASKS_LIMIT} \nYOUR TASK : {get_user_task(user_id)}\nUser Task Limit Exceed</b>", bot ,message)
         time_gap = timegap_check(message)
         if time_gap:
             return
@@ -121,7 +121,7 @@ def _clone(message, bot):
         else:
             tag = reply_to.from_user.mention_html(reply_to.from_user.first_name)
 
-    if not (is_gdrive_link(link) or (link.strip().isdigit() and multi == 0) or is_gdtot_link(link) or is_udrive_link(link) or is_sharer_link(link) or is_sharedrive_link(link) or is_filepress_link(link)):
+    if not (is_gdrive_link(link) or (link.strip().isdigit() and multi == 0) or is_gdtot_link(link) or is_udrive_link(link) or is_sharer_link(link) or is_sharedrive_link(link) or is_filepress_link(link) or is_unified_link(link)):
         return sendMessage("Send Gdrive or GDToT/HubDrive/DriveHub(ws)/KatDrive/Kolop/DriveFire/FilePress/SharerPw/ShareDrive link along with command or by replying to the link by command\n\n<b>Multi links only by replying to first link/file:</b>\n<code>/cmd</code> 10(number of links/files)", bot, message)
 
     timeout = 60
@@ -172,7 +172,9 @@ def start_clone(listelem):
     is_sharer = is_sharer_link(link)
     is_sharedrive = is_sharedrive_link(link)
     is_filepress = is_filepress_link(link)
-    if (is_gdtot or is_udrive or is_sharer or is_sharedrive or is_filepress):
+    is_unified = is_unified_link(link)
+    if (is_gdtot or is_udrive or is_sharer or is_sharedrive or is_filepress or is_unified):
+
         try:
             LOGGER.info(f"Processing: {link}")
             if is_gdtot:
@@ -190,6 +192,9 @@ def start_clone(listelem):
             elif is_filepress:
                 msg = sendMessage(f"FILEPRESS LINK DETECTED !", bot, message)
                 link = filepress(link)
+            elif is_unified:
+                msg = sendMessage(f"UNIFIED LINK DETECTED !", bot, message)
+                link = unified(link)
             LOGGER.info(f"Generated GDrive Link: {link}")
             deleteMessage(bot, msg)
         except DirectDownloadLinkException as e:
@@ -208,7 +213,7 @@ def start_clone(listelem):
         if smsg:
             tegr, html, tgdi = userlistype(user_id)
             if tegr:
-                return sendMessage("Someone already mirrored it for you !\nHere you go:", bot, message, button)
+                return sendMessage("File/Folder is already available in Drive. Here are the search results:", bot, message, button)
             elif html:
                 return sendFile(bot, message, button, f"File/Folder is already available in Drive. Here are the search results:\n\n{smsg}")
             else: return sendMessage(smsg, bot, message, button)
@@ -226,11 +231,15 @@ def start_clone(listelem):
         deleteMessage(bot, msg)
         if BOT_PM_X:
             if message.chat.type != 'private':
+                if config_dict['SAFE_MODE']:
+                    name = "File Name is hidden."
+                else:
+                    name = name
                 if config_dict['EMOJI_THEME']:
                     msg = f"<b>🗂️ Name: </b><{config_dict['NAME_FONT']}>{escape(name)}</{config_dict['NAME_FONT']}>\n"
                 else:
                     msg = f"<b>Name: </b><{config_dict['NAME_FONT']}>{escape(name)}</{config_dict['NAME_FONT']}>\n"
-                botpm = f"\n<b>Hey {tag}!, I have sent your cloned links in PM.</b>\n"
+                botpm = f"\n<b>Hey {tag}. I have sent your cloned links in PM.</b>\n"
                 buttons = ButtonMaker()
                 b_uname = bot.get_me().username
                 botstart = f"http://t.me/{b_uname}"
@@ -241,16 +250,19 @@ def start_clone(listelem):
                     sendMessage(msg + botpm, bot, message, buttons.build_menu(2))
             else:
                 if config_dict['EMOJI_THEME']:
-                    cc = f'\n<b>╰👤 #Clone_By: </b>{tag}\n\n'
+                    cc = f'\n<b>👤 Clone By: </b>{tag}\n\n'
                 else:
-                    cc = f'\n<b>╰ #Clone_By: </b>{tag}\n\n'
+                    cc = f'\n<b>Clone By: </b>{tag}\n\n'
                 if config_dict['PICS']:
                     sendPhoto(result + cc, bot, message, rchoice(config_dict['PICS']), button)
                 else:
                     sendMessage(result + cc, bot, message, button)
             message.delete()
             if reply_to is not None and config_dict['AUTO_DELETE_UPLOAD_MESSAGE_DURATION'] == -1:
-                reply_to.delete()
+                try:
+                    reply_to.delete()
+                except:
+                    pass
     else:
         drive = GoogleDriveHelper(name, user_id=user_id)
         gid = ''.join(SystemRandom().choices(ascii_letters + digits, k=12))
@@ -273,7 +285,7 @@ def start_clone(listelem):
                             msg = f"<b>🗂️ Name: </b><{config_dict['NAME_FONT']}>{escape(name)}</{config_dict['NAME_FONT']}>\n"
                         else:
                             msg = f"<b>Name: </b><{config_dict['NAME_FONT']}>{escape(name)}</{config_dict['NAME_FONT']}>\n"
-                        botpm = f"\n<b>Hey {tag}!, I have sent your cloned links in PM.</b>\n"
+                        botpm = f"\n<b>Hey {tag}. I have sent your cloned links in PM.</b>\n"
                         buttons = ButtonMaker()
                         b_uname = bot.get_me().username
                         botstart = f"http://t.me/{b_uname}"
@@ -284,16 +296,19 @@ def start_clone(listelem):
                             sendMessage(msg + botpm, bot, message, buttons.build_menu(2))
                     else:
                         if config_dict['EMOJI_THEME']:
-                            cc = f'\n<b>╰👤 #Clone_By: </b>{tag}\n\n'
+                            cc = f'\n<b>👤 Clone By: </b>{tag}\n\n'
                         else:
-                            cc = f'\n<b>╰ #Clone_By: </b>{tag}\n\n'
+                            cc = f'\n<b>Clone By: </b>{tag}\n\n'
                         if config_dict['PICS']:
                             sendPhoto(result + cc, bot, message, rchoice(config_dict['PICS']), button)
                         else:
                             sendMessage(result + cc, bot, message, button.build_menu(2))       
                     message.delete()
                     if reply_to is not None and config_dict['AUTO_DELETE_UPLOAD_MESSAGE_DURATION'] == -1:
-                        reply_to.delete()
+                        try:
+                            reply_to.delete()
+                        except:
+                            pass
             else:
                 update_all_messages()
         except IndexError:
@@ -304,13 +319,13 @@ def start_clone(listelem):
     user_id = message.from_user.id
     tag = f"@{message.from_user.username}"
     if config_dict['EMOJI_THEME']:
-        slmsg = f"╭🗂️ Name: <{config_dict['NAME_FONT']}>{escape(name)}</{config_dict['NAME_FONT']}>\n"
-        slmsg += f"├📐 Size: {get_readable_file_size(size)}\n"
-        slmsg += f"╰👥 Added by: {tag} | <code>{user_id}</code>\n\n"
+        slmsg = f"🗂️ Name: <{config_dict['NAME_FONT']}>{escape(name)}</{config_dict['NAME_FONT']}>\n"
+        slmsg += f"📐 Size: {get_readable_file_size(size)}\n"
+        slmsg += f"👥 Added by: {tag} | <code>{user_id}</code>\n\n"
     else:
-        slmsg = f"╭ Name: <{config_dict['NAME_FONT']}>{escape(name)}</{config_dict['NAME_FONT']}>\n"
-        slmsg += f"├ Size: {get_readable_file_size(size)}\n"
-        slmsg += f"╰ Added by: {tag} | <code>{user_id}</code>\n\n"
+        slmsg = f"Name: <{config_dict['NAME_FONT']}>{escape(name)}</{config_dict['NAME_FONT']}>\n"
+        slmsg += f"Size: {get_readable_file_size(size)}\n"
+        slmsg += f"Added by: {tag} | <code>{user_id}</code>\n\n"
     if 'link_logs' in user_data:
         try:
             upper = f"‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒‒\n"
@@ -333,23 +348,23 @@ def start_clone(listelem):
                 pass  
 
     if config_dict['EMOJI_THEME']:
-        cc = f'\n<b>╰👤 #Clone_By: </b>{tag}\n\n'
+        cc = f'\n<b>👤 Clone By: </b>{tag}\n\n'
     else:
-        cc = f'\n<b>╰ #Clone_By: </b>{tag}\n\n'
+        cc = f'\n<b>Clone By: </b>{tag}\n\n'
     if button.build_menu(2) in ["cancelled", ""]:
         sendMessage(f"{tag} {result}", bot, message)
     else:
         LOGGER.info(f'Cloning Done: {name}')
     if BOT_PM_X and message.chat.type != 'private':
         if config_dict['EMOJI_THEME']:
-            pmwarn = f"<b>😉I have sent files in PM.</b>\n"
+            pmwarn = f"<b>📩 I have sent files in PM.</b>\n"
         else:
             pmwarn = f"<b>I have sent files in PM.</b>\n"
     else:
         pmwarn = ''
     if 'mirror_logs' in user_data and message.chat.type != 'private':
         if config_dict['EMOJI_THEME']:
-            logwarn = f"<b>⚠️ I have sent files in Mirror Log Channel. Join <a href=\"{config_dict['MIRROR_LOG_URL']}\">Mirror Log channel</a> </b>\n"
+            logwarn = f"<b>📩 I have sent files in Mirror Log Channel. Join <a href=\"{config_dict['MIRROR_LOG_URL']}\">Mirror Log channel</a> </b>\n"
         else:
             logwarn = f"<b>I have sent files in Mirror Log Channel. Join <a href=\"{config_dict['MIRROR_LOG_URL']}\">Mirror Log channel</a> </b>\n"
     else:
@@ -358,7 +373,11 @@ def start_clone(listelem):
     AUTO_DELETE_UPLOAD_MESSAGE_DURATION = config_dict["AUTO_DELETE_UPLOAD_MESSAGE_DURATION"]
     if AUTO_DELETE_UPLOAD_MESSAGE_DURATION != -1:
         if reply_to is not None:
-            reply_to.delete()
+            try:
+                reply_to.delete()
+            except:
+                pass
+              
         auto_delete_message = int(AUTO_DELETE_UPLOAD_MESSAGE_DURATION / 60)
         if message.chat.type == 'private':
             warnmsg = ''
