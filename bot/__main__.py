@@ -436,8 +436,9 @@ def main():
                 msg += f"Date: {date}\n"
                 msg += f"Time: {time}\n"
                 msg += f"Time Zone: {timez}\n"
-                msg += f"Repo Version: {version}"
-
+                msg += f"Repo Version: {version}\n\n"
+                msg += f" Incomplete Tasks ⬇️ \n\n"
+                
                 for tag, links in data.items():
                     msg += f"\n{tag}: "
                     for index, link in enumerate(links, start=1):
