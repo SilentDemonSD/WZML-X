@@ -1064,7 +1064,7 @@ def update_private_file(update, context, omsg):
         if file_name == 'accounts.zip':
             if ospath.exists('accounts'):
                 srun(["rm", "-rf", "accounts"])
-            srun(["unzip", "-q", "-o", "accounts.zip", "-x", "accounts/emails.txt"])
+            srun(["7z", "x", "accounts.zip", "-oaccounts", "-aoa", "*.json"])
             srun(["chmod", "-R", "777", "accounts"])
         elif file_name == 'list_drives.txt':
             DRIVES_IDS.clear()
