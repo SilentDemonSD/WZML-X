@@ -18,7 +18,7 @@ google-auth-httplib2
 google-auth-oauthlib
 gunicorn
 lk21
-lxml
+lxml>=4.9.1
 markdown
 mediainfo
 pillow
@@ -26,7 +26,7 @@ psutil
 pybase64
 pycountry
 pymongo
-pyrogram==2.0.66
+pyrogram==2.0.59
 python-dotenv
 python-magic
 python-telegram-bot==13.15
