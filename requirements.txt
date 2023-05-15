@@ -7,12 +7,12 @@ beautifulsoup4
 bencode.py
 bencoding
 cfscrape
+cinemagoer
 cloudscraper
 dnspython
 feedparser
 flask
 gc-python-utils
-cinemagoer
 google-api-python-client
 google-auth-httplib2
 google-auth-oauthlib
