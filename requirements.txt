@@ -1,5 +1,5 @@
-aria2p
 anytree
+aria2p
 asyncio
 beautifulsoup4
 bencode.py
