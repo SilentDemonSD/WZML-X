@@ -486,8 +486,11 @@ class MirrorLeechListener:
                 msg += f'\n<b>Mirror By: </b>{self.tag}\n\n' 
             buttons = ButtonMaker()
             link = short_url(link, user_id_)
-            if config_dict['DISABLE_DRIVE_LINK'] and self.message.chat.type != 'private':
-                pass
+            if config_dict['DISABLE_DRIVE_LINK']:
+                if self.user_id == OWNER_ID:
+                    buttons.buildbutton("☁️ Drive Link", link)
+                else:
+                    pass
             else:
                 buttons.buildbutton("☁️ Drive Link", link)
             LOGGER.info(f'Done Uploading {name}')
