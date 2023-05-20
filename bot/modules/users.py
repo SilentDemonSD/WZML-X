@@ -56,11 +56,8 @@ def bot_limit(update, context):
         sendMessage(limit, context.bot, update.message)
 
 
-if config_dict['IS_PUBLIC_BOT']:
-    limit_handler = CommandHandler(BotCommands.LimitCommand, bot_limit)
-else:
-    limit_handler = CommandHandler(BotCommands.LimitCommand, bot_limit, filters=CustomFilters.authorized_chat | CustomFilters.authorized_user)
 
+limit_handler = CommandHandler(BotCommands.LimitCommand, bot_limit, filters=CustomFilters.authorized_chat | CustomFilters.authorized_user)
 dbusers_handler = CommandHandler("dbusers", dbusers, filters=CustomFilters.owner_filter | CustomFilters.sudo_user)
 id_handler = CommandHandler("id", get_id)
 
