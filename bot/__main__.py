@@ -26,7 +26,7 @@ from .modules import authorize, list, cancel_mirror, mirror_status, mirror_leech
                      delete, count, users_settings, search, rss, wayback, speedtest, anilist, imdb, bt_select, mediainfo, hash, \
                      scraper, pictures, save_msg, sel_cat, users, drive_clean, broadcast
 
-version = "Master Branch 5.0.2"
+version = "Master Branch 5.0.3"
 
 def progress_bar(percentage):
     p_used = config_dict['FINISHED_PROGRESS_STR']
@@ -437,7 +437,7 @@ def main():
                 msg += f"Time: {time}\n"
                 msg += f"Time Zone: {timez}\n"
                 msg += f"Repo Version: {version}\n\n"
-                msg += f" Incomplete Tasks ⬇️ \n\n"
+                msg += f"Incomplete Tasks ⬇️ \n"
                 
                 for tag, links in data.items():
                     msg += f"\n{tag}: "
