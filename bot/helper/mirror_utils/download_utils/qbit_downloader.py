@@ -200,10 +200,10 @@ def __check_limits(client, tor):
                 msg = f'You must leave {STORAGE_THRESHOLD}GB free storage.'
                 msg += f'\nYour File/Folder size is {get_readable_file_size(size)}'
                 if config_dict['PAID_SERVICE'] is True:
-                    msg += f'\n#Buy Paid Service'
+                    msg += f'\nBuy Paid Service'
                 __onDownloadError(msg, client, tor)
-            else:
-                pass
+        else:
+            pass
         limit = None
         if ZIP_UNZIP_LIMIT and arch:
             mssg = f'Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB'
@@ -215,7 +215,7 @@ def __check_limits(client, tor):
             mssg = f'Torrent limit is {TORRENT_DIRECT_LIMIT}GB'
             limit = TORRENT_DIRECT_LIMIT
         if config_dict['PAID_SERVICE'] is True:
-            mssg += f'\n#Buy Paid Service'
+            mssg += f'\nBuy Paid Service'
         if limit is not None:
             LOGGER.info('Checking File/Folder Size...')
             if size > limit * 1024**3:
@@ -224,15 +224,15 @@ def __check_limits(client, tor):
     DAILY_MIRROR_LIMIT = config_dict['DAILY_MIRROR_LIMIT'] * 1024**3 if config_dict['DAILY_MIRROR_LIMIT'] else config_dict['DAILY_MIRROR_LIMIT']
     DAILY_LEECH_LIMIT = config_dict['DAILY_LEECH_LIMIT'] * 1024**3 if config_dict['DAILY_LEECH_LIMIT'] else config_dict['DAILY_LEECH_LIMIT']
     if DAILY_MIRROR_LIMIT and not listener.isLeech and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) and (size >= (DAILY_MIRROR_LIMIT - getdailytasks(user_id, check_mirror=True)) or DAILY_MIRROR_LIMIT <= getdailytasks(user_id, check_mirror=True)):
-        mssg = f"Daily Mirror Limit is {get_readable_file_size(DAILY_MIRROR_LIMIT)}\nYou have exhausted Today's Mirror Limit or Size of your Mirror is greater than free Limits.\n#TRY_AGAIN_TOMORROW #Daily_Mirror_Limit"
+        mssg = f"Daily Mirror Limit is {get_readable_file_size(DAILY_MIRROR_LIMIT)}\nYou have exhausted Today's Mirror Limit or Size of your Mirror is greater than free Limits.\nTry again tomorrow"
         if config_dict['PAID_SERVICE'] is True:
-            mssg += f'\n#Buy Paid Service'
+            mssg += f'\nBuy Paid Service'
         __onDownloadError(mssg, client, tor)
     elif not listener.isLeech: msize = getdailytasks(user_id, upmirror=size, check_mirror=True); LOGGER.info(f"User : {user_id} | Daily Mirror Size : {get_readable_file_size(msize)}")
     if DAILY_LEECH_LIMIT and listener.isLeech and user_id != OWNER_ID and not is_sudo(user_id) and not is_paid(user_id) and (size >= (DAILY_LEECH_LIMIT - getdailytasks(user_id, check_leech=True)) or DAILY_LEECH_LIMIT <= getdailytasks(user_id, check_leech=True)):
-        mssg = f"Daily Leech Limit is {get_readable_file_size(DAILY_LEECH_LIMIT)}\nYou have exhausted Today's Leech Limit or Size of your Leech is greater than free Limits.\n#TRY_AGAIN_TOMORROW #Daily_Leech_Limit"
+        mssg = f"Daily Leech Limit is {get_readable_file_size(DAILY_LEECH_LIMIT)}\nYou have exhausted Today's Leech Limit or Size of your Leech is greater than free Limits.\nTry again tomorrow"
         if config_dict['PAID_SERVICE'] is True:
-            mssg += f'\n#Buy Paid Service'
+            mssg += f'\nBuy Paid Service'
         __onDownloadError(mssg, client, tor)
     elif listener.isLeech: lsize = getdailytasks(user_id, upleech=size, check_leech=True); LOGGER.info(f"User : {user_id} | Daily Leech Size : {get_readable_file_size(lsize)}")
 
