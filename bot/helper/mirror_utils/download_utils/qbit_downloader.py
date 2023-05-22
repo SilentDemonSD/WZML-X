@@ -203,7 +203,7 @@ def __check_limits(client, tor):
                     msg += f'\n#Buy Paid Service'
                 __onDownloadError(msg, client, tor)
                 return
-                limit = None
+        limit = None
         if ZIP_UNZIP_LIMIT and arch:
             mssg = f'Zip/Unzip limit is {ZIP_UNZIP_LIMIT}GB'
             limit = ZIP_UNZIP_LIMIT
