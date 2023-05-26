@@ -688,11 +688,7 @@ SAFE_MODE = environ.get('SAFE_MODE', '')
 if len(SAFE_MODE) == 0:
     log_warning('SAFE_MODE Is Not Enabled')
     SAFE_MODE = ''
-    
-LEECH_CAPTION = environ.get('LEECH_CAPTION')
-if len(LEECH_CAPTION) == 0:
-    LEECH_CAPTION = ''
-    
+   
 config_dict = {'ANILIST_ENABLED': ANILIST_ENABLED,
                'AS_DOCUMENT': AS_DOCUMENT,
                'AUTHORIZED_CHATS': AUTHORIZED_CHATS,
@@ -823,7 +819,6 @@ config_dict = {'ANILIST_ENABLED': ANILIST_ENABLED,
                'YTDLP_LIMIT': YTDLP_LIMIT,
                'MAX_PLAYLIST': MAX_PLAYLIST,
                'YT_DLP_QUALITY': YT_DLP_QUALITY,
-               'LEECH_CAPTION': LEECH_CAPTION,
                'SAFE_MODE': SAFE_MODE}
 
 if GDRIVE_ID:
