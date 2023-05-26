@@ -86,11 +86,6 @@ class TgUploader:
         LEECH_X = int(dumpid) if len(dumpid) != 0 else user_data.get('is_log_leech', [''])[0]
         
         BOT_PM_X = get_bot_pm(user_id_)
-       
-        if config_dict['AS_DOCUMENT']:
-            cap_mono = f""
-        else:
-            cap_mono = cap_mono
         
         notMedia = False
         thumb = self.__thumb
