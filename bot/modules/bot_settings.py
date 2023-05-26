@@ -364,10 +364,6 @@ def load_config():
     SERVER_PORT = environ.get('SERVER_PORT', '')
     SERVER_PORT = 80 if len(SERVER_PORT) == 0 else int(SERVER_PORT)
     
-    LEECH_CAPTION = environ.get('LEECH_CAPTION')
-    if len(LEECH_CAPTION) == 0:
-        LEECH_CAPTION = ''
-    
     SAFE_MODE = environ.get('SAFE_MODE', '')
     if len(SAFE_MODE) == 0:
         SAFE_MODE = ''
@@ -817,7 +813,6 @@ def load_config():
                         'WEB_PINCODE': WEB_PINCODE,
                         'YTDLP_LIMIT': YTDLP_LIMIT,
                         'MAX_PLAYLIST': MAX_PLAYLIST,
-                        'LEECH_CAPTION':LEECH_CAPTION,
                         'SAFE_MODE': SAFE_MODE,
                         'YT_DLP_QUALITY': YT_DLP_QUALITY})
 
