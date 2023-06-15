@@ -8,6 +8,7 @@ class WZMLStyle:
     ST_BN2_URL = 'https://t.me/WZML_X'
     ST_MSG = '''This bot can mirror all your links|files|torrents to Google Drive or any rclone cloud or to telegram.
 Type {help_command} to get a list of available commands'''
+    ST_BOTPM = '''Now, This bot will send all your files and links here. Start Using ...'''
     ST_UNAUTH = '''You Are not authorized user! Deploy your own mirror-leech bot'''
     # ---------------------
 
