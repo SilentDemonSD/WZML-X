@@ -127,7 +127,7 @@ async def login(_, message):
     elif len(message.command) > 1:
         user_id = message.from_user.id
         input_pass = message.command[1]
-        if user_dict.get(user_id, {}).get('token', '') == config_dict['LOGIN_PASS']:
+        if user_data.get(user_id, {}).get('token', '') == config_dict['LOGIN_PASS']:
             return await sendMessage(message, '<b>Already Bot Login In!</b>')
         if input_pass == config_dict['LOGIN_PASS']:
             update_user_ldata(user_id, 'token', config_dict['LOGIN_PASS'])
