@@ -437,7 +437,7 @@ SET_COMMANDS = environ.get('SET_COMMANDS', '')
 SET_COMMANDS = SET_COMMANDS.lower() == 'true'
 
 TOKEN_TIMEOUT = environ.get('TOKEN_TIMEOUT', '')
-TOKEN_TIMEOUT = int(TOKEN_TIMEOUT) if TOKEN_TIMEOUT.isdigit() else 21600
+TOKEN_TIMEOUT = int(TOKEN_TIMEOUT) if TOKEN_TIMEOUT.isdigit() else ''
 
 LOGIN_PASS = environ.get('LOGIN_PASS', '')
 if len(LOGIN_PASS) == 0:
