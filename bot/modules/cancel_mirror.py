@@ -92,7 +92,7 @@ async def cancel_all_update(_, query):
 
 
 bot.add_handler(MessageHandler(cancel_mirror, filters=regex(
-    f"^/{BotCommands.CancelMirror}_?") & CustomFilters.authorized))
+    f"^/{BotCommands.CancelMirror}(_\w+)?(?!all)") & CustomFilters.authorized))
 bot.add_handler(MessageHandler(cancell_all_buttons, filters=command(
     BotCommands.CancelAllCommand) & CustomFilters.sudo))
-bot.add_handler(CallbackQueryHandler(cancel_all_update, filters=regex(r"^canall") & CustomFilters.sudo))
+bot.add_handler(CallbackQueryHandler(cancel_all_update, filters=regex(r"^canall")))
