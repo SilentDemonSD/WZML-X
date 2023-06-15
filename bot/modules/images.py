@@ -22,28 +22,28 @@ async def picture_add(_, message):
             pic_add = msg_text.strip()
             await editMessage(editable, "<b>Adding your Link ...</b>")
     elif resm and resm.photo:
-        if not (resm.photo and resm.photo[-1].file_size <= 5242880*2):
+        if not (resm.photo and resm.photo.file_size <= 5242880*2):
             await editMessage(editable, "This Media is Not Supported! Only Send Photos !!")
             return
         path = "Thumbnails/"
         if not await aiopath.isdir(path):
             mkdir(path)
         photo_dir = await resm.download()
-        await editMessage(editable, "<b>Uploading to telegra.ph Server, Please Wait...</b>")
+        await editMessage(editable, "<b>Uploading to graph.org Server, Please Wait...</b>")
         await asleep(1)
         try:
             pic_add = f'https://graph.org{upload_file(photo_dir)[0]}'
             LOGGER.info(f"Telegraph Link : {pic_add}")
         except Exception as e:
-            LOGGER.error(f"Pictures Error: {e}")
+            LOGGER.error(f"Images Error: {e}")
             await editMessage(editable, str(e))
         finally:
             await aioremove(photo_dir)
     else:
         help_msg = "<b>By Replying to Link (Telegra.ph or DDL):</b>"
-        help_msg += f"\n<code>/addpic" + " {link}" + "</code>\n"
+        help_msg += f"\n<code>/{BotCommands.AddImageCommand}" + " {link}" + "</code>\n"
         help_msg += "\n<b>By Replying to Photo on Telegram:</b>"
-        help_msg += f"\n<code>/addpic" + " {photo}" + "</code>"
+        help_msg += f"\n<code>/{BotCommands.AddImageCommand}" + " {photo}" + "</code>"
         await editMessage(editable, help_msg)
         return
     config_dict['IMAGES'].append(pic_add)
@@ -55,7 +55,7 @@ async def picture_add(_, message):
 async def pictures(_, message):
     user_id = message.from_user.id
     if not config_dict['IMAGES']:
-        await sendMessage(message, "No Photo to Show ! Add by /addpic")
+        await sendMessage(message, f"No Photo to Show ! Add by /{BotCommands.AddImageCommand}")
     else:
         to_edit = await sendMessage(message, "Generating Grid of your Images...")
         buttons = ButtonMaker()
@@ -65,7 +65,7 @@ async def pictures(_, message):
         buttons.ibutton("Close", f"images {user_id} close")
         buttons.ibutton("Remove All", f"images {user_id} removall", 'footer')
         await deleteMessage(to_edit)
-        await sendMessage(message, f'🌄 <b>Picture No. : 1 / {len(config_dict["IMAGES"])}</b>', buttons.build_menu(2), config_dict['IMAGES'][0])
+        await sendMessage(message, f'🌄 <b>Image No. : 1 / {len(config_dict["IMAGES"])}</b>', buttons.build_menu(2), config_dict['IMAGES'][0])
 
 async def pics_callback(_, query):
     message = query.message
@@ -78,7 +78,7 @@ async def pics_callback(_, query):
         await query.answer()
         ind = handleIndex(int(data[3]), config_dict['IMAGES'])
         no = len(config_dict['IMAGES']) - abs(ind+1) if ind < 0 else ind + 1
-        pic_info = f'🌄 <b>Picture No. : {no} / {len(config_dict["IMAGES"])}</b>'
+        pic_info = f'🌄 <b>Image No. : {no} / {len(config_dict["IMAGES"])}</b>'
         buttons = ButtonMaker()
         buttons.ibutton("<<", f"images {data[1]} turn {ind-1}")
         buttons.ibutton(">>", f"images {data[1]} turn {ind+1}")
@@ -93,15 +93,15 @@ async def pics_callback(_, query):
         query.answer("Photo Successfully Deleted", show_alert=True)
         if len(config_dict['IMAGES']) == 0:
             await query.message.delete()
-            await sendMessage(message, "No Photo to Show ! Add by /addpic")
+            await sendMessage(message, f"<b>No Photo to Show !</b> Add by /{BotCommands.AddImageCommand}")
             return
         ind = int(data[3])+1
         ind = len(config_dict['IMAGES']) - abs(ind) if ind < 0 else ind
-        pic_info = f'🌄 <b>Picture No. : {ind+1} / {len(config_dict["IMAGES"])}</b>'
+        pic_info = f'🌄 <b>Image No. : {ind+1} / {len(config_dict["IMAGES"])}</b>'
         buttons = ButtonMaker()
         buttons.ibutton("<<", f"images {data[1]} turn {ind-1}")
         buttons.ibutton(">>", f"images {data[1]} turn {ind+1}")
-        buttons.ibutton("Remove Photo", f"images {data[1]} remov {ind}")
+        buttons.ibutton("Remove Image", f"images {data[1]} remov {ind}")
         buttons.ibutton("Close", f"images {data[1]} close")
         buttons.ibutton("Remove All", f"images {data[1]} removall", 'footer')
         await editMessage(message, pic_info, buttons.build_menu(2), config_dict['IMAGES'][ind])
@@ -109,9 +109,9 @@ async def pics_callback(_, query):
         config_dict['IMAGES'].clear()
         if DATABASE_URL:
             await DbManger().update_config({'IMAGES': config_dict['IMAGES']})
-        await query.answer("All Photos Successfully Deleted", show_alert=True)
+        await query.answer("All Images Successfully Deleted", show_alert=True)
         await query.message.delete()
-        await sendMessage("No Photo to Show ! Add by /addpic")
+        await sendMessage(f"<b>No Images to Show !</b> Add by /{BotCommands.AddImageCommand}")
     else:
         await query.answer()
         await query.message.delete()
