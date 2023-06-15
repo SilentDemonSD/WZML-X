@@ -82,7 +82,7 @@ class DDLUploader:
                     return
                 LOGGER.info(f"Uploaded To DDL: {file_name}")
         except Exception as err:
-            await LOGGER.info(f"upload cancel")
+            LOGGER.info(f"DDL Upload has been Cancelled")
             self.__is_errored = True
         finally:
             if self.__is_cancelled or self.__is_errored:
