@@ -110,12 +110,12 @@ async def pics_callback(_, query):
         if DATABASE_URL:
             await DbManger().update_config({'IMAGES': config_dict['IMAGES']})
         await query.answer("All Images Successfully Deleted", show_alert=True)
-        await query.message.delete()
-        await sendMessage(f"<b>No Images to Show !</b> Add by /{BotCommands.AddImageCommand}")
+        await sendMessage(message, "<b>No Images to Show !</b> Add by /{BotCommands.AddImageCommand}")
+        await message.delete()
     else:
         await query.answer()
-        await query.message.delete()
-        await query.message.reply_to_message.delete()
+        await message.delete()
+        await message.reply_to_message.delete()
 
 
 bot.add_handler(MessageHandler(picture_add, filters=command(BotCommands.AddImageCommand) & CustomFilters.authorized))
