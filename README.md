@@ -446,6 +446,7 @@ help - All cmds with description
     - `SET_COMMANDS`: Automatically set the Bot Commands no need to set from `@botfather`. Default is `False`. `Bool`
     - `FSUB_IDS`: Fill chat_id(-100xxxxxx) of groups/channel you want to force subscribe. Separate them by space. Int
       - Note: Bot should be added in the filled chat_id as admin
+    - `BOT_PM`: File/links send to the BOT PM. Default is `False`. `Bool`
     </details></li>
     <li><details>
         <summary><b>GDrive Tools</b></summary>
@@ -569,8 +570,6 @@ help - All cmds with description
     - `IMAGES`: Add multiple telgraph(graph.org) image links that are seperated by spaces.
     - `IMG_SEARCH`: Put Keyword to Download Images. Sperarte each name by , like `anime`, `iron man`, `god of war`
     - `IMG_PAGE`: Set the page value for downloading a image. Each page have approx 70 images. Deafult is `1`. `Int`
-    - `POSTER`: Add Movie/Tv-Show poster. `Bool`
-    - `GDTOT_CRYPT`: Cookie for gdtot google drive link generator. This is `optional`
     - `BOT_THEME`: Change the theme of bot. For now theme availabe is `minimal`. 
       - You can make your own theme checkout this link https://t.ly/9rVXq
     </details></li>

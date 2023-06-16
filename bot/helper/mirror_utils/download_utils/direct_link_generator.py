@@ -96,10 +96,12 @@ def direct_link_generator(link: str):
     elif any(x in domain for x in ['sbembed.com', 'watchsb.com', 'streamsb.net', 'sbplay.org']):
         return sbembed(link)
     elif is_share_link(link):
-        if 'gdtot' in domain or 'gdflix' in domain:
-            return gcloud(link)
+        if 'gdtot' in domain:
+            return gdtot(link)
         elif 'filepress' in domain:
             return filepress(link)
+        else:
+            return sharer_scraper(link)
     elif 'zippyshare.com' in domain:
         raise DirectDownloadLinkException('ERROR: R.I.P Zippyshare')
     else:
@@ -551,22 +553,89 @@ def filepress(url):
     return f'https://drive.google.com/uc?id={res["data"]}&export=download'
 
 
-def gcloud(url):
-    api = "https://algorithms-routine-unavailable-writer.trycloudflare.com"
-    domain = urlparse(url).hostname
+def gdtot(url):
+    cget = create_scraper().request
     try:
-        if 'gdtot' in domain:
-            try:
-                res = requests.get(f"{api}/gdtot?url={url}")
-            except Exception as error:
-                res = requests.get(
-                    f"{api}/gdtot?url={url}&crypt={config_dict['GDTOT_CRYPT']}")
-        elif 'gdflix' in domain:
-            res = requests.get(f"{api}/share?url={url}")
-        data = res.json()
-        return(data["drive_link"])
+        res = cget('GET', f'https://gdbot.xyz/file/{url.split("/")[-1]}')
     except Exception as e:
-        LOGGER.info(f"An error occurred: {e}")
+        raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
+    token_url = etree.HTML(res.content).xpath(
+        "//a[contains(@class,'inline-flex items-center justify-center')]/@href")
+    if not token_url:
+        try:
+            url = cget('GET', url).url
+            p_url = urlparse(url)
+            res = cget(
+                "GET", f"{p_url.scheme}://{p_url.hostname}/ddl/{url.split('/')[-1]}")
+        except Exception as e:
+            raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
+        if (drive_link := findall(r"myDl\('(.*?)'\)", res.text)) and "drive.google.com" in drive_link[0]:
+            return drive_link[0]
+        else:
+            raise DirectDownloadLinkException(
+                'ERROR: Drive Link not found, Try in your broswer')
+    token_url = token_url[0]
+    try:
+        token_page = cget('GET', token_url)
+    except Exception as e:
+        raise DirectDownloadLinkException(
+            f'ERROR: {e.__class__.__name__} with {token_url}')
+    path = findall('\("(.*?)"\)', token_page.text)
+    if not path:
+        raise DirectDownloadLinkException('ERROR: Cannot bypass this')
+    path = path[0]
+    raw = urlparse(token_url)
+    final_url = f'{raw.scheme}://{raw.hostname}{path}'
+    return sharer_scraper(final_url)
+
+
+def sharer_scraper(url):
+    cget = create_scraper().request
+    try:
+        url = cget('GET', url).url
+        raw = urlparse(url)
+        header = {
+            "useragent": "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/534.10 (KHTML, like Gecko) Chrome/7.0.548.0 Safari/534.10"}
+        res = cget('GET', url, headers=header)
+    except Exception as e:
+        raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
+    key = findall('"key",\s+"(.*?)"', res.text)
+    if not key:
+        raise DirectDownloadLinkException("ERROR: Key not found!")
+    key = key[0]
+    if not etree.HTML(res.content).xpath("//button[@id='drc']"):
+        raise DirectDownloadLinkException(
+            "ERROR: This link don't have direct download button")
+    boundary = uuid4()
+    headers = {
+        'Content-Type': f'multipart/form-data; boundary=----WebKitFormBoundary{boundary}',
+        'x-token': raw.hostname,
+        'useragent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/534.10 (KHTML, like Gecko) Chrome/7.0.548.0 Safari/534.10'
+    }
+
+    data = f'------WebKitFormBoundary{boundary}\r\nContent-Disposition: form-data; name="action"\r\n\r\ndirect\r\n' \
+        f'------WebKitFormBoundary{boundary}\r\nContent-Disposition: form-data; name="key"\r\n\r\n{key}\r\n' \
+        f'------WebKitFormBoundary{boundary}\r\nContent-Disposition: form-data; name="action_token"\r\n\r\n\r\n' \
+        f'------WebKitFormBoundary{boundary}--\r\n'
+    try:
+        res = cget("POST", url, cookies=res.cookies,
+                   headers=headers, data=data).json()
+    except Exception as e:
+        raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
+    if "url" not in res:
+        raise DirectDownloadLinkException(
+            'ERROR: Drive Link not found, Try in your broswer')
+    if "drive.google.com" in res["url"]:
+        return res["url"]
+    try:
+        res = cget('GET', res["url"])
+    except Exception as e:
+        raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
+    if (drive_link := etree.HTML(res.content).xpath("//a[contains(@class,'btn')]/@href")) and "drive.google.com" in drive_link[0]:
+        return drive_link[0]
+    else:
+        raise DirectDownloadLinkException(
+            'ERROR: Drive Link not found, Try in your broswer')
 
 def wetransfer(url):
     cget = create_scraper().request

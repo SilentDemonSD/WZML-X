@@ -586,18 +586,6 @@ def extra_btns(buttons):
             buttons.ubutton(btn_name, btn_url)
     return buttons
 
-
-async def poster(query):
-    api = "https://algorithms-routine-unavailable-writer.trycloudflare.com"
-    if config_dict['POSTER']:
-        try:
-            async with httpx.AsyncClient() as client:
-                res = await client.get(f"{api}/poster", params={"query": query})
-                data = res.json()
-                return data["url"]
-        except Exception as e:
-            LOGGER.info(f"An error occurred: {e}")
-
 async def set_commands(client):
     if config_dict['SET_COMMANDS']:
         await client.set_bot_commands([

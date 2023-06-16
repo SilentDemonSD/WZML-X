@@ -10,7 +10,7 @@ from asyncio import create_subprocess_exec, sleep, Event
 from bot import Interval, aria2, DOWNLOAD_DIR, download_dict, download_dict_lock, LOGGER, bot_name, DATABASE_URL, \
     MAX_SPLIT_SIZE, config_dict, status_reply_dict_lock, user_data, non_queued_up, non_queued_dl, queued_up, \
     queued_dl, queue_dict_lock, bot, GLOBAL_EXTENSION_FILTER
-from bot.helper.ext_utils.bot_utils import extra_btns, poster, sync_to_async, get_readable_file_size
+from bot.helper.ext_utils.bot_utils import extra_btns, sync_to_async, get_readable_file_size
 from bot.helper.ext_utils.fs_utils import get_base_name, get_path_size, clean_download, clean_target, \
     is_first_archive_split, is_archive, is_archive_split, join_files
 from bot.helper.ext_utils.leech_utils import split_file
@@ -344,15 +344,11 @@ class MirrorLeechListener:
             await DbManger().rm_complete_task(self.message.link)
         user_id = self.message.from_user.id
         user_dict = user_data.get(user_id, {})
-        poster_url = await poster(escape(name))
+        photo = self.random_pic
         msg = BotTheme('NAME', Name=escape(name))
         msg += BotTheme('SIZE', Size=get_readable_file_size(size))
         LOGGER.info(f'Task Done: {name}')
         buttons = ButtonMaker()
-        if poster_url:
-            photo = poster_url
-        else:
-            photo = self.random_pic
         if self.isLeech:
             msg += BotTheme('L_TOTAL_FILES', Files=folders)
             if mime_type != 0:

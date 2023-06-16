@@ -46,7 +46,7 @@ default_values = {'AUTO_DELETE_MESSAGE_DURATION': 30,
                   'TITLE_NAME': 'WeebZone-X',
                   'GD_INFO': 'Uploaded by WZML-X',
                   }
-bool_vars = ['AS_DOCUMENT', 'BOT_PM', 'STOP_DUPLICATE', 'SET_COMMANDS', 'SAVE_MSG', 'POSTER',
+bool_vars = ['AS_DOCUMENT', 'BOT_PM', 'STOP_DUPLICATE', 'SET_COMMANDS', 'SAVE_MSG',
              'IS_TEAM_DRIVE', 'USE_SERVICE_ACCOUNTS', 'WEB_PINCODE', 'EQUAL_SPLITS', 'DISABLE_DRIVE_LINK']
 
 
@@ -356,10 +356,6 @@ async def load_config():
     DISABLE_DRIVE_LINK = environ.get('DISABLE_DRIVE_LINK', '')
     DISABLE_DRIVE_LINK = DISABLE_DRIVE_LINK.lower() == 'true'
 
-    GDTOT_CRYPT = environ.get('GDTOT_CRYPT', '')
-    if len(GDTOT_CRYPT) == 0:
-        GDTOT_CRYPT = ''
-
     BOT_THEME = environ.get('BOT_THEME', '')
     if len(BOT_THEME) == 0:
         BOT_THEME = 'minimal'
@@ -437,9 +433,6 @@ async def load_config():
 
     <b>Description</b>: <i>{description}</i>'''
 
-    POSTER = environ.get('POSTER', '')
-    POSTER = POSTER.lower() == 'true'
-
     DRIVES_IDS.clear()
     DRIVES_NAMES.clear()
     INDEX_URLS.clear()
@@ -510,7 +503,6 @@ async def load_config():
                         'LEECH_LOG_ID': LEECH_LOG_ID,
                         'BOT_PM': BOT_PM,
                         'DISABLE_DRIVE_LINK': DISABLE_DRIVE_LINK,
-                        'GDTOT_CRYPT': GDTOT_CRYPT,
                         'BOT_THEME': BOT_THEME,
                         'IMAGES': IMAGES,
                         'IMG_SEARCH': IMG_SEARCH,
@@ -520,7 +512,6 @@ async def load_config():
                         'AUTHOR_URL': AUTHOR_URL,
                         'TITLE_NAME': TITLE_NAME,
                         'GD_INFO': GD_INFO,
-                        'POSTER': POSTER,
                         'EQUAL_SPLITS': EQUAL_SPLITS,
                         'EXTENSION_FILTER': EXTENSION_FILTER,
                         'GDRIVE_ID': GDRIVE_ID,

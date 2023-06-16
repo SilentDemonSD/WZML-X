@@ -52,7 +52,7 @@ non_queued_up = set()
 def get_version():
     MAJOR = '1'
     MINOR = '0'
-    PATCH = '0'
+    PATCH = '1'
     return f"v{MAJOR}.{MINOR}.{PATCH}-x"
 
 
@@ -394,10 +394,6 @@ DAILY_LEECH_LIMIT = '' if len(
 DISABLE_DRIVE_LINK = environ.get('DISABLE_DRIVE_LINK', '')
 DISABLE_DRIVE_LINK = DISABLE_DRIVE_LINK.lower() == 'true'
 
-GDTOT_CRYPT = environ.get('GDTOT_CRYPT', '')
-if len(GDTOT_CRYPT) == 0:
-    GDTOT_CRYPT = ''
-
 BOT_THEME = environ.get('BOT_THEME', '')
 if len(BOT_THEME) == 0:
     BOT_THEME = 'minimal'
@@ -476,9 +472,6 @@ if len(ANIME_TEMPLATE) == 0:
 
 <b>Description</b>: <i>{description}</i>'''
 
-POSTER = environ.get('POSTER', '')
-POSTER = POSTER.lower() == 'true'
-
 config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'AS_DOCUMENT': AS_DOCUMENT,
                'AUTHORIZED_CHATS': AUTHORIZED_CHATS,
@@ -508,7 +501,6 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'LEECH_LOG_ID': LEECH_LOG_ID,
                'BOT_PM': BOT_PM,
                'DISABLE_DRIVE_LINK': DISABLE_DRIVE_LINK,
-               'GDTOT_CRYPT': GDTOT_CRYPT,
                'BOT_THEME': BOT_THEME,
                'IMAGES': IMAGES,
                'IMG_SEARCH': IMG_SEARCH,
@@ -518,7 +510,6 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'AUTHOR_URL': AUTHOR_URL,
                'TITLE_NAME': TITLE_NAME,
                'GD_INFO': GD_INFO,
-               'POSTER': POSTER,
                'EQUAL_SPLITS': EQUAL_SPLITS,
                'EXTENSION_FILTER': EXTENSION_FILTER,
                'GDRIVE_ID': GDRIVE_ID,
