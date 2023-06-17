@@ -20,8 +20,8 @@ async def speedtest(_, message):
     path = result['share']
     string_speed = f'''
 ➲ <b><i>SPEEDTEST INFO</i></b>
-┠ <b>Upload:</b> <code>{speed_convert(result['upload'])}/s</code>
-┠ <b>Download:</b>  <code>{speed_convert(result['download'])}/s</code>
+┠ <b>Upload:</b> <code>{speed_convert(result['upload'])}</code>
+┠ <b>Download:</b>  <code>{speed_convert(result['download'])}</code>
 ┠ <b>Ping:</b> <code>{result['ping']} ms</code>
 ┠ <b>Time:</b> <code>{result['timestamp']}</code>
 ┠ <b>Data Sent:</b> <code>{get_readable_file_size(int(result['bytes_sent']))}</code>
