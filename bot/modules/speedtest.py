@@ -20,8 +20,8 @@ async def speedtest(_, message):
     path = result['share']
     string_speed = f'''
 ➲ <b><i>SPEEDTEST INFO</i></b>
-┠ <b>Upload:</b> <code>{get_readable_time(result['upload'])}/s</code>
-┠ <b>Download:</b>  <code>{get_readable_time(result['download'])}/s</code>
+┠ <b>Upload:</b> <code>{speed_convert(result['upload'])}/s</code>
+┠ <b>Download:</b>  <code>{speed_convert(result['download'])}/s</code>
 ┠ <b>Ping:</b> <code>{result['ping']} ms</code>
 ┠ <b>Time:</b> <code>{result['timestamp']}</code>
 ┠ <b>Data Sent:</b> <code>{get_readable_file_size(int(result['bytes_sent']))}</code>
@@ -49,6 +49,16 @@ async def speedtest(_, message):
     except Exception as e:
         LOGGER.error(str(e))
         pho = await editMessage(speed, string_speed)
+
+def speed_convert(size, byte=True):
+    if not byte: size = size / 8
+    power = 2 ** 10
+    zero = 0
+    units = {0: "B/s", 1: "KB/s", 2: "MB/s", 3: "GB/s", 4: "TB/s"}
+    while size > power:
+        size /= power
+        zero += 1
+    return f"{round(size, 2)} {units[zero]}"
 
 bot.add_handler(MessageHandler(speedtest, filters=command(
     BotCommands.SpeedCommand) & CustomFilters.authorized))
