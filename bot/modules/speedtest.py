@@ -7,10 +7,10 @@ from bot import bot, LOGGER
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.message_utils import sendMessage, deleteMessage, editMessage
-from bot.helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time
+from bot.helper.ext_utils.bot_utils import get_readable_file_size
 
 async def speedtest(_, message):
-    speed = await sendMessage(message, "Running Speed Test ...")
+    speed = await sendMessage(message, "<i>Initializing Speedtest...</i>")
     test = Speedtest()
     test.get_best_server()
     test.download()
@@ -20,8 +20,8 @@ async def speedtest(_, message):
     path = result['share']
     string_speed = f'''
 ➲ <b><i>SPEEDTEST INFO</i></b>
-┠ <b>Upload:</b> <code>{get_readable_time(result['upload'])}/s</code>
-┠ <b>Download:</b>  <code>{get_readable_time(result['download'])}/s</code>
+┠ <b>Upload:</b> <code>{get_readable_file_size(result['upload'] / 8)}/s</code>
+┠ <b>Download:</b>  <code>{get_readable_file_size(result['download'] / 8)}/s</code>
 ┠ <b>Ping:</b> <code>{result['ping']} ms</code>
 ┠ <b>Time:</b> <code>{result['timestamp']}</code>
 ┠ <b>Data Sent:</b> <code>{get_readable_file_size(int(result['bytes_sent']))}</code>
