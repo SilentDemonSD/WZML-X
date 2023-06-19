@@ -9,7 +9,7 @@ class WZMLStyle:
     ST_MSG = '''This bot can mirror all your links|files|torrents to Google Drive or any rclone cloud or to telegram.
 Type {help_command} to get a list of available commands'''
     ST_BOTPM = '''Now, This bot will send all your files and links here. Start Using ...'''
-    ST_UNAUTH = '''You Are not authorized user! Deploy your own mirror-leech bot'''
+    ST_UNAUTH = '''You Are not authorized user! Deploy your own WZML-X Mirror-Leech bot'''
     # ---------------------
 
     # async def stats(client, message):
@@ -46,16 +46,21 @@ Type {help_command} to get a list of available commands'''
     # ---------------------
 
     # async def restart(client, message): ---> __main__.py
-    RESTARTING = 'Restarting...'
+    RESTARTING = '<i>Restarting...</i>'
     # ---------------------
 
     # async def restart_notification(): ---> __main__.py
-    RESTART_SUCCESS = 'Restarted Successfully!'
+    RESTART_SUCCESS = '''⌬ <b><i>Restarted Successfully!</i></b>
+┠ <b>Date:</b> {date}
+┠ <b>Time:</b> {time}
+┠ <b>TimeZone:</b> {timz}
+┖ <b>Version:</b> {version}'''
+    RESTARTED = '''⌬ <b><i>Bot Restarted!</i></b>'''
     # ---------------------
 
     # async def ping(client, message): ---> __main__.py
-    PING = 'Starting Ping..'
-    PING_VALUE = '{value} ms..'
+    PING = '<i>Starting Ping..</i>'
+    PING_VALUE = '<b>Pong</b>\n<code>{value} ms..</code>'
     # ---------------------
 
     # async def onUploadComplete(): ---> tasks_listener.py
