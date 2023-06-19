@@ -58,7 +58,7 @@ async def ddl_mediainfo(message, link):
         async with aiohttp.ClientSession() as session:
             async with session.get(link, headers=headers) as response:
                 async with aiopen(des_path, "wb") as f:
-                    async for chunk in response.content.iter_any(10000000):
+                    async for chunk in response.content.iter_chunked(10000000):
                         await f.write(chunk)
                         break
         stdout, stderr, _ = await cmd_exec(ssplit(f'mediainfo "{des_path}"'))
