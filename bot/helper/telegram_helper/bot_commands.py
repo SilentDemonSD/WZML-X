@@ -1,5 +1,5 @@
+#!/usr/bin/env python3
 from bot import CMD_SUFFIX
-
 
 class _BotCommands:
     def __init__(self):
@@ -43,6 +43,6 @@ class _BotCommands:
         self.IMDBCommand = f'imdb{CMD_SUFFIX}'
         self.AniListCommand = f'anime{CMD_SUFFIX}'
         self.AnimeHelpCommand = f'animehelp{CMD_SUFFIX}'
-
+        self.MediaInfoCommand = f'mediainfo{CMD_SUFFIX}'
 
 BotCommands = _BotCommands()
