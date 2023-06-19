@@ -15,8 +15,9 @@ from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.telegram_helper.button_build import ButtonMaker
 
 async def picture_add(_, message):
+    resm = message.reply_to_message
     editable = await sendMessage(message, "<i>Fetching Input ...</i>")
-    if len(message.command) > 1 or (resm := message.reply_to_message) and resm.text:
+    if len(message.command) > 1 or resm and resm.text:
         msg_text = resm.text if resm else message.command[1]
         if msg_text.startswith("http"):
             pic_add = msg_text.strip()
