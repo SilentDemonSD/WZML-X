@@ -25,9 +25,6 @@ async def picture_add(_, message):
         if not (resm.photo and resm.photo.file_size <= 5242880*2):
             await editMessage(editable, "This Media is Not Supported! Only Send Photos !!")
             return
-        path = "Thumbnails/"
-        if not await aiopath.isdir(path):
-            mkdir(path)
         photo_dir = await resm.download()
         await editMessage(editable, "<b>Uploading to graph.org Server, Please Wait...</b>")
         await asleep(1)
@@ -35,7 +32,7 @@ async def picture_add(_, message):
             pic_add = f'https://graph.org{upload_file(photo_dir)[0]}'
             LOGGER.info(f"Telegraph Link : {pic_add}")
         except Exception as e:
-            LOGGER.error(f"Images Error: {e}")
+            LOGGER.error(f"Images Error: {str(e)}")
             await editMessage(editable, str(e))
         finally:
             await aioremove(photo_dir)
