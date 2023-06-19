@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import aiohttp
-from re import match as re_match
+from re import search as re_search
 from shlex import split as ssplit
 from aiofiles import open as aiopen
 from aiofiles.os import remove as aioremove, path as aiopath, mkdir
