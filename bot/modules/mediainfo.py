@@ -16,7 +16,7 @@ from bot.helper.ext_utils.bot_utils import cmd_exec
 from bot.helper.ext_utils.telegraph_helper import telegraph
 
 
-async def telegram_mediainfo(message, media):
+async def telegram_mediainfo(message, media, mmsg):
     temp_send = await sendMessage(message, '<i>Generating MediaInfo...</i>')
     try:
         path = "Mediainfo/"
@@ -24,7 +24,7 @@ async def telegram_mediainfo(message, media):
             await mkdir(path)
         des_path = ospath.join(path, media.file_name)
         if media.file_size <= 50000000:
-            await media.download(ospath.join(getcwd(), des_path))
+            await mmsg.download(ospath.join(getcwd(), des_path))
         else:
             async for chunk in bot.stream_media(media, limit=5):
                 async with aiopen(des_path, "ab") as f:
@@ -51,12 +51,11 @@ async def mediainfo(_, message):
         link = message.command[1]
         #Handle DDL or GDrive Links
     elif (mediamessage := message.reply_to_message) and not mediamessage.text:
-        file = next((i for i in [mediamessage.document, mediamessage.video, mediamessage.audio, mediamessage.document,
-                         mediamessage.video, mediamessage.photo, mediamessage.audio, mediamessage.voice,
-                         mediamessage.animation, mediamessage.video_note, mediamessage.sticker] if i is not None), None)
+        file = next((i for i in [mediamessage.document, mediamessage.video, mediamessage.audio, mediamessage.photo, mediamessage.voice,
+                         mediamessage.animation, mediamessage.video_note] if i is not None), None)
         if not file:
             return await sendMessage(message, help_msg)
-        return await telegram_mediainfo(message, file)
+        return await telegram_mediainfo(message, file, mediamessage)
     else:
         return await sendMessage(message, help_msg)
 
