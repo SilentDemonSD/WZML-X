@@ -29,7 +29,7 @@ async def telegram_mediainfo(message, media):
             async for chunk in bot.stream_media(media, limit=5):
                 async with aiopen(des_path, "ab") as f:
                     await f.write(chunk)
-        stdout, stderr, _ = await cmd_exec(ssplit(f'mediainfo "{des_dir}"'))
+        stdout, stderr, _ = await cmd_exec(ssplit(f'mediainfo "{des_path}"'))
         tele_content = f"<h4>{ospath.basename(des_path)}</h4><br><br>"
         if len(stdout) != 0:
             tele_content += f"<br><br><pre>{stdout}</pre><br>"
