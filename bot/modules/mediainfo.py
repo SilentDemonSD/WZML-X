@@ -3,7 +3,6 @@ from shlex import split as ssplit
 from aiofiles import open as aiopen
 from aiofiles.os import remove as aioremove, path as aiopath, mkdir
 from os import path as ospath, getcwd
-from bot.helper.ext_utils.shortners import short_url
 
 from pyrogram.handlers import MessageHandler 
 from pyrogram.filters import command
@@ -41,7 +40,7 @@ async def telegram_mediainfo(message, media, mmsg):
     finally:
         await aioremove(des_path)
     link_id = (await telegraph.create_page(title='MediaInfo', content=tele_content))["path"]
-    await editMessage(temp_send, f"https://te.legra.ph/{link_id}")
+    await editMessage(temp_send, f"<b>MediaInfo:</b> https://graph.org/{link_id}")
 
 
 async def mediainfo(_, message):
