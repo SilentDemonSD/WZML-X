@@ -48,7 +48,7 @@ async def picture_add(_, message):
     if DATABASE_URL:
         await DbManger().update_config({'IMAGES': config_dict['IMAGES']})
     await asleep(1.5)
-    await editMessage(editable, f"<b><i>Successfully Added to Images List!</i></b>\n\n<b>• Total Images : </b><code>{len(config_dict['IMAGES'])}</code>")
+    await editMessage(editable, f"<b><i>Successfully Added to Images List!</i></b>\n\n<b>• Total Images : {len(config_dict['IMAGES'])}</b>")
 
 async def pictures(_, message):
     user_id = message.from_user.id
