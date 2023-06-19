@@ -265,7 +265,7 @@ async def restart_notification():
 
     if await aiopath.isfile(".restartmsg"):
         try:
-            await bot.edit_message_text(chat_id=chat_id, message_id=msg_id, text=BotTheme('RESTART_SUCCESS'))
+            await bot.edit_message_text(chat_id=chat_id, message_id=msg_id, text=BotTheme('RESTART_SUCCESS', time=now.strftime('%I:%M:%S %p'), date=now.strftime('%d/%m/%y'), timz=config_dict['TIMEZONE'], version=get_version()))
         except:
             pass
         await aioremove(".restartmsg")
