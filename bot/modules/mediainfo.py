@@ -44,7 +44,7 @@ async def telegram_mediainfo(message, media, mmsg):
     link_id = (await telegraph.create_page(title='MediaInfo', content=tele_content))["path"]
     await editMessage(temp_send, f"<b>MediaInfo:</b> https://graph.org/{link_id}")
 
-async def ddl_mediainfo(link):
+async def ddl_mediainfo(message, link):
     temp_send = await sendMessage(message, '<i>Generating MediaInfo...</i>')
     try:
         path = "Mediainfo/"
@@ -77,11 +77,13 @@ async def ddl_mediainfo(link):
 
 
 async def mediainfo(_, message):
-    help_msg = "\n<b>By replying to message (including media):</b>"
+    help_msg = "<b>By replying to message (including media):</b>"
     help_msg += f"\n<code>/{BotCommands.MediaInfoCommand}" + " {message}" + "</code>"
-    if len(message.command) > 2:
+    help_msg = "\n\n<b>By sending link beside the command:</b>"
+    help_msg += f"\n<code>/{BotCommands.MediaInfoCommand}" + " {link}" + "</code>"
+    if len(message.command) > 1:
         link = message.command[1]
-        return await ddl_mediainfo(link)
+        return await ddl_mediainfo(message, link)
     elif (mediamessage := message.reply_to_message) and not mediamessage.text:
         file = next((i for i in [mediamessage.document, mediamessage.video, mediamessage.audio, mediamessage.photo, mediamessage.voice,
                          mediamessage.animation, mediamessage.video_note] if i is not None), None)
