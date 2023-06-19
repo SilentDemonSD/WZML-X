@@ -51,8 +51,6 @@ async def ddl_mediainfo(message, link):
         if not await aiopath.isdir(path):
             await mkdir(path)
         filename = re_search(".+/(.+)", link).group(1)
-        if len(filename) > 60:
-            filename = filename[-60:]
         des_path = ospath.join(path, filename)
         headers = {"user-agent":"Mozilla/5.0 (Linux; Android 12; 2201116PI) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Mobile Safari/537.36"}
         async with aiohttp.ClientSession() as session:
