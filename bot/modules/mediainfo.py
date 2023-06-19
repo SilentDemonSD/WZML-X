@@ -88,6 +88,9 @@ async def mediainfo(_, message):
         if not file:
             return await sendMessage(message, help_msg)
         return await telegram_mediainfo(message, file, mediamessage)
+    elif mediamessage and mediamessage.text:
+        link = mediamessage.text
+        return await ddl_mediainfo(message, link)
     else:
         return await sendMessage(message, help_msg)
 
