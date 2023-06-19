@@ -75,9 +75,9 @@ async def ddl_mediainfo(message, link):
 
 
 async def mediainfo(_, message):
-    help_msg = "<b>By replying to message (including media):</b>"
-    help_msg += f"\n<code>/{BotCommands.MediaInfoCommand}" + " {message}" + "</code>"
-    help_msg = "\n\n<b>By sending link beside the command:</b>"
+    help_msg = "<b>By replying to message (Including Media):</b>"
+    help_msg += f"\n<code>/{BotCommands.MediaInfoCommand}" + " {media}" + "</code>"
+    help_msg += "\n\n<b>By Sending Link beside the cmd:</b>"
     help_msg += f"\n<code>/{BotCommands.MediaInfoCommand}" + " {link}" + "</code>"
     if len(message.command) > 1:
         link = message.command[1]
