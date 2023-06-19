@@ -377,7 +377,7 @@ def arg_parser(items, arg_base):
 
 
 async def get_content_type(url):
-    async with ClientSession(trust_env=True) as session:
+    async with aioClientSession(trust_env=True) as session:
         async with session.get(url) as response:
             return response.headers.get('Content-Type')
 
