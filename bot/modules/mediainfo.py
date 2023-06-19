@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from shlex import split as split
+from shlex import split as ssplit
 from aiofiles import open as aiopen
 from aiofiles.os import remove as aioremove, path as aiopath, mkdir
 from os import path as ospath, getcwd
