@@ -47,7 +47,7 @@ async def telegram_mediainfo(message, media):
 async def mediainfo(_, message):
     help_msg = "\n<b>By replying to message (including media):</b>"
     help_msg += f"\n<code>/{BotCommands.MediaInfoCommand}" + " {message}" + "</code>"
-    if message.command > 2:
+    if len(message.command) > 2:
         link = message.command[1]
         #Handle DDL or GDrive Links
     elif (mediamessage := message.reply_to_message) and not mediamessage.text:
