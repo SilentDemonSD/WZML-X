@@ -40,7 +40,7 @@ async def telegram_mediainfo(message, media):
         await editMessage(temp_send, f"MediaInfo Stopped due to {str(e)}")
     finally:
         await aioremove(des_path)
-    link_id = telegraph.create_page(title='MediaInfo', content=tele_content)["path"]
+    link_id = await telegraph.create_page(title='MediaInfo', content=tele_content)["path"]
     await editMessage(temp_send, f"https://te.legra.ph/{link_id}")
 
 
