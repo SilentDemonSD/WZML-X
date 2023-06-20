@@ -1,7 +1,6 @@
 import hashlib
 from shlex import split as ssplit
 from os import path as ospath
-from aiofiles import open as aiopen
 from aiofiles.os import remove as aioremove, path as aiopath, mkdir
 from time import time
 from re import search as re_search
@@ -201,9 +200,9 @@ async def get_mediainfo_link(up_path):
     return f"https://graph.org/{link_id}"
 
 
-async def get_md5_hash(up_path):
+def get_md5_hash(up_path):
     md5_hash = hashlib.md5()
-    async with aiopen(up_path,"rb") as f:
-        for byte_block in iter(lambda: await f.read(4096), b""):
+    with open(up_path, "rb") as f:
+        for byte_block in iter(lambda: f.read(4096), b""):
             md5_hash.update(byte_block)
         return md5_hash.hexdigest()
