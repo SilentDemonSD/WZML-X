@@ -62,7 +62,7 @@ class TgUploader:
     async def __copy_file(self):
         try:
             if self.__bot_pm:
-                destination = 'BOT PM'
+                destination = 'Bot PM'
                 await bot.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
             if self.__ldump:
                 destination = 'Dump'
@@ -167,7 +167,7 @@ class TgUploader:
                 new_path = ospath.join(dirpath, f"{name}{ext}")
                 await aiorename(self.__up_path, new_path)
                 self.__up_path = new_path
-        return cap_mono
+        return cap_mono, file_
 
     def __get_input_media(self, subkey, key):
         rlist = []
@@ -205,7 +205,7 @@ class TgUploader:
         self.__sent_msg = msgs_list[-1]
         try:
             if self.__bot_pm:
-                destination = 'BOT PM'
+                destination = 'Bot PM'
                 await bot.copy_media_group(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
             if self.__ldump:
                 destination = 'Dump'
@@ -251,7 +251,7 @@ class TgUploader:
                         continue
                     if self.__is_cancelled:
                         return
-                    cap_mono = await self.__prepare_file(file_, dirpath)
+                    cap_mono, file_ = await self.__prepare_file(file_, dirpath)
                     if self.__last_msg_in_group:
                         group_lists = [x for v in self.__media_dict.values()
                                        for x in v.keys()]

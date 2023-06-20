@@ -51,7 +51,7 @@ non_queued_up = set()
 
 def get_version():
     MAJOR = '1'
-    MINOR = '0'
+    MINOR = '1'
     PATCH = '1'
     return f"v{MAJOR}.{MINOR}.{PATCH}-x"
 
@@ -75,7 +75,6 @@ BOT_TOKEN = environ.get('BOT_TOKEN', '')
 if len(BOT_TOKEN) == 0:
     log_error("BOT_TOKEN variable is missing! Exiting now")
     exit(1)
-
 
 bot_id = BOT_TOKEN.split(':', 1)[0]
 
@@ -472,6 +471,10 @@ if len(ANIME_TEMPLATE) == 0:
 
 <b>Description</b>: <i>{description}</i>'''
 
+TIMEZONE = environ.get('TIMEZONE', '')
+if len(TIMEZONE) == 0:
+    TIMEZONE = 'Asia/Kolkata'
+
 config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'AS_DOCUMENT': AS_DOCUMENT,
                'AUTHORIZED_CHATS': AUTHORIZED_CHATS,
@@ -509,6 +512,7 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'AUTHOR_NAME': AUTHOR_NAME,
                'AUTHOR_URL': AUTHOR_URL,
                'TITLE_NAME': TITLE_NAME,
+               'TIMEZONE': TIMEZONE,
                'GD_INFO': GD_INFO,
                'EQUAL_SPLITS': EQUAL_SPLITS,
                'EXTENSION_FILTER': EXTENSION_FILTER,

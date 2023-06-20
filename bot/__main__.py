@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import platform
 from time import time
+from datetime import datetime
 from sys import executable
 from os import execl as osexecl
 from asyncio import create_subprocess_exec, gather
@@ -8,6 +9,7 @@ from uuid import uuid4
 from base64 import b64decode
 
 from requests import get as rget
+from pytz import timezone
 from bs4 import BeautifulSoup
 from signal import signal, SIGINT
 from aiofiles.os import path as aiopath, remove as aioremove
@@ -28,7 +30,7 @@ from .helper.telegram_helper.button_build import ButtonMaker
 from .helper.listeners.aria2_listener import start_aria2_listener
 from .helper.themes import BotTheme
 from .modules import authorize, clone, gd_count, gd_delete, gd_list, cancel_mirror, mirror_leech, status, torrent_search, torrent_select, ytdlp, \
-                     rss, shell, eval, users_settings, bot_settings, speedtest, save_msg, images, imdb, anilist
+                     rss, shell, eval, users_settings, bot_settings, speedtest, save_msg, images, imdb, anilist, mediainfo
 
 
 async def stats(client, message):
@@ -229,6 +231,7 @@ async def bot_help(client, message):
 
 
 async def restart_notification():
+    now=datetime.now(timezone(config_dict['TIMEZONE']))
     if await aiopath.isfile(".restartmsg"):
         with open(".restartmsg") as f:
             chat_id, msg_id = map(int, f)
@@ -249,10 +252,9 @@ async def restart_notification():
     if INCOMPLETE_TASK_NOTIFIER and DATABASE_URL:
         if notifier_dict := await DbManger().get_incomplete_tasks():
             for cid, data in notifier_dict.items():
-                msg = BotTheme(
-                    'RESTART_SUCCESS') if cid == chat_id else 'Bot Restarted!'
+                msg = BotTheme('RESTART_SUCCESS', time=now.strftime('%I:%M:%S %p'), date=now.strftime('%d/%m/%y'), timz=config_dict['TIMEZONE'], version=get_version()) if cid == chat_id else BotTheme('RESTARTED')
                 for tag, links in data.items():
-                    msg += f"\n\n{tag}: "
+                    msg += f"\n\n➲ {tag}: "
                     for index, link in enumerate(links, start=1):
                         msg += f" <a href='{link}'>{index}</a> |"
                         if len(msg.encode()) > 4000:
@@ -263,7 +265,7 @@ async def restart_notification():
 
     if await aiopath.isfile(".restartmsg"):
         try:
-            await bot.edit_message_text(chat_id=chat_id, message_id=msg_id, text=BotTheme('RESTART_SUCCESS'))
+            await bot.edit_message_text(chat_id=chat_id, message_id=msg_id, text=BotTheme('RESTART_SUCCESS', time=now.strftime('%I:%M:%S %p'), date=now.strftime('%d/%m/%y'), timz=config_dict['TIMEZONE'], version=get_version()))
         except:
             pass
         await aioremove(".restartmsg")

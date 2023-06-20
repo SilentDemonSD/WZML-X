@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-import re
-import aiohttp
 from base64 import b64encode
 from datetime import datetime
 from os import path as ospath
@@ -11,23 +9,22 @@ from re import match as re_match, sub as re_sub
 from time import time
 from html import escape
 from uuid import uuid4
-import httpx
-
-import requests
-from bot.helper.ext_utils.db_handler import DbManger
-from bot.helper.themes import BotTheme
-from mega import MegaApi
-from psutil import virtual_memory, cpu_percent, disk_usage
 from subprocess import run as srun
 from asyncio import create_subprocess_exec, create_subprocess_shell, run_coroutine_threadsafe, sleep
 from asyncio.subprocess import PIPE
 from functools import partial, wraps
 from concurrent.futures import ThreadPoolExecutor
+
+from aiohttp import ClientSession as aioClientSession
+from psutil import virtual_memory, cpu_percent, disk_usage
+from requests import get as rget
+from mega import MegaApi
 from pyrogram.enums import ChatType
 from pyrogram.types import BotCommand
 from pyrogram.errors import PeerIdInvalid
-from aiohttp import ClientSession
 
+from bot.helper.ext_utils.db_handler import DbManger
+from bot.helper.themes import BotTheme
 from bot import OWNER_ID, bot_name, DATABASE_URL, LOGGER, get_client, aria2, download_dict, download_dict_lock, botStartTime, user_data, config_dict, bot_loop, extra_buttons, user
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
@@ -347,6 +344,7 @@ def is_rclone_path(path):
 def get_mega_link_type(url):
     return "folder" if "folder" in url or "/#F!" in url else "file"
 
+
 def arg_parser(items, arg_base):
     if not items:
         return arg_base
@@ -378,9 +376,8 @@ def arg_parser(items, arg_base):
     return arg_base
 
 
-
 async def get_content_type(url):
-    async with ClientSession(trust_env=True) as session:
+    async with aioClientSession(trust_env=True) as session:
         async with session.get(url) as response:
             return response.headers.get('Content-Type')
 
@@ -405,7 +402,7 @@ async def download_image_url(url):
         await mkdir(path)
     image_name = url.split('/')[-1]
     des_dir = ospath.join(path, image_name)
-    async with aiohttp.ClientSession() as session:
+    async with aioClientSession() as session:
         async with session.get(url) as response:
             if response.status == 200:
                 async with aiopen(des_dir, 'wb') as file:
@@ -526,6 +523,7 @@ async def getdailytasks(user_id, increase_task=False, upleech=0, upmirror=0, che
         userdate, task, lsize, msize = user_data[user_id]['dly_tasks']
         nowdate = datetime.today()
         if userdate.year <= nowdate.year and userdate.month <= nowdate.month and userdate.day < nowdate.day:
+            task, lsize, msize = 0, 0, 0
             if increase_task:
                 task = 1
             elif upleech != 0:
@@ -576,7 +574,7 @@ def checking_access(user_id, button=None):
             button = ButtonMaker()
         encrypt_url = b64encode(f"{token}&&{user_id}".encode()).decode()
         button.ubutton('Generate New Token', short_url(f'https://t.me/{bot_name}?start={encrypt_url}'))
-        return 'Temp Token is expired, generate a new token and try again.', button
+        return 'Temp Token is expired, generate a new temp token and try again.', button
     return None, button
 
 
@@ -609,12 +607,7 @@ async def set_commands(client):
             ])
 
 
-
 def is_valid_token(url, token):
-    get_account_resp = requests.get(
-        url=f"{url}getAccountDetails?token={token}&allDetails=true").json()
-    if get_account_resp["status"] == "error-wrongToken":
-        raise Exception(
-            "Invalid Gofile Token, Get your Gofile token from --> https://gofile.io/myProfile")
-    else:
-        pass
+    resp = rget(url=f"{url}getAccountDetails?token={token}&allDetails=true").json()
+    if resp["status"] == "error-wrongToken":
+        raise Exception("Invalid Gofile Token, Get your Gofile token from --> https://gofile.io/myProfile")
