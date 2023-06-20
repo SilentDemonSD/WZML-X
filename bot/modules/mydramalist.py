@@ -41,7 +41,7 @@ async def mydramalist_search(_, message):
         buttons = ButtonMaker()
         async with ClientSession() as sess:
             async with sess.get(f'{MDL_API}/search/q/{q(title)}') as resp:
-                if resp.status_code != 200:
+                if resp.status != 200:
                     return await editMessage(temp, "<i>No Results Found</i>, Try Again or Use <b>MyDramaList Link</b>")
                 mdl = await resp.json()
         for drama in mdl['results']['dramas']:
