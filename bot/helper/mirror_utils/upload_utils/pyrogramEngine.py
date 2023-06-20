@@ -17,7 +17,7 @@ from bot.helper.themes import BotTheme
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.fs_utils import clean_unwanted, is_archive, get_base_name
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, sync_to_async, format_filename
-from bot.helper.ext_utils.leech_utils import get_media_info, get_document_type, take_ss
+from bot.helper.ext_utils.leech_utils import get_media_info, get_document_type, take_ss, get_mediainfo_link
 
 LOGGER = getLogger(__name__)
 getLogger("pyrogram").setLevel(ERROR)
@@ -35,7 +35,7 @@ class TgUploader:
         self.__total_files = 0
         self.__is_cancelled = False
         self.__thumb = f"Thumbnails/{listener.message.from_user.id}.jpg"
-        self.__button = None
+        self.__has_buttons = False
         self.__msgs_dict = {}
         self.__corrupted = 0
         self.__is_corrupted = False
@@ -47,17 +47,21 @@ class TgUploader:
         self.__lremname = ''
         self.__lcaption = ''
         self.__ldump = ''
+        self.__mediainfo = ''
         self.__as_doc = False
         self.__media_group = False
         self.__bot_pm = False
         self.__user_id = listener.message.from_user.id
-        self.__buttons()
 
-    def __buttons(self):
+    async def __buttons(self, up_path):
         buttons = ButtonMaker()
+        if self.__mediainfo:
+            buttons.ubutton('MediaInfo', await get_mediainfo_link(up_path))
         if config_dict['SAVE_MSG']:
             buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
-            self.__button = buttons.build_menu(2)
+        if self.__has_buttons:
+            return buttons.build_menu(1)
+        return None
 
     async def __copy_file(self):
         try:
@@ -96,9 +100,9 @@ class TgUploader:
         user_id = self.__listener.message.from_user.id
         user_dict = user_data.get(user_id, {})
         self.__as_doc = user_dict.get('as_doc') or config_dict['AS_DOCUMENT']
-        self.__media_group = user_dict.get(
-            'media_group') or config_dict['MEDIA_GROUP']
+        self.__media_group = user_dict.get('media_group') or config_dict['MEDIA_GROUP']
         self.__bot_pm = config_dict['BOT_PM'] or user_dict.get('bot_pm')
+        self.__mediainfo = config_dict['SHOW_MEDIAINFO'] or user_dict.get('mediainfo')
         self.__ldump = user_dict.get('ldump', '') or ''
         self.__lprefix = config_dict['LEECH_FILENAME_PREFIX'] if (
             val := user_dict.get('lprefix', '')) == '' else val
@@ -108,6 +112,7 @@ class TgUploader:
             val := user_dict.get('lremname', '')) == '' else val
         self.__lcaption = config_dict['LEECH_FILENAME_CAPTION'] if (
             val := user_dict.get('lcaption', '')) == '' else val
+        self.__has_buttons = bool(config_dict['SAVE_MSG'] or self.__mediainfo)
         if not await aiopath.exists(self.__thumb):
             self.__thumb = None
 
@@ -328,9 +333,9 @@ class TgUploader:
                                                                        caption=cap_mono,
                                                                        force_document=True,
                                                                        disable_notification=True,
-                                                                       progress=self.__upload_progress,
-                                                                       reply_markup=self.__button)
-
+                                                                       progress=self.__upload_progress)
+                if self.__sent_msg and self.__has_buttons:
+                    await self.__sent_msg.edit_reply_markup(await self.__buttons(self.__up_path))
             elif is_video:
                 key = 'videos'
                 duration = (await get_media_info(self.__up_path))[0]
