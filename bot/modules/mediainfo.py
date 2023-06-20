@@ -71,9 +71,6 @@ async def mediainfo(_, message):
         if not file:
             return await sendMessage(message, help_msg)
         return await gen_mediainfo(message, None, file, rply)
-    elif :
-        link = 
-        return await gen_mediainfo(message, link)
     else:
         return await sendMessage(message, help_msg)
 
