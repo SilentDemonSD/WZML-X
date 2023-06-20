@@ -182,7 +182,8 @@ Type {help_command} to get a list of available commands'''
 
 ┎<b> YT-DLP Options :</b> <b><code>{YT}</code></b>
 ┠<b> Daily Tasks :</b> <code>{DT}</code> per day
-┠<b> Last Bot Used :</b> <b>{LAST_USED}</b>
+┠<b> Last Bot Used :</b> <code>{LAST_USED}</code>
+┠<b> Auto MediaInfo :</b> <code>{MEDIAINFO}</code>
 ┖<b> Bot PM :</b> <code>{BOT_PM}</code>'''
 
     MIRROR = '''㊂ <b><u>Mirror Settings : {NAME}</u></b>
