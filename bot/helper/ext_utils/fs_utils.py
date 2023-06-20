@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import hashlib
+from shlex import split as ssplit 
 from os import walk, path as ospath
 from aiofiles import open as aiopen
 from aiofiles.os import remove as aioremove, path as aiopath, listdir, rmdir, makedirs
@@ -159,7 +160,7 @@ async def get_mediainfo(up_path):
 async def get_md5_hash(up_path):
     md5_hash = hashlib.md5()
     async with aiopen(up_path,"rb") as f:
-        for byte_block in iter(lambda: f.read(4096), b""):
+        for byte_block in iter(lambda: await f.read(4096), b""):
             md5_hash.update(byte_block)
         return md5_hash.hexdigest()
 
@@ -167,12 +168,7 @@ async def get_md5_hash(up_path):
 def check_storage_threshold(size, threshold, arch=False, alloc=False):
     free = disk_usage(DOWNLOAD_DIR).free
     if not alloc:
-        if (
-            not arch
-            and free - size < threshold
-            or arch
-            and free - (size * 2) < threshold
-        ):
+        if (not arch and free - size < threshold or arch and free - (size * 2) < threshold):
             return False
     elif not arch:
         if free < threshold:
@@ -180,7 +176,6 @@ def check_storage_threshold(size, threshold, arch=False, alloc=False):
     elif free - size < threshold:
         return False
     return True
-
 
 
 async def join_files(path):
