@@ -1,4 +1,7 @@
+import hashlib
+from shlex import split as ssplit
 from os import path as ospath
+from aiofiles import open as aiopen
 from aiofiles.os import remove as aioremove, path as aiopath, mkdir
 from time import time
 from re import search as re_search
@@ -6,10 +9,9 @@ from asyncio import create_subprocess_exec
 from asyncio.subprocess import PIPE
 
 from bot import LOGGER, MAX_SPLIT_SIZE, config_dict, user_data
-from bot.helper.ext_utils.bot_utils import cmd_exec
-from bot.helper.ext_utils.bot_utils import sync_to_async
+from bot.helper.ext_utils.bot_utils import cmd_exec, sync_to_async
 from bot.helper.ext_utils.fs_utils import ARCH_EXT, get_mime_type
-
+from bot.helper.ext_utils.telegraph_helper import telegraph
 
 async def is_multi_streams(path):
     try:
@@ -186,3 +188,22 @@ async def split_file(path, size, file_, dirpath, split_size, listener, start_tim
             err = (await listener.suproc.stderr.read()).decode().strip()
             LOGGER.error(err)
     return True
+
+
+async def get_mediainfo_link(up_path):
+    stdout, stderr, _ = await cmd_exec(ssplit(f'mediainfo "{up_path}"'))
+    tele_content = f"<h4>{ospath.basename(up_path)}</h4><br><br>"
+    if len(stdout) != 0:
+        tele_content += f"<br><br><pre>{stdout}</pre><br>"
+    if len(stderr) != 0:
+        tele_content += f"<br><br><pre>{stderr}</pre><br>"
+    link_id = (await telegraph.create_page(title="MediaInfo", content=tele_content))["path"]
+    return f"https://graph.org/{link_id}"
+
+
+async def get_md5_hash(up_path):
+    md5_hash = hashlib.md5()
+    async with aiopen(up_path,"rb") as f:
+        for byte_block in iter(lambda: await f.read(4096), b""):
+            md5_hash.update(byte_block)
+        return md5_hash.hexdigest()
