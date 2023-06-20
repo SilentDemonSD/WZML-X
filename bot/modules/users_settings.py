@@ -214,19 +214,18 @@ async def update_user_settings(query, key=None, edit_type=None, edit_mode=None, 
 
 
 async def user_settings(client, message):
-    setup_text = None
-    text = message.text.split('-s', maxsplit=1)
-    setup = text[1].strip() if len(text) > 1 else None
-    if setup and (reply_to := message.reply_to_message):
-        if message.from_user.id != reply_to.from_user.id:
-            return await sendMessage(message, 'Reply to Your Own Message for Setting Directly')
-        msg = await sendMessage(message, 'Fetching Settings...', photo='IMAGES')
-        if setup in ['lprefix', 'lsuffix', 'lremname', 'lcaption', 'ldump']:
-            await set_custom(client, reply_to, msg, setup, True)
-        elif setup == 'thumb':
-            await set_thumb(client, reply_to, msg, setup, True)
-        else: 
-            await editMessage(msg, '''㊂ <b><u>Available Flags :</u></b>
+    if len(message.command) > 1 and message.command[1] == '-s':
+        set_arg = message.command[2].strip() if len(message.command) > 2 else None
+        msg = await sendMessage(message, '<i>Fetching Settings...</i>', photo='IMAGES')
+        if set_arg and (reply_to := message.reply_to_message):
+            if message.from_user.id != reply_to.from_user.id:
+                return await editMessage(msg, '<i>Reply to Your Own Message for Setting via Args Directly</i>')
+            if set_arg in ['lprefix', 'lsuffix', 'lremname', 'lcaption', 'ldump'] and reply_to.text:
+                return await set_custom(client, reply_to, msg, set_arg, True)
+            elif set_arg == 'thumb' and reply_to.media:
+                return await set_thumb(client, reply_to, msg, set_arg, True)
+        await editMessage(msg, '''㊂ <b><u>Available Flags :</u></b>
+>> Reply to the Value with appropriate arg respectively to set directly without opening USet.
 
 ➲ <b>Custom Thumbnail :</b>
     /cmd -s thumb
