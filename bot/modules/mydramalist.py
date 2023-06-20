@@ -1,4 +1,5 @@
-
+#!/usr/bin/env python3
+from aiohttp import ClientSession
 from requests import get as rget
 from urllib.parse import quote as q
 from pycountry import countries as conn
@@ -28,30 +29,33 @@ DEF_MDL_TEMP = '''⚡️𝐓𝐢𝐭𝐥𝐞: {title}
 
 ⚡️✅ 𝑪𝒍𝒊𝒄𝒌 𝑫𝒐𝒘𝒏 𝒂𝒏𝒅 𝑺𝒕𝒂𝒓𝒕 𝒕𝒉𝒆 𝑩𝒐𝒕 𝒕𝒐 𝑮𝒆𝒕 𝒕𝒉𝒆 𝑭𝒊𝒍𝒆 ✅ !! ⬇️ ⬇️
 '''
-
+LIST_ITEMS = 4
 IMDB_GENRE_EMOJI = {"Action": "🚀", "Adult": "🔞", "Adventure": "🌋", "Animation": "🎠", "Biography": "📜", "Comedy": "🪗", "Crime": "🔪", "Documentary": "🎞", "Drama": "🎭", "Family": "👨‍👩‍👧‍👦", "Fantasy": "🫧", "Film Noir": "🎯", "Game Show": "🎮", "History": "🏛", "Horror": "🧟", "Musical": "🎻", "Music": "🎸", "Mystery": "🧳", "News": "📰", "Reality-TV": "🖥", "Romance": "🥰", "Sci-Fi": "🌠", "Short": "📝", "Sport": "⛳", "Talk-Show": "👨‍🍳", "Thriller": "🗡", "War": "⚔", "Western": "🪩"}
 MDL_API = "https://wzmlmdl.vercel.app"
 
-async def mydramalist_search(c: Client, m: Message):
-    if ' ' in m.text:
-        k = await sendMessage('<code>Searching MyDramaList ...</code>', c, m)
-        title = m.text.split(' ', 1)[1]
-        user_id = m.from_user.id
+async def mydramalist_search(_, message):
+    if ' ' in message.text:
+        temp = await sendMessage(message, '<i>Searching in MyDramaList ...</i>')
+        title = message.text.split(' ', 1)[1]
+        user_id = message.from_user.id
         buttons = ButtonMaker()
-        mdl = rget(f'{MDL_API}/search/q/{q(title)}')
-        if mdl.status_code != 200:
-            return await editMessage("<i>No Results Found</i>, Try Again or Use <b>MyDramaList Link</b>", k)
-        for drama in mdl.json()['results']['dramas']:
-            buttons.sbutton(f"🎬 {drama.get('title')} ({drama.get('year')})",
-                                f"mdl {user_id} drama {drama.get('slug')}")
-        buttons.sbutton("🚫 Close 🚫", f"mdl {user_id} close")
-        await editMessage('<b><i>Here What I found on MyDramaList</i></b>', k, buttons.build_menu(1))
+        async with ClientSession() as sess:
+            async with sess.get(f'{MDL_API}/search/q/{q(title)}') as resp:
+                if resp.status_code != 200:
+                    return await editMessage(temp, "<i>No Results Found</i>, Try Again or Use <b>MyDramaList Link</b>")
+                mdl = await resp.json()
+        for drama in mdl['results']['dramas']:
+            buttons.ibutton(f"🎬 {drama.get('title')} ({drama.get('year')})", f"mdl {user_id} drama {drama.get('slug')}")
+        buttons.ibutton("🚫 Close 🚫", f"mdl {user_id} close")
+        await editMessage(temp, '<b><i>Dramas found on MyDramaList :</i></b>', buttons.build_menu(1))
     else:
-        await sendMessage('<i>Send Movie / TV Series Name along with /mdl Command</i>', c, m)
+        await sendMessage(message, '<i>Send Movie / TV Series Name along with /mdl Command</i>')
 
 
-def extractMDL(slug):
-    mdl = rget(f'{MDL_API}/id/{slug}').json()["data"]
+async def extract_MDL(slug):
+    async with ClientSession() as sess:
+        async with sess.get(f'{MDL_API}/id/{slug}') as resp:
+            mdl = (await resp.json())["data"]
     plot = mdl.get('synopsis')
     if plot and len(plot) > 300:
         plot = f"{plot[:300]}..."
@@ -133,44 +137,40 @@ def list_to_hash(k, flagg=False, emoji=False):
         return listing[:-2]
 
 
-async def mdl_callback(c, query):
+async def mdl_callback(_, query):
     message = query.message
     user_id = query.from_user.id
     data = query.data.split()
     if user_id != int(data[1]):
-        await query.answer(text="Not Yours!", show_alert=True)
+        await query.answer("Not Yours!", show_alert=True)
     elif data[2] == "drama":
         await query.answer()
-        mdl = extractMDL(slug=data[3])
+        mdl = await extract_MDL(data[3])
         buttons = ButtonMaker()
-        buttons.sbutton("🚫 Close 🚫", f"mdl {user_id} close")
-        template = ''
-        if int(data[1]) in user_data and user_data[int(data[1])].get('mdl_temp'):
-            template = user_data[int(data[1])].get('mdl_temp')
-        if not template:
-            template = DEF_MDL_TEMP
+        buttons.ibutton("🚫 Close 🚫", f"mdl {user_id} close")
+        template = DEF_MDL_TEMP
         if mdl and template != "":
             cap = template.format(**mdl)
         else:
             cap = "No Results"
         if mdl.get('poster'):
             try:
-                await c.send_photo(chat_id=query.message.reply_to_message.chat.id, photo=mdl['poster'], reply_to_message_id=message.id, caption=cap, reply_markup=buttons.build_menu(1))
+                await sendMessage(message.reply_to_message, cap, buttons.build_menu(1), mdl['poster'])
             except (MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty):
-                poster = mdl.get('poster').replace('f.jpg?v=1', 'c.jpg?v=1')
-                await c.send_photo(chat_id=query.message.reply_to_message.chat.id, photo=poster, reply_to_message_id=message.id, caption=cap, reply_markup=buttons.build_menu(1))
+                poster = mdl["poster"].replace('f.jpg?v=1', 'c.jpg?v=1')
+                await sendMessage(message.reply_to_message, cap, buttons.build_menu(1), poster)
             except ReplyMarkupInvalid:
-                await c.send_photo(chat_id=query.message.reply_to_message.chat.id, photo=mdl['poster'], reply_to_message_id=message.id, caption=cap)
+                await sendMessage(message.reply_to_message, cap, photo=mdl['poster'])
             except Exception as e:
-                LOGGER.exception(e)
-                await sendMessage(cap, c, message, reply_markup=buttons.build_menu(1), chat_id=query.message.reply_to_message.chat.id)
+                LOGGER.error(e)
+                await sendMessage(message.reply_to_message, cap, buttons.build_menu(1))
         else:
-            await sendPhoto(cap, c, message, photo='https://te.legra.ph/file/5af8d90a479b0d11df298.jpg', reply_markup=buttons.build_menu(1), chat_id=query.message.reply_to_message.chat.id)
+            await sendMessage(message.reply_to_message, cap, buttons.build_menu(1), 'https://te.legra.ph/file/5af8d90a479b0d11df298.jpg')
         await message.delete()
     else:
         await query.answer()
-        await query.message.delete()
-        await query.message.reply_to_message.delete()
+        await message.delete()
+        await message.reply_to_message.delete()
 
-bot.add_handler(MessageHandler(mydramalist_search, filters=command() & CustomFilters.authorized))
+bot.add_handler(MessageHandler(mydramalist_search, filters=command('mdl') & CustomFilters.authorized))
 bot.add_handler(CallbackQueryHandler(mdl_callback, filters=regex(r'^mdl')))
