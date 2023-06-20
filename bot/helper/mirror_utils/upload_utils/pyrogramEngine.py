@@ -370,8 +370,9 @@ class TgUploader:
                                                                     thumb=thumb,
                                                                     supports_streaming=True,
                                                                     disable_notification=True,
-                                                                    progress=self.__upload_progress,
-                                                                    reply_markup=self.__button)
+                                                                    progress=self.__upload_progress)
+                if self.__sent_msg and self.__has_buttons:
+                    await self.__sent_msg.edit_reply_markup(await self.__buttons(self.__up_path))
             elif is_audio:
                 key = 'audios'
                 duration, artist, title = await get_media_info(self.__up_path)
