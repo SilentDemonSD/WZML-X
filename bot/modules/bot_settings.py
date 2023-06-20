@@ -259,6 +259,9 @@ async def load_config():
     AS_DOCUMENT = environ.get('AS_DOCUMENT', '')
     AS_DOCUMENT = AS_DOCUMENT.lower() == 'true'
 
+    SHOW_MEDIAINFO = environ.get('SHOW_MEDIAINFO', '')
+    SHOW_MEDIAINFO = SHOW_MEDIAINFO.lower() == 'true'
+
     EQUAL_SPLITS = environ.get('EQUAL_SPLITS', '')
     EQUAL_SPLITS = EQUAL_SPLITS.lower() == 'true'
 
@@ -433,6 +436,10 @@ async def load_config():
 
     <b>Description</b>: <i>{description}</i>'''
 
+    TIMEZONE = environ.get('TIMEZONE', '')
+    if len(TIMEZONE) == 0:
+        TIMEZONE = 'Asia/Kolkata'
+        
     DRIVES_IDS.clear()
     DRIVES_NAMES.clear()
     INDEX_URLS.clear()
@@ -545,12 +552,14 @@ async def load_config():
                         'SEARCH_LIMIT': SEARCH_LIMIT,
                         'SEARCH_PLUGINS': SEARCH_PLUGINS,
                         'SET_COMMANDS': SET_COMMANDS,
+                        'SHOW_MEDIAINFO': SHOW_MEDIAINFO,
                         'STATUS_LIMIT': STATUS_LIMIT,
                         'STATUS_UPDATE_INTERVAL': STATUS_UPDATE_INTERVAL,
                         'STOP_DUPLICATE': STOP_DUPLICATE,
                         'SUDO_USERS': SUDO_USERS,
                         'TELEGRAM_API': TELEGRAM_API,
                         'TELEGRAM_HASH': TELEGRAM_HASH,
+                        'TIMEZONE': TIMEZONE,
                         'TORRENT_TIMEOUT': TORRENT_TIMEOUT,
                         'UPSTREAM_REPO': UPSTREAM_REPO,
                         'UPSTREAM_BRANCH': UPSTREAM_BRANCH,
