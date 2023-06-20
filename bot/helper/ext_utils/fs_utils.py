@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
+import hashlib
 from os import walk, path as ospath
+from aiofiles import open as aiopen
 from aiofiles.os import remove as aioremove, path as aiopath, listdir, rmdir, makedirs
 from aioshutil import rmtree as aiormtree
 from shutil import rmtree, disk_usage
@@ -11,6 +13,7 @@ from sys import exit as sexit
 from .exceptions import NotSupportedExtractionArchive
 from bot import aria2, LOGGER, DOWNLOAD_DIR, get_client, GLOBAL_EXTENSION_FILTER
 from bot.helper.ext_utils.bot_utils import sync_to_async, cmd_exec
+from bot.helper.ext_utils.telegraph_helper import telegraph
 
 ARCH_EXT = [".tar.bz2", ".tar.gz", ".bz2", ".gz", ".tar.xz", ".tar", ".tbz2", ".tgz", ".lzma2",
             ".zip", ".7z", ".z", ".rar", ".iso", ".wim", ".cab", ".apm", ".arj", ".chm",
@@ -140,6 +143,25 @@ def get_mime_type(file_path):
     mime_type = mime.from_file(file_path)
     mime_type = mime_type or "text/plain"
     return mime_type
+
+
+async def get_mediainfo(up_path):
+    stdout, stderr, _ = await cmd_exec(ssplit(f'mediainfo "{up_path}"'))
+    tele_content = f"<h4>{ospath.basename(up_path)}</h4><br><br>"
+    if len(stdout) != 0:
+        tele_content += f"<br><br><pre>{stdout}</pre><br>"
+    if len(stderr) != 0:
+        tele_content += f"<br><br><pre>{stderr}</pre><br>"
+    link_id = (await telegraph.create_page(title="MediaInfo", content=tele_content))["path"]
+    return f"https://graph.org/{link_id}"
+
+
+async def get_md5_hash(up_path):
+    md5_hash = hashlib.md5()
+    async with aiopen(up_path,"rb") as f:
+        for byte_block in iter(lambda: f.read(4096), b""):
+            md5_hash.update(byte_block)
+        return md5_hash.hexdigest()
 
 
 def check_storage_threshold(size, threshold, arch=False, alloc=False):
