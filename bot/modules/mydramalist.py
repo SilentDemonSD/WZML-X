@@ -154,6 +154,7 @@ async def mdl_callback(_, query):
         else:
             cap = "No Results"
         if mdl.get('poster'):
+            LOGGER.info(mdl['poster'])
             try:
                 await sendMessage(message.reply_to_message, cap, buttons.build_menu(1), mdl['poster'])
             except (MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty):
