@@ -474,6 +474,21 @@ if len(ANIME_TEMPLATE) == 0:
 
 <b>Description</b>: <i>{description}</i>'''
 
+MDL_TEMPLATE = environ.get('MDL_TEMPLATE', '')
+if len(MDL_TEMPLATE) == 0:
+    MDL_TEMPLATE = '''<b>Title:</b> {title}
+<b>Also Known As:</b> {aka}
+<b>Rating:</b> {rating}
+<b>Release Info:</b> {aired_date}
+<b>Genre:</b> {genres}
+<b>MyDramaList URL:</b> {url}
+<b>Language:</b> #Korean
+<b>Country of Origin:</b> {country}
+
+<b>Story Line:</b> {synopsis}
+
+<a href='{url}'>Read More ...</a>'''
+
 TIMEZONE = environ.get('TIMEZONE', '')
 if len(TIMEZONE) == 0:
     TIMEZONE = 'Asia/Kolkata'
@@ -495,6 +510,7 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'YTDLP_LIMIT': YTDLP_LIMIT,
                'GDRIVE_LIMIT': GDRIVE_LIMIT,
                'CLONE_LIMIT': CLONE_LIMIT,
+               'MDL_TEMPLATE': MDL_TEMPLATE,
                'MEGA_LIMIT': MEGA_LIMIT,
                'LEECH_LIMIT': LEECH_LIMIT,
                'FSUB_IDS': FSUB_IDS,
