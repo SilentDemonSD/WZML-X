@@ -355,7 +355,7 @@ class MirrorLeechListener:
                 msg += BotTheme('L_CORRUPTED_FILES', Corrupt=mime_type)
             msg += BotTheme('L_CC', Tag=self.tag)
             if not files:
-                await sendMessage(self.message, msg, photo)
+                await sendMessage(self.message, msg, photo=photo)
             elif config_dict['BOT_PM'] or user_dict.get('bot_pm'):
                 msg += BotTheme('L_BOT_MSG')
                 buttons.ubutton(BotTheme('CHECK_PM'),
