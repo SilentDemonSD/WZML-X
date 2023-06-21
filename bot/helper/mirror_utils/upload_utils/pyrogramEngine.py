@@ -56,7 +56,7 @@ class TgUploader:
     async def __buttons(self, up_path):
         buttons = ButtonMaker()
         if self.__mediainfo:
-            buttons.ubutton('MediaInfo', await get_mediainfo_link(up_path))
+            buttons.ubutton(BotTheme('MEDIAINFO_LINK'), await get_mediainfo_link(up_path))
         if config_dict['SAVE_MSG'] and not self.__listener.isPrivate:
             buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
         if self.__has_buttons:
@@ -67,7 +67,7 @@ class TgUploader:
         try:
             if self.__bot_pm and not self.__listener.isPrivate:
                 destination = 'Bot PM'
-                await self.__sent_msg.copy(chat_id=self.__user_id, reply_markup=self.__sent_msg.reply_markup)
+                await self.__sent_msg.copy(chat_id=self.__user_id)
             if self.__ldump:
                 destination = 'Dump'
                 for channel_id in self.__ldump.split():
@@ -79,13 +79,13 @@ class TgUploader:
                         continue
                     try:
                         chat = await bot.get_chat(channel_id)
-                        await self.__sent_msg.copy(chat_id=chat.id, reply_markup=self.__sent_msg.reply_markup)
+                        await self.__sent_msg.copy(chat_id=chat.id)
                     except PeerIdInvalid as e:
                         LOGGER.error(f"{e.NAME}: {e.MESSAGE} for {channel_id}")
                         continue
         except Exception as err:
             if not self.__is_cancelled:
-                LOGGER.error(f"Failed To Send in {destination}:\n{err}")
+                LOGGER.error(f"Failed To Send in {destination}:\n{str(err)}")
 
     async def __upload_progress(self, current, total):
         if self.__is_cancelled:
@@ -125,7 +125,7 @@ class TgUploader:
                                                           disable_web_page_preview=False, disable_notification=True)
         elif IS_PREMIUM_USER:
             if not self.__listener.isSuperGroup:
-                await self.__listener.onUploadError('Use SuperGroup to leech with User!')
+                await self.__listener.onUploadError('<i>Use SuperGroup to leech with User!</i>')
                 return False
             self.__sent_msg = await user.get_messages(chat_id=self.__listener.message.chat.id,
                                                       message_ids=self.__listener.uid)
@@ -196,8 +196,7 @@ class TgUploader:
 
     async def __send_media_group(self, subkey, key, msgs):
         msgs_list = await msgs[0].reply_to_message.reply_media_group(media=self.__get_input_media(subkey, key),
-                                                                     quote=True,
-                                                                     disable_notification=True)
+                                                                    quote=True, disable_notification=True)
         for msg in msgs:
             if msg.link in self.__msgs_dict:
                 del self.__msgs_dict[msg.link]
