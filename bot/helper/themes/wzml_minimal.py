@@ -71,8 +71,8 @@ Type {help_command} to get a list of available commands'''
     L_TOTAL_FILES =         '┠ <b>Total Files: </b>{Files}\n'
     L_CORRUPTED_FILES =     '┠ <b>Corrupted Files: </b>{Corrupt}\n'
     L_CC =                  '┖ <b>By: </b>{Tag}\n\n'
-    L_BOT_MSG =             '➲ <b><i>Files are Send to BOT PM</i></b>'
-    L_LL_MSG =              '➲ <b><i>Files are Send. Try Accessing via Links...</i></b>'
+    L_BOT_MSG =             '➲ <b><i>Files are Send to Bot PM (Private)</i></b>'
+    L_LL_MSG =              '➲ <b><i>Files are Send. Access via Links...</i></b>'
     
     # ----- MIRROR -------
     M_TYPE =                '┠ <b>Type: </b>{Mimetype}\n'
@@ -80,7 +80,7 @@ Type {help_command} to get a list of available commands'''
     TOTAL_FILES =           '┠ <b>Files: </b>{Files}\n'
     RCPATH =                '┠ <b>Path: </b><code>{RCpath}</code>\n'
     M_CC =                  '┖ <b>By: </b>{Tag}\n\n'
-    M_BOT_MSG =             '➲ <b><i>Links are Send to BOT PM</i></b>'
+    M_BOT_MSG =             '➲ <b><i>Links are Send to Bot PM (Private)</i></b>'
     
     # ----- BUTTONS -------
     CLOUD_LINK = '☁️ Cloud Link'
@@ -89,7 +89,8 @@ Type {help_command} to get a list of available commands'''
     DDL_LINK = '📎 {Serv} Link'
     INDEX_LINK = '⚡ Index Link'
     VIEW_LINK = '🌐 View Link'
-    CHECK_PM = '📥 Check Bot PM'
+    CHECK_PM = '📥 View Bot PM'
+    MEDIAINFO_LINK = '📃 MediaInfo'
     # ---------------------
 
     # def get_readable_message(): ---> bot_utilis.py
