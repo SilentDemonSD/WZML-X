@@ -66,7 +66,7 @@ class TgUploader:
 
     async def __copy_file(self):
         try:
-            if self.__bot_pm and not self.__listener.isPrivate:
+            if self.__bot_pm and not self.__listener.isPrivate and not config_dict['LEECH_LOG_ID']:
                 destination = 'Bot PM'
                 await self.__sent_msg.copy(chat_id=self.__user_id)
             if self.__ldump:
@@ -121,7 +121,7 @@ class TgUploader:
         msg_link = self.__listener.message.link if self.__listener.isSuperGroup else self.__listener.message.text
         msg_user = self.__listener.message.from_user
         if LEECH_LOG_ID := config_dict['LEECH_LOG_ID']:
-            if self.__bot_pm:
+            if self.__bot_pm and not self.isPrivate:
                 await sendBot(self.__listener.message, msg_link)
             _client = user if IS_PREMIUM_USER else bot
             self.__sent_msg = await _client.send_message(chat_id=LEECH_LOG_ID, text=f"➲ <b><u>Leech Started :</u></b>\n┃\n┠ <b>User :</b> {msg_user.mention(style='HTML')} ( {msg_user.id} )\n┖ <b>Source :</b> {msg_link}",
@@ -134,7 +134,7 @@ class TgUploader:
                 await sendBot(self.__listener.message, msg_link)
             self.__sent_msg = await user.get_messages(chat_id=self.__listener.message.chat.id,
                                                       message_ids=self.__listener.uid)
-        elif self.__bot_pm:
+        elif self.__bot_pm and not self.isPrivate:
             await sendBot(self.__listener.message, msg_link)
         else:
             self.__sent_msg = self.__listener.message
@@ -214,7 +214,7 @@ class TgUploader:
                 self.__msgs_dict[m.link] = m.caption
         self.__sent_msg = msgs_list[-1]
         try:
-            if self.__bot_pm and not self.__listener.isPrivate:
+            if self.__bot_pm and not self.__listener.isPrivate and not config_dict['LEECH_LOG_ID']:
                 destination = 'Bot PM'
                 await bot.copy_media_group(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
             if self.__ldump:
