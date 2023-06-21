@@ -6,7 +6,7 @@ from os import walk, path as ospath
 from html import escape
 from aioshutil import move
 from asyncio import create_subprocess_exec, sleep, Event
-from pyrogram.enums import ChatType 
+from pyrogram.enums import ChatType
 
 from bot import Interval, aria2, DOWNLOAD_DIR, download_dict, download_dict_lock, LOGGER, bot_name, DATABASE_URL, \
     MAX_SPLIT_SIZE, config_dict, status_reply_dict_lock, user_data, non_queued_up, non_queued_dl, queued_up, \
@@ -52,7 +52,7 @@ class MirrorLeechListener:
         self.dir = f"{DOWNLOAD_DIR}{self.uid}"
         self.select = select
         self.isSuperGroup = message.chat.type in [ChatType.SUPERGROUP, ChatType.CHANNEL]
-        self.isPrivate = message.chat.type == ChatType.PRIVATE
+        self.isPrivate = message.chat.type == ChatType.BOT
         self.suproc = None
         self.sameDir = sameDir
         self.rcFlags = rcFlags
@@ -365,7 +365,7 @@ class MirrorLeechListener:
                 buttons = extra_btns(buttons)
                 if not self.isPrivate:
                     await sendMessage(self.message, msg, buttons.build_menu(2), photo)
-            else:
+            if config_dict['LEECH_LOG_ID'] or not (config_dict['BOT_PM'] or user_dict.get('bot_pm')) and not self.isPrivate:
                 msg += BotTheme('L_LL_MSG')
                 btns = 0
                 for index, (link, name) in enumerate(files.items(), start=1):
