@@ -6,6 +6,7 @@ from os import walk, path as ospath
 from html import escape
 from aioshutil import move
 from asyncio import create_subprocess_exec, sleep, Event
+from pyrogram.enums import ChatType 
 
 from bot import Interval, aria2, DOWNLOAD_DIR, download_dict, download_dict_lock, LOGGER, bot_name, DATABASE_URL, \
     MAX_SPLIT_SIZE, config_dict, status_reply_dict_lock, user_data, non_queued_up, non_queued_dl, queued_up, \
@@ -50,7 +51,8 @@ class MirrorLeechListener:
         self.newDir = ""
         self.dir = f"{DOWNLOAD_DIR}{self.uid}"
         self.select = select
-        self.isSuperGroup = message.chat.type.name in ['SUPERGROUP', 'CHANNEL']
+        self.isSuperGroup = message.chat.type in [ChatType.SUPERGROUP, ChatType.CHANNEL]
+        self.isPrivate = message.chat.type == ChatType.PRIVATE
         self.suproc = None
         self.sameDir = sameDir
         self.rcFlags = rcFlags
