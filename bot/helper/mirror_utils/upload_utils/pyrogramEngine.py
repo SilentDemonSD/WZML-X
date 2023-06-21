@@ -65,9 +65,9 @@ class TgUploader:
 
     async def __copy_file(self):
         try:
-            if self.__bot_pm:
+            if self.__bot_pm and not self.__listener.isPrivate:
                 destination = 'Bot PM'
-                await bot.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
+                await self.__sent_msg.copy(chat_id=self.__user_id)
             if self.__ldump:
                 destination = 'Dump'
                 for channel_id in self.__ldump.split():
@@ -79,7 +79,7 @@ class TgUploader:
                         continue
                     try:
                         chat = await bot.get_chat(channel_id)
-                        await bot.copy_message(chat_id=chat.id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
+                        await self.__sent_msg.copy(chat_id=chat.id)
                     except PeerIdInvalid as e:
                         LOGGER.error(f"{e.NAME}: {e.MESSAGE} for {channel_id}")
                         continue
@@ -188,8 +188,7 @@ class TgUploader:
 
     async def __switching_client(self, f_size):
         if f_size > 2097152000 and IS_PREMIUM_USER and self.__sent_msg._client.me.is_bot:
-            LOGGER.info(
-                f'Trying to upload file greater than 2GB by user client')
+            LOGGER.info(f'Trying to upload file greater than 2GB by user client')
             self.__sent_msg = await user.get_messages(chat_id=self.__sent_msg.chat.id, message_ids=self.__sent_msg.id)
         if f_size < 2097152000 and not self.__sent_msg._client.me.is_bot:
             LOGGER.info(f'Trying to upload file less than 2GB by bot client')
@@ -209,7 +208,7 @@ class TgUploader:
                 self.__msgs_dict[m.link] = m.caption
         self.__sent_msg = msgs_list[-1]
         try:
-            if self.__bot_pm:
+            if self.__bot_pm and not self.__listener.isPrivate:
                 destination = 'Bot PM'
                 await bot.copy_media_group(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
             if self.__ldump:
@@ -229,7 +228,7 @@ class TgUploader:
                         continue
         except Exception as err:
             if not self.__is_cancelled:
-                LOGGER.error(f"Failed To Send in {destination}:\n{err}")
+                LOGGER.error(f"Failed To Send in {destination}:\n{str(err)}")
 
     async def upload(self, o_files, m_size, size):
         res = await self.__msg_to_reply()
@@ -276,8 +275,7 @@ class TgUploader:
                     await sleep(1)
                 except Exception as err:
                     if isinstance(err, RetryError):
-                        LOGGER.info(
-                            f"Total Attempts: {err.last_attempt.attempt_number}")
+                        LOGGER.info(f"Total Attempts: {err.last_attempt.attempt_number}")
                     else:
                         LOGGER.error(f"{err}. Path: {self.__up_path}")
                     if self.__is_cancelled:
@@ -386,8 +384,9 @@ class TgUploader:
                                                                     title=title,
                                                                     thumb=thumb,
                                                                     disable_notification=True,
-                                                                    progress=self.__upload_progress,
-                                                                    reply_markup=self.__button)
+                                                                    progress=self.__upload_progress)
+                if self.__sent_msg and self.__has_buttons:
+                    await self.__sent_msg.edit_reply_markup(await self.__buttons(self.__up_path))
             else:
                 key = 'photos'
                 if self.__is_cancelled:
@@ -396,8 +395,9 @@ class TgUploader:
                                                                     quote=True,
                                                                     caption=cap_mono,
                                                                     disable_notification=True,
-                                                                    progress=self.__upload_progress,
-                                                                    reply_markup=self.__button)
+                                                                    progress=self.__upload_progress)
+                if self.__sent_msg and self.__has_buttons:
+                    await self.__sent_msg.edit_reply_markup(await self.__buttons(self.__up_path))
 
             if not self.__is_cancelled and self.__media_group and (self.__sent_msg.video or self.__sent_msg.document):
                 key = 'documents' if self.__sent_msg.document else 'videos'
