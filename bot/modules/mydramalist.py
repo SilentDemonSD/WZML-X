@@ -80,7 +80,7 @@ async def extract_MDL(slug):
         'screenwriter': list_to_str(mdl['others'].get("screenwriter")),
         'genres': list_to_hash(mdl['others'].get("genres"), emoji=True),
         'tags': list_to_str(mdl['others'].get("tags")),
-        'poster': 'https://mydramalist.com' + mdl.get('poster').replace('c.jpg?v=1', 'f.jpg?v=1'),
+        'poster': mdl.get('poster').replace('c.jpg?v=1', 'f.jpg?v=1').strip(),
         'synopsis': plot,
         'rating': str(mdl.get("rating"))+" / 10",
         'content_rating': mdl['details'].get("content_rating"),
@@ -154,17 +154,11 @@ async def mdl_callback(_, query):
         else:
             cap = "No Results"
         if mdl.get('poster'):
-            LOGGER.info(mdl['poster'])
-            try:
-                await sendMessage(message.reply_to_message, cap, buttons.build_menu(1), mdl['poster'].replace("https://mydramalist.com", '').strip())
+            try: #Invoke Raw Functions
+                await bot.send_photo(message.reply_to_message.chat.id, caption=cap, reply_markup=buttons.build_menu(1), photo=mdl['poster'])
             except (MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty):
                 poster = mdl["poster"].replace('f.jpg?v=1', 'c.jpg?v=1')
                 await sendMessage(message.reply_to_message, cap, buttons.build_menu(1), poster)
-            except ReplyMarkupInvalid:
-                await sendMessage(message.reply_to_message, cap, photo=mdl['poster'])
-            except Exception as e:
-                LOGGER.error(e)
-                await sendMessage(message.reply_to_message, cap, buttons.build_menu(1))
         else:
             await sendMessage(message.reply_to_message, cap, buttons.build_menu(1), 'https://te.legra.ph/file/5af8d90a479b0d11df298.jpg')
         await message.delete()
