@@ -156,7 +156,7 @@ async def mdl_callback(_, query):
         if mdl.get('poster'):
             LOGGER.info(mdl['poster'])
             try:
-                await sendMessage(message.reply_to_message, cap, buttons.build_menu(1), mdl['poster'])
+                await sendMessage(message.reply_to_message, cap, buttons.build_menu(1), mdl['poster'].replace("https://mydramalist.com", '').strip())
             except (MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty):
                 poster = mdl["poster"].replace('f.jpg?v=1', 'c.jpg?v=1')
                 await sendMessage(message.reply_to_message, cap, buttons.build_menu(1), poster)
