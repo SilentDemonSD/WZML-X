@@ -47,7 +47,7 @@ class TgUploader:
         self.__lremname = ''
         self.__lcaption = ''
         self.__ldump = ''
-        self.__mediainfo = ''
+        self.__mediainfo = False
         self.__as_doc = False
         self.__media_group = False
         self.__bot_pm = False
@@ -67,7 +67,7 @@ class TgUploader:
         try:
             if self.__bot_pm and not self.__listener.isPrivate:
                 destination = 'Bot PM'
-                await self.__sent_msg.copy(chat_id=self.__user_id)
+                await self.__sent_msg.copy(chat_id=self.__user_id, reply_markup=self.__sent_msg.reply_markup)
             if self.__ldump:
                 destination = 'Dump'
                 for channel_id in self.__ldump.split():
@@ -79,7 +79,7 @@ class TgUploader:
                         continue
                     try:
                         chat = await bot.get_chat(channel_id)
-                        await self.__sent_msg.copy(chat_id=chat.id)
+                        await self.__sent_msg.copy(chat_id=chat.id, reply_markup=self.__sent_msg.reply_markup)
                     except PeerIdInvalid as e:
                         LOGGER.error(f"{e.NAME}: {e.MESSAGE} for {channel_id}")
                         continue
@@ -412,10 +412,7 @@ class TgUploader:
                         await self.__send_media_group(pname, key, msgs)
                     else:
                         self.__last_msg_in_group = True
-                else:
-                    await self.__copy_file()
-            else:
-                await self.__copy_file()
+            await self.__copy_file()
 
             if self.__thumb is None and thumb is not None and await aiopath.exists(thumb):
                 await aioremove(thumb)
