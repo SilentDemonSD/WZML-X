@@ -57,7 +57,7 @@ class TgUploader:
         buttons = ButtonMaker()
         if self.__mediainfo:
             buttons.ubutton('MediaInfo', await get_mediainfo_link(up_path))
-        if config_dict['SAVE_MSG']:
+        if config_dict['SAVE_MSG'] and not self.__listener.isPrivate:
             buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
         if self.__has_buttons:
             return buttons.build_menu(1)
