@@ -478,7 +478,7 @@ MDL_TEMPLATE = environ.get('MDL_TEMPLATE', '')
 if len(MDL_TEMPLATE) == 0:
     MDL_TEMPLATE = '''<b>Title:</b> {title}
 <b>Also Known As:</b> {aka}
-<b>Rating:</b> {rating}
+<b>Rating ⭐️:</b> <i>{rating}</i>
 <b>Release Info:</b> {aired_date}
 <b>Genre:</b> {genres}
 <b>MyDramaList URL:</b> {url}
@@ -546,6 +546,7 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'LEECH_SPLIT_SIZE': LEECH_SPLIT_SIZE,
                'LOGIN_PASS': LOGIN_PASS,
                'TOKEN_TIMEOUT': TOKEN_TIMEOUT,
+               'MDL_TEMPLATE': MDL_TEMPLATE,
                'MEDIA_GROUP': MEDIA_GROUP,
                'MEGA_EMAIL': MEGA_EMAIL,
                'MEGA_PASSWORD': MEGA_PASSWORD,
