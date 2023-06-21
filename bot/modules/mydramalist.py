@@ -13,22 +13,6 @@ from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage
 from bot.helper.telegram_helper.button_build import ButtonMaker
 
-MDL_TEMPLATE = '''⚡️𝐓𝐢𝐭𝐥𝐞: {title}
-⚡️𝐌𝐲𝐃𝐫𝐚𝐦𝐚𝐋𝐢𝐬𝐭 𝐑𝐚𝐭𝐢𝐧𝐠 : {rating}
-⚡️𝐐𝐮𝐚𝐥𝐢𝐭𝐲: WEBRip 
-⚡️𝐑𝐞𝐥𝐞𝐚𝐬𝐞 𝐃𝐚𝐭𝐞: {aired_date}
-⚡️𝐆𝐞𝐧𝐫𝐞: {genres}
-⚡️𝐌𝐲𝐃𝐫𝐚𝐦𝐚𝐋𝐢𝐬𝐭: {url}
-⚡️𝐋𝐚𝐧𝐠𝐮𝐚𝐠𝐞: #Korean
-⚡️𝐂𝐨𝐮𝐧𝐭𝐫𝐲: {country}
-⚡️𝐒𝐮𝐛𝐭𝐢𝐭𝐥𝐞𝐬: #ESub + #Others
-
-⚡️𝐒𝐭𝐨𝐫𝐲 𝐋𝐢𝐧𝐞: {synopsis}
-
-⚡️𝐉𝐨𝐢𝐧 𝐍𝐨𝐰 : @FuZionX 
-
-⚡️✅ 𝑪𝒍𝒊𝒄𝒌 𝑫𝒐𝒘𝒏 𝒂𝒏𝒅 𝑺𝒕𝒂𝒓𝒕 𝒕𝒉𝒆 𝑩𝒐𝒕 𝒕𝒐 𝑮𝒆𝒕 𝒕𝒉𝒆 𝑭𝒊𝒍𝒆 ✅ !! ⬇️ ⬇️
-'''
 LIST_ITEMS = 4
 IMDB_GENRE_EMOJI = {"Action": "🚀", "Adult": "🔞", "Adventure": "🌋", "Animation": "🎠", "Biography": "📜", "Comedy": "🪗", "Crime": "🔪", "Documentary": "🎞", "Drama": "🎭", "Family": "👨‍👩‍👧‍👦", "Fantasy": "🫧", "Film Noir": "🎯", "Game Show": "🎮", "History": "🏛", "Horror": "🧟", "Musical": "🎻", "Music": "🎸", "Mystery": "🧳", "News": "📰", "Reality-TV": "🖥", "Romance": "🥰", "Sci-Fi": "🌠", "Short": "📝", "Sport": "⛳", "Talk-Show": "👨‍🍳", "Thriller": "🗡", "War": "⚔", "Western": "🪩"}
 MDL_API = "http://kuryana.vercel.app/" #Public API ! Do Not Abuse !
@@ -148,7 +132,7 @@ async def mdl_callback(_, query):
         mdl = await extract_MDL(data[3])
         buttons = ButtonMaker()
         buttons.ibutton("🚫 Close 🚫", f"mdl {user_id} close")
-        template = MDL_TEMPLATE
+        template = config_dict['MDL_TEMPLATE']
         if mdl and template != "":
             cap = template.format(**mdl)
         else:
