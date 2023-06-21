@@ -15,6 +15,7 @@ from aioshutil import copy
 from bot import config_dict, user_data, GLOBAL_EXTENSION_FILTER, bot, user, IS_PREMIUM_USER
 from bot.helper.themes import BotTheme
 from bot.helper.telegram_helper.button_build import ButtonMaker
+from bot.helper.telegram_helper.message_utils import sendBot
 from bot.helper.ext_utils.fs_utils import clean_unwanted, is_archive, get_base_name
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, sync_to_async, format_filename
 from bot.helper.ext_utils.leech_utils import get_media_info, get_document_type, take_ss, get_mediainfo_link
@@ -57,7 +58,7 @@ class TgUploader:
         buttons = ButtonMaker()
         if self.__mediainfo:
             buttons.ubutton(BotTheme('MEDIAINFO_LINK'), await get_mediainfo_link(up_path))
-        if config_dict['SAVE_MSG'] and not self.__listener.isPrivate:
+        if config_dict['SAVE_MSG'] and config_dict['LEECH_LOG_ID'] or config_dict['SAVE_MSG'] and not self.__listener.isPrivate:
             buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
         if self.__has_buttons:
             return buttons.build_menu(1)
@@ -117,9 +118,11 @@ class TgUploader:
             self.__thumb = None
 
     async def __msg_to_reply(self):
+        msg_link = self.__listener.message.link if self.__listener.isSuperGroup else self.__listener.message.text
+        msg_user = self.__listener.message.from_user
         if LEECH_LOG_ID := config_dict['LEECH_LOG_ID']:
-            msg_link = self.__listener.message.link if self.__listener.isSuperGroup else self.__listener.message.text
-            msg_user = self.__listener.message.from_user
+            if self.__bot_pm:
+                await sendBot(self.__listener.message, msg_link)
             _client = user if IS_PREMIUM_USER else bot
             self.__sent_msg = await _client.send_message(chat_id=LEECH_LOG_ID, text=f"➲ <b><u>Leech Started :</u></b>\n┃\n┠ <b>User :</b> {msg_user.mention(style='HTML')} ( {msg_user.id} )\n┖ <b>Source :</b> {msg_link}",
                                                           disable_web_page_preview=False, disable_notification=True)
@@ -127,8 +130,12 @@ class TgUploader:
             if not self.__listener.isSuperGroup:
                 await self.__listener.onUploadError('<i>Use SuperGroup to leech with User!</i>')
                 return False
+            if self.__bot_pm:
+                await sendBot(self.__listener.message, msg_link)
             self.__sent_msg = await user.get_messages(chat_id=self.__listener.message.chat.id,
                                                       message_ids=self.__listener.uid)
+        elif self.__bot_pm:
+            await sendBot(self.__listener.message, msg_link)
         else:
             self.__sent_msg = self.__listener.message
         return True
