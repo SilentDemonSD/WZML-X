@@ -377,6 +377,7 @@ class MirrorLeechListener:
                 if btns != 0:
                     if config_dict['SAVE_MSG']:
                         buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
+                    LOGGER.info(buttons.build_menu(1))
                     await sendMessage(self.message, msg, buttons.build_menu(1), photo)
             if self.seed:
                 if self.newDir:
