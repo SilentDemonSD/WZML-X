@@ -363,6 +363,7 @@ class MirrorLeechListener:
                 buttons.ubutton(BotTheme('CHECK_PM'),
                                 f"https://t.me/{bot_name}", 'header')
                 buttons = extra_btns(buttons)
+                await sendBot(self.message, msg, photo=photo)
                 await sendMessage(self.message, msg, buttons.build_menu(2), photo)
             else:
                 msg += BotTheme('L_LL_MSG')
