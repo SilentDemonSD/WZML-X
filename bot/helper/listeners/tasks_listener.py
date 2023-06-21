@@ -361,10 +361,10 @@ class MirrorLeechListener:
             elif config_dict['BOT_PM'] or user_dict.get('bot_pm'):
                 await sendBot(self.message, msg, photo=photo)
                 msg += BotTheme('L_BOT_MSG')
-                buttons.ubutton(BotTheme('CHECK_PM'),
-                                f"https://t.me/{bot_name}", 'header')
+                buttons.ubutton(BotTheme('CHECK_PM'), f"https://t.me/{bot_name}", 'header')
                 buttons = extra_btns(buttons)
-                await sendMessage(self.message, msg, buttons.build_menu(2), photo)
+                if not self.isPrivate:
+                    await sendMessage(self.message, msg, buttons.build_menu(2), photo)
             else:
                 msg += BotTheme('L_LL_MSG')
                 btns = 0
