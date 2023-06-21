@@ -439,11 +439,11 @@ class MirrorLeechListener:
                 botbuttons = ButtonMaker()
                 botbuttons = extra_btns(botbuttons)
                 botbuttons.ubutton(BotTheme('CHECK_PM'),f"https://t.me/{bot_name}", 'header')
-                if config_dict['SAVE_MSG']:
-                    botbuttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                 botbutton = botbuttons.build_menu(2)
                 await sendMessage(self.message, msg, botbutton, photo)
             else:
+                if config_dict['SAVE_MSG']:
+                    botbuttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                 await sendMessage(self.message, msg, button, photo)
 
             if ids := config_dict['MIRROR_LOG_ID']:
