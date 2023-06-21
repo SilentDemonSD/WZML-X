@@ -13,7 +13,7 @@ from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage
 from bot.helper.telegram_helper.button_build import ButtonMaker
 
-DEF_MDL_TEMP = '''⚡️𝐓𝐢𝐭𝐥𝐞: {title}
+MDL_TEMPLATE = '''⚡️𝐓𝐢𝐭𝐥𝐞: {title}
 ⚡️𝐌𝐲𝐃𝐫𝐚𝐦𝐚𝐋𝐢𝐬𝐭 𝐑𝐚𝐭𝐢𝐧𝐠 : {rating}
 ⚡️𝐐𝐮𝐚𝐥𝐢𝐭𝐲: WEBRip 
 ⚡️𝐑𝐞𝐥𝐞𝐚𝐬𝐞 𝐃𝐚𝐭𝐞: {aired_date}
@@ -31,7 +31,7 @@ DEF_MDL_TEMP = '''⚡️𝐓𝐢𝐭𝐥𝐞: {title}
 '''
 LIST_ITEMS = 4
 IMDB_GENRE_EMOJI = {"Action": "🚀", "Adult": "🔞", "Adventure": "🌋", "Animation": "🎠", "Biography": "📜", "Comedy": "🪗", "Crime": "🔪", "Documentary": "🎞", "Drama": "🎭", "Family": "👨‍👩‍👧‍👦", "Fantasy": "🫧", "Film Noir": "🎯", "Game Show": "🎮", "History": "🏛", "Horror": "🧟", "Musical": "🎻", "Music": "🎸", "Mystery": "🧳", "News": "📰", "Reality-TV": "🖥", "Romance": "🥰", "Sci-Fi": "🌠", "Short": "📝", "Sport": "⛳", "Talk-Show": "👨‍🍳", "Thriller": "🗡", "War": "⚔", "Western": "🪩"}
-MDL_API = "http://kuryana.vercel.app/"
+MDL_API = "http://kuryana.vercel.app/" #Public API ! Do Not Abuse !
 
 async def mydramalist_search(_, message):
     if ' ' in message.text:
@@ -148,14 +148,14 @@ async def mdl_callback(_, query):
         mdl = await extract_MDL(data[3])
         buttons = ButtonMaker()
         buttons.ibutton("🚫 Close 🚫", f"mdl {user_id} close")
-        template = DEF_MDL_TEMP
+        template = MDL_TEMPLATE
         if mdl and template != "":
             cap = template.format(**mdl)
         else:
-            cap = "No Results"
+            cap = "<i>No Data Received</i>"
         if mdl.get('poster'):
             try: #Invoke Raw Functions
-                await bot.send_photo(message.reply_to_message.chat.id, caption=cap, reply_markup=buttons.build_menu(1), photo=mdl['poster'])
+                await message.reply_to_message.reply_photo(mdl["poster"], caption=cap, reply_markup=buttons.build_menu(1))
             except (MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty):
                 poster = mdl["poster"].replace('f.jpg?v=1', 'c.jpg?v=1')
                 await sendMessage(message.reply_to_message, cap, buttons.build_menu(1), poster)
