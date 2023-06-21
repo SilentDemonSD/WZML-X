@@ -436,6 +436,21 @@ async def load_config():
 
     <b>Description</b>: <i>{description}</i>'''
 
+    MDL_TEMPLATE = environ.get('MDL_TEMPLATE', '')
+    if len(MDL_TEMPLATE) == 0:
+        MDL_TEMPLATE = '''<b>Title:</b> {title}
+<b>Also Known As:</b> {aka}
+<b>Rating ⭐️:</b> <i>{rating}</i>
+<b>Release Info:</b> {aired_date}
+<b>Genre:</b> {genres}
+<b>MyDramaList URL:</b> {url}
+<b>Language:</b> #Korean
+<b>Country of Origin:</b> {country}
+
+<b>Story Line:</b> {synopsis}
+
+<a href='{url}'>Read More ...</a>'''
+    
     TIMEZONE = environ.get('TIMEZONE', '')
     if len(TIMEZONE) == 0:
         TIMEZONE = 'Asia/Kolkata'
@@ -535,6 +550,7 @@ async def load_config():
                         'MEDIA_GROUP': MEDIA_GROUP,
                         'MEGA_EMAIL': MEGA_EMAIL,
                         'MEGA_PASSWORD': MEGA_PASSWORD,
+                        'MDL_TEMPLATE': MDL_TEMPLATE,
                         'OWNER_ID': OWNER_ID,
                         'QUEUE_ALL': QUEUE_ALL,
                         'QUEUE_DOWNLOAD': QUEUE_DOWNLOAD,
