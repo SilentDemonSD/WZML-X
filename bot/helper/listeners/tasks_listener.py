@@ -392,7 +392,6 @@ class MirrorLeechListener:
                 if self.leechlogmsg and not (config_dict['BOT_PM'] or user_dict.get('bot_pm')):
                     buttons = ButtonMaker()
                     buttons.ubutton(BotTheme('CHECK_LL'), log_msg.link)
-                    msg += BotTheme('L_LL_MSG')
                     await sendMessage(self.message, msg, buttons.build_menu(1), photo)
             if self.seed:
                 if self.newDir:
