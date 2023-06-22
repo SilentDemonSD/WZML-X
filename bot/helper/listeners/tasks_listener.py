@@ -460,6 +460,9 @@ class MirrorLeechListener:
                 await sendMessage(self.message, msg, button, photo)
 
             if ids := config_dict['MIRROR_LOG_ID']:
+                if button is not None:
+                    buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
+                    button = buttons.build_menu(2)
                 await sendMirrorLog(self.message, msg, ids, button, photo)
 
             if self.seed:
