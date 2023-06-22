@@ -145,12 +145,7 @@ def get_mime_type(file_path):
 def check_storage_threshold(size, threshold, arch=False, alloc=False):
     free = disk_usage(DOWNLOAD_DIR).free
     if not alloc:
-        if (
-            not arch
-            and free - size < threshold
-            or arch
-            and free - (size * 2) < threshold
-        ):
+        if (not arch and free - size < threshold or arch and free - (size * 2) < threshold):
             return False
     elif not arch:
         if free < threshold:
@@ -158,7 +153,6 @@ def check_storage_threshold(size, threshold, arch=False, alloc=False):
     elif free - size < threshold:
         return False
     return True
-
 
 
 async def join_files(path):

@@ -44,5 +44,6 @@ class _BotCommands:
         self.AniListCommand = f'anime{CMD_SUFFIX}'
         self.AnimeHelpCommand = f'animehelp{CMD_SUFFIX}'
         self.MediaInfoCommand = f'mediainfo{CMD_SUFFIX}'
+        self.MyDramaListCommand = f'mdl{CMD_SUFFIX}'
 
 BotCommands = _BotCommands()

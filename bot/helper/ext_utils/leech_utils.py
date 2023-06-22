@@ -1,3 +1,6 @@
+import hashlib
+from re import sub as re_sub
+from shlex import split as ssplit
 from os import path as ospath
 from aiofiles.os import remove as aioremove, path as aiopath, mkdir
 from time import time
@@ -6,10 +9,9 @@ from asyncio import create_subprocess_exec
 from asyncio.subprocess import PIPE
 
 from bot import LOGGER, MAX_SPLIT_SIZE, config_dict, user_data
-from bot.helper.ext_utils.bot_utils import cmd_exec
-from bot.helper.ext_utils.bot_utils import sync_to_async
+from bot.helper.ext_utils.bot_utils import cmd_exec, sync_to_async, get_readable_file_size, get_readable_time
 from bot.helper.ext_utils.fs_utils import ARCH_EXT, get_mime_type
-
+from bot.helper.ext_utils.telegraph_helper import telegraph
 
 async def is_multi_streams(path):
     try:
@@ -186,3 +188,87 @@ async def split_file(path, size, file_, dirpath, split_size, listener, start_tim
             err = (await listener.suproc.stderr.read()).decode().strip()
             LOGGER.error(err)
     return True
+
+async def format_filename(file_, lprefix, lsuffix, lremname, lcaption, dirpath):
+    prefile_ = file_
+    # SD-Style V2 ~ WZML-X
+    if lremname:
+        if not lremname.startswith('|'):
+            lremname = f"|{lremname}"
+        lremname = lremname.replace('\s', ' ')
+        slit = lremname.split("|")
+        __newFileName = ospath.splitext(file_)[0]
+        for rep in range(1, len(slit)):
+            args = slit[rep].split(":")
+            if len(args) == 3:
+                __newFileName = re_sub(
+                    args[0], args[1], __newFileName, int(args[2]))
+            elif len(args) == 2:
+                __newFileName = re_sub(args[0], args[1], __newFileName)
+            elif len(args) == 1:
+                __newFileName = re_sub(args[0], '', __newFileName)
+        file_ = __newFileName + ospath.splitext(file_)[1]
+        LOGGER.info(f"New Filename : {file_}")
+
+    nfile_ = file_
+    if lprefix:
+        nfile_ = lprefix.replace('\s', ' ') + file_
+        lprefix = re_sub('<.*?>', '', lprefix).replace('\s', ' ')
+        if not file_.startswith(lprefix):
+            file_ = f"{lprefix}{file_}"
+
+    if lsuffix:
+        lsuffix = lsuffix.replace('\s', ' ')
+        sufLen = len(lsuffix)
+        fileDict = file_.split('.')
+        _extIn = 1 + len(fileDict[-1])
+        _extOutName = '.'.join(
+            fileDict[:-1]).replace('.', ' ').replace('-', ' ')
+        _newExtFileName = f"{_extOutName}{lsuffix}.{fileDict[-1]}"
+        if len(_extOutName) > (64 - (sufLen + _extIn)):
+            _newExtFileName = (
+                _extOutName[: 64 - (sufLen + _extIn)]
+                + f"{lsuffix}.{fileDict[-1]}"
+            )
+        file_ = _newExtFileName
+
+    cap_mono =  f"<{config_dict['CAP_FONT']}>{nfile_}</{config_dict['CAP_FONT']}>" if config_dict['CAP_FONT'] else nfile_
+    if lcaption:
+        lcaption = lcaption.replace('\|', '%%').replace('\s', ' ')
+        slit = lcaption.split("|")
+        up_path = ospath.join(dirpath, prefile_)
+        cap_mono = slit[0].format(
+            filename=nfile_,
+            size=get_readable_file_size(await aiopath.getsize(up_path)),
+            duration = get_readable_time((await get_media_info(up_path))[0])
+        )
+        if len(slit) > 1:
+            for rep in range(1, len(slit)):
+                args = slit[rep].split(":")
+                if len(args) == 3:
+                    cap_mono = cap_mono.replace(args[0], args[1], int(args[2]))
+                elif len(args) == 2:
+                    cap_mono = cap_mono.replace(args[0], args[1])
+                elif len(args) == 1:
+                    cap_mono = cap_mono.replace(args[0], '')
+        cap_mono = cap_mono.replace('%%', '|')
+    return cap_mono, file_
+    
+    
+async def get_mediainfo_link(up_path):
+    stdout, stderr, _ = await cmd_exec(ssplit(f'mediainfo "{up_path}"'))
+    tele_content = f"<h4>{ospath.basename(up_path)}</h4><br><br>"
+    if len(stdout) != 0:
+        tele_content += f"<br><br><pre>{stdout}</pre><br>"
+    if len(stderr) != 0:
+        tele_content += f"<br><br><pre>{stderr}</pre><br>"
+    link_id = (await telegraph.create_page(title="MediaInfo", content=tele_content))["path"]
+    return f"https://graph.org/{link_id}"
+
+
+def get_md5_hash(up_path):
+    md5_hash = hashlib.md5()
+    with open(up_path, "rb") as f:
+        for byte_block in iter(lambda: f.read(4096), b""):
+            md5_hash.update(byte_block)
+        return md5_hash.hexdigest()

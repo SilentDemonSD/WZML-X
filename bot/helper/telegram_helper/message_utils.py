@@ -39,7 +39,7 @@ async def sendMessage(message, text, buttons=None, photo=None):
         await sleep(f.value * 1.2)
         return await sendMessage(message, text, buttons, photo)
     except Exception as e:
-        LOGGER.error(str(e))
+        LOGGER.error(format_exc())
         return str(e)
 
 

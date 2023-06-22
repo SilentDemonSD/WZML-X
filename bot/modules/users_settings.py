@@ -60,7 +60,7 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
         buttons.ibutton("Universal Settings", f"userset {user_id} universal")
         buttons.ibutton("Mirror Settings", f"userset {user_id} mirror")
         buttons.ibutton("Leech Settings", f"userset {user_id} leech")
-        if user_dict and any(key in user_dict for key in ['lprefix', 'lsuffix', 'lremname', 'ldump', 'ddl_servers', 'yt_opt', 'bot_pm', 'media_grou','equal_splits', 'split_size', 'rclone', 'rclone', 'thumb', 'as_doc']):
+        if user_dict and any(key in user_dict for key in ['lprefix', 'lsuffix', 'lremname', 'ldump', 'ddl_servers', 'yt_opt', 'bot_pm', 'media_group', 'equal_splits', 'split_size', 'rclone', 'thumb', 'as_doc']):
             buttons.ibutton("Reset Setting", f"userset {user_id} reset_all")
         buttons.ibutton("Close", f"userset {user_id} close")
 
@@ -71,9 +71,13 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
         buttons.ibutton("YT-DLP Options", f"userset {user_id} yt_opt")
         ytopt = 'Not Exists' if (val:=user_dict.get('yt_opt', config_dict.get('YT_DLP_OPTIONS', ''))) == '' else val
         bot_pm = "Enabled" if user_dict.get('bot_pm', config_dict['BOT_PM']) else "Disabled"
-        buttons.ibutton('Disable Bot PM' if bot_pm == 'Enabled' else 'Enable Bot PM', f"userset {user_id} botpm")
+        buttons.ibutton('Disable Bot PM' if bot_pm == 'Enabled' else 'Enable Bot PM', f"userset {user_id} bot_pm")
         if config_dict['BOT_PM']:
-            bot_pm = "Force Enabled By Owner"
+            bot_pm = "Force Enabled"
+        mediainfo = "Enabled" if user_dict.get('mediainfo', config_dict['SHOW_MEDIAINFO']) else "Disabled"
+        buttons.ibutton('Disable MediaInfo' if mediainfo == 'Enabled' else 'Enable MediaInfo', f"userset {user_id} mediainfo")
+        if config_dict['SHOW_MEDIAINFO']:
+            mediainfo = "Force Enabled"
         dailytl = config_dict['DAILY_TASK_LIMIT'] if config_dict['DAILY_TASK_LIMIT'] else "♾️"
         dailytas = user_dict.get('dly_tasks')[1] if user_dict and user_dict.get('dly_tasks') and user_id != OWNER_ID and config_dict['DAILY_TASK_LIMIT'] else config_dict.get('DAILY_TASK_LIMIT', "♾️") if user_id != OWNER_ID else "♾️"        
         
@@ -82,8 +86,7 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
             lastused = f"{t[0]}h {t[1]}m {t[2].split('.')[0]}s ago"
         else: lastused = "Bot Not Used"
 
-        text = BotTheme('UNIVERSAL', NAME=name, YT=escape(ytopt), DT=f"{dailytas} / {dailytl}", LAST_USED=lastused, BOT_PM=bot_pm)
-        
+        text = BotTheme('UNIVERSAL', NAME=name, YT=escape(ytopt), DT=f"{dailytas} / {dailytl}", LAST_USED=lastused, BOT_PM=bot_pm, MEDIAINFO=mediainfo)
         buttons.ibutton("Back", f"userset {user_id} back", "footer")
         buttons.ibutton("Close", f"userset {user_id} close", "footer")
         button = buttons.build_menu(2)
@@ -211,19 +214,18 @@ async def update_user_settings(query, key=None, edit_type=None, edit_mode=None, 
 
 
 async def user_settings(client, message):
-    setup_text = None
-    text = message.text.split('-s', maxsplit=1)
-    setup = text[1].strip() if len(text) > 1 else None
-    if setup and (reply_to := message.reply_to_message):
-        if message.from_user.id != reply_to.from_user.id:
-            return await sendMessage(message, 'Reply to Your Own Message for Setting Directly')
-        msg = await sendMessage(message, 'Fetching Settings...', photo='IMAGES')
-        if setup in ['lprefix', 'lsuffix', 'lremname', 'lcaption', 'ldump']:
-            await set_custom(client, reply_to, msg, setup, True)
-        elif setup == 'thumb':
-            await set_thumb(client, reply_to, msg, setup, True)
-        else: 
-            await editMessage(msg, '''㊂ <b><u>Available Flags :</u></b>
+    if len(message.command) > 1 and message.command[1] == '-s':
+        set_arg = message.command[2].strip() if len(message.command) > 2 else None
+        msg = await sendMessage(message, '<i>Fetching Settings...</i>', photo='IMAGES')
+        if set_arg and (reply_to := message.reply_to_message):
+            if message.from_user.id != reply_to.from_user.id:
+                return await editMessage(msg, '<i>Reply to Your Own Message for Setting via Args Directly</i>')
+            if set_arg in ['lprefix', 'lsuffix', 'lremname', 'lcaption', 'ldump'] and reply_to.text:
+                return await set_custom(client, reply_to, msg, set_arg, True)
+            elif set_arg == 'thumb' and reply_to.media:
+                return await set_thumb(client, reply_to, msg, set_arg, True)
+        await editMessage(msg, '''㊂ <b><u>Available Flags :</u></b>
+>> Reply to the Value with appropriate arg respectively to set directly without opening USet.
 
 ➲ <b>Custom Thumbnail :</b>
     /cmd -s thumb
@@ -407,12 +409,12 @@ async def edit_user_settings(client, query):
         await update_user_settings(query, 'yt_opt', 'universal')
         if DATABASE_URL:
             await DbManger().update_user_data(user_id)
-    elif data[2] == 'botpm':
+    elif data[2] in ['bot_pm', 'mediainfo']:
         handler_dict[user_id] = False
-        if config_dict['BOT_PM']:
+        if data[2] == 'bot_pm' and config_dict['BOT_PM'] or data[2] == 'mediainfo' and config_dict['SHOW_MEDIAINFO']:
             return await query.answer("Force Enabled! Can't Alter Settings", show_alert=True)
         await query.answer()
-        update_user_ldata(user_id, 'bot_pm', not user_dict.get('bot_pm', False))
+        update_user_ldata(user_id, data[2], not user_dict.get(data[2], False))
         await update_user_settings(query, 'universal')
         if DATABASE_URL:
             await DbManger().update_user_data(user_id)

@@ -22,7 +22,7 @@ setdefaulttimeout(600)
 
 botStartTime = time()
 
-basicConfig(format="[%(asctime)s] [%(levelname)s] - %(message)s",
+basicConfig(format="[%(asctime)s] [%(levelname)s] - %(message)s", #  [%(filename)s:%(lineno)d]
             datefmt="%d-%b-%y %I:%M:%S %p",
             handlers=[FileHandler('log.txt'), StreamHandler()],
             level=INFO)
@@ -208,6 +208,10 @@ SEARCH_API_LINK = environ.get('SEARCH_API_LINK', '').rstrip("/")
 if len(SEARCH_API_LINK) == 0:
     SEARCH_API_LINK = ''
 
+CAP_FONT = environ.get('CAP_FONT', '').lower()
+if CAP_FONT.strip() not in ['', 'b', 'i', 'u', 's', 'spoiler', 'code']:
+    CAP_FONT = 'code'
+
 LEECH_FILENAME_PREFIX = environ.get('LEECH_FILENAME_PREFIX', '')
 if len(LEECH_FILENAME_PREFIX) == 0:
     LEECH_FILENAME_PREFIX = ''
@@ -298,6 +302,9 @@ WEB_PINCODE = WEB_PINCODE.lower() == 'true'
 
 AS_DOCUMENT = environ.get('AS_DOCUMENT', '')
 AS_DOCUMENT = AS_DOCUMENT.lower() == 'true'
+
+SHOW_MEDIAINFO = environ.get('SHOW_MEDIAINFO', '')
+SHOW_MEDIAINFO = SHOW_MEDIAINFO.lower() == 'true'
 
 EQUAL_SPLITS = environ.get('EQUAL_SPLITS', '')
 EQUAL_SPLITS = EQUAL_SPLITS.lower() == 'true'
@@ -471,6 +478,21 @@ if len(ANIME_TEMPLATE) == 0:
 
 <b>Description</b>: <i>{description}</i>'''
 
+MDL_TEMPLATE = environ.get('MDL_TEMPLATE', '')
+if len(MDL_TEMPLATE) == 0:
+    MDL_TEMPLATE = '''<b>Title:</b> {title}
+<b>Also Known As:</b> {aka}
+<b>Rating ⭐️:</b> <i>{rating}</i>
+<b>Release Info:</b> {aired_date}
+<b>Genre:</b> {genres}
+<b>MyDramaList URL:</b> {url}
+<b>Language:</b> #Korean
+<b>Country of Origin:</b> {country}
+
+<b>Story Line:</b> {synopsis}
+
+<a href='{url}'>Read More ...</a>'''
+
 TIMEZONE = environ.get('TIMEZONE', '')
 if len(TIMEZONE) == 0:
     TIMEZONE = 'Asia/Kolkata'
@@ -482,6 +504,7 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'BASE_URL': BASE_URL,
                'BASE_URL_PORT': BASE_URL_PORT,
                'BOT_TOKEN': BOT_TOKEN,
+               'CAP_FONT': CAP_FONT,
                'CMD_SUFFIX': CMD_SUFFIX,
                'DATABASE_URL': DATABASE_URL,
                'DEFAULT_UPLOAD': DEFAULT_UPLOAD,
@@ -492,6 +515,7 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'YTDLP_LIMIT': YTDLP_LIMIT,
                'GDRIVE_LIMIT': GDRIVE_LIMIT,
                'CLONE_LIMIT': CLONE_LIMIT,
+               'MDL_TEMPLATE': MDL_TEMPLATE,
                'MEGA_LIMIT': MEGA_LIMIT,
                'LEECH_LIMIT': LEECH_LIMIT,
                'FSUB_IDS': FSUB_IDS,
@@ -527,6 +551,7 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'LEECH_SPLIT_SIZE': LEECH_SPLIT_SIZE,
                'LOGIN_PASS': LOGIN_PASS,
                'TOKEN_TIMEOUT': TOKEN_TIMEOUT,
+               'MDL_TEMPLATE': MDL_TEMPLATE,
                'MEDIA_GROUP': MEDIA_GROUP,
                'MEGA_EMAIL': MEGA_EMAIL,
                'MEGA_PASSWORD': MEGA_PASSWORD,
@@ -547,6 +572,7 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'SEARCH_LIMIT': SEARCH_LIMIT,
                'SEARCH_PLUGINS': SEARCH_PLUGINS,
                'SET_COMMANDS': SET_COMMANDS,
+               'SHOW_MEDIAINFO': SHOW_MEDIAINFO,
                'STATUS_LIMIT': STATUS_LIMIT,
                'STATUS_UPDATE_INTERVAL': STATUS_UPDATE_INTERVAL,
                'STOP_DUPLICATE': STOP_DUPLICATE,

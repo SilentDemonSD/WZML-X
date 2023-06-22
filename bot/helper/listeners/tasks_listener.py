@@ -6,6 +6,7 @@ from os import walk, path as ospath
 from html import escape
 from aioshutil import move
 from asyncio import create_subprocess_exec, sleep, Event
+from pyrogram.enums import ChatType
 
 from bot import Interval, aria2, DOWNLOAD_DIR, download_dict, download_dict_lock, LOGGER, bot_name, DATABASE_URL, \
     MAX_SPLIT_SIZE, config_dict, status_reply_dict_lock, user_data, non_queued_up, non_queued_dl, queued_up, \
@@ -50,13 +51,15 @@ class MirrorLeechListener:
         self.newDir = ""
         self.dir = f"{DOWNLOAD_DIR}{self.uid}"
         self.select = select
-        self.isSuperGroup = message.chat.type.name in ['SUPERGROUP', 'CHANNEL']
+        self.isSuperGroup = message.chat.type in [ChatType.SUPERGROUP, ChatType.CHANNEL]
+        self.isPrivate = message.chat.type == ChatType.BOT
         self.suproc = None
         self.sameDir = sameDir
         self.rcFlags = rcFlags
         self.upPath = upPath
         self.random_pic = 'IMAGES'
         self.join = join
+        self.leechlogmsg = None
 
     async def clean(self):
         try:
@@ -355,14 +358,20 @@ class MirrorLeechListener:
                 msg += BotTheme('L_CORRUPTED_FILES', Corrupt=mime_type)
             msg += BotTheme('L_CC', Tag=self.tag)
             if not files:
-                await sendMessage(self.message, msg, photo)
-            elif config_dict['BOT_PM'] or user_dict.get('bot_pm'):
-                msg += BotTheme('L_BOT_MSG')
-                buttons.ubutton(BotTheme('CHECK_PM'),
-                                f"https://t.me/{bot_name}", 'header')
-                buttons = extra_btns(buttons)
-                await sendMessage(self.message, msg, buttons.build_menu(2), photo)
+                msg += BotTheme('PM_BOT_MSG')
+                await sendMessage(self.message, msg, photo=photo)
             else:
+                toPM = False
+                if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
+                    nmsg = msg + BotTheme('PM_BOT_MSG')
+                    await sendBot(self.message, nmsg, photo=photo)
+                    mssg = msg + BotTheme('L_BOT_MSG')
+                    btn = ButtonMaker()
+                    btn.ubutton(BotTheme('CHECK_PM'), f"https://t.me/{bot_name}", 'header')
+                    btn = extra_btns(btn)
+                    if self.isSuperGroup:
+                        toPM = True
+                        await sendMessage(self.message, mssg, btn.build_menu(2), photo)
                 msg += BotTheme('L_LL_MSG')
                 btns = 0
                 for index, (link, name) in enumerate(files.items(), start=1):
@@ -371,12 +380,18 @@ class MirrorLeechListener:
                     if index > 80:
                         if config_dict['SAVE_MSG']:
                             buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
-                        await sendMessage(self.message, msg, buttons.build_menu(1), photo)
+                        if self.leechlogmsg or not toPM:
+                            log_msg = await sendMessage(self.leechlogmsg if self.leechlogmsg else self.message, msg, buttons.build_menu(1), photo)
                         await sleep(1)
                         btns = 0
                 if btns != 0:
                     if config_dict['SAVE_MSG']:
                         buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
+                    if self.leechlogmsg or not toPM:
+                        log_msg = await sendMessage(self.leechlogmsg if self.leechlogmsg else self.message, msg, buttons.build_menu(1), photo)
+                if self.leechlogmsg and not (config_dict['BOT_PM'] or user_dict.get('bot_pm')):
+                    buttons = ButtonMaker()
+                    buttons.ubutton(BotTheme('CHECK_LL'), log_msg.link)
                     await sendMessage(self.message, msg, buttons.build_menu(1), photo)
             if self.seed:
                 if self.newDir:
@@ -390,7 +405,7 @@ class MirrorLeechListener:
             is_DDL = 'gofile' in link or 'streamsb' in link
             msg += BotTheme('M_TYPE', Mimetype=mime_type)
             if mime_type == "Folder":
-                if 'gofile' not in link and 'streamsb' not in link:
+                if not is_DDL:
                     msg += BotTheme('M_SUBFOLD', Folder=folders)
                     msg += BotTheme('TOTAL_FILES', Files=files)
             if link or rclonePath and config_dict['RCLONE_SERVE_URL']:
@@ -432,15 +447,19 @@ class MirrorLeechListener:
 
             if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
                 await sendBot(self.message, msg, button, photo)
-                msg += BotTheme('M_BOT_MSG')
-                botbuttons = ButtonMaker()
-                botbuttons = extra_btns(botbuttons)
-                botbuttons.ubutton(BotTheme('CHECK_PM'),f"https://t.me/{bot_name}", 'header')
-                if config_dict['SAVE_MSG']:
-                    botbuttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
-                botbutton = botbuttons.build_menu(2)
-                await sendMessage(self.message, msg, botbutton, photo)
+                nmsg = msg + BotTheme('M_BOT_MSG')
+                if button is not None:
+                    buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
+                    button = buttons.build_menu(2)
+                btns = ButtonMaker()
+                btns = extra_btns(btns)
+                btns.ubutton(BotTheme('CHECK_PM'), f"https://t.me/{bot_name}", 'header')
+                await sendMessage(self.message, nmsg, btns.build_menu(1), photo)
             else:
+                if config_dict['SAVE_MSG']:
+                    if button is not None:
+                        buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
+                        button = buttons.build_menu(2)
                 await sendMessage(self.message, msg, button, photo)
 
             if ids := config_dict['MIRROR_LOG_ID']:

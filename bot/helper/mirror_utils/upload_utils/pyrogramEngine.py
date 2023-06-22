@@ -15,9 +15,10 @@ from aioshutil import copy
 from bot import config_dict, user_data, GLOBAL_EXTENSION_FILTER, bot, user, IS_PREMIUM_USER
 from bot.helper.themes import BotTheme
 from bot.helper.telegram_helper.button_build import ButtonMaker
+from bot.helper.telegram_helper.message_utils import sendBot
 from bot.helper.ext_utils.fs_utils import clean_unwanted, is_archive, get_base_name
-from bot.helper.ext_utils.bot_utils import get_readable_file_size, sync_to_async, format_filename
-from bot.helper.ext_utils.leech_utils import get_media_info, get_document_type, take_ss
+from bot.helper.ext_utils.bot_utils import get_readable_file_size, sync_to_async
+from bot.helper.ext_utils.leech_utils import get_media_info, get_document_type, take_ss, get_mediainfo_link, format_filename
 
 LOGGER = getLogger(__name__)
 getLogger("pyrogram").setLevel(ERROR)
@@ -35,7 +36,7 @@ class TgUploader:
         self.__total_files = 0
         self.__is_cancelled = False
         self.__thumb = f"Thumbnails/{listener.message.from_user.id}.jpg"
-        self.__button = None
+        self.__has_buttons = False
         self.__msgs_dict = {}
         self.__corrupted = 0
         self.__is_corrupted = False
@@ -47,23 +48,27 @@ class TgUploader:
         self.__lremname = ''
         self.__lcaption = ''
         self.__ldump = ''
+        self.__mediainfo = False
         self.__as_doc = False
         self.__media_group = False
         self.__bot_pm = False
         self.__user_id = listener.message.from_user.id
-        self.__buttons()
 
-    def __buttons(self):
+    async def __buttons(self, up_path):
         buttons = ButtonMaker()
-        if config_dict['SAVE_MSG']:
+        if self.__mediainfo:
+            buttons.ubutton(BotTheme('MEDIAINFO_LINK'), await get_mediainfo_link(up_path))
+        if config_dict['SAVE_MSG'] and config_dict['LEECH_LOG_ID'] or config_dict['SAVE_MSG'] and not self.__listener.isPrivate:
             buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
-            self.__button = buttons.build_menu(2)
+        if self.__has_buttons:
+            return buttons.build_menu(1)
+        return None
 
     async def __copy_file(self):
         try:
-            if self.__bot_pm:
+            if self.__bot_pm and (self.__listener.leechlogmsg or self.__listener.isSuperGroup):
                 destination = 'Bot PM'
-                await bot.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
+                await self.__sent_msg.copy(chat_id=self.__user_id)
             if self.__ldump:
                 destination = 'Dump'
                 for channel_id in self.__ldump.split():
@@ -75,13 +80,13 @@ class TgUploader:
                         continue
                     try:
                         chat = await bot.get_chat(channel_id)
-                        await bot.copy_message(chat_id=chat.id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
+                        await self.__sent_msg.copy(chat_id=chat.id)
                     except PeerIdInvalid as e:
                         LOGGER.error(f"{e.NAME}: {e.MESSAGE} for {channel_id}")
                         continue
         except Exception as err:
             if not self.__is_cancelled:
-                LOGGER.error(f"Failed To Send in {destination}:\n{err}")
+                LOGGER.error(f"Failed To Send in {destination}:\n{str(err)}")
 
     async def __upload_progress(self, current, total):
         if self.__is_cancelled:
@@ -96,9 +101,9 @@ class TgUploader:
         user_id = self.__listener.message.from_user.id
         user_dict = user_data.get(user_id, {})
         self.__as_doc = user_dict.get('as_doc') or config_dict['AS_DOCUMENT']
-        self.__media_group = user_dict.get(
-            'media_group') or config_dict['MEDIA_GROUP']
+        self.__media_group = user_dict.get('media_group') or config_dict['MEDIA_GROUP']
         self.__bot_pm = config_dict['BOT_PM'] or user_dict.get('bot_pm')
+        self.__mediainfo = config_dict['SHOW_MEDIAINFO'] or user_dict.get('mediainfo')
         self.__ldump = user_dict.get('ldump', '') or ''
         self.__lprefix = config_dict['LEECH_FILENAME_PREFIX'] if (
             val := user_dict.get('lprefix', '')) == '' else val
@@ -108,23 +113,31 @@ class TgUploader:
             val := user_dict.get('lremname', '')) == '' else val
         self.__lcaption = config_dict['LEECH_FILENAME_CAPTION'] if (
             val := user_dict.get('lcaption', '')) == '' else val
+        self.__has_buttons = bool(config_dict['SAVE_MSG'] or self.__mediainfo)
         if not await aiopath.exists(self.__thumb):
             self.__thumb = None
 
     async def __msg_to_reply(self):
+        msg_link = self.__listener.message.link if self.__listener.isSuperGroup else self.__listener.message.text
+        msg_user = self.__listener.message.from_user
         if LEECH_LOG_ID := config_dict['LEECH_LOG_ID']:
-            msg_link = self.__listener.message.link if self.__listener.isSuperGroup else self.__listener.message.text
-            msg_user = self.__listener.message.from_user
+            if self.__bot_pm and self.__listener.isSuperGroup:
+                await sendBot(self.__listener.message, BotTheme('L_PM_START', msg_link=msg_link))
             _client = user if IS_PREMIUM_USER else bot
-            self.__sent_msg = await _client.send_message(chat_id=LEECH_LOG_ID, text=f"➲ <b><u>Leech Started :</u></b>\n┃\n┠ <b>User :</b> {msg_user.mention(style='HTML')} ( {msg_user.id} )\n┖ <b>Source :</b> {msg_link}",
+            self.__sent_msg = await _client.send_message(chat_id=LEECH_LOG_ID, text=BotTheme('L_LOG_START', mention=msg_user.mention(style='HTML'), uid=msg_user.id, msg_link=msg_link),
                                                           disable_web_page_preview=False, disable_notification=True)
+            self.__listener.leechlogmsg = self.__sent_msg
         elif IS_PREMIUM_USER:
             if not self.__listener.isSuperGroup:
-                await self.__listener.onUploadError('Use SuperGroup to leech with User!')
+                await self.__listener.onUploadError('<i>Use SuperGroup to leech with User!</i>')
                 return False
+            if self.__bot_pm:
+                await sendBot(self.__listener.message, BotTheme('L_PM_START', msg_link=msg_link))
             self.__sent_msg = await user.get_messages(chat_id=self.__listener.message.chat.id,
                                                       message_ids=self.__listener.uid)
         else:
+            if self.__bot_pm and self.__listener.isSuperGroup:
+                await sendBot(self.__listener.message, BotTheme('L_PM_START', msg_link=msg_link))
             self.__sent_msg = self.__listener.message
         return True
 
@@ -141,7 +154,7 @@ class TgUploader:
                 await aiorename(self.__up_path, new_path)
                 self.__up_path = new_path
         else:
-            cap_mono = f"<code>{file_}</code>"
+            cap_mono = f"<{config_dict['CAP_FONT']}>{file_}</{config_dict['CAP_FONT']}>" if config_dict['CAP_FONT'] else file_
         if len(file_) > 64:
             if is_archive(file_):
                 name = get_base_name(file_)
@@ -183,8 +196,7 @@ class TgUploader:
 
     async def __switching_client(self, f_size):
         if f_size > 2097152000 and IS_PREMIUM_USER and self.__sent_msg._client.me.is_bot:
-            LOGGER.info(
-                f'Trying to upload file greater than 2GB by user client')
+            LOGGER.info(f'Trying to upload file greater than 2GB by user client')
             self.__sent_msg = await user.get_messages(chat_id=self.__sent_msg.chat.id, message_ids=self.__sent_msg.id)
         if f_size < 2097152000 and not self.__sent_msg._client.me.is_bot:
             LOGGER.info(f'Trying to upload file less than 2GB by bot client')
@@ -192,8 +204,7 @@ class TgUploader:
 
     async def __send_media_group(self, subkey, key, msgs):
         msgs_list = await msgs[0].reply_to_message.reply_media_group(media=self.__get_input_media(subkey, key),
-                                                                     quote=True,
-                                                                     disable_notification=True)
+                                                                    quote=True, disable_notification=True)
         for msg in msgs:
             if msg.link in self.__msgs_dict:
                 del self.__msgs_dict[msg.link]
@@ -204,7 +215,7 @@ class TgUploader:
                 self.__msgs_dict[m.link] = m.caption
         self.__sent_msg = msgs_list[-1]
         try:
-            if self.__bot_pm:
+            if self.__bot_pm and (self.__listener.leechlogmsg or self.__listener.isSuperGroup):
                 destination = 'Bot PM'
                 await bot.copy_media_group(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
             if self.__ldump:
@@ -224,13 +235,13 @@ class TgUploader:
                         continue
         except Exception as err:
             if not self.__is_cancelled:
-                LOGGER.error(f"Failed To Send in {destination}:\n{err}")
+                LOGGER.error(f"Failed To Send in {destination}:\n{str(err)}")
 
     async def upload(self, o_files, m_size, size):
+        await self.__user_settings()
         res = await self.__msg_to_reply()
         if not res:
             return
-        await self.__user_settings()
         for dirpath, _, files in sorted(await sync_to_async(walk, self.__path)):
             if dirpath.endswith('/yt-dlp-thumb'):
                 continue
@@ -271,8 +282,7 @@ class TgUploader:
                     await sleep(1)
                 except Exception as err:
                     if isinstance(err, RetryError):
-                        LOGGER.info(
-                            f"Total Attempts: {err.last_attempt.attempt_number}")
+                        LOGGER.info(f"Total Attempts: {err.last_attempt.attempt_number}")
                     else:
                         LOGGER.error(f"{err}. Path: {self.__up_path}")
                     if self.__is_cancelled:
@@ -328,9 +338,9 @@ class TgUploader:
                                                                        caption=cap_mono,
                                                                        force_document=True,
                                                                        disable_notification=True,
-                                                                       progress=self.__upload_progress,
-                                                                       reply_markup=self.__button)
-
+                                                                       progress=self.__upload_progress)
+                if self.__sent_msg and self.__has_buttons:
+                    await self.__sent_msg.edit_reply_markup(await self.__buttons(self.__up_path))
             elif is_video:
                 key = 'videos'
                 duration = (await get_media_info(self.__up_path))[0]
@@ -365,8 +375,9 @@ class TgUploader:
                                                                     thumb=thumb,
                                                                     supports_streaming=True,
                                                                     disable_notification=True,
-                                                                    progress=self.__upload_progress,
-                                                                    reply_markup=self.__button)
+                                                                    progress=self.__upload_progress)
+                if self.__sent_msg and self.__has_buttons:
+                    await self.__sent_msg.edit_reply_markup(await self.__buttons(self.__up_path))
             elif is_audio:
                 key = 'audios'
                 duration, artist, title = await get_media_info(self.__up_path)
@@ -380,8 +391,9 @@ class TgUploader:
                                                                     title=title,
                                                                     thumb=thumb,
                                                                     disable_notification=True,
-                                                                    progress=self.__upload_progress,
-                                                                    reply_markup=self.__button)
+                                                                    progress=self.__upload_progress)
+                if self.__sent_msg and self.__has_buttons:
+                    await self.__sent_msg.edit_reply_markup(await self.__buttons(self.__up_path))
             else:
                 key = 'photos'
                 if self.__is_cancelled:
@@ -390,8 +402,9 @@ class TgUploader:
                                                                     quote=True,
                                                                     caption=cap_mono,
                                                                     disable_notification=True,
-                                                                    progress=self.__upload_progress,
-                                                                    reply_markup=self.__button)
+                                                                    progress=self.__upload_progress)
+                if self.__sent_msg and self.__has_buttons:
+                    await self.__sent_msg.edit_reply_markup(await self.__buttons(self.__up_path))
 
             if not self.__is_cancelled and self.__media_group and (self.__sent_msg.video or self.__sent_msg.document):
                 key = 'documents' if self.__sent_msg.document else 'videos'
@@ -406,10 +419,7 @@ class TgUploader:
                         await self.__send_media_group(pname, key, msgs)
                     else:
                         self.__last_msg_in_group = True
-                else:
-                    await self.__copy_file()
-            else:
-                await self.__copy_file()
+            await self.__copy_file()
 
             if self.__thumb is None and thumb is not None and await aiopath.exists(thumb):
                 await aioremove(thumb)
