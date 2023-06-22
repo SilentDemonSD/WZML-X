@@ -154,7 +154,7 @@ class TgUploader:
                 await aiorename(self.__up_path, new_path)
                 self.__up_path = new_path
         else:
-            cap_mono = f"<code>{file_}</code>"
+            cap_mono = f"<{config_dict['CAP_FONT']}>{file_}</{config_dict['CAP_FONT']}>" if config_dict['CAP_FONT'] else file_
         if len(file_) > 64:
             if is_archive(file_):
                 name = get_base_name(file_)
