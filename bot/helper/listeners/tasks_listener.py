@@ -59,6 +59,7 @@ class MirrorLeechListener:
         self.upPath = upPath
         self.random_pic = 'IMAGES'
         self.join = join
+        self.leechlogmsg = None
 
     async def clean(self):
         try:
@@ -361,14 +362,18 @@ class MirrorLeechListener:
             else:
                 toPM = False
                 if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
+                    nmsg = msg + BotTheme('PM_BOT_MSG')
                     await sendBot(self.message, msg, photo=photo)
                     mssg = msg + BotTheme('L_BOT_MSG')
-                    buttons.ubutton(BotTheme('CHECK_PM'), f"https://t.me/{bot_name}", 'header')
-                    buttons = extra_btns(buttons)
+                    btn = ButtonMaker()
+                    btn.ubutton(BotTheme('CHECK_PM'), f"https://t.me/{bot_name}", 'header')
+                    btn = extra_btns(btn)
                     if self.isSuperGroup:
                         toPM = True
-                        await sendMessage(self.message, mssg, buttons.build_menu(2), photo)
+                        await sendMessage(self.message, mssg, btn.build_menu(2), photo)
                 msg += BotTheme('L_LL_MSG')
+                if self.leechlogmsg is not None:
+                    self.message = self.leechlogmsg
                 btns = 0
                 for index, (link, name) in enumerate(files.items(), start=1):
                     btns += 1
@@ -376,14 +381,14 @@ class MirrorLeechListener:
                     if index > 80:
                         if config_dict['SAVE_MSG']:
                             buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
-                        if config_dict['LEECH_LOG_ID'] or not toPM:
+                        if self.leechlogmsg or not toPM:
                             await sendMessage(self.message, msg, buttons.build_menu(1), photo)
                         await sleep(1)
                         btns = 0
                 if btns != 0:
                     if config_dict['SAVE_MSG']:
                         buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
-                    if config_dict['LEECH_LOG_ID'] or not toPM:
+                    if self.leechlogmsg or not toPM:
                         await sendMessage(self.message, msg, buttons.build_menu(1), photo)
             if self.seed:
                 if self.newDir:
