@@ -402,7 +402,7 @@ class MirrorLeechListener:
             is_DDL = 'gofile' in link or 'streamsb' in link
             msg += BotTheme('M_TYPE', Mimetype=mime_type)
             if mime_type == "Folder":
-                if 'gofile' not in link and 'streamsb' not in link:
+                if not is_DDL:
                     msg += BotTheme('M_SUBFOLD', Folder=folders)
                     msg += BotTheme('TOTAL_FILES', Files=files)
             if link or rclonePath and config_dict['RCLONE_SERVE_URL']:
@@ -444,11 +444,11 @@ class MirrorLeechListener:
 
             if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
                 await sendBot(self.message, msg, button, photo)
-                msg += BotTheme('M_BOT_MSG')
+                nmsg = msg + BotTheme('M_BOT_MSG')
                 btns = ButtonMaker()
                 btns = extra_btns(btns)
-                btns.ubutton(BotTheme('CHECK_PM'),f"https://t.me/{bot_name}", 'header')
-                await sendMessage(self.message, msg, btns.build_menu(1), photo)
+                btns.ubutton(BotTheme('CHECK_PM'), f"https://t.me/{bot_name}", 'header')
+                await sendMessage(self.message, nmsg, btns.build_menu(1), photo)
             else:
                 if config_dict['SAVE_MSG']:
                     if button is not None:
