@@ -52,7 +52,7 @@ non_queued_up = set()
 def get_version():
     MAJOR = '1'
     MINOR = '1'
-    PATCH = '2'
+    PATCH = '1'
     return f"v{MAJOR}.{MINOR}.{PATCH}-x"
 
 
@@ -207,11 +207,11 @@ if len(INDEX_URL) == 0:
 SEARCH_API_LINK = environ.get('SEARCH_API_LINK', '').rstrip("/")
 if len(SEARCH_API_LINK) == 0:
     SEARCH_API_LINK = ''
-    
+
 CAP_FONT = environ.get('CAP_FONT', '').lower()
-    if CAP_FONT.strip() not in ['', 'b', 'i', 'u', 's', 'spoiler', 'code']:
-        CAP_FONT = 'code'
-        
+if CAP_FONT.strip() not in ['', 'b', 'i', 'u', 's', 'spoiler', 'code']:
+    CAP_FONT = 'code'
+
 LEECH_FILENAME_PREFIX = environ.get('LEECH_FILENAME_PREFIX', '')
 if len(LEECH_FILENAME_PREFIX) == 0:
     LEECH_FILENAME_PREFIX = ''
