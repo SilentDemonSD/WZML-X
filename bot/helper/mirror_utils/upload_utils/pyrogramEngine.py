@@ -122,9 +122,9 @@ class TgUploader:
         msg_user = self.__listener.message.from_user
         if LEECH_LOG_ID := config_dict['LEECH_LOG_ID']:
             if self.__bot_pm and self.__listener.isSuperGroup:
-                await sendBot(self.__listener.message, f"➲ <b><u>Leech Started :</u></b>\n┃\n┖ <b>Source :</b> {msg_link}")
+                await sendBot(self.__listener.message, BotTheme('L_PM_START', msg_link=msg_link))
             _client = user if IS_PREMIUM_USER else bot
-            self.__sent_msg = await _client.send_message(chat_id=LEECH_LOG_ID, text=f"➲ <b><u>Leech Started :</u></b>\n┃\n┠ <b>User :</b> {msg_user.mention(style='HTML')} ( {msg_user.id} )\n┖ <b>Source :</b> {msg_link}",
+            self.__sent_msg = await _client.send_message(chat_id=LEECH_LOG_ID, text=BotTheme('L_LOG_START', mention=msg_user.mention(style='HTML'), uid=msg_user.id, msg_link=msg_link),
                                                           disable_web_page_preview=False, disable_notification=True)
             self.__listener.leechlogmsg = self.__sent_msg
         elif IS_PREMIUM_USER:
@@ -132,12 +132,12 @@ class TgUploader:
                 await self.__listener.onUploadError('<i>Use SuperGroup to leech with User!</i>')
                 return False
             if self.__bot_pm:
-                await sendBot(self.__listener.message, f"➲ <b><u>Leech Started :</u></b>\n┃\n┖ <b>Source :</b> {msg_link}")
+                await sendBot(self.__listener.message, BotTheme('L_PM_START', msg_link=msg_link))
             self.__sent_msg = await user.get_messages(chat_id=self.__listener.message.chat.id,
                                                       message_ids=self.__listener.uid)
         else:
             if self.__bot_pm and self.__listener.isSuperGroup:
-                await sendBot(self.__listener.message, f"➲ <b><u>Leech Started :</u></b>\n┃\n┖ <b>Source :</b> {msg_link}")
+                await sendBot(self.__listener.message, BotTheme('L_PM_START', msg_link=msg_link))
             self.__sent_msg = self.__listener.message
         return True
 
