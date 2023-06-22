@@ -66,7 +66,7 @@ class TgUploader:
 
     async def __copy_file(self):
         try:
-            if self.__bot_pm and config_dict['LEECH_LOG_ID'] or self.__bot_pm and not self.__listener.isPrivate:
+            if self.__bot_pm and (self.__listener.leechlogmsg or self.__listener.isSuperGroup):
                 destination = 'Bot PM'
                 await self.__sent_msg.copy(chat_id=self.__user_id)
             if self.__ldump:
@@ -215,7 +215,7 @@ class TgUploader:
                 self.__msgs_dict[m.link] = m.caption
         self.__sent_msg = msgs_list[-1]
         try:
-            if self.__bot_pm and not self.__listener.isPrivate and not config_dict['LEECH_LOG_ID']:
+            if self.__bot_pm and (self.__listener.leechlogmsg or self.__listener.isSuperGroup):
                 destination = 'Bot PM'
                 await bot.copy_media_group(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
             if self.__ldump:
