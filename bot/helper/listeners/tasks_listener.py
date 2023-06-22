@@ -365,7 +365,7 @@ class MirrorLeechListener:
                 buttons = extra_btns(buttons)
                 if not self.isPrivate:
                     await sendMessage(self.message, msg, buttons.build_menu(2), photo)
-            if config_dict['LEECH_LOG_ID'] or not (config_dict['BOT_PM'] or user_dict.get('bot_pm')) and not self.isPrivate:
+            elif:
                 msg += BotTheme('L_LL_MSG')
                 btns = 0
                 for index, (link, name) in enumerate(files.items(), start=1):
