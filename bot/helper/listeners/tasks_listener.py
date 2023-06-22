@@ -373,8 +373,6 @@ class MirrorLeechListener:
                         toPM = True
                         await sendMessage(self.message, mssg, btn.build_menu(2), photo)
                 msg += BotTheme('L_LL_MSG')
-                if self.leechlogmsg is not None:
-                    self.message = self.leechlogmsg
                 btns = 0
                 for index, (link, name) in enumerate(files.items(), start=1):
                     btns += 1
@@ -383,14 +381,19 @@ class MirrorLeechListener:
                         if config_dict['SAVE_MSG']:
                             buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                         if self.leechlogmsg or not toPM:
-                            await sendMessage(self.message, msg, buttons.build_menu(1), photo)
+                            log_msg = await sendMessage(self.leechlogmsg if self.leechlogmsg else self.message, msg, buttons.build_menu(1), photo)
                         await sleep(1)
                         btns = 0
                 if btns != 0:
                     if config_dict['SAVE_MSG']:
                         buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                     if self.leechlogmsg or not toPM:
-                        await sendMessage(self.message, msg, buttons.build_menu(1), photo)
+                        log_msg = await sendMessage(self.leechlogmsg if self.leechlogmsg else self.message, msg, buttons.build_menu(1), photo)
+                if self.leechlogmsg and not (config_dict['BOT_PM'] or user_dict.get('bot_pm')):
+                    buttons = ButtonMaker()
+                    buttons.ubutton(BotTheme('CHECK_LL'), log_msg.link)
+                    msg += BotTheme('L_LL_MSG')
+                    await sendMessage(self.message, msg, buttons.build_menu(1), photo)
             if self.seed:
                 if self.newDir:
                     await clean_target(self.newDir)
