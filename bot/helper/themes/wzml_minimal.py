@@ -95,6 +95,7 @@ Type {help_command} to get a list of available commands'''
     INDEX_LINK = '⚡ Index Link'
     VIEW_LINK = '🌐 View Link'
     CHECK_PM = '📥 View in Bot PM'
+    CHECK_LL = '🗂 View in Leech Log'
     MEDIAINFO_LINK = '📃 MediaInfo'
     # ---------------------
 
