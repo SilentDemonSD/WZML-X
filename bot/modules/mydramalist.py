@@ -11,6 +11,7 @@ from pyrogram.errors import MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpt
 from bot import LOGGER, bot, config_dict, user_data
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage
+from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 
 LIST_ITEMS = 4
@@ -151,5 +152,5 @@ async def mdl_callback(_, query):
         await message.delete()
         await message.reply_to_message.delete()
 
-bot.add_handler(MessageHandler(mydramalist_search, filters=command('mdl') & CustomFilters.authorized))
+bot.add_handler(MessageHandler(mydramalist_search, filters=command(BotCommands.MyDramaListCommand) & CustomFilters.authorized))
 bot.add_handler(CallbackQueryHandler(mdl_callback, filters=regex(r'^mdl')))
