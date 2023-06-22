@@ -358,6 +358,7 @@ class MirrorLeechListener:
                 msg += BotTheme('L_CORRUPTED_FILES', Corrupt=mime_type)
             msg += BotTheme('L_CC', Tag=self.tag)
             if not files:
+                msg += BotTheme('PM_BOT_MSG')
                 await sendMessage(self.message, msg, photo=photo)
             else:
                 toPM = False
