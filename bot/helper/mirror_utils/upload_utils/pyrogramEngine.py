@@ -135,9 +135,9 @@ class TgUploader:
                 await sendBot(self.__listener.message, f"➲ <b><u>Leech Started :</u></b>\n┃\n┖ <b>Source :</b> {msg_link}")
             self.__sent_msg = await user.get_messages(chat_id=self.__listener.message.chat.id,
                                                       message_ids=self.__listener.uid)
-        elif self.__bot_pm and self.__listener.isSuperGroup:
-            await sendBot(self.__listener.message, f"➲ <b><u>Leech Started :</u></b>\n┃\n┖ <b>Source :</b> {msg_link}")
         else:
+            if self.__bot_pm and self.__listener.isSuperGroup:
+                await sendBot(self.__listener.message, f"➲ <b><u>Leech Started :</u></b>\n┃\n┖ <b>Source :</b> {msg_link}")
             self.__sent_msg = self.__listener.message
         return True
 
