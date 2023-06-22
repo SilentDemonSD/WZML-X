@@ -9,7 +9,7 @@ from asyncio import create_subprocess_exec
 from asyncio.subprocess import PIPE
 
 from bot import LOGGER, MAX_SPLIT_SIZE, config_dict, user_data
-from bot.helper.ext_utils.bot_utils import cmd_exec, sync_to_async, get_readable_file_size
+from bot.helper.ext_utils.bot_utils import cmd_exec, sync_to_async, get_readable_file_size, get_readable_time
 from bot.helper.ext_utils.fs_utils import ARCH_EXT, get_mime_type
 from bot.helper.ext_utils.telegraph_helper import telegraph
 
@@ -240,7 +240,7 @@ async def format_filename(file_, lprefix, lsuffix, lremname, lcaption, dirpath):
         cap_mono = slit[0].format(
             filename=nfile_,
             size=get_readable_file_size(await aiopath.getsize(up_path)),
-            duration = (await get_media_info(up_path))[0]
+            duration = get_readable_time((await get_media_info(up_path))[0])
         )
         if len(slit) > 1:
             for rep in range(1, len(slit)):
