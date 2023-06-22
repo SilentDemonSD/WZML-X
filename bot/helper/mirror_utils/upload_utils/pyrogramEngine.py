@@ -122,7 +122,8 @@ class TgUploader:
         msg_user = self.__listener.message.from_user
         if LEECH_LOG_ID := config_dict['LEECH_LOG_ID']:
             LOGGER.info('Bot PM')
-            if self.__bot_pm and self.isSuperGroup:
+            LOGGER.info(self.__bot_pm)
+            if self.__bot_pm:
                 LOGGER.info('Bot PM')
                 await sendBot(self.__listener.message, msg_link)
             _client = user if IS_PREMIUM_USER else bot
