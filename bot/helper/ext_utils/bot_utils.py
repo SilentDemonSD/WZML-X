@@ -377,9 +377,12 @@ def arg_parser(items, arg_base):
 
 
 async def get_content_type(url):
-    async with aioClientSession(trust_env=True) as session:
-        async with session.get(url) as response:
-            return response.headers.get('Content-Type')
+    try:
+        async with aioClientSession(trust_env=True) as session:
+            async with session.get(url, verify_ssl=False) as response:
+                return response.headers.get('Content-Type')
+    except:
+        return None
 
 
 def update_user_ldata(id_, key=None, value=None):
