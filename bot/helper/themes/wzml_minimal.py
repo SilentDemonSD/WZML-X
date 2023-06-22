@@ -65,7 +65,7 @@ Type {help_command} to get a list of available commands'''
 
     # async def __msg_to_reply(self): ---> pyrogramEngine.py
     L_PM_START = "➲ <b><u>Leech Started :</u></b>\n┃\n┖ <b>Source :</b> {msg_link}"
-    L_LOG_START = "➲ <b><u>Leech Started :</u></b>\n┃\n┠ <b>User :</b> {mention} ( {uid} )\n┖ <b>Source :</b> {msg_link}""
+    L_LOG_START = "➲ <b><u>Leech Started :</u></b>\n┃\n┠ <b>User :</b> {mention} ( {uid} )\n┖ <b>Source :</b> {msg_link}"
 
     # async def onUploadComplete(): ---> tasks_listener.py
     NAME =                  '<b><i>{Name}</i></b>\n┃\n'
