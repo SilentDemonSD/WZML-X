@@ -121,9 +121,7 @@ class TgUploader:
         msg_link = self.__listener.message.link if self.__listener.isSuperGroup else self.__listener.message.text
         msg_user = self.__listener.message.from_user
         if LEECH_LOG_ID := config_dict['LEECH_LOG_ID']:
-            LOGGER.info('Bot PM')
-            LOGGER.info(self.__bot_pm)
-            if self.__bot_pm:
+            if self.__bot_pm and self.isSuperGroup:
                 LOGGER.info('Bot PM')
                 await sendBot(self.__listener.message, msg_link)
             _client = user if IS_PREMIUM_USER else bot
@@ -239,10 +237,10 @@ class TgUploader:
                 LOGGER.error(f"Failed To Send in {destination}:\n{str(err)}")
 
     async def upload(self, o_files, m_size, size):
+        await self.__user_settings()
         res = await self.__msg_to_reply()
         if not res:
             return
-        await self.__user_settings()
         for dirpath, _, files in sorted(await sync_to_async(walk, self.__path)):
             if dirpath.endswith('/yt-dlp-thumb'):
                 continue
