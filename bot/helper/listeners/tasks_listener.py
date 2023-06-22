@@ -363,7 +363,7 @@ class MirrorLeechListener:
                 toPM = False
                 if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
                     nmsg = msg + BotTheme('PM_BOT_MSG')
-                    await sendBot(self.message, msg, photo=photo)
+                    await sendBot(self.message, nmsg, photo=photo)
                     mssg = msg + BotTheme('L_BOT_MSG')
                     btn = ButtonMaker()
                     btn.ubutton(BotTheme('CHECK_PM'), f"https://t.me/{bot_name}", 'header')
