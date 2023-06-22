@@ -71,6 +71,7 @@ Type {help_command} to get a list of available commands'''
     L_TOTAL_FILES =         '┠ <b>Total Files: </b>{Files}\n'
     L_CORRUPTED_FILES =     '┠ <b>Corrupted Files: </b>{Corrupt}\n'
     L_CC =                  '┖ <b>By: </b>{Tag}\n\n'
+    PM_BOT_MSG =            '➲ <b><i>Files are Send Above</i></b>'
     L_BOT_MSG =             '➲ <b><i>Files are Send to Bot PM (Private)</i></b>'
     L_LL_MSG =              '➲ <b><i>Files are Send. Access via Links...</i></b>'
     
