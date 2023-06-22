@@ -135,6 +135,10 @@ async def load_config():
     if len(SEARCH_API_LINK) == 0:
         SEARCH_API_LINK = ''
 
+    CAP_FONT = environ.get('CAP_FONT', '')
+    if CAP_FONT not in ['', 'b', 'i', 'u', 's', 'spoiler', 'code']:
+        CAP_FONT = 'code'
+        
     LEECH_FILENAME_PREFIX = environ.get('LEECH_FILENAME_PREFIX', '')
     if len(LEECH_FILENAME_PREFIX) == 0:
         LEECH_FILENAME_PREFIX = ''
@@ -406,35 +410,35 @@ async def load_config():
     DEF_IMDB_TEMP  = environ.get('IMDB_TEMPLATE', '')
     if len(DEF_IMDB_TEMP) == 0:
         DEF_IMDB_TEMP = '''<b>Title: </b> {title} [{year}]
-    <b>Also Known As:</b> {aka}
-    <b>Rating ⭐️:</b> <i>{rating}</i>
-    <b>Release Info: </b> <a href="{url_releaseinfo}">{release_date}</a>
-    <b>Genre: </b>{genres}
-    <b>IMDb URL:</b> {url}
-    <b>Language: </b>{languages}
-    <b>Country of Origin : </b> {countries}
+<b>Also Known As:</b> {aka}
+<b>Rating ⭐️:</b> <i>{rating}</i>
+<b>Release Info: </b> <a href="{url_releaseinfo}">{release_date}</a>
+<b>Genre: </b>{genres}
+<b>IMDb URL:</b> {url}
+<b>Language: </b>{languages}
+<b>Country of Origin : </b> {countries}
 
-    <b>Story Line: </b><code>{plot}</code>
+<b>Story Line: </b><code>{plot}</code>
 
-    <a href="{url_cast}">Read More ...</a>'''
+<a href="{url_cast}">Read More ...</a>'''
 
     DEF_ANI_TEMP  = environ.get('ANIME_TEMPLATE', '')
     if len(DEF_ANI_TEMP) == 0:
         DEF_ANI_TEMP = '''<b>{ro_title}</b>({na_title})
-    <b>Format</b>: <code>{format}</code>
-    <b>Status</b>: <code>{status}</code>
-    <b>Start Date</b>: <code>{startdate}</code>
-    <b>End Date</b>: <code>{enddate}</code>
-    <b>Season</b>: <code>{season}</code>
-    <b>Country</b>: {country}
-    <b>Episodes</b>: <code>{episodes}</code>
-    <b>Duration</b>: <code>{duration}</code>
-    <b>Average Score</b>: <code>{avgscore}</code>
-    <b>Genres</b>: {genres}
-    <b>Hashtag</b>: {hashtag}
-    <b>Studios</b>: {studios}
+<b>Format</b>: <code>{format}</code>
+<b>Status</b>: <code>{status}</code>
+<b>Start Date</b>: <code>{startdate}</code>
+<b>End Date</b>: <code>{enddate}</code>
+<b>Season</b>: <code>{season}</code>
+<b>Country</b>: {country}
+<b>Episodes</b>: <code>{episodes}</code>
+<b>Duration</b>: <code>{duration}</code>
+<b>Average Score</b>: <code>{avgscore}</code>
+<b>Genres</b>: {genres}
+<b>Hashtag</b>: {hashtag}
+<b>Studios</b>: {studios}
 
-    <b>Description</b>: <i>{description}</i>'''
+<b>Description</b>: <i>{description}</i>'''
 
     MDL_TEMPLATE = environ.get('MDL_TEMPLATE', '')
     if len(MDL_TEMPLATE) == 0:
@@ -503,6 +507,7 @@ async def load_config():
                         'BASE_URL': BASE_URL,
                         'BASE_URL_PORT': BASE_URL_PORT,
                         'BOT_TOKEN': BOT_TOKEN,
+                        'CAP_FONT': CAP_FONT,
                         'CMD_SUFFIX': CMD_SUFFIX,
                         'DATABASE_URL': DATABASE_URL,
                         'DEFAULT_UPLOAD': DEFAULT_UPLOAD,
