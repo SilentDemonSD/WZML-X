@@ -135,8 +135,8 @@ async def load_config():
     if len(SEARCH_API_LINK) == 0:
         SEARCH_API_LINK = ''
 
-    CAP_FONT = environ.get('CAP_FONT', '')
-    if CAP_FONT not in ['', 'b', 'i', 'u', 's', 'spoiler', 'code']:
+    CAP_FONT = environ.get('CAP_FONT', '').lower()
+    if CAP_FONT.strip() not in ['', 'b', 'i', 'u', 's', 'spoiler', 'code']:
         CAP_FONT = 'code'
         
     LEECH_FILENAME_PREFIX = environ.get('LEECH_FILENAME_PREFIX', '')
