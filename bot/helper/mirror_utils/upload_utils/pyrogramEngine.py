@@ -121,12 +121,14 @@ class TgUploader:
         msg_link = self.__listener.message.link if self.__listener.isSuperGroup else self.__listener.message.text
         msg_user = self.__listener.message.from_user
         if LEECH_LOG_ID := config_dict['LEECH_LOG_ID']:
-            if self.__bot_pm and not self.isPrivate:
+            LOGGER.info('Bot PM')
+            if self.__bot_pm and self.isSuperGroup:
                 LOGGER.info('Bot PM')
                 await sendBot(self.__listener.message, msg_link)
             _client = user if IS_PREMIUM_USER else bot
             self.__sent_msg = await _client.send_message(chat_id=LEECH_LOG_ID, text=f"➲ <b><u>Leech Started :</u></b>\n┃\n┠ <b>User :</b> {msg_user.mention(style='HTML')} ( {msg_user.id} )\n┖ <b>Source :</b> {msg_link}",
                                                           disable_web_page_preview=False, disable_notification=True)
+            self.__listener.leechlogmsg = self.__sent_msg
         elif IS_PREMIUM_USER:
             if not self.__listener.isSuperGroup:
                 await self.__listener.onUploadError('<i>Use SuperGroup to leech with User!</i>')
