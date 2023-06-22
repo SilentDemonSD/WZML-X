@@ -34,7 +34,7 @@ async def mydramalist_search(_, message):
         buttons.ibutton("🚫 Close 🚫", f"mdl {user_id} close")
         await editMessage(temp, '<b><i>Dramas found on MyDramaList :</i></b>', buttons.build_menu(1))
     else:
-        await sendMessage(message, '<i>Send Movie / TV Series Name along with /mdl Command</i>')
+        await sendMessage(message, f'<i>Send Movie / TV Series Name along with /{BotCommands.MyDramaListCommand} Command</i>')
 
 
 async def extract_MDL(slug):
