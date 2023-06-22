@@ -730,6 +730,10 @@ async def edit_variable(_, message, pre_message, key):
         aria2_options['bt-stop-timeout'] = f'{value}'
     elif key == 'LEECH_SPLIT_SIZE':
         value = min(int(value), MAX_SPLIT_SIZE)
+    elif key == 'CAP_FONT':
+        value = value.strip().lower()
+        if value not in ['b', 'i', 'u', 's', 'spoiler', 'code']:
+            value = 'code'
     elif key == 'BASE_URL_PORT':
         value = int(value)
         if config_dict['BASE_URL']:
