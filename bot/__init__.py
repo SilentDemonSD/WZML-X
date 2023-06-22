@@ -207,7 +207,11 @@ if len(INDEX_URL) == 0:
 SEARCH_API_LINK = environ.get('SEARCH_API_LINK', '').rstrip("/")
 if len(SEARCH_API_LINK) == 0:
     SEARCH_API_LINK = ''
-
+    
+CAP_FONT = environ.get('CAP_FONT', '').lower()
+    if CAP_FONT.strip() not in ['', 'b', 'i', 'u', 's', 'spoiler', 'code']:
+        CAP_FONT = 'code'
+        
 LEECH_FILENAME_PREFIX = environ.get('LEECH_FILENAME_PREFIX', '')
 if len(LEECH_FILENAME_PREFIX) == 0:
     LEECH_FILENAME_PREFIX = ''
@@ -500,6 +504,7 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'BASE_URL': BASE_URL,
                'BASE_URL_PORT': BASE_URL_PORT,
                'BOT_TOKEN': BOT_TOKEN,
+               'CAP_FONT': CAP_FONT,
                'CMD_SUFFIX': CMD_SUFFIX,
                'DATABASE_URL': DATABASE_URL,
                'DEFAULT_UPLOAD': DEFAULT_UPLOAD,
