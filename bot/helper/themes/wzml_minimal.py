@@ -6,10 +6,10 @@ class WZMLStyle:
     ST_BN1_URL = 'https://www.github.com/weebzone/WZML-X'
     ST_BN2_NAME = 'Updates'
     ST_BN2_URL = 'https://t.me/WZML_X'
-    ST_MSG = '''This bot can mirror all your links|files|torrents to Google Drive or any rclone cloud or to telegram.
-Type {help_command} to get a list of available commands'''
-    ST_BOTPM = '''Now, This bot will send all your files and links here. Start Using ...'''
-    ST_UNAUTH = '''You Are not authorized user! Deploy your own WZML-X Mirror-Leech bot'''
+    ST_MSG = '''<i>This bot can mirror all your links|files|torrents to Google Drive or any rclone cloud or to telegram or to ddl servers.</i>
+<b>Type {help_command} to get a list of available commands</b>'''
+    ST_BOTPM = '''<i>Now, This bot will send all your files and links here. Start Using ...</i>'''
+    ST_UNAUTH = '''<i>You Are not authorized user! Deploy your own WZML-X Mirror-Leech bot</i>'''
     # ---------------------
 
     # async def stats(client, message):
@@ -64,8 +64,8 @@ Type {help_command} to get a list of available commands'''
     # ---------------------
 
     # async def __msg_to_reply(self): ---> pyrogramEngine.py
-    L_PM_START = "➲ <b><u>Leech Started :</u></b>\n┃\n┖ <b>Source :</b> {msg_link}"
-    L_LOG_START = "➲ <b><u>Leech Started :</u></b>\n┃\n┠ <b>User :</b> {mention} ( {uid} )\n┖ <b>Source :</b> {msg_link}"
+    L_PM_START =            "➲ <b><u>Leech Started :</u></b>\n┃\n┖ <b>Source :</b> {msg_link}"
+    L_LOG_START =           "➲ <b><u>Leech Started :</u></b>\n┃\n┠ <b>User :</b> {mention} ( {uid} )\n┖ <b>Source :</b> {msg_link}"
 
     # async def onUploadComplete(): ---> tasks_listener.py
     NAME =                  '<b><i>{Name}</i></b>\n┃\n'
@@ -88,15 +88,15 @@ Type {help_command} to get a list of available commands'''
     M_BOT_MSG =             '➲ <b><i>Links are Send to Bot PM (Private)</i></b>'
     
     # ----- BUTTONS -------
-    CLOUD_LINK = '☁️ Cloud Link'
-    SAVE_MSG = '📨 Save Message'
-    RCLONE_LINK = '♻️ RClone Link'
-    DDL_LINK = '📎 {Serv} Link'
-    INDEX_LINK = '⚡ Index Link'
-    VIEW_LINK = '🌐 View Link'
-    CHECK_PM = '📥 View in Bot PM'
-    CHECK_LL = '🗂 View in Leech Log'
-    MEDIAINFO_LINK = '📃 MediaInfo'
+    CLOUD_LINK =      '☁️ Cloud Link'
+    SAVE_MSG =        '📨 Save Message'
+    RCLONE_LINK =     '♻️ RClone Link'
+    DDL_LINK =        '📎 {Serv} Link'
+    INDEX_LINK =      '⚡ Index Link'
+    VIEW_LINK =       '🌐 View Link'
+    CHECK_PM =        '📥 View in Bot PM'
+    CHECK_LL =        '🗂 View in Leech Log'
+    MEDIAINFO_LINK =  '📃 MediaInfo'
     # ---------------------
 
     # def get_readable_message(): ---> bot_utilis.py
@@ -190,8 +190,8 @@ Type {help_command} to get a list of available commands'''
 ┎<b> YT-DLP Options :</b> <b><code>{YT}</code></b>
 ┠<b> Daily Tasks :</b> <code>{DT}</code> per day
 ┠<b> Last Bot Used :</b> <code>{LAST_USED}</code>
-┠<b> Auto MediaInfo :</b> <code>{MEDIAINFO}</code>
-┖<b> Bot PM :</b> <code>{BOT_PM}</code>'''
+┠<b> MediaInfo Mode :</b> <code>{MEDIAINFO}</code>
+┖<b> User Bot PM :</b> <code>{BOT_PM}</code>'''
 
     MIRROR = '''㊂ <b><u>Mirror Settings : {NAME}</u></b>
 
