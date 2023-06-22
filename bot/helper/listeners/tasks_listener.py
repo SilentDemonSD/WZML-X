@@ -448,6 +448,9 @@ class MirrorLeechListener:
             if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
                 await sendBot(self.message, msg, button, photo)
                 nmsg = msg + BotTheme('M_BOT_MSG')
+                if button is not None:
+                    buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
+                    button = buttons.build_menu(2)
                 btns = ButtonMaker()
                 btns = extra_btns(btns)
                 btns.ubutton(BotTheme('CHECK_PM'), f"https://t.me/{bot_name}", 'header')
@@ -460,9 +463,6 @@ class MirrorLeechListener:
                 await sendMessage(self.message, msg, button, photo)
 
             if ids := config_dict['MIRROR_LOG_ID']:
-                if button is not None:
-                    buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
-                    button = buttons.build_menu(2)
                 await sendMirrorLog(self.message, msg, ids, button, photo)
 
             if self.seed:
