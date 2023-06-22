@@ -232,7 +232,7 @@ async def format_filename(file_, lprefix, lsuffix, lremname, lcaption, dirpath):
             )
         file_ = _newExtFileName
 
-    cap_mono = f"<code>{nfile_}</code>"
+    cap_mono =  f"<{config_dict['CAP_FONT']}>{nfile_}</{config_dict['CAP_FONT']}>" if config_dict['CAP_FONT'] else nfile_
     if lcaption:
         lcaption = lcaption.replace('\|', '%%').replace('\s', ' ')
         slit = lcaption.split("|")
