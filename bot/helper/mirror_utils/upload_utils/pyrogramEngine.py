@@ -91,6 +91,7 @@ class TgUploader:
         if REMNAME:
             if not REMNAME.startswith('|'):
                 REMNAME = f"|{REMNAME}"
+            PRENAME = PRENAME.replace('\s', ' ').replace('/s', ' ')
             slit = REMNAME.split("|")
             __newFileName = file_
             for rep in range(1, len(slit)):
@@ -104,9 +105,11 @@ class TgUploader:
             file_ = __newFileName
             LOGGER.info("Remname : "+file_)
         if PRENAME:
+            PRENAME = PRENAME.replace('\s', ' ').replace('/s', ' ')
             if not file_.startswith(PRENAME):
                 file_ = f"{PRENAME}{file_}"
         if SUFFIX:
+            SUFFIX = SUFFIX.replace('\s', ' ').replace('/s', ' ')
             sufLen = len(SUFFIX)
             fileDict = file_.split('.')
             _extIn = 1 + len(fileDict[-1])
@@ -124,6 +127,7 @@ class TgUploader:
             up_path = new_path
         cfont = CAPTION_FONT if not FSTYLE else FSTYLE
         if CAPTION:
+            CAPTION = CAPTION.replace('\s', ' ').replace('/s', ' ')
             slit = CAPTION.split("|")
             cap_mono = slit[0].format(
                 filename = file_,
