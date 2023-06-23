@@ -52,7 +52,7 @@ non_queued_up = set()
 def get_version():
     MAJOR = '1'
     MINOR = '1'
-    PATCH = '1'
+    PATCH = '2'
     return f"v{MAJOR}.{MINOR}.{PATCH}-x"
 
 
@@ -515,7 +515,6 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'YTDLP_LIMIT': YTDLP_LIMIT,
                'GDRIVE_LIMIT': GDRIVE_LIMIT,
                'CLONE_LIMIT': CLONE_LIMIT,
-               'MDL_TEMPLATE': MDL_TEMPLATE,
                'MEGA_LIMIT': MEGA_LIMIT,
                'LEECH_LIMIT': LEECH_LIMIT,
                'FSUB_IDS': FSUB_IDS,
