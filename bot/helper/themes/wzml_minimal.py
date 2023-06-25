@@ -196,6 +196,9 @@ class WZMLStyle:
     MIRROR = '''㊂ <b><u>Mirror Settings : {NAME}</u></b>
 
 ┎<b> RClone Config :</b> <i>{RCLONE}</i>
+┠<b> Mirror Prefix :</b> <code>{MPREFIX}</code>
+┠<b> Mirror Suffix :</b> <code>{MSUFFIX}</code>
+┠<b> Mirror Remname :</b> <code>{MREMNAME}</code>
 ┠<b> DDL Server(s) :</b> <i>{DDL_SERVER}</i>
 ┖<b> Daily Mirror :</b> <code>{DM}</code> per day'''
 
