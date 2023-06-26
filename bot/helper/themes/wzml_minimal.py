@@ -70,7 +70,7 @@ class WZMLStyle:
     # async def onUploadComplete(): ---> tasks_listener.py
     NAME =                  '<b><i>{Name}</i></b>\n┃\n'
     SIZE =                  '┠ <b>Size: </b>{Size}\n'
-    ELAPSED =               '┠ <b>Elapsed: </b>{Time}\n'
+    ELAPSE =               '┠ <b>Elapsed: </b>{Time}\n'
     MODE =                  '┠ <b>Upload Mode: </b>{Mode}\n'
 
     # ----- LEECH -------
