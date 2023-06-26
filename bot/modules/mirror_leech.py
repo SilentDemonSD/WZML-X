@@ -135,7 +135,8 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             await message.unpin()
         except:
             pass
-
+    elif sender_chat := message.sender_chat:
+        tag = sender_chat.title
     if username := message.from_user.username:
         tag = f"@{username}"
     else:
@@ -195,14 +196,17 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
        and not is_gdrive_link(link) and not link.endswith('.torrent') and file_ is None:
         content_type = await get_content_type(link)
         if content_type is None or re_match(r'text/html|text/plain', content_type):
+            process_msg = await sendMessage(message, f"<i>Processing:</i> <code>{link}</code>")
             try:
                 link = await sync_to_async(direct_link_generator, link)
                 LOGGER.info(f"Generated link: {link}")
+                await editMessage(process_msg, f"<i>Generated link:</i> <code>{link}</code>")
             except DirectDownloadLinkException as e:
                 LOGGER.info(str(e))
                 if str(e).startswith('ERROR:'):
                     await sendMessage(message, str(e))
                     return
+            await process_msg.delete()
 
     if not isLeech:
         if config_dict['DEFAULT_UPLOAD'] == 'rc' and not up or up == 'rc':
@@ -241,8 +245,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             await sendMessage(message, up)
             return
 
-    listener = MirrorLeechListener(
-        message, compress, extract, isQbit, isLeech, tag, select, seed, sameDir, rcf, up, join)
+    listener = MirrorLeechListener(message, compress, extract, isQbit, isLeech, tag, select, seed, sameDir, rcf, up, join, link)
 
     if file_ is not None:
         await TelegramDownloadHelper(listener).add_download(reply_to, f'{path}/', name, session)
@@ -253,7 +256,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         else:
             config_path = 'rclone.conf'
         if not await aiopath.exists(config_path):
-            await sendMessage(message, f"Rclone Config: {config_path} not Exists!")
+            await sendMessage(message, f"<b>RClone Config:</b> {config_path} not Exists!")
             return
         await add_rclone_download(link, config_path, f'{path}/', name, listener)
     elif is_gdrive_link(link):
@@ -286,10 +289,8 @@ async def leech(client, message):
     _mirror_leech(client, message, isLeech=True)
 
 
-
 async def qb_leech(client, message):
     _mirror_leech(client, message, isQbit=True, isLeech=True)
-
 
 
 bot.add_handler(MessageHandler(mirror, filters=command(
