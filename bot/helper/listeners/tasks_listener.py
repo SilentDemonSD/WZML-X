@@ -372,7 +372,7 @@ class MirrorLeechListener:
         photo = self.random_pic
         msg = BotTheme('NAME', Name=escape(name))
         msg += BotTheme('SIZE', Size=get_readable_file_size(size))
-        msg += BotTheme('ELAPSED', Time=get_readable_time(time() - self.message.date.timestamp()))
+        msg += BotTheme('ELAPSE', Time=get_readable_time(time() - self.message.date.timestamp()))
         msg += BotTheme('MODE', Mode=self.upload_details['mode'])
         LOGGER.info(f'Task Done: {name}')
         buttons = ButtonMaker()
