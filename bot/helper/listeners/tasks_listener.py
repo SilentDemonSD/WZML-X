@@ -12,7 +12,7 @@ from pyrogram.enums import ChatType
 from bot import Interval, aria2, DOWNLOAD_DIR, download_dict, download_dict_lock, LOGGER, bot_name, DATABASE_URL, \
     MAX_SPLIT_SIZE, config_dict, status_reply_dict_lock, user_data, non_queued_up, non_queued_dl, queued_up, \
     queued_dl, queue_dict_lock, bot, GLOBAL_EXTENSION_FILTER
-from bot.helper.ext_utils.bot_utils import extra_btns, sync_to_async, get_readable_file_size, get_readable_time, EngineStatus
+from bot.helper.ext_utils.bot_utils import extra_btns, sync_to_async, get_readable_file_size, get_readable_time, is_mega_link
 from bot.helper.ext_utils.fs_utils import get_base_name, get_path_size, clean_download, clean_target, \
     is_first_archive_split, is_archive, is_archive_split, join_files
 from bot.helper.ext_utils.leech_utils import split_file
@@ -47,6 +47,7 @@ class MirrorLeechListener:
         self.isQbit = isQbit
         self.isLeech = isLeech
         self.isClone = isClone
+        self.isMega = is_mega_link(link) if link else False
         self.tag = tag
         self.seed = seed
         self.newDir = ""
@@ -78,21 +79,30 @@ class MirrorLeechListener:
 
     def __setModeEng(self):
         if self.isLeech:
-            mode, eng = ('Leech', EngineStatus.STATUS_TG)
+            mode = 'Leech'
         elif self.isClone:
-            mode, eng = ('Clone', EngineStatus.STATUS_GD)
+            mode = 'Clone'
         elif self.upPath not in ['gd', 'ddl']:
-            mode, eng = ('RClone', EngineStatus.STATUS_RCLONE)
+            mode = 'RClone'
         elif self.upPath != 'gd':
-            mode, eng = ('DDL', 'GoFile API')
+            mode = 'DDL'
         else:
-            mode, eng = ('GDrive', EngineStatus.STATUS_GD)
+            mode = 'GDrive'
         if self.compress:
             mode += ' as Zip'
         elif self.extract:
             mode += ' as Unzip'
+        if self.isQbit:
+            mode += ' | #qbit'
+        elif self.isLeech:
+            mode += ' | #leech'
+        elif self.isClone:
+            mode += ' | #clone'
+        elif self.isMega:
+            mode += ' | #mega'
+        else:
+            mode += ' | #aria2'
         self.upload_details['mode'] = mode
-        self.upload_details['eng'] = eng
         
     async def onDownloadStart(self):
         if self.isSuperGroup and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL:
@@ -372,7 +382,7 @@ class MirrorLeechListener:
         msg = BotTheme('NAME', Name=escape(name))
         msg += BotTheme('SIZE', Size=get_readable_file_size(size))
         msg += BotTheme('ELAPSE', Time=get_readable_time(time() - self.message.date.timestamp()))
-        msg += BotTheme('MODE', Mode=self.upload_details['mode'], Eng=self.upload_details['eng'])
+        msg += BotTheme('MODE', Mode=self.upload_details['mode'])
         LOGGER.info(f'Task Done: {name}')
         buttons = ButtonMaker()
         if self.isLeech:
