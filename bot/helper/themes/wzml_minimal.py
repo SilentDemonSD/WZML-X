@@ -60,7 +60,7 @@ class WZMLStyle:
 
     # async def ping(client, message): ---> __main__.py
     PING = '<i>Starting Ping..</i>'
-    PING_VALUE = '<b>Pong</b>\n<code>{value} ms..</code>'
+    PING_VALUE = '<b>Pong</b>\n\n<code>{value} ms..</code>'
     # ---------------------
 
     # async def __msg_to_reply(self): ---> pyrogramEngine.py
@@ -70,6 +70,8 @@ class WZMLStyle:
     # async def onUploadComplete(): ---> tasks_listener.py
     NAME =                  '<b><i>{Name}</i></b>\n┃\n'
     SIZE =                  '┠ <b>Size: </b>{Size}\n'
+    ELAPSED =               '┠ <b>Elapsed: </b>{Time}\n'
+    MODE =                  '┠ <b>Upload Mode: </b>{Mode}\n'
 
     # ----- LEECH -------
     L_TOTAL_FILES =         '┠ <b>Total Files: </b>{Files}\n'
@@ -154,7 +156,7 @@ class WZMLStyle:
 
     # async def countNode(_, message): ----> gd_count.py
     COUNT_MSG = '<b>Counting:</b> <code>{LINK}</code>'
-    COUNT_NAME = '<b><i>{COUNT_NAME}</i></b>\n'
+    COUNT_NAME = '<b><i>{COUNT_NAME}</i></b>\n┃\n'
     COUNT_SIZE = '┠ <b>Size: </b>{COUNT_SIZE}\n'
     COUNT_TYPE = '┠ <b>Type: </b>{COUNT_TYPE}\n'
     COUNT_SUB =  '┠ <b>SubFolders: </b>{COUNT_SUB}\n'
@@ -169,7 +171,7 @@ class WZMLStyle:
     # ---------------------
 
     # async def mirror_status(_, message): ----> status.py
-    NO_ACTIVE_DL = '''<code>No Active Downloads!</code>
+    NO_ACTIVE_DL = '''<i>No Active Downloads!</i>
     
 ⌬ <b><i>Bot Stats</i></b>
 ┠ <b>CPU:</b> {cpu}% | <b>FREE:</b> {free}
@@ -193,7 +195,7 @@ class WZMLStyle:
 ┠<b> MediaInfo Mode :</b> <code>{MEDIAINFO}</code>
 ┖<b> User Bot PM :</b> <code>{BOT_PM}</code>'''
 
-    MIRROR = '''㊂ <b><u>Mirror Settings : {NAME}</u></b>
+    MIRROR = '''㊂ <b><u>Mirror/Clone Settings : {NAME}</u></b>
 
 ┎<b> RClone Config :</b> <i>{RCLONE}</i>
 ┠<b> Mirror Prefix :</b> <code>{MPREFIX}</code>
