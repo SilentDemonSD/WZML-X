@@ -47,7 +47,7 @@ class MirrorLeechListener:
         self.isQbit = isQbit
         self.isLeech = isLeech
         self.isClone = isClone
-        self.isMega = is_mega_link(source_url) if link else False
+        self.isMega = is_mega_link(source_url) if source_url else False
         self.tag = tag
         self.seed = seed
         self.newDir = ""
