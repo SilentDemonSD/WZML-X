@@ -94,6 +94,7 @@ class WZMLStyle:
     SAVE_MSG =        '📨 Save Message'
     RCLONE_LINK =     '♻️ RClone Link'
     DDL_LINK =        '📎 {Serv} Link'
+    SOURCE_URL =      '🔐 Source Link'
     INDEX_LINK =      '⚡ Index Link'
     VIEW_LINK =       '🌐 View Link'
     CHECK_PM =        '📥 View in Bot PM'
