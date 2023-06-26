@@ -43,10 +43,10 @@ default_values = {'AUTO_DELETE_MESSAGE_DURATION': 30,
                   'IMG_PAGE': 1,
                   'AUTHOR_NAME': 'WZML-X',
                   'AUTHOR_URL': 'https://t.me/WZML_X',
-                  'TITLE_NAME': 'WeebZone-X',
+                  'TITLE_NAME': 'WZ Mirror/Leech X',
                   'GD_INFO': 'Uploaded by WZML-X',
                   }
-bool_vars = ['AS_DOCUMENT', 'BOT_PM', 'STOP_DUPLICATE', 'SET_COMMANDS', 'SAVE_MSG', 'SHOW_MEDIAINFO',
+bool_vars = ['AS_DOCUMENT', 'BOT_PM', 'STOP_DUPLICATE', 'SET_COMMANDS', 'SAVE_MSG', 'SHOW_MEDIAINFO', 'SOURCE_LINK',
              'IS_TEAM_DRIVE', 'USE_SERVICE_ACCOUNTS', 'WEB_PINCODE', 'EQUAL_SPLITS', 'DISABLE_DRIVE_LINK']
 
 
@@ -265,6 +265,9 @@ async def load_config():
 
     SHOW_MEDIAINFO = environ.get('SHOW_MEDIAINFO', '')
     SHOW_MEDIAINFO = SHOW_MEDIAINFO.lower() == 'true'
+    
+    SOURCE_LINK = environ.get('SOURCE_LINK', '')
+    SOURCE_LINK = SOURCE_LINK.lower() == 'true'
 
     EQUAL_SPLITS = environ.get('EQUAL_SPLITS', '')
     EQUAL_SPLITS = EQUAL_SPLITS.lower() == 'true'
@@ -574,6 +577,7 @@ async def load_config():
                         'SEARCH_PLUGINS': SEARCH_PLUGINS,
                         'SET_COMMANDS': SET_COMMANDS,
                         'SHOW_MEDIAINFO': SHOW_MEDIAINFO,
+                        'SOURCE_LINK': SOURCE_LINK,
                         'STATUS_LIMIT': STATUS_LIMIT,
                         'STATUS_UPDATE_INTERVAL': STATUS_UPDATE_INTERVAL,
                         'STOP_DUPLICATE': STOP_DUPLICATE,
