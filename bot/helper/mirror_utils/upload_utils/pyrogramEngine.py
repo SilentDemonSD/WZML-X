@@ -43,10 +43,6 @@ class TgUploader:
         self.__media_dict = {'videos': {}, 'documents': {}}
         self.__last_msg_in_group = False
         self.__up_path = ''
-        self.__lprefix = ''
-        self.__lsuffix = ''
-        self.__lremname = ''
-        self.__lcaption = ''
         self.__ldump = ''
         self.__mediainfo = False
         self.__as_doc = False
@@ -58,7 +54,7 @@ class TgUploader:
         buttons = ButtonMaker()
         if self.__mediainfo:
             buttons.ubutton(BotTheme('MEDIAINFO_LINK'), await get_mediainfo_link(up_path))
-        if config_dict['SAVE_MSG'] and config_dict['LEECH_LOG_ID'] or config_dict['SAVE_MSG'] and not self.__listener.isPrivate:
+        if config_dict['SAVE_MSG'] and (config_dict['LEECH_LOG_ID'] or not self.__listener.isPrivate):
             buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
         if self.__has_buttons:
             return buttons.build_menu(1)
@@ -98,21 +94,12 @@ class TgUploader:
         self.__processed_bytes += chunk_size
 
     async def __user_settings(self):
-        user_id = self.__listener.message.from_user.id
-        user_dict = user_data.get(user_id, {})
+        user_dict = user_data.get(self.__user_id, {})
         self.__as_doc = user_dict.get('as_doc') or config_dict['AS_DOCUMENT']
         self.__media_group = user_dict.get('media_group') or config_dict['MEDIA_GROUP']
         self.__bot_pm = config_dict['BOT_PM'] or user_dict.get('bot_pm')
         self.__mediainfo = config_dict['SHOW_MEDIAINFO'] or user_dict.get('mediainfo')
         self.__ldump = user_dict.get('ldump', '') or ''
-        self.__lprefix = config_dict['LEECH_FILENAME_PREFIX'] if (
-            val := user_dict.get('lprefix', '')) == '' else val
-        self.__lsuffix = config_dict['LEECH_FILENAME_SUFFIX'] if (
-            val := user_dict.get('lsuffix', '')) == '' else val
-        self.__lremname = config_dict['LEECH_FILENAME_REMNAME'] if (
-            val := user_dict.get('lremname', '')) == '' else val
-        self.__lcaption = config_dict['LEECH_FILENAME_CAPTION'] if (
-            val := user_dict.get('lcaption', '')) == '' else val
         self.__has_buttons = bool(config_dict['SAVE_MSG'] or self.__mediainfo)
         if not await aiopath.exists(self.__thumb):
             self.__thumb = None
@@ -141,9 +128,9 @@ class TgUploader:
             self.__sent_msg = self.__listener.message
         return True
 
-    async def __prepare_file(self, file_, dirpath):
-        if self.__lprefix or self.__lsuffix or self.__lremname or self.__lcaption:
-            cap_mono, file_ = await format_filename(file_, self.__lprefix, self.__lsuffix, self.__lremname, self.__lcaption, dirpath)
+    async def __prepare_file(self, prefile_, dirpath):
+        cap_mono, file_ = await format_filename(prefile_, self.__user_id, dirpath)
+        if prefile_ != file_:
             if self.__listener.seed and not self.__listener.newDir and not dirpath.endswith("/splited_files_mltb"):
                 dirpath = f'{dirpath}/copied_mltb'
                 await makedirs(dirpath, exist_ok=True)
@@ -153,8 +140,6 @@ class TgUploader:
                 new_path = ospath.join(dirpath, file_)
                 await aiorename(self.__up_path, new_path)
                 self.__up_path = new_path
-        else:
-            cap_mono = f"<{config_dict['CAP_FONT']}>{file_}</{config_dict['CAP_FONT']}>" if config_dict['CAP_FONT'] else file_
         if len(file_) > 64:
             if is_archive(file_):
                 name = get_base_name(file_)
