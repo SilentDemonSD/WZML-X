@@ -71,7 +71,7 @@ class WZMLStyle:
     NAME =                  '<b><i>{Name}</i></b>\n┃\n'
     SIZE =                  '┠ <b>Size: </b>{Size}\n'
     ELAPSE =               '┠ <b>Elapsed: </b>{Time}\n'
-    MODE =                  '┠ <b>Upload Mode: </b>{Mode}\n'
+    MODE =                  '┠ <b>Mode Type: </b>{Mode} | {Eng}\n'
 
     # ----- LEECH -------
     L_TOTAL_FILES =         '┠ <b>Total Files: </b>{Files}\n'
