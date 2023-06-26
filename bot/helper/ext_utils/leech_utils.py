@@ -240,6 +240,10 @@ async def format_filename(file_, user_id, dirpath=None, isMirror=False):
                 + f"{suffix}.{fileDict[-1]}"
             )
         file_ = _newExtFileName
+    elif suffix:
+        suffix = suffix.replace('\s', ' ')
+        file_ = f"{ospath.splitext(file_)[0]}{suffix}{ospath.splitext(file_)[1]}" if '.' in file_ else f"{file_}{suffix}"
+
 
     cap_mono =  f"<{config_dict['CAP_FONT']}>{nfile_}</{config_dict['CAP_FONT']}>" if config_dict['CAP_FONT'] else nfile_
     if lcaption and not isMirror:
