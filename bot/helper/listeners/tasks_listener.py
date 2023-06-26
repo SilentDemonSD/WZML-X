@@ -369,11 +369,10 @@ class MirrorLeechListener:
             await DbManger().rm_complete_task(self.message.link)
         user_id = self.message.from_user.id
         user_dict = user_data.get(user_id, {})
-        photo = self.random_pic
         msg = BotTheme('NAME', Name=escape(name))
         msg += BotTheme('SIZE', Size=get_readable_file_size(size))
         msg += BotTheme('ELAPSE', Time=get_readable_time(time() - self.message.date.timestamp()))
-        msg += BotTheme('MODE', Mode=self.upload_details['mode'])
+        msg += BotTheme('MODE', Mode=self.upload_details['mode'], Eng=self.upload_details['eng'])
         LOGGER.info(f'Task Done: {name}')
         buttons = ButtonMaker()
         if self.isLeech:
@@ -383,19 +382,19 @@ class MirrorLeechListener:
             msg += BotTheme('L_CC', Tag=self.tag)
             if not files:
                 msg += BotTheme('PM_BOT_MSG')
-                await sendMessage(self.message, msg, photo=photo)
+                await sendMessage(self.message, msg, photo=self.random_pic)
             else:
                 toPM = False
                 if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
                     nmsg = msg + BotTheme('PM_BOT_MSG')
-                    await sendBot(self.message, nmsg, photo=photo)
+                    await sendBot(self.message, nmsg, photo=self.random_pic)
                     mssg = msg + BotTheme('L_BOT_MSG')
                     btn = ButtonMaker()
                     btn.ubutton(BotTheme('CHECK_PM'), f"https://t.me/{bot_name}", 'header')
                     btn = extra_btns(btn)
                     if self.isSuperGroup:
                         toPM = True
-                        await sendMessage(self.message, mssg, btn.build_menu(2), photo)
+                        await sendMessage(self.message, mssg, btn.build_menu(2), self.random_pic)
                 msg += BotTheme('L_LL_MSG')
                 btns = 0
                 for index, (link, name) in enumerate(files.items(), start=1):
@@ -405,18 +404,18 @@ class MirrorLeechListener:
                         if config_dict['SAVE_MSG']:
                             buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                         if self.leechlogmsg or not toPM:
-                            log_msg = await sendMessage(self.leechlogmsg if self.leechlogmsg else self.message, msg, buttons.build_menu(1), photo)
+                            log_msg = await sendMessage(self.leechlogmsg if self.leechlogmsg else self.message, msg, buttons.build_menu(1), self.random_pic)
                         await sleep(1)
                         btns = 0
                 if btns != 0:
                     if config_dict['SAVE_MSG']:
                         buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                     if self.leechlogmsg or not toPM:
-                        log_msg = await sendMessage(self.leechlogmsg if self.leechlogmsg else self.message, msg, buttons.build_menu(1), photo)
+                        log_msg = await sendMessage(self.leechlogmsg if self.leechlogmsg else self.message, msg, buttons.build_menu(1), self.random_pic)
                 if self.leechlogmsg and not (config_dict['BOT_PM'] or user_dict.get('bot_pm')):
                     buttons = ButtonMaker()
                     buttons.ubutton(BotTheme('CHECK_LL'), log_msg.link)
-                    await sendMessage(self.message, msg, buttons.build_menu(1), photo)
+                    await sendMessage(self.message, msg, buttons.build_menu(1), self.random_pic)
             if self.seed:
                 if self.newDir:
                     await clean_target(self.newDir)
@@ -470,7 +469,7 @@ class MirrorLeechListener:
 
 
             if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
-                await sendBot(self.message, msg, button, photo)
+                await sendBot(self.message, msg, button, self.random_pic)
                 nmsg = msg + BotTheme('M_BOT_MSG')
                 if button is not None:
                     buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
@@ -478,16 +477,16 @@ class MirrorLeechListener:
                 btns = ButtonMaker()
                 btns = extra_btns(btns)
                 btns.ubutton(BotTheme('CHECK_PM'), f"https://t.me/{bot_name}", 'header')
-                await sendMessage(self.message, nmsg, btns.build_menu(1), photo)
+                await sendMessage(self.message, nmsg, btns.build_menu(1), self.random_pic)
             else:
                 if config_dict['SAVE_MSG']:
                     if button is not None:
                         buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                         button = buttons.build_menu(2)
-                await sendMessage(self.message, msg, button, photo)
+                await sendMessage(self.message, msg, button, self.random_pic)
 
             if ids := config_dict['MIRROR_LOG_ID']:
-                await sendMirrorLog(self.message, msg, ids, button, photo)
+                await sendMirrorLog(self.message, msg, ids, button, self.random_pic)
 
             if self.seed:
                 if self.newDir:
