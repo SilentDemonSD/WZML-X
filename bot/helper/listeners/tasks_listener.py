@@ -408,7 +408,7 @@ class MirrorLeechListener:
                         toPM = True
                         await sendMessage(self.message, msg + BotTheme('L_BOT_MSG'), btn.build_menu(2), self.random_pic)
                 msg += BotTheme('L_LL_MSG')
-                fmsg = '\n'
+                fmsg = '\n\n'
                 for index, (link, name) in enumerate(files.items(), start=1):
                     fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
                     limit = 4000 if not config_dict['IMAGES'] else 1000
@@ -420,8 +420,8 @@ class MirrorLeechListener:
                         if self.leechlogmsg or not toPM:
                             log_msg = await sendMessage(self.leechlogmsg if self.leechlogmsg else self.message, msg + fmsg, buttons.build_menu(1), self.random_pic)
                         await sleep(1)
-                        fmsg = '\n'
-                if fmsg != '\n':
+                        fmsg = '\n\n'
+                if fmsg != '\n\n':
                     if config_dict['SAVE_MSG']:
                         buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                     if self.source_url and config_dict['SOURCE_LINK']:
