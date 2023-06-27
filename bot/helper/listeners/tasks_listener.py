@@ -336,7 +336,6 @@ class MirrorLeechListener:
             LOGGER.info(f'Start from Queued/Upload: {name}')
         async with queue_dict_lock:
             non_queued_up.add(self.uid)
-        LOGGER.info("Flow Check")
         if self.isLeech:
             size = await get_path_size(up_dir)
             for s in m_size:
