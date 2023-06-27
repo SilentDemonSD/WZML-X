@@ -22,7 +22,7 @@ class Aria2Status:
         self.queued = queued
         self.start_time = 0
         self.seeding = seeding
-        self.message = listener.message
+        self.message = self.listener.message
 
     def __update(self):
         if self.__download is None:
