@@ -31,13 +31,15 @@ async def sendMessage(message, text, buttons=None, photo=None):
                 await aioremove(des_dir)
                 return
             except Exception as e:
-                LOGGER.error(str(e))
+                LOGGER.error(format_exc())
         return await message.reply(text=text, quote=True, disable_web_page_preview=True,
                                    disable_notification=True, reply_markup=buttons)
     except FloodWait as f:
         LOGGER.warning(str(f))
         await sleep(f.value * 1.2)
         return await sendMessage(message, text, buttons, photo)
+    except ReplyMarkupInvalid:
+        return await sendMessage(message, text, None, photo)
     except Exception as e:
         LOGGER.error(format_exc())
         return str(e)
@@ -60,15 +62,17 @@ async def sendBot(message, text, buttons=None, photo=None):
                 await aioremove(des_dir)
                 return
             except Exception as e:
-                LOGGER.error(str(e))
+                LOGGER.error(format_exc())
         return await message._client.send_message(chat_id=user_id, text=text, disable_web_page_preview=True,
                                                   disable_notification=True, reply_markup=buttons)
     except FloodWait as f:
         LOGGER.warning(str(f))
         await sleep(f.value * 1.2)
         return await sendBot(message, text, buttons, photo)
+    except ReplyMarkupInvalid:
+        return await sendBot(message, text, None, photo)
     except Exception as e:
-        LOGGER.error(str(e))
+        LOGGER.error(format_exc())
         return str(e)
 
 
