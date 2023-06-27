@@ -400,9 +400,7 @@ class MirrorLeechListener:
             else:
                 toPM = False
                 if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
-                    nmsg = msg + BotTheme('PM_BOT_MSG')
-                    await sendBot(self.message, nmsg, photo=self.random_pic)
-                    mssg = msg + BotTheme('L_BOT_MSG')
+                    await sendBot(self.message, msg + BotTheme('PM_BOT_MSG'), photo=self.random_pic)
                     btn = ButtonMaker()
                     if self.source_url and config_dict['SOURCE_LINK']:
                         buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
@@ -410,9 +408,9 @@ class MirrorLeechListener:
                     btn = extra_btns(btn)
                     if self.isSuperGroup:
                         toPM = True
-                        await sendMessage(self.message, mssg, btn.build_menu(2), self.random_pic)
+                        await sendMessage(self.message, msg + BotTheme('L_BOT_MSG'), btn.build_menu(2), self.random_pic)
                 msg += BotTheme('L_LL_MSG')
-                fmsg = ''
+                fmsg = '\n'
                 btns = 0
                 for index, (link, name) in enumerate(files.items(), start=1):
                     btns += 1
@@ -427,8 +425,8 @@ class MirrorLeechListener:
                             log_msg = await sendMessage(self.leechlogmsg if self.leechlogmsg else self.message, msg + fmsg, buttons.build_menu(1), self.random_pic)
                         await sleep(1)
                         #btns = 0
-                        fmsg = ''
-                if fmsg != '':
+                        fmsg = '\n'
+                if fmsg != '\n':
                     if config_dict['SAVE_MSG']:
                         buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                     if self.source_url and config_dict['SOURCE_LINK']:
