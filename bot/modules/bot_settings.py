@@ -155,6 +155,18 @@ async def load_config():
     if len(LEECH_FILENAME_REMNAME) == 0:
         LEECH_FILENAME_REMNAME = ''
 
+    MIRROR_FILENAME_PREFIX = environ.get('MIRROR_FILENAME_PREFIX', '')
+    if len(MIRROR_FILENAME_PREFIX) == 0:
+        MIRROR_FILENAME_PREFIX = ''
+
+    MIRROR_FILENAME_SUFFIX = environ.get('MIRROR_FILENAME_SUFFIX', '')
+    if len(MIRROR_FILENAME_SUFFIX) == 0:
+        MIRROR_FILENAME_SUFFIX = ''
+
+    MIRROR_FILENAME_REMNAME = environ.get('MIRROR_FILENAME_REMNAME', '')
+    if len(MIRROR_FILENAME_REMNAME) == 0:
+        MIRROR_FILENAME_REMNAME = ''
+        
     SEARCH_PLUGINS = environ.get('SEARCH_PLUGINS', '')
     if len(SEARCH_PLUGINS) == 0:
         SEARCH_PLUGINS = ''
@@ -552,6 +564,9 @@ async def load_config():
                         'LEECH_FILENAME_SUFFIX': LEECH_FILENAME_SUFFIX,
                         'LEECH_FILENAME_CAPTION': LEECH_FILENAME_CAPTION,
                         'LEECH_FILENAME_REMNAME': LEECH_FILENAME_REMNAME,
+                        'MIRROR_FILENAME_PREFIX': MIRROR_FILENAME_PREFIX,
+                        'MIRROR_FILENAME_SUFFIX': MIRROR_FILENAME_SUFFIX,
+                        'MIRROR_FILENAME_REMNAME': MIRROR_FILENAME_REMNAME
                         'LEECH_SPLIT_SIZE': LEECH_SPLIT_SIZE,
                         'LOGIN_PASS': LOGIN_PASS,
                         'TOKEN_TIMEOUT': TOKEN_TIMEOUT,
