@@ -204,21 +204,18 @@ def get_readable_message():
         if download.status() not in [MirrorStatus.STATUS_SPLITTING, MirrorStatus.STATUS_SEEDING]:
             if download.status() != MirrorStatus.STATUS_UPLOADDDL:
                 msg += BotTheme('BAR', Bar=f"{get_progress_bar_string(download.progress())} {download.progress()}")
-                msg += BotTheme('PROCESSED',
-                                Processed=f"{download.processed_bytes()} of {download.size()}")
+                msg += BotTheme('PROCESSED', Processed=f"{download.processed_bytes()} of {download.size()}")
             msg += BotTheme('STATUS', Status=download.status(), Url=msg_link)
             if download.status() != MirrorStatus.STATUS_UPLOADDDL:
                 msg += BotTheme('ETA', Eta=download.eta())
-            if download.status() != MirrorStatus.STATUS_UPLOADDDL:
                 msg += BotTheme('SPEED', Speed=download.speed())
-            msg += BotTheme('ELAPSED', Elapsed=get_readable_time(time() -
-                            download.message.date.timestamp()))
+            msg += BotTheme('ELAPSED', Elapsed=get_readable_time(time() - download.message.date.timestamp()))
             msg += BotTheme('ENGINE', Engine=download.eng())
+            msg += BotTheme('MODE', Mode=download.upload_details['mode'])
             if hasattr(download, 'seeders_num'):
                 try:
                     msg += BotTheme('SEEDERS', Seeders=download.seeders_num())
-                    msg += BotTheme('LEECHERS',
-                                    Leechers=download.leechers_num())
+                    msg += BotTheme('LEECHERS', Leechers=download.leechers_num())
                 except:
                     pass
         elif download.status() == MirrorStatus.STATUS_SEEDING:
@@ -237,8 +234,7 @@ def get_readable_message():
         msg += BotTheme('USER',
                         User=download.message.from_user.mention(style="html"))
         msg += BotTheme('ID', Id=download.message.from_user.id)
-        msg += BotTheme('CANCEL',
-                        Cancel=f"/{BotCommands.CancelMirror}_{download.gid()}")
+        msg += BotTheme('CANCEL', Cancel=f"/{BotCommands.CancelMirror}_{download.gid()}")
 
     if len(msg) == 0:
         return None, None
