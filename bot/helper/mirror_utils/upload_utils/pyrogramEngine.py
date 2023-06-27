@@ -316,7 +316,7 @@ class TgUploader:
                     thumb = await take_ss(self.__up_path, None)
                 if self.__is_cancelled:
                     return
-                self.__sent_msg = await self.__sent_msg.reply_document(document=self.__up_path,
+                nrml_media = await self.__sent_msg.reply_document(document=self.__up_path,
                                                                        quote=True,
                                                                        thumb=thumb,
                                                                        caption=cap_mono,
@@ -324,10 +324,10 @@ class TgUploader:
                                                                        disable_notification=True,
                                                                        progress=self.__upload_progress,
                                                                        reply_markup=await self.__buttons(self.__up_path))
-                if size > 2097152000:
-                    prm_media = await bot.copy_message(self.__sent_msg.chat.id, self.__sent_msg.chat.id, self.__sent_msg.id, reply_markup=await self.__buttons(self.__up_path))
-                    self.__sent_msg.delete()
-                    self.__sent_msg = prm_media
+                if size > 2097152000 and self.__has_buttons:
+                    prm_media = await bot.copy_message(nrml_media.chat.id, nrml_media.chat.id, nrml_media.id, reply_to_message_id=self.__sent_msg.id, reply_markup=await self.__buttons(self.__up_path))
+                    await nrml_media.delete()
+                self.__sent_msg = prm_media
                                                                        
             elif is_video:
                 key = 'videos'
