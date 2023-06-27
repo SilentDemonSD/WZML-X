@@ -100,8 +100,10 @@ class MirrorLeechListener:
             mode += ' | #clone'
         elif self.isMega:
             mode += ' | #mega'
-        else:
+        elif self.source_url:
             mode += ' | #aria2'
+        else:
+            mode += ' | #tg'
         self.upload_details['mode'] = mode
         
     async def onDownloadStart(self):
@@ -381,6 +383,7 @@ class MirrorLeechListener:
             await DbManger().rm_complete_task(self.message.link)
         user_id = self.message.from_user.id
         user_dict = user_data.get(user_id, {})
+        LOGGER.info(self.source_url)
         msg = BotTheme('NAME', Name=escape(name))
         msg += BotTheme('SIZE', Size=get_readable_file_size(size))
         msg += BotTheme('ELAPSE', Time=get_readable_time(time() - self.message.date.timestamp()))
