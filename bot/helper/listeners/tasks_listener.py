@@ -401,22 +401,19 @@ class MirrorLeechListener:
                 toPM = False
                 if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
                     await sendBot(self.message, msg + BotTheme('PM_BOT_MSG'), photo=self.random_pic)
-                    btn = ButtonMaker()
-                    if self.source_url and config_dict['SOURCE_LINK']:
-                        buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
-                    btn.ubutton(BotTheme('CHECK_PM'), f"https://t.me/{bot_name}", 'header')
-                    btn = extra_btns(btn)
                     if self.isSuperGroup:
+                        btn = ButtonMaker()
+                        btn.ubutton(BotTheme('CHECK_PM'), f"https://t.me/{bot_name}", 'header')
+                        btn = extra_btns(btn)
                         toPM = True
                         await sendMessage(self.message, msg + BotTheme('L_BOT_MSG'), btn.build_menu(2), self.random_pic)
                 msg += BotTheme('L_LL_MSG')
                 fmsg = '\n'
-                btns = 0
                 for index, (link, name) in enumerate(files.items(), start=1):
-                    btns += 1
                     #buttons.ubutton(f"{index}. {name}", link)
                     fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
-                    if len(fmsg.encode() + msg.encode()) > 4000:
+                    limit = 4000 if not config_dict['IMAGES'] else 1000
+                    if len(fmsg.encode() + msg.encode()) > limit:
                         if config_dict['SAVE_MSG']:
                             buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                         if self.source_url and config_dict['SOURCE_LINK']:
@@ -424,7 +421,6 @@ class MirrorLeechListener:
                         if self.leechlogmsg or not toPM:
                             log_msg = await sendMessage(self.leechlogmsg if self.leechlogmsg else self.message, msg + fmsg, buttons.build_menu(1), self.random_pic)
                         await sleep(1)
-                        #btns = 0
                         fmsg = '\n'
                 if fmsg != '\n':
                     if config_dict['SAVE_MSG']:
