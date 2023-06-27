@@ -324,10 +324,11 @@ class TgUploader:
                                                                        disable_notification=True,
                                                                        progress=self.__upload_progress,
                                                                        reply_markup=await self.__buttons(self.__up_path))
+                self.__sent_msg = nrml_media
                 if size > 2097152000 and self.__has_buttons:
                     prm_media = await bot.copy_message(nrml_media.chat.id, nrml_media.chat.id, nrml_media.id, reply_to_message_id=self.__sent_msg.id, reply_markup=await self.__buttons(self.__up_path))
                     await nrml_media.delete()
-                self.__sent_msg = prm_media
+                    self.__sent_msg = prm_media
                                                                        
             elif is_video:
                 key = 'videos'
@@ -354,7 +355,7 @@ class TgUploader:
                         self.__up_path = new_path
                 if self.__is_cancelled:
                     return
-                self.__sent_msg = await self.__sent_msg.reply_video(video=self.__up_path,
+                nrml_media = await self.__sent_msg.reply_video(video=self.__up_path,
                                                                     quote=True,
                                                                     caption=cap_mono,
                                                                     duration=duration,
@@ -363,9 +364,13 @@ class TgUploader:
                                                                     thumb=thumb,
                                                                     supports_streaming=True,
                                                                     disable_notification=True,
-                                                                    progress=self.__upload_progress)
-                if self.__sent_msg and self.__has_buttons:
-                    await self.__sent_msg.edit_reply_markup(await self.__buttons(self.__up_path))
+                                                                    progress=self.__upload_progress,
+                                                                    reply_markup=await self.__buttons(self.__up_path))
+                self.__sent_msg = nrml_media
+                if size > 2097152000 and self.__has_buttons:
+                    prm_media = await bot.copy_message(nrml_media.chat.id, nrml_media.chat.id, nrml_media.id, reply_to_message_id=self.__sent_msg.id, reply_markup=await self.__buttons(self.__up_path))
+                    await nrml_media.delete()
+                    self.__sent_msg = prm_media
             elif is_audio:
                 key = 'audios'
                 duration, artist, title = await get_media_info(self.__up_path)
@@ -379,9 +384,8 @@ class TgUploader:
                                                                     title=title,
                                                                     thumb=thumb,
                                                                     disable_notification=True,
-                                                                    progress=self.__upload_progress)
-                if self.__sent_msg and self.__has_buttons:
-                    await self.__sent_msg.edit_reply_markup(await self.__buttons(self.__up_path))
+                                                                    progress=self.__upload_progress,
+                                                                    reply_markup=await self.__buttons(self.__up_path))
             else:
                 key = 'photos'
                 if self.__is_cancelled:
@@ -390,9 +394,8 @@ class TgUploader:
                                                                     quote=True,
                                                                     caption=cap_mono,
                                                                     disable_notification=True,
-                                                                    progress=self.__upload_progress)
-                if self.__sent_msg and self.__has_buttons:
-                    await self.__sent_msg.edit_reply_markup(await self.__buttons(self.__up_path))
+                                                                    progress=self.__upload_progress,
+                                                                    reply_markup=await self.__buttons(self.__up_path))
 
             if not self.__is_cancelled and self.__media_group and (self.__sent_msg.video or self.__sent_msg.document):
                 key = 'documents' if self.__sent_msg.document else 'videos'
@@ -438,4 +441,4 @@ class TgUploader:
     async def cancel_download(self):
         self.__is_cancelled = True
         LOGGER.info(f"Cancelling Upload: {self.name}")
-        await self.__listener.onUploadError('your upload has been stopped!')
+        await self.__listener.onUploadError('Your Upload has been Stopped!')
