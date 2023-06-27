@@ -260,6 +260,7 @@ def get_readable_message():
         elif tstatus == MirrorStatus.STATUS_UPLOADING or tstatus == MirrorStatus.STATUS_SEEDING:
             up_speed += speed_in_bytes_per_second
 
+    msg += BotTheme('FOOTER')
     if tasks > STATUS_LIMIT:
         msg += BotTheme('PAGE', Page=f"{PAGE_NO}/{PAGES}")
         msg += BotTheme('TASKS', Tasks=tasks)
@@ -268,7 +269,6 @@ def get_readable_message():
         buttons.ibutton(BotTheme('REFRESH'), "status ref")
         buttons.ibutton(BotTheme('NEXT'), "status nex")
         button = buttons.build_menu(3)
-    msg += BotTheme('FOOTER')
     msg += BotTheme('Cpu', cpu=cpu_percent())
     msg += BotTheme('FREE', free=get_readable_file_size(
         disk_usage(config_dict['DOWNLOAD_DIR']).free))
