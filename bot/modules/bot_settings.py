@@ -566,7 +566,7 @@ async def load_config():
                         'LEECH_FILENAME_REMNAME': LEECH_FILENAME_REMNAME,
                         'MIRROR_FILENAME_PREFIX': MIRROR_FILENAME_PREFIX,
                         'MIRROR_FILENAME_SUFFIX': MIRROR_FILENAME_SUFFIX,
-                        'MIRROR_FILENAME_REMNAME': MIRROR_FILENAME_REMNAME
+                        'MIRROR_FILENAME_REMNAME': MIRROR_FILENAME_REMNAME,
                         'LEECH_SPLIT_SIZE': LEECH_SPLIT_SIZE,
                         'LOGIN_PASS': LOGIN_PASS,
                         'TOKEN_TIMEOUT': TOKEN_TIMEOUT,
