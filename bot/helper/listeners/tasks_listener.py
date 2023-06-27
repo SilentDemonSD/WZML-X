@@ -466,7 +466,6 @@ class MirrorLeechListener:
                     share_url = f'{RCLONE_SERVE_URL}/{remote}/{url_path}'
                     if mime_type == "Folder":
                         share_url += '/'
-
                     buttons.ubutton(BotTheme('RCLONE_LINK'), share_url)
                 elif (INDEX_URL := config_dict['INDEX_URL']) and not rclonePath and not is_DDL:
                     url_path = rutils.quote(f'{name}')
@@ -492,7 +491,8 @@ class MirrorLeechListener:
                 await sendBot(self.message, msg, button, self.random_pic)
                 nmsg = msg + BotTheme('M_BOT_MSG')
                 if button is not None:
-                    buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
+                    if config_dict['SAVE_MSG']:
+                        buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                     button = buttons.build_menu(2)
                 btns = ButtonMaker()
                 btns = extra_btns(btns)
