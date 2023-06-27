@@ -241,8 +241,7 @@ class TgUploader:
                         continue
                     self.__total_files += 1
                     if f_size == 0:
-                        LOGGER.error(
-                            f"{self.__up_path} size is zero, telegram don't upload zero size files")
+                        LOGGER.error(f"{self.__up_path} size is zero, telegram don't upload zero size files")
                         self.__corrupted += 1
                         continue
                     if self.__is_cancelled:
@@ -259,7 +258,7 @@ class TgUploader:
                     self.__last_msg_in_group = False
                     self.__last_uploaded = 0
                     await self.__switching_client(f_size)
-                    await self.__upload_file(cap_mono, file_)
+                    await self.__upload_file(cap_mono, file_, f_size)
                     if self.__is_cancelled:
                         return
                     if not self.__is_corrupted and (self.__listener.isSuperGroup or config_dict['LEECH_LOG_ID']):
@@ -297,7 +296,7 @@ class TgUploader:
 
     @retry(wait=wait_exponential(multiplier=2, min=4, max=8), stop=stop_after_attempt(3),
            retry=retry_if_exception_type(Exception))
-    async def __upload_file(self, cap_mono, file, force_document=False):
+    async def __upload_file(self, cap_mono, file, size, force_document=False):
         if self.__thumb is not None and not await aiopath.exists(self.__thumb):
             self.__thumb = None
         thumb = self.__thumb
@@ -324,7 +323,12 @@ class TgUploader:
                                                                        force_document=True,
                                                                        disable_notification=True,
                                                                        progress=self.__upload_progress,
-                                                                       reply_markup=(await self.__buttons(self.__up_path)))
+                                                                       reply_markup=await self.__buttons(self.__up_path))
+                if f_size > 2097152000:
+                    prm_media = await bot.copy_message(self.__sent_msg.chat.id, self.__sent_msg.chat.id, self.__sent_msg.id, reply_markup=await self.__buttons(self.__up_path))
+                    self.__sent_msg.delete()
+                    self.__sent_msg = prm_media
+                                                                       
             elif is_video:
                 key = 'videos'
                 duration = (await get_media_info(self.__up_path))[0]
@@ -417,7 +421,7 @@ class TgUploader:
             LOGGER.error(f"{err_type}{err}. Path: {self.__up_path}")
             if 'Telegram says: [400' in str(err) and key != 'documents':
                 LOGGER.error(f"Retrying As Document. Path: {self.__up_path}")
-                return await self.__upload_file(cap_mono, file, True)
+                return await self.__upload_file(cap_mono, file, size, True)
             raise err
 
     @property
