@@ -12,6 +12,7 @@ class ExtractStatus:
         self.__size = size
         self.__gid = gid
         self.__listener = listener
+        self.upload_details = listener.upload_details
         self.__uid = listener.uid
         self.__start_time = time()
         self.message = listener.message
