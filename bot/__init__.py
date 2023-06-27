@@ -188,10 +188,10 @@ if len(USER_SESSION_STRING) != 0:
     try:
         user = tgClient('user', TELEGRAM_API, TELEGRAM_HASH, session_string=USER_SESSION_STRING,
                         parse_mode=enums.ParseMode.HTML).start()
+        IS_PREMIUM_USER = user.me.is_premium
     except Exception as e:
         log_error(f"Failed making client from USER_SESSION_STRING : [{e.NAME}] {e.MESSAGE}")
         user = ''
-    IS_PREMIUM_USER = user.me.is_premium
 
 MEGA_EMAIL = environ.get('MEGA_EMAIL', '')
 MEGA_PASSWORD = environ.get('MEGA_PASSWORD', '')
