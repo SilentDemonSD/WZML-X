@@ -12,7 +12,7 @@ from pyrogram.enums import ChatType
 from bot import Interval, aria2, DOWNLOAD_DIR, download_dict, download_dict_lock, LOGGER, bot_name, DATABASE_URL, \
     MAX_SPLIT_SIZE, config_dict, status_reply_dict_lock, user_data, non_queued_up, non_queued_dl, queued_up, \
     queued_dl, queue_dict_lock, bot, GLOBAL_EXTENSION_FILTER
-from bot.helper.ext_utils.bot_utils import extra_btns, sync_to_async, get_readable_file_size, get_readable_time, is_mega_link
+from bot.helper.ext_utils.bot_utils import extra_btns, sync_to_async, get_readable_file_size, get_readable_time, is_mega_link, is_gdrive_link
 from bot.helper.ext_utils.fs_utils import get_base_name, get_path_size, clean_download, clean_target, \
     is_first_archive_split, is_archive, is_archive_split, join_files
 from bot.helper.ext_utils.leech_utils import split_file
@@ -48,6 +48,7 @@ class MirrorLeechListener:
         self.isLeech = isLeech
         self.isClone = isClone
         self.isMega = is_mega_link(source_url) if source_url else False
+        self.isGdrive = is_gdrive_link(source_url) if source_url else False
         self.tag = tag
         self.seed = seed
         self.newDir = ""
@@ -94,10 +95,8 @@ class MirrorLeechListener:
             mode += ' as Unzip'
         if self.isQbit:
             mode += ' | #qbit'
-        elif self.isLeech:
-            mode += ' | #leech'
-        elif self.isClone:
-            mode += ' | #clone'
+        elif self.isClone or self.isGdrive:
+            mode += ' | #gdrive'
         elif self.isMega:
             mode += ' | #mega'
         elif self.source_url:
@@ -436,8 +435,6 @@ class MirrorLeechListener:
                         log_msg = await sendMessage(self.leechlogmsg if self.leechlogmsg else self.message, msg, buttons.build_menu(1), self.random_pic)
                 if self.leechlogmsg and not (config_dict['BOT_PM'] or user_dict.get('bot_pm')):
                     buttons = ButtonMaker()
-                    if self.source_url and config_dict['SOURCE_LINK']:
-                        buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
                     buttons.ubutton(BotTheme('CHECK_LL'), log_msg.link)
                     await sendMessage(self.message, msg, buttons.build_menu(1), self.random_pic)
             if self.seed:
