@@ -47,7 +47,7 @@ class MirrorLeechListener:
         self.isQbit = isQbit
         self.isLeech = isLeech
         self.isClone = isClone
-        self.isMega = is_mega_link(source_url) if source_url else False
+        #self.isMega = is_mega_link(source_url) if source_url else False
         self.tag = tag
         self.seed = seed
         self.newDir = ""
@@ -63,7 +63,7 @@ class MirrorLeechListener:
         self.join = join
         self.leechlogmsg = None
         self.upload_details = {}
-        self.source_url = source_url
+        #self.source_url = source_url
         self.__setModeEng()
 
     async def clean(self):
@@ -98,8 +98,8 @@ class MirrorLeechListener:
             mode += ' | #leech'
         elif self.isClone:
             mode += ' | #clone'
-        elif self.isMega:
-            mode += ' | #mega'
+        #elif self.isMega:
+        #    mode += ' | #mega'
         else:
             mode += ' | #aria2'
         self.upload_details['mode'] = mode
