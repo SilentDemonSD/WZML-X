@@ -407,6 +407,7 @@ class MirrorLeechListener:
                         btn = ButtonMaker()
                         if self.source_url and config_dict['SOURCE_LINK']:
                             buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
+                            btn.ubutton(BotTheme('SOURCE_URL'), self.source_url)
                         btn.ubutton(BotTheme('CHECK_PM'), f"https://t.me/{bot_name}", 'header')
                         btn = extra_btns(btn)
                         toPM = True
