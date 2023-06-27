@@ -22,6 +22,7 @@ class MegaAppListener(MegaListener):
         self.node = None
         self.public_node = None
         self.listener = listener
+        self.upload_details = listener.upload_details
         self.is_cancelled = False
         self.error = None
         self.__bytes_transferred = 0
