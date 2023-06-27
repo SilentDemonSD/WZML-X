@@ -245,7 +245,8 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             await sendMessage(message, up)
             return
 
-    listener = MirrorLeechListener(message, compress, extract, isQbit, isLeech, tag, select, seed, sameDir, rcf, up, join, link)
+    LOGGER.info(link)
+    listener = MirrorLeechListener(message, compress, extract, isQbit, isLeech, tag, select, seed, sameDir, rcf, up, join, source_link=link)
 
     if file_ is not None:
         await TelegramDownloadHelper(listener).add_download(reply_to, f'{path}/', name, session)
