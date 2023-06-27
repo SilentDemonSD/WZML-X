@@ -384,7 +384,6 @@ class MirrorLeechListener:
             await DbManger().rm_complete_task(self.message.link)
         user_id = self.message.from_user.id
         user_dict = user_data.get(user_id, {})
-        LOGGER.info(self.source_url)
         msg = BotTheme('NAME', Name=escape(name))
         msg += BotTheme('SIZE', Size=get_readable_file_size(size))
         msg += BotTheme('ELAPSE', Time=get_readable_time(time() - self.message.date.timestamp()))
@@ -406,6 +405,8 @@ class MirrorLeechListener:
                     await sendBot(self.message, msg + BotTheme('PM_BOT_MSG'), photo=self.random_pic)
                     if self.isSuperGroup:
                         btn = ButtonMaker()
+                        if self.source_url and config_dict['SOURCE_LINK']:
+                            buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
                         btn.ubutton(BotTheme('CHECK_PM'), f"https://t.me/{bot_name}", 'header')
                         btn = extra_btns(btn)
                         toPM = True
