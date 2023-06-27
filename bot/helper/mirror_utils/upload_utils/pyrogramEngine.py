@@ -323,9 +323,8 @@ class TgUploader:
                                                                        caption=cap_mono,
                                                                        force_document=True,
                                                                        disable_notification=True,
-                                                                       progress=self.__upload_progress)
-                if self.__sent_msg and self.__has_buttons:
-                    await self.__sent_msg.edit_reply_markup(await self.__buttons(self.__up_path))
+                                                                       progress=self.__upload_progress,
+                                                                       reply_markup=(await self.__buttons(self.__up_path)))
             elif is_video:
                 key = 'videos'
                 duration = (await get_media_info(self.__up_path))[0]
