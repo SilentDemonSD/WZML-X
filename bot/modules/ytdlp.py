@@ -392,7 +392,7 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
             return
 
     listener = MirrorLeechListener(
-        message, compress, isLeech=isLeech, tag=tag, sameDir=sameDir, rcFlags=rcf, upPath=up, source_url=link)
+        message, compress, isLeech=isLeech, tag=tag, sameDir=sameDir, rcFlags=rcf, upPath=up, isYtdlp=True, source_url=link)
 
     if 'mdisk.me' in link:
         name, link = await _mdisk(link, name)
