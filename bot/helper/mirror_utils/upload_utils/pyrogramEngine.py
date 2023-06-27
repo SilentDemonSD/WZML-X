@@ -324,7 +324,7 @@ class TgUploader:
                                                                        disable_notification=True,
                                                                        progress=self.__upload_progress,
                                                                        reply_markup=await self.__buttons(self.__up_path))
-                if f_size > 2097152000:
+                if size > 2097152000:
                     prm_media = await bot.copy_message(self.__sent_msg.chat.id, self.__sent_msg.chat.id, self.__sent_msg.id, reply_markup=await self.__buttons(self.__up_path))
                     self.__sent_msg.delete()
                     self.__sent_msg = prm_media
