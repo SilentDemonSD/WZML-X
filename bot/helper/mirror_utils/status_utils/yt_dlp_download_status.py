@@ -7,6 +7,7 @@ class YtDlpDownloadStatus:
     def __init__(self, obj, listener, gid):
         self.__obj = obj
         self.__listener = listener
+        self.upload_details = listener.upload_details
         self.__gid = gid
         self.message = listener.message
 
