@@ -410,7 +410,6 @@ class MirrorLeechListener:
                 msg += BotTheme('L_LL_MSG')
                 fmsg = '\n'
                 for index, (link, name) in enumerate(files.items(), start=1):
-                    #buttons.ubutton(f"{index}. {name}", link)
                     fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
                     limit = 4000 if not config_dict['IMAGES'] else 1000
                     if len(fmsg.encode() + msg.encode()) > limit:
@@ -419,7 +418,7 @@ class MirrorLeechListener:
                         if self.source_url and config_dict['SOURCE_LINK']:
                             buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
                         if self.leechlogmsg or not toPM:
-                            log_msg = await sendMessage(self.leechlogmsg if self.leechlogmsg else self.message, msg + fmsg, buttons.build_menu(1), self.random_pic)
+                            log_msg = await sendMessage(self.leechlogmsg if self.leechlogmsg else self.message, msg + fmsg, buttons.build_menu(1) if buttons else None, self.random_pic)
                         await sleep(1)
                         fmsg = '\n'
                 if fmsg != '\n':
@@ -428,7 +427,7 @@ class MirrorLeechListener:
                     if self.source_url and config_dict['SOURCE_LINK']:
                         buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
                     if self.leechlogmsg or not toPM:
-                        log_msg = await sendMessage(self.leechlogmsg if self.leechlogmsg else self.message, msg + fmsg, buttons.build_menu(1), self.random_pic)
+                        log_msg = await sendMessage(self.leechlogmsg if self.leechlogmsg else self.message, msg + fmsg, buttons.build_menu(1) if buttons else None, self.random_pic)
                 if self.leechlogmsg and not (config_dict['BOT_PM'] or user_dict.get('bot_pm')):
                     buttons = ButtonMaker()
                     buttons.ubutton(BotTheme('CHECK_LL'), log_msg.link)
