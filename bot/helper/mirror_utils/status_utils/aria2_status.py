@@ -18,7 +18,7 @@ class Aria2Status:
     def __init__(self, gid, listener, seeding=False, queued=False):
         self.__gid = gid
         self.__download = get_download(gid)
-        self.__listener = listener
+        self.listener = listener
         self.queued = queued
         self.start_time = 0
         self.seeding = seeding
@@ -86,9 +86,6 @@ class Aria2Status:
 
     def download(self):
         return self
-
-    def listener(self):
-        return self.__listener
 
     def gid(self):
         self.__update()
