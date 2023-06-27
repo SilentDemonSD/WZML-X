@@ -71,15 +71,15 @@ class WZMLStyle:
     NAME =                  '<b><i>{Name}</i></b>\n┃\n'
     SIZE =                  '┠ <b>Size: </b>{Size}\n'
     ELAPSE =                '┠ <b>Elapsed: </b>{Time}\n'
-    MODE =                  '┠ <b>Upload: </b>{Mode}\n'
+    MODE =                  '┠ <b>Mode: </b>{Mode}\n'
 
     # ----- LEECH -------
     L_TOTAL_FILES =         '┠ <b>Total Files: </b>{Files}\n'
     L_CORRUPTED_FILES =     '┠ <b>Corrupted Files: </b>{Corrupt}\n'
     L_CC =                  '┖ <b>By: </b>{Tag}\n\n'
-    PM_BOT_MSG =            '➲ <b><i>Files are Send Above</i></b>'
-    L_BOT_MSG =             '➲ <b><i>Files are Send to Bot PM (Private)</i></b>'
-    L_LL_MSG =              '➲ <b><i>Files are Send. Access via Links...</i></b>'
+    PM_BOT_MSG =            '➲ <b><i>File(s) have been Sent above</i></b>'
+    L_BOT_MSG =             '➲ <b><i>File(s) have been Sent to Bot PM (Private)</i></b>'
+    L_LL_MSG =              '➲ <b><i>File(s) have been Sent. Access via Links...</i></b>'
     
     # ----- MIRROR -------
     M_TYPE =                '┠ <b>Type: </b>{Mimetype}\n'
@@ -87,7 +87,7 @@ class WZMLStyle:
     TOTAL_FILES =           '┠ <b>Files: </b>{Files}\n'
     RCPATH =                '┠ <b>Path: </b><code>{RCpath}</code>\n'
     M_CC =                  '┖ <b>By: </b>{Tag}\n\n'
-    M_BOT_MSG =             '➲ <b><i>Links are Send to Bot PM (Private)</i></b>'
+    M_BOT_MSG =             '➲ <b><i>Link(s) have been Sent to Bot PM (Private)</i></b>'
     
     # ----- BUTTONS -------
     CLOUD_LINK =      '☁️ Cloud Link'
@@ -99,6 +99,7 @@ class WZMLStyle:
     VIEW_LINK =       '🌐 View Link'
     CHECK_PM =        '📥 View in Bot PM'
     CHECK_LL =        '🗂 View in Leech Log'
+    CHECK_ML =        '🗂 View in Mirror Log'
     MEDIAINFO_LINK =  '📃 MediaInfo'
     # ---------------------
 
