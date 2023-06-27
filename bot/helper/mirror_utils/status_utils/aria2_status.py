@@ -18,11 +18,12 @@ class Aria2Status:
     def __init__(self, gid, listener, seeding=False, queued=False):
         self.__gid = gid
         self.__download = get_download(gid)
-        self.listener = listener
+        self.__listener = listener
+        self.upload_details = self.__listener.upload_details
         self.queued = queued
         self.start_time = 0
         self.seeding = seeding
-        self.message = self.listener.message
+        self.message = self.__listener.message
 
     def __update(self):
         if self.__download is None:
@@ -50,6 +51,9 @@ class Aria2Status:
 
     def eta(self):
         return self.__download.eta_string()
+        
+    def listener(self):
+        return self.__listener
 
     def status(self):
         self.__update()
