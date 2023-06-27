@@ -196,13 +196,14 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
        and not is_gdrive_link(link) and not link.endswith('.torrent') and file_ is None:
         content_type = await get_content_type(link)
         if content_type is None or re_match(r'text/html|text/plain', content_type):
-            process_msg = await sendMessage(message, f"<i>Processing:</i> <code>{link}</code>")
+            process_msg = await sendMessage(message, f"<i><b>Processing:</b></i> <code>{link}</code>")
             try:
                 link = await sync_to_async(direct_link_generator, link)
                 LOGGER.info(f"Generated link: {link}")
-                await editMessage(process_msg, f"<i>Generated link:</i> <code>{link}</code>")
+                await editMessage(process_msg, f"<i><b>Generated link:</b></i> <code>{link}</code>")
             except DirectDownloadLinkException as e:
                 LOGGER.info(str(e))
+                await process_msg.delete()
                 if str(e).startswith('ERROR:'):
                     await sendMessage(message, str(e))
                     return
