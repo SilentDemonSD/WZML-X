@@ -64,8 +64,7 @@ class TgUploader:
         try:
             if self.__bot_pm and (self.__listener.leechlogmsg or self.__listener.isSuperGroup):
                 destination = 'Bot PM'
-                await self.__sent_msg.copy(chat_id=self.__user_id)
-            if self.__ldump:
+                await bot.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)            if self.__ldump:
                 destination = 'Dump'
                 for channel_id in self.__ldump.split():
                     if channel_id.startswith('-100'):
@@ -76,7 +75,7 @@ class TgUploader:
                         continue
                     try:
                         chat = await bot.get_chat(channel_id)
-                        await self.__sent_msg.copy(chat_id=chat.id)
+                        await bot.copy_message(chat_id=chat.id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                     except PeerIdInvalid as e:
                         LOGGER.error(f"{e.NAME}: {e.MESSAGE} for {channel_id}")
                         continue
