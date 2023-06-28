@@ -6,7 +6,6 @@ from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.ext_utils.fs_utils import get_base_name, check_storage_threshold
 from bot.helper.ext_utils.bot_utils import get_user_tasks, getdailytasks, sync_to_async, get_telegraph_list, get_readable_file_size, checking_access
 from bot.helper.telegram_helper.message_utils import forcesub, BotPm_check, user_info
-from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.themes import BotTheme
 
 
@@ -119,7 +118,7 @@ async def start_from_queued():
 async def limit_checker(size, listener, isTorrent=False, isMega=False, isDriveLink=False, isYtdlp=False):
     LOGGER.info('Checking Size Limit of file/folder...')
     user_id = listener.message.from_user.id
-    if await CustomFilters.authorized_user(listener.message._client, listener.message):
+    if uid == OWNER_ID or uid in user_data and user_data[uid].get('is_sudo'):
         return
     limit_exceeded = ''
     if listener.isClone:
