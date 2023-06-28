@@ -27,7 +27,7 @@ from bot.helper.mirror_utils.rclone_utils.serve import rclone_serve_booter
 from bot.modules.torrent_search import initiate_search_tools
 from bot.modules.rss import addJob
 
-START = 0
+START = 1
 STATE = 'view'
 handler_dict = {}
 default_values = {'AUTO_DELETE_MESSAGE_DURATION': 30,
@@ -628,7 +628,7 @@ async def get_buttons(key=None, edit_type=None, edit_mode=None, mess=None):
         buttons.ibutton('Qbit Settings', "botset qbit")
         buttons.ibutton('Aria2c Settings', "botset aria")
         buttons.ibutton('Close', "botset close")
-        msg = 'Bot Settings:'
+        msg = '<b><i>Bot Settings:</i></b>'
     elif key == 'var':
         for k in list(OrderedDict(sorted(config_dict.items())).keys())[START:10+START]:
             buttons.ibutton(k, f"botset editvar {k}")
@@ -637,7 +637,7 @@ async def get_buttons(key=None, edit_type=None, edit_mode=None, mess=None):
         for x in range(0, len(config_dict)-1, 10):
             buttons.ibutton(
                 f'{int(x/10)}', f"botset start var {x}", position='footer')
-        msg = f'Config Variables | Page: {int(START/10)}'
+        msg = f'<b>Config Variables<b> | Page: {int(START/10)}'
     elif key == 'private':
         buttons.ibutton('Back', "botset back")
         buttons.ibutton('Close', "botset close")
@@ -965,7 +965,7 @@ async def edit_bot_settings(client, query):
         await query.answer()
         key = data[2] if len(data) == 3 else None
         if key is None:
-            globals()['START'] = 0
+            globals()['START'] = 1
         await update_buttons(message, key)
     elif data[1] in ['var', 'aria', 'qbit']:
         await query.answer()
@@ -1169,7 +1169,7 @@ async def edit_bot_settings(client, query):
 
 async def bot_settings(_, message):
     msg, button = await get_buttons()
-    globals()['START'] = 0
+    globals()['START'] = 1
     await sendMessage(message, msg, button, 'IMAGES')
 
 
