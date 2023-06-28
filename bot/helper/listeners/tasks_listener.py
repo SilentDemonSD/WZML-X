@@ -390,6 +390,7 @@ class MirrorLeechListener:
                         toPM = True
                         await sendMessage(self.message, msg + BotTheme('L_BOT_MSG'), btn.build_menu(2), self.random_pic)
                 msg += BotTheme('L_LL_MSG')
+                self.leechlogmsg._client = bot
                 fmsg = '\n\n'
                 for index, (link, name) in enumerate(files.items(), start=1):
                     fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
