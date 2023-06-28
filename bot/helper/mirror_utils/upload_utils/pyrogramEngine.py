@@ -116,10 +116,10 @@ class TgUploader:
             self.__listener.leechlogmsg = self.__sent_msg
         elif IS_PREMIUM_USER:
             if not self.__listener.isSuperGroup:
-                await self.__listener.onUploadError('<i>Use SuperGroup to leech with User!</i>')
+                await self.__listener.onUploadError('Use SuperGroup to leech with User Client! or Set LEECH_LOG_ID to Leech in PM')
                 return False
             if self.__bot_pm:
-                await sendBot(self.__listener.message, BotTheme('L_PM_START', msg_link=msg_link))
+                await sendBot(self.__listener.message, BotTheme('L_PM_START', msg_link=self.__listener.source_url))
             self.__sent_msg = await user.get_messages(chat_id=self.__listener.message.chat.id,
                                                       message_ids=self.__listener.uid)
         else:
