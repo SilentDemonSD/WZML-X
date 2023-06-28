@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from asyncio import Event
 
-from bot import OWNER_ID, config_dict, queued_dl, queued_up, non_queued_up, non_queued_dl, queue_dict_lock, LOGGER, user_data
+from bot import OWNER_ID, config_dict, queued_dl, queued_up, non_queued_up, non_queued_dl, queue_dict_lock, LOGGER, user_data, download_dict
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.ext_utils.fs_utils import get_base_name, check_storage_threshold
 from bot.helper.ext_utils.bot_utils import get_user_tasks, getdailytasks, sync_to_async, get_telegraph_list, get_readable_file_size, checking_access
@@ -197,6 +197,8 @@ async def limit_checker(size, listener, isTorrent=False, isMega=False, isDriveLi
 async def task_utils(message):
     LOGGER.info('Checking Task Utilities ...')
     msg = []
+    tasks = len(download_dict)
+    bmax_tasks = config_dict['BOT_MAX_TASKS']
     button = None
 
     if message.chat.type != message.chat.type.PRIVATE:
@@ -215,6 +217,9 @@ async def task_utils(message):
                 _msg, button = await BotPm_check(message, button)
                 if _msg:
                     msg.append(_msg)
+    if bmax_tasks:
+        if tasks >= bmax_tasks:
+            msg.append(f"Bot max tasks limit exceeded.\nBot max tasks limit is {bmax_tasks}.\nPlease wait for the completion of old tasks.")
     if (maxtask := config_dict['USER_MAX_TASKS']) and await get_user_tasks(message.from_user.id, maxtask):
         msg.append(f"Your tasks limit exceeded for {maxtask} tasks")
     return msg, button
