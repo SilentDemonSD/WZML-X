@@ -10,7 +10,7 @@ from json import loads
 from bot import LOGGER, download_dict, download_dict_lock, config_dict, bot
 from bot.helper.ext_utils.task_manager import limit_checker, task_utils
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
-from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage, sendStatusMessage, delete_links
+from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage, sendStatusMessage, delete_links, auto_delete_message
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.mirror_utils.status_utils.gdrive_status import GdriveStatus
@@ -166,7 +166,8 @@ async def gdcloneNode(message, link, tag):
         LOGGER.info(f'Cloning Done: {name}')
         await listener.onUploadComplete(link, size, files, folders, mime_type, name)
     else:
-        await sendMessage(message, CLONE_HELP_MESSAGE)
+        reply_message = await sendMessage(message, CLONE_HELP_MESSAGE)
+        await auto_delete_message(message, reply_message)
 
 
 @new_task
