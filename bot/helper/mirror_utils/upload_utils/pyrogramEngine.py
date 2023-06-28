@@ -187,7 +187,8 @@ class TgUploader:
 
     async def __switching_client(self):
         if (self.__prm_media and IS_PREMIUM_USER and self.__sent_msg._client.me.is_bot) or (not self.__prm_media and not self.__sent_msg._client.me.is_bot):
-            LOGGER.info(f'Uploading Media {">" if self.__prm_media else "<"}2GB by {"User" if self.__prm_media else "Bot"} Client')
+            LOGGER.info(f'Uploading Media {">" if self.__prm_media else "<"} 2GB by {"User" if self.__prm_media else "Bot"} Client')
+            LOGGER.info(self.__sent_msg)
             self.__sent_msg = await (user if self.__prm_media else bot).get_messages(chat_id=self.__sent_msg.chat.id, message_ids=self.__sent_msg.id)
 
     async def __send_media_group(self, subkey, key, msgs):
