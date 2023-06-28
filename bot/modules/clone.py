@@ -262,7 +262,6 @@ async def clone(client, message):
             await delete_links(message)
             return
         await gdcloneNode(message, link, tag)
-    await delete_links(message)
     
 bot.add_handler(MessageHandler(clone, filters=command(
     BotCommands.CloneCommand) & CustomFilters.authorized))
