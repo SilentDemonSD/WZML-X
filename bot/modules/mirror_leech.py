@@ -270,8 +270,10 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             return
         await add_rclone_download(link, config_path, f'{path}/', name, listener)
     elif is_gdrive_link(link):
+        await delete_links(message)
         await add_gd_download(link, path, listener, name)
     elif is_mega_link(link):
+        await delete_links(message)
         await add_mega_download(link, f'{path}/', listener, name)
     elif isQbit:
         await add_qb_torrent(link, path, listener, ratio, seed_time)
