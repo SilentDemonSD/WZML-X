@@ -256,6 +256,9 @@ if len(LEECH_SPLIT_SIZE) == 0 or int(LEECH_SPLIT_SIZE) > MAX_SPLIT_SIZE:
 else:
     LEECH_SPLIT_SIZE = int(LEECH_SPLIT_SIZE)
 
+BOT_MAX_TASKS = environ.get('BOT_MAX_TASKS', '')
+BOT_MAX_TASKS = '' if len(BOT_MAX_TASKS) == 0 else int(BOT_MAX_TASKS)
+
 STATUS_UPDATE_INTERVAL = environ.get('STATUS_UPDATE_INTERVAL', '')
 if len(STATUS_UPDATE_INTERVAL) == 0:
     STATUS_UPDATE_INTERVAL = 10
@@ -526,6 +529,7 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'BASE_URL': BASE_URL,
                'BASE_URL_PORT': BASE_URL_PORT,
                'BOT_TOKEN': BOT_TOKEN,
+               'BOT_MAX_TASKS': BOT_MAX_TASKS,
                'CAP_FONT': CAP_FONT,
                'CMD_SUFFIX': CMD_SUFFIX,
                'DATABASE_URL': DATABASE_URL,
