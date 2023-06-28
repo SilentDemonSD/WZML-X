@@ -326,10 +326,12 @@ class TgUploader:
                                                                        disable_notification=True,
                                                                        progress=self.__upload_progress,
                                                                        reply_markup=await self.__buttons(self.__up_path))
-                self.__sent_msg = nrml_media
+                
                 if self.__prm_media and (self.__has_buttons or not self.__listener.leechlogmsg):
                     self.__sent_msg = await bot.copy_message(nrml_media.chat.id, nrml_media.chat.id, nrml_media.id, reply_to_message_id=self.__sent_msg.id, reply_markup=await self.__buttons(self.__up_path))
                     await nrml_media.delete()
+                else:
+                    self.__sent_msg = nrml_media
             elif is_video:
                 key = 'videos'
                 duration = (await get_media_info(self.__up_path))[0]
@@ -366,10 +368,11 @@ class TgUploader:
                                                                     disable_notification=True,
                                                                     progress=self.__upload_progress,
                                                                     reply_markup=await self.__buttons(self.__up_path))
-                self.__sent_msg = nrml_media
                 if self.__prm_media and (self.__has_buttons or not self.__listener.leechlogmsg):
                     self.__sent_msg = await bot.copy_message(nrml_media.chat.id, nrml_media.chat.id, nrml_media.id, reply_to_message_id=self.__sent_msg.id, reply_markup=await self.__buttons(self.__up_path))
                     await nrml_media.delete()
+                else:
+                    self.__sent_msg = nrml_media
             elif is_audio:
                 key = 'audios'
                 duration, artist, title = await get_media_info(self.__up_path)
@@ -419,9 +422,7 @@ class TgUploader:
         except Exception as err:
             if self.__thumb is None and thumb is not None and await aiopath.exists(thumb):
                 await aioremove(thumb)
-            err_type = "RPCError: " if isinstance(err, RPCError) else ""
-            LOGGER.error(f"{err_type}{err}. Path: {self.__up_path}")
-            LOGGER.error(format_exc())
+            LOGGER.error(f"{format_exc()}. Path: {self.__up_path}")
             if 'Telegram says: [400' in str(err) and key != 'documents':
                 LOGGER.error(f"Retrying As Document. Path: {self.__up_path}")
                 return await self.__upload_file(cap_mono, file, True)
