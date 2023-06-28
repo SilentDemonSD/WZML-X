@@ -42,6 +42,7 @@ class TgUploader:
         self.__is_corrupted = False
         self.__media_dict = {'videos': {}, 'documents': {}}
         self.__last_msg_in_group = False
+        self.__prm_media = False
         self.__up_path = ''
         self.__ldump = ''
         self.__mediainfo = False
@@ -111,8 +112,12 @@ class TgUploader:
             if self.__bot_pm and self.__listener.isSuperGroup:
                 await sendBot(self.__listener.message, BotTheme('L_PM_START', msg_link=self.__listener.source_url))
             _client = user if IS_PREMIUM_USER else bot
-            self.__sent_msg = await _client.send_message(chat_id=LEECH_LOG_ID, text=BotTheme('L_LOG_START', mention=msg_user.mention(style='HTML'), uid=msg_user.id, msg_link=msg_link),
-                                                          disable_web_page_preview=False, disable_notification=True)
+            try:
+                self.__sent_msg = await _client.send_message(chat_id=LEECH_LOG_ID, text=BotTheme('L_LOG_START', mention=msg_user.mention(style='HTML'), uid=msg_user.id, msg_link=msg_link),
+                                                            disable_web_page_preview=False, disable_notification=True)
+            except Exception as er:
+                await self.__listener.onUploadError(str(er))
+                return False
             self.__listener.leechlogmsg = self.__sent_msg
         elif IS_PREMIUM_USER:
             if not self.__listener.isSuperGroup:
@@ -179,13 +184,10 @@ class TgUploader:
             rlist.append(input_media)
         return rlist
 
-    async def __switching_client(self, f_size):
-        if f_size > 2097152000 and IS_PREMIUM_USER and self.__sent_msg._client.me.is_bot:
-            LOGGER.info(f'Trying to upload file greater than 2GB by user client')
-            self.__sent_msg = await user.get_messages(chat_id=self.__sent_msg.chat.id, message_ids=self.__sent_msg.id)
-        if f_size < 2097152000 and not self.__sent_msg._client.me.is_bot:
-            LOGGER.info(f'Trying to upload file less than 2GB by bot client')
-            self.__sent_msg = await bot.get_messages(chat_id=self.__sent_msg.chat.id, message_ids=self.__sent_msg.id)
+    async def __switching_client(self):
+        if (self.__prm_media and IS_PREMIUM_USER and self.__sent_msg._client.me.is_bot) or (not self.__prm_media and not self.__sent_msg._client.me.is_bot):
+            LOGGER.info(f'Uploading Media {">" if self.__prm_media else "<"}2GB by {"User" if self.__prm_media else "Bot"} Client')
+            self.__sent_msg = await (user if self.__prm_media else bot).get_messages(chat_id=self.__sent_msg.chat.id, message_ids=self.__sent_msg.id)
 
     async def __send_media_group(self, subkey, key, msgs):
         msgs_list = await msgs[0].reply_to_message.reply_media_group(media=self.__get_input_media(subkey, key),
@@ -246,6 +248,7 @@ class TgUploader:
                         continue
                     if self.__is_cancelled:
                         return
+                    self.__prm_media = True if f_size > 2097152000 else False
                     cap_mono, file_ = await self.__prepare_file(file_, dirpath)
                     if self.__last_msg_in_group:
                         group_lists = [x for v in self.__media_dict.values()
@@ -257,8 +260,8 @@ class TgUploader:
                                         await self.__send_media_group(subkey, key, msgs)
                     self.__last_msg_in_group = False
                     self.__last_uploaded = 0
-                    await self.__switching_client(f_size)
-                    await self.__upload_file(cap_mono, file_, f_size)
+                    await self.__switching_client()
+                    await self.__upload_file(cap_mono, file_)
                     if self.__is_cancelled:
                         return
                     if not self.__is_corrupted and (self.__listener.isSuperGroup or config_dict['LEECH_LOG_ID']):
@@ -296,7 +299,7 @@ class TgUploader:
 
     @retry(wait=wait_exponential(multiplier=2, min=4, max=8), stop=stop_after_attempt(3),
            retry=retry_if_exception_type(Exception))
-    async def __upload_file(self, cap_mono, file, size, force_document=False):
+    async def __upload_file(self, cap_mono, file, force_document=False):
         if self.__thumb is not None and not await aiopath.exists(self.__thumb):
             self.__thumb = None
         thumb = self.__thumb
@@ -325,7 +328,7 @@ class TgUploader:
                                                                        progress=self.__upload_progress,
                                                                        reply_markup=await self.__buttons(self.__up_path))
                 self.__sent_msg = nrml_media
-                if size > 2097152000 and self.__has_buttons:
+                if self.__prm_media and (self.__has_buttons or not self.__listener.leechlogmsg):
                     prm_media = await bot.copy_message(nrml_media.chat.id, nrml_media.chat.id, nrml_media.id, reply_to_message_id=self.__sent_msg.id, reply_markup=await self.__buttons(self.__up_path))
                     await nrml_media.delete()
                     self.__sent_msg = prm_media
@@ -367,7 +370,7 @@ class TgUploader:
                                                                     progress=self.__upload_progress,
                                                                     reply_markup=await self.__buttons(self.__up_path))
                 self.__sent_msg = nrml_media
-                if size > 2097152000 and self.__has_buttons:
+                if self.__prm_media and (self.__has_buttons or not self.__listener.leechlogmsg):
                     prm_media = await bot.copy_message(nrml_media.chat.id, nrml_media.chat.id, nrml_media.id, reply_to_message_id=self.__sent_msg.id, reply_markup=await self.__buttons(self.__up_path))
                     await nrml_media.delete()
                     self.__sent_msg = prm_media
@@ -424,7 +427,7 @@ class TgUploader:
             LOGGER.error(f"{err_type}{err}. Path: {self.__up_path}")
             if 'Telegram says: [400' in str(err) and key != 'documents':
                 LOGGER.error(f"Retrying As Document. Path: {self.__up_path}")
-                return await self.__upload_file(cap_mono, file, size, True)
+                return await self.__upload_file(cap_mono, file, True)
             raise err
 
     @property
