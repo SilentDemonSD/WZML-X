@@ -370,8 +370,9 @@ class TgUploader:
                                                                     reply_markup=await self.__buttons(self.__up_path))
                 self.__sent_msg = nrml_media
                 if self.__prm_media and (self.__has_buttons or not self.__listener.leechlogmsg):
-                    self.__sent_msg = await bot.copy_message(nrml_media.chat.id, nrml_media.chat.id, nrml_media.id, reply_to_message_id=self.__sent_msg.id, reply_markup=await self.__buttons(self.__up_path))
+                    prm_media = await bot.copy_message(nrml_media.chat.id, nrml_media.chat.id, nrml_media.id, reply_to_message_id=self.__sent_msg.id, reply_markup=await self.__buttons(self.__up_path))
                     await nrml_media.delete()
+                    self.__sent_msg = prm_media
             elif is_audio:
                 key = 'audios'
                 duration, artist, title = await get_media_info(self.__up_path)
