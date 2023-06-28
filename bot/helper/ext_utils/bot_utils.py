@@ -199,7 +199,7 @@ def get_readable_message():
         globals()['PAGE_NO'] = PAGES
     for download in list(download_dict.values())[STATUS_START:STATUS_LIMIT+STATUS_START]:
         msg_link = download.message.link if download.message.chat.type in [
-            ChatType.SUPERGROUP, ChatType.CHANNEL] else ''
+            ChatType.SUPERGROUP, ChatType.CHANNEL] and not config_dict['DELETE_LINKS'] else ''
         msg += BotTheme('STATUS_NAME', Name=escape(f'{download.name()}'))
         if download.status() not in [MirrorStatus.STATUS_SPLITTING, MirrorStatus.STATUS_SEEDING]:
             if download.status() != MirrorStatus.STATUS_UPLOADDDL:
@@ -270,8 +270,7 @@ def get_readable_message():
         buttons.ibutton(BotTheme('NEXT'), "status nex")
         button = buttons.build_menu(3)
     msg += BotTheme('Cpu', cpu=cpu_percent())
-    msg += BotTheme('FREE', free=get_readable_file_size(
-        disk_usage(config_dict['DOWNLOAD_DIR']).free))
+    msg += BotTheme('FREE', free=get_readable_file_size(disk_usage(config_dict['DOWNLOAD_DIR']).free))
     msg += BotTheme('Ram', ram=virtual_memory().percent)
     msg += BotTheme('uptime', uptime=get_readable_time(time() - botStartTime))
     msg += BotTheme('DL', DL=get_readable_file_size(dl_speed))
