@@ -30,7 +30,7 @@ from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.mirror_utils.upload_utils.pyrogramEngine import TgUploader
 from bot.helper.mirror_utils.upload_utils.ddlEngine import DDLUploader
 from bot.helper.mirror_utils.rclone_utils.transfer import RcloneTransferHelper
-from bot.helper.telegram_helper.message_utils import sendBot, sendMessage, delete_all_messages, sendMirrorLog, update_all_messages
+from bot.helper.telegram_helper.message_utils import sendBot, sendMessage, delete_all_messages, delete_links, sendMirrorLog, update_all_messages
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.themes import BotTheme
@@ -65,7 +65,7 @@ class MirrorLeechListener:
         self.join = join
         self.leechlogmsg = None
         self.upload_details = {}
-        self.source_url = source_url
+        self.source_url = source_url if source_url.startswith('http') else "https://t.me/share/url?url=" + source_url
         self.__setModeEng()
 
     async def clean(self):
@@ -80,32 +80,9 @@ class MirrorLeechListener:
             pass
 
     def __setModeEng(self):
-        if self.isLeech:
-            mode = 'Leech'
-        elif self.isClone:
-            mode = 'Clone'
-        elif self.upPath not in ['gd', 'ddl']:
-            mode = 'RClone'
-        elif self.upPath != 'gd':
-            mode = 'DDL'
-        else:
-            mode = 'GDrive'
-        if self.compress:
-            mode += ' as Zip'
-        elif self.extract:
-            mode += ' as Unzip'
-        if self.isQbit:
-            mode += ' | #qbit'
-        elif self.isYtdlp:
-            mode += ' | #ytdlp'
-        elif self.isClone or self.isGdrive:
-            mode += ' | #gdrive'
-        elif self.isMega:
-            mode += ' | #mega'
-        elif self.source_url:
-            mode += ' | #aria2'
-        else:
-            mode += ' | #tg'
+        mode = 'Leech' if self.isLeech else 'Clone' if self.isClone else 'RClone' if self.upPath not in ['gd', 'ddl'] else 'DDL' if self.upPath != 'gd' else 'GDrive'
+        mode += ' as Zip' if self.compress else ' as Unzip' if self.extract else ''
+        mode += f" | #{'qbit' if self.isQbit else 'ytdlp' if self.isYtdlp else 'gdrive' if (self.isClone or self.isGdrive) else 'mega' if self.isMega else 'aria2' if self.source_url else 'tg'}"
         self.upload_details['mode'] = mode
         
     async def onDownloadStart(self):
@@ -539,6 +516,7 @@ class MirrorLeechListener:
                 non_queued_up.remove(self.uid)
 
         await start_from_queued()
+        await delete_links(self.message)
 
     async def onDownloadError(self, error, button=None):
         async with download_dict_lock:
