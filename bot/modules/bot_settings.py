@@ -67,7 +67,7 @@ async def load_config():
         TELEGRAM_HASH = config_dict['TELEGRAM_HASH']
 
     BOT_MAX_TASKS = environ.get('BOT_MAX_TASKS', '')
-    BOT_MAX_TASKS = '' if len(BOT_MAX_TASKS) == 0 else int(BOT_MAX_TASKS)
+    BOT_MAX_TASKS = int(BOT_MAX_TASKS) if BOT_MAX_TASKS.isdigit() else ''
     
     OWNER_ID = environ.get('OWNER_ID', '')
     OWNER_ID = config_dict['OWNER_ID'] if len(OWNER_ID) == 0 else int(OWNER_ID)

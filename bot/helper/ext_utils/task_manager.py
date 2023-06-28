@@ -197,8 +197,6 @@ async def limit_checker(size, listener, isTorrent=False, isMega=False, isDriveLi
 async def task_utils(message):
     LOGGER.info('Checking Task Utilities ...')
     msg = []
-    tasks = len(download_dict)
-    bmax_tasks = config_dict['BOT_MAX_TASKS']
     button = None
 
     if message.chat.type != message.chat.type.PRIVATE:
@@ -217,9 +215,8 @@ async def task_utils(message):
                 _msg, button = await BotPm_check(message, button)
                 if _msg:
                     msg.append(_msg)
-    if bmax_tasks:
-        if tasks >= bmax_tasks:
-            msg.append(f"Bot max tasks limit exceeded.\nBot max tasks limit is {bmax_tasks}.\nPlease wait for the completion of old tasks.")
+    if (bmax_tasks := config_dict['BOT_MAX_TASKS']) and len(download_dict) >= bmax_tasks:
+        msg.append(f"Bot Max Tasks limit exceeded.\nBot max tasks limit is {bmax_tasks}.\nPlease wait for the completion of other tasks.")
     if (maxtask := config_dict['USER_MAX_TASKS']) and await get_user_tasks(message.from_user.id, maxtask):
         msg.append(f"Your tasks limit exceeded for {maxtask} tasks")
     return msg, button
