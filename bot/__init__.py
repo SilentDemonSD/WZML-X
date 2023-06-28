@@ -190,7 +190,7 @@ if len(USER_SESSION_STRING) != 0:
                         parse_mode=enums.ParseMode.HTML).start()
         IS_PREMIUM_USER = user.me.is_premium
     except Exception as e:
-        log_error(f"Failed making client from USER_SESSION_STRING : [{e.NAME}] {e.MESSAGE}")
+        log_error(f"Failed making client from USER_SESSION_STRING : {e}")
         user = ''
 
 MEGA_EMAIL = environ.get('MEGA_EMAIL', '')
