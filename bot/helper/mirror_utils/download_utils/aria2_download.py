@@ -4,7 +4,7 @@ from aiofiles.os import remove as aioremove, path as aiopath
 from bot import aria2, download_dict_lock, download_dict, LOGGER, config_dict, aria2_options, aria2c_global, non_queued_dl, queue_dict_lock
 from bot.helper.ext_utils.bot_utils import bt_selection_buttons, sync_to_async
 from bot.helper.mirror_utils.status_utils.aria2_status import Aria2Status
-from bot.helper.telegram_helper.message_utils import sendStatusMessage, sendMessage, delete_links
+from bot.helper.telegram_helper.message_utils import sendStatusMessage, sendMessage
 from bot.helper.ext_utils.task_manager import is_queued
 
 
@@ -33,7 +33,6 @@ async def add_aria2c_download(link, path, listener, filename, auth, ratio, seed_
     except Exception as e:
         LOGGER.info(f"Aria2c Download Error: {e}")
         await sendMessage(listener.message, f'{e}')
-        await delete_links(listener.message)
         return
     if await aiopath.exists(link):
         await aioremove(link)
@@ -41,7 +40,6 @@ async def add_aria2c_download(link, path, listener, filename, auth, ratio, seed_
         error = str(download.error_message).replace('<', ' ').replace('>', ' ')
         LOGGER.info(f"Aria2c Download Error: {error}")
         await sendMessage(listener.message, error)
-        await delete_links(listener.message)
         return
 
     gid = download.gid
