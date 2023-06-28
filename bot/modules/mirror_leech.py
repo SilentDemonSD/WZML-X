@@ -173,7 +173,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             file_ = None
 
     if not is_url(link) and not is_magnet(link) and not await aiopath.exists(link) and not is_rclone_path(link) and file_ is None:
-        await sendMessage(message, MIRROR_HELP_MESSAGE)
+        reply_message = await sendMessage(message, MIRROR_HELP_MESSAGE)
         await auto_delete_message(message, reply_message)
         await delete_links(message)
         return
