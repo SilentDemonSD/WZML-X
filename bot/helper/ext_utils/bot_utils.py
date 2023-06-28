@@ -176,10 +176,10 @@ def get_rclone_version():
 
 class EngineStatus:
     STATUS_ARIA = f"Aria2 v{aria2.client.get_version()['version']}"
-    STATUS_GD = f"G-API v{get_distribution('google-api-python-client').version}"
+    STATUS_GD = f"Google-API v{get_distribution('google-api-python-client').version}"
     STATUS_MEGA = f"MegaSDK v{MegaApi('test').getVersion()}"
     STATUS_QB = f"qBit {get_client().app.version}"
-    STATUS_TG = f"Pyro v{get_distribution('pyrogram').version}"
+    STATUS_TG = f"Pyrogram v{get_distribution('pyrogram').version}"
     STATUS_YT = f"yt-dlp v{get_distribution('yt-dlp').version}"
     STATUS_EXT = "pExtract"
     STATUS_SPLIT_MERGE = f"ffmpeg v{get_ffmpeg_version()}"
@@ -199,26 +199,23 @@ def get_readable_message():
         globals()['PAGE_NO'] = PAGES
     for download in list(download_dict.values())[STATUS_START:STATUS_LIMIT+STATUS_START]:
         msg_link = download.message.link if download.message.chat.type in [
-            ChatType.SUPERGROUP, ChatType.CHANNEL] else ''
+            ChatType.SUPERGROUP, ChatType.CHANNEL] and not config_dict['DELETE_LINKS'] else ''
         msg += BotTheme('STATUS_NAME', Name=escape(f'{download.name()}'))
         if download.status() not in [MirrorStatus.STATUS_SPLITTING, MirrorStatus.STATUS_SEEDING]:
             if download.status() != MirrorStatus.STATUS_UPLOADDDL:
                 msg += BotTheme('BAR', Bar=f"{get_progress_bar_string(download.progress())} {download.progress()}")
-                msg += BotTheme('PROCESSED',
-                                Processed=f"{download.processed_bytes()} of {download.size()}")
+                msg += BotTheme('PROCESSED', Processed=f"{download.processed_bytes()} of {download.size()}")
             msg += BotTheme('STATUS', Status=download.status(), Url=msg_link)
             if download.status() != MirrorStatus.STATUS_UPLOADDDL:
                 msg += BotTheme('ETA', Eta=download.eta())
-            if download.status() != MirrorStatus.STATUS_UPLOADDDL:
                 msg += BotTheme('SPEED', Speed=download.speed())
-            msg += BotTheme('ELAPSED', Elapsed=get_readable_time(time() -
-                            download.message.date.timestamp()))
+            msg += BotTheme('ELAPSED', Elapsed=get_readable_time(time() - download.message.date.timestamp()))
             msg += BotTheme('ENGINE', Engine=download.eng())
+            msg += BotTheme('STA_MODE', Mode=download.upload_details['mode'])
             if hasattr(download, 'seeders_num'):
                 try:
                     msg += BotTheme('SEEDERS', Seeders=download.seeders_num())
-                    msg += BotTheme('LEECHERS',
-                                    Leechers=download.leechers_num())
+                    msg += BotTheme('LEECHERS', Leechers=download.leechers_num())
                 except:
                     pass
         elif download.status() == MirrorStatus.STATUS_SEEDING:
@@ -237,8 +234,7 @@ def get_readable_message():
         msg += BotTheme('USER',
                         User=download.message.from_user.mention(style="html"))
         msg += BotTheme('ID', Id=download.message.from_user.id)
-        msg += BotTheme('CANCEL',
-                        Cancel=f"/{BotCommands.CancelMirror}_{download.gid()}")
+        msg += BotTheme('CANCEL', Cancel=f"/{BotCommands.CancelMirror}_{download.gid()}")
 
     if len(msg) == 0:
         return None, None
@@ -264,6 +260,7 @@ def get_readable_message():
         elif tstatus == MirrorStatus.STATUS_UPLOADING or tstatus == MirrorStatus.STATUS_SEEDING:
             up_speed += speed_in_bytes_per_second
 
+    msg += BotTheme('FOOTER')
     if tasks > STATUS_LIMIT:
         msg += BotTheme('PAGE', Page=f"{PAGE_NO}/{PAGES}")
         msg += BotTheme('TASKS', Tasks=tasks)
@@ -272,10 +269,8 @@ def get_readable_message():
         buttons.ibutton(BotTheme('REFRESH'), "status ref")
         buttons.ibutton(BotTheme('NEXT'), "status nex")
         button = buttons.build_menu(3)
-    msg += BotTheme('FOOTER')
     msg += BotTheme('Cpu', cpu=cpu_percent())
-    msg += BotTheme('FREE', free=get_readable_file_size(
-        disk_usage(config_dict['DOWNLOAD_DIR']).free))
+    msg += BotTheme('FREE', free=get_readable_file_size(disk_usage(config_dict['DOWNLOAD_DIR']).free))
     msg += BotTheme('Ram', ram=virtual_memory().percent)
     msg += BotTheme('uptime', uptime=get_readable_time(time() - botStartTime))
     msg += BotTheme('DL', DL=get_readable_file_size(dl_speed))

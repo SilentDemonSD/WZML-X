@@ -28,6 +28,9 @@ desp_dict = {'rcc': ['RClone is a command-line program to sync files and directo
             'lremname': ['Leech Filename Remname is combination of Regex(s) used for removing or manipulating Filename of the Leech Files', 'Send Leech Filename Remname. Timeout: 60 sec'],
             'lcaption': ['Leech Caption is the Custom Caption on the Leech Files Uploaded by the bot', 'Send Leech Caption. You can add HTML tags Timeout: 60 sec'],
             'ldump': ['Leech Files User Dump for Personal Use as a Storage.', 'Send Leech Dump Channel ID. Timeout: 60 sec'],
+            'mprefix': ['Mirror Filename Prefix is the Front Part attacted with the Filename of the Mirrored/Cloned Files.', 'Send Mirror Filename Prefix. Timeout: 60 sec'],
+            'msuffix': ['Mirror Filename Suffix is the End Part attached with the Filename of the Mirrored/Cloned Files', 'Send Mirror Filename Suffix. Timeout: 60 sec'],
+            'mremname': ['Mirror Filename Remname is combination of Regex(s) used for removing or manipulating Filename of the Mirrored/Cloned Files', 'Send Mirror Filename Remname. Timeout: 60 sec'],
             'thumb': ['Custom Thumbnail to appear on the Leeched files uploaded by the bot', 'Send a photo to save it as custom thumbnail. Timeout: 60 sec'],
             'yt_opt': ['YT-DLP Options is the Custom Quality for the extraction of videos from the yt-dlp supported sites.', 'Send YT-DLP Options. Timeout: 60 sec\nFormat: key:value|key:value|key:value.\nExample: format:bv*+mergeall[vcodec=none]|nocheckcertificate:True\nCheck all yt-dlp api options from this <a href="https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L184">FILE</a> or use this <a href="https://t.me/mltb_official/177">script</a> to convert cli arguments to api options.'],
             'split_size': ['Leech Splits Size is the size to split the Leeched File before uploading', f'Send Leech split size in bytes. IS_PREMIUM_USER: {IS_PREMIUM_USER}. Timeout: 60 sec'],
@@ -39,6 +42,9 @@ fname_dict = {'rcc': 'RClone',
              'lprefix': 'Prefix',
              'lsuffix': 'Suffix',
              'lremname': 'Remname',
+             'mprefix': 'Prefix',
+             'msuffix': 'Suffix',
+             'mremname': 'Remname',
              'ldump': 'Dump',
              'lcaption': 'Caption',
              'thumb': 'Thumbnail',
@@ -95,10 +101,20 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
         rccmsg = "Exists" if await aiopath.exists(rclone_path) else "Not Exists"
         dailytlup = get_readable_file_size(config_dict['DAILY_MIRROR_LIMIT'] * 1024**3) if config_dict['DAILY_MIRROR_LIMIT'] else "♾️"
         dailyup = get_readable_file_size(await getdailytasks(user_id, check_mirror=True)) if config_dict['DAILY_MIRROR_LIMIT'] and user_id != OWNER_ID else "♾️"
+        buttons.ibutton("Mirror Prefix", f"userset {user_id} mprefix")
+        mprefix = 'Not Exists' if (val:=user_dict.get('mprefix', config_dict.get('MIRROR_FILENAME_PREFIX', ''))) == '' else val
+
+        buttons.ibutton("Mirror Suffix", f"userset {user_id} msuffix")
+        msuffix = 'Not Exists' if (val:=user_dict.get('msuffix', config_dict.get('MIRROR_FILENAME_SUFFIX', ''))) == '' else val
+            
+        buttons.ibutton("Mirror Remname", f"userset {user_id} mremname")
+        mremname = 'Not Exists' if (val:=user_dict.get('mremname', config_dict.get('MIRROR_FILENAME_REMNAME', ''))) == '' else val
+
         ddl_serv = len(val.keys()) if (val := user_dict.get('ddl_servers', False)) else 0
         buttons.ibutton("DDL Servers", f"userset {user_id} ddl_servers")
 
-        text = BotTheme('MIRROR', NAME=name, RCLONE=rccmsg, DDL_SERVER=ddl_serv, DM=f"{dailyup} / {dailytlup}")
+        text = BotTheme('MIRROR', NAME=name, RCLONE=rccmsg, DDL_SERVER=ddl_serv, DM=f"{dailyup} / {dailytlup}", MREMNAME=escape(mremname), MPREFIX=escape(mprefix),
+                MSUFFIX=escape(msuffix))
         
         buttons.ibutton("Back", f"userset {user_id} back", "footer")
         buttons.ibutton("Close", f"userset {user_id} close", "footer")
@@ -141,7 +157,7 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
                 LTYPE=ltype, THUMB=thumbmsg, SPLIT_SIZE=split_size,
                 EQUAL_SPLIT=equal_splits, MEDIA_GROUP=media_group,
                 LCAPTION=escape(lcaption), LPREFIX=escape(lprefix),
-                LSUFFIX=escape(lsuffix), LDUMP=ldump, LREMNAME=lremname)
+                LSUFFIX=escape(lsuffix), LDUMP=ldump, LREMNAME=escape(lremname))
 
         buttons.ibutton("Back", f"userset {user_id} back", "footer")
         buttons.ibutton("Close", f"userset {user_id} close", "footer")
@@ -185,6 +201,9 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
         elif key in ['lprefix', 'lremname', 'lsuffix', 'lcaption', 'ldump']:
             set_exist = 'Not Exists' if (val:=user_dict.get(key, config_dict.get(f'LEECH_FILENAME_{key[1:].upper()}', ''))) == '' else val
             text += f"➲ <b>Leech Filename {fname_dict[key]} :</b> {set_exist}\n\n"
+        elif key in ['mprefix', 'mremname', 'msuffix']:
+            set_exist = 'Not Exists' if (val:=user_dict.get(key, config_dict.get(f'MIRROR_FILENAME_{key[1:].upper()}', ''))) == '' else val
+            text += f"➲ <b>Mirror Filename {fname_dict[key]} :</b> {set_exist}\n\n"
         elif key in ['gofile', 'streamsb']:
             set_exist = 'Exists' if key in (ddl_dict:=user_dict.get('ddl_servers', {})) and ddl_dict[key][1] and ddl_dict[key][1] != '' else 'Not Exists'
             ddl_mode = 'Enabled' if key in (ddl_dict:=user_dict.get('ddl_servers', {})) and ddl_dict[key][0] else 'Disabled'
@@ -492,20 +511,28 @@ async def edit_user_settings(client, query):
         pfunc = partial(set_custom, pre_event=query, key=data[2])
         rfunc = partial(update_user_settings, query, data[2], 'mirror' if data[2] == "ddl_servers" else "ddl_servers")
         await event_handler(client, query, pfunc, rfunc)
-    elif data[2] in ['lprefix', 'lsuffix', 'lremname', 'lcaption', 'ldump']:
+    elif data[2] in ['lprefix', 'lsuffix', 'lremname', 'lcaption', 'ldump', 'mprefix', 'msuffix', 'mremname']:
         handler_dict[user_id] = False
         await query.answer()
         edit_mode = len(data) == 4
-        await update_user_settings(query, data[2], 'leech', edit_mode)
+        return_key = 'leech' if data[2][0] == 'l' else 'mirror'
+        await update_user_settings(query, data[2], return_key, edit_mode)
         if not edit_mode: return
         pfunc = partial(set_custom, pre_event=query, key=data[2])
-        rfunc = partial(update_user_settings, query, data[2], 'leech')
+        rfunc = partial(update_user_settings, query, data[2], return_key)
         await event_handler(client, query, pfunc, rfunc)
     elif data[2] in ['dlprefix', 'dlsuffix', 'dlremname', 'dlcaption', 'dldump']:
         handler_dict[user_id] = False
         await query.answer()
         update_user_ldata(user_id, data[2][1:], '')
         await update_user_settings(query, data[2][1:], 'leech')
+        if DATABASE_URL:
+            await DbManger().update_user_data(user_id)
+    elif data[2] in ['dmprefix', 'dmsuffix', 'dmremname']:
+        handler_dict[user_id] = False
+        await query.answer()
+        update_user_ldata(user_id, data[2][1:], '')
+        await update_user_settings(query, data[2][1:], 'mirror')
         if DATABASE_URL:
             await DbManger().update_user_data(user_id)
     elif data[2] == 'back':

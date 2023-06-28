@@ -10,7 +10,7 @@ from time import time
 
 from bot import DOWNLOAD_DIR, bot, config_dict, user_data, LOGGER
 from bot.helper.ext_utils.task_manager import task_utils
-from bot.helper.telegram_helper.message_utils import sendMessage, editMessage
+from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, auto_delete_message, delete_links
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, is_url, new_task, sync_to_async, new_task, is_rclone_path, new_thread, get_readable_time, arg_parser
 from bot.helper.mirror_utils.download_utils.yt_dlp_download import YoutubeDLHelper
@@ -332,7 +332,8 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
             await message.unpin()
         except:
             pass
-
+    elif sender_chat := message.sender_chat:
+        tag = sender_chat.title
     if username := message.from_user.username:
         tag = f'@{username}'
     else:
@@ -342,7 +343,9 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
         link = reply_to.text.split('\n', 1)[0].strip()
 
     if not is_url(link):
-        await sendMessage(message, YT_HELP_MESSAGE)
+        reply_message = await sendMessage(message, YT_HELP_MESSAGE)
+        await auto_delete_message(message, reply_message)
+        await delete_links(message)
         return
 
     error_msg = []
@@ -358,6 +361,7 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
         if error_button is not None:
             error_button = error_button.build_menu(2)
         await sendMessage(message, final_msg, error_button)
+        await delete_links(message)
         return
 
     if not isLeech:
@@ -369,9 +373,11 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
             up = 'gd'
         if up == 'gd' and not config_dict['GDRIVE_ID']:
             await sendMessage(message, 'GDRIVE_ID not Provided!')
+            await delete_links(message)
             return
         elif not up:
             await sendMessage(message, 'No Rclone Destination!')
+            await delete_links(message)
             return
         elif up not in ['rcl', 'gd', 'ddl']:
             if up.startswith('mrcc:'):
@@ -380,19 +386,22 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
                 config_path = 'rclone.conf'
             if not await aiopath.exists(config_path):
                 await sendMessage(message, f'Rclone Config: {config_path} not Exists!')
+                await delete_links(message)
                 return
         if up != 'gd' and up != 'ddl' and not is_rclone_path(up):
             await sendMessage(message, 'Wrong Rclone Upload Destination!')
+            await delete_links(message)
             return
 
     if up == 'rcl' and not isLeech:
         up = await RcloneList(client, message).get_rclone_path('rcu')
         if not is_rclone_path(up):
             await sendMessage(message, up)
+            await delete_links(message)
             return
 
     listener = MirrorLeechListener(
-        message, compress, isLeech=isLeech, tag=tag, sameDir=sameDir, rcFlags=rcf, upPath=up)
+        message, compress, isLeech=isLeech, tag=tag, sameDir=sameDir, rcFlags=rcf, upPath=up, isYtdlp=True, source_url=link)
 
     if 'mdisk.me' in link:
         name, link = await _mdisk(link, name)
@@ -423,6 +432,7 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
         msg = str(e).replace('<', ' ').replace('>', ' ')
         await sendMessage(message, f'{tag} {msg}')
         __run_multi()
+        await delete_links(message)
         return
 
     __run_multi()
@@ -439,10 +449,12 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
         qual = await YtSelection(client, message).get_quality(result)
         if qual is None:
             return
+    await delete_links(message)
     LOGGER.info(f'Downloading with YT-DLP: {link}')
     playlist = 'entries' in result
     ydl = YoutubeDLHelper(listener)
     await ydl.add_download(link, path, name, qual, playlist, opt)
+    
 
 
 async def ytdl(client, message):

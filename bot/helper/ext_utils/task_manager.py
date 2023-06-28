@@ -118,6 +118,8 @@ async def start_from_queued():
 async def limit_checker(size, listener, isTorrent=False, isMega=False, isDriveLink=False, isYtdlp=False):
     LOGGER.info('Checking Size Limit of file/folder...')
     user_id = listener.message.from_user.id
+    if user_id == OWNER_ID or user_id in user_data and user_data[user_id].get('is_sudo'):
+        return
     limit_exceeded = ''
     if listener.isClone:
         if CLONE_LIMIT := config_dict['CLONE_LIMIT']:

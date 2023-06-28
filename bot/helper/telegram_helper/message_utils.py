@@ -7,7 +7,7 @@ from time import time
 from re import match as re_match
 
 from pyrogram.types import InputMediaPhoto
-from pyrogram.errors import FloodWait, PeerIdInvalid, RPCError, UserNotParticipant, MessageNotModified, MessageEmpty, PhotoInvalidDimensions, WebpageCurlFailed, MediaEmpty
+from pyrogram.errors import ReplyMarkupInvalid, FloodWait, PeerIdInvalid, RPCError, UserNotParticipant, MessageNotModified, MessageEmpty, PhotoInvalidDimensions, WebpageCurlFailed, MediaEmpty
 
 from bot import config_dict, LOGGER, bot_name, status_reply_dict, status_reply_dict_lock, Interval, bot, user, download_dict_lock
 from bot.helper.ext_utils.bot_utils import get_readable_message, setInterval, sync_to_async, download_image_url
@@ -31,13 +31,15 @@ async def sendMessage(message, text, buttons=None, photo=None):
                 await aioremove(des_dir)
                 return
             except Exception as e:
-                LOGGER.error(str(e))
+                LOGGER.error(format_exc())
         return await message.reply(text=text, quote=True, disable_web_page_preview=True,
                                    disable_notification=True, reply_markup=buttons)
     except FloodWait as f:
         LOGGER.warning(str(f))
         await sleep(f.value * 1.2)
         return await sendMessage(message, text, buttons, photo)
+    except ReplyMarkupInvalid:
+        return await sendMessage(message, text, None, photo)
     except Exception as e:
         LOGGER.error(format_exc())
         return str(e)
@@ -60,15 +62,17 @@ async def sendBot(message, text, buttons=None, photo=None):
                 await aioremove(des_dir)
                 return
             except Exception as e:
-                LOGGER.error(str(e))
+                LOGGER.error(format_exc())
         return await message._client.send_message(chat_id=user_id, text=text, disable_web_page_preview=True,
                                                   disable_notification=True, reply_markup=buttons)
     except FloodWait as f:
         LOGGER.warning(str(f))
         await sleep(f.value * 1.2)
         return await sendBot(message, text, buttons, photo)
+    except ReplyMarkupInvalid:
+        return await sendBot(message, text, None, photo)
     except Exception as e:
-        LOGGER.error(str(e))
+        LOGGER.error(format_exc())
         return str(e)
 
 
@@ -180,6 +184,13 @@ async def auto_delete_message(cmd_message=None, bot_message=None):
             await deleteMessage(bot_message)
 
 
+async def delete_links(message):
+    if config_dict['DELETE_LINKS']:
+        if reply_to := message.reply_to_message:
+            await deleteMessage(reply_to)
+        await deleteMessage(message)
+        
+        
 async def delete_all_messages():
     async with status_reply_dict_lock:
         for key, data in list(status_reply_dict.items()):
@@ -307,14 +318,12 @@ async def user_info(client, userId):
 
 async def BotPm_check(message, button=None):
     try:
-        msg1 = 'Added your requested link to download.'
-        user_id = message.from_user.id  # Obtain the user ID from the message
-        await message._client.send_message(chat_id=user_id, text=msg1)
+        temp_msg = await message._client.send_message(chat_id=message.from_user.id, text='<b>Checking Access...</b>')
+        await temp_msg.delete()
         return None, button
     except Exception as e:
         if button is None:
             button = ButtonMaker()
-        _msg = "You didn't START the bot in PM"
-        button.ubutton(
-            "Start Bot", f"https://t.me/{bot_name}?start=start", 'header')
+        _msg = "<i>You didn't START the bot in PM (Private)</i>"
+        button.ubutton("Start Bot Now", f"https://t.me/{bot_name}?start=start", 'header')
         return _msg, button

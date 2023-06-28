@@ -3,11 +3,12 @@ from bot.helper.ext_utils.bot_utils import EngineStatus, MirrorStatus, get_reada
 
 
 class TelegramStatus:
-    def __init__(self, obj, size, message, gid, status):
+    def __init__(self, obj, size, message, gid, status, upload_details):
         self.__obj = obj
         self.__size = size
         self.__gid = gid
         self.__status = status
+        self.upload_details = upload_details
         self.message = message
 
     def processed_bytes(self):

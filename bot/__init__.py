@@ -52,7 +52,7 @@ non_queued_up = set()
 def get_version():
     MAJOR = '1'
     MINOR = '1'
-    PATCH = '2'
+    PATCH = '3'
     return f"v{MAJOR}.{MINOR}.{PATCH}-x"
 
 
@@ -185,9 +185,13 @@ user = ''
 USER_SESSION_STRING = environ.get('USER_SESSION_STRING', '')
 if len(USER_SESSION_STRING) != 0:
     log_info("Creating client from USER_SESSION_STRING")
-    user = tgClient('user', TELEGRAM_API, TELEGRAM_HASH, session_string=USER_SESSION_STRING,
-                    parse_mode=enums.ParseMode.HTML).start()
-    IS_PREMIUM_USER = user.me.is_premium
+    try:
+        user = tgClient('user', TELEGRAM_API, TELEGRAM_HASH, session_string=USER_SESSION_STRING,
+                        parse_mode=enums.ParseMode.HTML).start()
+        IS_PREMIUM_USER = user.me.is_premium
+    except Exception as e:
+        log_error(f"Failed making client from USER_SESSION_STRING : [{e.NAME}] {e.MESSAGE}")
+        user = ''
 
 MEGA_EMAIL = environ.get('MEGA_EMAIL', '')
 MEGA_PASSWORD = environ.get('MEGA_PASSWORD', '')
@@ -227,6 +231,18 @@ if len(LEECH_FILENAME_CAPTION) == 0:
 LEECH_FILENAME_REMNAME = environ.get('LEECH_FILENAME_REMNAME', '')
 if len(LEECH_FILENAME_REMNAME) == 0:
     LEECH_FILENAME_REMNAME = ''
+    
+MIRROR_FILENAME_PREFIX = environ.get('MIRROR_FILENAME_PREFIX', '')
+if len(MIRROR_FILENAME_PREFIX) == 0:
+    MIRROR_FILENAME_PREFIX = ''
+
+MIRROR_FILENAME_SUFFIX = environ.get('MIRROR_FILENAME_SUFFIX', '')
+if len(MIRROR_FILENAME_SUFFIX) == 0:
+    MIRROR_FILENAME_SUFFIX = ''
+
+MIRROR_FILENAME_REMNAME = environ.get('MIRROR_FILENAME_REMNAME', '')
+if len(MIRROR_FILENAME_REMNAME) == 0:
+    MIRROR_FILENAME_REMNAME = ''
 
 SEARCH_PLUGINS = environ.get('SEARCH_PLUGINS', '')
 if len(SEARCH_PLUGINS) == 0:
@@ -305,6 +321,12 @@ AS_DOCUMENT = AS_DOCUMENT.lower() == 'true'
 
 SHOW_MEDIAINFO = environ.get('SHOW_MEDIAINFO', '')
 SHOW_MEDIAINFO = SHOW_MEDIAINFO.lower() == 'true'
+
+SOURCE_LINK = environ.get('SOURCE_LINK', '')
+SOURCE_LINK = SOURCE_LINK.lower() == 'true'
+
+DELETE_LINKS = environ.get('DELETE_LINKS', '')
+DELETE_LINKS = DELETE_LINKS.lower() == 'true'
 
 EQUAL_SPLITS = environ.get('EQUAL_SPLITS', '')
 EQUAL_SPLITS = EQUAL_SPLITS.lower() == 'true'
@@ -507,6 +529,7 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'CAP_FONT': CAP_FONT,
                'CMD_SUFFIX': CMD_SUFFIX,
                'DATABASE_URL': DATABASE_URL,
+               'DELETE_LINKS': DELETE_LINKS,
                'DEFAULT_UPLOAD': DEFAULT_UPLOAD,
                'DOWNLOAD_DIR': DOWNLOAD_DIR,
                'STORAGE_THRESHOLD': STORAGE_THRESHOLD,
@@ -547,6 +570,9 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'LEECH_FILENAME_SUFFIX': LEECH_FILENAME_SUFFIX,
                'LEECH_FILENAME_CAPTION': LEECH_FILENAME_CAPTION,
                'LEECH_FILENAME_REMNAME': LEECH_FILENAME_REMNAME,
+               'MIRROR_FILENAME_PREFIX': MIRROR_FILENAME_PREFIX,
+               'MIRROR_FILENAME_SUFFIX': MIRROR_FILENAME_SUFFIX,
+               'MIRROR_FILENAME_REMNAME': MIRROR_FILENAME_REMNAME,
                'LEECH_SPLIT_SIZE': LEECH_SPLIT_SIZE,
                'LOGIN_PASS': LOGIN_PASS,
                'TOKEN_TIMEOUT': TOKEN_TIMEOUT,
@@ -572,6 +598,7 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'SEARCH_PLUGINS': SEARCH_PLUGINS,
                'SET_COMMANDS': SET_COMMANDS,
                'SHOW_MEDIAINFO': SHOW_MEDIAINFO,
+               'SOURCE_LINK': SOURCE_LINK,
                'STATUS_LIMIT': STATUS_LIMIT,
                'STATUS_UPDATE_INTERVAL': STATUS_UPDATE_INTERVAL,
                'STOP_DUPLICATE': STOP_DUPLICATE,

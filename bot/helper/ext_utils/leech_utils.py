@@ -189,20 +189,29 @@ async def split_file(path, size, file_, dirpath, split_size, listener, start_tim
             LOGGER.error(err)
     return True
 
-async def format_filename(file_, lprefix, lsuffix, lremname, lcaption, dirpath):
+async def format_filename(file_, user_id, dirpath=None, isMirror=False):
+    user_dict = user_data.get(user_id, {})
+    ftag, ctag = ('m', 'MIRROR') if isMirror else ('l', 'LEECH')
+    prefix = config_dict[f'{ctag}_FILENAME_PREFIX'] if (val:=user_dict.get(f'{ftag}prefix', '')) == '' else val
+    remname = config_dict[f'{ctag}_FILENAME_REMNAME'] if (val:=user_dict.get(f'{ftag}remname', '')) == '' else val
+    suffix = config_dict[f'{ctag}_FILENAME_SUFFIX'] if (val:=user_dict.get(f'{ftag}suffix', '')) == '' else val
+    lcaption = val if user_dict.get('lcaption') else ''
+ 
     prefile_ = file_
     # SD-Style V2 ~ WZML-X
-    if lremname:
-        if not lremname.startswith('|'):
-            lremname = f"|{lremname}"
-        lremname = lremname.replace('\s', ' ')
-        slit = lremname.split("|")
+    if file_.startswith('www'): #Remove all www.xyz.xyz domains
+        file_ = ' '.join(file_.split()[1:])
+        
+    if remname:
+        if not remname.startswith('|'):
+            remname = f"|{remname}"
+        remname = remname.replace('\s', ' ')
+        slit = remname.split("|")
         __newFileName = ospath.splitext(file_)[0]
         for rep in range(1, len(slit)):
             args = slit[rep].split(":")
             if len(args) == 3:
-                __newFileName = re_sub(
-                    args[0], args[1], __newFileName, int(args[2]))
+                __newFileName = re_sub(args[0], args[1], __newFileName, int(args[2]))
             elif len(args) == 2:
                 __newFileName = re_sub(args[0], args[1], __newFileName)
             elif len(args) == 1:
@@ -211,29 +220,33 @@ async def format_filename(file_, lprefix, lsuffix, lremname, lcaption, dirpath):
         LOGGER.info(f"New Filename : {file_}")
 
     nfile_ = file_
-    if lprefix:
-        nfile_ = lprefix.replace('\s', ' ') + file_
-        lprefix = re_sub('<.*?>', '', lprefix).replace('\s', ' ')
-        if not file_.startswith(lprefix):
-            file_ = f"{lprefix}{file_}"
+    if prefix:
+        nfile_ = prefix.replace('\s', ' ') + file_
+        prefix = re_sub('<.*?>', '', prefix).replace('\s', ' ')
+        if not file_.startswith(prefix):
+            file_ = f"{prefix}{file_}"
 
-    if lsuffix:
-        lsuffix = lsuffix.replace('\s', ' ')
-        sufLen = len(lsuffix)
+    if suffix and not isMirror:
+        suffix = suffix.replace('\s', ' ')
+        sufLen = len(suffix)
         fileDict = file_.split('.')
         _extIn = 1 + len(fileDict[-1])
         _extOutName = '.'.join(
             fileDict[:-1]).replace('.', ' ').replace('-', ' ')
-        _newExtFileName = f"{_extOutName}{lsuffix}.{fileDict[-1]}"
+        _newExtFileName = f"{_extOutName}{suffix}.{fileDict[-1]}"
         if len(_extOutName) > (64 - (sufLen + _extIn)):
             _newExtFileName = (
                 _extOutName[: 64 - (sufLen + _extIn)]
-                + f"{lsuffix}.{fileDict[-1]}"
+                + f"{suffix}.{fileDict[-1]}"
             )
         file_ = _newExtFileName
+    elif suffix:
+        suffix = suffix.replace('\s', ' ')
+        file_ = f"{ospath.splitext(file_)[0]}{suffix}{ospath.splitext(file_)[1]}" if '.' in file_ else f"{file_}{suffix}"
+
 
     cap_mono =  f"<{config_dict['CAP_FONT']}>{nfile_}</{config_dict['CAP_FONT']}>" if config_dict['CAP_FONT'] else nfile_
-    if lcaption:
+    if lcaption and not isMirror:
         lcaption = lcaption.replace('\|', '%%').replace('\s', ' ')
         slit = lcaption.split("|")
         up_path = ospath.join(dirpath, prefile_)
@@ -252,6 +265,9 @@ async def format_filename(file_, lprefix, lsuffix, lremname, lcaption, dirpath):
                 elif len(args) == 1:
                     cap_mono = cap_mono.replace(args[0], '')
         cap_mono = cap_mono.replace('%%', '|')
+        
+    if isMirror:
+        return file_
     return cap_mono, file_
     
     

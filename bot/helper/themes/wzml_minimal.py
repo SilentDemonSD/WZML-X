@@ -60,24 +60,26 @@ class WZMLStyle:
 
     # async def ping(client, message): ---> __main__.py
     PING = '<i>Starting Ping..</i>'
-    PING_VALUE = '<b>Pong</b>\n<code>{value} ms..</code>'
+    PING_VALUE = '<b>Pong</b>\n\n<code>{value} ms..</code>'
     # ---------------------
 
     # async def __msg_to_reply(self): ---> pyrogramEngine.py
-    L_PM_START =            "➲ <b><u>Leech Started :</u></b>\n┃\n┖ <b>Source :</b> {msg_link}"
-    L_LOG_START =           "➲ <b><u>Leech Started :</u></b>\n┃\n┠ <b>User :</b> {mention} ( {uid} )\n┖ <b>Source :</b> {msg_link}"
+    L_PM_START =            "➲ <b><u>Leech Started :</u></b>\n┃\n┖ <b>Link:</b> <a href='{msg_link}'>Click Here</a>"
+    L_LOG_START =           "➲ <b><u>Leech Started :</u></b>\n┃\n┠ <b>User :</b> {mention} ( #ID{uid} )\n┖ <b>Source :</b> <a href='{msg_link}'>Click Here</a>"
 
     # async def onUploadComplete(): ---> tasks_listener.py
     NAME =                  '<b><i>{Name}</i></b>\n┃\n'
     SIZE =                  '┠ <b>Size: </b>{Size}\n'
+    ELAPSE =                '┠ <b>Elapsed: </b>{Time}\n'
+    MODE =                  '┠ <b>Mode: </b>{Mode}\n'
 
     # ----- LEECH -------
     L_TOTAL_FILES =         '┠ <b>Total Files: </b>{Files}\n'
     L_CORRUPTED_FILES =     '┠ <b>Corrupted Files: </b>{Corrupt}\n'
     L_CC =                  '┖ <b>By: </b>{Tag}\n\n'
-    PM_BOT_MSG =            '➲ <b><i>Files are Send Above</i></b>'
-    L_BOT_MSG =             '➲ <b><i>Files are Send to Bot PM (Private)</i></b>'
-    L_LL_MSG =              '➲ <b><i>Files are Send. Access via Links...</i></b>'
+    PM_BOT_MSG =            '➲ <b><i>File(s) have been Sent above</i></b>'
+    L_BOT_MSG =             '➲ <b><i>File(s) have been Sent to Bot PM (Private)</i></b>'
+    L_LL_MSG =              '➲ <b><i>File(s) have been Sent. Access via Links...</i></b>'
     
     # ----- MIRROR -------
     M_TYPE =                '┠ <b>Type: </b>{Mimetype}\n'
@@ -85,17 +87,19 @@ class WZMLStyle:
     TOTAL_FILES =           '┠ <b>Files: </b>{Files}\n'
     RCPATH =                '┠ <b>Path: </b><code>{RCpath}</code>\n'
     M_CC =                  '┖ <b>By: </b>{Tag}\n\n'
-    M_BOT_MSG =             '➲ <b><i>Links are Send to Bot PM (Private)</i></b>'
+    M_BOT_MSG =             '➲ <b><i>Link(s) have been Sent to Bot PM (Private)</i></b>'
     
     # ----- BUTTONS -------
     CLOUD_LINK =      '☁️ Cloud Link'
     SAVE_MSG =        '📨 Save Message'
     RCLONE_LINK =     '♻️ RClone Link'
     DDL_LINK =        '📎 {Serv} Link'
+    SOURCE_URL =      '🔐 Source Link'
     INDEX_LINK =      '⚡ Index Link'
     VIEW_LINK =       '🌐 View Link'
     CHECK_PM =        '📥 View in Bot PM'
     CHECK_LL =        '🗂 View in Leech Log'
+    CHECK_ML =        '🗂 View in Mirror Log'
     MEDIAINFO_LINK =  '📃 MediaInfo'
     # ---------------------
 
@@ -111,6 +115,7 @@ class WZMLStyle:
     SPEED =             '\n┠ <b>Speed:</b> {Speed}'
     ELAPSED =                                     ' | <b>Elapsed:</b> {Elapsed}'
     ENGINE =            '\n┠ <b>Engine:</b> {Engine}'
+    STA_MODE =          '\n┠ <b>Mode:</b> {Mode}'
     SEEDERS =           '\n┠ <b>Seeders:</b> {Seeders} | '
     LEECHERS =                                           '<b>Leechers:</b> {Leechers}'
 
@@ -154,7 +159,7 @@ class WZMLStyle:
 
     # async def countNode(_, message): ----> gd_count.py
     COUNT_MSG = '<b>Counting:</b> <code>{LINK}</code>'
-    COUNT_NAME = '<b><i>{COUNT_NAME}</i></b>\n'
+    COUNT_NAME = '<b><i>{COUNT_NAME}</i></b>\n┃\n'
     COUNT_SIZE = '┠ <b>Size: </b>{COUNT_SIZE}\n'
     COUNT_TYPE = '┠ <b>Type: </b>{COUNT_TYPE}\n'
     COUNT_SUB =  '┠ <b>SubFolders: </b>{COUNT_SUB}\n'
@@ -169,7 +174,7 @@ class WZMLStyle:
     # ---------------------
 
     # async def mirror_status(_, message): ----> status.py
-    NO_ACTIVE_DL = '''<code>No Active Downloads!</code>
+    NO_ACTIVE_DL = '''<i>No Active Downloads!</i>
     
 ⌬ <b><i>Bot Stats</i></b>
 ┠ <b>CPU:</b> {cpu}% | <b>FREE:</b> {free}
@@ -193,9 +198,12 @@ class WZMLStyle:
 ┠<b> MediaInfo Mode :</b> <code>{MEDIAINFO}</code>
 ┖<b> User Bot PM :</b> <code>{BOT_PM}</code>'''
 
-    MIRROR = '''㊂ <b><u>Mirror Settings : {NAME}</u></b>
+    MIRROR = '''㊂ <b><u>Mirror/Clone Settings : {NAME}</u></b>
 
 ┎<b> RClone Config :</b> <i>{RCLONE}</i>
+┠<b> Mirror Prefix :</b> <code>{MPREFIX}</code>
+┠<b> Mirror Suffix :</b> <code>{MSUFFIX}</code>
+┠<b> Mirror Remname :</b> <code>{MREMNAME}</code>
 ┠<b> DDL Server(s) :</b> <i>{DDL_SERVER}</i>
 ┖<b> Daily Mirror :</b> <code>{DM}</code> per day'''
 
