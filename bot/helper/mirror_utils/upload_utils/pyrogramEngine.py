@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from traceback import format_exc
 from logging import getLogger, ERROR
 from aiofiles.os import remove as aioremove, path as aiopath, rename as aiorename, makedirs
 from os import walk, path as ospath
@@ -271,7 +272,7 @@ class TgUploader:
                     if isinstance(err, RetryError):
                         LOGGER.info(f"Total Attempts: {err.last_attempt.attempt_number}")
                     else:
-                        LOGGER.error(f"{err}. Path: {self.__up_path}")
+                        LOGGER.error(f"{format_exc()}. Path: {self.__up_path}")
                     if self.__is_cancelled:
                         return
                     continue
