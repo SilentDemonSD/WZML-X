@@ -147,6 +147,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             reply_to, session = await get_tg_link_content(link)
         except Exception as e:
             await sendMessage(message, f'ERROR: {e}')
+            await delete_links(message)
             return
     elif not link and (reply_to := message.reply_to_message):
         if reply_to.text:
@@ -156,6 +157,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
                     reply_to, session = await get_tg_link_content(reply_text)
                 except Exception as e:
                     await sendMessage(message, f'ERROR: {e}')
+                    await delete_links(message)
                     return
 
     if reply_to:
@@ -172,6 +174,8 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
 
     if not is_url(link) and not is_magnet(link) and not await aiopath.exists(link) and not is_rclone_path(link) and file_ is None:
         await sendMessage(message, MIRROR_HELP_MESSAGE)
+        await auto_delete_message(message, reply_message)
+        await delete_links(message)
         return
 
     error_msg = []
@@ -187,6 +191,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         if error_button is not None:
             error_button = error_button.build_menu(2)
         await sendMessage(message, final_msg, error_button)
+        await delete_links(message)
         return
 
     if link:
@@ -203,9 +208,9 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
                 await editMessage(process_msg, f"<i><b>Generated link:</b></i> <code>{link}</code>")
             except DirectDownloadLinkException as e:
                 LOGGER.info(str(e))
-                await process_msg.delete()
                 if str(e).startswith('ERROR:'):
-                    await sendMessage(message, str(e))
+                    await editMessage(process_msg, str(e))
+                    await delete_links(message)
                     return
             await process_msg.delete()
 
@@ -220,7 +225,8 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             await sendMessage(message, 'GDRIVE_ID not Provided!')
             return
         elif not up:
-            await sendMessage(message, 'No Rclone Destination!')
+            await sendMessage(message, 'No RClone Destination!')
+            await delete_links(message)
             return
         elif up not in ['rcl', 'gd', 'ddl']:
             if up.startswith('mrcc:'):
@@ -228,22 +234,26 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             else:
                 config_path = 'rclone.conf'
             if not await aiopath.exists(config_path):
-                await sendMessage(message, f"Rclone Config: {config_path} not Exists!")
+                await sendMessage(message, f"RClone Config: {config_path} not Exists!")
+                await delete_links(message)
                 return
         if up != 'gd' and up != 'ddl' and not is_rclone_path(up):
             await sendMessage(message, 'Wrong Rclone Upload Destination!')
+            await delete_links(message)
             return
 
     if link == 'rcl':
         link = await RcloneList(client, message).get_rclone_path('rcd')
         if not is_rclone_path(link):
             await sendMessage(message, link)
+            await delete_links(message)
             return
 
     if up == 'rcl' and not isLeech:
         up = await RcloneList(client, message).get_rclone_path('rcu')
         if not is_rclone_path(up):
             await sendMessage(message, up)
+            await delete_links(message)
             return
 
     listener = MirrorLeechListener(message, compress, extract, isQbit, isLeech, tag, select, seed, sameDir, rcf, up, join, source_url=link)
@@ -258,6 +268,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             config_path = 'rclone.conf'
         if not await aiopath.exists(config_path):
             await sendMessage(message, f"<b>RClone Config:</b> {config_path} not Exists!")
+            await delete_links(message)
             return
         await add_rclone_download(link, config_path, f'{path}/', name, listener)
     elif is_gdrive_link(link):
