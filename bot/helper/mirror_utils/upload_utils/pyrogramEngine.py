@@ -112,9 +112,8 @@ class TgUploader:
         if LEECH_LOG_ID := config_dict['LEECH_LOG_ID']:
             if self.__bot_pm and self.__listener.isSuperGroup:
                 await sendBot(self.__listener.message, BotTheme('L_PM_START', msg_link=self.__listener.source_url))
-            _client = user if IS_PREMIUM_USER else bot
             try:
-                self.__sent_msg = await _client.send_message(chat_id=LEECH_LOG_ID, text=BotTheme('L_LOG_START', mention=msg_user.mention(style='HTML'), uid=msg_user.id, msg_link=msg_link if not config_dict['DELETE_LINKS'] else self.__listener.source_url),
+                self.__sent_msg = await bot.send_message(chat_id=LEECH_LOG_ID, text=BotTheme('L_LOG_START', mention=msg_user.mention(style='HTML'), uid=msg_user.id, msg_link=msg_link if not config_dict['DELETE_LINKS'] else self.__listener.source_url),
                                                             disable_web_page_preview=False, disable_notification=True)
             except Exception as er:
                 await self.__listener.onUploadError(str(er))
@@ -188,7 +187,6 @@ class TgUploader:
     async def __switching_client(self):
         if (self.__prm_media and IS_PREMIUM_USER and self.__sent_msg._client.me.is_bot) or (not self.__prm_media and not self.__sent_msg._client.me.is_bot):
             LOGGER.info(f'Uploading Media {">" if self.__prm_media else "<"} 2GB by {"User" if self.__prm_media else "Bot"} Client')
-            LOGGER.info(self.__sent_msg)
             self.__sent_msg = await (user if self.__prm_media else bot).get_messages(chat_id=self.__sent_msg.chat.id, message_ids=self.__sent_msg.id)
 
     async def __send_media_group(self, subkey, key, msgs):
