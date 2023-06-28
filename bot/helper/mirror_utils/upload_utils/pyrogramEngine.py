@@ -187,7 +187,8 @@ class TgUploader:
     async def __switching_client(self):
         if (self.__prm_media and IS_PREMIUM_USER and self.__sent_msg._client.me.is_bot) or (not self.__prm_media and not self.__sent_msg._client.me.is_bot):
             LOGGER.info(f'Uploading Media {">" if self.__prm_media else "<"} 2GB by {"User" if self.__prm_media else "Bot"} Client')
-            self.__sent_msg = await (user if self.__prm_media else bot).get_messages(chat_id=self.__sent_msg.chat.id, message_ids=self.__sent_msg.id)
+            self.__sent_msg._client = user if self.__prm_media else bot
+            #self.__sent_msg = await (user if self.__prm_media else bot).get_messages(chat_id=self.__sent_msg.chat.id, message_ids=self.__sent_msg.id)
 
     async def __send_media_group(self, subkey, key, msgs):
         msgs_list = await msgs[0].reply_to_message.reply_media_group(media=self.__get_input_media(subkey, key),
@@ -329,10 +330,8 @@ class TgUploader:
                                                                        reply_markup=await self.__buttons(self.__up_path))
                 self.__sent_msg = nrml_media
                 if self.__prm_media and (self.__has_buttons or not self.__listener.leechlogmsg):
-                    prm_media = await bot.copy_message(nrml_media.chat.id, nrml_media.chat.id, nrml_media.id, reply_to_message_id=self.__sent_msg.id, reply_markup=await self.__buttons(self.__up_path))
+                    self.__sent_msg = await bot.copy_message(nrml_media.chat.id, nrml_media.chat.id, nrml_media.id, reply_to_message_id=self.__sent_msg.id, reply_markup=await self.__buttons(self.__up_path))
                     await nrml_media.delete()
-                    self.__sent_msg = prm_media
-                                                                       
             elif is_video:
                 key = 'videos'
                 duration = (await get_media_info(self.__up_path))[0]
@@ -371,9 +370,8 @@ class TgUploader:
                                                                     reply_markup=await self.__buttons(self.__up_path))
                 self.__sent_msg = nrml_media
                 if self.__prm_media and (self.__has_buttons or not self.__listener.leechlogmsg):
-                    prm_media = await bot.copy_message(nrml_media.chat.id, nrml_media.chat.id, nrml_media.id, reply_to_message_id=self.__sent_msg.id, reply_markup=await self.__buttons(self.__up_path))
+                    self.__sent_msg = await bot.copy_message(nrml_media.chat.id, nrml_media.chat.id, nrml_media.id, reply_to_message_id=self.__sent_msg.id, reply_markup=await self.__buttons(self.__up_path))
                     await nrml_media.delete()
-                    self.__sent_msg = prm_media
             elif is_audio:
                 key = 'audios'
                 duration, artist, title = await get_media_info(self.__up_path)
