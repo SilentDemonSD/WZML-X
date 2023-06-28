@@ -161,9 +161,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
                     return
 
     if reply_to:
-        file_ = reply_to.document or reply_to.photo or reply_to.video or reply_to.audio or \
-            reply_to.voice or reply_to.video_note or reply_to.sticker or reply_to.animation or None
-
+        file_ = getattr(reply_to, reply_to.media.value) if reply_to.media else None
         if file_ is None:
             reply_text = reply_to.text.split('\n', 1)[0].strip()
             if is_url(reply_text) or is_magnet(reply_text):
