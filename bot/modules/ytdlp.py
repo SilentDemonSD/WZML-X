@@ -448,13 +448,13 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
     if not qual:
         qual = await YtSelection(client, message).get_quality(result)
         if qual is None:
-            await delete_links(message)
             return
+    await delete_links(message)
     LOGGER.info(f'Downloading with YT-DLP: {link}')
     playlist = 'entries' in result
     ydl = YoutubeDLHelper(listener)
     await ydl.add_download(link, path, name, qual, playlist, opt)
-    await delete_links(message)
+    
 
 
 async def ytdl(client, message):
