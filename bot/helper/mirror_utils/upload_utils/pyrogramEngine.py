@@ -422,6 +422,7 @@ class TgUploader:
                 await aioremove(thumb)
             err_type = "RPCError: " if isinstance(err, RPCError) else ""
             LOGGER.error(f"{err_type}{err}. Path: {self.__up_path}")
+            LOGGER.error(format_exc())
             if 'Telegram says: [400' in str(err) and key != 'documents':
                 LOGGER.error(f"Retrying As Document. Path: {self.__up_path}")
                 return await self.__upload_file(cap_mono, file, True)
