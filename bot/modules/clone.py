@@ -30,7 +30,6 @@ async def rcloneNode(client, message, link, dst_path, rcf, tag):
         link = await RcloneList(client, message).get_rclone_path('rcd')
         if not is_rclone_path(link):
             await sendMessage(message, link)
-            await delete_links(message)
             return
 
     if link.startswith('mrcc:'):
@@ -41,29 +40,24 @@ async def rcloneNode(client, message, link, dst_path, rcf, tag):
 
     if not await aiopath.exists(config_path):
         await sendMessage(message, f"<b>RClone Config:</b> {config_path} not Exists!")
-        await delete_links(message)
         return
 
     if dst_path == 'rcl' or config_dict['RCLONE_PATH'] == 'rcl':
         dst_path = await RcloneList(client, message).get_rclone_path('rcu', config_path)
         if not is_rclone_path(dst_path):
             await sendMessage(message, dst_path)
-            await delete_links(message)
             return
 
     dst_path = (dst_path or config_dict['RCLONE_PATH']).strip('/')
     if not is_rclone_path(dst_path):
         await sendMessage(message, 'Given Wrong RClone Destination!')
-        await delete_links(message)
         return
     if dst_path.startswith('mrcc:'):
         if config_path != f'rclone/{message.from_user.id}.conf':
             await sendMessage(message, 'You should use same rclone.conf to clone between paths!')
-            await delete_links(message)
             return
     elif config_path != 'rclone.conf':
         await sendMessage(message, 'You should use same rclone.conf to clone between paths!')
-        await delete_links(message)
         return
 
     remote, src_path = link.split(':', 1)
@@ -76,7 +70,6 @@ async def rcloneNode(client, message, link, dst_path, rcf, tag):
         if res[2] != -9:
             msg = f'Error: While getting RClone Stats. Path: {remote}:{src_path}. Stderr: {res[1][:4000]}'
             await sendMessage(message, msg)
-        await delete_links(message)
         return
     rstat = loads(res[0])
     if rstat['IsDir']:
@@ -99,7 +92,6 @@ async def rcloneNode(client, message, link, dst_path, rcf, tag):
     await sendStatusMessage(message)
     link, destination = await RCTransfer.clone(config_path, remote, src_path, dst_path, rcf, mime_type)
     if not link:
-        await delete_links(message)
         return
     LOGGER.info(f'Cloning Done: {name}')
     cmd1 = ['rclone', 'lsf', '--fast-list', '-R',
@@ -135,7 +127,6 @@ async def gdcloneNode(message, link, tag):
             LOGGER.error(str(e))
             if str(e).startswith('ERROR:'):
                 await editMessage(process_msg, str(e))
-                await delete_links(message)
                 return
         await process_msg.delete()
     if is_gdrive_link(link):
@@ -143,7 +134,6 @@ async def gdcloneNode(message, link, tag):
         name, mime_type, size, files, _ = await sync_to_async(gd.count, link)
         if mime_type is None:
             await sendMessage(message, name)
-            await delete_links(message)
             return
         if config_dict['STOP_DUPLICATE']:
             LOGGER.info('Checking File/Folder if already in Drive...')
@@ -152,12 +142,10 @@ async def gdcloneNode(message, link, tag):
                 msg = BotTheme('STOP_DUPLICATE', content=contents_no)
                 button = await get_telegraph_list(telegraph_content)
                 await sendMessage(message, msg, button)
-                await delete_links(message)
                 return
         listener = MirrorLeechListener(message, tag=tag, isClone=True, source_url=link)
         if limit_exceeded := await limit_checker(size, listener):
             await sendMessage(listener.message, limit_exceeded)
-            await delete_links(listener.message)
             return
         await listener.onDownloadStart()
         LOGGER.info(f'Clone Started: Name: {name} - Source: {link}')
@@ -174,7 +162,6 @@ async def gdcloneNode(message, link, tag):
             await sendStatusMessage(message)
             link, size, mime_type, files, folders = await sync_to_async(drive.clone, link)
         if not link:
-            await delete_links(message)
             return
         LOGGER.info(f'Cloning Done: {name}')
         await listener.onUploadComplete(link, size, files, folders, mime_type, name)
@@ -262,6 +249,7 @@ async def clone(client, message):
             await delete_links(message)
             return
         await gdcloneNode(message, link, tag)
+    await delete_links(message)
     
 bot.add_handler(MessageHandler(clone, filters=command(
     BotCommands.CloneCommand) & CustomFilters.authorized))
