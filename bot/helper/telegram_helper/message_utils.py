@@ -318,11 +318,12 @@ async def user_info(client, userId):
 
 async def BotPm_check(message, button=None):
     try:
-        await message._client.send_message(chat_id=message.from_user.id, text='<b>Checking Access...</b>')
+        temp_msg = await message._client.send_message(chat_id=message.from_user.id, text='<b>Checking Access...</b>')
+        await temp_msg.delete()
         return None, button
     except Exception as e:
         if button is None:
             button = ButtonMaker()
-        _msg = "You didn't START the bot in PM"
-        button.ubutton("Start Bot", f"https://t.me/{bot_name}?start=start", 'header')
+        _msg = "<i>You didn't START the bot in PM (Private)</i>"
+        button.ubutton("Start Bot Now", f"https://t.me/{bot_name}?start=start", 'header')
         return _msg, button
