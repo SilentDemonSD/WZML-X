@@ -125,8 +125,7 @@ class TgUploader:
                 return False
             if self.__bot_pm:
                 await sendBot(self.__listener.message, BotTheme('L_PM_START', msg_link=self.__listener.source_url))
-            self.__sent_msg = await user.get_messages(chat_id=self.__listener.message.chat.id,
-                                                      message_ids=self.__listener.uid)
+            self.__sent_msg = self.__listener.message
         else:
             if self.__bot_pm and self.__listener.isSuperGroup:
                 await sendBot(self.__listener.message, BotTheme('L_PM_START', msg_link=msg_link))
