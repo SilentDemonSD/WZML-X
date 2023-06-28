@@ -65,7 +65,7 @@ class WZMLStyle:
 
     # async def __msg_to_reply(self): ---> pyrogramEngine.py
     L_PM_START =            "➲ <b><u>Leech Started :</u></b>\n┃\n┖ <b>Link:</b> <a href='{msg_link}'>Click Here</a>"
-    L_LOG_START =           "➲ <b><u>Leech Started :</u></b>\n┃\n┠ <b>User :</b> {mention} ( {uid} )\n┖ <b>Source :</b> {msg_link}"
+    L_LOG_START =           "➲ <b><u>Leech Started :</u></b>\n┃\n┠ <b>User :</b> {mention} ( #ID{uid} )\n┖ <b>Source :</b> <a href='{msg_link}'>Click Here</a>"
 
     # async def onUploadComplete(): ---> tasks_listener.py
     NAME =                  '<b><i>{Name}</i></b>\n┃\n'
