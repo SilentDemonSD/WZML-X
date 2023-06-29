@@ -22,7 +22,8 @@ async def genPyroString(client, message):
     sess_msg = await sendMessage(message, """⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>
  
 <i>Send your <code>API_ID</code> or <code>APP_ID</code>.
-Get from https://my.telegram.org</i>. <b>Timeout:</b> 120s
+Get from https://my.telegram.org</i>. 
+<b>Timeout:</b> 120s
 
 <i>Send /stop to Stop Process</i>""")
     session_dict['message'] = sess_msg
@@ -36,7 +37,8 @@ Get from https://my.telegram.org</i>. <b>Timeout:</b> 120s
     await sleep(0.5)
     await editMessage(sess_msg,  """⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>
  
-<i>Send your <code>API_HASH</code>. Get from https://my.telegram.org</i>. <b>Timeout:</b> 120s
+<i>Send your <code>API_HASH</code>. Get from https://my.telegram.org</i>.
+<b>Timeout:</b> 120s
 
 <i>Send /stop to Stop Process</i>""")
     await invoke(client, message, 'API_HASH')
@@ -48,8 +50,8 @@ Get from https://my.telegram.org</i>. <b>Timeout:</b> 120s
     await sleep(0.5)
     await editMessage(sess_msg,  """⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>
  
-<i>Send your Telegram Account's Phone number in International Format ( Including Country Code ).
-<b>Example :</b> +14154566376</i>. <b>Timeout:</b> 120s
+<i>Send your Telegram Account's Phone number in International Format ( Including Country Code ). <b>Example :</b> +14154566376</i>.
+<b>Timeout:</b> 120s
 
 <i>Send /stop to Stop Process</i>""")
     while True:
@@ -85,7 +87,8 @@ Get from https://my.telegram.org</i>. <b>Timeout:</b> 120s
     await editMessage(sess_msg, """⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>
  
 <i>OTP has been sent to your Phone Number, Enter OTP in <code>1 2 3 4 5</code> format. ( Space between each Digits )</i>
-<b>If any error or bot not responded, Retry Again.</b>  <b>Timeout:</b> 120s
+<b>If any error or bot not responded, Retry Again.</b>
+<b>Timeout:</b> 120s
 
 <i>Send /stop to Stop Process</i>""")
     await invoke(client, message, 'OTP')
@@ -100,8 +103,8 @@ Get from https://my.telegram.org</i>. <b>Timeout:</b> 120s
     except SessionPasswordNeeded:
         await editMessage(sess_msg, """⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>
  
- <i>Account is being Protected via <b>Two-Step Verification.</b>
- Send your Password below.</i>  <b>Timeout:</b> 120s
+ <i>Account is being Protected via <b>Two-Step Verification.</b> Send your Password below.</i>
+ <b>Timeout:</b> 120s
  
  <i>Send /stop to Stop Process</i>""")
         await invoke(client, message, 'TWO_STEP_PASS')
