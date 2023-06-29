@@ -6,7 +6,7 @@ from asyncio import Lock
 from bot import LOGGER, download_dict, download_dict_lock, non_queued_dl, queue_dict_lock, bot, user, IS_PREMIUM_USER
 from bot.helper.mirror_utils.status_utils.telegram_status import TelegramStatus
 from bot.helper.mirror_utils.status_utils.queue_status import QueueStatus
-from bot.helper.telegram_helper.message_utils import sendStatusMessage, sendMessage
+from bot.helper.telegram_helper.message_utils import sendStatusMessage, sendMessage, delete_links
 from bot.helper.ext_utils.task_manager import is_queued, limit_checker, stop_duplicate_check
 
 global_lock = Lock()
