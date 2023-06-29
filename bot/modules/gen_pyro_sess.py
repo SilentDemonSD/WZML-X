@@ -121,7 +121,7 @@ async def event_handler(client, message, key):
     global is_stopped
     user_id = message.from_user.id
     session_dict[user_id] = True
-    start_time = time
+    start_time = time()
     
     async def set_details(client, message, key):
         global is_stopped
