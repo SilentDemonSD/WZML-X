@@ -116,24 +116,24 @@ async def genPyroString(client, message):
     except Exception as e:
         await editMessage(sess_msg ,f"**ERROR:** `{str(e)}`")
         return
-    
+
+async def set_details(client, message, newkey):
+    global is_stopped
+    user_id = message.from_user.id
+    session_dict[user_id] = False
+    value = message.text
+    await message.delete()
+    if value == '/stop':
+        is_stopped = True
+        await sendMessage(message, 'Process Canceled')
+        return
+    session_dict[newkey] = value
+        
 async def event_handler(client, message, key):
     global is_stopped
     user_id = message.from_user.id
     session_dict[user_id] = True
     start_time = time()
-    
-    async def set_details(client, message, newkey):
-        global is_stopped
-        user_id = message.from_user.id
-        session_dict[user_id] = False
-        value = message.text
-        await message.delete()
-        if value == '/stop':
-            is_stopped = True
-            await sendMessage(message, 'Process Canceled')
-            return
-        session_dict[newkey] = value
     
     pfunc = partial(set_details, newkey=key)
     handler = client.add_handler(MessageHandler(
