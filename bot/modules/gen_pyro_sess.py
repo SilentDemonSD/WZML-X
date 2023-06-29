@@ -7,14 +7,15 @@ from pyrogram.filters import command, private, user, text
 from pyrogram.handlers import MessageHandler
 from pyrogram.errors import SessionPasswordNeeded, FloodWait, PhoneNumberInvalid, ApiIdInvalid, PhoneCodeInvalid, PhoneCodeExpired, UsernameNotOccupied, ChatAdminRequired, PeerIdInvalid
 
-from bot import bot
+from bot import bot, LOGGER
+from bot.helper.ext_utils.bot_utils import new_thread
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, sendFile
 from bot.helper.telegram_helper.filters import CustomFilters
 
-API_TEXT = """Pyrogram's String Session Generator Bot. I will generate String Session 
+API_TEXT = """Pyrogram's String Session Generator. I will generate String Session 
 Now send your `API_ID` same as `APP_ID` to Start Generating Session.
 
-Get `APP_ID` from https://my.telegram.org or @UseTGzKBot."""
+Get `APP_ID` from https://my.telegram.org"""
 
 HASH_TEXT = "Now send your `API_HASH`.\n\nGet `API_HASH` from https://my.telegram.org Or @UseTGzKBot.\n\nPress /cancel to Cancel Task."
 
@@ -31,6 +32,7 @@ async def genPyroString(client, message):
     global is_stopped
     sess_msg = await sendMessage(message, API_TEXT)
     await event_handler(client, message, 'API_ID')
+    LOGGER.info('Flow 1')
     if is_stopped:
         return
     try:
@@ -117,8 +119,10 @@ async def genPyroString(client, message):
         await editMessage(sess_msg ,f"**ERROR:** `{str(e)}`")
         return
 
+@new_thread
 async def set_details(client, message, newkey):
     global is_stopped
+    LOGGER.info("Flow 0.5")
     user_id = message.from_user.id
     session_dict[user_id] = False
     value = message.text
@@ -138,9 +142,11 @@ async def event_handler(client, message, key):
     pfunc = partial(set_details, newkey=key)
     handler = client.add_handler(MessageHandler(
         pfunc, filters=user(user_id) & text & private), group=-1)
+    LOGGER.info("Flow 0.1")
     while session_dict[user_id]:
         await sleep(0.5)
         if time() - start_time > 120:
+            LOGGER.info("Flow 0.3")
             session_dict[user_id] = False
             is_stopped = True
     client.remove_handler(*handler)
