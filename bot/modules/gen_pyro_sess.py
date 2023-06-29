@@ -135,7 +135,7 @@ async def event_handler(client, message, key):
             return
         session_dict[key] = value
     
-    pfunc = partial(set_details, key)
+    pfunc = partial(set_details, key=key)
     handler = client.add_handler(MessageHandler(
         pfunc, filters=user(user_id) & text & private), group=-1)
     while session_dict[user_id]:
