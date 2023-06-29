@@ -13,61 +13,58 @@ from bot.helper.ext_utils.bot_utils import new_thread
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, sendFile
 from bot.helper.telegram_helper.filters import CustomFilters
 
-API_TEXT = """⌬ <i><b>Pyrogram String Session Generator</b></i>
- 
-<i>Now send your <code>API_ID</code> or <code>APP_ID<code>.
-
-Get APP_ID from https://my.telegram.org</i>"""
-
-HASH_TEXT = "Now send your `API_HASH`.\n\nGet `API_HASH` from https://my.telegram.org Or @UseTGzKBot.\n\nPress /cancel to Cancel Task."
-
-PHONE_NUMBER_TEXT = (
-    "Now send your Telegram account's Phone number in International Format. \n"
-    "Including Country code. Example: **+14154566376**\n\n"
-    "Press /cancel to Cancel Task."
-)
 session_dict = {}
-
-is_stopped = False
+isStop = False
 
 @new_thread
 async def genPyroString(client, message):
-    global is_stopped
-    sess_msg = await sendMessage(message, API_TEXT)
-    await event_handler(client, message, 'API_ID')
-    LOGGER.info('Flow 1')
-    if is_stopped:
+    global isStop
+    sess_msg = await sendMessage(message, """⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>
+ 
+<i>Send your <code>API_ID</code> or <code>APP_ID</code>.
+Get from https://my.telegram.org</i>. <b>Timeout:</b> 120s
+
+<i>Send /stop to Stop Process</i>""")
+    await invoke(client, message, 'API_ID')
+    if isStop:
         return
     try:
         api_id = int(session_dict['API_ID'])
     except Exception:
-        await editMessage(sess_msg, "`APP_ID` is Invalid.\nPress / to Start again.")
-        return
+        return await editMessage(sess_msg, "<i><code>APP_ID</code> is Invalid.</i>\n\n ⌬ <b>Process Stopped.</b>")
     await sleep(0.5)
-    await editMessage(sess_msg, HASH_TEXT)
-    await event_handler(client, message, 'API_HASH')
-    if is_stopped:
+    await editMessage(sess_msg,  """⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>
+ 
+<i>Send your <code>API_HASH</code>. Get from https://my.telegram.org</i>. <b>Timeout:</b> 120s
+
+<i>Send /stop to Stop Process</i>""")
+    await invoke(client, message, 'API_HASH')
+    if isStop:
         return
     api_hash = session_dict['API_HASH']
     if len(api_hash) <= 30:
-        await editMessage(sess_msg, "`API_HASH` is Invalid.\nPress / to Start again.")
-        return
+        return await editMessage(sess_msg,  "<i><code>API_HASH</code> is Invalid.</i>\n\n ⌬ <b>Process Stopped.</b>")
     await sleep(0.5)
-    await editMessage(sess_msg, PHONE_NUMBER_TEXT)
+    await editMessage(sess_msg,  """⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>
+ 
+<i>Send your Telegram Account's Phone number in International Format ( Including Country Code ).
+<b>Example :</b> +14154566376</i>. <b>Timeout:</b> 120s
+
+<i>Send /stop to Stop Process</i>""")
     while True:
-        await event_handler(client, message, 'PHONE_NO')
-        if is_stopped:
+        await invoke(client, message, 'PHONE_NO')
+        if isStop:
             return
-        await editMessage(sess_msg, f"Is {session_dict['PHONE_NO']}  correct? (y/n):` \n\nSend: `y` (If Yes)\nSend: `n` (If No)")
-        await event_handler(client, message, 'CONFIRM_PHN')
-        if is_stopped:
+        await editMessage(sess_msg, f"⌬ <b>Verification Confirmation:</b>\n\n <i>Is {session_dict['PHONE_NO']} correct? (y/n/yes/no): \n\nSend <code>y / yes</code> (Yes) | <code>n / no</code> (No)</i>")
+        await invoke(client, message, 'CONFIRM_PHN')
+        if isStop:
             return
-        if session_dict['CONFIRM_PHN'].lower() == 'y':
+        if session_dict['CONFIRM_PHN'].lower() in ['y', 'yes']:
             break
     try:
-        pyro_client = Client("Pyro-WZML-X", api_id=api_id, api_hash=api_hash)
+        pyro_client = Client(f"WZML-X-{message.from_user.id}", api_id=api_id, api_hash=api_hash)
     except Exception as e:
-        await editMessage(sess_msg ,f"**ERROR:** `{str(e)}`\nPress /start to Start again.")
+        await editMessage(sess_msg, f"<b>ERROR:</b> {str(e)}")
         return
     try:
         await pyro_client.connect()
@@ -78,79 +75,74 @@ async def genPyroString(client, message):
         user_code = await pyro_client.send_code(session_dict['PHONE_NO'])
         await sleep(0.5)
     except FloodWait as e:
-        await editMessage(sess_msg, f"Floodwait of {e.value} Seconds")
-        return
+        return await editMessage(sess_msg, f"<b>Floodwait of {e.value} Seconds. Retry Again</b>\n\n ⌬ <b>Process Stopped.</b>")
     except ApiIdInvalid:
-        await editMessage(sess_msg, "APP ID and API Hash are Invalid.\n\nPress /start to Start again.")
-        return
+        return await editMessage(sess_msg, "<b>API_ID and API_HASH are Invalid. Retry Again</b>\n\n ⌬ <b>Process Stopped.</b>")
     except PhoneNumberInvalid:
-        await editMessage(sess_msg, "Your Phone Number is Invalid.\n\nPress /start to Start again.")
-        return
+        return await editMessage(sess_msg, "<b>Phone Number is Invalid. Retry Again</b>\n\n ⌬ <b>Process Stopped.</b>")
     await sleep(0.5)
-    await editMessage(sess_msg, ("An OTP is sent to your phone number, "
-                      "Please enter OTP in `1 2 3 4 5` format. __(Space between each numbers!)__ \n\n"
-                      "If Bot not sending OTP then try /restart and Start Task again with /start command to Bot.\n"
-                      "Press /cancel to Cancel."))
-    await event_handler(client, message, 'OTP')
-    if is_stopped:
+    await editMessage(sess_msg, """⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>
+ 
+<i>OTP has been sent to your Phone Number, Enter OTP in <code>1 2 3 4 5</code> format. ( Space between each Digits )</i>
+<b>If any error or bot not responded, Retry Again.</b>  <b>Timeout:</b> 120s
+
+<i>Send /stop to Stop Process</i>"""))
+    await invoke(client, message, 'OTP')
+    if isStop:
         return
     try:
         await pyro_client.sign_in(session_dict['PHONE_NO'], user_code.phone_code_hash, phone_code=' '.join(str(session_dict['OTP'])))
     except PhoneCodeInvalid:
-        await editMessage(sess_msg, "Invalid Code.\n\nPress /start to Start again.")
-        return
+        return await editMessage(sess_msg, "<i>Input OTP is Invalid.</i>\n\n ⌬ <b>Process Stopped.</b>")
     except PhoneCodeExpired:
-        await editMessage(sess_msg, "Code is Expired.\n\nPress /start to Start again.")
-        return
+        return await editMessage(sess_msg, "<i> Input OTP has Expired.</i>\n\n ⌬ <b>Process Stopped.</b>")
     except SessionPasswordNeeded:
-        await editMessage(sess_msg, "Your account have Two-Step Verification.\nPlease enter your Password.\n\nPress /cancel to Cancel.")
-        await event_handler(client, message, 'TWO_STEP_PASS')
-        if is_stopped:
+        await editMessage(sess_msg, """⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>
+ 
+ <i>Account is being Protected via <b>Two-Step Verification.</b>
+ Send your Password below.</i>  <b>Timeout:</b> 120s
+ 
+ <i>Send /stop to Stop Process</i>""")
+        await invoke(client, message, 'TWO_STEP_PASS')
+        if isStop:
             return
         try:
             await pyro_client.check_password(session_dict['TWO_STEP_PASS'])
         except Exception as e:
-            await editMessage(sess_msg, f"**ERROR:** `{str(e)}`")
-            return
+            return await editMessage(sess_msg, f"<b>ERROR:</b> {str(e)}")
     except Exception as e:
-        await editMessage(sess_msg ,f"**ERROR:** `{str(e)}`")
-        return
+        return await editMessage(sess_msg ,f"<b>ERROR:</b> {str(e)}")
     try:
         session_string = await pyro_client.export_session_string()
-        await pyro_client.send_message("me", f"***Pyrogram V2 Session***\n\n```{session_string}```")
+        await pyro_client.send_message("self", f"⌬ <b>Pyrogram Session Generated</b>\n\n<code>{session_string}</code>")
         await pyro_client.disconnect()
-        text = "String Session is Successfully Generated."
-        await editMessage(sess_msg, text)
+        await editMessage(sess_msg, "<b>String Session is Successfully Generated. Check Saved Message to get your Session</b>")
     except Exception as e:
-        await editMessage(sess_msg ,f"**ERROR:** `{str(e)}`")
-        return
+        return await editMessage(sess_msg ,f"<b>ERROR:</b> {str(e)}")
 
 async def set_details(_, message, newkey):
-    global is_stopped
-    LOGGER.info("Flow 0.5")
+    global isStop
     user_id = message.from_user.id
     session_dict[user_id] = False
     value = message.text
     await message.delete()
-    if value == '/stop':
-        is_stopped = True
-        await sendMessage(message, '<b>Process Canceled</b>')
-        return
+    if value.lower() == '/stop':
+        isStop = True
+        return await sendMessage(message, '⌬ <b>Process Stopped</b>')
     session_dict[newkey] = value
         
-async def event_handler(client, message, key):
-    global is_stopped
+async def invoke(client, message, key):
+    global isStop
     user_id = message.from_user.id
     session_dict[user_id] = True
     start_time = time()
     handler = client.add_handler(MessageHandler(partial(set_details, newkey=key), filters=user(user_id) & text & private), group=-1)
-    LOGGER.info("Flow 0.1")
     while session_dict[user_id]:
         await sleep(0.5)
         if time() - start_time > 120:
-            LOGGER.info("Flow 0.3")
             session_dict[user_id] = False
-            is_stopped = True
+            await editMessage(message, "⌬ <b>Process Stopped</b>")
+            isStop = True
     client.remove_handler(*handler)
     
 bot.add_handler(MessageHandler(genPyroString, filters=command('exportsession') & private & CustomFilters.owner))
