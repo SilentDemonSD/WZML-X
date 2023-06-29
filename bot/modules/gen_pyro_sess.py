@@ -59,7 +59,7 @@ Get from https://my.telegram.org</i>.
         await invoke(client, message, 'PHONE_NO')
         if isStop:
             return
-        await editMessage(sess_msg, f"⌬ <b>Verification Confirmation:</b>\n\n <i>Is {session_dict['PHONE_NO']} correct? (y/n/yes/no): \n\nSend <code>y / yes</code> (Yes) | <code>n / no</code> (No)</i>")
+        await editMessage(sess_msg, f"⌬ <b>Verification Confirmation:</b>\n\n <i>Is {session_dict['PHONE_NO']} correct? (y/n/yes/no):</i> \n\n<b>Send y/yes (Yes) | n/no (No)</b>")
         await invoke(client, message, 'CONFIRM_PHN')
         if isStop:
             return
@@ -121,7 +121,7 @@ Get from https://my.telegram.org</i>.
         session_string = await pyro_client.export_session_string()
         await pyro_client.send_message("self", f"⌬ <b>Pyrogram Session Generated</b>\n\n<code>{session_string}</code>")
         await pyro_client.disconnect()
-        await editMessage(sess_msg, "<b>String Session is Successfully Generated. Check Saved Message to get your Session</b>")
+        await editMessage(sess_msg, "➲ <b>String Session is Successfully Generated. Check Saved Messages of that account to get your Pyro Session</b>")
     except Exception as e:
         return await editMessage(sess_msg ,f"<b>ERROR:</b> {str(e)}")
 
