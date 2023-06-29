@@ -123,7 +123,7 @@ async def event_handler(client, message, key):
     session_dict[user_id] = True
     start_time = time()
     
-    async def set_details(client, message, key):
+    async def set_details(client, message, newkey):
         global is_stopped
         user_id = message.from_user.id
         session_dict[user_id] = False
@@ -133,9 +133,9 @@ async def event_handler(client, message, key):
             is_stopped = True
             await sendMessage(message, 'Process Canceled')
             return
-        session_dict[key] = value
+        session_dict[newkey] = value
     
-    pfunc = partial(set_details, key=key)
+    pfunc = partial(set_details, newkey=key)
     handler = client.add_handler(MessageHandler(
         pfunc, filters=user(user_id) & text & private), group=-1)
     while session_dict[user_id]:
