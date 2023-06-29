@@ -132,7 +132,7 @@ async def set_details(_, message, newkey):
         return
     session_dict[newkey] = value
         
-async def event_handler(client, message, key):
+async def event_handler(___, message, key):
     global is_stopped
     user_id = message.from_user.id
     session_dict[user_id] = True
@@ -142,8 +142,7 @@ async def event_handler(client, message, key):
         user = event.from_user or event.sender_chat
         return bool(user.id == user_id and event.chat.id == message.chat.id and event.text)
         
-    handler = client.add_handler(MessageHandler(
-        partial(set_details, newkey=key), filters=create(event_filter)), group=-1)
+    handler = bot.add_handler(MessageHandler(partial(set_details, newkey=key), filters=create(event_filter)), group=-1)
     LOGGER.info("Flow 0.1")
     while session_dict[user_id]:
         await sleep(0.5)
@@ -151,6 +150,6 @@ async def event_handler(client, message, key):
             LOGGER.info("Flow 0.3")
             session_dict[user_id] = False
             is_stopped = True
-    client.remove_handler(*handler)
+    bot.remove_handler(*handler)
     
 bot.add_handler(MessageHandler(genPyroString, filters=command('exportsession') & CustomFilters.owner))
