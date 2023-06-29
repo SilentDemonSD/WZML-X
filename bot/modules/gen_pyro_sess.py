@@ -86,7 +86,7 @@ Get from https://my.telegram.org</i>. <b>Timeout:</b> 120s
 <i>OTP has been sent to your Phone Number, Enter OTP in <code>1 2 3 4 5</code> format. ( Space between each Digits )</i>
 <b>If any error or bot not responded, Retry Again.</b>  <b>Timeout:</b> 120s
 
-<i>Send /stop to Stop Process</i>"""))
+<i>Send /stop to Stop Process</i>""")
     await invoke(client, message, 'OTP')
     if isStop:
         return
