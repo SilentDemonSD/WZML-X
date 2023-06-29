@@ -66,7 +66,7 @@ async def mediainfo(_, message):
         link = rply.text if rply else message.command[1]
         return await gen_mediainfo(message, link)
     elif rply:
-        file = next((i for i in [rply.document, rply.video, rply.audio, rply.photo, rply.voice,
+        file = next((i for i in [rply.document, rply.video, rply.audio, rply.voice,
                          rply.animation, rply.video_note] if i is not None), None)
         if not file:
             return await sendMessage(message, help_msg)
