@@ -3,7 +3,8 @@ from time import time
 from asyncio import sleep
 from functools import partial
 
-from pyrogram.filters import command, create
+from pyrogram.filters import command, user, text, private
+from pyrogram.types import Client
 from pyrogram.handlers import MessageHandler
 from pyrogram.errors import SessionPasswordNeeded, FloodWait, PhoneNumberInvalid, ApiIdInvalid, PhoneCodeInvalid, PhoneCodeExpired, UsernameNotOccupied, ChatAdminRequired, PeerIdInvalid
 
@@ -12,10 +13,11 @@ from bot.helper.ext_utils.bot_utils import new_thread
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, sendFile
 from bot.helper.telegram_helper.filters import CustomFilters
 
-API_TEXT = """Pyrogram's String Session Generator. I will generate String Session 
-Now send your `API_ID` same as `APP_ID` to Start Generating Session.
+API_TEXT = """⌬ <i><b>Pyrogram String Session Generator</b></i>
+ 
+<i>Now send your <code>API_ID</code> or <code>APP_ID<code>.
 
-Get `APP_ID` from https://my.telegram.org"""
+Get APP_ID from https://my.telegram.org</i>"""
 
 HASH_TEXT = "Now send your `API_HASH`.\n\nGet `API_HASH` from https://my.telegram.org Or @UseTGzKBot.\n\nPress /cancel to Cancel Task."
 
@@ -41,20 +43,22 @@ async def genPyroString(client, message):
     except Exception:
         await editMessage(sess_msg, "`APP_ID` is Invalid.\nPress / to Start again.")
         return
+    await sleep(1.5)
     await editMessage(sess_msg, HASH_TEXT)
     await event_handler(client, message, 'API_HASH')
     if is_stopped:
         return
     api_hash = session_dict['API_HASH']
-    if not len(api_hash) >= 30:
+    if len(api_hash) <= 30:
         await editMessage(sess_msg, "`API_HASH` is Invalid.\nPress / to Start again.")
         return
+    await sleep(1.5)
     await editMessage(sess_msg, PHONE_NUMBER_TEXT)
     while True:
         await event_handler(client, message, 'PHONE_NO')
         if is_stopped:
             return
-        await editMessage(sess_msg, "Is {session_dict['PHONE_NO']}  correct? (y/n):` \n\nSend: `y` (If Yes)\nSend: `n` (If No)")
+        await editMessage(sess_msg, f"Is {session_dict['PHONE_NO']}  correct? (y/n):` \n\nSend: `y` (If Yes)\nSend: `n` (If No)")
         await event_handler(client, message, 'CONFIRM_PHN')
         if is_stopped:
             return
@@ -82,6 +86,7 @@ async def genPyroString(client, message):
     except PhoneNumberInvalid:
         await editMessage(sess_msg, "Your Phone Number is Invalid.\n\nPress /start to Start again.")
         return
+    await sleep(1.5)
     await editMessage(sess_msg, ("An OTP is sent to your phone number, "
                       "Please enter OTP in `1 2 3 4 5` format. __(Space between each numbers!)__ \n\n"
                       "If Bot not sending OTP then try /restart and Start Task again with /start command to Bot.\n"
@@ -129,7 +134,7 @@ async def set_details(_, message, newkey):
     await message.delete()
     if value == '/stop':
         is_stopped = True
-        await sendMessage(message, 'Process Canceled')
+        await sendMessage(message, '<b>Process Canceled</b>')
         return
     session_dict[newkey] = value
         
@@ -138,12 +143,7 @@ async def event_handler(client, message, key):
     user_id = message.from_user.id
     session_dict[user_id] = True
     start_time = time()
-    
-    async def event_filter(_, __, event):
-        user = event.from_user or event.sender_chat
-        return bool(user.id == user_id and event.chat.id == message.chat.id and event.text)
-        
-    handler = client.add_handler(MessageHandler(partial(set_details, newkey=key), filters=create(event_filter)), group=-1)
+    handler = client.add_handler(MessageHandler(partial(set_details, newkey=key), filters=user(user_id) & text & private), group=-1)
     LOGGER.info("Flow 0.1")
     while session_dict[user_id]:
         await sleep(0.5)
@@ -153,4 +153,4 @@ async def event_handler(client, message, key):
             is_stopped = True
     client.remove_handler(*handler)
     
-bot.add_handler(MessageHandler(genPyroString, filters=command('exportsession') & CustomFilters.owner))
+bot.add_handler(MessageHandler(genPyroString, filters=command('exportsession') & private & CustomFilters.owner))
