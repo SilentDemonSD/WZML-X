@@ -3,8 +3,8 @@ from time import time
 from asyncio import sleep
 from functools import partial
 
+from pyrogram import Client
 from pyrogram.filters import command, user, text, private
-from pyrogram.types import Client
 from pyrogram.handlers import MessageHandler
 from pyrogram.errors import SessionPasswordNeeded, FloodWait, PhoneNumberInvalid, ApiIdInvalid, PhoneCodeInvalid, PhoneCodeExpired, UsernameNotOccupied, ChatAdminRequired, PeerIdInvalid
 
