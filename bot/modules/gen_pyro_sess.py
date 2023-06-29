@@ -25,6 +25,7 @@ async def genPyroString(client, message):
 Get from https://my.telegram.org</i>. <b>Timeout:</b> 120s
 
 <i>Send /stop to Stop Process</i>""")
+    session_dict['message'] = sess_msg
     await invoke(client, message, 'API_ID')
     if isStop:
         return
@@ -128,7 +129,7 @@ async def set_details(_, message, newkey):
     await message.delete()
     if value.lower() == '/stop':
         isStop = True
-        return await sendMessage(message, '⌬ <b>Process Stopped</b>')
+        return await editMessage(session_dict['message'], '⌬ <b>Process Stopped</b>')
     session_dict[newkey] = value
         
 async def invoke(client, message, key):
