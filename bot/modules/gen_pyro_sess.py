@@ -19,6 +19,8 @@ isStop = False
 @new_thread
 async def genPyroString(client, message):
     global isStop
+    session_dict.clear()
+    session_dict[message.from_user.id] = True
     sess_msg = await sendMessage(message, """⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>
  
 <i>Send your <code>API_ID</code> or <code>APP_ID</code>.
