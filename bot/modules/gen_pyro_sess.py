@@ -137,7 +137,7 @@ async def event_handler(client, message, key):
     
     pfunc = partial(set_details, key)
     handler = client.add_handler(MessageHandler(
-        pfunc, filters=user(user_id) & text & private, group=-1)
+        pfunc, filters=user(user_id) & text & private, group=-1))
     while session_dict[user_id]:
         await sleep(0.5)
         if time() - start_time > 120:
