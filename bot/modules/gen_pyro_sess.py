@@ -119,7 +119,6 @@ async def genPyroString(client, message):
         await editMessage(sess_msg ,f"**ERROR:** `{str(e)}`")
         return
 
-@new_thread
 async def set_details(client, message, newkey):
     global is_stopped
     LOGGER.info("Flow 0.5")
@@ -139,9 +138,8 @@ async def event_handler(client, message, key):
     session_dict[user_id] = True
     start_time = time()
     
-    pfunc = partial(set_details, newkey=key)
     handler = client.add_handler(MessageHandler(
-        pfunc, filters=user(user_id) & text & private), group=-1)
+        partial(set_details, newkey=key), filters=(user(user_id) & text & private)), group=-1)
     LOGGER.info("Flow 0.1")
     while session_dict[user_id]:
         await sleep(0.5)
