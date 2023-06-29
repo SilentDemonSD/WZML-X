@@ -39,11 +39,11 @@ async def genPyroString(client, message):
     if is_stopped:
         return
     try:
-        client_api = int(session_dict['API_ID'])
+        api_id = int(session_dict['API_ID'])
     except Exception:
         await editMessage(sess_msg, "`APP_ID` is Invalid.\nPress / to Start again.")
         return
-    await sleep(1.5)
+    await sleep(0.5)
     await editMessage(sess_msg, HASH_TEXT)
     await event_handler(client, message, 'API_HASH')
     if is_stopped:
@@ -52,7 +52,7 @@ async def genPyroString(client, message):
     if len(api_hash) <= 30:
         await editMessage(sess_msg, "`API_HASH` is Invalid.\nPress / to Start again.")
         return
-    await sleep(1.5)
+    await sleep(0.5)
     await editMessage(sess_msg, PHONE_NUMBER_TEXT)
     while True:
         await event_handler(client, message, 'PHONE_NO')
@@ -76,7 +76,7 @@ async def genPyroString(client, message):
         await pyro_client.connect()
     try:
         user_code = await pyro_client.send_code(session_dict['PHONE_NO'])
-        await sleep(1.5)
+        await sleep(0.5)
     except FloodWait as e:
         await editMessage(sess_msg, f"Floodwait of {e.value} Seconds")
         return
@@ -86,7 +86,7 @@ async def genPyroString(client, message):
     except PhoneNumberInvalid:
         await editMessage(sess_msg, "Your Phone Number is Invalid.\n\nPress /start to Start again.")
         return
-    await sleep(1.5)
+    await sleep(0.5)
     await editMessage(sess_msg, ("An OTP is sent to your phone number, "
                       "Please enter OTP in `1 2 3 4 5` format. __(Space between each numbers!)__ \n\n"
                       "If Bot not sending OTP then try /restart and Start Task again with /start command to Bot.\n"
