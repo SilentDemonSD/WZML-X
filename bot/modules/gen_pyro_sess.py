@@ -3,7 +3,7 @@ from time import time
 from asyncio import sleep
 from functools import partial
 
-from pyrogram.filters import command, private, user, text
+from pyrogram.filters import command, create
 from pyrogram.handlers import MessageHandler
 from pyrogram.errors import SessionPasswordNeeded, FloodWait, PhoneNumberInvalid, ApiIdInvalid, PhoneCodeInvalid, PhoneCodeExpired, UsernameNotOccupied, ChatAdminRequired, PeerIdInvalid
 
@@ -138,8 +138,12 @@ async def event_handler(client, message, key):
     session_dict[user_id] = True
     start_time = time()
     
+    async def event_filter(_, __, event):
+        user = event.from_user or event.sender_chat
+        return bool(user.id == user_id and event.chat.id == message.chat.id and event.text)
+        
     handler = client.add_handler(MessageHandler(
-        partial(set_details, key), filters=(user(user_id) & text & private)), group=-1)
+        partial(set_details, newkey=key), filters=create(event_filter)), group=-1)
     LOGGER.info("Flow 0.1")
     while session_dict[user_id]:
         await sleep(0.5)
