@@ -184,8 +184,10 @@ async def search_images():
                         img_url = img['data-src']
                         if img_url not in config_dict['IMAGES']:
                             config_dict['IMAGES'].append(img_url)
-                if DATABASE_URL:
-                    await DbManger().update_config({'IMAGES': config_dict['IMAGES']})
+            if len(config_dict['IMAGES']) != 0:
+                config_dict['STATUS_LIMIT'] = 2
+            if DATABASE_URL:
+                await DbManger().update_config({'IMAGES': config_dict['IMAGES'], 'STATUS_LIMIT': config_dict['STATUS_LIMIT']})
         except Exception as e:
             LOGGER.error(f"An error occurred: {e}")
 
@@ -291,7 +293,7 @@ async def main():
         BotCommands.HelpCommand) & CustomFilters.authorized))
     bot.add_handler(MessageHandler(stats, filters=command(
         BotCommands.StatsCommand) & CustomFilters.authorized))
-    LOGGER.info("Bot Started!")
+    LOGGER.info("WZML-X Bot Started!")
     signal(SIGINT, exit_clean_up)
 
 bot.loop.run_until_complete(main())

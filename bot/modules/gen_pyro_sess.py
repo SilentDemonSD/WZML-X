@@ -48,14 +48,14 @@ Get from https://my.telegram.org</i>.
     api_hash = session_dict['API_HASH']
     if len(api_hash) <= 30:
         return await editMessage(sess_msg,  "<i><code>API_HASH</code> is Invalid.</i>\n\n ⌬ <b>Process Stopped.</b>")
-    await sleep(0.5)
-    await editMessage(sess_msg,  """⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>
+    while True:
+        await sleep(0.5)
+        await editMessage(sess_msg,  """⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>
  
 <i>Send your Telegram Account's Phone number in International Format ( Including Country Code ). <b>Example :</b> +14154566376</i>.
 <b>Timeout:</b> 120s
 
 <i>Send /stop to Stop Process</i>""")
-    while True:
         await invoke(client, message, 'PHONE_NO')
         if isStop:
             return

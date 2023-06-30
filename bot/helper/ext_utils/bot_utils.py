@@ -115,8 +115,7 @@ def bt_selection_buttons(id_):
         buttons.ubutton("Select Files", f"{BASE_URL}/app/files/{id_}")
         buttons.ibutton("Pincode", f"btsel pin {gid} {pincode}")
     else:
-        buttons.ubutton(
-            "Select Files", f"{BASE_URL}/app/files/{id_}?pin_code={pincode}")
+        buttons.ubutton("Select Files", f"{BASE_URL}/app/files/{id_}?pin_code={pincode}")
     buttons.ibutton("Done Selecting", f"btsel done {gid} {id_}")
     return buttons.build_menu(2)
 
@@ -181,7 +180,7 @@ class EngineStatus:
     STATUS_QB = f"qBit {get_client().app.version}"
     STATUS_TG = f"Pyrogram v{get_distribution('pyrogram').version}"
     STATUS_YT = f"yt-dlp v{get_distribution('yt-dlp').version}"
-    STATUS_EXT = "pExtract"
+    STATUS_EXT = "pExtract v2"
     STATUS_SPLIT_MERGE = f"ffmpeg v{get_ffmpeg_version()}"
     STATUS_ZIP = f"p7zip v{get_p7zip_version()}"
     STATUS_QUEUE = "Sleep v0"
@@ -200,7 +199,7 @@ def get_readable_message():
     for download in list(download_dict.values())[STATUS_START:STATUS_LIMIT+STATUS_START]:
         msg_link = download.message.link if download.message.chat.type in [
             ChatType.SUPERGROUP, ChatType.CHANNEL] and not config_dict['DELETE_LINKS'] else ''
-        msg += BotTheme('STATUS_NAME', Name=escape(f'{download.name()}'))
+        msg += BotTheme('STATUS_NAME', Name="Task is being Processed!" if config_dict['SAFE_MODE'] else escape(f'{download.name()}'))
         if download.status() not in [MirrorStatus.STATUS_SPLITTING, MirrorStatus.STATUS_SEEDING]:
             if download.status() != MirrorStatus.STATUS_UPLOADDDL:
                 msg += BotTheme('BAR', Bar=f"{get_progress_bar_string(download.progress())} {download.progress()}")

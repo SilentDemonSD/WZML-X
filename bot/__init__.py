@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 from tzlocal import get_localzone
+from pytz import timezone
+from datetime import datetime
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from pyrogram import Client as tgClient, enums
 from pymongo import MongoClient
@@ -13,7 +15,7 @@ from aria2p import API as ariaAPI, Client as ariaClient
 from qbittorrentapi import Client as qbClient
 from faulthandler import enable as faulthandler_enable
 from socket import setdefaulttimeout
-from logging import getLogger, FileHandler, StreamHandler, INFO, basicConfig, error as log_error, info as log_info, warning as log_warning
+from logging import getLogger, Formatter, FileHandler, StreamHandler, INFO, basicConfig, error as log_error, info as log_info, warning as log_warning
 from uvloop import install
 
 faulthandler_enable()
@@ -137,6 +139,15 @@ TELEGRAM_HASH = environ.get('TELEGRAM_HASH', '')
 if len(TELEGRAM_HASH) == 0:
     log_error("TELEGRAM_HASH variable is missing! Exiting now")
     exit(1)
+    
+TIMEZONE = environ.get('TIMEZONE', '')
+if len(TIMEZONE) == 0:
+    TIMEZONE = 'Asia/Kolkata'
+    
+def changetz(*args):
+    return datetime.now(timezone(TIMEZONE)).timetuple()
+
+Formatter.converter = changetz
 
 GDRIVE_ID = environ.get('GDRIVE_ID', '')
 if len(GDRIVE_ID) == 0:
@@ -282,7 +293,7 @@ LEECH_LOG_ID = environ.get('LEECH_LOG_ID', '')
 LEECH_LOG_ID = '' if len(LEECH_LOG_ID) == 0 else int(LEECH_LOG_ID)
 
 STATUS_LIMIT = environ.get('STATUS_LIMIT', '')
-STATUS_LIMIT = 10 if len(STATUS_LIMIT) == 0 else int(STATUS_LIMIT)
+STATUS_LIMIT = 6 if len(STATUS_LIMIT) == 0 else int(STATUS_LIMIT)
 
 CMD_SUFFIX = environ.get('CMD_SUFFIX', '')
 
@@ -290,7 +301,7 @@ RSS_CHAT_ID = environ.get('RSS_CHAT_ID', '')
 RSS_CHAT_ID = '' if len(RSS_CHAT_ID) == 0 else int(RSS_CHAT_ID)
 
 RSS_DELAY = environ.get('RSS_DELAY', '')
-RSS_DELAY = 900 if len(RSS_DELAY) == 0 else int(RSS_DELAY)
+RSS_DELAY = 600 if len(RSS_DELAY) == 0 else int(RSS_DELAY)
 
 TORRENT_TIMEOUT = environ.get('TORRENT_TIMEOUT', '')
 TORRENT_TIMEOUT = '' if len(TORRENT_TIMEOUT) == 0 else int(TORRENT_TIMEOUT)
@@ -407,6 +418,10 @@ if len(FSUB_IDS) == 0:
 MIRROR_LOG_ID = environ.get('MIRROR_LOG_ID', '')
 if len(MIRROR_LOG_ID) == 0:
     MIRROR_LOG_ID = ''
+    
+LINKS_LOG_ID = environ.get('LINKS_LOG_ID', '')
+if len(LINKS_LOG_ID) == 0:
+    LINKS_LOG_ID = ''
 
 BOT_PM = environ.get('BOT_PM', '')
 BOT_PM = BOT_PM.lower() == 'true'
@@ -432,14 +447,15 @@ if len(BOT_THEME) == 0:
 IMAGES = environ.get('IMAGES', '')
 IMAGES = (IMAGES.replace("'", '').replace('"', '').replace(
     '[', '').replace(']', '').replace(",", "")).split()
-
+if IMAGES:
+    STATUS_LIMIT = 2
 
 IMG_SEARCH = environ.get('IMG_SEARCH', '')
 IMG_SEARCH = (IMG_SEARCH.replace("'", '').replace('"', '').replace(
     '[', '').replace(']', '').replace(",", "")).split()
 
 IMG_PAGE = environ.get('IMG_PAGE', '')
-IMG_PAGE = 1 if not IMG_PAGE else int(IMG_PAGE)
+IMG_PAGE = int(IMG_PAGE) if IMG_PAGE.isdigit() else ''
 
 AUTHOR_NAME = environ.get('AUTHOR_NAME', '')
 if len(AUTHOR_NAME) == 0:
@@ -451,7 +467,7 @@ if len(AUTHOR_URL) == 0:
 
 TITLE_NAME = environ.get('TITLE_NAME', '')
 if len(TITLE_NAME) == 0:
-    TITLE_NAME = 'WeebZone-X'
+    TITLE_NAME = 'WZ M/L X'
 
 GD_INFO = environ.get('GD_INFO', '')
 if len(GD_INFO) == 0:
@@ -459,6 +475,9 @@ if len(GD_INFO) == 0:
 
 SAVE_MSG = environ.get('SAVE_MSG', '')
 SAVE_MSG = SAVE_MSG.lower() == 'true'
+
+SAFE_MODE = environ.get('SAFE_MODE', '')
+SAFE_MODE = SAFE_MODE.lower() == 'true'
 
 SET_COMMANDS = environ.get('SET_COMMANDS', '')
 SET_COMMANDS = SET_COMMANDS.lower() == 'true'
@@ -518,10 +537,6 @@ if len(MDL_TEMPLATE) == 0:
 
 <a href='{url}'>Read More ...</a>'''
 
-TIMEZONE = environ.get('TIMEZONE', '')
-if len(TIMEZONE) == 0:
-    TIMEZONE = 'Asia/Kolkata'
-
 config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'AS_DOCUMENT': AS_DOCUMENT,
                'AUTHORIZED_CHATS': AUTHORIZED_CHATS,
@@ -552,6 +567,7 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'DAILY_LEECH_LIMIT': DAILY_LEECH_LIMIT,
                'MIRROR_LOG_ID': MIRROR_LOG_ID,
                'LEECH_LOG_ID': LEECH_LOG_ID,
+               'LINKS_LOG_ID': LINKS_LOG_ID,
                'BOT_PM': BOT_PM,
                'DISABLE_DRIVE_LINK': DISABLE_DRIVE_LINK,
                'BOT_THEME': BOT_THEME,
@@ -597,6 +613,7 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'RSS_CHAT_ID': RSS_CHAT_ID,
                'RSS_DELAY': RSS_DELAY,
                'SAVE_MSG': SAVE_MSG,
+               'SAFE_MODE': SAFE_MODE,
                'SEARCH_API_LINK': SEARCH_API_LINK,
                'SEARCH_LIMIT': SEARCH_LIMIT,
                'SEARCH_PLUGINS': SEARCH_PLUGINS,
@@ -640,7 +657,7 @@ if ospath.exists('buttons.txt'):
         lines = f.readlines()
         for line in lines:
             temp = line.strip().split()
-            if len(extra_buttons.keys()) == 4:
+            if len(extra_buttons.keys()) >= 6:
                 break
             if len(temp) == 2:
                 extra_buttons[temp[0].replace("_", " ")] = temp[1]
@@ -654,8 +671,7 @@ if ospath.exists('shorteners.txt'):
                 shorteneres_list.append({'domain': temp[0],'api_key': temp[1]})
 
 if BASE_URL:
-    Popen(
-        f"gunicorn web.wserver:app --bind 0.0.0.0:{BASE_URL_PORT} --worker-class gevent", shell=True)
+    Popen(f"gunicorn web.wserver:app --bind 0.0.0.0:{BASE_URL_PORT} --worker-class gevent", shell=True)
 
 srun(["qbittorrent-nox", "-d", f"--profile={getcwd()}"])
 if not ospath.exists('.netrc'):

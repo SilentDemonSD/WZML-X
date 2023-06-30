@@ -46,7 +46,7 @@ default_values = {'AUTO_DELETE_MESSAGE_DURATION': 30,
                   'TITLE_NAME': 'WZ Mirror/Leech X',
                   'GD_INFO': 'Uploaded by WZML-X',
                   }
-bool_vars = ['AS_DOCUMENT', 'BOT_PM', 'STOP_DUPLICATE', 'SET_COMMANDS', 'SAVE_MSG', 'SHOW_MEDIAINFO', 'SOURCE_LINK',
+bool_vars = ['AS_DOCUMENT', 'BOT_PM', 'STOP_DUPLICATE', 'SET_COMMANDS', 'SAVE_MSG', 'SHOW_MEDIAINFO', 'SOURCE_LINK', 'SAFE_MODE',
              'IS_TEAM_DRIVE', 'USE_SERVICE_ACCOUNTS', 'WEB_PINCODE', 'EQUAL_SPLITS', 'DISABLE_DRIVE_LINK', 'DELETE_LINKS']
 
 
@@ -421,6 +421,9 @@ async def load_config():
     SET_COMMANDS = environ.get('SET_COMMANDS', '')
     SET_COMMANDS = SET_COMMANDS.lower() == 'true'
     
+    SAFE_MODE = environ.get('SAFE_MODE', '')
+    SAFE_MODE = SAFE_MODE.lower() == 'true'
+    
     TOKEN_TIMEOUT = environ.get('TOKEN_TIMEOUT', '')
     TOKEN_TIMEOUT = int(TOKEN_TIMEOUT) if TOKEN_TIMEOUT.isdigit() else ''
 
@@ -595,6 +598,7 @@ async def load_config():
                         'RSS_CHAT_ID': RSS_CHAT_ID,
                         'RSS_DELAY': RSS_DELAY,
                         'SAVE_MSG': SAVE_MSG,
+                        'SAFE_MODE': SAFE_MODE,
                         'SEARCH_API_LINK': SEARCH_API_LINK,
                         'SEARCH_LIMIT': SEARCH_LIMIT,
                         'SEARCH_PLUGINS': SEARCH_PLUGINS,
