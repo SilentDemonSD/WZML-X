@@ -563,7 +563,7 @@ class MirrorLeechListener:
             if self.uid in download_dict.keys():
                 del download_dict[self.uid]
             count = len(download_dict)
-         msg = f'''<i><b>Upload Stopped!</b></i>
+        msg = f'''<i><b>Upload Stopped!</b></i>
 ┠ <b>Task for:</b> {self.tag}
 ┃
 ┠ <b>Due To:</b> {escape(error)}
