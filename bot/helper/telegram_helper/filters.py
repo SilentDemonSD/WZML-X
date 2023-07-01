@@ -29,7 +29,7 @@ class CustomFilters:
         #    LOGGER.info("Access Given uset")
         #    return True
         isExists = False
-        LOGGER.info("uset check"
+        LOGGER.info("uset check")
         for channel_id in config_dict['AUTHORIZED_CHATS']:
             LOGGER.info("For Loop check")
             try:
