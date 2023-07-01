@@ -46,6 +46,6 @@ class CustomFilters:
     async def sudo_user(self, _, message):
         user = message.from_user or message.sender_chat
         uid = user.id
-                return bool(uid == OWNER_ID or uid in user_data and user_data[uid].get('is_sudo'))
+        return bool(uid == OWNER_ID or uid in user_data and user_data[uid].get('is_sudo'))
 
     sudo = create(sudo_user)
