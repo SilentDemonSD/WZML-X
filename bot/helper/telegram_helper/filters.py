@@ -33,7 +33,7 @@ class CustomFilters:
                 if not (channel_id.get('is_auth') and str(channel_id).startswith('-100')):
                     continue
                 try:
-                    if await (await chat_info(str(channel_id)).get_member(uid):
+                    if await (await chat_info(str(channel_id))).get_member(uid):
                         isExists = True
                         break
                 except:
