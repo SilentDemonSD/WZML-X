@@ -214,6 +214,7 @@ help_string = f'''
 /{BotCommands.CloneCommand}: Copy file/folder to Cloud Drive.
 /{BotCommands.CountCommand} [drive_url]: Count file/folder of Google Drive.
 /{BotCommands.DeleteCommand} [drive_url]: Delete file/folder from Google Drive (Only Owner & Sudo).
+/{BotCommands.GDCleanCommand}: Delete all files in Google Drive.
 
 <b>Cancel Tasks:</b>
 /{BotCommands.CancelMirror}: Cancel task by gid or reply.
