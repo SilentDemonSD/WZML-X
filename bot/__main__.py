@@ -225,7 +225,7 @@ help_string = f'''<b>NOTE: <i>Click on any CMD to see more minor detalis.</i></b
 <b>Bot Settings:</b>
 /{BotCommands.UserSetCommand[0]} or /{BotCommands.UserSetCommand[1]} [query]: Open User Settings (PM also)
 /{BotCommands.UsersCommand}: Show User Stats Info (Only Owner & Sudo).
-/{BotCommands.BotSetCommand[0]} or /{BotCommands.BotSetCommand[0]} [query]: Open Bot Settings (Only Owner & Sudo).
+/{BotCommands.BotSetCommand[0]} or /{BotCommands.BotSetCommand[1]} [query]: Open Bot Settings (Only Owner & Sudo).
 
 <b>Authentication:</b>
 /{BotCommands.AuthorizeCommand}: Authorize a chat or a user to use the bot (Only Owner & Sudo).
