@@ -30,7 +30,7 @@ class CustomFilters:
         if message.chat.type == ChatType.PRIVATE:
             isExists = False
             for channel_id in user_data:
-                if not (channel_id.get('is_auth') and str(channel_id).startswith('-100')):
+                if not (user_data[channel_id].get('is_auth') and str(channel_id).startswith('-100')):
                     continue
                 try:
                     if await (await chat_info(str(channel_id))).get_member(uid):
