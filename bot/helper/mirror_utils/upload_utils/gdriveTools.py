@@ -181,7 +181,7 @@ class GoogleDriveHelper:
             msg = str(err)
         return msg
         
-    def driveclean(self, drive_id=config_dict["GDRIVE_ID"]):
+    def driveclean(self, drive_id):
         msg = ''
         query = f"'{drive_id}' in parents and trashed = false"
         page_token = None
@@ -195,7 +195,7 @@ class GoogleDriveHelper:
                     self.__service.files().delete(fileId=file['id'], supportsAllDrives=True).execute()
                 page_token = drive_query.get('nextPageToken', None)
                 if page_token is None:
-                    msg = f"Successfully Deleted : {self.__total_files} files of {get_readable_file_size(self.__total_bytes)} Size"
+                    msg = f"⌬ <b><i>Successfully Cleaned Folder/Drive :</i></b> \n\n<b>Total Files:</b> <code>{self.__total_files}</code>\n<b>Total Size:</b> <code>{get_readable_file_size(self.__total_bytes)}</code>"
                     break
             except Exception as err:
                 msg = str(err).replace('>', '').replace('<', '')
