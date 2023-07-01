@@ -33,7 +33,7 @@ class CustomFilters:
         for channel_id in config_dict['AUTHORIZED_CHATS']:
             LOGGER.info("For Loop check")
             try:
-                auth_chat = chat_info(channel_id)
+                auth_chat = await chat_info(channel_id)
                 user = await auth_chat.get_member(uid)
                 LOGGER.info(user)
                 if user:
