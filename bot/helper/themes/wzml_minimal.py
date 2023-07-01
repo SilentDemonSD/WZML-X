@@ -134,7 +134,8 @@ class WZMLStyle:
     ####--------OVERALL MSG FOOTER----------
     USER =              '\n┠ <b>User:</b> <code>{User}</code> | '
     ID =                                                        '<b>ID:</b> <code>{Id}</code>'
-    CANCEL = '''\n┖ {Cancel}\n\n'''
+    BTSEL =          '\n┠ <b>Select:</b> {Btsel}'
+    CANCEL =         '\n┖ <b>Cancel:</b> {Cancel}\n\n'
 
     ####------FOOTER--------
     FOOTER = '⌬ <b><i>Bot Stats</i></b>\n'

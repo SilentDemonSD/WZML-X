@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from pyrogram.filters import create
 
-from bot import user_data, OWNER_ID, config_dict
+from bot import user_data, OWNER_ID, config_dict, LOGGER
 from bot.helper.telegram_helper.message_utils import chat_info
 
 
@@ -31,10 +31,13 @@ class CustomFilters:
         for channel_id in config_dict['AUTHORIZED_CHATS']:
             try:
                 auth_chat = chat_info(channel_id)
-                if await auth_chat.get_member(uid):
+                user = await auth_chat.get_member(uid)
+                LOGGER.info(user)
+                if user:
                     isExists = True
                     break
-            except Exception:
+            except Exception as e:
+                LOGGER.info(e)
                 continue
         return isExists
         
