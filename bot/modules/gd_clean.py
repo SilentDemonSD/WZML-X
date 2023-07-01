@@ -44,5 +44,5 @@ async def drivecleancb(_, query):
         await auto_delete_message(message, message)
         
 
-bot.add_handler(MessageHandler(driveclean, filters=command('driveclean') & CustomFilters.owner))
+bot.add_handler(MessageHandler(driveclean, filters=command(BotCommands.GDCleanCommand) & CustomFilters.owner))
 bot.add_handler(CallbackQueryHandler(drivecleancb, filters=regex(r'^gdclean')))
