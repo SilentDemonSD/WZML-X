@@ -26,9 +26,11 @@ class CustomFilters:
     async def authorized_usetting(self, _, message):
         uid = (message.from_user or message.sender_chat).id
         if uid == OWNER_ID or (uid in user_data and (user_data[uid].get('is_auth', False) or user_data[uid].get('is_sudo', False))):
+            LOGGER.info("Access Given uset")
             return True
         isExists = False
         for channel_id in config_dict['AUTHORIZED_CHATS']:
+            LOGGER.info("For Loop check")
             try:
                 auth_chat = chat_info(channel_id)
                 user = await auth_chat.get_member(uid)
