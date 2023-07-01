@@ -214,6 +214,10 @@ async def torrentSearch(_, message):
     buttons = ButtonMaker()
     key = message.text.split()
     SEARCH_PLUGINS = config_dict['SEARCH_PLUGINS']
+    msg, btn = checking_access(user_id)
+    if msg is not None:
+        await sendMessage(message, msg, btn.build_menu(1))
+        return
     if SITES is None and not SEARCH_PLUGINS:
         await sendMessage(message, "No API link or search PLUGINS added for this function")
     elif len(key) == 1 and SITES is None:

@@ -67,6 +67,10 @@ async def drive_list(_, message):
     if len(message.text.split()) == 1:
         return await sendMessage(message, 'Send a search key along with command')
     user_id = message.from_user.id
+    msg, btn = checking_access(user_id)
+    if msg is not None:
+        await sendMessage(message, msg, btn.build_menu(1))
+        return
     buttons = await list_buttons(user_id)
     await sendMessage(message, 'Choose list options:', buttons, 'IMAGES')
 
