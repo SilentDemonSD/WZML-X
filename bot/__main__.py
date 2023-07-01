@@ -192,15 +192,13 @@ async def search_images():
             LOGGER.error(f"An error occurred: {e}")
 
 
-help_string = f'''
-<b>NOTE: Click on any CMD to see more detalis.</b>
+help_string = f'''<b>NOTE: <i>Click on any CMD to see more minor detalis.</i></b>
 
 /{BotCommands.MirrorCommand[0]} or /{BotCommands.MirrorCommand[1]}: Upload to Cloud Drive.
 
 <b>Use qBit commands for torrents only:</b>
 /{BotCommands.QbMirrorCommand[0]} or /{BotCommands.QbMirrorCommand[1]}: Download using qBittorrent and Upload to Cloud Drive.
-
-/{BotCommands.BtSelectCommand}: Select files from torrents by gid or reply.
+/{BotCommands.BtSelectCommand}: Select files from torrents by btsel_gid or reply.
 
 <b>Use Yt-Dlp commands for YouTube or any videos:</b>
 /{BotCommands.YtdlCommand[0]} or /{BotCommands.YtdlCommand[1]}: Mirror yt-dlp supported link.
@@ -214,20 +212,20 @@ help_string = f'''
 /{BotCommands.CloneCommand}: Copy file/folder to Cloud Drive.
 /{BotCommands.CountCommand} [drive_url]: Count file/folder of Google Drive.
 /{BotCommands.DeleteCommand} [drive_url]: Delete file/folder from Google Drive (Only Owner & Sudo).
-/{BotCommands.GDCleanCommand}: Delete all files in Google Drive.
+/{BotCommands.GDCleanCommand} [drive_id]: Delete all files from specific folder in Google Drive.
 
 <b>Cancel Tasks:</b>
-/{BotCommands.CancelMirror}: Cancel task by gid or reply.
-/{BotCommands.CancelAllCommand[0]} : Cancel all tasks which added by you /{BotCommands.CancelAllCommand[1]} to in bots.
+/{BotCommands.CancelMirror}: Cancel task by cancel_gid or reply.
+/{BotCommands.CancelAllCommand[0]}: Cancel all Tasks & /{BotCommands.CancelAllCommand[1]} for Multiple Bots.
 
 <b>Torrent/Drive Search:</b>
 /{BotCommands.ListCommand} [query]: Search in Google Drive(s).
 /{BotCommands.SearchCommand} [query]: Search for torrents with API.
 
 <b>Bot Settings:</b>
-/{BotCommands.UserSetCommand[0]} or /{BotCommands.UserSetCommand[1]} [query]: Open User settings.
-/{BotCommands.UsersCommand}: show users settings (Only Owner & Sudo).
-/{BotCommands.BotSetCommand[0]} or /{BotCommands.BotSetCommand[0]} [query]: Open Bot settings (Only Owner & Sudo).
+/{BotCommands.UserSetCommand[0]} or /{BotCommands.UserSetCommand[1]} [query]: Open User Settings (PM also)
+/{BotCommands.UsersCommand}: Show User Stats Info (Only Owner & Sudo).
+/{BotCommands.BotSetCommand[0]} or /{BotCommands.BotSetCommand[0]} [query]: Open Bot Settings (Only Owner & Sudo).
 
 <b>Authentication:</b>
 /{BotCommands.AuthorizeCommand}: Authorize a chat or a user to use the bot (Only Owner & Sudo).
@@ -236,13 +234,13 @@ help_string = f'''
 /{BotCommands.RmSudoCommand}: Remove sudo users (Only Owner).
 
 <b>Bot Stats:</b>
-/{BotCommands.StatusCommand[0]} or /{BotCommands.StatusCommand[1]}: Shows a status of all active tasks.
-/{BotCommands.StatsCommand[0]} or /{BotCommands.StatsCommand[1]}: Show server stats.
+/{BotCommands.StatusCommand[0]} or /{BotCommands.StatusCommand[1]}: Shows a status page of all active tasks.
+/{BotCommands.StatsCommand[0]} or /{BotCommands.StatsCommand[1]}: Show Server detailed stats.
 /{BotCommands.PingCommand[0]} or /{BotCommands.PingCommand[1]}: Check how long it takes to Ping the Bot.
 
 <b>Maintainance:</b>
-/{BotCommands.RestartCommand[0]}: Restart and update the bot (Only Owner & Sudo).
-/{BotCommands.RestartCommand[1]}: Restart and update all bots (Only Owner & Sudo).
+/{BotCommands.RestartCommand[0]}: Restart and Update the Bot (Only Owner & Sudo).
+/{BotCommands.RestartCommand[1]}: Restart and Update all Bots (Only Owner & Sudo).
 /{BotCommands.LogCommand}: Get a log file of the bot. Handy for getting crash reports (Only Owner & Sudo).
 
 <b>Extras:</b>
@@ -251,19 +249,19 @@ help_string = f'''
 /{BotCommands.ExecCommand}: Run Commands In Exec (Only Owner).
 /{BotCommands.ClearLocalsCommand}: Clear {BotCommands.EvalCommand} or {BotCommands.ExecCommand} locals (Only Owner).
 
-/{BotCommands.SpeedCommand}: Check speed in vps.
-/{BotCommands.AddImageCommand}: Adding images.
-/{BotCommands.ImagesCommand}: Stored images.
+/{BotCommands.SpeedCommand}: Check Speed in VPS/Server.
+/{BotCommands.AddImageCommand} [url/photo]: Add Images in Bot
+/{BotCommands.ImagesCommand}: Generate grid of Stored Images.
 /{BotCommands.IMDBCommand}: Search in IMDB.
-/{BotCommands.AniListCommand}: Search for anime.
+/{BotCommands.AniListCommand}: Search for anime in AniList.
 /{BotCommands.AnimeHelpCommand}: Anime help guide.
-/{BotCommands.MediaInfoCommand}: Media info for everything.
-/{BotCommands.MyDramaListCommand}: Search in MDL.
+/{BotCommands.MediaInfoCommand} [url/media]: Generate MediaInfo of Media or DL Urls
+/{BotCommands.MyDramaListCommand}: Search in MyDramaList.
 
 <b>RSS Feed:</b>
 /{BotCommands.RssCommand}: Open RSS Menu.
 
-<b>Attention: Read the first line again!</b>
+⌬ <b>Attention: Read the first line again!</b>
 '''
 
 
