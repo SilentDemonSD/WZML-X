@@ -433,7 +433,7 @@ class MirrorLeechListener:
                 if is_DDL:
                     buttons.ubutton(BotTheme('DDL_LINK', Serv='GoFile'), link)
                 elif link:
-                    if not config_dict['DISABLE_DRIVE_LINK'] and user_id != OWNER_ID:
+                    if not config_dict['DISABLE_DRIVE_LINK'] and user_id == OWNER_ID:
                         buttons.ubutton(BotTheme('CLOUD_LINK'), link)
                 else:
                     msg += BotTheme('RCPATH', RCpath=rclonePath)
@@ -525,7 +525,12 @@ class MirrorLeechListener:
             if self.sameDir and self.uid in self.sameDir['tasks']:
                 self.sameDir['tasks'].remove(self.uid)
                 self.sameDir['total'] -= 1
-        msg = f"{self.tag} <b>Download Stopped!</b>\n\n<i>Reason: {escape(error)}\n<b>Elapsed:</b>{get_readable_time(time() - self.message.date.timestamp())}\n<b>Mode:</b>{self.upload_details['mode']}</i>"
+        msg = f'''<i><b>Download Stopped!</b></i>
+┠ <b>Task for:</b> {self.tag}
+┃
+┠ <b>Due To:</b> {escape(error)}
+┠ <b>Mode:</b> {self.upload_details['mode']}
+┖ <b>Elapsed:</b> {get_readable_time(time() - self.message.date.timestamp())}'''
         await sendMessage(self.message, msg, button)
         if count == 0:
             await self.clean()
@@ -558,7 +563,12 @@ class MirrorLeechListener:
             if self.uid in download_dict.keys():
                 del download_dict[self.uid]
             count = len(download_dict)
-        msg = f"{self.tag} <b>Upload Stopped!</b>\n\n<i>Reason: {escape(error)}\n<b>Elapsed:</b>{get_readable_time(time() - self.message.date.timestamp())}\n<b>Mode:</b>{self.upload_details['mode']}</i>"
+         msg = f'''<i><b>Upload Stopped!</b></i>
+┠ <b>Task for:</b> {self.tag}
+┃
+┠ <b>Due To:</b> {escape(error)}
+┠ <b>Mode:</b> {self.upload_details['mode']}
+┖ <b>Elapsed:</b> {get_readable_time(time() - self.message.date.timestamp())}'''
         await sendMessage(self.message, msg)
         if count == 0:
             await self.clean()

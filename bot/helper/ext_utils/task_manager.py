@@ -166,12 +166,11 @@ async def limit_checker(size, listener, isTorrent=False, isMega=False, isDriveLi
         if (PLAYLIST_LIMIT := config_dict['PLAYLIST_LIMIT']):
             limit_exceeded = f'Playlist limit is {PLAYLIST_LIMIT}'
 
-        if config_dict['DAILY_TASK_LIMIT']:
-            if config_dict['DAILY_TASK_LIMIT'] <= await getdailytasks(user_id):
-                limit_exceeded = f"Daily Total Task Limit: {config_dict['DAILY_TASK_LIMIT']}\nYou have exhausted all your Daily Task Limits."
-            else:
-                ttask = await getdailytasks(user_id, increase_task=True)
-                LOGGER.info(f"User: {user_id} | Daily Tasks: {ttask}")
+        if config_dict['DAILY_TASK_LIMIT'] and config_dict['DAILY_TASK_LIMIT'] <= await getdailytasks(user_id):
+            limit_exceeded = f"Daily Total Task Limit: {config_dict['DAILY_TASK_LIMIT']}\nYou have exhausted all your Daily Task Limits."
+        else:
+            ttask = await getdailytasks(user_id, increase_task=True)
+            LOGGER.info(f"User: {user_id} | Daily Tasks: {ttask}")
         if (DAILY_MIRROR_LIMIT := config_dict['DAILY_MIRROR_LIMIT']) and not listener.isLeech:
             limit = DAILY_MIRROR_LIMIT * 1024**3
             if (size >= (limit - await getdailytasks(user_id, check_mirror=True)) or limit <= await getdailytasks(user_id, check_mirror=True)):
@@ -188,7 +187,7 @@ async def limit_checker(size, listener, isTorrent=False, isMega=False, isDriveLi
                 LOGGER.info(f"User : {user_id} | Daily Leech Size : {get_readable_file_size(lsize)}")
 
     if limit_exceeded:
-        return f"{limit_exceeded}.\nYour File/Folder size is {get_readable_file_size(size)}"
+        return f"{limit_exceeded}.\nYour List/File/Folder size is {get_readable_file_size(size)}"
 
 
 async def task_utils(message):
