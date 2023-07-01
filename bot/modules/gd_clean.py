@@ -27,7 +27,7 @@ async def drivecleancb(_, query):
     if user_id != OWNER_ID:
         await query.answer(text="Not Owner!", show_alert=True)
         return
-    if data[1] == "clean":
+    if data[1] == "clear":
         await query.answer()
         drive = GoogleDriveHelper()
         msg = await sync_to_async(drive.driveclean)
