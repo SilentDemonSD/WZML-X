@@ -21,8 +21,7 @@ async def broadcast(_, message):
         return await sendMessage(message, '<b>Reply to any Message to Broadcast Users in Bot PM</b>')
     t, s, b, d, u = 0, 0, 0, 0, 0
     start_time = time()
-    status = '''<b><u>Broadcast Stats :</u></b>
-┃
+    status = '''⌬  <b><i>Broadcast Stats :</i></b>
 ┠ <b>Total Users:</b> <code>{t}</code>
 ┠ <b>Success:</b> <code>{s}</code>
 ┠ <b>Blocked Users:</b> <code>{b}</code>

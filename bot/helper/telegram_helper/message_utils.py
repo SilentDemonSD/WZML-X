@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 from traceback import format_exc
 from asyncio import sleep
+from aiofiles import open as aiopen
 from aiofiles.os import remove as aioremove
 from random import choice as rchoice
 from time import time
+from html import escape
 from re import match as re_match
 
 from pyrogram.types import InputMediaPhoto
@@ -149,6 +151,25 @@ async def sendFile(message, file, caption=None):
     except Exception as e:
         LOGGER.error(str(e))
         return str(e)
+        
+
+async def sendLogFile(message):
+    async with aiopen('log.txt', 'r') as f:
+        logFileLines = (await f.read()).splitlines()
+    ind = 1
+    Loglines = ''
+    try:
+        while len(Loglines) <= 2500:
+            Loglines = logFileLines[-ind] + '\n' + Loglines
+            if ind == len(logFileLines): 
+                break
+            ind += 1
+        startLine = f"Showing Last {ind} Lines from log.txt: \n\n---------------- START LOG -----------------\n\n"
+        endLine = "\n---------------- END LOG -----------------"
+        await sendMessage(message, escape(startLine+Loglines+endLine))
+    except Exception as err:
+        LOGGER.error(f"Log Display : {str(err)}")
+    await sendFile(message, 'log.txt')
 
 
 async def sendRss(text):

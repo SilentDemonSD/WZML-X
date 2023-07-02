@@ -24,7 +24,7 @@ from .helper.ext_utils.fs_utils import start_cleanup, clean_all, exit_clean_up
 from .helper.ext_utils.bot_utils import get_progress_bar_string, get_readable_file_size, get_readable_time, cmd_exec, sync_to_async, new_task, set_commands, update_user_ldata
 from .helper.ext_utils.db_handler import DbManger
 from .helper.telegram_helper.bot_commands import BotCommands
-from .helper.telegram_helper.message_utils import sendMessage, editMessage, sendFile
+from .helper.telegram_helper.message_utils import sendMessage, editMessage, sendLogFile
 from .helper.telegram_helper.filters import CustomFilters
 from .helper.telegram_helper.button_build import ButtonMaker
 from .helper.listeners.aria2_listener import start_aria2_listener
@@ -166,7 +166,7 @@ async def ping(client, message):
 
 
 async def log(client, message):
-    await sendFile(message, 'log.txt')
+    await sendLogFile(message)
 
 
 async def search_images():
