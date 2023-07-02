@@ -141,7 +141,7 @@ async def editMessage(message, text, buttons=None, photo=None):
 
 async def sendFile(message, file, caption=None, buttons=None):
     try:
-        return await message.reply_document(document=file, quote=True, caption=caption, disable_notification=True, reply_markup=butt)
+        return await message.reply_document(document=file, quote=True, caption=caption, disable_notification=True, reply_markup=buttons)
     except FloodWait as f:
         LOGGER.warning(str(f))
         await sleep(f.value * 1.2)
