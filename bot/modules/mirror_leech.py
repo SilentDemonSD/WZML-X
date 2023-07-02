@@ -302,11 +302,15 @@ async def wzmlxcb(_, query):
         await query.answer()
         async with aiopen('log.txt', 'r') as f:
             logFileLines = (await f.read()).splitlines()
-        ind = 1
-        Loglines = ''
+        def parseline(line):
+            try:
+                return "[" + line.split('] [', 1)[1]
+            except IndexError:
+                return line
+        ind, Loglines = 1, ''
         try:
-            while len(Loglines) <= 2500:
-                Loglines = ("["+logFileLines[-ind].split('] [', 1)[1]) if logFileLines[-ind].startswith('[') else logFileLines[-ind] + '\n' + Loglines
+            while len(Loglines) <= 3500:
+                Loglines = parseline(logFileLines[-ind]) + '\n' + Loglines
                 if ind == len(logFileLines): 
                     break
                 ind += 1
