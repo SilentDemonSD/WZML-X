@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 from traceback import format_exc
 from asyncio import sleep
-from aiofiles import open as aiopen
 from aiofiles.os import remove as aioremove
 from random import choice as rchoice
 from time import time
-from html import escape
 from re import match as re_match
 
 from pyrogram.types import InputMediaPhoto
