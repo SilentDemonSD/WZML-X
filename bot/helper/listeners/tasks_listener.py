@@ -370,8 +370,6 @@ class MirrorLeechListener:
             if mime_type != 0:
                 msg += BotTheme('L_CORRUPTED_FILES', Corrupt=mime_type)
             msg += BotTheme('L_CC', Tag=self.tag)
-            if self.message:
-                self.message._client = bot
             if not files:
                 if self.isPrivate:
                     msg += BotTheme('PM_BOT_MSG')

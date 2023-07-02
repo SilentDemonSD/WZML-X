@@ -289,6 +289,7 @@ class TgUploader:
                     await self.__send_media_group(subkey, key, msgs)
         if self.__is_cancelled:
             return
+        self.__listener.message._client = bot
         if self.__listener.seed and not self.__listener.newDir:
             await clean_unwanted(self.__path)
         if self.__total_files == 0:
@@ -452,4 +453,5 @@ class TgUploader:
     async def cancel_download(self):
         self.__is_cancelled = True
         LOGGER.info(f"Cancelling Upload: {self.name}")
+        self.__listener.message._client = bot
         await self.__listener.onUploadError('Your Upload has been Stopped!')
