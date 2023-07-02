@@ -10,7 +10,7 @@ from bot.helper.telegram_helper.message_utils import editMessage, sendMessage
 from bot.helper.ext_utils.telegraph_helper import telegraph
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.ext_utils.bot_utils import get_readable_file_size, sync_to_async, new_task
+from bot.helper.ext_utils.bot_utils import get_readable_file_size, sync_to_async, new_task, checking_access
 from bot.helper.telegram_helper.button_build import ButtonMaker
 
 PLUGINS = []
@@ -214,6 +214,10 @@ async def torrentSearch(_, message):
     buttons = ButtonMaker()
     key = message.text.split()
     SEARCH_PLUGINS = config_dict['SEARCH_PLUGINS']
+    msg, btn = checking_access(user_id)
+    if msg is not None:
+        await sendMessage(message, msg, btn.build_menu(1))
+        return
     if SITES is None and not SEARCH_PLUGINS:
         await sendMessage(message, "No API link or search PLUGINS added for this function")
     elif len(key) == 1 and SITES is None:

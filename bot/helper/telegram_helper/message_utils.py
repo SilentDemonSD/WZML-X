@@ -91,8 +91,8 @@ async def chat_info(channel_id):
         return None
 
 
-async def sendMirrorLog(message, text, ids, buttons=None, photo=None):
-    for channel_id in ids.split():
+async def sendMultiMessage(message, chat_ids, text, buttons=None, photo=None):
+    for channel_id in chat_ids.split():
         chat = await chat_info(channel_id)
         try:
             if photo:
@@ -105,7 +105,7 @@ async def sendMirrorLog(message, text, ids, buttons=None, photo=None):
                     pass
                 except (PhotoInvalidDimensions, WebpageCurlFailed, MediaEmpty):
                     des_dir = await download_image_url(photo)
-                    await sendMirrorLog(message, text, buttons, des_dir)
+                    await sendMultiMessage(message, chat_ids, text, buttons, des_dir)
                     await aioremove(des_dir)
                     return
                 except Exception as e:
@@ -115,7 +115,7 @@ async def sendMirrorLog(message, text, ids, buttons=None, photo=None):
         except FloodWait as f:
             LOGGER.warning(str(f))
             await sleep(f.value * 1.2)
-            return await sendMirrorLog(message, text, ids, buttons, photo)
+            return await sendMultiMessage(message, chat_ids, text, buttons, photo)
         except Exception as e:
             LOGGER.error(str(e))
             return str(e)
@@ -139,9 +139,9 @@ async def editMessage(message, text, buttons=None, photo=None):
         return str(e)
 
 
-async def sendFile(message, file, caption=None):
+async def sendFile(message, file, caption=None, buttons=None):
     try:
-        return await message.reply_document(document=file, quote=True, caption=caption, disable_notification=True)
+        return await message.reply_document(document=file, quote=True, caption=caption, disable_notification=True, reply_markup=buttons)
     except FloodWait as f:
         LOGGER.warning(str(f))
         await sleep(f.value * 1.2)

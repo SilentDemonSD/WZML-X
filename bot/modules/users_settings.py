@@ -99,8 +99,8 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
     elif key == 'mirror':
         buttons.ibutton("RClone", f"userset {user_id} rcc")
         rccmsg = "Exists" if await aiopath.exists(rclone_path) else "Not Exists"
-        dailytlup = get_readable_file_size(config_dict['DAILY_MIRROR_LIMIT'] * 1024**3) if config_dict['DAILY_MIRROR_LIMIT'] else "♾️"
-        dailyup = get_readable_file_size(await getdailytasks(user_id, check_mirror=True)) if config_dict['DAILY_MIRROR_LIMIT'] and user_id != OWNER_ID else "♾️"
+        dailytlup = get_readable_file_size(config_dict['DAILY_MIRROR_LIMIT'] * 1024**3) if config_dict['DAILY_MIRROR_LIMIT'] else "∞"
+        dailyup = get_readable_file_size(await getdailytasks(user_id, check_mirror=True)) if config_dict['DAILY_MIRROR_LIMIT'] and user_id != OWNER_ID else "️∞"
         buttons.ibutton("Mirror Prefix", f"userset {user_id} mprefix")
         mprefix = 'Not Exists' if (val:=user_dict.get('mprefix', config_dict.get('MIRROR_FILENAME_PREFIX', ''))) == '' else val
 
@@ -127,8 +127,8 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
             ltype = "MEDIA"
             buttons.ibutton("Send As Document", f"userset {user_id} doc")
 
-        dailytlle = get_readable_file_size(config_dict['DAILY_LEECH_LIMIT'] * 1024**3) if config_dict['DAILY_LEECH_LIMIT'] else "♾️"
-        dailyll = get_readable_file_size(await getdailytasks(user_id, check_leech=True)) if config_dict['DAILY_LEECH_LIMIT'] and user_id != OWNER_ID else "♾️"
+        dailytlle = get_readable_file_size(config_dict['DAILY_LEECH_LIMIT'] * 1024**3) if config_dict['DAILY_LEECH_LIMIT'] else "️∞"
+        dailyll = get_readable_file_size(await getdailytasks(user_id, check_leech=True)) if config_dict['DAILY_LEECH_LIMIT'] and user_id != OWNER_ID else "∞"
 
         buttons.ibutton("Thumbnail", f"userset {user_id} thumb")
         thumbmsg = "Exists" if await aiopath.exists(thumbpath) else "Not Exists"
@@ -639,6 +639,5 @@ async def send_users_settings(client, message):
 bot.add_handler(MessageHandler(send_users_settings, filters=command(
     BotCommands.UsersCommand) & CustomFilters.sudo))
 bot.add_handler(MessageHandler(user_settings, filters=command(
-    BotCommands.UserSetCommand)))
-bot.add_handler(CallbackQueryHandler(
-    edit_user_settings, filters=regex("^userset")))
+    BotCommands.UserSetCommand) & CustomFilters.authorized_uset))
+bot.add_handler(CallbackQueryHandler(edit_user_settings, filters=regex("^userset")))

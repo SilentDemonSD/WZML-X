@@ -9,10 +9,11 @@ if ospath.exists('log.txt'):
     with open('log.txt', 'r+') as f:
         f.truncate(0)
 
-if ospath.exists('rlog.txt'):
+if ospath.exists('rlog.txt'): #RClone Logs
     remove('rlog.txt')
 
-basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+basicConfig(format="[%(asctime)s] [%(levelname)s] - %(message)s",
+            datefmt="%d-%b-%y %I:%M:%S %p",
             handlers=[FileHandler('log.txt'), StreamHandler()],
             level=INFO)
 
@@ -70,8 +71,11 @@ if UPSTREAM_REPO is not None:
                      && git fetch origin -q \
                      && git reset --hard origin/{UPSTREAM_BRANCH} -q"], shell=True)
 
+    repo = UPSTREAM_REPO.split('/')
+    UPSTREAM_REPO = f"https://github.com/{repo[-2]}/{repo[-1]}"
     if update.returncode == 0:
-        log_info('Successfully updated with latest commit from UPSTREAM_REPO')
+        log_info('Successfully updated with latest commits !!')
+        log_info(f'UPSTREAM_REPO: {UPSTREAM_REPO} | UPSTREAM_BRANCH: {UPSTREAM_BRANCH}')
     else:
-        log_error(
-            'Something went wrong while updating, check UPSTREAM_REPO if valid or not!')
+        log_error('Something went Wrong !!')
+        log_error(f'UPSTREAM_REPO: {UPSTREAM_REPO} | UPSTREAM_BRANCH: {UPSTREAM_BRANCH}')

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from asyncio import Event
 
-from bot import OWNER_ID, config_dict, queued_dl, queued_up, non_queued_up, non_queued_dl, queue_dict_lock, LOGGER, user_data
+from bot import OWNER_ID, config_dict, queued_dl, queued_up, non_queued_up, non_queued_dl, queue_dict_lock, LOGGER, user_data, download_dict
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.ext_utils.fs_utils import get_base_name, check_storage_threshold
 from bot.helper.ext_utils.bot_utils import get_user_tasks, getdailytasks, sync_to_async, get_telegraph_list, get_readable_file_size, checking_access
@@ -116,7 +116,7 @@ async def start_from_queued():
 
 
 async def limit_checker(size, listener, isTorrent=False, isMega=False, isDriveLink=False, isYtdlp=False):
-    LOGGER.info('Checking Size Limit of file/folder...')
+    LOGGER.info('Checking Size Limit of link/file/folder/tasks...')
     user_id = listener.message.from_user.id
     if user_id == OWNER_ID or user_id in user_data and user_data[user_id].get('is_sudo'):
         return
@@ -166,32 +166,28 @@ async def limit_checker(size, listener, isTorrent=False, isMega=False, isDriveLi
         if (PLAYLIST_LIMIT := config_dict['PLAYLIST_LIMIT']):
             limit_exceeded = f'Playlist limit is {PLAYLIST_LIMIT}'
 
-        if user_id != OWNER_ID:
-            if config_dict['DAILY_TASK_LIMIT']:
-                if config_dict['DAILY_TASK_LIMIT'] <= await getdailytasks(user_id):
-                    limit_exceeded = f"Daily Total Task Limit: {config_dict['DAILY_TASK_LIMIT']}\nYou have exhausted all your Daily Task Limits."
-                else:
-                    ttask = await getdailytasks(user_id, increase_task=True)
-                    LOGGER.info(f"User: {user_id} Daily Tasks: {ttask}")
-            if (DAILY_MIRROR_LIMIT := config_dict['DAILY_MIRROR_LIMIT']) and not listener.isLeech:
-                limit = DAILY_MIRROR_LIMIT * 1024**3
-                if (size >= (limit - await getdailytasks(user_id, check_mirror=True)) or limit <= await getdailytasks(user_id, check_mirror=True)):
-                    limit_exceeded = f'Daily Mirror Limit is {get_readable_file_size(limit)}\nYou have exhausted all your Daily Mirror Limit.'
-                else:
-                    if not listener.isLeech:
-                        msize = await getdailytasks(user_id, upmirror=size, check_mirror=True)
-                        LOGGER.info(f"User : {user_id} Daily Mirror Size : {get_readable_file_size(msize)}")
-            if (DAILY_LEECH_LIMIT := config_dict['DAILY_LEECH_LIMIT']) and listener.isLeech:
-                limit = DAILY_LEECH_LIMIT * 1024**3
-                if (size >= (limit - await getdailytasks(user_id, check_leech=True)) or limit <= await getdailytasks(user_id, check_leech=True)):
-                    limit_exceeded = f'Daily Leech Limit is {get_readable_file_size(limit)}\nYou have exhausted all your Daily Leech Limit.'
-                else:
-                    if listener.isLeech:
-                        lsize = await getdailytasks(user_id, upleech=size, check_leech=True)
-                        LOGGER.info(f"User : {user_id} Daily Leech Size : {get_readable_file_size(lsize)}")
+        if config_dict['DAILY_TASK_LIMIT'] and config_dict['DAILY_TASK_LIMIT'] <= await getdailytasks(user_id):
+            limit_exceeded = f"Daily Total Task Limit: {config_dict['DAILY_TASK_LIMIT']}\nYou have exhausted all your Daily Task Limits."
+        else:
+            ttask = await getdailytasks(user_id, increase_task=True)
+            LOGGER.info(f"User: {user_id} | Daily Tasks: {ttask}")
+        if (DAILY_MIRROR_LIMIT := config_dict['DAILY_MIRROR_LIMIT']) and not listener.isLeech:
+            limit = DAILY_MIRROR_LIMIT * 1024**3
+            if (size >= (limit - await getdailytasks(user_id, check_mirror=True)) or limit <= await getdailytasks(user_id, check_mirror=True)):
+                limit_exceeded = f'Daily Mirror Limit is {get_readable_file_size(limit)}\nYou have exhausted all your Daily Mirror Limit.'
+            elif not listener.isLeech:
+                msize = await getdailytasks(user_id, upmirror=size, check_mirror=True)
+                LOGGER.info(f"User : {user_id} | Daily Mirror Size : {get_readable_file_size(msize)}")
+        if (DAILY_LEECH_LIMIT := config_dict['DAILY_LEECH_LIMIT']) and listener.isLeech:
+            limit = DAILY_LEECH_LIMIT * 1024**3
+            if (size >= (limit - await getdailytasks(user_id, check_leech=True)) or limit <= await getdailytasks(user_id, check_leech=True)):
+                limit_exceeded = f'Daily Leech Limit is {get_readable_file_size(limit)}\nYou have exhausted all your Daily Leech Limit.'
+            elif listener.isLeech:
+                lsize = await getdailytasks(user_id, upleech=size, check_leech=True)
+                LOGGER.info(f"User : {user_id} | Daily Leech Size : {get_readable_file_size(lsize)}")
 
     if limit_exceeded:
-        return f"{limit_exceeded}.\nYour File/Folder size is {get_readable_file_size(size)}"
+        return f"{limit_exceeded}.\nYour List/File/Folder size is {get_readable_file_size(size)}"
 
 
 async def task_utils(message):
@@ -199,10 +195,10 @@ async def task_utils(message):
     msg = []
     button = None
 
+    token_msg, button = checking_access(message.from_user.id, button)
+    if token_msg is not None:
+        msg.append(token_msg)
     if message.chat.type != message.chat.type.PRIVATE:
-        token_msg, button = checking_access(message.from_user.id, button)
-        if token_msg is not None:
-            msg.append(token_msg)
         if ids := config_dict['FSUB_IDS']:
             _msg, button = await forcesub(message, ids, button)
             if _msg:
@@ -215,6 +211,8 @@ async def task_utils(message):
                 _msg, button = await BotPm_check(message, button)
                 if _msg:
                     msg.append(_msg)
+    if (bmax_tasks := config_dict['BOT_MAX_TASKS']) and len(download_dict) >= bmax_tasks:
+        msg.append(f"Bot Max Tasks limit exceeded.\nBot max tasks limit is {bmax_tasks}.\nPlease wait for the completion of other tasks.")
     if (maxtask := config_dict['USER_MAX_TASKS']) and await get_user_tasks(message.from_user.id, maxtask):
         msg.append(f"Your tasks limit exceeded for {maxtask} tasks")
     return msg, button

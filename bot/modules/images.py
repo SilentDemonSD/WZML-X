@@ -8,12 +8,13 @@ from pyrogram.filters import command, regex
 
 from bot import bot, LOGGER, config_dict, DATABASE_URL
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage
-from bot.helper.ext_utils.bot_utils import handleIndex
+from bot.helper.ext_utils.bot_utils import handleIndex, new_task
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.telegram_helper.button_build import ButtonMaker
 
+@new_task
 async def picture_add(_, message):
     resm = message.reply_to_message
     editable = await sendMessage(message, "<i>Fetching Input ...</i>")
@@ -50,6 +51,7 @@ async def picture_add(_, message):
     await asleep(1.5)
     await editMessage(editable, f"<b><i>Successfully Added to Images List!</i></b>\n\n<b>• Total Images : {len(config_dict['IMAGES'])}</b>")
 
+
 async def pictures(_, message):
     user_id = message.from_user.id
     if not config_dict['IMAGES']:
@@ -65,6 +67,8 @@ async def pictures(_, message):
         await deleteMessage(to_edit)
         await sendMessage(message, f'🌄 <b>Image No. : 1 / {len(config_dict["IMAGES"])}</b>', buttons.build_menu(2), config_dict['IMAGES'][0])
 
+
+@new_task
 async def pics_callback(_, query):
     message = query.message
     user_id = query.from_user.id

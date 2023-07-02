@@ -195,7 +195,7 @@ async def format_filename(file_, user_id, dirpath=None, isMirror=False):
     prefix = config_dict[f'{ctag}_FILENAME_PREFIX'] if (val:=user_dict.get(f'{ftag}prefix', '')) == '' else val
     remname = config_dict[f'{ctag}_FILENAME_REMNAME'] if (val:=user_dict.get(f'{ftag}remname', '')) == '' else val
     suffix = config_dict[f'{ctag}_FILENAME_SUFFIX'] if (val:=user_dict.get(f'{ftag}suffix', '')) == '' else val
-    lcaption = val if user_dict.get('lcaption') else ''
+    lcaption = config_dict['LEECH_FILENAME_CAPTION'] if (val:=user_dict.get('lcaption', '')) == '' else val
  
     prefile_ = file_
     # SD-Style V2 ~ WZML-X

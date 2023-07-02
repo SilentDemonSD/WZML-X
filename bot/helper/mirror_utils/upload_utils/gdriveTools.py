@@ -180,6 +180,28 @@ class GoogleDriveHelper:
             LOGGER.error(f"Delete Result: {err}")
             msg = str(err)
         return msg
+        
+    def driveclean(self, drive_id):
+        msg = ''
+        query = f"'{drive_id}' in parents and trashed = false"
+        page_token = None
+        while True:
+            try:
+                drive_query = self.__service.files().list(q=query, spaces='drive', fields='nextPageToken, files(id, name, size)', pageToken=page_token, includeItemsFromAllDrives=True, supportsAllDrives=True).execute()
+                files = drive_query.get('files', [])
+                for file in files:
+                    self.__total_files += 1
+                    self.__total_bytes += int(file.get('size', 0))
+                    self.__service.files().delete(fileId=file['id'], supportsAllDrives=True).execute()
+                page_token = drive_query.get('nextPageToken', None)
+                if page_token is None:
+                    msg = f"⌬ <b><i>Successfully Cleaned Folder/Drive :</i></b> \n\n<b>Total Files:</b> <code>{self.__total_files}</code>\n<b>Total Size:</b> <code>{get_readable_file_size(self.__total_bytes)}</code>"
+                    break
+            except Exception as err:
+                msg = str(err).replace('>', '').replace('<', '')
+                LOGGER.error(err)
+                break
+        return msg
 
     def upload(self, file_name, size):
         self.__is_uploading = True

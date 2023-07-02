@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
-from pyrogram.filters import command, regex
+from pyrogram.filters import regex
 from aiofiles.os import remove as aioremove, path as aiopath
 
-from bot import bot, aria2, download_dict, download_dict_lock, OWNER_ID, user_data, LOGGER
+from bot import bot, bot_name, aria2, download_dict, download_dict_lock, OWNER_ID, user_data, LOGGER
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import sendMessage, sendStatusMessage
@@ -12,9 +12,12 @@ from bot.helper.ext_utils.bot_utils import getDownloadByGid, MirrorStatus, bt_se
 
 async def select(client, message):
     user_id = message.from_user.id
-    msg = message.text.split()
+    msg = message.text.split('_', maxsplit=1)
     if len(msg) > 1:
-        gid = msg[1]
+        cmd_data = msg[1].split('@', maxsplit=1)
+        if len(cmd_data) > 1 and cmd_data[1].strip() != bot_name:
+            return
+        gid = cmd_data[0]
         dl = await getDownloadByGid(gid)
         if dl is None:
             await sendMessage(message, f"GID: <code>{gid}</code> Not Found.")
@@ -123,6 +126,6 @@ async def get_confirm(client, query):
         await message.delete()
 
 
-bot.add_handler(MessageHandler(select, filters=command(
-    BotCommands.BtSelectCommand) & CustomFilters.authorized))
+bot.add_handler(MessageHandler(select, filters=regex(
+    f"^/{BotCommands.BtSelectCommand}(_\w+)?") & CustomFilters.authorized))
 bot.add_handler(CallbackQueryHandler(get_confirm, filters=regex("^btsel")))
