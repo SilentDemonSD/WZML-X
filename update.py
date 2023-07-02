@@ -9,7 +9,7 @@ if ospath.exists('log.txt'):
     with open('log.txt', 'r+') as f:
         f.truncate(0)
 
-if ospath.exists('rlog.txt'):
+if ospath.exists('rlog.txt'): #RClone Logs
     remove('rlog.txt')
 
 basicConfig(format="[%(asctime)s] [%(levelname)s] - %(message)s",

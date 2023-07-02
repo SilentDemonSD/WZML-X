@@ -236,6 +236,7 @@ help_string = f'''<b><i>㊂ Help Guide :</i></b>
 ➥ /{BotCommands.BotSetCommand[0]} or /{BotCommands.BotSetCommand[0]} [query]: Open Bot Settings (Only Owner & Sudo).
 
 <b>Authentication:</b>
+➥ /login: Login to Bot to Access Bot without Temp Pass System (Private)
 ➥ /{BotCommands.AuthorizeCommand}: Authorize a chat or a user to use the bot (Only Owner & Sudo).
 ➥ /{BotCommands.UnAuthorizeCommand}: Unauthorize a chat or a user to use the bot (Only Owner & Sudo).
 ➥ /{BotCommands.AddSudoCommand}: Add sudo user (Only Owner).
@@ -257,6 +258,7 @@ help_string = f'''<b><i>㊂ Help Guide :</i></b>
 ➥ /{BotCommands.EvalCommand}: Run Python Code Line | Lines (Only Owner).
 ➥ /{BotCommands.ExecCommand}: Run Commands In Exec (Only Owner).
 ➥ /{BotCommands.ClearLocalsCommand}: Clear {BotCommands.EvalCommand} or {BotCommands.ExecCommand} locals (Only Owner).
+➥ /exportsession: Generate User StringSession of Same Pyro Version (Only Owner).
 
 <b>Extras:</b>
 ➥ /{BotCommands.SpeedCommand}: Check Speed in VPS/Server.
