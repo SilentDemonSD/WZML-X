@@ -418,10 +418,6 @@ if len(FSUB_IDS) == 0:
 MIRROR_LOG_ID = environ.get('MIRROR_LOG_ID', '')
 if len(MIRROR_LOG_ID) == 0:
     MIRROR_LOG_ID = ''
-    
-LINKS_LOG_ID = environ.get('LINKS_LOG_ID', '')
-if len(LINKS_LOG_ID) == 0:
-    LINKS_LOG_ID = ''
 
 BOT_PM = environ.get('BOT_PM', '')
 BOT_PM = BOT_PM.lower() == 'true'
@@ -567,7 +563,6 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'DAILY_LEECH_LIMIT': DAILY_LEECH_LIMIT,
                'MIRROR_LOG_ID': MIRROR_LOG_ID,
                'LEECH_LOG_ID': LEECH_LOG_ID,
-               'LINKS_LOG_ID': LINKS_LOG_ID,
                'BOT_PM': BOT_PM,
                'DISABLE_DRIVE_LINK': DISABLE_DRIVE_LINK,
                'BOT_THEME': BOT_THEME,
