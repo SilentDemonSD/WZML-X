@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-from pyrogram.handlers import MessageHandler
-from pyrogram.filters import command
+from pyrogram.handlers import MessageHandler, CallbackQueryHandler
+from pyrogram.filters import command, regex
+from html import escape
 from base64 import b64encode
 from re import match as re_match
 from asyncio import sleep
+from aiofiles import open as aiopen
 from aiofiles.os import path as aiopath
 
 from bot import bot, DOWNLOAD_DIR, LOGGER, config_dict
@@ -289,6 +291,35 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     await delete_links(message)
 
 
+@new_task
+async def wzmlxcb(_, query):
+    message = query.message
+    user_id = query.from_user.id
+    data = query.data.split()
+    if user_id != int(data[1]):
+        return await query.answer(text="Not Message User!", show_alert=True)
+    if data[2] == "logdisplay":
+        await query.answer()
+        async with aiopen('log.txt', 'r') as f:
+            logFileLines = (await f.read()).splitlines()
+        ind = 1
+        Loglines = ''
+        try:
+            while len(Loglines) <= 2500:
+                Loglines = logFileLines[-ind] + '\n' + Loglines
+                if ind == len(logFileLines): 
+                    break
+                ind += 1
+            startLine = f"<b>Showing Last {ind} Lines from log.txt:</b> \n\n----------START LOG----------\n\n"
+            endLine = "\n----------END LOG----------"
+            await sendMessage(message, startLine + escape(Loglines) + endLine)
+        except Exception as err:
+            LOGGER.error(f"TG Log Display : {str(err)}")
+    else: # More Whole Bot CB Usage !!
+        await query.answer()
+        await message.delete()
+    
+
 
 async def mirror(client, message):
     _mirror_leech(client, message)
@@ -314,3 +345,4 @@ bot.add_handler(MessageHandler(leech, filters=command(
     BotCommands.LeechCommand) & CustomFilters.authorized))
 bot.add_handler(MessageHandler(qb_leech, filters=command(
     BotCommands.QbLeechCommand) & CustomFilters.authorized))
+bot.add_handler(CallbackQueryHandler(wzmlxcb, filters=regex(r'^wzmlx')))

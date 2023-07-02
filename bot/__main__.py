@@ -158,15 +158,17 @@ async def restart(client, message):
     osexecl(executable, executable, "-m", "bot")
 
 
-async def ping(client, message):
+async def ping(_, message):
     start_time = int(round(time() * 1000))
     reply = await sendMessage(message, BotTheme('PING'))
     end_time = int(round(time() * 1000))
     await editMessage(reply, BotTheme('PING_VALUE', value=(end_time - start_time)))
 
 
-async def log(client, message):
-    await sendLogFile(message)
+async def log(_, message):
+    buttons = ButtonMaker()
+    buttons.ibutton('TG Log Disp', f'wzmlx {message.from_user.id} logdisplay')
+    await sendFile(message, 'log.txt', buttons=buttons.build_menu(1))
 
 
 async def search_images():

@@ -27,8 +27,10 @@ class CustomFilters:
     async def authorized_usetting(self, _, message):
         uid = (message.from_user or message.sender_chat).id
         chat_id = message.chat.id
-        if message.chat.type == ChatType.PRIVATE:
-            isExists = False
+        isExists = False
+        if uid == OWNER_ID or (uid in user_data and (user_data[uid].get('is_auth', False) or user_data[uid].get('is_sudo', False))) or (chat_id in user_data and user_data[chat_id].get('is_auth', False)):
+            isExists = True
+        elif message.chat.type == ChatType.PRIVATE:
             for channel_id in user_data:
                 if not (user_data[channel_id].get('is_auth') and str(channel_id).startswith('-100')):
                     continue
@@ -38,8 +40,7 @@ class CustomFilters:
                         break
                 except:
                     continue
-            return isExists
-        return bool(uid == OWNER_ID or (uid in user_data and (user_data[uid].get('is_auth', False) or user_data[uid].get('is_sudo', False))) or (chat_id in user_data and user_data[chat_id].get('is_auth', False)))
+        return isExists
         
     authorized_uset = create(authorized_usetting)
 

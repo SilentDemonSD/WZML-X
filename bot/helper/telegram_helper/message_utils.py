@@ -141,9 +141,9 @@ async def editMessage(message, text, buttons=None, photo=None):
         return str(e)
 
 
-async def sendFile(message, file, caption=None):
+async def sendFile(message, file, caption=None, buttons=None):
     try:
-        return await message.reply_document(document=file, quote=True, caption=caption, disable_notification=True)
+        return await message.reply_document(document=file, quote=True, caption=caption, disable_notification=True, reply_markup=butt)
     except FloodWait as f:
         LOGGER.warning(str(f))
         await sleep(f.value * 1.2)
@@ -151,25 +151,6 @@ async def sendFile(message, file, caption=None):
     except Exception as e:
         LOGGER.error(str(e))
         return str(e)
-        
-
-async def sendLogFile(message):
-    async with aiopen('log.txt', 'r') as f:
-        logFileLines = (await f.read()).splitlines()
-    ind = 1
-    Loglines = ''
-    try:
-        while len(Loglines) <= 2500:
-            Loglines = logFileLines[-ind] + '\n' + Loglines
-            if ind == len(logFileLines): 
-                break
-            ind += 1
-        startLine = f"Showing Last {ind} Lines from log.txt: \n\n---------------- START LOG -----------------\n\n"
-        endLine = "\n---------------- END LOG -----------------"
-        await sendMessage(message, escape(startLine+Loglines+endLine))
-    except Exception as err:
-        LOGGER.error(f"Log Display : {str(err)}")
-    await sendFile(message, 'log.txt')
 
 
 async def sendRss(text):
