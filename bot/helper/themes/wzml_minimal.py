@@ -139,8 +139,8 @@ class WZMLStyle:
 
     ####------FOOTER--------
     FOOTER = '⌬ <b><i>Bot Stats</i></b>\n'
-    PAGE = '┠ <b>Page:</b> {Page} | '
-    TASKS =                       '<b>Tasks:</b> {Tasks}\n'
+    TASKS =  '┠ <b>Tasks:</b> {Tasks}\n'
+    BOT_TASKS = '┠ <b>Tasks:</b> {Tasks}/{Ttask} | <b>Avl:</b> {Free}\n'
     Cpu = '┠ <b>CPU:</b> {cpu}% | '
     FREE =                      '<b>FREE:</b> {free}'
     Ram = '\n┠ <b>RAM:</b> {ram}% | '
@@ -150,7 +150,7 @@ class WZMLStyle:
 
     ###--------BUTTONS-------
     PREVIOUS = '⫷'
-    REFRESH = '♺ Refresh'
+    REFRESH = 'ᴘᴀɢᴇs\n{Page}'
     NEXT = '⫸'
     # ---------------------
 
