@@ -16,7 +16,7 @@ from aioshutil import copy
 from bot import config_dict, user_data, GLOBAL_EXTENSION_FILTER, bot, user, IS_PREMIUM_USER
 from bot.helper.themes import BotTheme
 from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.telegram_helper.message_utils import sendBot
+from bot.helper.telegram_helper.message_utils import sendBot, chat_info
 from bot.helper.ext_utils.fs_utils import clean_unwanted, is_archive, get_base_name
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, sync_to_async
 from bot.helper.ext_utils.leech_utils import get_media_info, get_document_type, take_ss, get_mediainfo_link, format_filename
@@ -69,21 +69,21 @@ class TgUploader:
                 copied = await bot.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)        
                 if self.__has_buttons:
                     rply = (InlineKeyboardMarkup(BTN) if (BTN := self.__sent_msg.reply_markup.inline_keyboard[:-1]) else None) if config_dict['SAVE_MSG'] else self.__sent_msg.reply_markup
-                    await copied.edit_reply_markup(rply)
+                    try:
+                        await copied.edit_reply_markup(rply)
+                    except MessageNotModified:
+                        pass
             if self.__ldump:
                 destination = 'User Dump'
                 for channel_id in self.__ldump.split():
-                    if channel_id.startswith('-100'):
-                        channel_id = int(channel_id)
-                    elif channel_id.startswith('@'):
-                        channel_id = channel_id.replace('@', '')
-                    else:
-                        continue
+                    chat = await chat_info(channel_id)
                     try:
-                        chat = await bot.get_chat(channel_id)
                         dump_copy = await bot.copy_message(chat_id=chat.id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
                         if self.__has_buttons:
-                            await dump_copy.edit_reply_markup(self.__sent_msg.reply_markup)
+                            try:
+                                await dump_copy.edit_reply_markup(self.__sent_msg.reply_markup)
+                            except MessageNotModified:
+                                pass
                     except PeerIdInvalid as e:
                         LOGGER.error(f"{e.NAME}: {e.MESSAGE} for {channel_id}")
                         continue
@@ -332,8 +332,11 @@ class TgUploader:
                                                                        reply_markup=await self.__buttons(self.__up_path))
                 
                 if self.__prm_media and (self.__has_buttons or not self.__listener.leechlogmsg):
-                    self.__sent_msg = await bot.copy_message(nrml_media.chat.id, nrml_media.chat.id, nrml_media.id, reply_to_message_id=self.__sent_msg.id, reply_markup=await self.__buttons(self.__up_path))
-                    await nrml_media.delete()
+                    try:
+                        self.__sent_msg = await bot.copy_message(nrml_media.chat.id, nrml_media.chat.id, nrml_media.id, reply_to_message_id=self.__sent_msg.id, reply_markup=await self.__buttons(self.__up_path))
+                        await nrml_media.delete()
+                    except:
+                        self.__sent_msg = nrml_media
                 else:
                     self.__sent_msg = nrml_media
             elif is_video:
@@ -373,8 +376,11 @@ class TgUploader:
                                                                     progress=self.__upload_progress,
                                                                     reply_markup=await self.__buttons(self.__up_path))
                 if self.__prm_media and (self.__has_buttons or not self.__listener.leechlogmsg):
-                    self.__sent_msg = await bot.copy_message(nrml_media.chat.id, nrml_media.chat.id, nrml_media.id, reply_to_message_id=self.__sent_msg.id, reply_markup=await self.__buttons(self.__up_path))
-                    await nrml_media.delete()
+                    try:
+                        self.__sent_msg = await bot.copy_message(nrml_media.chat.id, nrml_media.chat.id, nrml_media.id, reply_to_message_id=self.__sent_msg.id, reply_markup=await self.__buttons(self.__up_path))
+                        await nrml_media.delete()
+                    except:
+                        self.__sent_msg = nrml_media
                 else:
                     self.__sent_msg = nrml_media
             elif is_audio:
