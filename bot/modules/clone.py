@@ -80,7 +80,7 @@ async def rcloneNode(client, message, link, dst_path, rcf, tag):
         name = src_path.rsplit('/', 1)[-1]
         mime_type = rstat['MimeType']
 
-    listener = MirrorLeechListener(message, tag=tag)
+    listener = MirrorLeechListener(message, tag=tag, source_url=link)
     await listener.onDownloadStart()
 
     RCTransfer = RcloneTransferHelper(listener, name)
@@ -88,7 +88,7 @@ async def rcloneNode(client, message, link, dst_path, rcf, tag):
     gid = ''.join(SystemRandom().choices(ascii_letters + digits, k=12))
     async with download_dict_lock:
         download_dict[message.id] = RcloneStatus(
-            RCTransfer, message, gid, 'cl')
+            RCTransfer, message, gid, 'cl', listener.upload_details)
     await sendStatusMessage(message)
     link, destination = await RCTransfer.clone(config_path, remote, src_path, dst_path, rcf, mime_type)
     if not link:
