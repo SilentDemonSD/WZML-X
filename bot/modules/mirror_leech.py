@@ -306,12 +306,12 @@ async def wzmlxcb(_, query):
         Loglines = ''
         try:
             while len(Loglines) <= 2500:
-                Loglines = logFileLines[-ind] + '\n' + Loglines
+                Loglines = "["+logFileLines[-ind].split('] [', 1)[1] + '\n' + Loglines
                 if ind == len(logFileLines): 
                     break
                 ind += 1
-            startLine = f"<b>Showing Last {ind} Lines from log.txt:</b> \n\n----------START LOG----------\n\n"
-            endLine = "\n----------END LOG----------"
+            startLine = f"<b>Showing Last {ind} Lines from log.txt:</b> \n\n----------<b>START LOG</b>----------\n\n"
+            endLine = "\n----------<b>END LOG</b>----------"
             await sendMessage(message, startLine + escape(Loglines) + endLine)
         except Exception as err:
             LOGGER.error(f"TG Log Display : {str(err)}")
