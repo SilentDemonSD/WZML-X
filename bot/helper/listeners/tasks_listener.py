@@ -30,7 +30,7 @@ from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.mirror_utils.upload_utils.pyrogramEngine import TgUploader
 from bot.helper.mirror_utils.upload_utils.ddlEngine import DDLUploader
 from bot.helper.mirror_utils.rclone_utils.transfer import RcloneTransferHelper
-from bot.helper.telegram_helper.message_utils import sendBot, sendMessage, delete_all_messages, delete_links, sendMirrorLog, update_all_messages
+from bot.helper.telegram_helper.message_utils import sendBot, sendMessage, delete_all_messages, delete_links, sendMultiMessage, update_all_messages
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.themes import BotTheme
@@ -370,6 +370,8 @@ class MirrorLeechListener:
             if mime_type != 0:
                 msg += BotTheme('L_CORRUPTED_FILES', Corrupt=mime_type)
             msg += BotTheme('L_CC', Tag=self.tag)
+            if self.message:
+                self.message._client = bot
             if not files:
                 if self.isPrivate:
                     msg += BotTheme('PM_BOT_MSG')
@@ -487,7 +489,7 @@ class MirrorLeechListener:
                 await sendMessage(self.message, msg, button, self.random_pic)
 
             if ids := config_dict['MIRROR_LOG_ID']:
-                await sendMirrorLog(self.message, msg, ids, button, self.random_pic)
+                await sendMultiMessage(self.message, ids, msg, button, self.random_pic)
 
             if self.seed:
                 if self.newDir:

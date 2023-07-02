@@ -107,7 +107,7 @@ class TgUploader:
             self.__thumb = None
 
     async def __msg_to_reply(self):
-        msg_link = self.__listener.message.link if self.__listener.isSuperGroup else self.__listener.message.text
+        msg_link = self.__listener.message.link if self.__listener.isSuperGroup else ''
         msg_user = self.__listener.message.from_user
         if LEECH_LOG_ID := config_dict['LEECH_LOG_ID']:
             if self.__bot_pm and self.__listener.isSuperGroup:
@@ -184,9 +184,8 @@ class TgUploader:
         return rlist
 
     async def __switching_client(self):
-        if (self.__prm_media and IS_PREMIUM_USER and self.__sent_msg._client.me.is_bot) or (not self.__prm_media and not self.__sent_msg._client.me.is_bot):
-            LOGGER.info(f'Uploading Media {">" if self.__prm_media and IS_PREMIUM_USER else "<"} 2GB by {"User" if self.__prm_media and IS_PREMIUM_USER else "Bot"} Client')
-            self.__sent_msg._client = user if self.__prm_media and IS_PREMIUM_USER else bot
+        LOGGER.info(f'Uploading Media {">" if self.__prm_media else "<"} 2GB by {"User" if self.__prm_media else "Bot"} Client')
+        self.__sent_msg._client = user if (self.__prm_media and IS_PREMIUM_USER and self.__sent_msg._client.me.is_bot) else bot
 
     async def __send_media_group(self, subkey, key, msgs):
         msgs_list = await msgs[0].reply_to_message.reply_media_group(media=self.__get_input_media(subkey, key),

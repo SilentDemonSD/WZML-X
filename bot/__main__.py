@@ -167,7 +167,7 @@ async def ping(_, message):
 
 async def log(_, message):
     buttons = ButtonMaker()
-    buttons.ibutton('TG Log Disp', f'wzmlx {message.from_user.id} logdisplay')
+    buttons.ibutton('📑 Log Display', f'wzmlx {message.from_user.id} logdisplay')
     await sendFile(message, 'log.txt', buttons=buttons.build_menu(1))
 
 
