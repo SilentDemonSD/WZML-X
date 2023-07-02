@@ -18,18 +18,18 @@ async def broadcast(_, message):
     if not DATABASE_URL:
         return await sendMessage(message, 'DATABASE_URL not provided!')
     if not message.reply_to_message:
-        return await sendMessage(message, '<b>Reply to any Message to Broadcast Users in Bot PM</i>')
+        return await sendMessage(message, '<b>Reply to any Message to Broadcast Users in Bot PM</b>')
     t, s, b, d, u = 0, 0, 0, 0, 0
     start_time = time()
-    status = f'''<b><u>Broadcast Stats :</u></b>
+    status = '''<b><u>Broadcast Stats :</u></b>
 ┃
 ┠ <b>Total Users:</b> <code>{t}</code>
 ┠ <b>Success:</b> <code>{s}</code>
 ┠ <b>Blocked Users:</b> <code>{b}</code>
 ┠ <b>Deleted Accounts:</b> <code>{d}</code>
-┖ <b>Unsuccess Attempt:<b> <code>{u}</code>'''
+┖ <b>Unsuccess Attempt:</b> <code>{u}</code>'''
     updater = time()
-    pls_wait = await sendMessage(message, status)
+    pls_wait = await sendMessage(message, status.format(**locals()))
     for uid in (await DbManger().get_pm_uids()):
         try:
             await message.reply_to_message.copy(uid)
@@ -48,9 +48,9 @@ async def broadcast(_, message):
             u += 1
         t += 1
         if (time() - updater) > 10:
-            await editMessage(pls_wait, status)
+            await editMessage(pls_wait, status.format(**locals()))
             updater = time()
-    await editMessage(pls_wait, status + f"\n\n<b>Elapsed Time:</b> <code>{get_readable_time(time() - start_time)}</code>")
+    await editMessage(pls_wait, status.format(**locals()) + f"\n\n<b>Elapsed Time:</b> <code>{get_readable_time(time() - start_time)}</code>")
         
         
 bot.add_handler(MessageHandler(broadcast, filters=command(BotCommands.BroadcastCommand) & CustomFilters.owner))
