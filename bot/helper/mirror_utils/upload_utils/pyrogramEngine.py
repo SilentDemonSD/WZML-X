@@ -6,7 +6,7 @@ from os import walk, path as ospath
 from time import time
 from PIL import Image
 from pyrogram.types import InputMediaVideo, InputMediaDocument, InlineKeyboardMarkup
-from pyrogram.errors import FloodWait, RPCError, PeerIdInvalid
+from pyrogram.errors import FloodWait, RPCError, PeerIdInvalid, MessageNotModified
 from asyncio import sleep
 from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type, RetryError
 from re import match as re_match, sub as re_sub
