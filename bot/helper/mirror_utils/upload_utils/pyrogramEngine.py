@@ -5,7 +5,7 @@ from aiofiles.os import remove as aioremove, path as aiopath, rename as aiorenam
 from os import walk, path as ospath
 from time import time
 from PIL import Image
-from pyrogram.types import InputMediaVideo, InputMediaDocument
+from pyrogram.types import InputMediaVideo, InputMediaDocument, InlineKeyboardMarkup
 from pyrogram.errors import FloodWait, RPCError, PeerIdInvalid
 from asyncio import sleep
 from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type, RetryError
@@ -67,7 +67,9 @@ class TgUploader:
             if self.__bot_pm and (self.__listener.leechlogmsg or self.__listener.isSuperGroup):
                 destination = 'Bot PM'
                 copied = await bot.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)        
-                await copied.edit_reply_markup(self.__sent_msg.reply_markup)
+                if self.__has_buttons:
+                    rply = (InlineKeyboardMarkup(BTN) if (BTN := self.__sent_msg.reply_markup.inline_keyboard[:-1]) else None) if config_dict['SAVE_MSG'] else self.__sent_msg.reply_markup
+                    await copied.edit_reply_markup(rply)
             if self.__ldump:
                 destination = 'Dump'
                 for channel_id in self.__ldump.split():
@@ -129,7 +131,7 @@ class TgUploader:
             self.__sent_msg = self.__listener.message
         else:
             if self.__bot_pm and self.__listener.isSuperGroup:
-                await sendBot(self.__listener.message, BotTheme('L_PM_START', msg_link=msg_link))
+                await sendBot(self.__listener.message, BotTheme('L_PM_START', msg_link=msg_link if not config_dict['DELETE_LINKS'] else self.__listener.source_url))
             self.__sent_msg = self.__listener.message
         return True
 
