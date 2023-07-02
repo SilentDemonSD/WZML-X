@@ -10,7 +10,8 @@ app = Flask(__name__)
 
 aria2 = ariaAPI(ariaClient(host="http://localhost", port=6800, secret=""))
 
-basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+basicConfig(format="[%(asctime)s] [%(levelname)s] - %(message)s",
+            datefmt="%d-%b-%y %I:%M:%S %p",
             handlers=[FileHandler('log.txt'), StreamHandler()],
             level=INFO)
 
@@ -772,15 +773,15 @@ def set_priority(id_):
 
         res = aria2.client.change_option(id_, {'select-file': resume})
         if res == "OK":
-            LOGGER.info(f"Verified! Gid: {id_}")
+            LOGGER.info(f"Verified! GID: {id_}")
         else:
-            LOGGER.info(f"Verification Failed! Report! Gid: {id_}")
+            LOGGER.info(f"Verification Failed! Report! GID: {id_}")
     return list_torrent_contents(id_)
 
 
 @app.route('/')
 def homepage():
-    return "<h1>See WZML-X <a href='https://www.github.com/weebzone/WZML'>@GitHub</a> By <a href='https://github.com/weebzone'>Code With Weeb</a></h1>"
+    return "<h1>Checkout WZML-X <a href='https://www.github.com/weebzone/WZML-X'>@GitHub</a> By <a href='https://github.com/weebzone'>WZML-X Devs</a></h1>"
 
 
 @app.errorhandler(Exception)

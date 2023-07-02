@@ -30,7 +30,8 @@ from .helper.telegram_helper.button_build import ButtonMaker
 from .helper.listeners.aria2_listener import start_aria2_listener
 from .helper.themes import BotTheme
 from .modules import authorize, clone, gd_count, gd_delete, gd_list, cancel_mirror, mirror_leech, status, torrent_search, torrent_select, ytdlp, \
-                     rss, shell, eval, users_settings, bot_settings, speedtest, save_msg, images, imdb, anilist, mediainfo, mydramalist, gen_pyro_sess, gd_clean
+                     rss, shell, eval, users_settings, bot_settings, speedtest, save_msg, images, imdb, anilist, mediainfo, mydramalist, gen_pyro_sess, \
+                     gd_clean, broadcast
 
 
 async def stats(client, message):
@@ -81,6 +82,7 @@ async def stats(client, message):
 
 
 async def start(client, message):
+    await DbManger().update_pm_users(message.from_user.id)
     buttons = ButtonMaker()
     buttons.ubutton(BotTheme('ST_BN1_NAME'), BotTheme('ST_BN1_URL'))
     buttons.ubutton(BotTheme('ST_BN2_NAME'), BotTheme('ST_BN2_URL'))
@@ -192,74 +194,81 @@ async def search_images():
             LOGGER.error(f"An error occurred: {e}")
 
 
-help_string = f'''<b>NOTE: <i>Click on any CMD to see more minor detalis.</i></b>
+help_string = f'''<b><i>㊂ Help Guide :</i></b>
 
-/{BotCommands.MirrorCommand[0]} or /{BotCommands.MirrorCommand[1]}: Upload to Cloud Drive.
+<b>NOTE: <i>Click on any CMD to see more minor detalis.</i></b>
+
+<b>Use Mirror commands to download your link/file/rcl</b>
+➥ /{BotCommands.MirrorCommand[0]} or /{BotCommands.MirrorCommand[1]}: Download via file/url/media to Upload to Cloud Drive.
 
 <b>Use qBit commands for torrents only:</b>
-/{BotCommands.QbMirrorCommand[0]} or /{BotCommands.QbMirrorCommand[1]}: Download using qBittorrent and Upload to Cloud Drive.
-/{BotCommands.BtSelectCommand}: Select files from torrents by btsel_gid or reply.
+➥ /{BotCommands.QbMirrorCommand[0]} or /{BotCommands.QbMirrorCommand[1]}: Download using qBittorrent and Upload to Cloud Drive.
+➥ /{BotCommands.BtSelectCommand}: Select files from torrents by btsel_gid or reply.
 
-<b>Use Yt-Dlp commands for YouTube or any videos:</b>
-/{BotCommands.YtdlCommand[0]} or /{BotCommands.YtdlCommand[1]}: Mirror yt-dlp supported link.
+<b>Use yt-dlp commands for YouTube or any supported sites:</b>
+➥ /{BotCommands.YtdlCommand[0]} or /{BotCommands.YtdlCommand[1]}: Mirror yt-dlp supported link.
 
 <b>Use Leech commands for upload to Telegram:</b>
-/{BotCommands.LeechCommand[0]} or /{BotCommands.LeechCommand[1]}: Upload to Telegram.
-/{BotCommands.QbLeechCommand[0]} or /{BotCommands.QbLeechCommand[1]}: Download using qBittorrent and upload to Telegram(For torrents only).
-/{BotCommands.YtdlLeechCommand[0]} or /{BotCommands.YtdlLeechCommand[1]}: Download using Yt-Dlp(supported link) and upload to telegram.
+➥ /{BotCommands.LeechCommand[0]} or /{BotCommands.LeechCommand[1]}: Upload to Telegram.
+➥ /{BotCommands.QbLeechCommand[0]} or /{BotCommands.QbLeechCommand[1]}: Download using qBittorrent and upload to Telegram(For torrents only).
+➥ /{BotCommands.YtdlLeechCommand[0]} or /{BotCommands.YtdlLeechCommand[1]}: Download using Yt-Dlp(supported link) and upload to telegram.
 
 <b>G-Drive commands:</b>
-/{BotCommands.CloneCommand}: Copy file/folder to Cloud Drive.
-/{BotCommands.CountCommand} [drive_url]: Count file/folder of Google Drive.
-/{BotCommands.DeleteCommand} [drive_url]: Delete file/folder from Google Drive (Only Owner & Sudo).
-/{BotCommands.GDCleanCommand} [drive_id]: Delete all files from specific folder in Google Drive.
+➥ /{BotCommands.CloneCommand}: Copy file/folder to Cloud Drive.
+➥ /{BotCommands.CountCommand} [drive_url]: Count file/folder of Google Drive.
+➥ /{BotCommands.DeleteCommand} [drive_url]: Delete file/folder from Google Drive (Only Owner & Sudo).
+➥ /{BotCommands.GDCleanCommand} [drive_id]: Delete all files from specific folder in Google Drive.
 
 <b>Cancel Tasks:</b>
-/{BotCommands.CancelMirror}: Cancel task by cancel_gid or reply.
-/{BotCommands.CancelAllCommand[0]}: Cancel all Tasks & /{BotCommands.CancelAllCommand[1]} for Multiple Bots.
+➥ /{BotCommands.CancelMirror}: Cancel task by cancel_gid or reply.
+➥ /{BotCommands.CancelAllCommand[0]}: Cancel all Tasks & /{BotCommands.CancelAllCommand[1]} for Multiple Bots.
 
 <b>Torrent/Drive Search:</b>
-/{BotCommands.ListCommand} [query]: Search in Google Drive(s).
-/{BotCommands.SearchCommand} [query]: Search for torrents with API.
+➥ /{BotCommands.ListCommand} [query]: Search in Google Drive(s).
+➥ /{BotCommands.SearchCommand} [query]: Search for torrents with API.
 
 <b>Bot Settings:</b>
-/{BotCommands.UserSetCommand[0]} or /{BotCommands.UserSetCommand[1]} [query]: Open User Settings (PM also)
-/{BotCommands.UsersCommand}: Show User Stats Info (Only Owner & Sudo).
-/{BotCommands.BotSetCommand[0]} or /{BotCommands.BotSetCommand[0]} [query]: Open Bot Settings (Only Owner & Sudo).
+➥ /{BotCommands.UserSetCommand[0]} or /{BotCommands.UserSetCommand[1]} [query]: Open User Settings (PM also)
+➥ /{BotCommands.UsersCommand}: Show User Stats Info (Only Owner & Sudo).
+➥ /{BotCommands.BotSetCommand[0]} or /{BotCommands.BotSetCommand[0]} [query]: Open Bot Settings (Only Owner & Sudo).
 
 <b>Authentication:</b>
-/{BotCommands.AuthorizeCommand}: Authorize a chat or a user to use the bot (Only Owner & Sudo).
-/{BotCommands.UnAuthorizeCommand}: Unauthorize a chat or a user to use the bot (Only Owner & Sudo).
-/{BotCommands.AddSudoCommand}: Add sudo user (Only Owner).
-/{BotCommands.RmSudoCommand}: Remove sudo users (Only Owner).
+➥ /{BotCommands.AuthorizeCommand}: Authorize a chat or a user to use the bot (Only Owner & Sudo).
+➥ /{BotCommands.UnAuthorizeCommand}: Unauthorize a chat or a user to use the bot (Only Owner & Sudo).
+➥ /{BotCommands.AddSudoCommand}: Add sudo user (Only Owner).
+➥ /{BotCommands.RmSudoCommand}: Remove sudo users (Only Owner).
 
 <b>Bot Stats:</b>
-/{BotCommands.StatusCommand[0]} or /{BotCommands.StatusCommand[1]}: Shows a status page of all active tasks.
-/{BotCommands.StatsCommand[0]} or /{BotCommands.StatsCommand[1]}: Show Server detailed stats.
-/{BotCommands.PingCommand[0]} or /{BotCommands.PingCommand[1]}: Check how long it takes to Ping the Bot.
+➥ /{BotCommands.BroadcastCommand[0]} or /{BotCommands.BroadcastCommand[1]} [reply_msg]: Broadcast to PM users who have started the bot anytime.
+➥ /{BotCommands.StatusCommand[0]} or /{BotCommands.StatusCommand[1]}: Shows a status page of all active tasks.
+➥ /{BotCommands.StatsCommand}: Show Server detailed stats.
+➥ /{BotCommands.PingCommand}: Check how long it takes to Ping the Bot.
 
 <b>Maintainance:</b>
-/{BotCommands.RestartCommand[0]}: Restart and Update the Bot (Only Owner & Sudo).
-/{BotCommands.RestartCommand[1]}: Restart and Update all Bots (Only Owner & Sudo).
-/{BotCommands.LogCommand}: Get a log file of the bot. Handy for getting crash reports (Only Owner & Sudo).
+➥ /{BotCommands.RestartCommand[0]}: Restart and Update the Bot (Only Owner & Sudo).
+➥ /{BotCommands.RestartCommand[1]}: Restart and Update all Bots (Only Owner & Sudo).
+➥ /{BotCommands.LogCommand}: Get a log file of the bot. Handy for getting crash reports (Only Owner & Sudo).
+
+<b>Executors:</b>
+➥ /{BotCommands.ShellCommand}: Run shell commands (Only Owner).
+➥ /{BotCommands.EvalCommand}: Run Python Code Line | Lines (Only Owner).
+➥ /{BotCommands.ExecCommand}: Run Commands In Exec (Only Owner).
+➥ /{BotCommands.ClearLocalsCommand}: Clear {BotCommands.EvalCommand} or {BotCommands.ExecCommand} locals (Only Owner).
 
 <b>Extras:</b>
-/{BotCommands.ShellCommand}: Run shell commands (Only Owner).
-/{BotCommands.EvalCommand}: Run Python Code Line | Lines (Only Owner).
-/{BotCommands.ExecCommand}: Run Commands In Exec (Only Owner).
-/{BotCommands.ClearLocalsCommand}: Clear {BotCommands.EvalCommand} or {BotCommands.ExecCommand} locals (Only Owner).
+➥ /{BotCommands.SpeedCommand}: Check Speed in VPS/Server.
+➥ /{BotCommands.AddImageCommand} [url/photo]: Add Images in Bot
+➥ /{BotCommands.ImagesCommand}: Generate grid of Stored Images.
+➥ /{BotCommands.MediaInfoCommand} [url/media]: Generate MediaInfo of Media or DL Urls
 
-/{BotCommands.SpeedCommand}: Check Speed in VPS/Server.
-/{BotCommands.AddImageCommand} [url/photo]: Add Images in Bot
-/{BotCommands.ImagesCommand}: Generate grid of Stored Images.
-/{BotCommands.IMDBCommand}: Search in IMDB.
-/{BotCommands.AniListCommand}: Search for anime in AniList.
-/{BotCommands.AnimeHelpCommand}: Anime help guide.
-/{BotCommands.MediaInfoCommand} [url/media]: Generate MediaInfo of Media or DL Urls
-/{BotCommands.MyDramaListCommand}: Search in MyDramaList.
+<b>Movie/TV Shows/Drama Search:</b>
+➥ /{BotCommands.IMDBCommand}: Search in IMDB.
+➥ /{BotCommands.AniListCommand}: Search for anime in AniList.
+➥ /{BotCommands.AnimeHelpCommand}: Anime help guide.
+➥ /{BotCommands.MyDramaListCommand}: Search in MyDramaList.
 
 <b>RSS Feed:</b>
-/{BotCommands.RssCommand}: Open RSS Menu.
+➥ /{BotCommands.RssCommand}: Open RSS Menu (Sub/Unsub/Start/Pause)
 
 ⌬ <b>Attention: Read the first line again!</b>
 '''
