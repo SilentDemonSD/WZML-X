@@ -66,7 +66,8 @@ class TgUploader:
         try:
             if self.__bot_pm and (self.__listener.leechlogmsg or self.__listener.isSuperGroup):
                 destination = 'Bot PM'
-                await bot.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)            
+                copied = await bot.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)        
+                await copied.edit_reply_markup(self.__sent_msg.reply_markup)
             if self.__ldump:
                 destination = 'Dump'
                 for channel_id in self.__ldump.split():

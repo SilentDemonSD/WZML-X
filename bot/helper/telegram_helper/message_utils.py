@@ -92,7 +92,7 @@ async def chat_info(channel_id):
 
 
 async def sendMultiMessage(message, chat_ids, text, buttons=None, photo=None):
-    for channel_id in ids.split():
+    for channel_id in chat_ids.split():
         chat = await chat_info(channel_id)
         try:
             if photo:

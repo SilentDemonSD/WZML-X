@@ -306,7 +306,7 @@ async def wzmlxcb(_, query):
         Loglines = ''
         try:
             while len(Loglines) <= 2500:
-                Loglines = "["+logFileLines[-ind].split('] [', 1)[1] + '\n' + Loglines
+                Loglines = ("["+line.split('] [', 1)[1]) if (line:=logFileLines[-ind]).startswith('[') else line + '\n' + Loglines
                 if ind == len(logFileLines): 
                     break
                 ind += 1
