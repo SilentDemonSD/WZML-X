@@ -140,9 +140,9 @@ class WZMLStyle:
     ####------FOOTER--------
     FOOTER = '⌬ <b><i>Bot Stats</i></b>\n'
     TASKS =  '┠ <b>Tasks:</b> {Tasks}\n'
-    BOT_TASKS = '┠ <b>Tasks:</b> {Tasks}/{Ttask} | <b>Avl:</b> {Free}\n'
+    BOT_TASKS = '┠ <b>Tasks:</b> {Tasks}/{Ttask} | <b>AVL:</b> {Free}\n'
     Cpu = '┠ <b>CPU:</b> {cpu}% | '
-    FREE =                      '<b>FREE:</b> {free}'
+    FREE =                      '<b>FREE:</b> {free} [{free_p}%]'
     Ram = '\n┠ <b>RAM:</b> {ram}% | '
     uptime =                     '<b>UPTIME:</b> {uptime}'
     DL = '\n┖ <b>DL:</b> {DL}/s | '
