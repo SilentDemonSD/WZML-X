@@ -217,7 +217,7 @@ help_string = f'''<b><i>㊂ Help Guide :</i></b>
 ➥ /{BotCommands.YtdlLeechCommand[0]} or /{BotCommands.YtdlLeechCommand[1]}: Download using Yt-Dlp(supported link) and upload to telegram.
 
 <b>G-Drive commands:</b>
-➥ /{BotCommands.CloneCommand}: Copy file/folder to Cloud Drive.
+➥ /{BotCommands.CountCommand} [drive_url]: Count file/folder of Google Drive.
 ➥ /{BotCommands.CountCommand} [drive_url]: Count file/folder of Google Drive.
 ➥ /{BotCommands.DeleteCommand} [drive_url]: Delete file/folder from Google Drive (Only Owner & Sudo).
 ➥ /{BotCommands.GDCleanCommand} [drive_id]: Delete all files from specific folder in Google Drive.
