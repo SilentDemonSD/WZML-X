@@ -36,7 +36,7 @@ Get from https://my.telegram.org</i>.
     except Exception:
         return await editMessage(sess_msg, "<i><code>APP_ID</code> is Invalid.</i>\n\n ⌬ <b>Process Stopped.</b>")
     await sleep(0.5)
-    await editMessage(sess_msg,  """⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>
+    await editMessage(sess_msg, """⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>
  
 <i>Send your <code>API_HASH</code>. Get from https://my.telegram.org</i>.
 <b>Timeout:</b> 120s
@@ -66,7 +66,7 @@ Get from https://my.telegram.org</i>.
         if session_dict['CONFIRM_PHN'].lower() in ['y', 'yes']:
             break
     try:
-        pyro_client = Client(f"WZML-X-{message.from_user.id}", api_id=api_id, api_hash=api_hash)
+        pyro_client = Client(f"WZML-X-{message.from_user.id}", api_id=api_id, api_hash=api_hash, is_memory=True)
     except Exception as e:
         await editMessage(sess_msg, f"<b>ERROR:</b> {str(e)}")
         return
@@ -102,17 +102,19 @@ Get from https://my.telegram.org</i>.
     except PhoneCodeExpired:
         return await editMessage(sess_msg, "<i> Input OTP has Expired.</i>\n\n ⌬ <b>Process Stopped.</b>")
     except SessionPasswordNeeded:
-        await editMessage(sess_msg, """⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>
+        await editMessage(sess_msg, f"""⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>
  
  <i>Account is being Protected via <b>Two-Step Verification.</b> Send your Password below.</i>
  <b>Timeout:</b> 120s
+ 
+ <b>Password Hint</b> : {await pyro_client.get_password_hint()}
  
  <i>Send /stop to Stop Process</i>""")
         await invoke(client, message, 'TWO_STEP_PASS')
         if isStop:
             return
         try:
-            await pyro_client.check_password(session_dict['TWO_STEP_PASS'])
+            await pyro_client.check_password(session_dict['TWO_STEP_PASS'].strip())
         except Exception as e:
             return await editMessage(sess_msg, f"<b>ERROR:</b> {str(e)}")
     except Exception as e:

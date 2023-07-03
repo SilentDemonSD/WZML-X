@@ -54,8 +54,11 @@ class TgUploader:
 
     async def __buttons(self, up_path):
         buttons = ButtonMaker()
-        if self.__mediainfo:
-            buttons.ubutton(BotTheme('MEDIAINFO_LINK'), await get_mediainfo_link(up_path))
+        try:
+            if self.__mediainfo:
+                buttons.ubutton(BotTheme('MEDIAINFO_LINK'), await get_mediainfo_link(up_path))
+        except Exception as e:
+            LOGGER.error(e)
         if config_dict['SAVE_MSG'] and (config_dict['LEECH_LOG_ID'] or not self.__listener.isPrivate):
             buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
         if self.__has_buttons:

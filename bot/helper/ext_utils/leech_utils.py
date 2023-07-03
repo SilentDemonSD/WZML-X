@@ -9,6 +9,7 @@ from asyncio import create_subprocess_exec
 from asyncio.subprocess import PIPE
 
 from bot import LOGGER, MAX_SPLIT_SIZE, config_dict, user_data
+from bot.modules.mediainfo import parseinfo
 from bot.helper.ext_utils.bot_utils import cmd_exec, sync_to_async, get_readable_file_size, get_readable_time
 from bot.helper.ext_utils.fs_utils import ARCH_EXT, get_mime_type
 from bot.helper.ext_utils.telegraph_helper import telegraph
@@ -217,7 +218,7 @@ async def format_filename(file_, user_id, dirpath=None, isMirror=False):
             elif len(args) == 1:
                 __newFileName = re_sub(args[0], '', __newFileName)
         file_ = __newFileName + ospath.splitext(file_)[1]
-        LOGGER.info(f"New Filename : {file_}")
+        LOGGER.info(f"New Remname : {file_}")
 
     nfile_ = file_
     if prefix:
@@ -272,13 +273,11 @@ async def format_filename(file_, user_id, dirpath=None, isMirror=False):
     
     
 async def get_mediainfo_link(up_path):
-    stdout, stderr, _ = await cmd_exec(ssplit(f'mediainfo "{up_path}"'))
-    tele_content = f"<h4>{ospath.basename(up_path)}</h4><br><br>"
+    stdout, __, _ = await cmd_exec(ssplit(f'mediainfo "{up_path}"'))
+    tele_content = f"📌 <h4>{ospath.basename(up_path)}</h4><br><br>"
     if len(stdout) != 0:
-        tele_content += f"<br><br><pre>{stdout}</pre><br>"
-    if len(stderr) != 0:
-        tele_content += f"<br><br><pre>{stderr}</pre><br>"
-    link_id = (await telegraph.create_page(title="MediaInfo", content=tele_content))["path"]
+        tc += parseinfo(stdout)
+    link_id = (await telegraph.create_page(title="MediaInfo X", content=tc))["path"]
     return f"https://graph.org/{link_id}"
 
 
