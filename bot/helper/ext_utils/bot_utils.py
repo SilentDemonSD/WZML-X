@@ -533,7 +533,7 @@ async def set_commands(client):
         BotCommand(f'{BotCommands.QbLeechCommand[0]}', f'or /{BotCommands.QbLeechCommand[1]} Leech torrent using qBittorrent'),
         BotCommand(f'{BotCommands.YtdlCommand[0]}', f'or /{BotCommands.YtdlCommand[1]} Mirror yt-dlp supported link'),
         BotCommand(f'{BotCommands.YtdlLeechCommand[0]}', f'or /{BotCommands.YtdlLeechCommand[1]} Leech through yt-dlp supported link'),
-        BotCommand(f'{BotCommands.CloneCommand[0]}', 'Copy file/folder to Drive'),
+        BotCommand(f'{BotCommands.CloneCommand[1]}', 'Copy file/folder to Drive'),
         BotCommand(f'{BotCommands.CountCommand}', '[drive_url]: Count file/folder of Google Drive.'),
         BotCommand(f'{BotCommands.StatusCommand[0]}', f'or /{BotCommands.StatusCommand[1]} Get mirror status message'),
         BotCommand(f'{BotCommands.StatsCommand}', f'Check Bot & System stats'),
