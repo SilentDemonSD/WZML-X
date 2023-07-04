@@ -247,7 +247,7 @@ async def format_filename(file_, user_id, dirpath=None, isMirror=False):
 
 
     cap_mono =  f"<{config_dict['CAP_FONT']}>{nfile_}</{config_dict['CAP_FONT']}>" if config_dict['CAP_FONT'] else nfile_
-    if lcaption and not isMirror:
+    if lcaption and dirpath and not isMirror:
         lcaption = lcaption.replace('\|', '%%').replace('\s', ' ')
         slit = lcaption.split("|")
         up_path = ospath.join(dirpath, prefile_)
@@ -266,9 +266,6 @@ async def format_filename(file_, user_id, dirpath=None, isMirror=False):
                 elif len(args) == 1:
                     cap_mono = cap_mono.replace(args[0], '')
         cap_mono = cap_mono.replace('%%', '|')
-        
-    if isMirror:
-        return file_
     return cap_mono, file_
     
     

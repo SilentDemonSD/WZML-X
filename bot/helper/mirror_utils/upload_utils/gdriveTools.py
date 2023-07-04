@@ -281,7 +281,7 @@ class GoogleDriveHelper:
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(3),
            retry=retry_if_exception_type(Exception))
     def __create_directory(self, directory_name, dest_id):
-        directory_name = async_to_sync(format_filename, directory_name, self.__user_id, isMirror=True)
+        directory_name, _ = async_to_sync(format_filename, directory_name, self.__user_id, isMirror=True)
         file_metadata = {
             "name": directory_name,
             "description": config_dict['GD_INFO'],
@@ -301,7 +301,7 @@ class GoogleDriveHelper:
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(3),
            retry=(retry_if_exception_type(Exception)))
     def __upload_file(self, file_path, file_name, mime_type, dest_id, is_dir=True):
-        file_name = async_to_sync(format_filename, file_name, self.__user_id, isMirror=True)
+        file_name, _ = async_to_sync(format_filename, file_name, self.__user_id, isMirror=True)
         # File body description
         file_metadata = {
             'name': file_name,
@@ -455,7 +455,7 @@ class GoogleDriveHelper:
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(3),
            retry=retry_if_exception_type(Exception))
     def __copyFile(self, file_id, dest_id, file_name):
-        file_name = async_to_sync(format_filename, file_name, self.__user_id, isMirror=True)
+        file_name, _ = async_to_sync(format_filename, file_name, self.__user_id, isMirror=True)
         body = {'name': file_name,
                 'parents': [dest_id]}
         try:
