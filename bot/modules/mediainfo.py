@@ -78,9 +78,9 @@ def parseinfo(out):
 async def mediainfo(_, message):
     rply = message.reply_to_message
     help_msg = "<b>By replying to media:</b>"
-    help_msg += f"\n<code>/{BotCommands.MediaInfoCommand}" + " {media}" + "</code>"
+    help_msg += f"\n<code>/{BotCommands.MediaInfoCommand[0]} or /{BotCommands.MediaInfoCommand[1]}" + " {media}" + "</code>"
     help_msg += "\n\n<b>By reply/sending download link:</b>"
-    help_msg += f"\n<code>/{BotCommands.MediaInfoCommand}" + " {link}" + "</code>"
+    help_msg += f"\n<code>/{BotCommands.MediaInfoCommand[0]} or /{BotCommands.MediaInfoCommand[1]}" + " {link}" + "</code>"
     if len(message.command) > 1 or rply and rply.text:
         link = rply.text if rply else message.command[1]
         return await gen_mediainfo(message, link)

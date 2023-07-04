@@ -135,8 +135,10 @@ Get from https://my.telegram.org</i>.
         await editMessage(sess_msg, "⌬ <u><i><b>Pyrogram String Session Generator</b></i></u> \n\n➲ <b>String Session is Successfully Generated ( Saved Messages ).</b>")
     except Exception as e:
         return await editMessage(sess_msg ,f"<b>Export Session Error:</b> {str(e)}")
-    await aioremove(f'WZML-X-{message.from_user.id}.session')
-    await aioremove(f'WZML-X-{message.from_user.id}.session-journal')
+    try:
+        await aioremove(f'WZML-X-{message.from_user.id}.session')
+        await aioremove(f'WZML-X-{message.from_user.id}.session-journal')
+    except: pass
     
 
 async def set_details(_, message, newkey):

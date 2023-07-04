@@ -540,14 +540,14 @@ async def set_commands(client):
             BotCommand(BotCommands.CancelAllCommand[0], f'Cancel all Tasks in whole Bots.'),
             BotCommand(BotCommands.ListCommand, 'Search in Drive(s)'),
             BotCommand(BotCommands.SearchCommand, 'Search in Torrent via qBit clients!'),
-            BotCommand(BotCommands.HelpCommand[0], f'or /{BotCommands.HelpCommand[1]} Get detailed help about the WZML-X Bot'),
+            BotCommand(BotCommands.HelpCommand, 'Get detailed help about the WZML-X Bot'),
             BotCommand(BotCommands.UserSetCommand[0], f"or /{BotCommands.UserSetCommand[1]} User's Personal Settings (Open in PM)"),
             BotCommand(BotCommands.IMDBCommand, 'Search Movies/Series on IMDB.com and fetch details'),
             BotCommand(BotCommands.AniListCommand, 'Search Animes on AniList.com and fetch details'),
             BotCommand(BotCommands.MyDramaListCommand, 'Search Dramas on MyDramaList.com and fetch details'),
             BotCommand(BotCommands.SpeedCommand[0], f'or /{BotCommands.SpeedCommand[1]} Check Server Up & Down Speed & Details'),
             BotCommand(BotCommands.MediaInfoCommand[0], f'or /{BotCommands.MediaInfoCommand[1]} Generate Mediainfo for Replied Media or DL links'),
-            BotCommand(BotCommands.BotSetCommand[0], f"or /{BotCommands.BotSetCommand} Bot's Personal Settings (Owner or Sudo Only)"),
+            BotCommand(BotCommands.BotSetCommand[0], f"or /{BotCommands.BotSetCommand[1]} Bot's Personal Settings (Owner or Sudo Only)"),
             BotCommand(BotCommands.RestartCommand[0], f'or /{BotCommands.RestartCommand[1]} Restart & Update the Bot (Owner or Sudo Only)'),
             ])
             LOGGER.info('Bot Commands have been Set & Updated')

@@ -60,7 +60,7 @@ class WZMLStyle:
 
     # async def ping(client, message): ---> __main__.py
     PING = '<i>Starting Ping..</i>'
-    PING_VALUE = '<b>Pong</b>\n\n<code>{value} ms..</code>'
+    PING_VALUE = '<b>Pong</b>\n<code>{value} ms..</code>'
     # ---------------------
 
     # async def __msg_to_reply(self): ---> pyrogramEngine.py
@@ -142,7 +142,7 @@ class WZMLStyle:
     TASKS =  '┠ <b>Tasks:</b> {Tasks}\n'
     BOT_TASKS = '┠ <b>Tasks:</b> {Tasks}/{Ttask} | <b>AVL:</b> {Free}\n'
     Cpu = '┠ <b>CPU:</b> {cpu}% | '
-    FREE =                      '<b>FREE:</b> {free} [{free_p}%]'
+    FREE =                      '<b>F:</b> {free} [{free_p}%]'
     Ram = '\n┠ <b>RAM:</b> {ram}% | '
     uptime =                     '<b>UPTIME:</b> {uptime}'
     DL = '\n┖ <b>DL:</b> {DL}/s | '
