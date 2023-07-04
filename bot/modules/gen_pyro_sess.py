@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from time import time
-from asyncio import sleep
+from asyncio import sleep, wrap_future
 from functools import partial
 
 from pyrogram import Client
@@ -28,7 +28,7 @@ Get from https://my.telegram.org</i>.
 
 <i>Send /stop to Stop Process</i>""")
     session_dict['message'] = sess_msg
-    await invoke(client, message, 'API_ID')
+    await wrap_future(invoke(client, message, 'API_ID'))
     if isStop:
         return
     try:
