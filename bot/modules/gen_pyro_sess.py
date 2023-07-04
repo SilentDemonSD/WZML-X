@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from time import time
-from asyncio import sleep, wrap_future
+from asyncio import sleep, wrap_future, Lock
 from functools import partial
 
 from pyrogram import Client
@@ -14,6 +14,7 @@ from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, s
 from bot.helper.telegram_helper.filters import CustomFilters
 
 session_dict = {}
+session_lock = Lock()
 isStop = False
 
 @new_task
@@ -31,11 +32,12 @@ Get from https://my.telegram.org</i>.
     await wrap_future(invoke(client, message, 'API_ID'))
     if isStop:
         return
-    try:
-        api_id = int(session_dict['API_ID'])
-    except Exception:
-        return await editMessage(sess_msg, "<i><code>APP_ID</code> is Invalid.</i>\n\n ⌬ <b>Process Stopped.</b>")
-    await sleep(0.5)
+    async with session_lock:
+        try:
+            api_id = int(session_dict['API_ID'])
+        except Exception:
+            return await editMessage(sess_msg, "<i><code>APP_ID</code> is Invalid.</i>\n\n ⌬ <b>Process Stopped.</b>")
+    await sleep(1.5)
     await editMessage(sess_msg, """⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>
  
 <i>Send your <code>API_HASH</code>. Get from https://my.telegram.org</i>.
@@ -45,11 +47,12 @@ Get from https://my.telegram.org</i>.
     await wrap_future(invoke(client, message, 'API_HASH'))
     if isStop:
         return
-    api_hash = session_dict['API_HASH']
+    async with session_lock:
+        api_hash = session_dict['API_HASH']
     if len(api_hash) <= 30:
         return await editMessage(sess_msg,  "<i><code>API_HASH</code> is Invalid.</i>\n\n ⌬ <b>Process Stopped.</b>")
     while True:
-        await sleep(0.5)
+        await sleep(1.5)
         await editMessage(sess_msg,  """⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>
  
 <i>Send your Telegram Account's Phone number in International Format ( Including Country Code ). <b>Example :</b> +14154566376</i>.
@@ -63,8 +66,9 @@ Get from https://my.telegram.org</i>.
         await wrap_future(invoke(client, message, 'CONFIRM_PHN'))
         if isStop:
             return
-        if session_dict['CONFIRM_PHN'].lower() in ['y', 'yes']:
-            break
+        async with session_lock:
+            if session_dict['CONFIRM_PHN'].lower() in ['y', 'yes']:
+                break
     try:
         pyro_client = Client(f"WZML-X-{message.from_user.id}", api_id=api_id, api_hash=api_hash)
     except Exception as e:
@@ -95,8 +99,10 @@ Get from https://my.telegram.org</i>.
     await wrap_future(invoke(client, message, 'OTP'))
     if isStop:
         return
+    async with session_lock:
+        otp = '  '.join(str(session_dict['OTP']))
     try:
-        await pyro_client.sign_in(session_dict['PHONE_NO'], user_code.phone_code_hash, phone_code=' '.join(str(session_dict['OTP'])))
+        await pyro_client.sign_in(session_dict['PHONE_NO'], user_code.phone_code_hash, phone_code=otp)
     except PhoneCodeInvalid:
         return await editMessage(sess_msg, "<i>Input OTP is Invalid.</i>\n\n ⌬ <b>Process Stopped.</b>")
     except PhoneCodeExpired:
@@ -113,8 +119,10 @@ Get from https://my.telegram.org</i>.
         await wrap_future(invoke(client, message, 'TWO_STEP_PASS'))
         if isStop:
             return
+        async with session_lock:
+            password = session_dict['TWO_STEP_PASS'].strip()
         try:
-            await pyro_client.check_password(session_dict['TWO_STEP_PASS'].strip())
+            await pyro_client.check_password(password)
         except Exception as e:
             return await editMessage(sess_msg, f"<b>ERROR:</b> {str(e)}")
     except Exception as e:
@@ -137,7 +145,8 @@ async def set_details(_, message, newkey):
     if value.lower() == '/stop':
         isStop = True
         return await editMessage(session_dict['message'], '⌬ <b>Process Stopped</b>')
-    session_dict[newkey] = value
+    async with session_lock:
+        session_dict[newkey] = value
 
 @new_thread
 async def invoke(client, message, key, wait=True):
