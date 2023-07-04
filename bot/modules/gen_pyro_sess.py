@@ -140,7 +140,7 @@ async def set_details(_, message, newkey):
     session_dict[newkey] = value
 
 @new_thread
-async def invoke(client, message, key):
+async def invoke(client, message, key, wait=True):
     global isStop
     user_id = message.from_user.id
     session_dict[user_id] = True
