@@ -62,7 +62,7 @@ def parseinfo(out):
         for section, emoji in section_dict.items():
             if line.startswith(section):
                 trigger = True
-                tc += f'<h4>{emoji} {line.replace('Text', 'Subtitle')}</h4>'
+                tc += f"<h4>{emoji} {line.replace('Text', 'Subtitle')}</h4>"
                 break
         if trigger:
             tc += '<br><pre>'
