@@ -266,7 +266,7 @@ async def format_filename(file_, user_id, dirpath=None, isMirror=False):
                 elif len(args) == 1:
                     cap_mono = cap_mono.replace(args[0], '')
         cap_mono = cap_mono.replace('%%', '|')
-    return cap_mono, file_
+    return file_, cap_mono
     
     
 async def get_mediainfo_link(up_path):

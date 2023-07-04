@@ -58,7 +58,7 @@ class TgUploader:
             if self.__mediainfo:
                 buttons.ubutton(BotTheme('MEDIAINFO_LINK'), await get_mediainfo_link(up_path))
         except Exception as e:
-            LOGGER.error(e)
+            LOGGER.error("MediaInfo Error: "+str(e))
         if config_dict['SAVE_MSG'] and (config_dict['LEECH_LOG_ID'] or not self.__listener.isPrivate):
             buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
         if self.__has_buttons:
@@ -141,7 +141,7 @@ class TgUploader:
         return True
 
     async def __prepare_file(self, prefile_, dirpath):
-        cap_mono, file_ = await format_filename(prefile_, self.__user_id, dirpath)
+        file_, cap_mono = await format_filename(prefile_, self.__user_id, dirpath)
         if prefile_ != file_:
             if self.__listener.seed and not self.__listener.newDir and not dirpath.endswith("/splited_files_mltb"):
                 dirpath = f'{dirpath}/copied_mltb'
