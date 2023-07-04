@@ -69,7 +69,8 @@ def parseinfo(out):
             trigger = False
         else:
             tc += line + '\n'
-    return tc += '</pre><br>'
+    tc += '</pre><br>'
+    return tc
 
 
 async def mediainfo(_, message):
