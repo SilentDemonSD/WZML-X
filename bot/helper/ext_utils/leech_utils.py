@@ -271,7 +271,7 @@ async def format_filename(file_, user_id, dirpath=None, isMirror=False):
     
 async def get_mediainfo_link(up_path):
     stdout, __, _ = await cmd_exec(ssplit(f'mediainfo "{up_path}"'))
-    tele_content = f"📌 <h4>{ospath.basename(up_path)}</h4><br><br>"
+    tc = f"📌 <h4>{ospath.basename(up_path)}</h4><br><br>"
     if len(stdout) != 0:
         tc += parseinfo(stdout)
     link_id = (await telegraph.create_page(title="MediaInfo X", content=tc))["path"]

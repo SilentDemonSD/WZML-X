@@ -82,14 +82,14 @@ Get from https://my.telegram.org</i>.
         await pyro_client.connect()
     try:
         user_code = await pyro_client.send_code(session_dict['PHONE_NO'])
-        await sleep(0.5)
+        await sleep(1.5)
     except FloodWait as e:
         return await editMessage(sess_msg, f"<b>Floodwait of {e.value} Seconds. Retry Again</b>\n\n ⌬ <b>Process Stopped.</b>")
     except ApiIdInvalid:
         return await editMessage(sess_msg, "<b>API_ID and API_HASH are Invalid. Retry Again</b>\n\n ⌬ <b>Process Stopped.</b>")
     except PhoneNumberInvalid:
         return await editMessage(sess_msg, "<b>Phone Number is Invalid. Retry Again</b>\n\n ⌬ <b>Process Stopped.</b>")
-    await sleep(0.5)
+    await sleep(1.5)
     await editMessage(sess_msg, """⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>
  
 <i>OTP has been sent to your Phone Number, Enter OTP in <code>1 2 3 4 5</code> format. ( Space between each Digits )</i>
@@ -109,6 +109,7 @@ Get from https://my.telegram.org</i>.
     except PhoneCodeExpired:
         return await editMessage(sess_msg, "<i> Input OTP has Expired.</i>\n\n ⌬ <b>Process Stopped.</b>")
     except SessionPasswordNeeded:
+        await sleep(1.5)
         await editMessage(sess_msg, f"""⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>
  
  <i>Account is being Protected via <b>Two-Step Verification.</b> Send your Password below.</i>
