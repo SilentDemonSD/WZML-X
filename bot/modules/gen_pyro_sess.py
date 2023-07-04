@@ -66,7 +66,7 @@ Get from https://my.telegram.org</i>.
         if session_dict['CONFIRM_PHN'].lower() in ['y', 'yes']:
             break
     try:
-        pyro_client = Client(f"WZML-X-{message.from_user.id}", api_id=api_id, api_hash=api_hash, is_memory=True)
+        pyro_client = Client(f"WZML-X-{message.from_user.id}", api_id=api_id, api_hash=api_hash)
     except Exception as e:
         await editMessage(sess_msg, f"<b>ERROR:</b> {str(e)}")
         return
@@ -121,8 +121,8 @@ Get from https://my.telegram.org</i>.
         return await editMessage(sess_msg ,f"<b>ERROR:</b> {str(e)}")
     try:
         session_string = await pyro_client.export_session_string()
-        await pyro_client.send_message("self", f"⌬ <b>Pyrogram Session Generated</b>\n\n<code>{session_string}</code>")
-        await pyro_client.disconnect()
+        await pyro_client.send_message("self", f"⌬ <b>Pyrogram Session Generated :</b>\n\n<code>{session_string}</code>\n\n<i>Via WZML-X Repo</i>")
+        await pyro_client.log_out()
         await editMessage(sess_msg, "➲ <b>String Session is Successfully Generated. Check Saved Messages of that account to get your Pyro Session</b>")
     except Exception as e:
         return await editMessage(sess_msg ,f"<b>ERROR:</b> {str(e)}")
