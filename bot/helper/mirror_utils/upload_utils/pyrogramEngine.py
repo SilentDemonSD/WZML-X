@@ -6,7 +6,7 @@ from os import walk, path as ospath
 from time import time
 from PIL import Image
 from pyrogram.types import InputMediaVideo, InputMediaDocument, InlineKeyboardMarkup
-from pyrogram.errors import FloodWait, RPCError, PeerIdInvalid, MessageNotModified
+from pyrogram.errors import FloodWait, RPCError, PeerIdInvalid, MessageNotModified, ChannelInvalid
 from asyncio import sleep
 from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type, RetryError
 from re import match as re_match, sub as re_sub
@@ -87,7 +87,7 @@ class TgUploader:
                                 await dump_copy.edit_reply_markup(self.__sent_msg.reply_markup)
                             except MessageNotModified:
                                 pass
-                    except PeerIdInvalid as e:
+                    except (ChannelInvalid, PeerIdInvalid) as e:
                         LOGGER.error(f"{e.NAME}: {e.MESSAGE} for {channel_id}")
                         continue
         except Exception as err:
@@ -214,16 +214,10 @@ class TgUploader:
             if self.__ldump:
                 destination = 'Dump'
                 for channel_id in self.__ldump.split():
-                    if channel_id.startswith('-100'):
-                        channel_id = int(channel_id)
-                    elif channel_id.startswith('@'):
-                        channel_id = channel_id.replace('@', '')
-                    else:
-                        continue
+                    dump_chat = await chat_info(channel_id)
                     try:
-                        chat = await bot.get_chat(channel_id)
-                        await bot.copy_media_group(chat_id=chat.id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
-                    except PeerIdInvalid as e:
+                        await bot.copy_media_group(chat_id=dump_chat.id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
+                    except (ChannelInvalid, PeerIdInvalid) as e:
                         LOGGER.error(f"{e.NAME}: {e.MESSAGE} for {channel_id}")
                         continue
         except Exception as err:
