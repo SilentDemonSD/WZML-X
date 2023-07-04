@@ -135,7 +135,7 @@ class WZMLStyle:
     USER =              '\n┠ <b>User:</b> <code>{User}</code> | '
     ID =                                                        '<b>ID:</b> <code>{Id}</code>'
     BTSEL =          '\n┠ <b>Select:</b> {Btsel}'
-    CANCEL =         '\n┖ <b>Stop:</b> {Cancel}\n\n'
+    CANCEL =         '\n┖ {Cancel}\n\n'
 
     ####------FOOTER--------
     FOOTER = '⌬ <b><i>Bot Stats</i></b>\n'
@@ -178,7 +178,7 @@ class WZMLStyle:
     NO_ACTIVE_DL = '''<i>No Active Downloads!</i>
     
 ⌬ <b><i>Bot Stats</i></b>
-┠ <b>CPU:</b> {cpu}% | <b>FREE:</b> {free}
+┠ <b>CPU:</b> {cpu}% | <b>F:</b> {free} [{free_p}%]
 ┖ <b>RAM:</b> {ram} | <b>UPTIME:</b> {uptime}
     '''
     # ---------------------

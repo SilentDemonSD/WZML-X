@@ -275,7 +275,7 @@ def get_readable_message():
         buttons.ibutton(BotTheme('NEXT'), "status nex")
     button = buttons.build_menu(3)
     msg += BotTheme('Cpu', cpu=cpu_percent())
-    msg += BotTheme('FREE', free=get_readable_file_size(disk_usage(config_dict['DOWNLOAD_DIR']).free), free_p=100-disk_usage(config_dict['DOWNLOAD_DIR']).percent)
+    msg += BotTheme('FREE', free=get_readable_file_size(disk_usage(config_dict['DOWNLOAD_DIR']).free), free_p=round(100-disk_usage(config_dict['DOWNLOAD_DIR']).percent, 1))
     msg += BotTheme('Ram', ram=virtual_memory().percent)
     msg += BotTheme('uptime', uptime=get_readable_time(time() - botStartTime))
     msg += BotTheme('DL', DL=get_readable_file_size(dl_speed))
