@@ -42,7 +42,7 @@ Get from https://my.telegram.org</i>.
 <b>Timeout:</b> 120s
 
 <i>Send /stop to Stop Process</i>""")
-    await invoke(client, message, 'API_HASH')
+    await wrap_future(invoke(client, message, 'API_HASH'))
     if isStop:
         return
     api_hash = session_dict['API_HASH']
@@ -56,11 +56,11 @@ Get from https://my.telegram.org</i>.
 <b>Timeout:</b> 120s
 
 <i>Send /stop to Stop Process</i>""")
-        await invoke(client, message, 'PHONE_NO')
+        await wrap_future(invoke(client, message, 'PHONE_NO'))
         if isStop:
             return
         await editMessage(sess_msg, f"⌬ <b>Verification Confirmation:</b>\n\n <i>Is {session_dict['PHONE_NO']} correct? (y/n/yes/no):</i> \n\n<b>Send y/yes (Yes) | n/no (No)</b>")
-        await invoke(client, message, 'CONFIRM_PHN')
+        await wrap_future(invoke(client, message, 'CONFIRM_PHN'))
         if isStop:
             return
         if session_dict['CONFIRM_PHN'].lower() in ['y', 'yes']:
@@ -92,7 +92,7 @@ Get from https://my.telegram.org</i>.
 <b>Timeout:</b> 120s
 
 <i>Send /stop to Stop Process</i>""")
-    await invoke(client, message, 'OTP')
+    await wrap_future(invoke(client, message, 'OTP'))
     if isStop:
         return
     try:
@@ -110,7 +110,7 @@ Get from https://my.telegram.org</i>.
  <b>Password Hint</b> : {await pyro_client.get_password_hint()}
  
  <i>Send /stop to Stop Process</i>""")
-        await invoke(client, message, 'TWO_STEP_PASS')
+        await wrap_future(invoke(client, message, 'TWO_STEP_PASS'))
         if isStop:
             return
         try:
