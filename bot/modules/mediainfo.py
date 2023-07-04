@@ -52,31 +52,20 @@ async def gen_mediainfo(message, link=None, media=None, mmsg=None):
         await aioremove(des_path)
     link_id = (await telegraph.create_page(title='MediaInfo X', content=tc))["path"]
     await temp_send.edit(f"<b>MediaInfo:</b>\n\n➲ <b>Link :</b> https://graph.org/{link_id}", disable_web_page_preview=False)
-    
 
+
+section_dict = {'General': '🗒', 'Video': '🎞', 'Audio': '🔊', 'Text': '🔠', 'Menu': '🗃'}
 def parseinfo(out):
     tc = ''
     trigger = False
     for line in out.split('\n'):
-        if line.startswith('General'):
-            trigger = True
-            tc += f'<h4>🗒 {line} </h4>'
-        elif line.startswith('Video'):
-            tc += '</pre><br>'
-            trigger = True
-            tc += f'<h4>🎞 {line} </h4>'
-        elif line.startswith('Audio'):
-            tc += '</pre><br>'
-            trigger = True
-            tc += f'<h4>🔊 {line} </h4>'
-        elif line.startswith('Text'):
-            tc += '</pre><br>'
-            trigger = True
-            tc += f'<h4>🔠 {line} </h4>'
-        elif line.startswith('Menu'):
-            tc += '</pre><br>'
-            trigger = True
-            tc += f'<h4>🗃 {line} </h4>'
+        for section, emoji in section_dict.items():
+            if line.startswith(section):
+                trigger = True
+                if not line.startswith('General'):
+                    tc += '</pre><br>'
+                tc += f"<h4>{emoji} {line.replace('Text', 'Subtitle')}</h4>"
+                break
         if trigger:
             tc += '<br><pre>'
             trigger = False
@@ -89,9 +78,9 @@ def parseinfo(out):
 async def mediainfo(_, message):
     rply = message.reply_to_message
     help_msg = "<b>By replying to media:</b>"
-    help_msg += f"\n<code>/{BotCommands.MediaInfoCommand}" + " {media}" + "</code>"
+    help_msg += f"\n<code>/{BotCommands.MediaInfoCommand[0]} or /{BotCommands.MediaInfoCommand[1]}" + " {media}" + "</code>"
     help_msg += "\n\n<b>By reply/sending download link:</b>"
-    help_msg += f"\n<code>/{BotCommands.MediaInfoCommand}" + " {link}" + "</code>"
+    help_msg += f"\n<code>/{BotCommands.MediaInfoCommand[0]} or /{BotCommands.MediaInfoCommand[1]}" + " {link}" + "</code>"
     if len(message.command) > 1 or rply and rply.text:
         link = rply.text if rply else message.command[1]
         return await gen_mediainfo(message, link)
