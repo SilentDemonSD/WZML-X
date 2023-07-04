@@ -317,6 +317,7 @@ async def wzmlxcb(_, query):
             startLine = f"<b>Showing Last {ind} Lines from log.txt:</b> \n\n----------<b>START LOG</b>----------\n\n"
             endLine = "\n----------<b>END LOG</b>----------"
             await sendMessage(message, startLine + escape(Loglines) + endLine)
+            await query.edit_message_reply_markup(None)
         except Exception as err:
             LOGGER.error(f"TG Log Display : {str(err)}")
     else: # More Whole Bot CB Usage !!
