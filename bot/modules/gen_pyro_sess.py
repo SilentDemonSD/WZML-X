@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from time import time
+from aiofiles.os import remove as aioremove
 from asyncio import sleep, wrap_future, Lock
 from functools import partial
 
@@ -72,7 +73,7 @@ Get from https://my.telegram.org</i>.
     try:
         pyro_client = Client(f"WZML-X-{message.from_user.id}", api_id=api_id, api_hash=api_hash)
     except Exception as e:
-        await editMessage(sess_msg, f"<b>ERROR:</b> {str(e)}")
+        await editMessage(sess_msg, f"<b>Client Error:</b> {str(e)}")
         return
     try:
         await pyro_client.connect()
@@ -100,7 +101,7 @@ Get from https://my.telegram.org</i>.
     if isStop:
         return
     async with session_lock:
-        otp = '  '.join(str(session_dict['OTP']))
+        otp = ' '.join(str(session_dict['OTP']))
     try:
         await pyro_client.sign_in(session_dict['PHONE_NO'], user_code.phone_code_hash, phone_code=otp)
     except PhoneCodeInvalid:
@@ -124,17 +125,19 @@ Get from https://my.telegram.org</i>.
         try:
             await pyro_client.check_password(password)
         except Exception as e:
-            return await editMessage(sess_msg, f"<b>ERROR:</b> {str(e)}")
+            return await editMessage(sess_msg, f"<b>Password Check Error:</b> {str(e)}")
     except Exception as e:
-        return await editMessage(sess_msg ,f"<b>ERROR:</b> {str(e)}")
+        return await editMessage(sess_msg ,f"<b>Sign In Error:</b> {str(e)}")
     try:
         session_string = await pyro_client.export_session_string()
-        await pyro_client.send_message("self", f"⌬ <b>Pyrogram Session Generated :</b>\n\n<code>{session_string}</code>\n\n<i>Via WZML-X Repo</i>")
-        await pyro_client.log_out()
+        await pyro_client.send_message("self", f"⌬ <b><u>Pyrogram Session Generated :</u></b>\n\n<code>{session_string}</code>\n\n<b>Via <a href='https://github.com/weebzone/WZML-X'>WZML-X</a> [ @WZML_X ]</b>")
+        await pyro_client.disconnect()
         await editMessage(sess_msg, "➲ <b>String Session is Successfully Generated. Check Saved Messages of that account to get your Pyro Session</b>")
     except Exception as e:
-        return await editMessage(sess_msg ,f"<b>ERROR:</b> {str(e)}")
-
+        return await editMessage(sess_msg ,f"<b>Export Session Error:</b> {str(e)}")
+    await aioremove(f'WZML-X-{message.from_user.id}.session')
+    await aioremove(f'WZML-X-{message.from_user.id}.session-journal')
+    
 
 async def set_details(_, message, newkey):
     global isStop
