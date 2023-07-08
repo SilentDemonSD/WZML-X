@@ -67,11 +67,11 @@ class WZMLStyle:
     LINKS_START = """<b><i>Task Started</i></b>
 ┠ <b>On:</b> {On}
 ┠ <b>Mode:</b> {Mode}
-┖ <b>By:</b> {Tag}"""
-    LINKS_SOURCE = """\n\n➲ <b>Source:</b>
+┖ <b>By:</b> {Tag}\n\n"""
+    LINKS_SOURCE = """➲ <b>Source:</b>
 ------------------------------------------
 <code>{Source}</code>
-------------------------------------------"""
+------------------------------------------\n\n"""
     
     # async def __msg_to_reply(self): ---> pyrogramEngine.py
     L_PM_START =            "➲ <b><u>Leech Started :</u></b>\n┃\n┖ <b>Link:</b> <a href='{msg_link}'>Click Here</a>"

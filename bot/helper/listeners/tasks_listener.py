@@ -385,7 +385,6 @@ class MirrorLeechListener:
                     msg += BotTheme('PM_BOT_MSG')
                 await sendMessage(self.message, msg, photo=self.random_pic)
             else:
-                LOGGER.info("Flow Check 1")
                 fmsg = '\n\n'
                 for index, (link, name) in enumerate(files.items(), start=1):
                     fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
@@ -399,7 +398,6 @@ class MirrorLeechListener:
                             await sendMessage(self.message, msg + BotTheme('L_LL_MSG') + fmsg, buttons.build_menu(1))
                         await sleep(1)
                         fmsg = '\n\n'
-                LOGGER.info("Flow Check 2")
                 if fmsg != '\n\n':
                     if config_dict['SAVE_MSG']:
                         buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
@@ -408,7 +406,6 @@ class MirrorLeechListener:
                         await editMessage(self.linkslogmsg, (msg + BotTheme('LINKS_SOURCE', Source=self.source_url) + BotTheme('L_LL_MSG') + fmsg), buttons.build_menu(1))
                     else:
                         await sendMessage(self.message, msg + BotTheme('L_LL_MSG') + fmsg, buttons.build_menu(1))
-                LOGGER.info("Flow Check 3")
                 btn = ButtonMaker()
                 if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
                     await sendCustomMsg(self.message.from_user.id, msg + BotTheme('PM_BOT_MSG'), photo=self.random_pic)
