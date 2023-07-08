@@ -403,6 +403,7 @@ class MirrorLeechListener:
                     if config_dict['SAVE_MSG']:
                         buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                     if self.linkslogmsg:
+                        LOGGER.info(msg + self.leechlogmsg[1] + BotTheme('L_LL_MSG') + fmsg)
                         await editMessage(self.linkslogmsg[0], msg + self.leechlogmsg[1] + BotTheme('L_LL_MSG') + fmsg, buttons.build_menu(1))
                     else:
                         await sendMessage(self.message, msg + BotTheme('L_LL_MSG') + fmsg, buttons.build_menu(1))
@@ -410,7 +411,7 @@ class MirrorLeechListener:
                 if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
                     await sendCustomMsg(self.message.from_user.id, msg + BotTheme('PM_BOT_MSG'), photo=self.random_pic)
                     if self.isSuperGroup:
-                        btn.ubutton(BotTheme('CHECK_PM'), f"https://t.me/{bot_name}?start=start", 'header')
+                        btn.ubutton(BotTheme('CHECK_PM'), f"https://t.me/{bot_name}", 'header')
                         if self.linkslogmsg:
                             btn.ubutton(BotTheme('CHECK_LL'), self.linkslogmsg.link)
                         if self.source_url and config_dict['SOURCE_LINK']:
