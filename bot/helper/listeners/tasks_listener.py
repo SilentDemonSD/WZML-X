@@ -64,8 +64,6 @@ class MirrorLeechListener:
         self.random_pic = 'IMAGES'
         self.join = join
         self.linkslogmsg = None
-        self.leechlogmsg = None
-        self.mirrorlogmsg = None
         self.upload_details = {}
         self.source_url = source_url if source_url and source_url.startswith('http') else ("https://t.me/share/url?url=" + source_url) if source_url else message.link
         self.__setModeEng()

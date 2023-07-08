@@ -52,6 +52,7 @@ class TgUploader:
         self.__media_group = False
         self.__bot_pm = False
         self.__user_id = listener.message.from_user.id
+        self.__leechmsg = None
 
     async def __buttons(self, up_path):
         buttons = ButtonMaker()
@@ -68,7 +69,7 @@ class TgUploader:
 
     async def __copy_file(self):
         try:
-            if self.__bot_pm and (self.__listener.leechlogmsg or self.__listener.isSuperGroup):
+            if self.__bot_pm and (self.__leechmsg or self.__listener.isSuperGroup):
                 destination = 'Bot PM'
                 copied = await bot.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)        
                 if self.__has_buttons:
@@ -123,12 +124,11 @@ class TgUploader:
             if self.__bot_pm and self.__listener.isSuperGroup:
                 await sendCustomMsg(msg_user.id, BotTheme('L_PM_START', msg_link=self.__listener.source_url))
             try:
-                self.__sent_msg = await bot.send_message(chat_id=LEECH_LOG_ID, text=BotTheme('L_LOG_START', mention=msg_user.mention(style='HTML'), uid=msg_user.id, msg_link=msg_link if not config_dict['DELETE_LINKS'] else self.__listener.source_url),
-                                                            disable_web_page_preview=True, disable_notification=True)
+                self.__sent_msg = await sendCustomMsg(LEECH_LOG_ID, BotTheme('L_LOG_START', mention=msg_user.mention(style='HTML'), uid=msg_user.id, msg_link=msg_link if not config_dict['DELETE_LINKS'] else self.__listener.source_url))
             except Exception as er:
                 await self.__listener.onUploadError(str(er))
                 return False
-            self.__listener.leechlogmsg = self.__sent_msg
+            self.__leechmsg = self.__sent_msg
         elif IS_PREMIUM_USER:
             if not self.__listener.isSuperGroup:
                 await self.__listener.onUploadError('Use SuperGroup to leech with User Client! or Set LEECH_LOG_ID to Leech in PM')
@@ -210,7 +210,7 @@ class TgUploader:
                 self.__msgs_dict[m.link] = m.caption
         self.__sent_msg = msgs_list[-1]
         try:
-            if self.__bot_pm and (self.__listener.leechlogmsg or self.__listener.isSuperGroup):
+            if self.__bot_pm and (self.__leechmsg or self.__listener.isSuperGroup):
                 destination = 'Bot PM'
                 await bot.copy_media_group(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
             if self.__ldump:
@@ -286,6 +286,7 @@ class TgUploader:
             for subkey, msgs in list(value.items()):
                 if len(msgs) > 1:
                     await self.__send_media_group(subkey, key, msgs)
+        await self.__leechmsg.delete()
         if self.__is_cancelled:
             return
         if self.__listener.seed and not self.__listener.newDir:
@@ -331,7 +332,7 @@ class TgUploader:
                                                                        progress=self.__upload_progress,
                                                                        reply_markup=await self.__buttons(self.__up_path))
                 
-                if self.__prm_media and (self.__has_buttons or not self.__listener.leechlogmsg):
+                if self.__prm_media and (self.__has_buttons or not self.__leechmsg):
                     try:
                         self.__sent_msg = await bot.copy_message(nrml_media.chat.id, nrml_media.chat.id, nrml_media.id, reply_to_message_id=self.__sent_msg.id, reply_markup=await self.__buttons(self.__up_path))
                         if self.__sent_msg: await nrml_media.delete()
@@ -376,7 +377,7 @@ class TgUploader:
                                                                     disable_notification=True,
                                                                     progress=self.__upload_progress,
                                                                     reply_markup=await self.__buttons(self.__up_path))
-                if self.__prm_media and (self.__has_buttons or not self.__listener.leechlogmsg):
+                if self.__prm_media and (self.__has_buttons or not self.__leechmsg):
                     try:
                         self.__sent_msg = await bot.copy_message(nrml_media.chat.id, nrml_media.chat.id, nrml_media.id, reply_to_message_id=self.__sent_msg.id, reply_markup=await self.__buttons(self.__up_path))
                         if self.__sent_msg: await nrml_media.delete()

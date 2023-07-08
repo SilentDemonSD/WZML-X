@@ -98,8 +98,7 @@ class WZMLStyle:
     INDEX_LINK =      '⚡ Index Link'
     VIEW_LINK =       '🌐 View Link'
     CHECK_PM =        '📥 View in Bot PM'
-    CHECK_LL =        '🗂 View in Leech Log'
-    CHECK_ML =        '🗂 View in Mirror Log'
+    CHECK_LL =        '🖇 View in Links Log'
     MEDIAINFO_LINK =  '📃 MediaInfo'
     # ---------------------
 
