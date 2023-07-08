@@ -16,7 +16,7 @@ from aioshutil import copy
 from bot import config_dict, user_data, GLOBAL_EXTENSION_FILTER, bot, user, IS_PREMIUM_USER
 from bot.helper.themes import BotTheme
 from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.telegram_helper.message_utils import sendBot, chat_info
+from bot.helper.telegram_helper.message_utils import sendCustomMsg, chat_info
 from bot.helper.ext_utils.fs_utils import clean_unwanted, is_archive, get_base_name
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, sync_to_async
 from bot.helper.ext_utils.leech_utils import get_media_info, get_document_type, take_ss, get_mediainfo_link, format_filename
@@ -121,7 +121,7 @@ class TgUploader:
         msg_user = self.__listener.message.from_user
         if LEECH_LOG_ID := config_dict['LEECH_LOG_ID']:
             if self.__bot_pm and self.__listener.isSuperGroup:
-                await sendBot(self.__listener.message, BotTheme('L_PM_START', msg_link=self.__listener.source_url))
+                await sendCustomMsg(msg_user.id, BotTheme('L_PM_START', msg_link=self.__listener.source_url))
             try:
                 self.__sent_msg = await bot.send_message(chat_id=LEECH_LOG_ID, text=BotTheme('L_LOG_START', mention=msg_user.mention(style='HTML'), uid=msg_user.id, msg_link=msg_link if not config_dict['DELETE_LINKS'] else self.__listener.source_url),
                                                             disable_web_page_preview=True, disable_notification=True)
@@ -134,11 +134,11 @@ class TgUploader:
                 await self.__listener.onUploadError('Use SuperGroup to leech with User Client! or Set LEECH_LOG_ID to Leech in PM')
                 return False
             if self.__bot_pm:
-                await sendBot(self.__listener.message, BotTheme('L_PM_START', msg_link=self.__listener.source_url))
+                await sendCustomMsg(msg_user.id, BotTheme('L_PM_START', msg_link=self.__listener.source_url))
             self.__sent_msg = self.__listener.message
         else:
             if self.__bot_pm and self.__listener.isSuperGroup:
-                await sendBot(self.__listener.message, BotTheme('L_PM_START', msg_link=msg_link if not config_dict['DELETE_LINKS'] else self.__listener.source_url))
+                await sendCustomMsg(msg_user.id, BotTheme('L_PM_START', msg_link=msg_link if not config_dict['DELETE_LINKS'] else self.__listener.source_url))
             self.__sent_msg = self.__listener.message
         return True
 

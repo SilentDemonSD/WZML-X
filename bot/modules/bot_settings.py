@@ -355,6 +355,9 @@ async def load_config():
     FSUB_IDS = environ.get('FSUB_IDS', '')
     if len(FSUB_IDS) == 0:
         FSUB_IDS = ''
+    
+    LINKS_LOG_ID = environ.get('LINKS_LOG_ID', '')
+    LINKS_LOG_ID = '' if len(LINKS_LOG_ID) == 0 else int(LINKS_LOG_ID)
 
     MIRROR_LOG_ID = environ.get('MIRROR_LOG_ID', '')
     if len(MIRROR_LOG_ID) == 0:
@@ -554,6 +557,7 @@ async def load_config():
                         'DAILY_LEECH_LIMIT': DAILY_LEECH_LIMIT,
                         'MIRROR_LOG_ID': MIRROR_LOG_ID,
                         'LEECH_LOG_ID': LEECH_LOG_ID,
+                        'LINKS_LOG_ID': LINKS_LOG_ID,
                         'BOT_PM': BOT_PM,
                         'DISABLE_DRIVE_LINK': DISABLE_DRIVE_LINK,
                         'BOT_THEME': BOT_THEME,

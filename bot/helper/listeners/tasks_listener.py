@@ -30,7 +30,7 @@ from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.mirror_utils.upload_utils.pyrogramEngine import TgUploader
 from bot.helper.mirror_utils.upload_utils.ddlEngine import DDLUploader
 from bot.helper.mirror_utils.rclone_utils.transfer import RcloneTransferHelper
-from bot.helper.telegram_helper.message_utils import sendBot, sendMessage, delete_all_messages, delete_links, sendMultiMessage, update_all_messages
+from bot.helper.telegram_helper.message_utils import sendCustomMsg, sendMessage, delete_all_messages, delete_links, sendMultiMessage, update_all_messages
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.themes import BotTheme
@@ -63,7 +63,9 @@ class MirrorLeechListener:
         self.upPath = upPath
         self.random_pic = 'IMAGES'
         self.join = join
+        self.linkslogmsg = None
         self.leechlogmsg = None
+        self.mirrorlogmsg = None
         self.upload_details = {}
         self.source_url = source_url if source_url and source_url.startswith('http') else ("https://t.me/share/url?url=" + source_url) if source_url else message.link
         self.__setModeEng()
@@ -86,6 +88,8 @@ class MirrorLeechListener:
         self.upload_details['mode'] = mode
         
     async def onDownloadStart(self):
+        if config_dict['LINKS_LOG_ID']:
+            self.linkslogmsg = await sendCustomMsg(config_dict['LINKS_LOG_ID'], 'task started yeh')
         if self.isSuperGroup and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL:
             await DbManger().add_incomplete_task(self.message.chat.id, self.message.link, self.tag)
 
@@ -382,7 +386,7 @@ class MirrorLeechListener:
             else:
                 toPM = False
                 if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
-                    await sendBot(self.message, msg + BotTheme('PM_BOT_MSG'), photo=self.random_pic)
+                    await sendCustomMsg(self.message.from_user.id, msg + BotTheme('PM_BOT_MSG'), photo=self.random_pic)
                     if self.isSuperGroup:
                         btn = ButtonMaker()
                         if self.source_url and config_dict['SOURCE_LINK']:
@@ -468,7 +472,7 @@ class MirrorLeechListener:
 
 
             if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
-                await sendBot(self.message, msg, button, self.random_pic)
+                await sendCustomMsg(self.message.from_user.id, msg, button, self.random_pic)
                 nmsg = msg + BotTheme('M_BOT_MSG')
                 if button is not None:
                     if config_dict['SAVE_MSG']:
