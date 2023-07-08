@@ -82,7 +82,7 @@ class MirrorLeechListener:
     def __setModeEng(self):
         mode = 'Leech' if self.isLeech else 'Clone' if self.isClone else 'RClone' if self.upPath not in ['gd', 'ddl'] else 'DDL' if self.upPath != 'gd' else 'GDrive'
         mode += ' as Zip' if self.compress else ' as Unzip' if self.extract else ''
-        mode += f" | #{'qbit' if self.isQbit else 'ytdlp' if self.isYtdlp else 'gdrive' if (self.isClone or self.isGdrive) else 'mega' if self.isMega else 'aria2' if self.source_url and self.source_url != message.link else 'tg'}"
+        mode += f" | #{'qbit' if self.isQbit else 'ytdlp' if self.isYtdlp else 'gdrive' if (self.isClone or self.isGdrive) else 'mega' if self.isMega else 'aria2' if self.source_url and self.source_url != self.message.link else 'tg'}"
         self.upload_details['mode'] = mode
         
     async def onDownloadStart(self):
