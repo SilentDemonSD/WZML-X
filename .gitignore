@@ -9,6 +9,8 @@ data*
 log.txt
 accounts/*
 Thumbnails/*
+MediaInfo/*
+Images/*
 rclone/*
 list_drives.txt
 cookies.txt

@@ -6,7 +6,7 @@ from os import walk, path as ospath
 from time import time
 from PIL import Image
 from pyrogram.types import InputMediaVideo, InputMediaDocument, InlineKeyboardMarkup
-from pyrogram.errors import FloodWait, RPCError, PeerIdInvalid, MessageNotModified
+from pyrogram.errors import FloodWait, RPCError, PeerIdInvalid, MessageNotModified, ChannelInvalid
 from asyncio import sleep
 from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type, RetryError
 from re import match as re_match, sub as re_sub
@@ -44,6 +44,7 @@ class TgUploader:
         self.__media_dict = {'videos': {}, 'documents': {}}
         self.__last_msg_in_group = False
         self.__prm_media = False
+        self.__client = bot
         self.__up_path = ''
         self.__ldump = ''
         self.__mediainfo = False
@@ -190,7 +191,7 @@ class TgUploader:
 
     async def __switching_client(self):
         LOGGER.info(f'Uploading Media {">" if self.__prm_media else "<"} 2GB by {"User" if self.__prm_media else "Bot"} Client')
-        self.__sent_msg._client = user if (self.__prm_media and IS_PREMIUM_USER and self.__sent_msg._client.me.is_bot) else bot
+        self.__client = user if (self.__prm_media and IS_PREMIUM_USER and self.__sent_msg._client.me.is_bot) else bot
 
     async def __send_media_group(self, subkey, key, msgs):
         msgs_list = await msgs[0].reply_to_message.reply_media_group(media=self.__get_input_media(subkey, key),
@@ -289,7 +290,6 @@ class TgUploader:
                     await self.__send_media_group(subkey, key, msgs)
         if self.__is_cancelled:
             return
-        self.__listener.message._client = bot
         if self.__listener.seed and not self.__listener.newDir:
             await clean_unwanted(self.__path)
         if self.__total_files == 0:
@@ -323,8 +323,9 @@ class TgUploader:
                     thumb = await take_ss(self.__up_path, None)
                 if self.__is_cancelled:
                     return
-                nrml_media = await self.__sent_msg.reply_document(document=self.__up_path,
-                                                                       quote=True,
+                nrml_media = await self.__client.send_document(chat_id=self.__sent_msg.chat.id,
+                                                                       reply_to_message_id=self.__sent_msg.id,
+                                                                       document=self.__up_path,
                                                                        thumb=thumb,
                                                                        caption=cap_mono,
                                                                        force_document=True,
@@ -335,7 +336,7 @@ class TgUploader:
                 if self.__prm_media and (self.__has_buttons or not self.__listener.leechlogmsg):
                     try:
                         self.__sent_msg = await bot.copy_message(nrml_media.chat.id, nrml_media.chat.id, nrml_media.id, reply_to_message_id=self.__sent_msg.id, reply_markup=await self.__buttons(self.__up_path))
-                        await nrml_media.delete()
+                        if self.__sent_msg: await nrml_media.delete()
                     except:
                         self.__sent_msg = nrml_media
                 else:
@@ -365,8 +366,9 @@ class TgUploader:
                         self.__up_path = new_path
                 if self.__is_cancelled:
                     return
-                nrml_media = await self.__sent_msg.reply_video(video=self.__up_path,
-                                                                    quote=True,
+                nrml_media = await self.__client.send_video(chat_id=self.__sent_msg.chat.id,
+                                                                    reply_to_message_id=self.__sent_msg.id,
+                                                                    video=self.__up_path,
                                                                     caption=cap_mono,
                                                                     duration=duration,
                                                                     width=width,
@@ -379,7 +381,7 @@ class TgUploader:
                 if self.__prm_media and (self.__has_buttons or not self.__listener.leechlogmsg):
                     try:
                         self.__sent_msg = await bot.copy_message(nrml_media.chat.id, nrml_media.chat.id, nrml_media.id, reply_to_message_id=self.__sent_msg.id, reply_markup=await self.__buttons(self.__up_path))
-                        await nrml_media.delete()
+                        if self.__sent_msg: await nrml_media.delete()
                     except:
                         self.__sent_msg = nrml_media
                 else:
@@ -389,8 +391,9 @@ class TgUploader:
                 duration, artist, title = await get_media_info(self.__up_path)
                 if self.__is_cancelled:
                     return
-                self.__sent_msg = await self.__sent_msg.reply_audio(audio=self.__up_path,
-                                                                    quote=True,
+                self.__sent_msg = await self.__client.send_audio(chat_id=self.__sent_msg.chat.id,
+                                                                    reply_to_message_id=self.__sent_msg.id,
+                                                                    audio=self.__up_path,
                                                                     caption=cap_mono,
                                                                     duration=duration,
                                                                     performer=artist,
@@ -403,8 +406,9 @@ class TgUploader:
                 key = 'photos'
                 if self.__is_cancelled:
                     return
-                self.__sent_msg = await self.__sent_msg.reply_photo(photo=self.__up_path,
-                                                                    quote=True,
+                self.__sent_msg = await self.__client.send_photo(chat_id=self.__sent_msg.chat.id,
+                                                                    reply_to_message_id=self.__sent_msg.id,
+                                                                    photo=self.__up_path,
                                                                     caption=cap_mono,
                                                                     disable_notification=True,
                                                                     progress=self.__upload_progress,
@@ -453,5 +457,4 @@ class TgUploader:
     async def cancel_download(self):
         self.__is_cancelled = True
         LOGGER.info(f"Cancelling Upload: {self.name}")
-        self.__listener.message._client = bot
         await self.__listener.onUploadError('Your Upload has been Stopped!')

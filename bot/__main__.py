@@ -113,6 +113,7 @@ async def start(client, message):
     else:
         await sendMessage(message, BotTheme('ST_UNAUTH'), reply_markup, photo='IMAGES')
 
+
 async def token_callback(_, query):
     user_id = query.from_user.id
     input_token = query.data.split()[1]
@@ -125,7 +126,8 @@ async def token_callback(_, query):
     kb = query.message.reply_markup.inline_keyboard[1:]
     kb.insert(0, [InlineKeyboardButton('✅️ Activated ✅', callback_data='pass activated')])
     await query.edit_message_reply_markup(InlineKeyboardMarkup(kb))
-    
+
+
 async def login(_, message):
     if config_dict['LOGIN_PASS'] is None:
         return
@@ -141,6 +143,7 @@ async def login(_, message):
             return await sendMessage(message, '<b>Invalid Password!</b>\n\nKindly put the correct Password .')
     else:
         await sendMessage(message, '<b>Bot Login Usage :</b>\n\n<code>/cmd {password}</code>')
+
 
 async def restart(client, message):
     restart_message = await sendMessage(message, BotTheme('RESTARTING'))

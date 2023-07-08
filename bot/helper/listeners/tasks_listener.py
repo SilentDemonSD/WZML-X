@@ -82,7 +82,7 @@ class MirrorLeechListener:
     def __setModeEng(self):
         mode = 'Leech' if self.isLeech else 'Clone' if self.isClone else 'RClone' if self.upPath not in ['gd', 'ddl'] else 'DDL' if self.upPath != 'gd' else 'GDrive'
         mode += ' as Zip' if self.compress else ' as Unzip' if self.extract else ''
-        mode += f" | #{'qbit' if self.isQbit else 'ytdlp' if self.isYtdlp else 'gdrive' if (self.isClone or self.isGdrive) else 'mega' if self.isMega else 'aria2' if self.source_url else 'tg'}"
+        mode += f" | #{'qbit' if self.isQbit else 'ytdlp' if self.isYtdlp else 'gdrive' if (self.isClone or self.isGdrive) else 'mega' if self.isMega else 'aria2' if self.source_url and self.source_url != message.link else 'tg'}"
         self.upload_details['mode'] = mode
         
     async def onDownloadStart(self):
@@ -387,8 +387,6 @@ class MirrorLeechListener:
                         toPM = True
                         await sendMessage(self.message, msg + BotTheme('L_BOT_MSG'), btn.build_menu(2), self.random_pic)
                 msg += BotTheme('L_LL_MSG')
-                if self.leechlogmsg:
-                    self.leechlogmsg._client = bot
                 fmsg = '\n\n'
                 for index, (link, name) in enumerate(files.items(), start=1):
                     fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
@@ -500,7 +498,7 @@ class MirrorLeechListener:
                 await start_from_queued()
                 return
 
-        # await clean_download(self.dir)
+        await clean_download(self.dir)
         async with download_dict_lock:
             if self.uid in download_dict.keys():
                 del download_dict[self.uid]

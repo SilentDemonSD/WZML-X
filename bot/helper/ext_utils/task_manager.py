@@ -191,14 +191,14 @@ async def limit_checker(size, listener, isTorrent=False, isMega=False, isDriveLi
 
 
 async def task_utils(message):
-    LOGGER.info('Checking Task Utilities ...')
+    LOGGER.info('Running Task Manager ...')
     msg = []
     button = None
 
     token_msg, button = checking_access(message.from_user.id, button)
     if token_msg is not None:
         msg.append(token_msg)
-    if message.chat.type != message.chat.type.PRIVATE:
+    if message.chat.type != message.chat.type.BOT:
         if ids := config_dict['FSUB_IDS']:
             _msg, button = await forcesub(message, ids, button)
             if _msg:
@@ -207,10 +207,9 @@ async def task_utils(message):
         user_dict = user_data.get(user_id, {})
         user = await user_info(message._client, message.from_user.id)
         if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
-            if user.status == user.status.LONG_AGO:
-                _msg, button = await BotPm_check(message, button)
-                if _msg:
-                    msg.append(_msg)
+            _msg, button = await BotPm_check(message, button)
+            if _msg:
+                msg.append(_msg)
     if (bmax_tasks := config_dict['BOT_MAX_TASKS']) and len(download_dict) >= bmax_tasks:
         msg.append(f"Bot Max Tasks limit exceeded.\nBot max tasks limit is {bmax_tasks}.\nPlease wait for the completion of other tasks.")
     if (maxtask := config_dict['USER_MAX_TASKS']) and await get_user_tasks(message.from_user.id, maxtask):
