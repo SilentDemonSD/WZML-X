@@ -67,7 +67,7 @@ class WZMLStyle:
     LINKS_START = """<b><i>Task Started</i></b>
 ┠ <b>On:</b> {On}
 ┠ <b>Mode:</b> {Mode}
-┖ <b>By:</b> {Tag}}"""
+┖ <b>By:</b> {Tag}"""
     LINKS_SOURCE = """➲ <b>Source:</b>
 ------------------------------------------
 <code>{Source}</code>
