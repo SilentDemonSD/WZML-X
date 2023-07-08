@@ -63,6 +63,16 @@ class WZMLStyle:
     PING_VALUE = '<b>Pong</b>\n<code>{value} ms..</code>'
     # ---------------------
 
+    # async def onDownloadStart(self): --> tasks_listener.py
+    LINKS_START = """<b><i>Task Started</i></b>
+┠ <b>On:</b> {On}
+┠ <b>Mode:</b> {Mode}
+┖ <b>By:</b> {Tag}}"""
+    LINKS_SOURCE = """➲ <b>Source:</b>
+------------------------------------------
+<code>{Source}</code>
+------------------------------------------"""
+    
     # async def __msg_to_reply(self): ---> pyrogramEngine.py
     L_PM_START =            "➲ <b><u>Leech Started :</u></b>\n┃\n┖ <b>Link:</b> <a href='{msg_link}'>Click Here</a>"
     L_LOG_START =           "➲ <b><u>Leech Started :</u></b>\n┃\n┠ <b>User :</b> {mention} ( #ID{uid} )\n┖ <b>Source :</b> <a href='{msg_link}'>Click Here</a>"

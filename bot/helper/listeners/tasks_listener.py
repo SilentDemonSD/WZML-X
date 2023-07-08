@@ -65,7 +65,7 @@ class MirrorLeechListener:
         self.upPath = upPath
         self.random_pic = 'IMAGES'
         self.join = join
-        self.linkslogmsg = None
+        self.linkslogmsg = []
         self.upload_details = {}
         self.source_url = source_url if source_url and source_url.startswith('http') else ("https://t.me/share/url?url=" + source_url) if source_url else message.link
         self.__setModeEng()
@@ -82,22 +82,16 @@ class MirrorLeechListener:
             pass
 
     def __setModeEng(self):
-        mode = 'Leech' if self.isLeech else 'Clone' if self.isClone else 'RClone' if self.upPath not in ['gd', 'ddl'] else 'DDL' if self.upPath != 'gd' else 'GDrive'
+        mode = f" #{'Leech' if self.isLeech else 'Clone' if self.isClone else 'RClone' if self.upPath not in ['gd', 'ddl'] else 'DDL' if self.upPath != 'gd' else 'GDrive'}"
         mode += ' as Zip' if self.compress else ' as Unzip' if self.extract else ''
         mode += f" | #{'qbit' if self.isQbit else 'ytdlp' if self.isYtdlp else 'gdrive' if (self.isClone or self.isGdrive) else 'mega' if self.isMega else 'aria2' if self.source_url and self.source_url != self.message.link else 'tg'}"
         self.upload_details['mode'] = mode
         
     async def onDownloadStart(self):
         if config_dict['LINKS_LOG_ID']:
-            self.linkslogmsg = await sendCustomMsg(config_dict['LINKS_LOG_ID'], f"""<b><i>Task Started</i></b>
-┠ <b>On:</b> {datetime.now(timezone(config_dict['TIMEZONE'])).strftime('At %d/%m/%y, %I:%M:%S %p')}
-┠ <b>Mode:</b> {self.upload_details['mode']}
-┖ <b>By:</b> {self.tag}
-
-➲ <b>Source:</b>
-------------------------------------------
-<code>{self.source_url}</code>
-------------------------------------------""")
+            dispTime = datetime.now(timezone(config_dict['TIMEZONE'])).strftime('At %d/%m/%y, %I:%M:%S %p')
+            self.linkslogmsg = [await sendCustomMsg(config_dict['LINKS_LOG_ID'], BotTheme('LINKS_START', On=dispTime, Mode=self.upload_details['mode'], Tag=self.tag) + BotTheme('LINKS_SOURCE', Source=self.source_url)),
+                                BotTheme('LINKS_SOURCE', Source=self.source_url)]
         if self.isSuperGroup and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL:
             await DbManger().add_incomplete_task(self.message.chat.id, self.message.link, self.tag)
 
@@ -400,27 +394,31 @@ class MirrorLeechListener:
                         if config_dict['SAVE_MSG']:
                             buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                         if self.linkslogmsg:
-                            log_msg = await sendMessage(self.linkslogmsg if self.linkslogmsg else self.message, msg + BotTheme('L_LL_MSG') + fmsg, buttons.build_menu(1))
+                            await editMessage(self.linkslogmsg[0], msg + self.leechlogmsg[1] + BotTheme('L_LL_MSG') + fmsg, buttons.build_menu(1))
+                        else:
+                            await sendMessage(self.message, msg + BotTheme('L_LL_MSG') + fmsg, buttons.build_menu(1))
                         await sleep(1)
                         fmsg = '\n\n'
                 if fmsg != '\n\n':
                     if config_dict['SAVE_MSG']:
                         buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                     if self.linkslogmsg:
-                        log_msg = await sendMessage(self.linkslogmsg if self.linkslogmsg else self.message, msg + BotTheme('L_LL_MSG') + fmsg, buttons.build_menu(1))
+                        await editMessage(self.linkslogmsg[0], msg + self.leechlogmsg[1] + BotTheme('L_LL_MSG') + fmsg, buttons.build_menu(1))
+                    else:
+                        await sendMessage(self.message, msg + BotTheme('L_LL_MSG') + fmsg, buttons.build_menu(1))
                 btn = ButtonMaker()
                 if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
                     await sendCustomMsg(self.message.from_user.id, msg + BotTheme('PM_BOT_MSG'), photo=self.random_pic)
                     if self.isSuperGroup:
                         btn.ubutton(BotTheme('CHECK_PM'), f"https://t.me/{bot_name}?start=start", 'header')
                         if self.linkslogmsg:
-                            btn.ubutton(BotTheme('CHECK_LL'), log_msg.link)
+                            btn.ubutton(BotTheme('CHECK_LL'), self.linkslogmsg.link)
                         if self.source_url and config_dict['SOURCE_LINK']:
                             btn.ubutton(BotTheme('SOURCE_URL'), self.source_url)
                         btn = extra_btns(btn)
                         await sendMessage(self.message, msg + BotTheme('L_BOT_MSG'), btn.build_menu(2), self.random_pic)
                 elif self.linkslogmsg:
-                    btn.ubutton(BotTheme('CHECK_LL'), log_msg.link)
+                    btn.ubutton(BotTheme('CHECK_LL'), self.linkslogmsg.link)
                     if self.source_url and config_dict['SOURCE_LINK']:
                         btn.ubutton(BotTheme('SOURCE_URL'), self.source_url)
                     btn = extra_btns(btn)
