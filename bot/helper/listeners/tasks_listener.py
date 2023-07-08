@@ -89,7 +89,14 @@ class MirrorLeechListener:
         
     async def onDownloadStart(self):
         if config_dict['LINKS_LOG_ID']:
-            self.linkslogmsg = await sendCustomMsg(config_dict['LINKS_LOG_ID'], 'task started yeh')
+            self.linkslogmsg = await sendCustomMsg(config_dict['LINKS_LOG_ID'], f"""<b>Task Started by {self.tag}</b>
+Mode: {self.upload_details["mode"]}
+On:
+
+Source:
+--------------------
+{self.source_url}
+--------------------""")
         if self.isSuperGroup and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL:
             await DbManger().add_incomplete_task(self.message.chat.id, self.message.link, self.tag)
 
@@ -405,8 +412,8 @@ class MirrorLeechListener:
                             buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                         if self.source_url and config_dict['SOURCE_LINK']:
                             buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
-                        if self.leechlogmsg or not toPM:
-                            log_msg = await sendMessage(self.leechlogmsg if self.leechlogmsg else self.message, msg + fmsg, buttons.build_menu(1), self.random_pic)
+                        if self.linkslogmsg or not toPM:
+                            log_msg = await sendMessage(self.linkslogmsg if self.linkslogmsg else self.message, msg + fmsg, buttons.build_menu(1), self.random_pic)
                         await sleep(1)
                         fmsg = '\n\n'
                 if fmsg != '\n\n':
@@ -414,9 +421,9 @@ class MirrorLeechListener:
                         buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                     if self.source_url and config_dict['SOURCE_LINK']:
                         buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
-                    if self.leechlogmsg or not toPM:
-                        log_msg = await sendMessage(self.leechlogmsg if self.leechlogmsg else self.message, msg + fmsg, buttons.build_menu(1), self.random_pic)
-                if self.leechlogmsg and not (config_dict['BOT_PM'] or user_dict.get('bot_pm')):
+                    if self.linkslogmsg or not toPM:
+                        log_msg = await sendMessage(self.linkslogmsg if self.linkslogmsg else self.message, msg + fmsg, buttons.build_menu(1), self.random_pic)
+                if self.linkslogmsg and not (config_dict['BOT_PM'] or user_dict.get('bot_pm')):
                     buttons = ButtonMaker()
                     buttons.ubutton(BotTheme('CHECK_LL'), log_msg.link)
                     await sendMessage(self.message, msg, buttons.build_menu(1), self.random_pic)
