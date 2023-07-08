@@ -220,10 +220,10 @@ help_string = f'''<b><i>㊂ Help Guide :</i></b>
 ➥ /{BotCommands.YtdlLeechCommand[0]} or /{BotCommands.YtdlLeechCommand[1]}: Download using Yt-Dlp(supported link) and upload to telegram.
 
 <b>G-Drive commands:</b>
-➥ /{BotCommands.CloneCommand}: Copy file/folder to Cloud Drive.
+➥ /{BotCommands.CloneCommand[0]}: Copy file/folder to Cloud Drive.
 ➥ /{BotCommands.CountCommand} [drive_url]: Count file/folder of Google Drive.
 ➥ /{BotCommands.DeleteCommand} [drive_url]: Delete file/folder from Google Drive (Only Owner & Sudo).
-➥ /{BotCommands.GDCleanCommand} [drive_id]: Delete all files from specific folder in Google Drive.
+➥ /{BotCommands.GDCleanCommand[0]} or /{BotCommands.GDCleanCommand[1]} [drive_id]: Delete all files from specific folder in Google Drive.
 
 <b>Cancel Tasks:</b>
 ➥ /{BotCommands.CancelMirror}: Cancel task by cancel_gid or reply.
@@ -240,20 +240,20 @@ help_string = f'''<b><i>㊂ Help Guide :</i></b>
 
 <b>Authentication:</b>
 ➥ /login: Login to Bot to Access Bot without Temp Pass System (Private)
-➥ /{BotCommands.AuthorizeCommand}: Authorize a chat or a user to use the bot (Only Owner & Sudo).
-➥ /{BotCommands.UnAuthorizeCommand}: Unauthorize a chat or a user to use the bot (Only Owner & Sudo).
+➥ /{BotCommands.AuthorizeCommand[0]} or /{BotCommands.AuthorizeCommand[1]}: Authorize a chat or a user to use the bot (Only Owner & Sudo).
+➥ /{BotCommands.UnAuthorizeCommand[0]} or /{BotCommands.UnAuthorizeCommand[1]}: Unauthorize a chat or a user to use the bot (Only Owner & Sudo).
 ➥ /{BotCommands.AddSudoCommand}: Add sudo user (Only Owner).
 ➥ /{BotCommands.RmSudoCommand}: Remove sudo users (Only Owner).
 
 <b>Bot Stats:</b>
 ➥ /{BotCommands.BroadcastCommand[0]} or /{BotCommands.BroadcastCommand[1]} [reply_msg]: Broadcast to PM users who have started the bot anytime.
 ➥ /{BotCommands.StatusCommand[0]} or /{BotCommands.StatusCommand[1]}: Shows a status page of all active tasks.
-➥ /{BotCommands.StatsCommand}: Show Server detailed stats.
-➥ /{BotCommands.PingCommand}: Check how long it takes to Ping the Bot.
+➥ /{BotCommands.StatsCommand[0]} or /{BotCommands.StatsCommand[1]}: Show Server detailed stats.
+➥ /{BotCommands.PingCommand[0]} or /{BotCommands.PingCommand[1]}: Check how long it takes to Ping the Bot.
 
 <b>Maintainance:</b>
-➥ /{BotCommands.RestartCommand[0]}: Restart and Update the Bot (Only Owner & Sudo).
-➥ /{BotCommands.RestartCommand[1]}: Restart and Update all Bots (Only Owner & Sudo).
+➥ /{BotCommands.RestartCommand[0]} or /{BotCommands.RestartCommand[1]}: Restart and Update the Bot (Only Owner & Sudo).
+➥ /{BotCommands.RestartCommand[2]}: Restart and Update all Bots (Only Owner & Sudo).
 ➥ /{BotCommands.LogCommand}: Get a log file of the bot. Handy for getting crash reports (Only Owner & Sudo).
 
 <b>Executors:</b>
@@ -264,10 +264,10 @@ help_string = f'''<b><i>㊂ Help Guide :</i></b>
 ➥ /exportsession: Generate User StringSession of Same Pyro Version (Only Owner).
 
 <b>Extras:</b>
-➥ /{BotCommands.SpeedCommand}: Check Speed in VPS/Server.
+➥ /{BotCommands.SpeedCommand[0]} or /{BotCommands.SpeedCommand[1]}: Check Speed in VPS/Server.
 ➥ /{BotCommands.AddImageCommand} [url/photo]: Add Images in Bot
 ➥ /{BotCommands.ImagesCommand}: Generate grid of Stored Images.
-➥ /{BotCommands.MediaInfoCommand} [url/media]: Generate MediaInfo of Media or DL Urls
+➥ /{BotCommands.MediaInfoCommand[0]} or /{BotCommands.MediaInfoCommand[1]} [url/media]: Generate MediaInfo of Media or DL Urls
 
 <b>Movie/TV Shows/Drama Search:</b>
 ➥ /{BotCommands.IMDBCommand}: Search in IMDB.

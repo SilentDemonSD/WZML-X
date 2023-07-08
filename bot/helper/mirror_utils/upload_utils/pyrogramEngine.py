@@ -55,8 +55,11 @@ class TgUploader:
 
     async def __buttons(self, up_path):
         buttons = ButtonMaker()
-        if self.__mediainfo:
-            buttons.ubutton(BotTheme('MEDIAINFO_LINK'), await get_mediainfo_link(up_path))
+        try:
+            if self.__mediainfo:
+                buttons.ubutton(BotTheme('MEDIAINFO_LINK'), await get_mediainfo_link(up_path))
+        except Exception as e:
+            LOGGER.error("MediaInfo Error: "+str(e))
         if config_dict['SAVE_MSG'] and (config_dict['LEECH_LOG_ID'] or not self.__listener.isPrivate):
             buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
         if self.__has_buttons:
@@ -85,7 +88,7 @@ class TgUploader:
                                 await dump_copy.edit_reply_markup(self.__sent_msg.reply_markup)
                             except MessageNotModified:
                                 pass
-                    except PeerIdInvalid as e:
+                    except (ChannelInvalid, PeerIdInvalid) as e:
                         LOGGER.error(f"{e.NAME}: {e.MESSAGE} for {channel_id}")
                         continue
         except Exception as err:
@@ -139,7 +142,7 @@ class TgUploader:
         return True
 
     async def __prepare_file(self, prefile_, dirpath):
-        cap_mono, file_ = await format_filename(prefile_, self.__user_id, dirpath)
+        file_, cap_mono = await format_filename(prefile_, self.__user_id, dirpath)
         if prefile_ != file_:
             if self.__listener.seed and not self.__listener.newDir and not dirpath.endswith("/splited_files_mltb"):
                 dirpath = f'{dirpath}/copied_mltb'
@@ -212,16 +215,10 @@ class TgUploader:
             if self.__ldump:
                 destination = 'Dump'
                 for channel_id in self.__ldump.split():
-                    if channel_id.startswith('-100'):
-                        channel_id = int(channel_id)
-                    elif channel_id.startswith('@'):
-                        channel_id = channel_id.replace('@', '')
-                    else:
-                        continue
+                    dump_chat = await chat_info(channel_id)
                     try:
-                        chat = await bot.get_chat(channel_id)
-                        await bot.copy_media_group(chat_id=chat.id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
-                    except PeerIdInvalid as e:
+                        await bot.copy_media_group(chat_id=dump_chat.id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
+                    except (ChannelInvalid, PeerIdInvalid) as e:
                         LOGGER.error(f"{e.NAME}: {e.MESSAGE} for {channel_id}")
                         continue
         except Exception as err:
