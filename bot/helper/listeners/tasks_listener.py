@@ -400,14 +400,14 @@ class MirrorLeechListener:
                         if config_dict['SAVE_MSG']:
                             buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                         if self.linkslogmsg:
-                            log_msg = await sendMessage(self.linkslogmsg if self.linkslogmsg else self.message, BotTheme('L_LL_MSG')+msg + fmsg, buttons.build_menu(1))
+                            log_msg = await sendMessage(self.linkslogmsg if self.linkslogmsg else self.message, msg + BotTheme('L_LL_MSG') + fmsg, buttons.build_menu(1))
                         await sleep(1)
                         fmsg = '\n\n'
                 if fmsg != '\n\n':
                     if config_dict['SAVE_MSG']:
                         buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                     if self.linkslogmsg:
-                        log_msg = await sendMessage(self.linkslogmsg if self.linkslogmsg else self.message, BotTheme('L_LL_MSG')+msg + fmsg, buttons.build_menu(1))
+                        log_msg = await sendMessage(self.linkslogmsg if self.linkslogmsg else self.message, msg + BotTheme('L_LL_MSG') + fmsg, buttons.build_menu(1))
                 btn = ButtonMaker()
                 if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
                     await sendCustomMsg(self.message.from_user.id, msg + BotTheme('PM_BOT_MSG'), photo=self.random_pic)
@@ -424,7 +424,7 @@ class MirrorLeechListener:
                     if self.source_url and config_dict['SOURCE_LINK']:
                         btn.ubutton(BotTheme('SOURCE_URL'), self.source_url)
                     btn = extra_btns(btn)
-                    await sendMessage(self.message, BotTheme('L_LL_MSG')+msg, btn.build_menu(2), self.random_pic)
+                    await sendMessage(self.message, msg + BotTheme('L_LL_MSG'), btn.build_menu(2), self.random_pic)
                     
             if self.seed:
                 if self.newDir:
