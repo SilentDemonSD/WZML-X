@@ -65,7 +65,7 @@ class MirrorLeechListener:
         self.upPath = upPath
         self.random_pic = 'IMAGES'
         self.join = join
-        self.linkslogmsg = []
+        self.linkslogmsg = None
         self.upload_details = {}
         self.source_url = source_url if source_url and source_url.startswith('http') else ("https://t.me/share/url?url=" + source_url) if source_url else message.link
         self.__setModeEng()
@@ -90,8 +90,7 @@ class MirrorLeechListener:
     async def onDownloadStart(self):
         if config_dict['LINKS_LOG_ID']:
             dispTime = datetime.now(timezone(config_dict['TIMEZONE'])).strftime('At %d/%m/%y, %I:%M:%S %p')
-            self.linkslogmsg = [await sendCustomMsg(config_dict['LINKS_LOG_ID'], BotTheme('LINKS_START', On=dispTime, Mode=self.upload_details['mode'], Tag=self.tag) + BotTheme('LINKS_SOURCE', Source=self.source_url)),
-                                BotTheme('LINKS_SOURCE', Source=self.source_url)]
+            self.linkslogmsg = await sendCustomMsg(config_dict['LINKS_LOG_ID'], BotTheme('LINKS_START', On=dispTime, Mode=self.upload_details['mode'], Tag=self.tag) + BotTheme('LINKS_SOURCE', Source=self.source_url))
         if self.isSuperGroup and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL:
             await DbManger().add_incomplete_task(self.message.chat.id, self.message.link, self.tag)
 
@@ -386,6 +385,7 @@ class MirrorLeechListener:
                     msg += BotTheme('PM_BOT_MSG')
                 await sendMessage(self.message, msg, photo=self.random_pic)
             else:
+                LOGGER.info("Flow Check 1")
                 fmsg = '\n\n'
                 for index, (link, name) in enumerate(files.items(), start=1):
                     fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
@@ -394,19 +394,21 @@ class MirrorLeechListener:
                         if config_dict['SAVE_MSG']:
                             buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                         if self.linkslogmsg:
-                            await editMessage(self.linkslogmsg[0], msg + self.leechlogmsg[1] + BotTheme('L_LL_MSG') + fmsg, buttons.build_menu(1))
+                            await editMessage(self.linkslogmsg, msg + BotTheme('LINKS_SOURCE', Source=self.source_url) + BotTheme('L_LL_MSG') + fmsg, buttons.build_menu(1))
                         else:
                             await sendMessage(self.message, msg + BotTheme('L_LL_MSG') + fmsg, buttons.build_menu(1))
                         await sleep(1)
                         fmsg = '\n\n'
+                LOGGER.info("Flow Check 2")
                 if fmsg != '\n\n':
                     if config_dict['SAVE_MSG']:
                         buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                     if self.linkslogmsg:
-                        LOGGER.info(msg + self.leechlogmsg[1] + BotTheme('L_LL_MSG') + fmsg)
-                        await editMessage(self.linkslogmsg[0], msg + self.leechlogmsg[1] + BotTheme('L_LL_MSG') + fmsg, buttons.build_menu(1))
+                        LOGGER.info(msg + BotTheme('LINKS_SOURCE', Source=self.source_url) + BotTheme('L_LL_MSG') + fmsg)
+                        await editMessage(self.linkslogmsg, (msg + BotTheme('LINKS_SOURCE', Source=self.source_url) + BotTheme('L_LL_MSG') + fmsg), buttons.build_menu(1))
                     else:
                         await sendMessage(self.message, msg + BotTheme('L_LL_MSG') + fmsg, buttons.build_menu(1))
+                LOGGER.info("Flow Check 3")
                 btn = ButtonMaker()
                 if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
                     await sendCustomMsg(self.message.from_user.id, msg + BotTheme('PM_BOT_MSG'), photo=self.random_pic)
