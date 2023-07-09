@@ -68,7 +68,7 @@ class WZMLStyle:
 ┠ <b>Mode:</b> {Mode}
 ┖ <b>By:</b> {Tag}\n\n"""
     LINKS_SOURCE = """➲ <b>Source:</b>
-<bAdded On:</b> {On}
+┖ <b>Added On:</b> {On}
 ------------------------------------------
 <code>{Source}</code>
 ------------------------------------------\n\n"""
