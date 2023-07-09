@@ -515,23 +515,41 @@ def terabox(url) -> str:
         raise DirectDownloadLinkException("ERROR: terabox.txt not found")
     session = create_scraper()
     try:
-        res = session.request('GET', url)
-        key = res.url.split('?surl=')[-1]
         jar = MozillaCookieJar('terabox.txt')
         jar.load()
+        cookie_string = ''
+        for cookie in jar: cookie_string += f'{cookie.name}={cookie.value}; '
         session.cookies.update(jar)
+        res = session.request('GET', url)
+        key = res.url.split('?surl=')[-1]
+        soup = BeautifulSoup(res.content, 'lxml')
+        jsToken = None
+        for fs in soup.find_all('script'):
+            fstring = fs.string
+            if fstring and fstring.startswith('try {eval(decodeURIComponent'):
+                jsToken = fstring.split('%22')[1]
+        headers = {"Cookie": cookie_string}
         res = session.request(
-            'GET', f'https://www.terabox.com/share/list?app_id=250528&shorturl={key}&root=1')
-        result = res.json()['list']
+            'GET', f'https://www.terabox.com/share/list?app_id=250528&jsToken={jsToken}&shorturl={key}&root=1', headers=headers)
+        result = res.json()
     except Exception as e:
         raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}")
+    if result['errno'] != 0: raise DirectDownloadLinkException(f"ERROR: '{result['errmsg']}' Check cookies")
+    result = result['list']
     if len(result) > 1:
         raise DirectDownloadLinkException(
             "ERROR: Can't download mutiple files")
     result = result[0]
+    
     if result['isdir'] != '0':
         raise DirectDownloadLinkException("ERROR: Can't download folder")
-    return result['dlink']
+    
+    try:
+        dlink = result['dlink']
+    except Exception as e:
+        raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}, Check cookies")
+
+    return dlink
 
 
 def filepress(url):
