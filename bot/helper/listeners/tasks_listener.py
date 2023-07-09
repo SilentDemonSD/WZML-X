@@ -486,8 +486,8 @@ class MirrorLeechListener:
                     buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                     button = buttons.build_menu(2)
                 log_msg = list((await sendMultiMessage(config_dict['MIRROR_LOG_ID'], msg, button, self.random_pic)).values())[0]
-                if self.leechlogmsg:
-                    await editMessage(self.leechlogmsg, (msg + BotTheme('LINKS_SOURCE', On=dispTime, Source=self.source_url) + BotTheme('L_LL_MSG') + f"\n\n<a href='{log_msg.link}'>{escape(name)}</a>\n"))
+                if self.linkslogmsg:
+                    await editMessage(self.linkslogmsg, (msg + BotTheme('LINKS_SOURCE', On=dispTime, Source=self.source_url) + BotTheme('L_LL_MSG') + f"\n\n<a href='{log_msg.link}'>{escape(name)}</a>\n"))
 
             if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
                 await sendCustomMsg(self.message.from_user.id, msg, button, self.random_pic)
