@@ -84,12 +84,14 @@ class TgUploader:
                 for chat_id, msg in list(self.__leechmsg.items())[1:]:
                     destination = f'Leech Log: {chat_id}'
                     self.__leechmsg[chat_id] = await bot.copy_message(chat_id=chat_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id, reply_to_message_id=msg.id)
+                    if msg.text:
+                        await msg.delete()
                     if self.__has_buttons:
                         try:
                             await self.__leechmsg[chat_id].edit_reply_markup(self.__sent_msg.reply_markup)
                         except MessageNotModified:
                             pass
-            LOGGER.info("Flow Check")
+
             if self.__ldump:
                 destination = 'User Dump'
                 for channel_id in self.__ldump.split():
@@ -237,6 +239,7 @@ class TgUploader:
         res = await self.__msg_to_reply()
         if not res:
             return
+        isDeleted = False
         for dirpath, _, files in sorted(await sync_to_async(walk, self.__path)):
             if dirpath.endswith('/yt-dlp-thumb'):
                 continue
@@ -270,6 +273,9 @@ class TgUploader:
                     self.__last_uploaded = 0
                     await self.__switching_client()
                     await self.__upload_file(cap_mono, file_)
+                    if not isDeleted:
+                        await (self.__leechmsg.values())[0].delete()
+                        isDeleted = True
                     if self.__is_cancelled:
                         return
                     if not self.__is_corrupted and (self.__listener.isSuperGroup or config_dict['LEECH_LOG_ID']):
@@ -292,7 +298,6 @@ class TgUploader:
             for subkey, msgs in list(value.items()):
                 if len(msgs) > 1:
                     await self.__send_media_group(subkey, key, msgs)
-        await self.__leechmsg.delete()
         if self.__is_cancelled:
             return
         if self.__listener.seed and not self.__listener.newDir:
