@@ -66,6 +66,7 @@ class MirrorLeechListener:
         self.random_pic = 'IMAGES'
         self.join = join
         self.linkslogmsg = None
+        self.botpmmsg = None
         self.upload_details = {}
         self.source_url = source_url if source_url and source_url.startswith('http') else ("https://t.me/share/url?url=" + source_url) if source_url else message.link
         self.__setModeEng()
@@ -90,7 +91,9 @@ class MirrorLeechListener:
     async def onDownloadStart(self):
         if config_dict['LINKS_LOG_ID']:
             dispTime = datetime.now(timezone(config_dict['TIMEZONE'])).strftime('At %d/%m/%y, %I:%M:%S %p')
-            self.linkslogmsg = await sendCustomMsg(config_dict['LINKS_LOG_ID'], BotTheme('LINKS_START', On=dispTime, Mode=self.upload_details['mode'], Tag=self.tag) + BotTheme('LINKS_SOURCE', Source=self.source_url))
+            self.linkslogmsg = await sendCustomMsg(config_dict['LINKS_LOG_ID'], BotTheme('LINKS_START', On=dispTime, Mode=self.upload_details['mode'], Tag=self.tag) + BotTheme('LINKS_SOURCE', On=dispTime, Source=self.source_url))
+        if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
+            self.botpmmsg = await sendCustomMsg(self.message.from_user.id, BotTheme('PM_START', msg_link=self.source_url))
         if self.isSuperGroup and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL:
             await DbManger().add_incomplete_task(self.message.chat.id, self.message.link, self.tag)
 
@@ -385,25 +388,28 @@ class MirrorLeechListener:
                     msg += BotTheme('PM_BOT_MSG')
                 await sendMessage(self.message, msg, photo=self.random_pic)
             else:
-                fmsg = '\n\n'
+                dispTime = datetime.now(timezone(config_dict['TIMEZONE'])).strftime('At %d/%m/%y, %I:%M:%S %p')
+                attachmsg = True
+                fmsg, totalmsg = '\n\n', ''
                 for index, (link, name) in enumerate(files.items(), start=1):
                     fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
-                    limit = 4000 if not config_dict['IMAGES'] else 1000
-                    if len(fmsg.encode() + msg.encode()) > limit:
+                    totalmsg = (msg + BotTheme('LINKS_SOURCE', On=dispTime, Source=self.source_url) + BotTheme('L_LL_MSG') + fmsg) if attachmsg else fmsg
+                    if len(totalmsg.encode()) > 4000:
                         if config_dict['SAVE_MSG']:
                             buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                         if self.linkslogmsg:
-                            await editMessage(self.linkslogmsg, msg + BotTheme('LINKS_SOURCE', Source=self.source_url) + BotTheme('L_LL_MSG') + fmsg, buttons.build_menu(1))
+                            await editMessage(self.linkslogmsg, totalmsg, buttons.build_menu(1))
+                            self.linkslogmsg = await sendMessage(self.linkslogmsg, "<i>Fetching Details...</i>")
                         else:
                             await sendMessage(self.message, msg + BotTheme('L_LL_MSG') + fmsg, buttons.build_menu(1))
+                        attachmsg = False
                         await sleep(1)
                         fmsg = '\n\n'
                 if fmsg != '\n\n':
                     if config_dict['SAVE_MSG']:
                         buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                     if self.linkslogmsg:
-                        LOGGER.info(msg + BotTheme('LINKS_SOURCE', Source=self.source_url) + BotTheme('L_LL_MSG') + fmsg)
-                        await editMessage(self.linkslogmsg, (msg + BotTheme('LINKS_SOURCE', Source=self.source_url) + BotTheme('L_LL_MSG') + fmsg), buttons.build_menu(1))
+                        await editMessage(self.linkslogmsg, totalmsg, buttons.build_menu(1))
                     else:
                         await sendMessage(self.message, msg + BotTheme('L_LL_MSG') + fmsg, buttons.build_menu(1))
                 btn = ButtonMaker()

@@ -121,8 +121,6 @@ class TgUploader:
         msg_link = self.__listener.message.link if self.__listener.isSuperGroup else ''
         msg_user = self.__listener.message.from_user
         if LEECH_LOG_ID := config_dict['LEECH_LOG_ID']:
-            if self.__bot_pm and self.__listener.isSuperGroup:
-                await sendCustomMsg(msg_user.id, BotTheme('L_PM_START', msg_link=self.__listener.source_url))
             try:
                 self.__sent_msg = await sendCustomMsg(LEECH_LOG_ID, BotTheme('L_LOG_START', mention=msg_user.mention(style='HTML'), uid=msg_user.id, msg_link=msg_link if not config_dict['DELETE_LINKS'] else self.__listener.source_url))
             except Exception as er:
@@ -133,12 +131,8 @@ class TgUploader:
             if not self.__listener.isSuperGroup:
                 await self.__listener.onUploadError('Use SuperGroup to leech with User Client! or Set LEECH_LOG_ID to Leech in PM')
                 return False
-            if self.__bot_pm:
-                await sendCustomMsg(msg_user.id, BotTheme('L_PM_START', msg_link=self.__listener.source_url))
             self.__sent_msg = self.__listener.message
         else:
-            if self.__bot_pm and self.__listener.isSuperGroup:
-                await sendCustomMsg(msg_user.id, BotTheme('L_PM_START', msg_link=msg_link if not config_dict['DELETE_LINKS'] else self.__listener.source_url))
             self.__sent_msg = self.__listener.message
         return True
 
