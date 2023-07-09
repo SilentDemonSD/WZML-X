@@ -80,18 +80,16 @@ class TgUploader:
                     except MessageNotModified:
                         pass
 
-            if len(self.__leechmsg.keys()) > 1:
-                for chat_id, msg in self.__leechmsg.items():
+            if len(self.__leechmsg) > 1:
+                for chat_id, msg in list(self.__leechmsg.items())[1:]:
                     destination = f'Leech Log: {chat_id}'
-                    if chat_id == self.__sent_msg.chat.id:
-                        continue
                     self.__leechmsg[chat_id] = await bot.copy_message(chat_id=chat_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id, reply_to_message_id=msg.id)
                     if self.__has_buttons:
                         try:
                             await self.__leechmsg[chat_id].edit_reply_markup(self.__sent_msg.reply_markup)
                         except MessageNotModified:
                             pass
-            
+            LOGGER.info("Flow Check")
             if self.__ldump:
                 destination = 'User Dump'
                 for channel_id in self.__ldump.split():
