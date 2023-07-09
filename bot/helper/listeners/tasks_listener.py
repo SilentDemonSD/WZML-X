@@ -104,15 +104,15 @@ class MirrorLeechListener:
             msg = self.source_url.replace('https://t.me/share/url?url=', '')
             if msg.startswith('magnet'):
                 mag = unquote(msg).split('&')
-                tracCount = 0
+                tracCount, name = 0, ''
                 for check in mag:
-                    if check.startswith('dn='):
-                        name = check.replace("dn=", "")
-                    elif check.startswith('tr='):
+                    if check.startswith('tr='):
                         tracCount += 1
                     elif check.startswith('magnet:?xt=urn:btih:'):
                         hashh = check.replace('magnet:?xt=urn:btih:', '')
-                self.source_msg = f"┎ <b>Name:</b> {name}\n┠ <b>Magnet Hash:</b> <code>{hashh}</code>\n┠ <b>Trackers:</b> {tracCount} \n┖ <a href='https://t.me/share/url?url={quote(msg)}'>Share To Telegram</a>"
+                    else:
+                        name += check.replace("dn=", "")
+                self.source_msg = f"┎ <b>Name:</b> <i>{name}</i>\n┠ <b>Magnet Hash:</b> <code>{hashh}</code>\n┠ <b>Total Trackers:</b> {tracCount} \n┖ <b>Share:</b> <a href='https://t.me/share/url?url={quote(msg)}'>Share To Telegram</a>"
             else: self.source_msg = f"<code>{msg}</code>"
         else:
             self.source_msg = f"<code>{self.source_url}</code>"
