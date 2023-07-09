@@ -488,28 +488,28 @@ class MirrorLeechListener:
                 log_msg = list((await sendMultiMessage(config_dict['MIRROR_LOG_ID'], msg, button, self.random_pic)).values())[0]
                 if self.linkslogmsg:
                     dispTime = datetime.now(timezone(config_dict['TIMEZONE'])).strftime('%d/%m/%y, %I:%M:%S %p')
-                    await editMessage(self.linkslogmsg, (msg + BotTheme('LINKS_SOURCE', On=dispTime, Source=self.source_url) + BotTheme('L_LL_MSG') + f"\n\n<a href='{log_msg.link}'>{escape(name)}</a>\n"))
-
+                    if config_dict['SAVE_MSG']:
+                        btns = ButtonMaker()
+                        btns.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
+                    await editMessage(self.linkslogmsg, (msg + BotTheme('LINKS_SOURCE', On=dispTime, Source=self.source_url) + BotTheme('L_LL_MSG') + f"\n\n<a href='{log_msg.link}'>{escape(name)}</a>\n"), btns.build_menu(1))
+            
+            buttons = ButtonMaker()
             if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
                 await sendCustomMsg(self.message.from_user.id, msg, button, self.random_pic)
                 if self.isSuperGroup:
-                    if button is not None:
-                        buttons.ubutton(BotTheme('CHECK_PM'), f"https://t.me/{bot_name}", 'header')
-                        if self.linkslogmsg:
-                            buttons.ubutton(BotTheme('CHECK_LL'), self.linkslogmsg.link)
-                        if self.source_url and config_dict['SOURCE_LINK']:
-                            buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
-                        buttons = extra_btns(buttons)
-                        button = buttons.build_menu(2)
-                    await sendMessage(self.message, msg + BotTheme('M_BOT_MSG'), button, self.random_pic)
-            elif self.linkslogmsg:
-                if button is not None:
-                    buttons.ubutton(BotTheme('CHECK_LL'), self.linkslogmsg.link)
+                    buttons.ubutton(BotTheme('CHECK_PM'), f"https://t.me/{bot_name}", 'header')
+                    if self.linkslogmsg:
+                        buttons.ubutton(BotTheme('CHECK_LL'), self.linkslogmsg.link)
                     if self.source_url and config_dict['SOURCE_LINK']:
                         buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
                     buttons = extra_btns(buttons)
-                    button = buttons.build_menu(2)
-                await sendMessage(self.message, msg, button, self.random_pic)
+                    await sendMessage(self.message, msg + BotTheme('M_BOT_MSG'), buttons.build_menu(2), self.random_pic)
+            elif self.linkslogmsg:
+                buttons.ubutton(BotTheme('CHECK_LL'), self.linkslogmsg.link)
+                if self.source_url and config_dict['SOURCE_LINK']:
+                    buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
+                buttons = extra_btns(buttons)
+                await sendMessage(self.message, msg, buttons.build_menu(2), self.random_pic)
 
             if self.seed:
                 if self.newDir:
