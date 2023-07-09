@@ -122,7 +122,7 @@ async def sendMultiMessage(chat_ids, text, buttons=None, photo=None):
         except Exception as e:
             LOGGER.error(str(e))
             return str(e)
-        return msg_dict
+    return msg_dict
 
 
 async def editMessage(message, text, buttons=None, photo=None):
