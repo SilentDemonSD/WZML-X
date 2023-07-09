@@ -415,7 +415,7 @@ class MirrorLeechListener:
                         await sendMessage(self.message, msg + BotTheme('L_LL_MSG') + fmsg, buttons.build_menu(1))
                 btn = ButtonMaker()
                 if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
-                    await sendCustomMsg(self.message.from_user.id, msg + BotTheme('PM_BOT_MSG'), photo=self.random_pic)
+                    await sendMessage(self.botpmmsg, msg + BotTheme('PM_BOT_MSG'), photo=self.random_pic)
                     if self.isSuperGroup:
                         btn.ubutton(BotTheme('CHECK_PM'), f"https://t.me/{bot_name}", 'header')
                         if self.linkslogmsg:

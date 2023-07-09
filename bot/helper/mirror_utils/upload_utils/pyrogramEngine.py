@@ -37,6 +37,8 @@ class TgUploader:
         self.__total_files = 0
         self.__is_cancelled = False
         self.__thumb = f"Thumbnails/{listener.message.from_user.id}.jpg"
+        self.__sent_msg = None 
+        self.__sent_pmmsg = listener.botpmmsg
         self.__has_buttons = False
         self.__msgs_dict = {}
         self.__corrupted = 0
@@ -71,11 +73,11 @@ class TgUploader:
         try:
             if self.__bot_pm and (self.__leechmsg or self.__listener.isSuperGroup):
                 destination = 'Bot PM'
-                copied = await bot.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)        
+                self.__sent_pmmsg = await bot.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id, reply_to_message_id=self.__sent_pmmsg.id) 
                 if self.__has_buttons:
                     rply = (InlineKeyboardMarkup(BTN) if (BTN := self.__sent_msg.reply_markup.inline_keyboard[:-1]) else None) if config_dict['SAVE_MSG'] else self.__sent_msg.reply_markup
                     try:
-                        await copied.edit_reply_markup(rply)
+                        await self.__sent_pmmsg.edit_reply_markup(rply)
                     except MessageNotModified:
                         pass
             if self.__ldump:
