@@ -480,6 +480,12 @@ SAFE_MODE = SAFE_MODE.lower() == 'true'
 SET_COMMANDS = environ.get('SET_COMMANDS', '')
 SET_COMMANDS = SET_COMMANDS.lower() == 'true'
 
+CLEAN_LOG_MSG = environ.get('CLEAN_LOG_MSG', '')
+CLEAN_LOG_MSG = CLEAN_LOG_MSG.lower() == 'true'
+    
+SHOW_EXTRA_CMDS = environ.get('SHOW_EXTRA_CMDS', '')
+SHOW_EXTRA_CMDS = SHOW_EXTRA_CMDS.lower() == 'true'
+
 TOKEN_TIMEOUT = environ.get('TOKEN_TIMEOUT', '')
 TOKEN_TIMEOUT = int(TOKEN_TIMEOUT) if TOKEN_TIMEOUT.isdigit() else ''
 
@@ -617,6 +623,8 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'SEARCH_PLUGINS': SEARCH_PLUGINS,
                'SET_COMMANDS': SET_COMMANDS,
                'SHOW_MEDIAINFO': SHOW_MEDIAINFO,
+               'CLEAN_LOG_MSG': CLEAN_LOG_MSG,
+               'SHOW_EXTRA_CMDS': SHOW_EXTRA_CMDS,
                'SOURCE_LINK': SOURCE_LINK,
                'STATUS_LIMIT': STATUS_LIMIT,
                'STATUS_UPDATE_INTERVAL': STATUS_UPDATE_INTERVAL,

@@ -46,8 +46,8 @@ default_values = {'AUTO_DELETE_MESSAGE_DURATION': 30,
                   'TITLE_NAME': 'WZ Mirror/Leech X',
                   'GD_INFO': 'Uploaded by WZML-X',
                   }
-bool_vars = ['AS_DOCUMENT', 'BOT_PM', 'STOP_DUPLICATE', 'SET_COMMANDS', 'SAVE_MSG', 'SHOW_MEDIAINFO', 'SOURCE_LINK', 'SAFE_MODE',
-             'IS_TEAM_DRIVE', 'USE_SERVICE_ACCOUNTS', 'WEB_PINCODE', 'EQUAL_SPLITS', 'DISABLE_DRIVE_LINK', 'DELETE_LINKS']
+bool_vars = ['AS_DOCUMENT', 'BOT_PM', 'STOP_DUPLICATE', 'SET_COMMANDS', 'SAVE_MSG', 'SHOW_MEDIAINFO', 'SOURCE_LINK', 'SAFE_MODE', 'SHOW_EXTRA_CMDS',
+             'IS_TEAM_DRIVE', 'USE_SERVICE_ACCOUNTS', 'WEB_PINCODE', 'EQUAL_SPLITS', 'DISABLE_DRIVE_LINK', 'DELETE_LINKS', 'CLEAN_LOG_MSG']
 
 
 async def load_config():
@@ -428,6 +428,12 @@ async def load_config():
     SAFE_MODE = environ.get('SAFE_MODE', '')
     SAFE_MODE = SAFE_MODE.lower() == 'true'
     
+    CLEAN_LOG_MSG = environ.get('CLEAN_LOG_MSG', '')
+    CLEAN_LOG_MSG = CLEAN_LOG_MSG.lower() == 'true'
+    
+    SHOW_EXTRA_CMDS = environ.get('SHOW_EXTRA_CMDS', '')
+    SHOW_EXTRA_CMDS = SHOW_EXTRA_CMDS.lower() == 'true'
+    
     TOKEN_TIMEOUT = environ.get('TOKEN_TIMEOUT', '')
     TOKEN_TIMEOUT = int(TOKEN_TIMEOUT) if TOKEN_TIMEOUT.isdigit() else ''
 
@@ -609,6 +615,8 @@ async def load_config():
                         'SEARCH_PLUGINS': SEARCH_PLUGINS,
                         'SET_COMMANDS': SET_COMMANDS,
                         'SHOW_MEDIAINFO': SHOW_MEDIAINFO,
+                        'CLEAN_LOG_MSG': CLEAN_LOG_MSG,
+                        'SHOW_EXTRA_CMDS': SHOW_EXTRA_CMDS,
                         'SOURCE_LINK': SOURCE_LINK,
                         'STATUS_LIMIT': STATUS_LIMIT,
                         'STATUS_UPDATE_INTERVAL': STATUS_UPDATE_INTERVAL,

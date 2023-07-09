@@ -84,7 +84,7 @@ class TgUploader:
                 for chat_id, msg in list(self.__leechmsg.items())[1:]:
                     destination = f'Leech Log: {chat_id}'
                     self.__leechmsg[chat_id] = await bot.copy_message(chat_id=chat_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id, reply_to_message_id=msg.id)
-                    if msg.text:
+                    if msg.text and config_dict['CLEAN_LOG_MSG']:
                         await msg.delete()
                     if self.__has_buttons:
                         try:
@@ -273,7 +273,7 @@ class TgUploader:
                     self.__last_uploaded = 0
                     await self.__switching_client()
                     await self.__upload_file(cap_mono, file_)
-                    if not isDeleted:
+                    if not isDeleted and config_dict['CLEAN_LOG_MSG']:
                         await list(self.__leechmsg.values())[0].delete()
                         isDeleted = True
                     if self.__is_cancelled:

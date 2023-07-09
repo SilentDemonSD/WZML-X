@@ -43,17 +43,17 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     except:
         multi = 0
 
-    select = args['-s']
-    seed = args['-d']
-    isBulk = args['-b']
+    select =      args['-s']
+    seed =        args['-d']
+    isBulk =      args['-b']
     folder_name = args['-m']
-    name = args['-n']
-    up = args['-up']
-    rcf = args['-rcf']
-    link = args['link']
-    compress = args['-z']
-    extract = args['-e']
-    join = args['-j']
+    name =        args['-n']
+    up =          args['-up']
+    rcf =         args['-rcf']
+    link =        args['link']
+    extract =     args['-e'] or 'uz' in input_list[0] or 'unzip' in input_list[0]
+    compress =    args['-z'] or (not extract and ('z' in input_list[0] or 'zip' in input_list[0]))
+    join =        args['-j']
 
     bulk_start = 0
     bulk_end = 0
@@ -259,6 +259,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     listener = MirrorLeechListener(message, compress, extract, isQbit, isLeech, tag, select, seed, sameDir, rcf, up, join, source_url=link)
 
     if file_ is not None:
+        await delete_links(message)
         await TelegramDownloadHelper(listener).add_download(reply_to, f'{path}/', name, session)
     elif is_rclone_path(link):
         if link.startswith('mrcc:'):
@@ -323,7 +324,6 @@ async def wzmlxcb(_, query):
     else: # More Whole Bot CB Usage !!
         await query.answer()
         await message.delete()
-    
 
 
 async def mirror(client, message):
