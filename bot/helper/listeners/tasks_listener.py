@@ -481,31 +481,34 @@ class MirrorLeechListener:
                 button = None
             msg += BotTheme('M_CC', Tag=self.tag)
 
+            if config_dict['MIRROR_LOG_ID']:
+                if button is not None and config_dict['SAVE_MSG']:
+                    button.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
+                    button = buttons.build_menu(2)
+                log_msg = list((await sendMultiMessage(config_dict['MIRROR_LOG_ID'], msg, button, self.random_pic)).values())[0]
+                if self.leechlogmsg:
+                    await editMessage(self.leechlogmsg, (msg + BotTheme('LINKS_SOURCE', On=dispTime, Source=self.source_url) + BotTheme('L_LL_MSG') + f"\n\n<a href='{log_msg.link}'>{escape(name)}</a>\n"))
 
             if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
                 await sendCustomMsg(self.message.from_user.id, msg, button, self.random_pic)
-                nmsg = msg + BotTheme('M_BOT_MSG')
-                if button is not None:
-                    if config_dict['SAVE_MSG']:
-                        buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
-                    button = buttons.build_menu(2)
-                btns = ButtonMaker()
-                btns = extra_btns(btns)
-                if self.source_url and config_dict['SOURCE_LINK']:
-                    btns.ubutton(BotTheme('SOURCE_URL'), self.source_url)
-                btns.ubutton(BotTheme('CHECK_PM'), f"https://t.me/{bot_name}", 'header')
-                await sendMessage(self.message, nmsg, btns.build_menu(1), self.random_pic)
-            else:
-                if config_dict['SAVE_MSG']:
+                if self.isSuperGroup:
                     if button is not None:
+                        button.ubutton(BotTheme('CHECK_PM'), f"https://t.me/{bot_name}", 'header')
+                        if self.linkslogmsg:
+                            button.ubutton(BotTheme('CHECK_LL'), self.linkslogmsg.link)
                         if self.source_url and config_dict['SOURCE_LINK']:
-                            buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
-                        buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
+                            button.ubutton(BotTheme('SOURCE_URL'), self.source_url)
+                        button = extra_btns(button)
                         button = buttons.build_menu(2)
+                    await sendMessage(self.message, msg + BotTheme('M_BOT_MSG'), button, self.random_pic)
+            elif self.linkslogmsg:
+                if button is not None:
+                    button.ubutton(BotTheme('CHECK_LL'), self.linkslogmsg.link)
+                    if self.source_url and config_dict['SOURCE_LINK']:
+                        buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
+                    button = extra_btns(button)
+                    button = buttons.build_menu(2)
                 await sendMessage(self.message, msg, button, self.random_pic)
-
-            if ids := config_dict['MIRROR_LOG_ID']:
-                await sendMultiMessage(ids, msg, button, self.random_pic)
 
             if self.seed:
                 if self.newDir:

@@ -563,6 +563,14 @@ async def set_commands(client):
             if config_dict['SHOW_EXTRA_CMDS']:
                 bot_cmds.insert(1, BotCommand(BotCommands.MirrorCommand[2], f'or /{BotCommands.MirrorCommand[3]} Mirror and UnZip [links/media/rclone_path]'))
                 bot_cmds.insert(1, BotCommand(BotCommands.MirrorCommand[4], f'or /{BotCommands.MirrorCommand[5]} Mirror and Zip [links/media/rclone_path]'))
+                bot_cmds.insert(4, BotCommand(BotCommands.LeechCommand[2], f'or /{BotCommands.LeechCommand[3]} Leech and UnZip [links/media/rclone_path]'))
+                bot_cmds.insert(4, BotCommand(BotCommands.LeechCommand[4], f'or /{BotCommands.LeechCommand[5]} Leech and Zip [links/media/rclone_path]'))
+                bot_cmds.insert(7, BotCommand(BotCommands.QbMirrorCommand[2], f'or /{BotCommands.QbMirrorCommand[3]} Mirror magnet/torrent and UnZip using qBit'))
+                bot_cmds.insert(7, BotCommand(BotCommands.QbMirrorCommand[4], f'or /{BotCommands.QbMirrorCommand[5]} Mirror magnet/torrent and Zip using qBit'))
+                bot_cmds.insert(10, BotCommand(BotCommands.QbLeechCommand[2], f'or /{BotCommands.QbLeechCommand[3]} Leech magnet/torrent and UnZip using qBit'))
+                bot_cmds.insert(10, BotCommand(BotCommands.QbLeechCommand[4], f'or /{BotCommands.QbLeechCommand[5]} Leech magnet/torrent and Zip using qBit'))
+                bot_cmds.insert(13, BotCommand(BotCommands.YtdlCommand[2], f'or /{BotCommands.YtdlCommand[3]} Mirror yt-dlp supported links and Zip via bot'))
+                bot_cmds.insert(13, BotCommand(BotCommands.YtdlLeechCommand[2], f'or /{BotCommands.YtdlLeechCommand[3]} Leech yt-dlp supported links and Zip via bot'))
             await client.set_bot_commands(bot_cmds)
             LOGGER.info('Bot Commands have been Set & Updated')
         except Exception as err:
