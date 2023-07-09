@@ -94,19 +94,19 @@ class MirrorLeechListener:
         if self.source_url == self.message.link:
             file = self.message.reply_to_message
             media = getattr(file, file.media.value)
-            self.source_msg = f'<b>Name:</b> {media.file_name}\n' \
-                              f'Type: {media.mime_type}\n' \
-                              f'Size: {get_readable_file_size(media.file_size)}\n' \
-                              f'Created Date: {media.date}\n' \
-                              f'File Type: {file.media.value}'
+            self.source_msg = f'<b>Name:</b> <i>{media.file_name}</i>\n' \
+                              f'<b>Type:</b> {media.mime_type}\n' \
+                              f'<b>Size:</b> {get_readable_file_size(media.file_size)}\n' \
+                              f'<b>Created Date:</b> {media.date}\n' \
+                              f'<b>Media Type:</b> {(file.media.value).capitalize()}'
         elif self.source_url.startswith('https://t.me/share/url?url='):
-            self.source_msg = self.source_url.replace('https://t.me/share/url?url=', '')
+            self.source_msg = f"<code>{self.source_url.replace('https://t.me/share/url?url=', '')}"
         else:
-            self.source_msg = self.source_url
+            self.source_msg = f"<code>{self.source_url}</code>"
         
     async def onDownloadStart(self):
         if config_dict['LINKS_LOG_ID']:
-            dispTime = datetime.now(timezone(config_dict['TIMEZONE'])).strftime('At %d/%m/%y, %I:%M:%S %p')
+            dispTime = datetime.now(timezone(config_dict['TIMEZONE'])).strftime('%d/%m/%y, %I:%M:%S %p')
             self.linkslogmsg = await sendCustomMsg(config_dict['LINKS_LOG_ID'], BotTheme('LINKS_START', Mode=self.upload_details['mode'], Tag=self.tag) + BotTheme('LINKS_SOURCE', On=dispTime, Source=self.source_msg))
         user_dict = user_data.get(self.message.from_user.id, {})
         if config_dict['BOT_PM'] or user_dict.get('bot_pm'):

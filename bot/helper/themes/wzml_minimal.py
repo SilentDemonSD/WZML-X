@@ -70,7 +70,7 @@ class WZMLStyle:
     LINKS_SOURCE = """➲ <b>Source:</b>
 ┖ <b>Added On:</b> {On}
 ------------------------------------------
-<code>{Source}</code>
+{Source}
 ------------------------------------------\n\n"""
     
     # async def __msg_to_reply(self): ---> pyrogramEngine.py
