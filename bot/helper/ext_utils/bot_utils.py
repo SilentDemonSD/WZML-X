@@ -534,7 +534,7 @@ def extra_btns(buttons):
 async def set_commands(client):
     if config_dict['SET_COMMANDS']:
         try:
-            await client.set_bot_commands([
+            bot_cmds = [
             BotCommand(BotCommands.MirrorCommand[0], f'or /{BotCommands.MirrorCommand[1]} Mirror [links/media/rclone_path]'),
             BotCommand(BotCommands.LeechCommand[0], f'or /{BotCommands.LeechCommand[1]} Leech [links/media/rclone_path]'),
             BotCommand(BotCommands.QbMirrorCommand[0], f'or /{BotCommands.QbMirrorCommand[1]} Mirror magnet/torrent using qBittorrent'),
@@ -559,7 +559,11 @@ async def set_commands(client):
             BotCommand(BotCommands.MediaInfoCommand[0], f'or /{BotCommands.MediaInfoCommand[1]} Generate Mediainfo for Replied Media or DL links'),
             BotCommand(BotCommands.BotSetCommand[0], f"or /{BotCommands.BotSetCommand[1]} Bot's Personal Settings (Owner or Sudo Only)"),
             BotCommand(BotCommands.RestartCommand[0], f'or /{BotCommands.RestartCommand[1]} Restart & Update the Bot (Owner or Sudo Only)'),
-            ])
+            ]
+            if config_dict['SHOW_EXTRA_CMDS']:
+                bot_cmds.insert(1, BotCommand(BotCommands.MirrorCommand[2], f'or /{BotCommands.MirrorCommand[3]} Mirror and UnZip [links/media/rclone_path]'))
+                bot_cmds.insert(1, BotCommand(BotCommands.MirrorCommand[4], f'or /{BotCommands.MirrorCommand[5]} Mirror and Zip [links/media/rclone_path]'))
+            await client.set_bot_commands(bot_cmds)
             LOGGER.info('Bot Commands have been Set & Updated')
         except Exception as err:
             LOGGER.error(err)
