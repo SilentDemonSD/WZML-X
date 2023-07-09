@@ -87,10 +87,10 @@ class TgUploader:
                         continue
                     self.__leechmsg[chat_id] = await bot.copy_message(chat_id=chat_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id, reply_to_message_id=msg.id)
                     if self.__has_buttons:
-                    try:
-                        await self.__leechmsg[chat_id].edit_reply_markup(self.__sent_msg.reply_markup)
-                    except MessageNotModified:
-                        pass
+                        try:
+                            await self.__leechmsg[chat_id].edit_reply_markup(self.__sent_msg.reply_markup)
+                        except MessageNotModified:
+                            pass
             
             if self.__ldump:
                 destination = 'User Dump'
