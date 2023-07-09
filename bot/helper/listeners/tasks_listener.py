@@ -112,7 +112,7 @@ class MirrorLeechListener:
                         tracCount += 1
                     elif check.startswith('magnet:?xt=urn:btih:'):
                         hashh = check.replace('magnet:?xt=urn:btih:', '')
-                self.source_msg = f"┎ <b>Name:</b> {name}\n┠ <b>Magnet Hash:</b> <code>{hashh}</code>\n┠ <b>Trackers:</b> {tracCount} \n┖ <a href='https://t.me/share/url?url={quote(mag)}'>Share To Telegram</a>"
+                self.source_msg = f"┎ <b>Name:</b> {name}\n┠ <b>Magnet Hash:</b> <code>{hashh}</code>\n┠ <b>Trackers:</b> {tracCount} \n┖ <a href='https://t.me/share/url?url={quote(msg)}'>Share To Telegram</a>"
             else: self.source_msg = f"<code>{msg}</code>"
         else:
             self.source_msg = f"<code>{self.source_url}</code>"
