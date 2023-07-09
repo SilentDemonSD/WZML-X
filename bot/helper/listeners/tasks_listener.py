@@ -92,12 +92,13 @@ class MirrorLeechListener:
         
     def __parseSource(self):
         if self.source_url == self.message.link:
-            media = self.message.reply_to_message
+            file = self.message.reply_to_message
+            media = getattr(file, file.media.value)
             self.source_msg = f'<b>Name:</b> {media.file_name}\n' \
                               f'Type: {media.mime_type}\n' \
                               f'Size: {get_readable_file_size(media.file_size)}\n' \
                               f'Created Date: {media.date}\n' \
-                              f'File Type: {getattr(media, media.media.value)}'
+                              f'File Type: {file.media.value}'
         elif self.source_url.startswith('https://t.me/share/url?url='):
             self.source_msg = self.source_url.replace('https://t.me/share/url?url=', '')
         else:
