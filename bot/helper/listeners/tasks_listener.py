@@ -3,6 +3,7 @@ from random import choice
 from time import time
 from pytz import timezone
 from datetime import datetime
+from urllib.parse import unquote, quote
 from requests import utils as rutils
 from aiofiles.os import path as aiopath, remove as aioremove, listdir, makedirs
 from os import walk, path as ospath
@@ -94,13 +95,25 @@ class MirrorLeechListener:
         if self.source_url == self.message.link:
             file = self.message.reply_to_message
             media = getattr(file, file.media.value)
-            self.source_msg = f'<b>Name:</b> <i>{media.file_name}</i>\n' \
-                              f'<b>Type:</b> {media.mime_type}\n' \
-                              f'<b>Size:</b> {get_readable_file_size(media.file_size)}\n' \
-                              f'<b>Created Date:</b> {media.date}\n' \
-                              f'<b>Media Type:</b> {(file.media.value).capitalize()}'
+            self.source_msg = f'┎ <b>Name:</b> <i>{media.file_name}</i>\n' \
+                              f'┠ <b>Type:</b> {media.mime_type}\n' \
+                              f'┠ <b>Size:</b> {get_readable_file_size(media.file_size)}\n' \
+                              f'┠ <b>Created Date:</b> {media.date}\n' \
+                              f'┖ <b>Media Type:</b> {(file.media.value).capitalize()}'
         elif self.source_url.startswith('https://t.me/share/url?url='):
-            self.source_msg = f"<code>{self.source_url.replace('https://t.me/share/url?url=', '')}"
+            msg = self.source_url.replace('https://t.me/share/url?url=', '')
+            if msg.startswith('magnet'):
+                mag = unquote(msg).split('&')
+                tracCount = 0
+                for check in mag:
+                    if check.startswith('dn='):
+                        name = check.replace("dn=", "")
+                    elif check.startswith('tr='):
+                        tracCount += 1
+                    elif check.startswith('magnet:?xt=urn:btih:'):
+                        hashh = check.replace('magnet:?xt=urn:btih:', '')
+                self.source_msg = f"┎ <b>Name:</b> {name}\n┠ <b>Magnet Hash:</b> <code>{hashh}</code>\n┠ <b>Trackers:</b> {tracCount} \n┖ <a href='https://t.me/share/url?url={quote(mag)}'>Share To Telegram</a>"
+            else: self.source_msg = f"<code>{msg}</code>"
         else:
             self.source_msg = f"<code>{self.source_url}</code>"
         
