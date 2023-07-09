@@ -418,7 +418,8 @@ if len(MIRROR_LOG_ID) == 0:
     MIRROR_LOG_ID = ''
     
 LEECH_LOG_ID = environ.get('LEECH_LOG_ID', '')
-LEECH_LOG_ID = '' if len(LEECH_LOG_ID) == 0 else int(LEECH_LOG_ID)
+if len(LEECH_LOG_ID) == 0 
+    LEECH_LOG_ID = ''
 
 BOT_PM = environ.get('BOT_PM', '')
 BOT_PM = BOT_PM.lower() == 'true'

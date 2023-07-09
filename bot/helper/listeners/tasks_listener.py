@@ -505,7 +505,7 @@ class MirrorLeechListener:
                 await sendMessage(self.message, msg, button, self.random_pic)
 
             if ids := config_dict['MIRROR_LOG_ID']:
-                await sendMultiMessage(self.message, ids, msg, button, self.random_pic)
+                await sendMultiMessage(ids, msg, button, self.random_pic)
 
             if self.seed:
                 if self.newDir:

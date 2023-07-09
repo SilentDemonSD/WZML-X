@@ -53,7 +53,7 @@ class TgUploader:
         self.__media_group = False
         self.__bot_pm = False
         self.__user_id = listener.message.from_user.id
-        self.__leechmsg = None
+        self.__leechmsg = {}
 
     async def __buttons(self, up_path):
         buttons = ButtonMaker()
@@ -79,6 +79,19 @@ class TgUploader:
                         await copied.edit_reply_markup(rply)
                     except MessageNotModified:
                         pass
+
+            if len(self.__leechmsg.keys()) > 1:
+                for chat_id, msg in self.__leechmsg.items():
+                    destination = f'Leech Log: {chat_id}'
+                    if chat_id == self.__sent_msg.chat.id:
+                        continue
+                    self.__leechmsg[chat_id] = await bot.copy_message(chat_id=chat_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id, reply_to_message_id=msg.id)
+                    if self.__has_buttons:
+                    try:
+                        await self.__leechmsg[chat_id].edit_reply_markup(self.__sent_msg.reply_markup)
+                    except MessageNotModified:
+                        pass
+            
             if self.__ldump:
                 destination = 'User Dump'
                 for channel_id in self.__ldump.split():
@@ -121,13 +134,13 @@ class TgUploader:
     async def __msg_to_reply(self):
         msg_link = self.__listener.message.link if self.__listener.isSuperGroup else ''
         msg_user = self.__listener.message.from_user
-        if LEECH_LOG_ID := config_dict['LEECH_LOG_ID']:
+        if config_dict['LEECH_LOG_ID']:
             try:
-                self.__sent_msg = await sendCustomMsg(LEECH_LOG_ID, BotTheme('L_LOG_START', mention=msg_user.mention(style='HTML'), uid=msg_user.id, msg_link=msg_link if not config_dict['DELETE_LINKS'] else self.__listener.source_url))
+                self.__leechmsg = await sendMultiMessage(config_dict['LEECH_LOG_ID'], BotTheme('L_LOG_START', mention=msg_user.mention(style='HTML'), uid=msg_user.id, msg_link=self.__listener.source_url))
             except Exception as er:
                 await self.__listener.onUploadError(str(er))
                 return False
-            self.__leechmsg = self.__sent_msg
+            self.__sent_msg = list(self.__leechmsg.values())[0]
         elif IS_PREMIUM_USER:
             if not self.__listener.isSuperGroup:
                 await self.__listener.onUploadError('Use SuperGroup to leech with User Client! or Set LEECH_LOG_ID to Leech in PM')
