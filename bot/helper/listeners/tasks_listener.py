@@ -483,7 +483,7 @@ class MirrorLeechListener:
 
             if config_dict['MIRROR_LOG_ID']:
                 if button is not None and config_dict['SAVE_MSG']:
-                    button.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
+                    buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                     button = buttons.build_menu(2)
                 log_msg = list((await sendMultiMessage(config_dict['MIRROR_LOG_ID'], msg, button, self.random_pic)).values())[0]
                 if self.leechlogmsg:
@@ -493,20 +493,20 @@ class MirrorLeechListener:
                 await sendCustomMsg(self.message.from_user.id, msg, button, self.random_pic)
                 if self.isSuperGroup:
                     if button is not None:
-                        button.ubutton(BotTheme('CHECK_PM'), f"https://t.me/{bot_name}", 'header')
+                        buttons.ubutton(BotTheme('CHECK_PM'), f"https://t.me/{bot_name}", 'header')
                         if self.linkslogmsg:
-                            button.ubutton(BotTheme('CHECK_LL'), self.linkslogmsg.link)
+                            buttons.ubutton(BotTheme('CHECK_LL'), self.linkslogmsg.link)
                         if self.source_url and config_dict['SOURCE_LINK']:
-                            button.ubutton(BotTheme('SOURCE_URL'), self.source_url)
-                        button = extra_btns(button)
+                            buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
+                        buttons = extra_btns(buttons)
                         button = buttons.build_menu(2)
                     await sendMessage(self.message, msg + BotTheme('M_BOT_MSG'), button, self.random_pic)
             elif self.linkslogmsg:
                 if button is not None:
-                    button.ubutton(BotTheme('CHECK_LL'), self.linkslogmsg.link)
+                    buttons.ubutton(BotTheme('CHECK_LL'), self.linkslogmsg.link)
                     if self.source_url and config_dict['SOURCE_LINK']:
                         buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
-                    button = extra_btns(button)
+                    buttons = extra_btns(buttons)
                     button = buttons.build_menu(2)
                 await sendMessage(self.message, msg, button, self.random_pic)
 
