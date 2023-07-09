@@ -16,7 +16,7 @@ from aioshutil import copy
 from bot import config_dict, user_data, GLOBAL_EXTENSION_FILTER, bot, user, IS_PREMIUM_USER
 from bot.helper.themes import BotTheme
 from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.telegram_helper.message_utils import sendCustomMsg, chat_info
+from bot.helper.telegram_helper.message_utils import sendCustomMsg, sendMultiMessage, chat_info
 from bot.helper.ext_utils.fs_utils import clean_unwanted, is_archive, get_base_name
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, sync_to_async
 from bot.helper.ext_utils.leech_utils import get_media_info, get_document_type, take_ss, get_mediainfo_link, format_filename
