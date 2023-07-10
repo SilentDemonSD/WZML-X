@@ -104,14 +104,15 @@ class MirrorLeechListener:
             msg = self.source_url.replace('https://t.me/share/url?url=', '')
             if msg.startswith('magnet'):
                 mag = unquote(msg).split('&')
-                tracCount, name = 0, ''
+                tracCount, name, amper = 0, '', False
                 for check in mag:
                     if check.startswith('tr='):
                         tracCount += 1
                     elif check.startswith('magnet:?xt=urn:btih:'):
                         hashh = check.replace('magnet:?xt=urn:btih:', '')
                     else:
-                        name += check.replace("dn=", "")
+                        name += '&' if amper else '' + check.replace("dn=", "")
+                        amper = True
                 self.source_msg = f"┎ <b>Name:</b> <i>{name}</i>\n┠ <b>Magnet Hash:</b> <code>{hashh}</code>\n┠ <b>Total Trackers:</b> {tracCount} \n┖ <b>Share:</b> <a href='https://t.me/share/url?url={quote(msg)}'>Share To Telegram</a>"
             else: self.source_msg = f"<code>{msg}</code>"
         else:
@@ -445,8 +446,10 @@ class MirrorLeechListener:
                 btn = ButtonMaker()
                 if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
                     await sendMessage(self.botpmmsg, msg + BotTheme('PM_BOT_MSG'), photo=self.random_pic)
+                    if self.isPrivate:
+                        await self.botpmmsg.delete()
                     if self.isSuperGroup:
-                        btn.ubutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
+                        btn.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
                         if self.linkslogmsg:
                             btn.ubutton(BotTheme('CHECK_LL'), self.linkslogmsg.link)
                         if self.source_url and config_dict['SOURCE_LINK']:
@@ -526,6 +529,8 @@ class MirrorLeechListener:
             buttons = ButtonMaker()
             if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
                 await sendMessage(self.botpmmsg, msg, button, self.random_pic)
+                if self.isPrivate:
+                    await self.botpmmsg.delete()
                 if self.isSuperGroup:
                     buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
                     if self.linkslogmsg:
