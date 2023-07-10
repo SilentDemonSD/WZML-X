@@ -111,7 +111,7 @@ class MirrorLeechListener:
                     elif check.startswith('magnet:?xt=urn:btih:'):
                         hashh = check.replace('magnet:?xt=urn:btih:', '')
                     else:
-                        name += '&' if amper else '' + check.replace("dn=", "")
+                        name += ('&' if amper else '') + check.replace("dn=", "")
                         amper = True
                 self.source_msg = f"┎ <b>Name:</b> <i>{name}</i>\n┠ <b>Magnet Hash:</b> <code>{hashh}</code>\n┠ <b>Total Trackers:</b> {tracCount} \n┖ <b>Share:</b> <a href='https://t.me/share/url?url={quote(msg)}'>Share To Telegram</a>"
             else: self.source_msg = f"<code>{msg}</code>"
@@ -431,7 +431,7 @@ class MirrorLeechListener:
                         if self.linkslogmsg:
                             await editMessage(self.linkslogmsg, totalmsg, buttons.build_menu(1))
                             self.linkslogmsg = await sendMessage(self.linkslogmsg, "<i>Fetching Details...</i>")
-                        else:
+                        elif not (config_dict['BOT_PM'] or user_dict.get('bot_pm')):
                             await sendMessage(self.message, msg + BotTheme('L_LL_MSG') + fmsg, buttons.build_menu(1))
                         attachmsg = False
                         await sleep(1)
@@ -441,7 +441,7 @@ class MirrorLeechListener:
                         buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                     if self.linkslogmsg:
                         await editMessage(self.linkslogmsg, totalmsg, buttons.build_menu(1))
-                    else:
+                    elif not (config_dict['BOT_PM'] or user_dict.get('bot_pm')):
                         await sendMessage(self.message, msg + BotTheme('L_LL_MSG') + fmsg, buttons.build_menu(1))
                 btn = ButtonMaker()
                 if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
@@ -453,7 +453,7 @@ class MirrorLeechListener:
                         if self.source_url and config_dict['SOURCE_LINK']:
                             btn.ubutton(BotTheme('SOURCE_URL'), self.source_url)
                         btn = extra_btns(btn)
-                        await sendMessage(self.message, msg + BotTheme('L_BOT_MSG'), btn.build_menu(2), self.random_pic)
+                        await sendMessage(self.message, msg + BotTheme('L_BOT_MSG'), btn.build_menu(1), self.random_pic)
                     else:
                         await self.botpmmsg.delete()
                 elif self.linkslogmsg:
@@ -461,7 +461,7 @@ class MirrorLeechListener:
                     if self.source_url and config_dict['SOURCE_LINK']:
                         btn.ubutton(BotTheme('SOURCE_URL'), self.source_url)
                     btn = extra_btns(btn)
-                    await sendMessage(self.message, msg + BotTheme('L_LL_MSG'), btn.build_menu(2), self.random_pic)
+                    await sendMessage(self.message, msg + BotTheme('L_LL_MSG'), btn.build_menu(1), self.random_pic)
                     
             if self.seed:
                 if self.newDir:
@@ -536,7 +536,7 @@ class MirrorLeechListener:
                     if self.source_url and config_dict['SOURCE_LINK']:
                         buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
                     buttons = extra_btns(buttons)
-                    await sendMessage(self.message, msg + BotTheme('M_BOT_MSG'), buttons.build_menu(2), self.random_pic)
+                    await sendMessage(self.message, msg + BotTheme('M_BOT_MSG'), buttons.build_menu(1), self.random_pic)
                 else:
                     await self.botpmmsg.delete()
             elif self.linkslogmsg:
@@ -544,7 +544,7 @@ class MirrorLeechListener:
                 if self.source_url and config_dict['SOURCE_LINK']:
                     buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
                 buttons = extra_btns(buttons)
-                await sendMessage(self.message, msg, buttons.build_menu(2), self.random_pic)
+                await sendMessage(self.message, msg, buttons.build_menu(1), self.random_pic)
 
             if self.seed:
                 if self.newDir:
