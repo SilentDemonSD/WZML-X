@@ -325,7 +325,7 @@ async def wzmlxcb(_, query):
         except Exception as err:
             LOGGER.error(f"TG Log Display : {str(err)}")
     elif data[2] == "botpm":
-        await query.answer(f"https://t.me/{bot_name}")
+        await query.answer(url=f"t.me/{bot_name}")
     else:
         await query.answer()
         await message.delete()
