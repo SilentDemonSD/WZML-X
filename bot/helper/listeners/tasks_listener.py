@@ -446,7 +446,7 @@ class MirrorLeechListener:
                 if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
                     await sendMessage(self.botpmmsg, msg + BotTheme('PM_BOT_MSG'), photo=self.random_pic)
                     if self.isSuperGroup:
-                        btn.ubutton(BotTheme('CHECK_PM'), f"https://t.me/{bot_name}", 'header')
+                        btn.ubutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
                         if self.linkslogmsg:
                             btn.ubutton(BotTheme('CHECK_LL'), self.linkslogmsg.link)
                         if self.source_url and config_dict['SOURCE_LINK']:
@@ -527,7 +527,7 @@ class MirrorLeechListener:
             if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
                 await sendMessage(self.botpmmsg, msg, button, self.random_pic)
                 if self.isSuperGroup:
-                    buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {self.message.from_user.id} botpm", 'header')
+                    buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
                     if self.linkslogmsg:
                         buttons.ubutton(BotTheme('CHECK_LL'), self.linkslogmsg.link)
                     if self.source_url and config_dict['SOURCE_LINK']:

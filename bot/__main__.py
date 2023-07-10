@@ -83,12 +83,13 @@ async def stats(client, message):
 
 @new_task
 async def start(client, message):
-    await DbManger().update_pm_users(message.from_user.id)
     buttons = ButtonMaker()
     buttons.ubutton(BotTheme('ST_BN1_NAME'), BotTheme('ST_BN1_URL'))
     buttons.ubutton(BotTheme('ST_BN2_NAME'), BotTheme('ST_BN2_URL'))
     reply_markup = buttons.build_menu(2)
-    if len(message.command) > 1 and config_dict['TOKEN_TIMEOUT']:
+    if len(message.command) > 1 and message.command[1] == "wzmlx":
+        await message.delete()
+    elif len(message.command) > 1 and config_dict['TOKEN_TIMEOUT']:
         userid = message.from_user.id
         encrypted_url = message.command[1]
         input_token, pre_uid = (b64decode(encrypted_url.encode()).decode()).split('&&')
@@ -112,6 +113,7 @@ async def start(client, message):
         await sendMessage(message, BotTheme('ST_BOTPM'), reply_markup, photo='IMAGES')
     else:
         await sendMessage(message, BotTheme('ST_UNAUTH'), reply_markup, photo='IMAGES')
+    await DbManger().update_pm_users(message.from_user.id)
 
 
 async def token_callback(_, query):
