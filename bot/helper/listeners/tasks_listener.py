@@ -446,8 +446,6 @@ class MirrorLeechListener:
                 btn = ButtonMaker()
                 if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
                     await sendMessage(self.botpmmsg, msg + BotTheme('PM_BOT_MSG'), photo=self.random_pic)
-                    if self.isPrivate:
-                        await self.botpmmsg.delete()
                     if self.isSuperGroup:
                         btn.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
                         if self.linkslogmsg:
@@ -456,6 +454,8 @@ class MirrorLeechListener:
                             btn.ubutton(BotTheme('SOURCE_URL'), self.source_url)
                         btn = extra_btns(btn)
                         await sendMessage(self.message, msg + BotTheme('L_BOT_MSG'), btn.build_menu(2), self.random_pic)
+                    else:
+                        await self.botpmmsg.delete()
                 elif self.linkslogmsg:
                     btn.ubutton(BotTheme('CHECK_LL'), self.linkslogmsg.link)
                     if self.source_url and config_dict['SOURCE_LINK']:
@@ -529,8 +529,6 @@ class MirrorLeechListener:
             buttons = ButtonMaker()
             if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
                 await sendMessage(self.botpmmsg, msg, button, self.random_pic)
-                if self.isPrivate:
-                    await self.botpmmsg.delete()
                 if self.isSuperGroup:
                     buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
                     if self.linkslogmsg:
@@ -539,6 +537,8 @@ class MirrorLeechListener:
                         buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
                     buttons = extra_btns(buttons)
                     await sendMessage(self.message, msg + BotTheme('M_BOT_MSG'), buttons.build_menu(2), self.random_pic)
+                else:
+                    await self.botpmmsg.delete()
             elif self.linkslogmsg:
                 buttons.ubutton(BotTheme('CHECK_LL'), self.linkslogmsg.link)
                 if self.source_url and config_dict['SOURCE_LINK']:
