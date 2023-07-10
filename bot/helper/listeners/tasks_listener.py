@@ -511,10 +511,11 @@ class MirrorLeechListener:
             msg += BotTheme('M_CC', Tag=self.tag)
 
             if config_dict['MIRROR_LOG_ID']:
+                buttonss = button
                 if button is not None and config_dict['SAVE_MSG']:
                     buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
-                    button = buttons.build_menu(2)
-                log_msg = list((await sendMultiMessage(config_dict['MIRROR_LOG_ID'], msg, button, self.random_pic)).values())[0]
+                    buttonss = buttons.build_menu(2)
+                log_msg = list((await sendMultiMessage(config_dict['MIRROR_LOG_ID'], msg, buttonss, self.random_pic)).values())[0]
                 if self.linkslogmsg:
                     dispTime = datetime.now(timezone(config_dict['TIMEZONE'])).strftime('%d/%m/%y, %I:%M:%S %p')
                     if config_dict['SAVE_MSG']:
@@ -526,7 +527,7 @@ class MirrorLeechListener:
             if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
                 await sendMessage(self.botpmmsg, msg, button, self.random_pic)
                 if self.isSuperGroup:
-                    buttons.ubutton(BotTheme('CHECK_PM'), f"https://t.me/{bot_name}", 'header')
+                    buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {self.message.from_user.id} botpm", 'header')
                     if self.linkslogmsg:
                         buttons.ubutton(BotTheme('CHECK_LL'), self.linkslogmsg.link)
                     if self.source_url and config_dict['SOURCE_LINK']:
