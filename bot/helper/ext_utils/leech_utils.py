@@ -252,9 +252,10 @@ async def format_filename(file_, user_id, dirpath=None, isMirror=False):
         slit = lcaption.split("|")
         up_path = ospath.join(dirpath, prefile_)
         cap_mono = slit[0].format(
-            filename=nfile_,
-            size=get_readable_file_size(await aiopath.getsize(up_path)),
-            duration = get_readable_time((await get_media_info(up_path))[0])
+            filename = nfile_,
+            size = get_readable_file_size(await aiopath.getsize(up_path)),
+            duration = get_readable_time((await get_media_info(up_path))[0]),
+            md5_hash = get_md5_hash(up_path)
         )
         if len(slit) > 1:
             for rep in range(1, len(slit)):

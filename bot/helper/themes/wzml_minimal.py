@@ -63,8 +63,18 @@ class WZMLStyle:
     PING_VALUE = '<b>Pong</b>\n<code>{value} ms..</code>'
     # ---------------------
 
+    # async def onDownloadStart(self): --> tasks_listener.py
+    LINKS_START = """<b><i>Task Started</i></b>
+┠ <b>Mode:</b> {Mode}
+┖ <b>By:</b> {Tag}\n\n"""
+    LINKS_SOURCE = """➲ <b>Source:</b>
+┖ <b>Added On:</b> {On}
+------------------------------------------
+{Source}
+------------------------------------------\n\n"""
+    
     # async def __msg_to_reply(self): ---> pyrogramEngine.py
-    L_PM_START =            "➲ <b><u>Leech Started :</u></b>\n┃\n┖ <b>Link:</b> <a href='{msg_link}'>Click Here</a>"
+    PM_START =            "➲ <b><u>Task Started :</u></b>\n┃\n┖ <b>Link:</b> <a href='{msg_link}'>Click Here</a>"
     L_LOG_START =           "➲ <b><u>Leech Started :</u></b>\n┃\n┠ <b>User :</b> {mention} ( #ID{uid} )\n┖ <b>Source :</b> <a href='{msg_link}'>Click Here</a>"
 
     # async def onUploadComplete(): ---> tasks_listener.py
@@ -98,8 +108,7 @@ class WZMLStyle:
     INDEX_LINK =      '⚡ Index Link'
     VIEW_LINK =       '🌐 View Link'
     CHECK_PM =        '📥 View in Bot PM'
-    CHECK_LL =        '🗂 View in Leech Log'
-    CHECK_ML =        '🗂 View in Mirror Log'
+    CHECK_LL =        '🖇 View in Links Log'
     MEDIAINFO_LINK =  '📃 MediaInfo'
     # ---------------------
 

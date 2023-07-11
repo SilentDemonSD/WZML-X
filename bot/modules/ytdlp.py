@@ -261,7 +261,7 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
     up = args['-up']
     rcf = args['-rcf']
     link = args['link']
-    compress = args['-z']
+    compress = args['-z'] or 'z' in input_list[0] or 'zip' in input_list[0]
 
     bulk_start = 0
     bulk_end = 0

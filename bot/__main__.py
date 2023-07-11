@@ -83,12 +83,13 @@ async def stats(client, message):
 
 @new_task
 async def start(client, message):
-    await DbManger().update_pm_users(message.from_user.id)
     buttons = ButtonMaker()
     buttons.ubutton(BotTheme('ST_BN1_NAME'), BotTheme('ST_BN1_URL'))
     buttons.ubutton(BotTheme('ST_BN2_NAME'), BotTheme('ST_BN2_URL'))
     reply_markup = buttons.build_menu(2)
-    if len(message.command) > 1 and config_dict['TOKEN_TIMEOUT']:
+    if len(message.command) > 1 and message.command[1] == "wzmlx":
+        await message.delete()
+    elif len(message.command) > 1 and config_dict['TOKEN_TIMEOUT']:
         userid = message.from_user.id
         encrypted_url = message.command[1]
         input_token, pre_uid = (b64decode(encrypted_url.encode()).decode()).split('&&')
@@ -112,6 +113,8 @@ async def start(client, message):
         await sendMessage(message, BotTheme('ST_BOTPM'), reply_markup, photo='IMAGES')
     else:
         await sendMessage(message, BotTheme('ST_UNAUTH'), reply_markup, photo='IMAGES')
+    await DbManger().update_pm_users(message.from_user.id)
+
 
 async def token_callback(_, query):
     user_id = query.from_user.id
@@ -125,7 +128,8 @@ async def token_callback(_, query):
     kb = query.message.reply_markup.inline_keyboard[1:]
     kb.insert(0, [InlineKeyboardButton('✅️ Activated ✅', callback_data='pass activated')])
     await query.edit_message_reply_markup(InlineKeyboardMarkup(kb))
-    
+
+
 async def login(_, message):
     if config_dict['LOGIN_PASS'] is None:
         return
@@ -141,6 +145,7 @@ async def login(_, message):
             return await sendMessage(message, '<b>Invalid Password!</b>\n\nKindly put the correct Password .')
     else:
         await sendMessage(message, '<b>Bot Login Usage :</b>\n\n<code>/cmd {password}</code>')
+
 
 async def restart(client, message):
     restart_message = await sendMessage(message, BotTheme('RESTARTING'))

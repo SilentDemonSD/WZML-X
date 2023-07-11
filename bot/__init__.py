@@ -54,7 +54,7 @@ non_queued_up = set()
 def get_version():
     MAJOR = '1'
     MINOR = '1'
-    PATCH = '4'
+    PATCH = '5'
     return f"v{MAJOR}.{MINOR}.{PATCH}-x"
 
 
@@ -261,7 +261,7 @@ if len(SEARCH_PLUGINS) == 0:
 MAX_SPLIT_SIZE = 4194304000 if IS_PREMIUM_USER else 2097152000
 
 LEECH_SPLIT_SIZE = environ.get('LEECH_SPLIT_SIZE', '')
-if len(LEECH_SPLIT_SIZE) == 0 or int(LEECH_SPLIT_SIZE) > MAX_SPLIT_SIZE:
+if str(LEECH_SPLIT_SIZE) in ["4194304000", "2097152000"] or len(LEECH_SPLIT_SIZE) == 0 or int(LEECH_SPLIT_SIZE) > MAX_SPLIT_SIZE:
     LEECH_SPLIT_SIZE = MAX_SPLIT_SIZE
 else:
     LEECH_SPLIT_SIZE = int(LEECH_SPLIT_SIZE)
@@ -287,9 +287,6 @@ if len(YT_DLP_OPTIONS) == 0:
 
 SEARCH_LIMIT = environ.get('SEARCH_LIMIT', '')
 SEARCH_LIMIT = 0 if len(SEARCH_LIMIT) == 0 else int(SEARCH_LIMIT)
-
-LEECH_LOG_ID = environ.get('LEECH_LOG_ID', '')
-LEECH_LOG_ID = '' if len(LEECH_LOG_ID) == 0 else int(LEECH_LOG_ID)
 
 STATUS_LIMIT = environ.get('STATUS_LIMIT', '')
 STATUS_LIMIT = 6 if len(STATUS_LIMIT) == 0 else int(STATUS_LIMIT)
@@ -380,8 +377,7 @@ if len(RCLONE_SERVE_PASS) == 0:
     RCLONE_SERVE_PASS = ''
 
 STORAGE_THRESHOLD = environ.get('STORAGE_THRESHOLD', '')
-STORAGE_THRESHOLD = '' if len(
-    STORAGE_THRESHOLD) == 0 else float(STORAGE_THRESHOLD)
+STORAGE_THRESHOLD = '' if len(STORAGE_THRESHOLD) == 0 else float(STORAGE_THRESHOLD)
 
 TORRENT_LIMIT = environ.get('TORRENT_LIMIT', '')
 TORRENT_LIMIT = '' if len(TORRENT_LIMIT) == 0 else float(TORRENT_LIMIT)
@@ -413,10 +409,17 @@ PLAYLIST_LIMIT = '' if len(PLAYLIST_LIMIT) == 0 else int(PLAYLIST_LIMIT)
 FSUB_IDS = environ.get('FSUB_IDS', '')
 if len(FSUB_IDS) == 0:
     FSUB_IDS = ''
+    
+LINKS_LOG_ID = environ.get('LINKS_LOG_ID', '')
+LINKS_LOG_ID = '' if len(LINKS_LOG_ID) == 0 else int(LINKS_LOG_ID)
 
 MIRROR_LOG_ID = environ.get('MIRROR_LOG_ID', '')
 if len(MIRROR_LOG_ID) == 0:
     MIRROR_LOG_ID = ''
+    
+LEECH_LOG_ID = environ.get('LEECH_LOG_ID', '')
+if len(LEECH_LOG_ID) == 0:
+    LEECH_LOG_ID = ''
 
 BOT_PM = environ.get('BOT_PM', '')
 BOT_PM = BOT_PM.lower() == 'true'
@@ -462,7 +465,7 @@ if len(AUTHOR_URL) == 0:
 
 TITLE_NAME = environ.get('TITLE_NAME', '')
 if len(TITLE_NAME) == 0:
-    TITLE_NAME = 'WZ M/L X'
+    TITLE_NAME = 'WZ-M/L-X'
 
 GD_INFO = environ.get('GD_INFO', '')
 if len(GD_INFO) == 0:
@@ -476,6 +479,12 @@ SAFE_MODE = SAFE_MODE.lower() == 'true'
 
 SET_COMMANDS = environ.get('SET_COMMANDS', '')
 SET_COMMANDS = SET_COMMANDS.lower() == 'true'
+
+CLEAN_LOG_MSG = environ.get('CLEAN_LOG_MSG', '')
+CLEAN_LOG_MSG = CLEAN_LOG_MSG.lower() == 'true'
+    
+SHOW_EXTRA_CMDS = environ.get('SHOW_EXTRA_CMDS', '')
+SHOW_EXTRA_CMDS = SHOW_EXTRA_CMDS.lower() == 'true'
 
 TOKEN_TIMEOUT = environ.get('TOKEN_TIMEOUT', '')
 TOKEN_TIMEOUT = int(TOKEN_TIMEOUT) if TOKEN_TIMEOUT.isdigit() else ''
@@ -562,6 +571,7 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'DAILY_LEECH_LIMIT': DAILY_LEECH_LIMIT,
                'MIRROR_LOG_ID': MIRROR_LOG_ID,
                'LEECH_LOG_ID': LEECH_LOG_ID,
+               'LINKS_LOG_ID': LINKS_LOG_ID,
                'BOT_PM': BOT_PM,
                'DISABLE_DRIVE_LINK': DISABLE_DRIVE_LINK,
                'BOT_THEME': BOT_THEME,
@@ -613,6 +623,8 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'SEARCH_PLUGINS': SEARCH_PLUGINS,
                'SET_COMMANDS': SET_COMMANDS,
                'SHOW_MEDIAINFO': SHOW_MEDIAINFO,
+               'CLEAN_LOG_MSG': CLEAN_LOG_MSG,
+               'SHOW_EXTRA_CMDS': SHOW_EXTRA_CMDS,
                'SOURCE_LINK': SOURCE_LINK,
                'STATUS_LIMIT': STATUS_LIMIT,
                'STATUS_UPDATE_INTERVAL': STATUS_UPDATE_INTERVAL,

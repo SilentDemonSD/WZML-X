@@ -8,7 +8,7 @@ from asyncio import sleep
 from aiofiles import open as aiopen
 from aiofiles.os import path as aiopath
 
-from bot import bot, DOWNLOAD_DIR, LOGGER, config_dict
+from bot import bot, DOWNLOAD_DIR, LOGGER, config_dict, bot_name
 from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_mega_link, is_gdrive_link, get_content_type, new_task, sync_to_async, is_rclone_path, is_telegram_link, arg_parser
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from bot.helper.ext_utils.task_manager import task_utils
@@ -22,6 +22,7 @@ from bot.helper.mirror_utils.download_utils.direct_link_generator import direct_
 from bot.helper.mirror_utils.download_utils.telegram_download import TelegramDownloadHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
+from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, get_tg_link_content, delete_links, auto_delete_message
 from bot.helper.listeners.tasks_listener import MirrorLeechListener
 from bot.helper.ext_utils.help_messages import MIRROR_HELP_MESSAGE
@@ -43,17 +44,17 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     except:
         multi = 0
 
-    select = args['-s']
-    seed = args['-d']
-    isBulk = args['-b']
+    select =      args['-s']
+    seed =        args['-d']
+    isBulk =      args['-b']
     folder_name = args['-m']
-    name = args['-n']
-    up = args['-up']
-    rcf = args['-rcf']
-    link = args['link']
-    compress = args['-z']
-    extract = args['-e']
-    join = args['-j']
+    name =        args['-n']
+    up =          args['-up']
+    rcf =         args['-rcf']
+    link =        args['link']
+    extract =     args['-e'] or 'uz' in input_list[0] or 'unzip' in input_list[0]
+    compress =    args['-z'] or (not extract and ('z' in input_list[0] or 'zip' in input_list[0]))
+    join =        args['-j']
 
     bulk_start = 0
     bulk_end = 0
@@ -259,6 +260,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     listener = MirrorLeechListener(message, compress, extract, isQbit, isLeech, tag, select, seed, sameDir, rcf, up, join, source_url=link)
 
     if file_ is not None:
+        await delete_links(message)
         await TelegramDownloadHelper(listener).add_download(reply_to, f'{path}/', name, session)
     elif is_rclone_path(link):
         if link.startswith('mrcc:'):
@@ -298,7 +300,7 @@ async def wzmlxcb(_, query):
     data = query.data.split()
     if user_id != int(data[1]):
         return await query.answer(text="Not Message User!", show_alert=True)
-    if data[2] == "logdisplay":
+    elif data[2] == "logdisplay":
         await query.answer()
         async with aiopen('log.txt', 'r') as f:
             logFileLines = (await f.read()).splitlines()
@@ -316,14 +318,17 @@ async def wzmlxcb(_, query):
                 ind += 1
             startLine = f"<b>Showing Last {ind} Lines from log.txt:</b> \n\n----------<b>START LOG</b>----------\n\n"
             endLine = "\n----------<b>END LOG</b>----------"
-            await sendMessage(message, startLine + escape(Loglines) + endLine)
+            btn = ButtonMaker()
+            btn.ibutton('Close', f'wzmlx {user_id} close')
+            await sendMessage(message, startLine + escape(Loglines) + endLine, btn.build_menu(1))
             await query.edit_message_reply_markup(None)
         except Exception as err:
             LOGGER.error(f"TG Log Display : {str(err)}")
-    else: # More Whole Bot CB Usage !!
+    elif data[2] == "botpm":
+        await query.answer(url=f"https://t.me/{bot_name}?start=wzmlx")
+    else:
         await query.answer()
         await message.delete()
-    
 
 
 async def mirror(client, message):

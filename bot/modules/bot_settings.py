@@ -46,8 +46,8 @@ default_values = {'AUTO_DELETE_MESSAGE_DURATION': 30,
                   'TITLE_NAME': 'WZ Mirror/Leech X',
                   'GD_INFO': 'Uploaded by WZML-X',
                   }
-bool_vars = ['AS_DOCUMENT', 'BOT_PM', 'STOP_DUPLICATE', 'SET_COMMANDS', 'SAVE_MSG', 'SHOW_MEDIAINFO', 'SOURCE_LINK', 'SAFE_MODE',
-             'IS_TEAM_DRIVE', 'USE_SERVICE_ACCOUNTS', 'WEB_PINCODE', 'EQUAL_SPLITS', 'DISABLE_DRIVE_LINK', 'DELETE_LINKS']
+bool_vars = ['AS_DOCUMENT', 'BOT_PM', 'STOP_DUPLICATE', 'SET_COMMANDS', 'SAVE_MSG', 'SHOW_MEDIAINFO', 'SOURCE_LINK', 'SAFE_MODE', 'SHOW_EXTRA_CMDS',
+             'IS_TEAM_DRIVE', 'USE_SERVICE_ACCOUNTS', 'WEB_PINCODE', 'EQUAL_SPLITS', 'DISABLE_DRIVE_LINK', 'DELETE_LINKS', 'CLEAN_LOG_MSG']
 
 
 async def load_config():
@@ -208,9 +208,6 @@ async def load_config():
     SEARCH_LIMIT = environ.get('SEARCH_LIMIT', '')
     SEARCH_LIMIT = 0 if len(SEARCH_LIMIT) == 0 else int(SEARCH_LIMIT)
 
-    LEECH_LOG_ID = environ.get('LEECH_LOG_ID', '')
-    LEECH_LOG_ID = '' if len(LEECH_LOG_ID) == 0 else int(LEECH_LOG_ID)
-
     STATUS_LIMIT = environ.get('STATUS_LIMIT', '')
     STATUS_LIMIT = 10 if len(STATUS_LIMIT) == 0 else int(STATUS_LIMIT)
 
@@ -355,10 +352,17 @@ async def load_config():
     FSUB_IDS = environ.get('FSUB_IDS', '')
     if len(FSUB_IDS) == 0:
         FSUB_IDS = ''
+    
+    LINKS_LOG_ID = environ.get('LINKS_LOG_ID', '')
+    LINKS_LOG_ID = '' if len(LINKS_LOG_ID) == 0 else int(LINKS_LOG_ID)
 
     MIRROR_LOG_ID = environ.get('MIRROR_LOG_ID', '')
     if len(MIRROR_LOG_ID) == 0:
         MIRROR_LOG_ID = ''
+        
+    LEECH_LOG_ID = environ.get('LEECH_LOG_ID', '')
+    if len(LEECH_LOG_ID) == 0:
+        LEECH_LOG_ID = ''
 
     USER_MAX_TASKS = environ.get('USER_MAX_TASKS', '')
     USER_MAX_TASKS = '' if len(USER_MAX_TASKS) == 0 else int(USER_MAX_TASKS)
@@ -423,6 +427,12 @@ async def load_config():
     
     SAFE_MODE = environ.get('SAFE_MODE', '')
     SAFE_MODE = SAFE_MODE.lower() == 'true'
+    
+    CLEAN_LOG_MSG = environ.get('CLEAN_LOG_MSG', '')
+    CLEAN_LOG_MSG = CLEAN_LOG_MSG.lower() == 'true'
+    
+    SHOW_EXTRA_CMDS = environ.get('SHOW_EXTRA_CMDS', '')
+    SHOW_EXTRA_CMDS = SHOW_EXTRA_CMDS.lower() == 'true'
     
     TOKEN_TIMEOUT = environ.get('TOKEN_TIMEOUT', '')
     TOKEN_TIMEOUT = int(TOKEN_TIMEOUT) if TOKEN_TIMEOUT.isdigit() else ''
@@ -554,6 +564,7 @@ async def load_config():
                         'DAILY_LEECH_LIMIT': DAILY_LEECH_LIMIT,
                         'MIRROR_LOG_ID': MIRROR_LOG_ID,
                         'LEECH_LOG_ID': LEECH_LOG_ID,
+                        'LINKS_LOG_ID': LINKS_LOG_ID,
                         'BOT_PM': BOT_PM,
                         'DISABLE_DRIVE_LINK': DISABLE_DRIVE_LINK,
                         'BOT_THEME': BOT_THEME,
@@ -604,6 +615,8 @@ async def load_config():
                         'SEARCH_PLUGINS': SEARCH_PLUGINS,
                         'SET_COMMANDS': SET_COMMANDS,
                         'SHOW_MEDIAINFO': SHOW_MEDIAINFO,
+                        'CLEAN_LOG_MSG': CLEAN_LOG_MSG,
+                        'SHOW_EXTRA_CMDS': SHOW_EXTRA_CMDS,
                         'SOURCE_LINK': SOURCE_LINK,
                         'STATUS_LIMIT': STATUS_LIMIT,
                         'STATUS_UPDATE_INTERVAL': STATUS_UPDATE_INTERVAL,
@@ -737,7 +750,7 @@ async def edit_variable(_, message, pre_message, key):
     elif key == 'DOWNLOAD_DIR':
         if not value.endswith('/'):
             value += '/'
-    elif key in ['LEECH_LOG_ID', 'RSS_CHAT_ID']:
+    elif key in ['LINKS_LOG_ID', 'RSS_CHAT_ID']:
         value = int(value)
     elif key == 'STATUS_UPDATE_INTERVAL':
         value = int(value)
