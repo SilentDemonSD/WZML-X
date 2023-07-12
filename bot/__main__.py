@@ -238,7 +238,7 @@ help_string = f'''<b><i>㊂ Help Guide :</i></b>
 <b>Bot Settings:</b>
 ➥ /{BotCommands.UserSetCommand[0]} or /{BotCommands.UserSetCommand[1]} [query]: Open User Settings (PM also)
 ➥ /{BotCommands.UsersCommand}: Show User Stats Info (Only Owner & Sudo).
-➥ /{BotCommands.BotSetCommand[0]} or /{BotCommands.BotSetCommand[0]} [query]: Open Bot Settings (Only Owner & Sudo).
+➥ /{BotCommands.BotSetCommand[0]} or /{BotCommands.BotSetCommand[1]} [query]: Open Bot Settings (Only Owner & Sudo).
 
 <b>Authentication:</b>
 ➥ /login: Login to Bot to Access Bot without Temp Pass System (Private)
