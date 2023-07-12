@@ -483,7 +483,7 @@ class MirrorLeechListener:
                 if is_DDL:
                     buttons.ubutton(BotTheme('DDL_LINK', Serv='GoFile'), link)
                 elif link:
-                    if user_id == OWNER_ID or not config_dict['DISABLE_DRIVE_LINK']:
+                    if not config_dict['DISABLE_DRIVE_LINK'] and user_id == OWNER_ID:
                         buttons.ubutton(BotTheme('CLOUD_LINK'), link)
                 else:
                     msg += BotTheme('RCPATH', RCpath=rclonePath)

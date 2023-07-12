@@ -12,7 +12,7 @@ class _BotCommands:
             self.QbMirrorCommand.extend([f'qbunzipmirror{CMD_SUFFIX}', f'quzm{CMD_SUFFIX}', f'qbzipmirror{CMD_SUFFIX}', f'qzm{CMD_SUFFIX}'])
         self.YtdlCommand = [f'ytdl{CMD_SUFFIX}', f'y{CMD_SUFFIX}']
         if config_dict['SHOW_EXTRA_CMDS']:
-            self.MirrorCommand.extend([f'ytdlzip{CMD_SUFFIX}', f'yz{CMD_SUFFIX}'])
+            self.YtdlCommand.extend([f'ytdlzip{CMD_SUFFIX}', f'yz{CMD_SUFFIX}'])
         self.LeechCommand = [f'leech{CMD_SUFFIX}', f'l{CMD_SUFFIX}']
         if config_dict['SHOW_EXTRA_CMDS']:
             self.LeechCommand.extend([f'unzipleech{CMD_SUFFIX}', f'uzl{CMD_SUFFIX}', f'zipleech{CMD_SUFFIX}', f'zl{CMD_SUFFIX}'])
@@ -21,7 +21,7 @@ class _BotCommands:
             self.QbLeechCommand.extend([f'qbunzipleech{CMD_SUFFIX}', f'quzl{CMD_SUFFIX}', f'qbzipleech{CMD_SUFFIX}', f'qzl{CMD_SUFFIX}'])
         self.YtdlLeechCommand = [f'ytdlleech{CMD_SUFFIX}', f'yl{CMD_SUFFIX}']
         if config_dict['SHOW_EXTRA_CMDS']:
-            self.MirrorCommand.extend([f'ytdlzipleech{CMD_SUFFIX}', f'yzl{CMD_SUFFIX}'])
+            self.YtdlLeechCommand.extend([f'ytdlzipleech{CMD_SUFFIX}', f'yzl{CMD_SUFFIX}'])
         self.CloneCommand = [f'clone{CMD_SUFFIX}', f'c{CMD_SUFFIX}']
         self.CountCommand = f'count{CMD_SUFFIX}'
         self.DeleteCommand = f'del{CMD_SUFFIX}'
