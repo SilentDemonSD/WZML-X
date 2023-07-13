@@ -138,6 +138,8 @@ async def editMessage(message, text, buttons=None, photo=None):
         return await editMessage(message, text, buttons, photo)
     except (MessageNotModified, MessageEmpty):
         pass
+    except ReplyMarkupInvalid:
+        return await editMessage(message, text, None, photo)
     except Exception as e:
         LOGGER.error(str(e))
         return str(e)
