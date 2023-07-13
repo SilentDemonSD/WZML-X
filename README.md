@@ -447,6 +447,7 @@ help - All cmds with description
     - `FSUB_IDS`: Fill chat_id(-100xxxxxx) of groups/channel you want to force subscribe. Separate them by space. Int
       - Note: Bot should be added in the filled chat_id as admin
     - `BOT_PM`: File/links send to the BOT PM. Default is `False`. `Bool`
+    - `BOT_MAX_TASKS`: Limit the Maximum task for bots of group at a time. `Int`
     </details></li>
     <li><details>
         <summary><b>GDrive Tools</b></summary>
@@ -479,7 +480,7 @@ help - All cmds with description
 
     </details></li>
     <li><details>
-        <summary><b>Telegram Leech</b></summary>
+        <summary><b>Telegram Leech & Mirror</b></summary>
 
     - `LEECH_SPLIT_SIZE`: Size of split in bytes. Default is `2GB`. Default is `4GB` if your account is premium. `Int`
     - `AS_DOCUMENT`: Default type of Telegram file upload. Default is `False` mean as media. `Bool`
@@ -489,14 +490,18 @@ help - All cmds with description
     - `LEECH_FILENAME_SUFFIX`: Add custom suffix to leeched file name. `Str`
     - `LEECH_FILENAME_CAPTION`: Add custom caption to leeched file. `Str`
     - `LEECH_FILENAME_REMNAME`: Remove custom word from leeched file name. `Str`
+    - `MIRROR_FILENAME_PREFIX`: Add custom prefix to mirrored file name. `Str`
+    - `MIRROR_FILENAME_SUFFIX`: Add custom suffix to mirrored file name. `Str`
+    - `MIRROR_FILENAME_REMNAME`: Remove custom word from mirrored file name. `Str`
 
     </details></li>
     <li><details>
         <summary><b>Log Channel</b></summary>
 
     - `LEECH_LOG_ID`: Chat ID to where leeched files would be uploaded. `Int`. **NOTE**: Only available for superGroup/channel. Add `-100` before channel/superGroup id. In short don't add bot id or your id!
-    - `MIRROR_LOG_ID`: Chat ID to where Mirror files would be Send. `Int`. **NOTE**: Only available for superGroup/channel. Add `-100` before channel/superGroup id. In short don't add bot id or your id!. 
-      - **Note**: For Multiple id Separate them by space.
+    - `MIRROR_LOG_ID`: Chat ID to where Mirror files would be Send. `Int`. **NOTE**: Only available for superGroup/channel. Add `-100` before channel/superGroup id. In short don't add bot id or your id!.
+    - `LINKS_LOG_ID`: Chat ID to where Link logs would be Send. `Int`. **NOTE**: Only available for superGroup/channel. Add `-100` before channel/superGroup id. In short don't add bot id or your id!.
+      - **Note**: LEECH_LOG_ID & MIRROR_LOG_ID it's multiple, For multiple id Separate them by space.
     </details></li>
     <li><details>
         <summary><b>qBittorrent/Aria2c</b></summary>
@@ -567,6 +572,11 @@ help - All cmds with description
     <li><details>
         <summary><b>Extra</b></summary>
         
+    - `SAFE_MODE`: Remove all file names. Not from BOT_PM & LINK_LOGS. Default is `False`. `Bool`
+    - `DELETE_LINKS`: Delete links after used. Default is `False`. `Bool`
+    - `CLEAN_LOG_MSG`: Clean log msg. Default is `False`. `Bool`
+    - `SHOW_EXTRA_CMDS`: Add old cmds like zipleech... Default is `False`. `Bool`
+    - `SOURCE_LINK`: Source button of files and links. Default is `False`. `Bool`
     - `IMAGES`: Add multiple telgraph(graph.org) image links that are seperated by spaces.
     - `IMG_SEARCH`: Put Keyword to Download Images. Sperarte each name by , like `anime`, `iron man`, `god of war`
     - `IMG_PAGE`: Set the page value for downloading a image. Each page have approx 70 images. Deafult is `1`. `Int`
