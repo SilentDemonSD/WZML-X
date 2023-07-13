@@ -102,7 +102,7 @@ class MirrorLeechListener:
                                   f'┠ <b>Created Date:</b> {media.date}\n' \
                                   f'┖ <b>Media Type:</b> {(file.media.value).capitalize()}'
             else:
-                self.source_msg = "<b>No media information available.</b>"
+                self.source_msg = f"<code>{self.message.reply_to_message.text}</code>"
         elif self.source_url.startswith('https://t.me/share/url?url='):
             msg = self.source_url.replace('https://t.me/share/url?url=', '')
             if msg.startswith('magnet'):
