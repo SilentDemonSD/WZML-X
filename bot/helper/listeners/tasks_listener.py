@@ -94,12 +94,15 @@ class MirrorLeechListener:
     def __parseSource(self):
         if self.source_url == self.message.link:
             file = self.message.reply_to_message
-            media = getattr(file, file.media.value)
-            self.source_msg = f'┎ <b>Name:</b> <i>{media.file_name}</i>\n' \
-                              f'┠ <b>Type:</b> {media.mime_type}\n' \
-                              f'┠ <b>Size:</b> {get_readable_file_size(media.file_size)}\n' \
-                              f'┠ <b>Created Date:</b> {media.date}\n' \
-                              f'┖ <b>Media Type:</b> {(file.media.value).capitalize()}'
+            if file is not None and file.media is not None:
+                media = getattr(file, file.media.value)
+                self.source_msg = f'┎ <b>Name:</b> <i>{media.file_name}</i>\n' \
+                                  f'┠ <b>Type:</b> {media.mime_type}\n' \
+                                  f'┠ <b>Size:</b> {get_readable_file_size(media.file_size)}\n' \
+                                  f'┠ <b>Created Date:</b> {media.date}\n' \
+                                  f'┖ <b>Media Type:</b> {(file.media.value).capitalize()}'
+            else:
+                self.source_msg = "<b>No media information available.</b>"
         elif self.source_url.startswith('https://t.me/share/url?url='):
             msg = self.source_url.replace('https://t.me/share/url?url=', '')
             if msg.startswith('magnet'):
@@ -114,7 +117,8 @@ class MirrorLeechListener:
                         name += ('&' if amper else '') + check.replace("dn=", "")
                         amper = True
                 self.source_msg = f"┎ <b>Name:</b> <i>{name}</i>\n┠ <b>Magnet Hash:</b> <code>{hashh}</code>\n┠ <b>Total Trackers:</b> {tracCount} \n┖ <b>Share:</b> <a href='https://t.me/share/url?url={quote(msg)}'>Share To Telegram</a>"
-            else: self.source_msg = f"<code>{msg}</code>"
+            else:
+                self.source_msg = f"<code>{msg}</code>"
         else:
             self.source_msg = f"<code>{self.source_url}</code>"
         
