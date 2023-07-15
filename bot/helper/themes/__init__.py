@@ -26,8 +26,8 @@ class BotTheme():
         elif theme_ == 'random':
             rantheme = rchoice(list(AVL_THEMES.values()))
             LOGGER.info(f"Random Theme Chosen: {rantheme}")
-            text = getattr(rantheme.WZMLStyle(), var_name, None)
+            text = getattr(rantheme.WZMLStyle(), self.var_name, None)
         if text is None:
-            text = getattr(wzml_minimal.WZMLStyle(), var_name)
+            text = getattr(wzml_minimal.WZMLStyle(), self.var_name)
 
         return text.format_map(self.format_vars)
