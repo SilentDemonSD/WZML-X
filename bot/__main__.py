@@ -45,8 +45,8 @@ async def stats(client, message):
     swap = swap_memory()
     memory = virtual_memory()
     cpuUsage = cpu_percent(interval=0.5)
-    stats = BotTheme('STATS',
-                     last_commit=last_commit,
+    stats = BotTheme('STATS')
+    stats.add_val(last_commit=last_commit,
                      bot_version=get_version(),
                      commit_details=changelog,
                      bot_uptime=get_readable_time(time() - botStartTime),
@@ -78,14 +78,14 @@ async def stats(client, message):
                      dl_data=get_readable_file_size(
                          net_io_counters().bytes_recv)
                      )
-    await sendMessage(message, stats, photo='IMAGES')
+    await sendMessage(message, stats.build_theme(), photo='IMAGES')
 
 
 @new_task
 async def start(client, message):
     buttons = ButtonMaker()
-    buttons.ubutton(BotTheme('ST_BN1_NAME'), BotTheme('ST_BN1_URL'))
-    buttons.ubutton(BotTheme('ST_BN2_NAME'), BotTheme('ST_BN2_URL'))
+    buttons.ubutton(BotTheme('ST_BN1_NAME').build_theme(), BotTheme('ST_BN1_URL').build_theme())
+    buttons.ubutton(BotTheme('ST_BN2_NAME').build_theme(), BotTheme('ST_BN2_URL').build_theme())
     reply_markup = buttons.build_menu(2)
     if len(message.command) > 1 and message.command[1] == "wzmlx":
         await message.delete()
