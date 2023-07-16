@@ -253,4 +253,4 @@ async def clone(client, message):
     await delete_links(message)
     
 bot.add_handler(MessageHandler(clone, filters=command(
-    BotCommands.CloneCommand) & CustomFilters.authorized))
+    BotCommands.CloneCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))

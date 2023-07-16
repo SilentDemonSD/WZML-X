@@ -431,9 +431,9 @@ async def anime_help(_, message):
 • /manga : <i>[search manga]</i>'''
     await sendMessage(message, help_string)
 
-bot.add_handler(MessageHandler(anilist, filters=command(BotCommands.AniListCommand) & CustomFilters.authorized))
-bot.add_handler(MessageHandler(character, filters=command("character") & CustomFilters.authorized))
-bot.add_handler(MessageHandler(manga, filters=command("manga") & CustomFilters.authorized))
-bot.add_handler(MessageHandler(anime_help, filters=command(BotCommands.AnimeHelpCommand) & CustomFilters.authorized))
+bot.add_handler(MessageHandler(anilist, filters=command(BotCommands.AniListCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
+bot.add_handler(MessageHandler(character, filters=command("character") & CustomFilters.authorized & ~CustomFilters.blacklisted))
+bot.add_handler(MessageHandler(manga, filters=command("manga") & CustomFilters.authorized & ~CustomFilters.blacklisted))
+bot.add_handler(MessageHandler(anime_help, filters=command(BotCommands.AnimeHelpCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
 bot.add_handler(CallbackQueryHandler(setAnimeButtons, filters=regex(r'^anime')))
 bot.add_handler(CallbackQueryHandler(setCharacButtons, filters=regex(r'^cha')))

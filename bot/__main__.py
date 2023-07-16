@@ -105,7 +105,7 @@ async def start(client, message):
         msg += f'<b>Temp Token:</b> <code>{input_token}</code>\n\n'
         msg += f'<b>Validity:</b> {get_readable_time(int(config_dict["TOKEN_TIMEOUT"]))}'
         return await sendMessage(message, msg, reply_markup)
-    elif await CustomFilters.authorized(client, message):
+    elif await CustomFilters.authorized & ~CustomFilters.blacklisted(client, message):
         start_string = BotTheme('ST_MSG', help_command=f"/{BotCommands.HelpCommand}")
         await sendMessage(message, start_string, reply_markup, photo='IMAGES')
     elif config_dict['BOT_PM']:
@@ -343,11 +343,11 @@ async def main():
     bot.add_handler(MessageHandler(restart, filters=command(
         BotCommands.RestartCommand) & CustomFilters.sudo))
     bot.add_handler(MessageHandler(ping, filters=command(
-        BotCommands.PingCommand) & CustomFilters.authorized))
+        BotCommands.PingCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
     bot.add_handler(MessageHandler(bot_help, filters=command(
-        BotCommands.HelpCommand) & CustomFilters.authorized))
+        BotCommands.HelpCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
     bot.add_handler(MessageHandler(stats, filters=command(
-        BotCommands.StatsCommand) & CustomFilters.authorized))
+        BotCommands.StatsCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
     LOGGER.info("WZML-X Bot Started!")
     signal(SIGINT, exit_clean_up)
 

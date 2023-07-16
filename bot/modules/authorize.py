@@ -62,7 +62,7 @@ async def addSudo(client, message):
                 await DbManger().update_user_data(id_)
             msg = 'Promoted as Sudo'
     else:
-        msg = "Give ID or Reply To message of whom you want to Promote."
+        msg = "<i>Give User's ID or Reply to User's message of whom you want to Promote as Sudo</i>"
     await sendMessage(message, msg)
 
 
@@ -73,13 +73,16 @@ async def removeSudo(client, message):
         id_ = int(msg[1].strip())
     elif reply_to := message.reply_to_message:
         id_ = reply_to.from_user.id
-    if id_ and id_ not in user_data or user_data[id_].get('is_sudo'):
-        update_user_ldata(id_, 'is_sudo', False)
-        if DATABASE_URL:
-            await DbManger().update_user_data(id_)
-        msg = 'Demoted'
+    if id_:
+        if id_ in user_data and not user_data[id_].get('is_sudo'):
+            msg = 'Not a Sudo User, Already Demoted'
+        else:
+            update_user_ldata(id_, 'is_sudo', False)
+            if DATABASE_URL:
+                await DbManger().update_user_data(id_)
+            msg = 'Demoted'
     else:
-        msg = "Give ID or Reply To message of whom you want to remove from Sudo"
+        msg = "<i>Give User's ID or Reply to User's message of whom you want to Demote</i>"
     await sendMessage(message, msg)
 
 
@@ -92,12 +95,12 @@ async def addBlackList(_, message):
         id_ = reply_to.from_user.id
     if id_:
         if id_ in user_data and user_data[id_].get('is_blacklist'):
-            msg = 'Already BlackListed!'
+            msg = 'User Already BlackListed!'
         else:
             update_user_ldata(id_, 'is_blacklist', True)
             if DATABASE_URL:
                 await DbManger().update_user_data(id_)
-            msg = 'User now BlackListed'
+            msg = 'User BlackListed'
     else:
         msg = "Give ID or Reply To message of whom you want to blacklist."
     await sendMessage(message, msg)
@@ -110,18 +113,21 @@ async def rmBlackList(_, message):
         id_ = int(msg[1].strip())
     elif reply_to := message.reply_to_message:
         id_ = reply_to.from_user.id
-    if id_ and id_ not in user_data or user_data[id_].get('is_blacklist'):
-        update_user_ldata(id_, 'is_blacklist', False)
-        if DATABASE_URL:
-            await DbManger().update_user_data(id_)
-        msg = 'User now Set Free'
+    if id_
+        if id_ in user_data and not user_data[id_].get('is_blacklist'):
+            msg = '<i>User Already Freed</i>'
+        else:
+            update_user_ldata(id_, 'is_blacklist', False)
+            if DATABASE_URL:
+                await DbManger().update_user_data(id_)
+            msg = '<i>User Set Free as Bird!</i>'
     else:
         msg = "Give ID or Reply To message of whom you want to remove from blacklisted"
     await sendMessage(message, msg)
     
     
 async def black_listed(_, message):
-    await sendMessage(message, "<i>BlackListed Fellow, You are Restricted</i>")
+    await sendMessage(message, "<i>BlackListed Detected, Restricted from Bot</i>")
     
     
 bot.add_handler(MessageHandler(authorize, filters=command(
@@ -137,5 +143,5 @@ bot.add_handler(MessageHandler(addBlackList, filters=command(
 bot.add_handler(MessageHandler(rmBlackList, filters=command(
     BotCommands.RmBlackListCommand) & CustomFilters.sudo))
 bot.add_handler(MessageHandler(black_listed, filters=regex(r'^/')
-    & CustomFilters.blacklisted), group=-2)
+    & CustomFilters.authorized & CustomFilters.blacklisted))
     
