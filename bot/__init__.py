@@ -16,7 +16,6 @@ from qbittorrentapi import Client as qbClient
 from faulthandler import enable as faulthandler_enable
 from socket import setdefaulttimeout
 from logging import getLogger, Formatter, FileHandler, StreamHandler, INFO, basicConfig, error as log_error, info as log_info, warning as log_warning
-from bot.helper.ext_utils.bot_utils import update_user_ldata
 from uvloop import install
 
 faulthandler_enable()
@@ -187,8 +186,7 @@ if len(SUDO_USERS) != 0:
 BLACKLIST_USERS = environ.get('BLACKLIST_USERS', '')
 if len(BLACKLIST_USERS) != 0:
     for id_ in BLACKLIST_USERS.split():
-        user_data[int(id_.strip())] = {'is_blacklist': True}
-        update_user_ldata(id_, 'is_blacklist', True)
+        user_data[int(id_.strip())]['is_blacklist'] = True
 
 EXTENSION_FILTER = environ.get('EXTENSION_FILTER', '')
 if len(EXTENSION_FILTER) > 0:
