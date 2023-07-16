@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-from aiofiles.os import listdir
+from os import listdir
 from importlib import import_module
 from random import choice as rchoice
 from bot import config_dict, LOGGER
 from bot.helper.themes import wzml_minimal
 
 AVL_THEMES = {}
-for theme in await listdir('bot/helper/themes'):
+for theme in listdir('bot/helper/themes'):
     if theme.startswith('wzml') and theme.endswith('.py'):
         AVL_THEMES[theme[5:-3]] = import_module(f'bot.helper.themes.{theme[:-3]}')
 
