@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from pyrogram.handlers import MessageHandler
-from pyrogram.filters import command
+from pyrogram.filters import command, regex
 
 from bot import user_data, DATABASE_URL, bot
 from bot.helper.telegram_helper.message_utils import sendMessage
