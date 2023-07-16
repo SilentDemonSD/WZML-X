@@ -186,8 +186,10 @@ if len(SUDO_USERS) != 0:
 BLACKLIST_USERS = environ.get('BLACKLIST_USERS', '')
 if len(BLACKLIST_USERS) != 0:
     aid = BLACKLIST_USERS.split()
+    LOGGER.info(aid)
     for id_ in aid:
         user_data[int(id_.strip())] = {'is_blacklist': True}
+        LOGGER.info(user_data[int(id_.strip())])
 
 EXTENSION_FILTER = environ.get('EXTENSION_FILTER', '')
 if len(EXTENSION_FILTER) > 0:
