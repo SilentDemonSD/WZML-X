@@ -145,14 +145,15 @@ Get from https://my.telegram.org</i>.
 async def set_details(_, message, newkey):
     global isStop
     user_id = message.from_user.id
-    session_dict[user_id] = False
     value = message.text
     await message.delete()
+    async with session_lock:
+        session_dict[newkey] = value
+    session_dict[user_id] = False
     if value.lower() == '/stop':
         isStop = True
         return await editMessage(session_dict['message'], '⌬ <b>Process Stopped</b>')
-    async with session_lock:
-        session_dict[newkey] = value
+
 
 @new_thread
 async def invoke(client, message, key, wait=True):
