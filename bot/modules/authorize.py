@@ -113,7 +113,7 @@ async def rmBlackList(_, message):
         id_ = int(msg[1].strip())
     elif reply_to := message.reply_to_message:
         id_ = reply_to.from_user.id
-    if id_
+    if id_:
         if id_ in user_data and not user_data[id_].get('is_blacklist'):
             msg = '<i>User Already Freed</i>'
         else:
