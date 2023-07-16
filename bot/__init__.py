@@ -182,6 +182,12 @@ if len(SUDO_USERS) != 0:
     aid = SUDO_USERS.split()
     for id_ in aid:
         user_data[int(id_.strip())] = {'is_sudo': True}
+        
+BLACKLIST_USERS = environ.get('BLACKLIST_USERS', '')
+if len(BLACKLIST_USERS) != 0:
+    aid = BLACKLIST_USERS.split()
+    for id_ in aid:
+        user_data[int(id_.strip())] = {'is_blacklist': True}
 
 EXTENSION_FILTER = environ.get('EXTENSION_FILTER', '')
 if len(EXTENSION_FILTER) > 0:
@@ -547,6 +553,7 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'AUTO_DELETE_MESSAGE_DURATION': AUTO_DELETE_MESSAGE_DURATION,
                'BASE_URL': BASE_URL,
                'BASE_URL_PORT': BASE_URL_PORT,
+               'BLACKLIST_USERS': BLACKLIST_USERS,
                'BOT_TOKEN': BOT_TOKEN,
                'BOT_MAX_TASKS': BOT_MAX_TASKS,
                'CAP_FONT': CAP_FONT,

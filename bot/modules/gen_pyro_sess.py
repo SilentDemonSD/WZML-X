@@ -156,7 +156,7 @@ async def set_details(_, message, newkey):
 
 
 @new_thread
-async def invoke(client, message, key, wait=True):
+async def invoke(client, message, key):
     global isStop
     user_id = message.from_user.id
     session_dict[user_id] = True
@@ -171,4 +171,4 @@ async def invoke(client, message, key, wait=True):
     client.remove_handler(*handler)
 
 
-bot.add_handler(MessageHandler(genPyroString, filters=command('exportsession') & private & CustomFilters.owner))
+bot.add_handler(MessageHandler(genPyroString, filters=command('exportsession') & private & CustomFilters.sudo))

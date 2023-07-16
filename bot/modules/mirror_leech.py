@@ -348,7 +348,7 @@ async def qb_leech(client, message):
 
 
 bot.add_handler(MessageHandler(mirror, filters=command(
-    BotCommands.MirrorCommand) & CustomFilters.authorized))
+    BotCommands.MirrorCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
 bot.add_handler(MessageHandler(qb_mirror, filters=command(
     BotCommands.QbMirrorCommand) & CustomFilters.authorized))
 bot.add_handler(MessageHandler(leech, filters=command(

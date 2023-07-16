@@ -95,12 +95,13 @@ class MirrorLeechListener:
         if self.source_url == self.message.link:
             file = self.message.reply_to_message
             if file is not None and file.media is not None:
-                media = getattr(file, file.media.value)
-                self.source_msg = f'┎ <b>Name:</b> <i>{media.file_name}</i>\n' \
+                mtype = file.media.value
+                media = getattr(file, mtype)
+                self.source_msg = f'┎ <b>Name:</b> <i>{media.file_name if hasattr(media, "file_name") else mtype+"_"+media.file_unique_id}</i>\n' \
                                   f'┠ <b>Type:</b> {media.mime_type}\n' \
                                   f'┠ <b>Size:</b> {get_readable_file_size(media.file_size)}\n' \
                                   f'┠ <b>Created Date:</b> {media.date}\n' \
-                                  f'┖ <b>Media Type:</b> {(file.media.value).capitalize()}'
+                                  f'┖ <b>Media Type:</b> {mtype.capitalize()}'
             else:
                 self.source_msg = f"<code>{self.message.reply_to_message.text}</code>"
         elif self.source_url.startswith('https://t.me/share/url?url='):
