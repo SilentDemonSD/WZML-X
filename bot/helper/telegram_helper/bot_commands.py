@@ -28,6 +28,8 @@ class _BotCommands:
         self.UsersCommand = f'users{CMD_SUFFIX}'
         self.AuthorizeCommand = [f'authorize{CMD_SUFFIX}', f'a{CMD_SUFFIX}']
         self.UnAuthorizeCommand = [f'unauthorize{CMD_SUFFIX}', f'ua{CMD_SUFFIX}']
+        self.AddBlackListCommand = [f'blacklist{CMD_SUFFIX}', f'bl{CMD_SUFFIX}']
+        self.RmBlackListCommand = [f'rmblacklist{CMD_SUFFIX}', f'rbl{CMD_SUFFIX}']
         self.AddSudoCommand = f'addsudo{CMD_SUFFIX}'
         self.RmSudoCommand = f'rmsudo{CMD_SUFFIX}'
         self.PingCommand = [f'ping{CMD_SUFFIX}', f'p{CMD_SUFFIX}']
