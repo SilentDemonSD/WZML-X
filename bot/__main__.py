@@ -105,7 +105,7 @@ async def start(client, message):
         msg += f'<b>Temp Token:</b> <code>{input_token}</code>\n\n'
         msg += f'<b>Validity:</b> {get_readable_time(int(config_dict["TOKEN_TIMEOUT"]))}'
         return await sendMessage(message, msg, reply_markup)
-    elif await CustomFilters.authorized & ~CustomFilters.blacklisted(client, message):
+    elif await CustomFilters.authorized(client, message):
         start_string = BotTheme('ST_MSG', help_command=f"/{BotCommands.HelpCommand}")
         await sendMessage(message, start_string, reply_markup, photo='IMAGES')
     elif config_dict['BOT_PM']:
