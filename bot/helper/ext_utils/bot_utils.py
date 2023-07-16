@@ -396,8 +396,8 @@ async def get_content_type(url):
 
 
 def update_user_ldata(id_, key=None, value=None):
-    exception_keys = ['is_sudo', 'is_auth', 'dly_tasks']
-    if not key and not value:
+    exception_keys = ['is_sudo', 'is_auth', 'dly_tasks', 'is_blacklist']
+    if not (key and value):
         if id_ in user_data:
             updated_data = {}
             for k, v in user_data[id_].items():

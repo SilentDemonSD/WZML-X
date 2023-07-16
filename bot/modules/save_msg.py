@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from bot import bot
+from bot import bot, bot_name
 from pyrogram.types import InlineKeyboardMarkup 
 from pyrogram.handlers import CallbackQueryHandler
 from pyrogram.filters import regex
