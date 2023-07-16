@@ -121,7 +121,7 @@ async def rmBlackList(_, message):
     
     
 async def black_listed(_, message):
-    await sendMessage(message, "You BlackListed Fellow, Shut Up")
+    await sendMessage(message, "<i>BlackListed Fellow, You are Restricted</i>")
     
     
 bot.add_handler(MessageHandler(authorize, filters=command(
@@ -136,5 +136,6 @@ bot.add_handler(MessageHandler(addBlackList, filters=command(
     BotCommands.AddBlackListCommand) & CustomFilters.sudo))
 bot.add_handler(MessageHandler(rmBlackList, filters=command(
     BotCommands.RmBlackListCommand) & CustomFilters.sudo))
-bot.add_handler(MessageHandler(black_listed, filters=CustomFilters.blacklisted))
+bot.add_handler(MessageHandler(black_listed, filters=regex(r'^/')
+    & CustomFilters.blacklisted), group=-2)
     
