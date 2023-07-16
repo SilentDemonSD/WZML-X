@@ -8,7 +8,7 @@ from bot.helper.themes import wzml_minimal
 AVL_THEMES = {}
 for theme in listdir('bot/helper/themes'):
     if theme.startswith('wzml') and theme.endswith('.py'):
-        AVL_THEMES[str(theme[5:])] = import_module(f'bot.helper.themes.{theme[:-3]}')
+        AVL_THEMES[str(theme[5:-3])] = import_module(f'bot.helper.themes.{theme[:-3]}')
 
 class BotTheme():
     def __init__(self, var_name, fast_build=True, **init_vars):
@@ -16,7 +16,7 @@ class BotTheme():
         self.var_name = var_name
         self.format_vars.update(init_vars)
         if fast_build:
-            self.build_theme()
+            return self.build_theme()
         
     def add_val(self, **more_vars):
         self.format_vars.update(more_vars)
