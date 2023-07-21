@@ -280,6 +280,13 @@ async def load_config():
 
     AS_DOCUMENT = environ.get('AS_DOCUMENT', '')
     AS_DOCUMENT = AS_DOCUMENT.lower() == 'true'
+    
+    USER_TD_MODE = environ.get('USER_TD_MODE', '')
+    USER_TD_MODE = USER_TD_MODE.lower() == 'true'
+
+    USER_TD_SA = environ.get('USER_TD_MODE', '')
+    if len(USER_TD_SA) != 0:
+        USER_TD_SA = USER_TD_SA.lower()
 
     SHOW_MEDIAINFO = environ.get('SHOW_MEDIAINFO', '')
     SHOW_MEDIAINFO = SHOW_MEDIAINFO.lower() == 'true'
@@ -637,6 +644,8 @@ async def load_config():
                         'UPSTREAM_BRANCH': UPSTREAM_BRANCH,
                         'UPTOBOX_TOKEN': UPTOBOX_TOKEN,
                         'USER_SESSION_STRING': USER_SESSION_STRING,
+                        'USER_TD_MODE':USER_TD_MODE,
+                        'USER_TD_SA': USER_TD_SA,
                         'USE_SERVICE_ACCOUNTS': USE_SERVICE_ACCOUNTS,
                         'WEB_PINCODE': WEB_PINCODE,
                         'YT_DLP_OPTIONS': YT_DLP_OPTIONS})

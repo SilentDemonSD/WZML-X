@@ -35,6 +35,7 @@ desp_dict = {'rcc': ['RClone is a command-line program to sync files and directo
             'yt_opt': ['YT-DLP Options is the Custom Quality for the extraction of videos from the yt-dlp supported sites.', 'Send YT-DLP Options. Timeout: 60 sec\nFormat: key:value|key:value|key:value.\nExample: format:bv*+mergeall[vcodec=none]|nocheckcertificate:True\nCheck all yt-dlp api options from this <a href="https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L184">FILE</a> or use this <a href="https://t.me/mltb_official/177">script</a> to convert cli arguments to api options.'],
             'split_size': ['Leech Splits Size is the size to split the Leeched File before uploading', f'Send Leech split size in bytes. IS_PREMIUM_USER: {IS_PREMIUM_USER}. Timeout: 60 sec'],
             'ddl_servers': ['DDL Servers which uploads your File to their Specific Hosting', ''],
+            'user_tds': ['UserTD helps to Upload files via Bot to your Custom Drive Destination', ''],
             'gofile': ['Gofile is a free file sharing and storage platform. You can store and share your content without any limit.', "Send GoFile's API Key. Get it on https://gofile.io/myProfile"],
             'streamsb': ['StreamSB', "Send StreamSB's API Key"],
             }
@@ -51,6 +52,7 @@ fname_dict = {'rcc': 'RClone',
              'yt_opt': 'YT-DLP Options',
              'split_size': 'Leech Splits',
              'ddl_servers': 'DDL Servers',
+             'user_tds': 'User Custom TDs',
              'gofile': 'GoFile',
              'streamsb': 'StreamSB',
              }
@@ -112,9 +114,17 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
 
         ddl_serv = len(val.keys()) if (val := user_dict.get('ddl_servers', False)) else 0
         buttons.ibutton("DDL Servers", f"userset {user_id} ddl_servers")
+        
+        tds_mode = "Enabled" if user_dict.get('td_mode', config_dict['BOT_PM']) else "Disabled"
+        buttons.ibutton('Disable UserTD' if tds_mode == 'Enabled' else 'Enable UserTD', f"userset {user_id} td_mode")
+        if config_dict['USER_TD_MODE']:
+            tds_mode = "Force Enabled"
+        
+        user_tds = len(val) if (val := user_dict.get('user_tds', False)) else 0
+        buttons.ibutton("User TD", f"userset {user_id} user_tds")
 
         text = BotTheme('MIRROR', NAME=name, RCLONE=rccmsg, DDL_SERVER=ddl_serv, DM=f"{dailyup} / {dailytlup}", MREMNAME=escape(mremname), MPREFIX=escape(mprefix),
-                MSUFFIX=escape(msuffix))
+                MSUFFIX=escape(msuffix), TMODE=td_mode, USERTD=user_tds)
         
         buttons.ibutton("Back", f"userset {user_id} back", "footer")
         buttons.ibutton("Close", f"userset {user_id} close", "footer")
@@ -428,13 +438,14 @@ async def edit_user_settings(client, query):
         await update_user_settings(query, 'yt_opt', 'universal')
         if DATABASE_URL:
             await DbManger().update_user_data(user_id)
-    elif data[2] in ['bot_pm', 'mediainfo']:
+    elif data[2] in ['bot_pm', 'mediainfo', 'td_mode']:
         handler_dict[user_id] = False
-        if data[2] == 'bot_pm' and config_dict['BOT_PM'] or data[2] == 'mediainfo' and config_dict['SHOW_MEDIAINFO']:
-            return await query.answer("Force Enabled! Can't Alter Settings", show_alert=True)
+        if data[2] == 'bot_pm' and config_dict['BOT_PM'] or data[2] == 'mediainfo' and config_dict['SHOW_MEDIAINFO'] or data[2] == 'td_mode' and not config_dict['USER_TD_MODE']:
+            mode_up = "Disabled" if data[2] == 'td_mode' else "Enabled"
+            return await query.answer(f"Force {mode_up}! Can't Alter Settings", show_alert=True)
         await query.answer()
         update_user_ldata(user_id, data[2], not user_dict.get(data[2], False))
-        await update_user_settings(query, 'universal')
+        await update_user_settings(query, 'mirror' if data[2] in ['td_mode'] else 'universal')
         if DATABASE_URL:
             await DbManger().update_user_data(user_id)
     elif data[2] == 'split_size':
