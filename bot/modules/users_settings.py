@@ -226,7 +226,7 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
             buttons.ibutton('Disable UserTD' if tds_mode == 'Enabled' else 'Enable UserTD', f"userset {user_id} td_mode", "header")
             if not config_dict['USER_TD_MODE']:
                 tds_mode = "Force Disabled"
-            text += f"➲ <b>User TD Mode :</b> {td_mode}\n"
+            text += f"➲ <b>User TD Mode :</b> {tds_mode}\n"
             text += f"➲ <b>{fname_dict[key]} :</b> {set_exist}\n\n"
         else: return
         text += f"➲ <b>Description :</b> <i>{desp_dict[key][0]}</i>"

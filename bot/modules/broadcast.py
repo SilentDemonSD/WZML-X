@@ -50,13 +50,18 @@ async def broadcast(_, message):
 /cmd [reply_edited_msg] broadcast_id -e
 
 <b>Delete Broadcast msg:</b> -d or -delete
-/bc broadcast_id -d''')
+/bc broadcast_id -d
+
+<b>Notes:</b>
+1. Broadcast msgs can be only edited or deleted until restart.
+2. Forwarded msgs can't be Edited''')
     t, s, b, d, u = 0, 0, 0, 0, 0
     if deleted:
         temp_wait = await sendMessage(message, '<i>Deleting the Broadcasted Message! Please Wait ...</i>')
         for msg in (msgs:=bc_cache[bc_id]):
             try:
                 await msg.delete()
+                await sleep(0.5)
                 msgs.pop(msgs.index(msg))
                 s += 1
             except:
@@ -71,8 +76,11 @@ async def broadcast(_, message):
     elif edited:
         temp_wait = await sendMessage(message, '<i>Editing the Broadcasted Message! Please Wait ...</i>')
         for msg in bc_cache[bc_id]:
+            if hasattr(msg, "forward_from"):
+                return await editMessage(temp_wait, "<i>Forwarded Messages can't be Edited, Only can be Deleted !</i>")
             try:
                 await msg.edit(text=rply.text, entities=rply.entities, reply_markup=rply.reply_markup)
+                await sleep(0.5)
                 s += 1
             except FloodWait as e:
                 await sleep(e.value)
