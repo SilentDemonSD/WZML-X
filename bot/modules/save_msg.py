@@ -13,7 +13,7 @@ async def save_message(_, query):
             if user_dict.get('save_mode'):
                 usr = await chat_info((user_dict.get('ldump', '')).split()[0])
             await query.message.copy(usr.id, reply_markup=InlineKeyboardMarkup(BTN) if (BTN := query.message.reply_markup.inline_keyboard[:-1]) else None)
-            await query.answer("Message/Media Successfully Saved !")
+            await query.answer("Message/Media Successfully Saved !", show_alert=True)
         except:
             await query.answer('Make Bot as Admin and give Post Permissions and Try Again' if user_dict.get('save_mode') else 'Start the Bot in Private and Try Again', show_alert=True)
 

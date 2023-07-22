@@ -35,7 +35,7 @@ desp_dict = {'rcc': ['RClone is a command-line program to sync files and directo
             'yt_opt': ['YT-DLP Options is the Custom Quality for the extraction of videos from the yt-dlp supported sites.', 'Send YT-DLP Options. Timeout: 60 sec\nFormat: key:value|key:value|key:value.\nExample: format:bv*+mergeall[vcodec=none]|nocheckcertificate:True\nCheck all yt-dlp api options from this <a href="https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L184">FILE</a> or use this <a href="https://t.me/mltb_official/177">script</a> to convert cli arguments to api options.'],
             'split_size': ['Leech Splits Size is the size to split the Leeched File before uploading', f'Send Leech split size in bytes. IS_PREMIUM_USER: {IS_PREMIUM_USER}. Timeout: 60 sec'],
             'ddl_servers': ['DDL Servers which uploads your File to their Specific Hosting', ''],
-            'user_tds': ['UserTD helps to Upload files via Bot to your Custom Drive Destination', ''],
+            'user_tds': ['UserTD helps to Upload files via Bot to your Custom Drive Destination via Global SA mail', 'Send User TD details for Use while Mirror/Clone\n<b>Format:</b> name id index(optional)'],
             'gofile': ['Gofile is a free file sharing and storage platform. You can store and share your content without any limit.', "Send GoFile's API Key. Get it on https://gofile.io/myProfile"],
             'streamsb': ['StreamSB', "Send StreamSB's API Key"],
             }
@@ -86,11 +86,10 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
         buttons.ibutton('Disable MediaInfo' if mediainfo == 'Enabled' else 'Enable MediaInfo', f"userset {user_id} mediainfo")
         if config_dict['SHOW_MEDIAINFO']:
             mediainfo = "Force Enabled"
-        save_mode = "Save As Dump" if user_dict.get('mediainfo', config_dict['SHOW_MEDIAINFO']) else "Save As BotPM"
+        save_mode = "Save As Dump" if user_dict.get('save_mode') else "Save As BotPM"
         buttons.ibutton('Save As BotPM' if save_mode == 'Save As Dump' else 'Save As Dump', f"userset {user_id} save_mode")
         dailytl = config_dict['DAILY_TASK_LIMIT'] if config_dict['DAILY_TASK_LIMIT'] else "♾️"
-        dailytas = user_dict.get('dly_tasks')[1] if user_dict and user_dict.get('dly_tasks') and user_id != OWNER_ID and config_dict['DAILY_TASK_LIMIT'] else config_dict.get('DAILY_TASK_LIMIT', "♾️") if user_id != OWNER_ID else "♾️"        
-        
+        dailytas = user_dict.get('dly_tasks')[1] if user_dict and user_dict.get('dly_tasks') and user_id != OWNER_ID and config_dict['DAILY_TASK_LIMIT'] else config_dict.get('DAILY_TASK_LIMIT', "♾️") if user_id != OWNER_ID else "♾️"
         if user_dict.get('dly_tasks', False):
             t = str(datetime.now() - user_dict['dly_tasks'][0]).split(':')
             lastused = f"{t[0]}h {t[1]}m {t[2].split('.')[0]}s ago"
@@ -118,7 +117,6 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
         buttons.ibutton("DDL Servers", f"userset {user_id} ddl_servers")
         
         tds_mode = "Enabled" if user_dict.get('td_mode', config_dict['BOT_PM']) else "Disabled"
-        buttons.ibutton('Disable UserTD' if tds_mode == 'Enabled' else 'Enable UserTD', f"userset {user_id} td_mode")
         if not config_dict['USER_TD_MODE']:
             tds_mode = "Force Disabled"
         
@@ -224,6 +222,11 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
             buttons.ibutton('Disable DDL' if ddl_mode == 'Enabled' else 'Enable DDL', f"userset {user_id} s{key}", "header")
         elif key == 'user_tds':
             set_exist = 'Not Exists' if (val:=user_dict.get(key, [])) else len(val)
+            tds_mode = "Enabled" if user_dict.get('td_mode', config_dict['BOT_PM']) else "Disabled"
+            buttons.ibutton('Disable UserTD' if tds_mode == 'Enabled' else 'Enable UserTD', f"userset {user_id} td_mode", "header")
+            if not config_dict['USER_TD_MODE']:
+                tds_mode = "Force Disabled"
+            text += f"➲ <b>User TD Mode :</b> {td_mode}\n"
             text += f"➲ <b>{fname_dict[key]} :</b> {set_exist}\n\n"
         else: return
         text += f"➲ <b>Description :</b> <i>{desp_dict[key][0]}</i>"
@@ -295,14 +298,27 @@ async def set_custom(client, message, pre_event, key, direct=False):
     value = message.text
     return_key = 'leech'
     n_key = key
+    user_dict = user_data.get(user_id, {})
     if key in ['gofile', 'streamsb']:
-        user_dict = user_data.get(user_id, {})
         ddl_dict = user_dict.get('ddl_servers', {})
         mode, api = ddl_dict.get(key, [False, ""])
         ddl_dict[key] = [mode, value]
         value = ddl_dict
         n_key = 'ddl_servers'
         return_key = 'ddl_servers'
+    elif key == 'user_tds':
+        user_tds = user_dict.get(key, [])
+        for td_item in value.split('\n'):
+            if td_item == '':
+                continue
+            td_details = td_item.rsplit(maxsplit=2) if (td_item.split())[-1].startswith('http') else td_item.rsplit(maxsplit=1)
+            for dic in user_tds:
+                if td_details[0].lower() == dic.get('title'):
+                    user_tds.pop(user_tds.index(dic))
+            if len(td_details) > 1:
+                user_tds.append({'title': td_details[0].lower(),'id': td_details[1],'index': td_details[2].rstrip('/') if len(td_details) > 2 else ''})
+        value = user_tds
+        return_key = 'mirror'
     update_user_ldata(user_id, n_key, value)
     await message.delete()
     await update_user_settings(pre_event, key, return_key, msg=message, sdirect=direct)
@@ -445,7 +461,8 @@ async def edit_user_settings(client, query):
             await DbManger().update_user_data(user_id)
     elif data[2] in ['bot_pm', 'mediainfo', 'save_mode', 'td_mode']:
         handler_dict[user_id] = False
-        if data[2] == 'bot_pm' and config_dict['BOT_PM'] or data[2] == 'mediainfo' and config_dict['SHOW_MEDIAINFO'] or data[2] == 'td_mode' and not config_dict['USER_TD_MODE']:
+        if data[2] == 'save_mode' and not (user_dict.get(data[2], False) and user_dict.get('ldump')):
+        elif data[2] == 'bot_pm' and config_dict['BOT_PM'] or data[2] == 'mediainfo' and config_dict['SHOW_MEDIAINFO'] or data[2] == 'td_mode' and not config_dict['USER_TD_MODE']:
             mode_up = "Disabled" if data[2] == 'td_mode' else "Enabled"
             return await query.answer(f"Force {mode_up}! Can't Alter Settings", show_alert=True)
         await query.answer()
