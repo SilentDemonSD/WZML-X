@@ -206,6 +206,7 @@ class WZMLStyle:
 ┠<b> Daily Tasks :</b> <code>{DT}</code> per day
 ┠<b> Last Bot Used :</b> <code>{LAST_USED}</code>
 ┠<b> MediaInfo Mode :</b> <code>{MEDIAINFO}</code>
+┠<b> Save Mode :</b> <code>{SAVE_MODE}</code>
 ┖<b> User Bot PM :</b> <code>{BOT_PM}</code>'''
 
     MIRROR = '''㊂ <b><u>Mirror/Clone Settings : {NAME}</u></b>

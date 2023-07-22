@@ -7,7 +7,7 @@ from time import time
 from re import match as re_match
 
 from pyrogram.types import InputMediaPhoto
-from pyrogram.errors import ReplyMarkupInvalid, FloodWait, PeerIdInvalid, RPCError, UserNotParticipant, MessageNotModified, MessageEmpty, PhotoInvalidDimensions, WebpageCurlFailed, MediaEmpty
+from pyrogram.errors import ReplyMarkupInvalid, FloodWait, PeerIdInvalid, ChannelInvalid, RPCError, UserNotParticipant, MessageNotModified, MessageEmpty, PhotoInvalidDimensions, WebpageCurlFailed, MediaEmpty
 
 from bot import config_dict, LOGGER, bot_name, status_reply_dict, status_reply_dict_lock, Interval, bot, user, download_dict_lock
 from bot.helper.ext_utils.bot_utils import get_readable_message, setInterval, sync_to_async, download_image_url
@@ -76,6 +76,7 @@ async def sendCustomMsg(chat_id, text, buttons=None, photo=None):
 
 
 async def chat_info(channel_id):
+    channel_id = channel_id.strip()
     if channel_id.startswith('-100'):
         channel_id = int(channel_id)
     elif channel_id.startswith('@'):
@@ -85,7 +86,7 @@ async def chat_info(channel_id):
     try:
         chat = await bot.get_chat(channel_id)
         return chat
-    except PeerIdInvalid as e:
+    except (PeerIdInvalid, ChannelInvalid) as e:
         LOGGER.error(f"{e.NAME}: {e.MESSAGE} for {channel_id}")
         return None
 

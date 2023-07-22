@@ -86,6 +86,8 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
         buttons.ibutton('Disable MediaInfo' if mediainfo == 'Enabled' else 'Enable MediaInfo', f"userset {user_id} mediainfo")
         if config_dict['SHOW_MEDIAINFO']:
             mediainfo = "Force Enabled"
+        save_mode = "Save As Dump" if user_dict.get('mediainfo', config_dict['SHOW_MEDIAINFO']) else "Save As BotPM"
+        buttons.ibutton('Save As BotPM' if save_mode == 'Save As Dump' else 'Save As Dump', f"userset {user_id} save_mode")
         dailytl = config_dict['DAILY_TASK_LIMIT'] if config_dict['DAILY_TASK_LIMIT'] else "♾️"
         dailytas = user_dict.get('dly_tasks')[1] if user_dict and user_dict.get('dly_tasks') and user_id != OWNER_ID and config_dict['DAILY_TASK_LIMIT'] else config_dict.get('DAILY_TASK_LIMIT', "♾️") if user_id != OWNER_ID else "♾️"        
         
@@ -94,7 +96,7 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
             lastused = f"{t[0]}h {t[1]}m {t[2].split('.')[0]}s ago"
         else: lastused = "Bot Not Used"
 
-        text = BotTheme('UNIVERSAL', NAME=name, YT=escape(ytopt), DT=f"{dailytas} / {dailytl}", LAST_USED=lastused, BOT_PM=bot_pm, MEDIAINFO=mediainfo)
+        text = BotTheme('UNIVERSAL', NAME=name, YT=escape(ytopt), DT=f"{dailytas} / {dailytl}", LAST_USED=lastused, BOT_PM=bot_pm, MEDIAINFO=mediainfo, SAVE_MODE=save_mode)
         buttons.ibutton("Back", f"userset {user_id} back", "footer")
         buttons.ibutton("Close", f"userset {user_id} close", "footer")
         button = buttons.build_menu(2)
@@ -117,8 +119,8 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
         
         tds_mode = "Enabled" if user_dict.get('td_mode', config_dict['BOT_PM']) else "Disabled"
         buttons.ibutton('Disable UserTD' if tds_mode == 'Enabled' else 'Enable UserTD', f"userset {user_id} td_mode")
-        if config_dict['USER_TD_MODE']:
-            tds_mode = "Force Enabled"
+        if not config_dict['USER_TD_MODE']:
+            tds_mode = "Force Disabled"
         
         user_tds = len(val) if (val := user_dict.get('user_tds', False)) else 0
         buttons.ibutton("User TD", f"userset {user_id} user_tds")
@@ -220,6 +222,9 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
             text = f"➲ <b>Upload {fname_dict[key]} :</b> {ddl_mode}\n" \
                    f"➲ <b>{fname_dict[key]}'s API Key :</b> {set_exist}\n\n"
             buttons.ibutton('Disable DDL' if ddl_mode == 'Enabled' else 'Enable DDL', f"userset {user_id} s{key}", "header")
+        elif key == 'user_tds':
+            set_exist = 'Not Exists' if (val:=user_dict.get(key, [])) else len(val)
+            text += f"➲ <b>{fname_dict[key]} :</b> {set_exist}\n\n"
         else: return
         text += f"➲ <b>Description :</b> <i>{desp_dict[key][0]}</i>"
         if not edit_mode:
@@ -438,7 +443,7 @@ async def edit_user_settings(client, query):
         await update_user_settings(query, 'yt_opt', 'universal')
         if DATABASE_URL:
             await DbManger().update_user_data(user_id)
-    elif data[2] in ['bot_pm', 'mediainfo', 'td_mode']:
+    elif data[2] in ['bot_pm', 'mediainfo', 'save_mode', 'td_mode']:
         handler_dict[user_id] = False
         if data[2] == 'bot_pm' and config_dict['BOT_PM'] or data[2] == 'mediainfo' and config_dict['SHOW_MEDIAINFO'] or data[2] == 'td_mode' and not config_dict['USER_TD_MODE']:
             mode_up = "Disabled" if data[2] == 'td_mode' else "Enabled"
@@ -513,14 +518,14 @@ async def edit_user_settings(client, query):
         else:
             await query.answer("Old Settings", show_alert=True)
             await update_user_settings(query)
-    elif data[2] in ['ddl_servers', 'gofile', 'streamsb']:
+    elif data[2] in ['ddl_servers', 'user_tds', 'gofile', 'streamsb']:
         handler_dict[user_id] = False
         await query.answer()
         edit_mode = len(data) == 4
-        await update_user_settings(query, data[2], 'mirror' if data[2] == 'ddl_servers' else 'ddl_servers', edit_mode)
+        await update_user_settings(query, data[2], 'mirror' if data[2] in ['ddl_servers', 'user_tds'] else 'ddl_servers', edit_mode)
         if not edit_mode: return
         pfunc = partial(set_custom, pre_event=query, key=data[2])
-        rfunc = partial(update_user_settings, query, data[2], 'mirror' if data[2] == "ddl_servers" else "ddl_servers")
+        rfunc = partial(update_user_settings, query, data[2], 'mirror' if data[2] in ['ddl_servers', 'user_tds'] else "ddl_servers")
         await event_handler(client, query, pfunc, rfunc)
     elif data[2] in ['lprefix', 'lsuffix', 'lremname', 'lcaption', 'ldump', 'mprefix', 'msuffix', 'mremname']:
         handler_dict[user_id] = False
