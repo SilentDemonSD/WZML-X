@@ -215,6 +215,8 @@ class WZMLStyle:
 ┠<b> Mirror Suffix :</b> <code>{MSUFFIX}</code>
 ┠<b> Mirror Remname :</b> <code>{MREMNAME}</code>
 ┠<b> DDL Server(s) :</b> <i>{DDL_SERVER}</i>
+┠<b> User TD Mode :</b> <i>{TMODE}</i>
+┠<b> Total User TD(s) :</b> <i>{USERTD}</i>
 ┖<b> Daily Mirror :</b> <code>{DM}</code> per day'''
 
     LEECH = '''㊂ <b><u>Leech Settings for {NAME}</u></b>
