@@ -35,7 +35,20 @@ async def broadcast(_, message):
             elif arg in ['-e', '-edit'] and bc_id and rply:
                 edited = True
     if not bc_id and not rply:
-        return await sendMessage(message, '<b>Reply to any Message to Broadcast Users in Bot PMs or Provide Broadcast ID to Delete or Edit it.</b>')
+        return await sendMessage(message, '''<b>By replying to msg to Broadcast:</b>
+/broadcast bc_id -d -e -f -q
+
+<b>Forward Broadcast with Tag:</b> -f or -forward
+/cmd [reply_msg] -f
+
+<b>Quietly Broadcast msg:</b> -q or -quiet
+/cmd [reply_msg] -q -f
+
+<b>Edit Broadcast msg:</b> -e or -edit
+/cmd [reply_edited_msg] broadcast_id -e
+
+<b>Delete Broadcast msg:</b> -d or -delete
+/bc broadcast_id -d''')
     t, s, b, d, u = 0, 0, 0, 0, 0
     if deleted:
         temp_wait = await sendMessage(message, '<i>Deleting the Broadcasted Message! Please Wait ...</i>')
@@ -47,7 +60,7 @@ async def broadcast(_, message):
             except:
                 u += 1
             t += 1
-        return await editMessage(temp_wait, '''⌬  <b><i>Broadcast Deleted Stats :</i></b>
+        return await editMessage(temp_wait, f'''⌬  <b><i>Broadcast Deleted Stats :</i></b>
 ┠ <b>Total Users:</b> <code>{t}</code>
 ┠ <b>Success:</b> <code>{s}</code>
 ┖ <b>Unsuccess Attempt:</b> <code>{u}</code>
@@ -65,7 +78,7 @@ async def broadcast(_, message):
             except:
                 u += 1
             t += 1
-        return await editMessage(temp_wait, '''⌬  <b><i>Broadcast Edited Stats :</i></b>
+        return await editMessage(temp_wait, f'''⌬  <b><i>Broadcast Edited Stats :</i></b>
 ┠ <b>Total Users:</b> <code>{t}</code>
 ┠ <b>Success:</b> <code>{s}</code>
 ┖ <b>Unsuccess Attempt:</b> <code>{u}</code>
