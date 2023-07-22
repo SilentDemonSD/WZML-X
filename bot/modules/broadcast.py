@@ -25,6 +25,8 @@ async def broadcast(_, message):
     if len(message.command) > 1:
         if not message.command[1].startswith('-'):
             bc_id = message.command[1] if bc_cache.get(message.command[1], False) else ''
+            if not bc_id:
+                return await sendMessage(message, "<i>Broadcast ID not found! After Restart, you can't edit or delete broadcasted messages...</i>")
         for arg in message.command:
             if arg in ['-f', '-forward'] and rply:
                 forwarded = True
@@ -65,7 +67,7 @@ async def broadcast(_, message):
 ┠ <b>Success:</b> <code>{s}</code>
 ┖ <b>Unsuccess Attempt:</b> <code>{u}</code>
 
-<b>Broadcast ID:</b> <code>{bc_hash}</code>''')
+<b>Broadcast ID:</b> <code>{bc_id}</code>''')
     elif edited:
         temp_wait = await sendMessage(message, '<i>Editing the Broadcasted Message! Please Wait ...</i>')
         for msg in bc_cache[bc_id]:
@@ -83,7 +85,7 @@ async def broadcast(_, message):
 ┠ <b>Success:</b> <code>{s}</code>
 ┖ <b>Unsuccess Attempt:</b> <code>{u}</code>
 
-<b>Broadcast ID:</b> <code>{bc_hash}</code>''')
+<b>Broadcast ID:</b> <code>{bc_id}</code>''')
     start_time = time()
     status = '''⌬  <b><i>Broadcast Stats :</i></b>
 ┠ <b>Total Users:</b> <code>{t}</code>
