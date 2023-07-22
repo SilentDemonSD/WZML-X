@@ -8,7 +8,7 @@ from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
-from bot.helper.ext_utils.bot_utils import sync_to_async, new_task, is_gdrive_link, get_get_readable_file_size
+from bot.helper.ext_utils.bot_utils import sync_to_async, new_task, is_gdrive_link, get_readable_file_size
 
 
 @new_task
@@ -35,7 +35,7 @@ async def driveclean(_, message):
     reply_message = await sendMessage(message, f'''⌬ <b><i>GDrive Clean/Trash :</i></b>
     
     ┎ <b>Name:</b> {name}
-    ┃ <b>Size:</b> {get_get_readable_file_size(size)}
+    ┃ <b>Size:</b> {get_readable_file_size(size)}
     ┖ <b>Files:</b> {files} | <b>Folders:</b> {folders}
     
     <b>NOTES:</b>
