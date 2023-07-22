@@ -79,7 +79,7 @@ async def broadcast(_, message):
 ┠ <b>Deleted Accounts:</b> <code>{d}</code>
 ┖ <b>Unsuccess Attempt:</b> <code>{u}</code>'''
     updater = time()
-    bc_hash, bc_msgs = uuid4(), []
+    bc_hash, bc_msgs = str(uuid4()), []
     pls_wait = await sendMessage(message, status.format(**locals()))
     for uid in (await DbManger().get_pm_uids()):
         try:
