@@ -7,7 +7,7 @@ from bot.helper.themes import wzml_minimal
 
 AVL_THEMES = {}
 for theme in listdir('bot/helper/themes'):
-    if theme.startswith('wzml') and theme.endswith('.py'):
+    if theme.startswith('wzml_') and theme.endswith('.py'):
         AVL_THEMES[theme[5:-3]] = import_module(f'bot.helper.themes.{theme[:-3]}')
 
 def BotTheme(var_name, **format_vars):

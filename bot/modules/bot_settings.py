@@ -898,7 +898,10 @@ async def update_private_file(_, message, pre_message):
         await message.delete()
     elif doc := message.document:
         file_name = doc.file_name
-        await message.download(file_name=f'{getcwd()}/{file_name}')
+        path = file_name
+        if file_name.startswith('wzml_') and file_name.endswith('.py'):
+            path = f'bot/helper/themes/{file_name}'
+        await message.download(file_name=f'{getcwd()}/{path}')
         if file_name == 'accounts.zip':
             if await aiopath.exists('accounts'):
                 await aiormtree('accounts')
@@ -953,9 +956,9 @@ async def update_private_file(_, message, pre_message):
             await load_config()
         if '@github.com' in config_dict['UPSTREAM_REPO']:
             buttons = ButtonMaker()
-            msg = 'Push to UPSTREAM_REPO ?'
+            msg = '<i>Do you want to Upload (Git Push) your file to <b>UPSTREAM_REPO</b> ?</i>'
             buttons.ibutton('Yes!', f"botset push {file_name}")
-            buttons.ibutton('No', "botset close")
+            buttons.ibutton('No!', "botset close")
             await sendMessage(message, msg, buttons.build_menu(2))
         else:
             await message.delete()
@@ -963,7 +966,7 @@ async def update_private_file(_, message, pre_message):
         await rclone_serve_booter()
     await update_buttons(pre_message)
     if DATABASE_URL:
-        await DbManger().update_private_file(file_name)
+        await DbManger().update_private_file(path)
     if await aiopath.exists('accounts.zip'):
         await remove('accounts.zip')
 
