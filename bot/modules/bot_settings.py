@@ -34,7 +34,7 @@ default_values = {'AUTO_DELETE_MESSAGE_DURATION': 30,
                   'DEFAULT_UPLOAD': 'gd',
                   'DOWNLOAD_DIR': '/usr/src/app/downloads/',
                   'LEECH_SPLIT_SIZE': MAX_SPLIT_SIZE,
-                  'RSS_DELAY': 900,
+                  'RSS_DELAY': 600,
                   'STATUS_UPDATE_INTERVAL': 10,
                   'SEARCH_LIMIT': 0,
                   'UPSTREAM_BRANCH': 'master',
@@ -376,6 +376,10 @@ async def load_config():
     LEECH_LOG_ID = environ.get('LEECH_LOG_ID', '')
     if len(LEECH_LOG_ID) == 0:
         LEECH_LOG_ID = ''
+        
+    EXCEP_CHATS = environ.get('EXCEP_CHATS', '')
+    if len(EXCEP_CHATS) == 0:
+        EXCEP_CHATS = ''
 
     USER_MAX_TASKS = environ.get('USER_MAX_TASKS', '')
     USER_MAX_TASKS = '' if len(USER_MAX_TASKS) == 0 else int(USER_MAX_TASKS)
@@ -562,6 +566,7 @@ async def load_config():
                         'DELETE_LINKS': DELETE_LINKS,
                         'DEFAULT_UPLOAD': DEFAULT_UPLOAD,
                         'DOWNLOAD_DIR': DOWNLOAD_DIR,
+                        'EXCEP_CHATS': EXCEP_CHATS,
                         'STORAGE_THRESHOLD': STORAGE_THRESHOLD,
                         'TORRENT_LIMIT': TORRENT_LIMIT,
                         'DIRECT_LIMIT': DIRECT_LIMIT,

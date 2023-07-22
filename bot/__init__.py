@@ -432,6 +432,10 @@ if len(MIRROR_LOG_ID) == 0:
 LEECH_LOG_ID = environ.get('LEECH_LOG_ID', '')
 if len(LEECH_LOG_ID) == 0:
     LEECH_LOG_ID = ''
+    
+EXCEP_CHATS = environ.get('EXCEP_CHATS', '')
+if len(EXCEP_CHATS) == 0:
+    EXCEP_CHATS = ''
 
 BOT_PM = environ.get('BOT_PM', '')
 BOT_PM = BOT_PM.lower() == 'true'
@@ -585,6 +589,7 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'MIRROR_LOG_ID': MIRROR_LOG_ID,
                'LEECH_LOG_ID': LEECH_LOG_ID,
                'LINKS_LOG_ID': LINKS_LOG_ID,
+               'EXCEP_CHATS': EXCEP_CHATS,
                'BOT_PM': BOT_PM,
                'DISABLE_DRIVE_LINK': DISABLE_DRIVE_LINK,
                'BOT_THEME': BOT_THEME,
