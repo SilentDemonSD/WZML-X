@@ -98,7 +98,7 @@ class MirrorLeechListener:
                 mtype = file.media.value
                 media = getattr(file, mtype)
                 self.source_msg = f'┎ <b>Name:</b> <i>{media.file_name if hasattr(media, "file_name") else mtype+"_"+media.file_unique_id}</i>\n' \
-                                  f'┠ <b>Type:</b> {media.mime_type if hasattr(media, "mime_type") else 'image/jpeg' if mtype == "photo" else "text/plain"}\n' \
+                                  f'┠ <b>Type:</b> {media.mime_type if hasattr(media, "mime_type") else "image/jpeg" if mtype == "photo" else "text/plain"}\n' \
                                   f'┠ <b>Size:</b> {get_readable_file_size(media.file_size)}\n' \
                                   f'┠ <b>Created Date:</b> {media.date}\n' \
                                   f'┖ <b>Media Type:</b> {mtype.capitalize()}'
