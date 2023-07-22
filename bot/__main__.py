@@ -86,7 +86,9 @@ async def start(client, message):
     buttons.ubutton(BotTheme('ST_BN1_NAME'), BotTheme('ST_BN1_URL'))
     buttons.ubutton(BotTheme('ST_BN2_NAME'), BotTheme('ST_BN2_URL'))
     reply_markup = buttons.build_menu(2)
-    if len(message.command) > 1 and config_dict['TOKEN_TIMEOUT']:
+    if len(message.command) > 1 and message.command[1] == "wzmlx":
+        await message.delete()
+    elif len(message.command) > 1 and config_dict['TOKEN_TIMEOUT']:
         userid = message.from_user.id
         encrypted_url = message.command[1]
         input_token, pre_uid = (b64decode(encrypted_url.encode()).decode()).split('&&')
