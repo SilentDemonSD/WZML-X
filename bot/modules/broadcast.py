@@ -28,7 +28,7 @@ async def broadcast(_, message):
         for arg in message.command:
             if arg in ['-f', '-forward'] and rply:
                 forwarded = True
-            elif arg in ['-q', '-quiet'] and rply:
+            if arg in ['-q', '-quiet'] and rply:
                 quietly = True
             elif arg in ['-d', '-delete'] and bc_id:
                 deleted = True
@@ -38,7 +38,7 @@ async def broadcast(_, message):
         return await sendMessage(message, '<b>Reply to any Message to Broadcast Users in Bot PMs or Provide Broadcast ID to Delete or Edit it.</b>')
     t, s, b, d, u = 0, 0, 0, 0, 0
     if deleted:
-        temp_wait = await sendMessage('<i>Deleting the Broadcasted Message! Please Wait ...</i>')
+        temp_wait = await sendMessage(message, '<i>Deleting the Broadcasted Message! Please Wait ...</i>')
         for msg in (msgs:=bc_cache[bc_id]):
             try:
                 await msg.delete()
@@ -54,7 +54,7 @@ async def broadcast(_, message):
 
 <b>Broadcast ID:</b> <code>{bc_hash}</code>''')
     elif edited:
-        temp_wait = await sendMessage('<i>Editing the Broadcasted Message! Please Wait ...</i>')
+        temp_wait = await sendMessage(message, '<i>Editing the Broadcasted Message! Please Wait ...</i>')
         for msg in bc_cache[bc_id]:
             try:
                 await msg.edit(text=rply.text, entities=rply.entities, reply_markup=rply.reply_markup)
