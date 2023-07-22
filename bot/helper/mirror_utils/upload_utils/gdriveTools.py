@@ -198,7 +198,8 @@ class GoogleDriveHelper:
                         self.__service.files().delete(fileId=file['id'], supportsAllDrives=True).execute()
                 page_token = drive_query.get('nextPageToken', None)
                 if page_token is None:
-                    msg = f"⌬ <b><i>Successfully Cleaned Folder/Drive :</i></b> \n\n<b>Total Files:</b> <code>{self.__total_files}</code>\n<b>Total Size:</b> <code>{get_readable_file_size(self.__total_bytes)}</code>"
+                    msg = "⌬ <b><i>Successfully Moved Folder/Drive to Bin :</i></b> " if trash else "⌬ <b><i>Successfully Cleaned Folder/Drive :</i></b>"
+                    msg += f"\n\n<b>Total Files:</b> <code>{self.__total_files}</code>\n<b>Total Size:</b> <code>{get_readable_file_size(self.__total_bytes)}</code>"
                     break
             except Exception as err:
                 msg = str(err).replace('>', '').replace('<', '')
