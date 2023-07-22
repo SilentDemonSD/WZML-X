@@ -21,12 +21,16 @@ async def driveclean(_, message):
     else:
         link = f"https://drive.google.com/drive/folders/{config_dict['GDRIVE_ID']}"
     if not is_gdrive_link(link):
-        return await sendMessage('No GDrive Link Provided')
+        return await sendMessage(message, 'No GDrive Link Provided')
     gd = GoogleDriveHelper()
     name, mime_type, size, files, folders = await sync_to_async(gd.count, link)
+    try:
+        drive_id = await sync_to_async(gd.__getIdFromUrl, link)
+    except (KeyError, IndexError):
+        return await sendMessage(message, "Google Drive ID could not be found in the provided link")
     buttons = ButtonMaker()
-    buttons.ibutton('Move to Trash', f'gdclean clear {link} trash')
-    buttons.ibutton('Permanent Del', f'gdclean clear {link}')
+    buttons.ibutton('Move to Trash', f'gdclean clear {drive_id} trash')
+    buttons.ibutton('Permanent Del', f'gdclean clear {drive_id}')
     buttons.ibutton('Stop Clean', 'gdclean stop', 'footer')
     reply_message = await sendMessage(message, f"⌬ <b><i>GDrive Clean :</i></b>\n\nName : {name}\nSize: {size}\nFiles: {files} | Folders : {folders}\n\n<code>Choose the Required Action below to Clean your Drive!</code>\n\n<b>NOTE:</b>\n<i>1) All files are permanently deleted if Permanent Del, not moved to trash.\n2) Folder doesn't gets Deleted.\n3) Delete files of custom folder via giving link along with cmd, but it should have delete permissions.\n4) Move to Trash Moves all your files to trash but can be restored again if have permissions.</i>", buttons.build_menu(2))
 
