@@ -125,7 +125,7 @@ class MirrorLeechListener:
             self.source_msg = f"<code>{self.source_url}</code>"
         
     async def onDownloadStart(self):
-        if config_dict['LINKS_LOG_ID']:
+        if config_dict['LINKS_LOG_ID'] and not self.excep_chat:
             dispTime = datetime.now(timezone(config_dict['TIMEZONE'])).strftime('%d/%m/%y, %I:%M:%S %p')
             self.linkslogmsg = await sendCustomMsg(config_dict['LINKS_LOG_ID'], BotTheme('LINKS_START', Mode=self.upload_details['mode'], Tag=self.tag) + BotTheme('LINKS_SOURCE', On=dispTime, Source=self.source_msg))
         user_dict = user_data.get(self.message.from_user.id, {})
@@ -489,7 +489,7 @@ class MirrorLeechListener:
                 if is_DDL:
                     buttons.ubutton(BotTheme('DDL_LINK', Serv='GoFile'), link)
                 elif link:
-                    if not config_dict['DISABLE_DRIVE_LINK'] and user_id != OWNER_ID:
+                    if user_id == OWNER_ID or not config_dict['DISABLE_DRIVE_LINK']:
                         buttons.ubutton(BotTheme('CLOUD_LINK'), link)
                 else:
                     msg += BotTheme('RCPATH', RCpath=rclonePath)
