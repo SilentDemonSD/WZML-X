@@ -22,29 +22,30 @@ async def driveclean(_, message):
         link = f"https://drive.google.com/drive/folders/{config_dict['GDRIVE_ID']}"
     if not is_gdrive_link(link):
         return await sendMessage(message, 'No GDrive Link Provided')
+    clean_msg = await sendMessage(message, '<i>Fetching ...</i>')
     gd = GoogleDriveHelper()
     name, mime_type, size, files, folders = await sync_to_async(gd.count, link)
     try:
         drive_id = await sync_to_async(gd.getIdFromUrl, link)
     except (KeyError, IndexError):
-        return await sendMessage(message, "Google Drive ID could not be found in the provided link")
+        return await editMessage(clean_msg, "Google Drive ID could not be found in the provided link")
     buttons = ButtonMaker()
     buttons.ibutton('Move to Bin', f'gdclean clear {drive_id} trash')
     buttons.ibutton('Permanent Clean', f'gdclean clear {drive_id}')
     buttons.ibutton('Stop GDrive Clean', 'gdclean stop', 'footer')
-    reply_message = await sendMessage(message, f'''⌬ <b><i>GDrive Clean/Trash :</i></b>
+    await editMessage(clean_msg, f'''⌬ <b><i>GDrive Clean/Trash :</i></b>
     
-    ┎ <b>Name:</b> {name}
-    ┃ <b>Size:</b> {get_readable_file_size(size)}
-    ┖ <b>Files:</b> {files} | <b>Folders:</b> {folders}
+┎ <b>Name:</b> {name}
+┃ <b>Size:</b> {get_readable_file_size(size)}
+┖ <b>Files:</b> {files} | <b>Folders:</b> {folders}
     
-    <b>NOTES:</b>
-    <i>1. All files are permanently deleted if Permanent Del, not moved to trash.
-    2. Folder doesn't gets Deleted.
-    3. Delete files of custom folder via giving link along with cmd, but it should have delete permissions.
-    4. Move to Bin Moves all your files to trash but can be restored again if have permissions.</i>
+<b>NOTES:</b>
+<i>1. All files are permanently deleted if Permanent Del, not moved to trash.
+2. Folder doesn't gets Deleted.
+3. Delete files of custom folder via giving link along with cmd, but it should have delete permissions.
+4. Move to Bin Moves all your files to trash but can be restored again if have permissions.</i>
     
-    <code>Choose the Required Action below to Clean your Drive!</code>''', buttons.build_menu(2))
+<code>Choose the Required Action below to Clean your Drive!</code>''', buttons.build_menu(2))
 
 
 @new_task

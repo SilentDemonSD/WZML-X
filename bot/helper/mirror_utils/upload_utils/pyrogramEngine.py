@@ -70,8 +70,7 @@ class TgUploader:
 
     async def __copy_file(self):
         try:
-            if self.__bot_pm and (self.__leechmsg or self.__listener.isSuperGroup):
-                destination = 'Bot PM'
+            if self.__bot_pm and (self.__leechmsg not self.__listener.excep_chat or self.__listener.isSuperGroup):
                 copied = await bot.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id, reply_to_message_id=self.__listener.botpmmsg.id) 
                 if self.__has_buttons:
                     rply = (InlineKeyboardMarkup(BTN) if (BTN := self.__sent_msg.reply_markup.inline_keyboard[:-1]) else None) if config_dict['SAVE_MSG'] else self.__sent_msg.reply_markup
@@ -79,10 +78,12 @@ class TgUploader:
                         await copied.edit_reply_markup(rply)
                     except MessageNotModified:
                         pass
-
-            if len(self.__leechmsg) > 1:
+        except Exception as err:
+            if not self.__is_cancelled:
+                LOGGER.error(f"Failed To Send in BotPM:\n{str(err)}")
+        try:
+            if len(self.__leechmsg) > 1 and not self.__listener.excep_chat:
                 for chat_id, msg in list(self.__leechmsg.items())[1:]:
-                    destination = f'Leech Log: {chat_id}'
                     self.__leechmsg[chat_id] = await bot.copy_message(chat_id=chat_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id, reply_to_message_id=msg.id)
                     if msg.text and config_dict['CLEAN_LOG_MSG']:
                         await msg.delete()
@@ -91,9 +92,11 @@ class TgUploader:
                             await self.__leechmsg[chat_id].edit_reply_markup(self.__sent_msg.reply_markup)
                         except MessageNotModified:
                             pass
-
+        except Exception as err:
+            if not self.__is_cancelled:
+                LOGGER.error(f"Failed To Send in Leech Log [ {chat_id} ]:\n{str(err)}")
+        try:
             if self.__ldump:
-                destination = 'User Dump'
                 for channel_id in self.__ldump.split():
                     chat = await chat_info(channel_id)
                     try:
@@ -109,7 +112,7 @@ class TgUploader:
                         continue
         except Exception as err:
             if not self.__is_cancelled:
-                LOGGER.error(f"Failed To Send in {destination}:\n{str(err)}")
+                LOGGER.error(f"Failed To Send in User Dump:\n{str(err)}")
 
     async def __upload_progress(self, current, total):
         if self.__is_cancelled:
@@ -134,7 +137,7 @@ class TgUploader:
     async def __msg_to_reply(self):
         msg_link = self.__listener.message.link if self.__listener.isSuperGroup else ''
         msg_user = self.__listener.message.from_user
-        if config_dict['LEECH_LOG_ID']:
+        if config_dict['LEECH_LOG_ID'] and not self.__listener.excep_chat:
             try:
                 self.__leechmsg = await sendMultiMessage(config_dict['LEECH_LOG_ID'], BotTheme('L_LOG_START', mention=msg_user.mention(style='HTML'), uid=msg_user.id, msg_link=self.__listener.source_url))
             except Exception as er:
@@ -151,7 +154,10 @@ class TgUploader:
         return True
 
     async def __prepare_file(self, prefile_, dirpath):
-        file_, cap_mono = await format_filename(prefile_, self.__user_id, dirpath)
+        try:
+            file_, cap_mono = await format_filename(prefile_, self.__user_id, dirpath)
+        except Exception as err:
+            return await self.__listener.onUploadError(f'Error in Format Filename : {err}')
         if prefile_ != file_:
             if self.__listener.seed and not self.__listener.newDir and not dirpath.endswith("/splited_files_mltb"):
                 dirpath = f'{dirpath}/copied_mltb'
@@ -219,10 +225,12 @@ class TgUploader:
         self.__sent_msg = msgs_list[-1]
         try:
             if self.__bot_pm and (self.__leechmsg or self.__listener.isSuperGroup):
-                destination = 'Bot PM'
                 await bot.copy_media_group(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
+        except Exception as err:
+            if not self.__is_cancelled:
+                LOGGER.error(f"Failed To Send in Bot PM:\n{str(err)}")
+        try:
             if self.__ldump:
-                destination = 'Dump'
                 for channel_id in self.__ldump.split():
                     dump_chat = await chat_info(channel_id)
                     try:
@@ -232,7 +240,7 @@ class TgUploader:
                         continue
         except Exception as err:
             if not self.__is_cancelled:
-                LOGGER.error(f"Failed To Send in {destination}:\n{str(err)}")
+                LOGGER.error(f"Failed To Send in User Dump:\n{str(err)}")
 
     async def upload(self, o_files, m_size, size):
         await self.__user_settings()
