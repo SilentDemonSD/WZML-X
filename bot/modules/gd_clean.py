@@ -25,7 +25,7 @@ async def driveclean(_, message):
     gd = GoogleDriveHelper()
     name, mime_type, size, files, folders = await sync_to_async(gd.count, link)
     try:
-        drive_id = await sync_to_async(gd.__getIdFromUrl, link)
+        drive_id = await sync_to_async(gd.getIdFromUrl, link)
     except (KeyError, IndexError):
         return await sendMessage(message, "Google Drive ID could not be found in the provided link")
     buttons = ButtonMaker()

@@ -107,7 +107,7 @@ class GoogleDriveHelper:
         self.__service = self.__authorize()
 
     @staticmethod
-    def __getIdFromUrl(link):
+    def getIdFromUrl(link):
         if "folders" in link or "file" in link:
             regex = r"https:\/\/drive\.google\.com\/(?:drive(.*?)\/folders\/|file(.*?)?\/d\/)([-\w]+)"
             res = re_search(regex, link)
@@ -161,7 +161,7 @@ class GoogleDriveHelper:
 
     def deletefile(self, link: str):
         try:
-            file_id = self.__getIdFromUrl(link)
+            file_id = self.getIdFromUrl(link)
         except (KeyError, IndexError):
             return "Google Drive ID could not be found in the provided link"
         msg = ''
@@ -389,7 +389,7 @@ class GoogleDriveHelper:
         self.__total_files = 0
         self.__total_folders = 0
         try:
-            file_id = self.__getIdFromUrl(link)
+            file_id = self.getIdFromUrl(link)
         except (KeyError, IndexError):
             return "Google Drive ID could not be found in the provided link"
         msg = ""
@@ -634,7 +634,7 @@ class GoogleDriveHelper:
 
     def count(self, link):
         try:
-            file_id = self.__getIdFromUrl(link)
+            file_id = self.getIdFromUrl(link)
         except (KeyError, IndexError):
             return "Google Drive ID could not be found in the provided link", None, None, None, None
         LOGGER.info(f"File ID: {file_id}")
@@ -699,7 +699,7 @@ class GoogleDriveHelper:
 
     def download(self, link):
         self.__is_downloading = True
-        file_id = self.__getIdFromUrl(link)
+        file_id = self.getIdFromUrl(link)
         self.__updater = setInterval(self.__update_interval, self.__progress)
         try:
             meta = self.__getFileMetadata(file_id)
