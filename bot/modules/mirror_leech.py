@@ -25,7 +25,6 @@ from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage, get_tg_link_content, delete_links, auto_delete_message
 from bot.helper.listeners.tasks_listener import MirrorLeechListener
-from bot.helper.ext_utils.help_messages import MIRROR_HELP_MESSAGE, CLONE_HELP_MESSAGE
 from bot.helper.ext_utils.bulk_links import extract_bulk_links
 
 
@@ -187,7 +186,9 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             file_ = None
 
     if not is_url(link) and not is_magnet(link) and not await aiopath.exists(link) and not is_rclone_path(link) and file_ is None:
-        reply_message = await sendMessage(message, MIRROR_HELP_MESSAGE)
+        btn = ButtonMaker()
+        btn.ibutton('Cʟɪᴄᴋ Hᴇʀᴇ Tᴏ Rᴇᴀᴅ Mᴏʀᴇ ...', f'wzmlx {message.from_user.id} help MIRROR')
+        reply_message = await sendMessage(message, MIRROR_HELP_MESSAGE[0], btn.build_menu(1))
         await auto_delete_message(message, reply_message)
         await delete_links(message)
         return
@@ -334,7 +335,7 @@ async def wzmlxcb(_, query):
             startLine = f"<b>Showing Last {ind} Lines from log.txt:</b> \n\n----------<b>START LOG</b>----------\n\n"
             endLine = "\n----------<b>END LOG</b>----------"
             btn = ButtonMaker()
-            btn.ibutton('Close', f'wzmlx {user_id} close')
+            btn.ibutton('Cʟᴏsᴇ', f'wzmlx {user_id} close')
             await sendMessage(message, startLine + escape(Loglines) + endLine, btn.build_menu(1))
             await query.edit_message_reply_markup(None)
         except Exception as err:
@@ -344,9 +345,15 @@ async def wzmlxcb(_, query):
     elif data[2] == "help":
         await query.answer()
         btn = ButtonMaker()
-        btn.ibutton('Close', f'wzmlx {user_id} close')
+        btn.ibutton('Cʟᴏsᴇ', f'wzmlx {user_id} close')
         if data[3] == "CLONE":
             await editMessage(query.message, CLONE_HELP_MESSAGE[1], btn.build_menu(1))
+        elif data[3] == "MIRROR":
+            await editMessage(query.message, MIRROR_HELP_MESSAGE[1], btn.build_menu(1))
+        if data[3] == "YT":
+            await editMessage(query.message, YT_HELP_MESSAGE[1], btn.build_menu(1))
+        elif data[3] == "RSS":
+            await editMessage(query.message, RSS_HELP_MESSAGE[1], btn.build_menu(1))
     else:
         await query.answer()
         await deleteMessage(message)
