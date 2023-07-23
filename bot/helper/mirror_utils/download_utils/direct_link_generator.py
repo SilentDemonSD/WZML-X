@@ -45,8 +45,7 @@ def direct_link_generator(link: str):
     if not domain:
         raise DirectDownloadLinkException("ERROR: Invalid URL")
     if 'youtube.com' in domain or 'youtu.be' in domain:
-        raise DirectDownloadLinkException(
-            "ERROR: Use ytdl cmds for Youtube links")
+        raise DirectDownloadLinkException("ERROR: Use ytdl cmds for Youtube links")
     elif 'yadi.sk' in domain or 'disk.yandex.com' in domain:
         return yandex_disk(link)
     elif 'mediafire.com' in domain:
@@ -105,8 +104,7 @@ def direct_link_generator(link: str):
     elif 'zippyshare.com' in domain:
         raise DirectDownloadLinkException('ERROR: R.I.P Zippyshare')
     else:
-        raise DirectDownloadLinkException(
-            f'No Direct link function found for {link}')
+        raise DirectDownloadLinkException(f'No Direct link function found for {link}')
 
 
 def yandex_disk(url: str) -> str:
@@ -577,27 +575,33 @@ def gdtot(url):
         res = cget('GET', f'https://gdbot.xyz/file/{url.split("/")[-1]}')
     except Exception as e:
         raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
-    token_url = etree.HTML(res.content).xpath(
-        "//a[contains(@class,'inline-flex items-center justify-center')]/@href")
+    token_url = etree.HTML(res.content).xpath("//a[contains(@class,'inline-flex items-center justify-center')]/@href")
     if not token_url:
         try:
             url = cget('GET', url).url
             p_url = urlparse(url)
-            res = cget(
-                "GET", f"{p_url.scheme}://{p_url.hostname}/ddl/{url.split('/')[-1]}")
+            res = cget("GET", f"{p_url.scheme}://{p_url.hostname}/ddl/{url.split('/')[-1]}")
         except Exception as e:
             raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
         if (drive_link := findall(r"myDl\('(.*?)'\)", res.text)) and "drive.google.com" in drive_link[0]:
             return drive_link[0]
+        elif config_dict['GDTOT_CRYPT']:
+            cget('GET', url, cookies={'crypt': config_dict['GDTOT_CRYPT']})
+            p_url = urlparse(url)
+            js_script = cget('GET', f"{p_url.scheme}://{p_url.hostname}/dld?id={url.split('/')[-1]}")
+            g_id = findall('gd=(.*?)&', js_script.text)
+            try:
+                decoded_id = b64decode(str(g_id[0])).decode('utf-8')
+            except:
+                raise DirectDownloadLinkException("ERROR: Try in your browser, mostly file not found or user limit exceeded!")
+            return f'https://drive.google.com/open?id={decoded_id}'
         else:
-            raise DirectDownloadLinkException(
-                'ERROR: Drive Link not found, Try in your broswer')
+            raise DirectDownloadLinkException('ERROR: Drive Link not found, Try in your broswer! GDTOT_CRYPT not Provided, it increases efficiency!')
     token_url = token_url[0]
     try:
         token_page = cget('GET', token_url)
     except Exception as e:
-        raise DirectDownloadLinkException(
-            f'ERROR: {e.__class__.__name__} with {token_url}')
+        raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__} with {token_url}')
     path = findall('\("(.*?)"\)', token_page.text)
     if not path:
         raise DirectDownloadLinkException('ERROR: Cannot bypass this')

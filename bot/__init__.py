@@ -218,6 +218,10 @@ if len(MEGA_EMAIL) == 0 or len(MEGA_PASSWORD) == 0:
 UPTOBOX_TOKEN = environ.get('UPTOBOX_TOKEN', '')
 if len(UPTOBOX_TOKEN) == 0:
     UPTOBOX_TOKEN = ''
+    
+GDTOT_CRYPT = environ.get('GDTOT_CRYPT', '')
+if len(GDTOT_CRYPT) == 0:
+    GDTOT_CRYPT = ''
 
 INDEX_URL = environ.get('INDEX_URL', '').rstrip("/")
 if len(INDEX_URL) == 0:
@@ -602,6 +606,7 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'TITLE_NAME': TITLE_NAME,
                'TIMEZONE': TIMEZONE,
                'GD_INFO': GD_INFO,
+               'GDTOT_CRYPT': GDTOT_CRYPT,
                'EQUAL_SPLITS': EQUAL_SPLITS,
                'EXTENSION_FILTER': EXTENSION_FILTER,
                'GDRIVE_ID': GDRIVE_ID,
