@@ -13,7 +13,7 @@ from io import BytesIO
 from asyncio import sleep
 
 from bot import OWNER_ID, bot, user_data, config_dict, DATABASE_URL, IS_PREMIUM_USER, MAX_SPLIT_SIZE
-from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, sendFile
+from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage, sendFile
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
@@ -46,7 +46,7 @@ fname_dict = {'rcc': 'RClone',
              'mprefix': 'Prefix',
              'msuffix': 'Suffix',
              'mremname': 'Remname',
-             'ldump': 'Dump',
+             'ldump': 'User Dump',
              'lcaption': 'Caption',
              'thumb': 'Thumbnail',
              'yt_opt': 'YT-DLP Options',
@@ -286,7 +286,7 @@ async def set_yt_options(client, message, pre_event):
     handler_dict[user_id] = False
     value = message.text
     update_user_ldata(user_id, 'yt_opt', value)
-    await message.delete()
+    await deleteMessage(message)
     await update_user_settings(pre_event, 'yt_opt', 'universal')
     if DATABASE_URL:
         await DbManger().update_user_data(user_id)
@@ -320,7 +320,7 @@ async def set_custom(client, message, pre_event, key, direct=False):
         value = user_tds
         return_key = 'mirror'
     update_user_ldata(user_id, n_key, value)
-    await message.delete()
+    await deleteMessage(message)
     await update_user_settings(pre_event, key, return_key, msg=message, sdirect=direct)
     if DATABASE_URL:
         await DbManger().update_user_data(user_id)
@@ -337,7 +337,7 @@ async def set_thumb(client, message, pre_event, key, direct=False):
     await sync_to_async(Image.open(photo_dir).convert("RGB").save, des_dir, "JPEG")
     await aioremove(photo_dir)
     update_user_ldata(user_id, 'thumb', des_dir)
-    await message.delete()
+    await deleteMessage(message)
     await update_user_settings(pre_event, key, 'leech', msg=message, sdirect=direct)
     if DATABASE_URL:
         await DbManger().update_user_doc(user_id, 'thumb', des_dir)
@@ -352,7 +352,7 @@ async def add_rclone(client, message, pre_event):
     des_dir = ospath.join(path, f'{user_id}.conf')
     await message.download(file_name=des_dir)
     update_user_ldata(user_id, 'rclone', f'rclone/{user_id}.conf')
-    await message.delete()
+    await deleteMessage(message)
     await update_user_settings(pre_event, 'rcc', 'mirror')
     if DATABASE_URL:
         await DbManger().update_user_doc(user_id, 'rclone', des_dir)
@@ -368,7 +368,7 @@ async def leech_split_size(client, message, pre_event):
     if out in sdic:
         value = min((float(value[:slice].strip()) * 1024**sdic.index(out)), MAX_SPLIT_SIZE)
     update_user_ldata(user_id, 'split_size', int(round(value)))
-    await message.delete()
+    await deleteMessage(message)
     await update_user_settings(pre_event, 'split_size', 'leech')
     if DATABASE_URL:
         await DbManger().update_user_data(user_id)
@@ -615,8 +615,8 @@ async def edit_user_settings(client, query):
     else:
         handler_dict[user_id] = False
         await query.answer()
-        await message.reply_to_message.delete()
-        await message.delete()
+        await deleteMessage(message.reply_to_message)
+        await deleteMessage(message)
 
 async def getUserInfo(client, id):
     try:

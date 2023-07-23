@@ -10,7 +10,7 @@ from time import time
 
 from bot import DOWNLOAD_DIR, bot, config_dict, user_data, LOGGER
 from bot.helper.ext_utils.task_manager import task_utils
-from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, auto_delete_message, delete_links
+from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage, auto_delete_message, delete_links
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, is_url, new_task, sync_to_async, new_task, is_rclone_path, new_thread, get_readable_time, arg_parser
 from bot.helper.mirror_utils.download_utils.yt_dlp_download import YoutubeDLHelper
@@ -158,7 +158,7 @@ class YtSelection:
         self.__reply_to = await sendMessage(self.__message, msg, self.__main_buttons)
         await wrap_future(future)
         if not self.is_cancelled:
-            await self.__reply_to.delete()
+            await deleteMessage(self.__reply_to)
         return self.qual
 
     async def back_to_main(self):

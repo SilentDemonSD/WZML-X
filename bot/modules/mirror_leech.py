@@ -9,7 +9,7 @@ from aiofiles import open as aiopen
 from aiofiles.os import path as aiopath
 
 from bot import bot, DOWNLOAD_DIR, LOGGER, config_dict, bot_name
-from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_mega_link, is_gdrive_link, get_content_type, new_task, sync_to_async, is_rclone_path, is_telegram_link, arg_parser
+from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_mega_link, is_gdrive_link, is_share_link, get_content_type, new_task, sync_to_async, is_rclone_path, is_telegram_link, arg_parser
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from bot.helper.ext_utils.task_manager import task_utils
 from bot.helper.mirror_utils.download_utils.aria2_download import add_aria2c_download
@@ -34,8 +34,20 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     text = message.text.split('\n')
     input_list = text[0].split(' ')
 
-    arg_base = {'link': '', '-i': 0, '-m': '', '-d': False, '-j': False, '-s': False, '-b': False,
-                '-n': '', '-e': False, '-z': False, '-up': '', '-rcf': '', '-au': '', '-ap': ''}
+    arg_base = {'link': '', 
+                '-i': 0, 
+                '-m': '', 
+                '-d': False, 
+                '-j': False, 
+                '-s': False,
+                '-b': False,
+                '-n': '', 
+                '-e': False, 
+                '-z': False, 
+                '-up': '', 
+                '-rcf': '', 
+                '-au': '', 
+                '-ap': ''}
 
     args = arg_parser(input_list[1:], arg_base)
 
@@ -55,14 +67,14 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     extract =     args['-e'] or 'uz' in input_list[0] or 'unzip' in input_list[0]
     compress =    args['-z'] or (not extract and ('z' in input_list[0] or 'zip' in input_list[0]))
     join =        args['-j']
-
-    bulk_start = 0
-    bulk_end = 0
-    ratio = None
-    seed_time = None
-    reply_to = None
-    file_ = None
-    session = ''
+    bulk_start =  0
+    bulk_end =    0
+    ratio =       None
+    seed_time =   None
+    reply_to =    None
+    file_ =       None
+    session =     ''
+    
     if not isinstance(seed, bool):
         dargs = seed.split(':')
         ratio = dargs[0] or None
@@ -198,6 +210,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     if link:
         LOGGER.info(link)
 
+    org_link = link if is_share_link(link) else None
     if not is_mega_link(link) and not isQbit and not is_magnet(link) and not is_rclone_path(link) \
        and not is_gdrive_link(link) and not link.endswith('.torrent') and file_ is None:
         content_type = await get_content_type(link)
@@ -275,7 +288,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         await add_rclone_download(link, config_path, f'{path}/', name, listener)
     elif is_gdrive_link(link):
         await delete_links(message)
-        await add_gd_download(link, path, listener, name)
+        await add_gd_download(link, path, listener, name, org_link)
     elif is_mega_link(link):
         await delete_links(message)
         await add_mega_download(link, f'{path}/', listener, name)

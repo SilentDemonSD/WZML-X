@@ -33,7 +33,7 @@ from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.mirror_utils.upload_utils.pyrogramEngine import TgUploader
 from bot.helper.mirror_utils.upload_utils.ddlEngine import DDLUploader
 from bot.helper.mirror_utils.rclone_utils.transfer import RcloneTransferHelper
-from bot.helper.telegram_helper.message_utils import sendCustomMsg, sendMessage, editMessage, delete_all_messages, delete_links, sendMultiMessage, update_all_messages
+from bot.helper.telegram_helper.message_utils import sendCustomMsg, sendMessage, editMessage, deleteMessage, delete_all_messages, delete_links, sendMultiMessage, update_all_messages
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.themes import BotTheme
@@ -461,7 +461,7 @@ class MirrorLeechListener:
                         btn = extra_btns(btn)
                         await sendMessage(self.message, msg + BotTheme('L_BOT_MSG'), btn.build_menu(1), self.random_pic)
                     else:
-                        await self.botpmmsg.delete()
+                        await deleteMessage(self.botpmmsg)
                 elif self.linkslogmsg:
                     btn.ubutton(BotTheme('CHECK_LL'), self.linkslogmsg.link)
                     if self.source_url and config_dict['SOURCE_LINK']:
@@ -544,7 +544,7 @@ class MirrorLeechListener:
                     buttons = extra_btns(buttons)
                     await sendMessage(self.message, msg + BotTheme('M_BOT_MSG'), buttons.build_menu(1), self.random_pic)
                 else:
-                    await self.botpmmsg.delete()
+                    await deleteMessage(self.botpmmsg)
             elif self.linkslogmsg:
                 buttons.ubutton(BotTheme('CHECK_LL'), self.linkslogmsg.link)
                 if self.source_url and config_dict['SOURCE_LINK']:

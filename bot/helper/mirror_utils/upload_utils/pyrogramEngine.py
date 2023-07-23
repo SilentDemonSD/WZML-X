@@ -16,7 +16,7 @@ from aioshutil import copy
 from bot import config_dict, user_data, GLOBAL_EXTENSION_FILTER, bot, user, IS_PREMIUM_USER
 from bot.helper.themes import BotTheme
 from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.telegram_helper.message_utils import sendCustomMsg, sendMultiMessage, chat_info
+from bot.helper.telegram_helper.message_utils import sendCustomMsg, sendMultiMessage, chat_info, deleteMessage
 from bot.helper.ext_utils.fs_utils import clean_unwanted, is_archive, get_base_name
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, sync_to_async
 from bot.helper.ext_utils.leech_utils import get_media_info, get_document_type, take_ss, get_mediainfo_link, format_filename
@@ -86,7 +86,7 @@ class TgUploader:
                 for chat_id, msg in list(self.__leechmsg.items())[1:]:
                     self.__leechmsg[chat_id] = await bot.copy_message(chat_id=chat_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id, reply_to_message_id=msg.id)
                     if msg.text and config_dict['CLEAN_LOG_MSG']:
-                        await msg.delete()
+                        await deleteMessage(msg)
                     if self.__has_buttons:
                         try:
                             await self.__leechmsg[chat_id].edit_reply_markup(self.__sent_msg.reply_markup)
@@ -217,7 +217,7 @@ class TgUploader:
         for msg in msgs:
             if msg.link in self.__msgs_dict:
                 del self.__msgs_dict[msg.link]
-            await msg.delete()
+            await deleteMessage(msg)
         del self.__media_dict[key][subkey]
         if self.__listener.isSuperGroup or config_dict['LEECH_LOG_ID']:
             for m in msgs_list:
@@ -282,7 +282,7 @@ class TgUploader:
                     await self.__switching_client()
                     await self.__upload_file(cap_mono, file_)
                     if self.__leechmsg and not isDeleted and config_dict['CLEAN_LOG_MSG']:
-                        await list(self.__leechmsg.values())[0].delete()
+                        await deleteMessage(list(self.__leechmsg.values())[0])
                         isDeleted = True
                     if self.__is_cancelled:
                         return
@@ -354,7 +354,7 @@ class TgUploader:
                 if self.__prm_media and (self.__has_buttons or not self.__leechmsg):
                     try:
                         self.__sent_msg = await bot.copy_message(nrml_media.chat.id, nrml_media.chat.id, nrml_media.id, reply_to_message_id=self.__sent_msg.id, reply_markup=await self.__buttons(self.__up_path))
-                        if self.__sent_msg: await nrml_media.delete()
+                        if self.__sent_msg: await deleteMessage(nrml_media)
                     except:
                         self.__sent_msg = nrml_media
                 else:
@@ -399,7 +399,7 @@ class TgUploader:
                 if self.__prm_media and (self.__has_buttons or not self.__leechmsg):
                     try:
                         self.__sent_msg = await bot.copy_message(nrml_media.chat.id, nrml_media.chat.id, nrml_media.id, reply_to_message_id=self.__sent_msg.id, reply_markup=await self.__buttons(self.__up_path))
-                        if self.__sent_msg: await nrml_media.delete()
+                        if self.__sent_msg: await deleteMessage(nrml_media)
                     except:
                         self.__sent_msg = nrml_media
                 else:
