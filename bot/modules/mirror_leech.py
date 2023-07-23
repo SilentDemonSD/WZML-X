@@ -9,7 +9,7 @@ from aiofiles import open as aiopen
 from aiofiles.os import path as aiopath
 
 from bot import bot, DOWNLOAD_DIR, LOGGER, config_dict, bot_name
-from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_mega_link, is_gdrive_link, is_share_link, get_content_type, new_task, sync_to_async, is_rclone_path, is_telegram_link, arg_parser
+from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_mega_link, is_gdrive_link, get_content_type, new_task, sync_to_async, is_rclone_path, is_telegram_link, arg_parser
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from bot.helper.ext_utils.task_manager import task_utils
 from bot.helper.mirror_utils.download_utils.aria2_download import add_aria2c_download
@@ -23,9 +23,9 @@ from bot.helper.mirror_utils.download_utils.telegram_download import TelegramDow
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, get_tg_link_content, delete_links, auto_delete_message
+from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage, get_tg_link_content, delete_links, auto_delete_message
 from bot.helper.listeners.tasks_listener import MirrorLeechListener
-from bot.helper.ext_utils.help_messages import MIRROR_HELP_MESSAGE
+from bot.helper.ext_utils.help_messages import MIRROR_HELP_MESSAGE, CLONE_HELP_MESSAGE
 from bot.helper.ext_utils.bulk_links import extract_bulk_links
 
 
@@ -35,19 +35,20 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     input_list = text[0].split(' ')
 
     arg_base = {'link': '', 
-                '-i': 0, 
-                '-m': '', 
-                '-d': False, 
-                '-j': False, 
-                '-s': False,
-                '-b': False,
-                '-n': '', 
-                '-e': False, 
-                '-z': False, 
-                '-up': '', 
+                '-i': 0,
+                '-m': '', '-sd': '', '-samedir': '',
+                '-d': False, '-seed': False,
+                '-j': False, '-join': False,
+                '-s': False, '-select': False,
+                '-b': False, '-bulk': False,
+                '-n': '', '-name': '',
+                '-e': False, '-extract': False,
+                '-uz': False, '-unzip': False,
+                '-z': False, '-zip': False,
+                '-up': '', '-upload': '',
                 '-rcf': '', 
-                '-au': '', 
-                '-ap': ''}
+                '-u': '', '-user': '',
+                '-p': '', '-pass': ''}
 
     args = arg_parser(input_list[1:], arg_base)
 
@@ -55,25 +56,25 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         multi = int(args['-i'])
     except:
         multi = 0
-
-    select =      args['-s']
-    seed =        args['-d']
-    isBulk =      args['-b']
-    folder_name = args['-m']
-    name =        args['-n']
-    up =          args['-up']
-    rcf =         args['-rcf']
-    link =        args['link']
-    extract =     args['-e'] or 'uz' in input_list[0] or 'unzip' in input_list[0]
-    compress =    args['-z'] or (not extract and ('z' in input_list[0] or 'zip' in input_list[0]))
-    join =        args['-j']
-    bulk_start =  0
-    bulk_end =    0
-    ratio =       None
-    seed_time =   None
-    reply_to =    None
-    file_ =       None
-    session =     ''
+    
+    link          = args['link']
+    folder_name   = args['-m'] or args['-sd'] or args['-samedir']
+    seed          = args['-d'] or args['-seed']
+    join          = args['-j'] or args['-join']
+    select        = args['-s'] or args['-select']
+    isBulk        = args['-b'] or args['-bulk']
+    name          = args['-n'] or args['-name']
+    extract       = args['-e'] or args['-extract'] or args['-uz'] or args['-unzip'] or 'uz' in input_list[0] or 'unzip' in input_list[0]
+    compress      = args['-z'] or args['-zip'] or (not extract and ('z' in input_list[0] or 'zip' in input_list[0]))
+    up            = args['-up'] or args['-upload']
+    rcf           = args['-rcf']
+    bulk_start    = 0
+    bulk_end      = 0
+    ratio         = None
+    seed_time     = None
+    reply_to      = None
+    file_         = None
+    session       = ''
     
     if not isinstance(seed, bool):
         dargs = seed.split(':')
@@ -209,8 +210,8 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
 
     if link:
         LOGGER.info(link)
+        org_link = link
 
-    org_link = link if is_share_link(link) else None
     if not is_mega_link(link) and not isQbit and not is_magnet(link) and not is_rclone_path(link) \
        and not is_gdrive_link(link) and not link.endswith('.torrent') and file_ is None:
         content_type = await get_content_type(link)
@@ -270,7 +271,8 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             await delete_links(message)
             return
 
-    listener = MirrorLeechListener(message, compress, extract, isQbit, isLeech, tag, select, seed, sameDir, rcf, up, join, source_url=link)
+    listener = MirrorLeechListener(message, compress, extract, isQbit, isLeech, tag, select, seed, 
+                                    sameDir, rcf, up, join, source_url=org_link)
 
     if file_ is not None:
         await delete_links(message)
@@ -295,8 +297,8 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     elif isQbit:
         await add_qb_torrent(link, path, listener, ratio, seed_time)
     else:
-        ussr = args['-au']
-        pssw = args['-ap']
+        ussr = args['-u'] or args['-user']
+        pssw = args['-p'] or args['-pass']
         if ussr or pssw:
             auth = f"{ussr}:{pssw}"
             auth = "Basic " + b64encode(auth.encode()).decode('ascii')
@@ -312,7 +314,7 @@ async def wzmlxcb(_, query):
     user_id = query.from_user.id
     data = query.data.split()
     if user_id != int(data[1]):
-        return await query.answer(text="Not Message User!", show_alert=True)
+        return await query.answer(text="Not Yours!", show_alert=True)
     elif data[2] == "logdisplay":
         await query.answer()
         async with aiopen('log.txt', 'r') as f:
@@ -339,9 +341,16 @@ async def wzmlxcb(_, query):
             LOGGER.error(f"TG Log Display : {str(err)}")
     elif data[2] == "botpm":
         await query.answer(url=f"https://t.me/{bot_name}?start=wzmlx")
+    elif data[2] == "help":
+        await query.answer()
+        btn = ButtonMaker()
+        btn.ibutton('Close', f'wzmlx {user_id} close')
+        if data[3] == "CLONE":
+            await editMessage(query.message, CLONE_HELP_MESSAGE[1], btn.build_menu(1))
     else:
         await query.answer()
-        await message.delete()
+        await deleteMessage(message)
+        await deleteMessage(message.reply_to_message)
 
 
 async def mirror(client, message):

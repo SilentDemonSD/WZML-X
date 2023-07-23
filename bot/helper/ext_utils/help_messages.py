@@ -170,20 +170,20 @@ Filter Notes:
 Timeout: 60 sec.
 """
 
-CLONE_HELP_MESSAGE = """
-Send Gdrive|Gdtot|Filepress|Filebee|Appdrive|Gdflix link or rclone path along with command or by replying to the link/rc_path by command.
+CLONE_HELP_MESSAGE = ["""<i>Send Gdrive or Gdtot or Filepress or Filebee or Appdrive or Gdflix link or rclone path along with command or by replying to the link/rc_path by command with args.</i>""",
+"""<i>Send Gdrive|Gdtot|Filepress|Filebee|Appdrive|Gdflix link or rclone path along with command or by replying to the link/rc_path by command.</i>
 
-<b>Multi links only by replying to first gdlink or rclone_path:</b>
-<code>/cmd</code> -i 10(number of links/pathies)
+<b><i>Multi Links (only by replying to first gdlink or rclone_path):</i></b>
+<code>/cmd</code> -i 10(number of links/paths)
 
-<b>Gdrive:</b>
+<b><i>Gdrive Link:</i></b>
 <code>/cmd</code> gdrivelink
 
-<b>Rclone:</b>
+<b><i>RClone Path:</i></b>
 <code>/cmd</code> (rcl or rclone_path) -up (rcl or rclone_path) -rcf flagkey:flagvalue|flagkey|flagkey:flagvalue
 
-Note: If -up not specified then rclone destination will be the RCLONE_PATH from config.env
-"""
+<b>Note:</b> If -up or -upload not specified then rclone destination will be the RCLONE_PATH from <code>config.env</code>.
+"""]
 
 
 default_desp = {'AS_DOCUMENT': 'Default type of Telegram file upload. Default is False mean as media.',
