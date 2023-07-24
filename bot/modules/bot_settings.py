@@ -524,7 +524,7 @@ async def load_config():
         categories_dict['Root'] = {"drive_id": GDRIVE_ID, "index_link": INDEX_URL}
 
     if await aiopath.exists('list_drives.txt'):
-        async with open('list_drives.txt', 'r+') as f:
+        async with aiopen('list_drives.txt', 'r+') as f:
             lines = await f.readlines()
             for line in lines:
                 sep = 2 if line.strip().split()[-1].startswith('http') else 1
@@ -534,7 +534,7 @@ async def load_config():
 
     categories_dict.clear()
     if await aiopath.exists('categories.txt'):
-        async with open('categories.txt', 'r+') as f:
+        async with aiopen('categories.txt', 'r+') as f:
             lines = await f.readlines()
             for line in lines:
                 sep = 2 if line.strip().split()[-1].startswith('http') else 1
