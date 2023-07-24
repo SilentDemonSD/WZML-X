@@ -101,7 +101,7 @@ async def confirm_category(client, query):
         for _name in user_tds.keys():
             buttons.ibutton(f'{_name}', f"scat {user_id} {data[2]} {_name.replace(' ', '_')}")
     buttons.ibutton('Done Selecting', f'scat {user_id} {msg_id} sdone', 'footer')
-    await editMessage(query.message, f'<b>Select the category where you want to upload</b>\n\n<i><b>Upload Category:</b></i> <code>{data[3].replace('_', ' ')}</code>', buttons.build_menu(2))
+    await editMessage(query.message, f"<b>Select the category where you want to upload</b>\n\n<i><b>Upload Category:</b></i> <code>{data[3].replace('_', ' ')}</code>", buttons.build_menu(2))
 
 
 bot.add_handler(MessageHandler(change_category, filters=command(BotCommands.CategorySelect) & CustomFilters.authorized))
