@@ -305,7 +305,7 @@ async def open_category_btns(message):
     start_time = time()
     while time() - start_time <= 60:
         await sleep(0.5)
-        if bot_cache[msg_id][3]:
+        if bot_cache[msg_id][2]:
             break
     drive_id, index_link, _ = bot_cache[msg_id]
     await deleteMessage(prompt)

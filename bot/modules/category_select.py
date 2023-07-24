@@ -86,7 +86,7 @@ async def confirm_category(client, query):
     if user_id != int(data[1]) and not await CustomFilters.sudo(client, query):
         return await query.answer(text="This task is not for you!", show_alert=True)
     if data[3] == "sdone":
-        bot_cache[msg_id][3] = True
+        bot_cache[msg_id][2] = True
         return
     await query.answer()
     user_tds = await fetch_user_tds(user_id)
