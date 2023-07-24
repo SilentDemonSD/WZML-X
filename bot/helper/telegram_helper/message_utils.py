@@ -9,8 +9,8 @@ from re import match as re_match
 from pyrogram.types import InputMediaPhoto
 from pyrogram.errors import ReplyMarkupInvalid, FloodWait, PeerIdInvalid, ChannelInvalid, RPCError, UserNotParticipant, MessageNotModified, MessageEmpty, PhotoInvalidDimensions, WebpageCurlFailed, MediaEmpty
 
-from bot import config_dict, LOGGER, bot_name, status_reply_dict, status_reply_dict_lock, Interval, bot, user, download_dict_lock
-from bot.helper.ext_utils.bot_utils import get_readable_message, setInterval, sync_to_async, download_image_url
+from bot import config_dict, categories_dict, bot_cache, LOGGER, bot_name, status_reply_dict, status_reply_dict_lock, Interval, bot, user, download_dict_lock
+from bot.helper.ext_utils.bot_utils import get_readable_message, setInterval, sync_to_async, download_image_url, fetch_user_tds
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.exceptions import TgLinkException
 
@@ -238,8 +238,7 @@ async def get_tg_link_content(link):
         try:
             user_message = await user.get_messages(chat_id=chat, message_ids=msg_id)
         except Exception as e:
-            raise TgLinkException(
-                f"You don't have access to this chat!. ERROR: {e}") from e
+            raise TgLinkException(f"You don't have access to this chat!. ERROR: {e}") from e
         if not user_message.empty:
             return user_message, 'user'
         else:
@@ -247,8 +246,7 @@ async def get_tg_link_content(link):
     elif not private:
         return message, 'bot'
     else:
-        raise TgLinkException(
-            "Bot can't download from GROUPS without joining!")
+        raise TgLinkException("Bot can't download from GROUPS without joining!")
 
 
 async def update_all_messages(force=False):
@@ -290,6 +288,30 @@ async def sendStatusMessage(msg):
             Interval.append(setInterval(
                 config_dict['STATUS_UPDATE_INTERVAL'], update_all_messages))
 
+
+async def open_category_btns(message):
+    user_id = message.from_user.id
+    msg_id = message.id
+    buttons = ButtonMaker()
+    if len(categories_dict) > 1:
+        for _name in categories_dict.keys():
+            buttons.ibutton(f'{_name}', f"scat {user_id} {msg_id} {_name.replace(' ', '_')}")
+    if utds := await fetch_user_tds(user_id):
+        for _name in utds.keys():
+            buttons.ibutton(f'{_name}', f"scat {user_id} {msg_id} {_name.replace(' ', '_')}")
+    buttons.ubutton('Start', f'scat {user_id} {msg_id} done', 'footer')
+    prompt = await sendMessage(message, '<b>Select the category where you want to upload</b>\n\n<i>Upload Category:</i> <code>Root</code>', buttons.build_menu(2))
+    bot_cache[msg_id] = [None, None, False]
+    start_time = time()
+    while time() - start_time <= 60:
+        await sleep(0.5)
+        if bot_cache[msg_id][3]:
+            break
+    drive_id, index_link, _ = bot_cache[msg_id]
+    await deleteMessage(prompt)
+    del bot_cache[msg_id]
+    return drive_id, index_link
+    
 
 async def forcesub(message, ids, button=None):
     join_button = {}

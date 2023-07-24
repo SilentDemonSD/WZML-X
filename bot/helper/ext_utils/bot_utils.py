@@ -25,7 +25,7 @@ from pyrogram.errors import PeerIdInvalid
 
 from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.themes import BotTheme
-from bot import OWNER_ID, bot_name, DATABASE_URL, LOGGER, get_client, aria2, download_dict, download_dict_lock, categories_dict, botStartTime, user_data, config_dict, bot_loop, extra_buttons, bot_cache, user
+from bot import OWNER_ID, bot_name, DATABASE_URL, LOGGER, get_client, aria2, download_dict, download_dict_lock, botStartTime, user_data, config_dict, bot_loop, extra_buttons, user
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.telegraph_helper import telegraph
@@ -503,29 +503,6 @@ async def fetch_user_tds(user_id, force=False):
     if config_dict['USER_TD_MODE'] and user_dict.get('td_mode', False) or force:
         return user_dict.get('user_tds', {})
     return {}
-
-async def open_category_btns(message):
-    user_id = message.from_user.id
-    msg_id = message.id
-    buttons = ButtonMaker()
-    if len(categories_dict) > 1:
-        for _name in categories_dict.keys():
-            buttons.ibutton(f'{_name}', f"scat {user_id} {msg_id} {_name.replace(' ', '_')}")
-    if utds := await fetch_user_tds(user_id):
-        for _name in utds.keys():
-            buttons.ibutton(f'{_name}', f"scat {user_id} {msg_id} {_name.replace(' ', '_')}")
-    buttons.ubutton('Start', f'scat {user_id} {msg_id} done', 'footer')
-    prompt = await sendMessage(message, '<b>Select the category where you want to upload</b>\n\n<i>Upload Category:</i> <code>Root</code>', buttons.build_menu(2))
-    bot_cache[msg_id] = [None, None, False]
-    start_time = time()
-    while time() - start_time <= 60:
-        await sleep(0.5)
-        if bot_cache[msg_id][3]:
-            break
-    drive_id, index_link, _ = bot_cache[msg_id]
-    await deleteMessage(prompt)
-    del bot_cache[msg_id]
-    return drive_id, index_link
 
 
 def checking_access(user_id, button=None):
