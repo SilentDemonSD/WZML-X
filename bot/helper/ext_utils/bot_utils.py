@@ -547,7 +547,7 @@ def checking_access(user_id, button=None):
             button = ButtonMaker()
         encrypt_url = b64encode(f"{token}&&{user_id}".encode()).decode()
         button.ubutton('Generate New Token', short_url(f'https://t.me/{bot_name}?start={encrypt_url}'))
-        return f'<i>Temporary Token has been expired,</i> Kindly generate a New Temp Token to start using bot Again.\n<b>Validity :</b> <code>{get_readable_time(config_dict['TOKEN_TIMEOUT'])}</code>', button
+        return f'<i>Temporary Token has been expired,</i> Kindly generate a New Temp Token to start using bot Again.\n<b>Validity :</b> <code>{get_readable_time(config_dict["TOKEN_TIMEOUT"])}</code>', button
     return None, button
 
 
