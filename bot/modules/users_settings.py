@@ -113,7 +113,7 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
         buttons.ibutton("Mirror Remname", f"userset {user_id} mremname")
         mremname = 'Not Exists' if (val:=user_dict.get('mremname', config_dict.get('MIRROR_FILENAME_REMNAME', ''))) == '' else val
 
-        ddl_serv = len(val.keys()) if (val := user_dict.get('ddl_servers', False)) else 0
+        ddl_serv = len(val) if (val := user_dict.get('ddl_servers', False)) else 0
         buttons.ibutton("DDL Servers", f"userset {user_id} ddl_servers")
         
         tds_mode = "Enabled" if user_dict.get('td_mode', config_dict['BOT_PM']) else "Disabled"
@@ -121,7 +121,7 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
             tds_mode = "Force Disabled"
         
         user_tds = len(val) if (val := user_dict.get('user_tds', False)) else 0
-        buttons.ibutton("User TD", f"userset {user_id} user_tds")
+        buttons.ibutton("User TDs", f"userset {user_id} user_tds")
 
         text = BotTheme('MIRROR', NAME=name, RCLONE=rccmsg, DDL_SERVER=ddl_serv, DM=f"{dailyup} / {dailytlup}", MREMNAME=escape(mremname), MPREFIX=escape(mprefix),
                 MSUFFIX=escape(msuffix), TMODE=tds_mode, USERTD=user_tds)
@@ -307,16 +307,16 @@ async def set_custom(client, message, pre_event, key, direct=False):
         n_key = 'ddl_servers'
         return_key = 'ddl_servers'
     elif key == 'user_tds':
-        user_tds = user_dict.get(key, [])
+        user_tds = user_dict.get(key, {})
         for td_item in value.split('\n'):
             if td_item == '':
                 continue
             td_details = td_item.rsplit(maxsplit=2) if (td_item.split())[-1].startswith('http') else td_item.rsplit(maxsplit=1)
-            for dic in user_tds:
-                if td_details[0].lower() == dic.get('title'):
-                    user_tds.pop(user_tds.index(dic))
+            for title in user_tds.keys():
+                if td_details[0].casefold() == title:
+                    del user_tds[td_details[0]]
             if len(td_details) > 1:
-                user_tds.append({'title': td_details[0].lower(),'id': td_details[1],'index': td_details[2].rstrip('/') if len(td_details) > 2 else ''})
+                user_tds[td_details[0]] = {'drive_id': td_details[1],'index_link': td_details[2].rstrip('/') if len(td_details) > 2 else ''}
         value = user_tds
         return_key = 'mirror'
     update_user_ldata(user_id, n_key, value)

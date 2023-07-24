@@ -8,8 +8,8 @@ from asyncio import sleep
 from aiofiles import open as aiopen
 from aiofiles.os import path as aiopath
 
-from bot import bot, DOWNLOAD_DIR, LOGGER, config_dict, bot_name
-from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_mega_link, is_gdrive_link, get_content_type, new_task, sync_to_async, is_rclone_path, is_telegram_link, arg_parser
+from bot import bot, DOWNLOAD_DIR, LOGGER, config_dict, bot_name, categories_dict, user_data
+from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_mega_link, is_gdrive_link, get_content_type, new_task, sync_to_async, is_rclone_path, is_telegram_link, arg_parser, open_category_btns, fetch_user_tds
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from bot.helper.ext_utils.task_manager import task_utils
 from bot.helper.mirror_utils.download_utils.aria2_download import add_aria2c_download
@@ -18,6 +18,7 @@ from bot.helper.mirror_utils.download_utils.qbit_download import add_qb_torrent
 from bot.helper.mirror_utils.download_utils.mega_download import add_mega_download
 from bot.helper.mirror_utils.download_utils.rclone_download import add_rclone_download
 from bot.helper.mirror_utils.rclone_utils.list import RcloneList
+from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.mirror_utils.download_utils.direct_link_generator import direct_link_generator
 from bot.helper.mirror_utils.download_utils.telegram_download import TelegramDownloadHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -48,7 +49,12 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
                 '-up': '', '-upload': '',
                 '-rcf': '', 
                 '-u': '', '-user': '',
-                '-p': '', '-pass': ''}
+                '-p': '', '-pass': '',
+                '-id': '',
+                '-index': '',
+                '-gd': '',
+                '-ud': '', '-userdump': '',
+    }
 
     args = arg_parser(input_list[1:], arg_base)
 
@@ -68,6 +74,9 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     compress      = args['-z'] or args['-zip'] or (not extract and ('z' in input_list[0] or 'zip' in input_list[0]))
     up            = args['-up'] or args['-upload']
     rcf           = args['-rcf']
+    drive_id      = args['-id']
+    index_link    = args['-index']
+    gd_cat        = args['-gd']
     bulk_start    = 0
     bulk_end      = 0
     ratio         = None
@@ -89,6 +98,9 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         if len(dargs) == 2:
             bulk_end = dargs[1] or None
         isBulk = True
+        
+    if drive_id and is_gdrive_link(drive_id):
+        drive_id = GoogleDriveHelper.getIdFromUrl(drive_id)
 
     if folder_name and not isBulk:
         seed = False
@@ -238,7 +250,12 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             up = 'ddl'
         if not up and config_dict['DEFAULT_UPLOAD'] == 'gd':
             up = 'gd'
-        if up == 'gd' and not config_dict['GDRIVE_ID']:
+            user_tds = await fetch_user_tds(message.from_user.id)
+            if not drive_id and len(categories_dict) > 1 and len(user_tds) == 0 or len(categories_dict) >= 1 and len(user_tds) > 1:
+                drive_id, index_link = await open_category_btns(message)
+            if drive_id and not await sync_to_async(GoogleDriveHelper().getFolderData, drive_id):
+                return await sendMessage(message, "Google Drive ID validation failed!!")
+        if up == 'gd' and not config_dict['GDRIVE_ID'] and not drive_id:
             await sendMessage(message, 'GDRIVE_ID not Provided!')
             return
         elif not up:
@@ -274,7 +291,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             return
 
     listener = MirrorLeechListener(message, compress, extract, isQbit, isLeech, tag, select, seed, 
-                                    sameDir, rcf, up, join, source_url=org_link)
+                                    sameDir, rcf, up, join, drive_id, index_link, source_url=org_link)
 
     if file_ is not None:
         await delete_links(message)

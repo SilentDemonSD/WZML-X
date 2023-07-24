@@ -209,6 +209,9 @@ Gdrive | Gdtot | Filepress | Filebee | Appdrive | Gdflix link or rclone path
 <b>NOTE:</b> If -up or -upload not specified then rclone destination will be the RCLONE_PATH from <code>config.env</code>.
 """]
 
+CATEGORY_HELP_MESSAGE = """
+.
+"""
 
 default_desp = {'AS_DOCUMENT': 'Default type of Telegram file upload. Default is False mean as media.',
                 'ANIME_TEMPLATE': 'Set template for AniList Template. HTML Tags supported',

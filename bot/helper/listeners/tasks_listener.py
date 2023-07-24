@@ -40,7 +40,7 @@ from bot.helper.themes import BotTheme
 
 
 class MirrorLeechListener:
-    def __init__(self, message, compress=False, extract=False, isQbit=False, isLeech=False, tag=None, select=False, seed=False, sameDir=None, rcFlags=None, upPath=None, isClone=False, join=False, isYtdlp=False, source_url=None):
+    def __init__(self, message, compress=False, extract=False, isQbit=False, isLeech=False, tag=None, select=False, seed=False, sameDir=None, rcFlags=None, upPath=None, isClone=False, join=False, drive_id=None, index_link=None, isYtdlp=False, source_url=None, ):
         if sameDir is None:
             sameDir = {}
         self.message = message
@@ -67,6 +67,8 @@ class MirrorLeechListener:
         self.upPath = upPath
         self.random_pic = 'IMAGES'
         self.join = join
+        self.drive_id = drive_id
+        self.index_link = index_link
         self.linkslogmsg = None
         self.botpmmsg = None
         self.upload_details = {}
@@ -383,7 +385,7 @@ class MirrorLeechListener:
             async with download_dict_lock:
                 download_dict[self.uid] = upload_status
             await update_all_messages()
-            await sync_to_async(drive.upload, up_name, size)
+            await sync_to_async(drive.upload, up_name, size, self.drive_id)
         elif self.upPath == 'ddl':
             size = await get_path_size(up_path)
             LOGGER.info(f"Upload Name: {up_name} via DDL")

@@ -116,6 +116,16 @@ class GoogleDriveHelper:
             return res.group(3)
         parsed = urlparse(link)
         return parse_qs(parsed.query)['id'][0]
+        
+    @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(3),
+           retry=retry_if_exception_type(Exception))
+    def getFolderData(self, file_id):
+        try:
+            meta = self.__service.files().get(fileId=file_id, supportsAllDrives=True).execute()
+            if meta.get('mimeType', '') == self.__G_DRIVE_DIR_MIME_TYPE:
+                return meta.get('name')
+        except:
+            return
 
     @retry(wait=wait_exponential(multiplier=2, min=3, max=6), stop=stop_after_attempt(3),
            retry=retry_if_exception_type(Exception))
@@ -207,7 +217,9 @@ class GoogleDriveHelper:
                 break
         return msg
 
-    def upload(self, file_name, size):
+    def upload(self, file_name, size, gdrive_id):
+        if not gdrive_id:
+            gdrive_id = config_dict['GDRIVE_ID']
         self.__is_uploading = True
         item_path = f"{self.__path}/{file_name}"
         LOGGER.info(f"Uploading: {item_path}")
@@ -218,7 +230,7 @@ class GoogleDriveHelper:
                     raise Exception('This file extension is excluded by extension filter!')
                 mime_type = get_mime_type(item_path)
                 link = self.__upload_file(
-                    item_path, file_name, mime_type, config_dict['GDRIVE_ID'], is_dir=False)
+                    item_path, file_name, mime_type, gdrive_id, is_dir=False)
                 if self.__is_cancelled:
                     return
                 if link is None:
@@ -227,7 +239,7 @@ class GoogleDriveHelper:
             else:
                 mime_type = 'Folder'
                 dir_id = self.__create_directory(ospath.basename(
-                    ospath.abspath(file_name)), config_dict['GDRIVE_ID'])
+                    ospath.abspath(file_name)), gdrive_id)
                 result = self.__upload_dir(item_path, dir_id)
                 if result is None:
                     raise Exception('Upload has been manually cancelled!')

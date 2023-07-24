@@ -25,23 +25,19 @@ from pyrogram.errors import PeerIdInvalid
 
 from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.themes import BotTheme
-from bot import OWNER_ID, bot_name, DATABASE_URL, LOGGER, get_client, aria2, download_dict, download_dict_lock, botStartTime, user_data, config_dict, bot_loop, extra_buttons, user
+from bot import OWNER_ID, bot_name, DATABASE_URL, LOGGER, get_client, aria2, download_dict, download_dict_lock, categories_dict, botStartTime, user_data, config_dict, bot_loop, extra_buttons, bot_cache, user
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.telegraph_helper import telegraph
 from bot.helper.ext_utils.shortners import short_url
 
-THREADPOOL = ThreadPoolExecutor(max_workers=1000)
-
+THREADPOOLb  = ThreadPoolExecutor(max_workers=1000)
 MAGNET_REGEX = r'magnet:\?xt=urn:(btih|btmh):[a-zA-Z0-9]*\s*'
-
-URL_REGEX = r'^(?!\/)(rtmps?:\/\/|mms:\/\/|rtsp:\/\/|https?:\/\/|ftp:\/\/)?([^\/:]+:[^\/@]+@)?(www\.)?(?=[^\/:\s]+\.[^\/:\s]+)([^\/:\s]+\.[^\/:\s]+)(:\d+)?(\/[^#\s]*[\s\S]*)?(\?[^#\s]*)?(#.*)?$'
-
-SIZE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
-
+URL_REGEX    = r'^(?!\/)(rtmps?:\/\/|mms:\/\/|rtsp:\/\/|https?:\/\/|ftp:\/\/)?([^\/:]+:[^\/@]+@)?(www\.)?(?=[^\/:\s]+\.[^\/:\s]+)([^\/:\s]+\.[^\/:\s]+)(:\d+)?(\/[^#\s]*[\s\S]*)?(\?[^#\s]*)?(#.*)?$'
+SIZE_UNITS   = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB']
 STATUS_START = 0
-PAGES = 1
-PAGE_NO = 1
+PAGES        = 1
+PAGE_NO      = 1
 
 
 class MirrorStatus:
@@ -327,7 +323,7 @@ def is_gdrive_link(url):
 
 
 def is_telegram_link(url):
-    return url.startswith(('https://t.me/', 'tg://openmessage?user_id='))
+    return url.startswith(('https://t.me/', 'https://telegram.me/', 'https://telegram.dog/', 'https://telegram.space/', 'tg://openmessage?user_id='))
 
 
 def is_share_link(url):
@@ -502,6 +498,36 @@ async def getdailytasks(user_id, increase_task=False, upleech=0, upmirror=0, che
     return task
 
 
+async def fetch_user_tds(user_id, force=False):
+    user_dict = user_data.get(user_id, {})
+    if config_dict['USER_TD_MODE'] and user_dict.get('td_mode', False) or force:
+        return user_dict.get('user_tds', {})
+    return {}
+
+async def open_category_btns(message):
+    user_id = message.from_user.id
+    msg_id = message.id
+    buttons = ButtonMaker()
+    if len(categories_dict) > 1:
+        for _name in categories_dict.keys():
+            buttons.ibutton(f'{_name}', f"scat {user_id} {msg_id} {_name.replace(' ', '_')}")
+    if utds := await fetch_user_tds(user_id):
+        for _name in utds.keys():
+            buttons.ibutton(f'{_name}', f"scat {user_id} {msg_id} {_name.replace(' ', '_')}")
+    buttons.ubutton('Start', f'scat {user_id} {msg_id} done', 'footer')
+    prompt = await sendMessage(message, '<b>Select the category where you want to upload</b>\n\n<i>Upload Category:</i> <code>Root</code>', buttons.build_menu(2))
+    bot_cache[msg_id] = [None, None, False]
+    start_time = time()
+    while time() - start_time <= 60:
+        await sleep(0.5)
+        if bot_cache[msg_id][3]:
+            break
+    drive_id, index_link, _ = bot_cache[msg_id]
+    await deleteMessage(prompt)
+    del bot_cache[msg_id]
+    return drive_id, index_link
+
+
 def checking_access(user_id, button=None):
     if not config_dict['TOKEN_TIMEOUT'] or bool(user_id == OWNER_ID or user_id in user_data and user_data[user_id].get('is_sudo')):
         return None, button
@@ -521,7 +547,7 @@ def checking_access(user_id, button=None):
             button = ButtonMaker()
         encrypt_url = b64encode(f"{token}&&{user_id}".encode()).decode()
         button.ubutton('Generate New Token', short_url(f'https://t.me/{bot_name}?start={encrypt_url}'))
-        return 'Temp Token is expired, generate a new temp token and try again.', button
+        return f'<i>Temporary Token has been expired,</i> Kindly generate a New Temp Token to start using bot Again.\n<b>Validity :</b> <code>{get_readable_time(config_dict['TOKEN_TIMEOUT'])}</code>', button
     return None, button
 
 
@@ -530,6 +556,7 @@ def extra_btns(buttons):
         for btn_name, btn_url in extra_buttons.items():
             buttons.ubutton(btn_name, btn_url)
     return buttons
+
 
 async def set_commands(client):
     if config_dict['SET_COMMANDS']:
