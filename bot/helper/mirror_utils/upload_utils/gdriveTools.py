@@ -13,7 +13,7 @@ from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type, RetryError
 
-from bot import config_dict, DRIVES_NAMES, DRIVES_IDS, INDEX_URLS, GLOBAL_EXTENSION_FILTER
+from bot import config_dict, list_drives_dict, GLOBAL_EXTENSION_FILTER
 from bot.helper.ext_utils.bot_utils import setInterval, async_to_sync, get_readable_file_size
 from bot.helper.ext_utils.fs_utils import get_mime_type
 from bot.helper.ext_utils.leech_utils import format_filename
@@ -566,15 +566,14 @@ class GoogleDriveHelper:
         contents_no = 0
         telegraph_content = []
         Title = False
-        if len(DRIVES_IDS) > 1:
+        if len(list_drives_dict) > 1:
             token_service = self.__alt_authorize()
             if token_service is not None:
                 self.__service = token_service
-        for drive_name, dir_id, index_url in zip(DRIVES_NAMES, DRIVES_IDS, INDEX_URLS):
+        for drive_name, (dir_id, index_url) in list_drives_dict.items():
             isRecur = False if isRecursive and len(
                 dir_id) > 23 else isRecursive
-            response = self.__drive_query(
-                dir_id, fileName, stopDup, isRecur, itemType)
+            response = self.__drive_query(dir_id, fileName, stopDup, isRecur, itemType)
             if not response["files"]:
                 if noMulti:
                     break

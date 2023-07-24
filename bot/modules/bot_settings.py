@@ -14,7 +14,7 @@ from time import time
 from io import BytesIO
 from aioshutil import rmtree as aiormtree
 
-from bot import config_dict, user_data, DATABASE_URL, MAX_SPLIT_SIZE, DRIVES_IDS, DRIVES_NAMES, INDEX_URLS, aria2, GLOBAL_EXTENSION_FILTER, status_reply_dict_lock, Interval, aria2_options, aria2c_global, IS_PREMIUM_USER, download_dict, qbit_options, get_client, LOGGER, bot, extra_buttons, shorteneres_list
+from bot import config_dict, user_data, DATABASE_URL, MAX_SPLIT_SIZE, list_drives_dict, aria2, GLOBAL_EXTENSION_FILTER, status_reply_dict_lock, Interval, aria2_options, aria2c_global, IS_PREMIUM_USER, download_dict, qbit_options, get_client, LOGGER, bot, extra_buttons, shorteners_list
 from bot.helper.telegram_helper.message_utils import sendMessage, sendFile, editMessage, deleteMessage, update_all_messages
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -518,26 +518,29 @@ async def load_config():
     if len(TIMEZONE) == 0:
         TIMEZONE = 'Asia/Kolkata'
         
-    DRIVES_IDS.clear()
-    DRIVES_NAMES.clear()
-    INDEX_URLS.clear()
-
+    list_drives_dict.clear()
     if GDRIVE_ID:
-        DRIVES_NAMES.append("Main")
-        DRIVES_IDS.append(GDRIVE_ID)
-        INDEX_URLS.append(INDEX_URL)
+        list_drives_dict['Main'] = {"drive_id": GDRIVE_ID, "index_link": INDEX_URL}
+        categories_dict['Root'] = {"drive_id": GDRIVE_ID, "index_link": INDEX_URL}
 
     if await aiopath.exists('list_drives.txt'):
-        async with aiopen('list_drives.txt', 'r+') as f:
+        async with open('list_drives.txt', 'r+') as f:
             lines = await f.readlines()
             for line in lines:
-                temp = line.strip().split()
-                DRIVES_IDS.append(temp[1])
-                DRIVES_NAMES.append(temp[0].replace("_", " "))
-                if len(temp) > 2:
-                    INDEX_URLS.append(temp[2])
-                else:
-                    INDEX_URLS.append('')
+                sep = 2 if line.strip().split()[-1].startswith('http') else 1
+                temp = line.strip().rsplit(maxsplit=sep)
+                name = "Main Custom" if temp[0].casefold() == "Main" else temp[0]
+                list_drives_dict[name] = {'drive_id': temp[1], 'index_link': (temp[2] if sep == 2 else '')}
+
+    categories_dict.clear()
+    if await aiopath.exists('categories.txt'):
+        async with open('categories.txt', 'r+') as f:
+            lines = await f.readlines()
+            for line in lines:
+                sep = 2 if line.strip().split()[-1].startswith('http') else 1
+                temp = line.strip().rsplit(maxsplit=sep)
+                name = "Root Custom" if temp[0].casefold() == "Root" else temp[0]
+                categories_dict[name] = {'drive_id': temp[1], 'index_link': (temp[2] if sep == 2 else '')}
 
     extra_buttons.clear()
     if await aiopath.exists('buttons.txt'):
@@ -550,14 +553,14 @@ async def load_config():
                 if len(temp) == 2:
                     extra_buttons[temp[0].replace("_", " ")] = temp[1]
 
-    shorteneres_list.clear()
+    shorteners_list.clear()
     if await aiopath.exists('shorteners.txt'):
         async with aiopen('shorteners.txt', 'r+') as f:
             lines = await f.readlines()
             for line in lines:
                 temp = line.strip().split()
                 if len(temp) == 2:
-                    shorteneres_list.append({'domain': temp[0],'api_key': temp[1]})
+                    shorteners_list.append({'domain': temp[0],'api_key': temp[1]})
 
     config_dict.update({'ANIME_TEMPLATE': DEF_ANI_TEMP,
                         'AS_DOCUMENT': AS_DOCUMENT,
@@ -821,15 +824,11 @@ async def edit_variable(_, message, pre_message, key):
                 x = x.lstrip('.')
             GLOBAL_EXTENSION_FILTER.append(x.strip().lower())
     elif key == 'GDRIVE_ID':
-        if DRIVES_NAMES and DRIVES_NAMES[0] == 'Main':
-            DRIVES_IDS[0] = value
-        else:
-            DRIVES_IDS.insert(0, value)
+        list_drives_dict['Main'] = {"drive_id": value, "index_link": config_dict['INDEX_URL']}
+        categories_dict['Root'] = {"drive_id": value, "index_link": config_dict['INDEX_URL']}
     elif key == 'INDEX_URL':
-        if DRIVES_NAMES and DRIVES_NAMES[0] == 'Main':
-            INDEX_URLS[0] = value
-        else:
-            INDEX_URLS.insert(0, value)
+        list_drives_dict['Main'] = {"drive_id": config_dict['GDRIVE_ID'], "index_link": value}
+        categories_dict['Root'] = {"drive_id": config_dict['GDRIVE_ID'], "index_link": value}
     elif value.isdigit():
         value = int(value)
     config_dict[key] = value
@@ -910,6 +909,16 @@ async def update_private_file(_, message, pre_message):
             await (await create_subprocess_exec("cp", ".netrc", "/root/.netrc")).wait()
         elif file_name in ['buttons.txt', 'buttons']:
             extra_buttons.clear()
+        elif file_name in ['categories.txt', 'categories']:
+            categories_dict.clear()
+            if GDRIVE_ID := config_dict['GDRIVE_ID']:
+                categories_dict['Root'] = {"drive_id": GDRIVE_ID, "index_link": config_dict['INDEX_URL']}
+        elif file_name in ['list_drives.txt', 'list_drives']:
+            list_drives_dict.clear()
+            if GDRIVE_ID := config_dict['GDRIVE_ID']:
+                list_drives_dict['Main'] = {"drive_id": GDRIVE_ID, "index_link": config_dict['INDEX_URL']}
+        elif file_name in ['shorteners.txt', 'shorteners']:
+            shorteners_list.clear()
         await deleteMessage(message)
     elif doc := message.document:
         file_name = doc.file_name
@@ -925,41 +934,45 @@ async def update_private_file(_, message, pre_message):
             await (await create_subprocess_exec("7z", "x", "-o.", "-aoa", "accounts.zip", "accounts/*.json")).wait()
             await (await create_subprocess_exec("chmod", "-R", "777", "accounts")).wait()
         elif file_name == 'list_drives.txt':
-            DRIVES_IDS.clear()
-            DRIVES_NAMES.clear()
-            INDEX_URLS.clear()
+            list_drives_dict.clear()
             if GDRIVE_ID := config_dict['GDRIVE_ID']:
-                DRIVES_NAMES.append("Main")
-                DRIVES_IDS.append(GDRIVE_ID)
-                INDEX_URLS.append(config_dict['INDEX_URL'])
+                list_drives_dict['Main'] = {"drive_id": GDRIVE_ID, "index_link": config_dict['INDEX_URL']}
             async with aiopen('list_drives.txt', 'r+') as f:
                 lines = await f.readlines()
                 for line in lines:
-                    temp = line.strip().split()
-                    DRIVES_IDS.append(temp[1])
-                    DRIVES_NAMES.append(temp[0].replace("_", " "))
-                    if len(temp) > 2:
-                        INDEX_URLS.append(temp[2])
-                    else:
-                        INDEX_URLS.append('')
+                    sep = 2 if line.strip().split()[-1].startswith('http') else 1
+                    temp = line.strip().rsplit(maxsplit=sep)
+                    name = "Main Custom" if temp[0].casefold() == "Main" else temp[0]
+                    list_drives_dict[name] = {'drive_id': temp[1], 'index_link': (temp[2] if sep == 2 else '')}
+        elif file_name = 'categories.txt':
+            categories_dict.clear()
+            if GDRIVE_ID := config_dict['GDRIVE_ID']:
+                categories_dict['Root'] = {"drive_id": GDRIVE_ID, "index_link": config_dict['INDEX_URL']}
+            async with aiopen('categories.txt', 'r+') as f:
+                lines = f.readlines()
+                for line in lines:
+                    sep = 2 if line.strip().split()[-1].startswith('http') else 1
+                    temp = line.strip().rsplit(maxsplit=sep)
+                    name = "Root Custom" if temp[0].casefold() == "Root" else temp[0]
+                    categories_dict[name] = {'drive_id': temp[1], 'index_link': (temp[2] if sep == 2 else '')}
         elif file_name == 'buttons.txt':
             extra_buttons.clear()
             async with aiopen('buttons.txt', 'r+') as f:
                 lines = await f.readlines()
                 for line in lines:
-                    temp = line.strip().split()
-                    if len(extra_buttons.keys()) == 4:
+                    temp = line.strip().rsplit(maxsplit=1)
+                    if len(extra_buttons.keys()) >= 20:
                         break
-                    if len(temp) == 2:
-                        extra_buttons[temp[0].replace("_", " ")] = temp[1]
+                    elif temp[1].startswith('http'):
+                        extra_buttons[temp[0]] = temp[1]
         elif file_name == 'shorteners.txt':
-            shorteneres_list.clear()
+            shorteners_list.clear()
             async with aiopen('shorteners.txt', 'r+') as f:
                 lines = await f.readlines()
                 for line in lines:
                     temp = line.strip().split()
                     if len(temp) == 2:
-                        shorteneres_list.append({'domain': temp[0],'api_key': temp[1]})
+                        shorteners_list.append({'domain': temp[0],'api_key': temp[1]})
         elif file_name in ['.netrc', 'netrc']:
             if file_name == 'netrc':
                 await rename('netrc', '.netrc')

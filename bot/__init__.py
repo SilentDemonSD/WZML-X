@@ -36,17 +36,17 @@ load_dotenv('config.env', override=True)
 Interval = []
 QbInterval = []
 QbTorrents = {}
-DRIVES_NAMES = []
-DRIVES_IDS = []
-INDEX_URLS = []
 GLOBAL_EXTENSION_FILTER = ['aria2', '!qB']
 user_data = {}
 extra_buttons = {}
-shorteneres_list = []
+list_drives_dict = {}
+shorteners_list = []
+categories_dict = {}
 aria2_options = {}
 qbit_options = {}
 queued_dl = {}
 queued_up = {}
+bot_cache = {}
 non_queued_dl = set()
 non_queued_up = set()
 
@@ -672,31 +672,36 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'YT_DLP_OPTIONS': YT_DLP_OPTIONS}
 
 if GDRIVE_ID:
-    DRIVES_NAMES.append("Main")
-    DRIVES_IDS.append(GDRIVE_ID)
-    INDEX_URLS.append(INDEX_URL)
+    list_drives_dict['Main'] = {"drive_id": GDRIVE_ID, "index_link": INDEX_URL}
+    categories_dict['Root'] = {"drive_id": GDRIVE_ID, "index_link": INDEX_URL}
 
 if ospath.exists('list_drives.txt'):
     with open('list_drives.txt', 'r+') as f:
         lines = f.readlines()
         for line in lines:
-            temp = line.strip().split()
-            DRIVES_IDS.append(temp[1])
-            DRIVES_NAMES.append(temp[0].replace("_", " "))
-            if len(temp) > 2:
-                INDEX_URLS.append(temp[2])
-            else:
-                INDEX_URLS.append('')
+            sep = 2 if line.strip().split()[-1].startswith('http') else 1
+            temp = line.strip().rsplit(maxsplit=sep)
+            name = "Main Custom" if temp[0].casefold() == "Main" else temp[0]
+            list_drives_dict[name] = {'drive_id': temp[1], 'index_link': (temp[2] if sep == 2 else '')}
+
+if ospath.exists('categories.txt'):
+    with open('categories.txt', 'r+') as f:
+        lines = f.readlines()
+        for line in lines:
+            sep = 2 if line.strip().split()[-1].startswith('http') else 1
+            temp = line.strip().rsplit(maxsplit=sep)
+            name = "Root Custom" if temp[0].casefold() == "Root" else temp[0]
+            categories_dict[name] = {'drive_id': temp[1], 'index_link': (temp[2] if sep == 2 else '')}
 
 if ospath.exists('buttons.txt'):
     with open('buttons.txt', 'r+') as f:
         lines = f.readlines()
         for line in lines:
-            temp = line.strip().split()
-            if len(extra_buttons.keys()) >= 6:
+            temp = line.strip().rsplit(maxsplit=1)
+            if len(extra_buttons.keys()) >= 20:
                 break
-            if len(temp) == 2:
-                extra_buttons[temp[0].replace("_", " ")] = temp[1]
+            elif temp[1].startswith('http'):
+                extra_buttons[temp[0]] = temp[1]
 
 if ospath.exists('shorteners.txt'):
     with open('shorteners.txt', 'r+') as f:
@@ -704,7 +709,7 @@ if ospath.exists('shorteners.txt'):
         for line in lines:
             temp = line.strip().split()
             if len(temp) == 2:
-                shorteneres_list.append({'domain': temp[0],'api_key': temp[1]})
+                shorteners_list.append({'domain': temp[0],'api_key': temp[1]})
 
 if BASE_URL:
     Popen(f"gunicorn web.wserver:app --bind 0.0.0.0:{BASE_URL_PORT} --worker-class gevent", shell=True)
