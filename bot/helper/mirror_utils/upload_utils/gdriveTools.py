@@ -582,7 +582,9 @@ class GoogleDriveHelper:
             token_service = self.__alt_authorize()
             if token_service is not None:
                 self.__service = token_service
-        for drive_name, (_, dir_id, _, index_url) in list_drives_dict.items():
+        for drive_name, drives_dict in list_drives_dict.items():
+            dir_id = drives_dict['drive_id']
+            index_url = drives_dict['index_link']
             isRecur = False if isRecursive and len(
                 dir_id) > 23 else isRecursive
             response = self.__drive_query(dir_id, fileName, stopDup, isRecur, itemType)
