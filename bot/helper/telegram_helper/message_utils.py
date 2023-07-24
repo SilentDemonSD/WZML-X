@@ -299,8 +299,8 @@ async def open_category_btns(message):
     if utds := await fetch_user_tds(user_id):
         for _name in utds.keys():
             buttons.ibutton(f'{_name}', f"scat {user_id} {msg_id} {_name.replace(' ', '_')}")
-    buttons.ibutton('Start', f'scat {user_id} {msg_id} done', 'footer')
-    prompt = await sendMessage(message, '<b>Select the category where you want to upload</b>\n\n<i>Upload Category:</i> <code>Root</code>', buttons.build_menu(2))
+    buttons.ibutton('Done Selecting', f'scat {user_id} {msg_id} sdone', 'footer')
+    prompt = await sendMessage(message, '<b>Select the category where you want to upload</b>\n\n<i><b>Upload Category:</b></i> <code>Root</code>', buttons.build_menu(2))
     bot_cache[msg_id] = [None, None, False]
     start_time = time()
     while time() - start_time <= 60:
