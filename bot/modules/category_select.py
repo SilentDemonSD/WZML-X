@@ -100,7 +100,7 @@ async def confirm_category(client, query):
     if user_tds:
         for _name in user_tds.keys():
             buttons.ibutton(f'{_name}', f"scat {user_id} {data[2]} {_name.replace(' ', '_')}")
-    buttons.ubutton('Start', f'scat {user_id} {msg_id} done', 'footer')
+    buttons.ibutton('Start', f'scat {user_id} {msg_id} done', 'footer')
     await editMessage(query.message, f'<b>Select the category where you want to upload</b>\n\n<i>Upload Category:</i> <code>{data[3]}</code>', buttons.build_menu(2))
 
 
