@@ -12,7 +12,7 @@ from html import escape
 from io import BytesIO
 from asyncio import sleep
 
-from bot import OWNER_ID, bot, user_data, config_dict, DATABASE_URL, IS_PREMIUM_USER, MAX_SPLIT_SIZE
+from bot import OWNER_ID, bot, user_data, config_dict, categories_dict, DATABASE_URL, IS_PREMIUM_USER, MAX_SPLIT_SIZE
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage, sendFile
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -312,8 +312,10 @@ async def set_custom(client, message, pre_event, key, direct=False):
             if td_item == '':
                 continue
             td_details = td_item.rsplit(maxsplit=2) if (td_item.split())[-1].startswith('http') else td_item.rsplit(maxsplit=1)
+            if td_details[0] in list(categories_dict.keys()):
+                continue
             for title in user_tds.keys():
-                if td_details[0].casefold() == title:
+                if td_details[0].casefold() == title.casefold():
                     del user_tds[td_details[0]]
             if len(td_details) > 1:
                 user_tds[td_details[0]] = {'drive_id': td_details[1],'index_link': td_details[2].rstrip('/') if len(td_details) > 2 else ''}
