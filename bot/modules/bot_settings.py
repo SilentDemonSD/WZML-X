@@ -949,7 +949,7 @@ async def update_private_file(_, message, pre_message):
             if GDRIVE_ID := config_dict['GDRIVE_ID']:
                 categories_dict['Root'] = {"drive_id": GDRIVE_ID, "index_link": config_dict['INDEX_URL']}
             async with aiopen('categories.txt', 'r+') as f:
-                lines = f.readlines()
+                lines = await f.readlines()
                 for line in lines:
                     sep = 2 if line.strip().split()[-1].startswith('http') else 1
                     temp = line.strip().rsplit(maxsplit=sep)
