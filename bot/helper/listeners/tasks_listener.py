@@ -68,7 +68,6 @@ class MirrorLeechListener:
         self.random_pic = 'IMAGES'
         self.join = join
         self.drive_id = drive_id
-        LOGGER.info(drive_id)
         self.index_link = index_link
         self.linkslogmsg = None
         self.botpmmsg = None
@@ -386,6 +385,7 @@ class MirrorLeechListener:
             async with download_dict_lock:
                 download_dict[self.uid] = upload_status
             await update_all_messages()
+            LOGGER.info("Deeeebbbbuuuggggg Mmeee plzz")
             LOGGER.info(self.drive_id)
             await sync_to_async(drive.upload, up_name, size, self.drive_id)
         elif self.upPath == 'ddl':
