@@ -944,7 +944,7 @@ async def update_private_file(_, message, pre_message):
                     temp = line.strip().rsplit(maxsplit=sep)
                     name = "Main Custom" if temp[0].casefold() == "Main" else temp[0]
                     list_drives_dict[name] = {'drive_id': temp[1], 'index_link': (temp[2] if sep == 2 else '')}
-        elif file_name = 'categories.txt':
+        elif file_name == 'categories.txt':
             categories_dict.clear()
             if GDRIVE_ID := config_dict['GDRIVE_ID']:
                 categories_dict['Root'] = {"drive_id": GDRIVE_ID, "index_link": config_dict['INDEX_URL']}
