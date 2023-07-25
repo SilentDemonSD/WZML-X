@@ -372,7 +372,7 @@ async def wzmlxcb(_, query):
             logFile = await f.read()
         cget = create_scraper().request
         resp = cget('POST', 'http://stashbin.xyz/api/document', data={'content': logFile}).json()
-        if resp.status_code == 200 and resp['ok']:
+        if resp['ok']:
             btn = ButtonMaker()
             btn.ubutton('📨 Web Paste', f"http://stashbin.xyz/{resp['data']['key']}")
             await query.edit_message_reply_markup(btn.build_menu(1))
