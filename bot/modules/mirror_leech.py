@@ -254,10 +254,12 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         if not up and config_dict['DEFAULT_UPLOAD'] == 'gd':
             up = 'gd'
             user_tds = await fetch_user_tds(message.from_user.id)
+            LOGGER.info(gd_cat)
             if not drive_id and gd_cat:
                 merged_dict = {**categories_dict, **user_tds}
                 for drive_name, drive_dict in merged_dict.items():
-                    if drive_name.casefold() == gd_cat.replace('_', ' ').casefold():
+                    if drive_name.lower() == (gd_cat.replace('_', ' ')).lower():
+                        LOGGER.info("Used Gd_cat")
                         drive_id, index_link = (drive_dict['drive_id'], drive_dict['index_link'])
             if not drive_id and len(categories_dict) > 1 and len(user_tds) == 0 or len(categories_dict) >= 1 and len(user_tds) > 1:
                 drive_id, index_link = await open_category_btns(message)
