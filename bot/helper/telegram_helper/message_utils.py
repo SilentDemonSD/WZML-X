@@ -293,14 +293,14 @@ async def open_category_btns(message):
     user_id = message.from_user.id
     msg_id = message.id
     buttons = ButtonMaker()
-    if len(categories_dict) > 1:
-        for _name in categories_dict.keys():
-            buttons.ibutton(f'{_name}', f"scat {user_id} {msg_id} {_name.replace(' ', '_')}")
     if utds := await fetch_user_tds(user_id):
         for _name in utds.keys():
             buttons.ibutton(f'{_name}', f"scat {user_id} {msg_id} {_name.replace(' ', '_')}")
+    elif len(categories_dict) > 1:
+        for _name in categories_dict.keys():
+            buttons.ibutton(f'{_name}', f"scat {user_id} {msg_id} {_name.replace(' ', '_')}")
     buttons.ibutton('Done Selecting', f'scat {user_id} {msg_id} sdone', 'footer')
-    prompt = await sendMessage(message, '<b>Select the category where you want to upload</b>\n\n<i><b>Upload Category:</b></i> <code>Root</code>', buttons.build_menu(2))
+    prompt = await sendMessage(message, '<b>Select the category where you want to upload</b>\n\n<i><b>Upload Category:</b></i> <code>Root</code>\n\n<b>Timeout:</b> 60 sec', buttons.build_menu(3))
     bot_cache[msg_id] = [None, None, False]
     start_time = time()
     while time() - start_time <= 60:

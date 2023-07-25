@@ -94,14 +94,14 @@ async def confirm_category(client, query):
     bot_cache[msg_id][0] = merged_dict[data[3].replace('_', ' ')].get('drive_id')
     bot_cache[msg_id][1] = merged_dict[data[3].replace('_', ' ')].get('index_link')
     buttons = ButtonMaker()
-    if len(categories_dict) > 1:
-        for _name in categories_dict.keys():
-            buttons.ibutton(f'{_name}', f"scat {user_id} {data[2]} {_name.replace(' ', '_')}")
     if user_tds:
         for _name in user_tds.keys():
             buttons.ibutton(f'{_name}', f"scat {user_id} {data[2]} {_name.replace(' ', '_')}")
+    elif len(categories_dict) > 1:
+        for _name in categories_dict.keys():
+            buttons.ibutton(f'{_name}', f"scat {user_id} {data[2]} {_name.replace(' ', '_')}")
     buttons.ibutton('Done Selecting', f'scat {user_id} {msg_id} sdone', 'footer')
-    await editMessage(query.message, f"<b>Select the category where you want to upload</b>\n\n<i><b>Upload Category:</b></i> <code>{data[3].replace('_', ' ')}</code>", buttons.build_menu(2))
+    await editMessage(query.message, f"<b>Select the category where you want to upload</b>\n\n<i><b>Upload Category:</b></i> <code>{data[3].replace('_', ' ')}</code>\n\n<b>Timeout:</b> 60 sec", buttons.build_menu(3))
 
 
 bot.add_handler(MessageHandler(change_category, filters=command(BotCommands.CategorySelect) & CustomFilters.authorized))

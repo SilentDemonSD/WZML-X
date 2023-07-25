@@ -7,6 +7,7 @@ from re import match as re_match
 from asyncio import sleep
 from aiofiles import open as aiopen
 from aiofiles.os import path as aiopath
+from cloudscraper import create_scraper
 
 from bot import bot, DOWNLOAD_DIR, LOGGER, config_dict, bot_name, categories_dict, user_data
 from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_mega_link, is_gdrive_link, get_content_type, new_task, sync_to_async, is_rclone_path, is_telegram_link, arg_parser, fetch_user_tds
@@ -52,8 +53,8 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
                 '-p': '', '-pass': '',
                 '-id': '',
                 '-index': '',
-                '-gd': '',
-                '-ud': '', '-userdump': '',
+                '-c': '', '-category',
+                '-ud': '', '-dump': '',
     }
 
     args = arg_parser(input_list[1:], arg_base)
@@ -76,7 +77,8 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     rcf           = args['-rcf']
     drive_id      = args['-id']
     index_link    = args['-index']
-    gd_cat        = args['-gd']
+    gd_cat        = args['-c'] or args['-category']
+    user_dump     = args['-ud'] or args['-dump']
     bulk_start    = 0
     bulk_end      = 0
     ratio         = None
@@ -252,6 +254,11 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         if not up and config_dict['DEFAULT_UPLOAD'] == 'gd':
             up = 'gd'
             user_tds = await fetch_user_tds(message.from_user.id)
+            if not drive_id and gd_cat:
+                merged_dict = {**categories_dict, **user_tds}
+                for drive_name, drive_dict in merged_dict.items():
+                    if drive_name.casefold() == gd_cat.replace('_', ' ').casefold():
+                        drive_id, index_link = (drive_dict['drive_id'], drive_dict['index_link'])
             if not drive_id and len(categories_dict) > 1 and len(user_tds) == 0 or len(categories_dict) >= 1 and len(user_tds) > 1:
                 drive_id, index_link = await open_category_btns(message)
             if drive_id and not await sync_to_async(GoogleDriveHelper().getFolderData, drive_id):
@@ -291,7 +298,6 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             await delete_links(message)
             return
 
-    LOGGER.info(drive_id)
     listener = MirrorLeechListener(message, compress, extract, isQbit, isLeech, tag, select, seed, 
                                     sameDir, rcf, up, join, drive_id=drive_id, index_link=index_link, source_url=org_link if org_link else link)
 
@@ -360,6 +366,16 @@ async def wzmlxcb(_, query):
             await query.edit_message_reply_markup(None)
         except Exception as err:
             LOGGER.error(f"TG Log Display : {str(err)}")
+    elif data[2] == "webpaste":
+        await query.answer()
+        async with aiopen('log.txt', 'r') as f:
+            logFile = await f.read()
+        cget = create_scraper().request
+        resp = cget('POST', 'http://stashbin.xyz/api/document', data={'content': }).json()
+        if resp.status_code == 200 and resp['ok']:
+            btn = ButtonMaker()
+            btn.ubutton('📨 Web Paste', f"http://stashbin.xyz/{resp['data']['key']}")
+            await query.edit_message_reply_markup(btn.build_menu(1))
     elif data[2] == "botpm":
         await query.answer(url=f"https://t.me/{bot_name}?start=wzmlx")
     elif data[2] == "help":

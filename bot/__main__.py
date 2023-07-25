@@ -170,9 +170,10 @@ async def ping(_, message):
 
 
 async def log(_, message):
-    buttons = ButtonMaker()
-    buttons.ibutton('📑 Log Display', f'wzmlx {message.from_user.id} logdisplay')
-    await sendFile(message, 'log.txt', buttons=buttons.build_menu(1))
+    buttons = ButtonMaker()""
+    buttons.ibutton('📑 Log Disp', f'wzmlx {message.from_user.id} logdisplay')
+    buttons.ibutton('📨 Web Paste', f'wzmlx {message.from_user.id} webpaste'))
+    await sendFile(message, 'log.txt', buttons=buttons.build_menu(2))
 
 
 async def search_images():
