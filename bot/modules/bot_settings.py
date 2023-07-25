@@ -910,7 +910,7 @@ async def update_private_file(_, message, pre_message):
             await (await create_subprocess_exec("cp", ".netrc", "/root/.netrc")).wait()
         elif file_name.startswith('wzml_'):
             path = f"bot/helper/themes/{file_name.rsplit('.py', 1)[0]}.py"
-            if await aiopath.isfile(path)
+            if await aiopath.isfile(path):
                 await remove(path)
         elif file_name in ['buttons.txt', 'buttons']:
             extra_buttons.clear()
