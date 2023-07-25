@@ -318,8 +318,7 @@ async def set_custom(client, message, pre_event, key, direct=False):
             td_details = td_item.rsplit(maxsplit=(2 if (td_item.split())[-1].startswith('http') else 1))
             if td_details[0] in list(categories_dict.keys()):
                 continue
-            all_tds = user_tds.keys()
-            for title in all_tds:
+            for title in list(user_tds.keys()):
                 if td_details[0].casefold() == title.casefold():
                     del user_tds[td_details[0]]
             if len(td_details) > 1 and not await sync_to_async(GoogleDriveHelper().getFolderData, td_details[1]):
@@ -482,7 +481,10 @@ async def edit_user_settings(client, query):
             return await query.answer(f"Force {mode_up}! Can't Alter Settings", show_alert=True)
         await query.answer()
         update_user_ldata(user_id, data[2], not user_dict.get(data[2], False))
-        await update_user_settings(query, 'user_tds' if data[2] in ['td_mode'] else 'universal')
+        if data[2] in ['td_mode']:
+            await update_user_settings(query, 'user_tds', 'mirror')
+        else:
+            await update_user_settings(query, 'universal')
         if DATABASE_URL:
             await DbManger().update_user_data(user_id)
     elif data[2] == 'split_size':
@@ -576,10 +578,10 @@ async def edit_user_settings(client, query):
         await update_user_settings(query, data[2][1:], 'leech')
         if DATABASE_URL:
             await DbManger().update_user_data(user_id)
-    elif data[2] in ['dmprefix', 'dmsuffix', 'dmremname']:
+    elif data[2] in ['dmprefix', 'dmsuffix', 'dmremname', 'duser_tds']:
         handler_dict[user_id] = False
         await query.answer()
-        update_user_ldata(user_id, data[2][1:], '')
+        update_user_ldata(user_id, data[2][1:], {} if data[2] == 'duser_tds' else '')
         await update_user_settings(query, data[2][1:], 'mirror')
         if DATABASE_URL:
             await DbManger().update_user_data(user_id)
