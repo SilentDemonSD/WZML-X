@@ -228,6 +228,9 @@ async def clone(client, message):
 
     __run_multi()
 
+    if drive_id and is_gdrive_link(drive_id):
+        drive_id = GoogleDriveHelper.getIdFromUrl(drive_id)
+
     if len(link) == 0:
         btn = ButtonMaker()
         btn.ibutton('Cʟɪᴄᴋ Hᴇʀᴇ Tᴏ Rᴇᴀᴅ Mᴏʀᴇ ...', f'wzmlx {message.from_user.id} help CLONE')
@@ -269,6 +272,7 @@ async def clone(client, message):
             for drive_name, drive_dict in merged_dict.items():
                 if drive_name.casefold() == gd_cat.replace('_', ' ').casefold():
                     drive_id, index_link = (drive_dict['drive_id'], drive_dict['index_link'])
+                    break
         if not drive_id and (len(categories_dict) > 1 and len(user_tds) == 0 or len(categories_dict) >= 1 and len(user_tds) > 1):
             drive_id, index_link = await open_category_btns(message)
         if drive_id and not await sync_to_async(GoogleDriveHelper().getFolderData, drive_id):

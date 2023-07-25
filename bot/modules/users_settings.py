@@ -13,10 +13,11 @@ from io import BytesIO
 from asyncio import sleep
 
 from bot import OWNER_ID, bot, user_data, config_dict, categories_dict, DATABASE_URL, IS_PREMIUM_USER, MAX_SPLIT_SIZE
-from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage, sendFile
+from bot.helper.telegram_helper.message_utils import sendMessage, sendCustomMsg, editMessage, deleteMessage, sendFile
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
+from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.ext_utils.bot_utils import getdailytasks, update_user_ldata, get_readable_file_size, sync_to_async, new_thread
 from bot.helper.themes import BotTheme
@@ -221,14 +222,15 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
                    f"➲ <b>{fname_dict[key]}'s API Key :</b> {set_exist}\n\n"
             buttons.ibutton('Disable DDL' if ddl_mode == 'Enabled' else 'Enable DDL', f"userset {user_id} s{key}", "header")
         elif key == 'user_tds':
-            set_exist = 'Not Exists' if (val:=user_dict.get(key, [])) else len(val)
+            set_exist = len(val) if (val:=user_dict.get(key, False)) else 'Not Exists'
             tds_mode = "Enabled" if user_dict.get('td_mode', config_dict['BOT_PM']) else "Disabled"
-            buttons.ibutton('Disable UserTD' if tds_mode == 'Enabled' else 'Enable UserTD', f"userset {user_id} td_mode", "header")
+            buttons.ibutton('Disable UserTDs' if tds_mode == 'Enabled' else 'Enable UserTDs', f"userset {user_id} td_mode", "header")
             if not config_dict['USER_TD_MODE']:
                 tds_mode = "Force Disabled"
             text += f"➲ <b>User TD Mode :</b> {tds_mode}\n"
             text += f"➲ <b>{fname_dict[key]} :</b> {set_exist}\n\n"
-        else: return
+        else: 
+            return
         text += f"➲ <b>Description :</b> <i>{desp_dict[key][0]}</i>"
         if not edit_mode:
             buttons.ibutton(f"Change {fname_dict[key]}" if set_exist and set_exist != 'Not Exists' and (set_exist != get_readable_file_size(config_dict['LEECH_SPLIT_SIZE']) + ' (Default)') else f"Set {fname_dict[key]}", f"userset {user_id} {key} edit")
@@ -238,6 +240,8 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
         if set_exist and set_exist != 'Not Exists' and (set_exist != get_readable_file_size(config_dict['LEECH_SPLIT_SIZE']) + ' (Default)'):
             if key == 'thumb':
                 buttons.ibutton("View Thumbnail", f"userset {user_id} vthumb", "header")
+            elif key == 'user_tds':
+                buttons.ibutton('Show UserTDs', f"userset {user_id} show_tds", "header")
             buttons.ibutton("↻ Delete", f"userset {user_id} d{key}")
         buttons.ibutton("Back", f"userset {user_id} back {edit_type}", "footer")
         buttons.ibutton("Close", f"userset {user_id} close", "footer")
@@ -311,13 +315,14 @@ async def set_custom(client, message, pre_event, key, direct=False):
         for td_item in value.split('\n'):
             if td_item == '':
                 continue
-            td_details = td_item.rsplit(maxsplit=2) if (td_item.split())[-1].startswith('http') else td_item.rsplit(maxsplit=1)
+            td_details = td_item.rsplit(maxsplit=(2 if (td_item.split())[-1].startswith('http') else 1))
             if td_details[0] in list(categories_dict.keys()):
                 continue
-            for title in user_tds.keys():
+            all_tds = user_tds.keys()
+            for title in all_tds:
                 if td_details[0].casefold() == title.casefold():
                     del user_tds[td_details[0]]
-            if len(td_details) > 1:
+            if len(td_details) > 1 and not await sync_to_async(GoogleDriveHelper().getFolderData, td_details[1]):
                 user_tds[td_details[0]] = {'drive_id': td_details[1],'index_link': td_details[2].rstrip('/') if len(td_details) > 2 else ''}
         value = user_tds
         return_key = 'mirror'
@@ -424,8 +429,15 @@ async def edit_user_settings(client, query):
     elif data[2] == 'vthumb':
         handler_dict[user_id] = False
         await query.answer()
-        await sendFile(message, thumb_path, from_user.mention)
+        buttons = ButtonMaker()
+        buttons.ibutton('Cʟᴏsᴇ', f'wzmlx {user_id} close')
+        await sendMessage(message, from_user.mention, buttons.build_menu(1), thumb_path)
         await update_user_settings(query, 'thumb', 'leech')
+    elif data[2] == 'show_tds':
+        handler_dict[user_id] = False
+        await sendCustomMsg(from_user.id, user_dict.get('user_tds', {}))
+        await query.answer('User TDs Successfully Send in your PM', show_alert=True)
+        await update_user_settings(query, 'user_tds', 'mirror')
     elif data[2] == "dthumb":
         handler_dict[user_id] = False
         if await aiopath.exists(thumb_path):
@@ -470,7 +482,7 @@ async def edit_user_settings(client, query):
             return await query.answer(f"Force {mode_up}! Can't Alter Settings", show_alert=True)
         await query.answer()
         update_user_ldata(user_id, data[2], not user_dict.get(data[2], False))
-        await update_user_settings(query, 'mirror' if data[2] in ['td_mode'] else 'universal')
+        await update_user_settings(query, 'user_tds' if data[2] in ['td_mode'] else 'universal')
         if DATABASE_URL:
             await DbManger().update_user_data(user_id)
     elif data[2] == 'split_size':
