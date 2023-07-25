@@ -371,7 +371,7 @@ async def wzmlxcb(_, query):
         async with aiopen('log.txt', 'r') as f:
             logFile = await f.read()
         cget = create_scraper().request
-        resp = cget('POST', 'http://stashbin.xyz/api/document', data={'content': }).json()
+        resp = cget('POST', 'http://stashbin.xyz/api/document', data={'content': logFile}).json()
         if resp.status_code == 200 and resp['ok']:
             btn = ButtonMaker()
             btn.ubutton('📨 Web Paste', f"http://stashbin.xyz/{resp['data']['key']}")
