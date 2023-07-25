@@ -321,7 +321,7 @@ async def set_custom(client, message, pre_event, key, direct=False):
             for title in list(user_tds.keys()):
                 if td_details[0].casefold() == title.casefold():
                     del user_tds[td_details[0]]
-            if len(td_details) > 1 and not await sync_to_async(GoogleDriveHelper().getFolderData, td_details[1]):
+            if len(td_details) > 1 and await sync_to_async(GoogleDriveHelper().getFolderData, td_details[1]):
                 user_tds[td_details[0]] = {'drive_id': td_details[1],'index_link': td_details[2].rstrip('/') if len(td_details) > 2 else ''}
         value = user_tds
         return_key = 'mirror'
@@ -480,7 +480,7 @@ async def edit_user_settings(client, query):
             mode_up = "Disabled" if data[2] == 'td_mode' else "Enabled"
             return await query.answer(f"Force {mode_up}! Can't Alter Settings", show_alert=True)
         if data[2] == 'td_mode' and not user_dict.get('user_tds', False):
-            return await query.answer("Set UserTD first to Enable User TD Mode !")
+            return await query.answer("Set UserTD first to Enable User TD Mode !", show_alert=True)
         await query.answer()
         update_user_ldata(user_id, data[2], not user_dict.get(data[2], False))
         if data[2] in ['td_mode']:

@@ -385,8 +385,7 @@ class MirrorLeechListener:
             async with download_dict_lock:
                 download_dict[self.uid] = upload_status
             await update_all_messages()
-            LOGGER.info("Deeeebbbbuuuggggg Mmeee plzz")
-            LOGGER.info(self.drive_id)
+
             await sync_to_async(drive.upload, up_name, size, self.drive_id)
         elif self.upPath == 'ddl':
             size = await get_path_size(up_path)
