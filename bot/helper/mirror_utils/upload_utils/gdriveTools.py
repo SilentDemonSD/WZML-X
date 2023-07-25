@@ -396,7 +396,9 @@ class GoogleDriveHelper:
             return self.__G_DRIVE_BASE_DOWNLOAD_URL.format(drive_file.get('id'))
         return
 
-    def clone(self, link):
+    def clone(self, link, gdrive_id):
+        if not gdrive_id:
+            gdrive_id = config_dict['GDRIVE_ID']
         self.__is_cloning = True
         self.__start_time = time()
         self.__total_files = 0
@@ -411,7 +413,7 @@ class GoogleDriveHelper:
             meta = self.__getFileMetadata(file_id)
             mime_type = meta.get("mimeType")
             if mime_type == self.__G_DRIVE_DIR_MIME_TYPE:
-                dir_id = self.__create_directory(meta.get('name'), config_dict['GDRIVE_ID'])
+                dir_id = self.__create_directory(meta.get('name'), gdrive_id)
                 self.__cloneFolder(meta.get('name'), meta.get('name'), meta.get('id'), dir_id)
                 durl = self.__G_DRIVE_DIR_BASE_DOWNLOAD_URL.format(dir_id)
                 if self.__is_cancelled:
@@ -421,7 +423,7 @@ class GoogleDriveHelper:
                 mime_type = 'Folder'
                 size = self.__processed_bytes
             else:
-                file = self.__copyFile(meta.get('id'), config_dict['GDRIVE_ID'], meta.get('name'))
+                file = self.__copyFile(meta.get('id'), gdrive_id, meta.get('name'))
                 msg += f'<b>Name: </b><code>{file.get("name")}</code>'
                 durl = self.__G_DRIVE_BASE_DOWNLOAD_URL.format(file.get("id"))
                 if mime_type is None:

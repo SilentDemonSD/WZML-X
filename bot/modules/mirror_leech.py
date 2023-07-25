@@ -78,7 +78,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     drive_id      = args['-id']
     index_link    = args['-index']
     gd_cat        = args['-c'] or args['-category']
-    user_dump     = args['-ud'] or args['-dump']
+    #user_dump     = args['-ud'] or args['-dump']
     bulk_start    = 0
     bulk_end      = 0
     ratio         = None
