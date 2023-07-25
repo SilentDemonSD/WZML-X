@@ -892,6 +892,7 @@ async def edit_qbit(_, message, pre_message, key):
 async def update_private_file(_, message, pre_message):
     handler_dict[message.chat.id] = False
     if not message.media and (file_name := message.text):
+        path = file_name
         fn = file_name.rsplit('.zip', 1)[0]
         if await aiopath.isfile(fn) and file_name != 'config.env':
             await remove(fn)
@@ -907,6 +908,10 @@ async def update_private_file(_, message, pre_message):
             await (await create_subprocess_exec("touch", ".netrc")).wait()
             await (await create_subprocess_exec("chmod", "600", ".netrc")).wait()
             await (await create_subprocess_exec("cp", ".netrc", "/root/.netrc")).wait()
+        elif file_name.startswith('wzml_'):
+            path = f"bot/helper/themes/{file_name.rsplit('.py', 1)[0]}.py"
+            if await aiopath.isfile(path)
+                await remove(path)
         elif file_name in ['buttons.txt', 'buttons']:
             extra_buttons.clear()
         elif file_name in ['categories.txt', 'categories']:

@@ -108,7 +108,7 @@ async def confirm_category(client, query):
         for _name in categories_dict.keys():
             buttons.ibutton(f'{"✅️" if cat_name == _name else ""} {_name}', f"scat {user_id} {data[2]} {_name.replace(' ', '_')}")
     buttons.ibutton('Cancel', f'scat {user_id} {msg_id} scancel', 'footer')
-    buttons.ibutton(f'Done ({get_readable_time(time() - bot_cache[msg_id][4])})', f'scat {user_id} {msg_id} sdone', 'footer')
+    buttons.ibutton(f'Done ({get_readable_time(60 - (time() - bot_cache[msg_id][4]))})', f'scat {user_id} {msg_id} sdone', 'footer')
     await editMessage(query.message, f"<b>Select the category where you want to upload</b>\n\n<i><b>Upload Category:</b></i> <code>{cat_name}</code>\n\n<b>Timeout:</b> 60 sec", buttons.build_menu(3))
 
 
