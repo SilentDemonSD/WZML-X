@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 from pyrogram.filters import command, regex
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
+from time import time
 
 from bot import bot, bot_cache, categories_dict, download_dict, download_dict_lock
-from bot.helper.ext_utils.bot_utils import MirrorStatus, arg_parser, fetch_user_tds, getDownloadByGid, is_gdrive_link, new_task, sync_to_async
+from bot.helper.ext_utils.bot_utils import MirrorStatus, arg_parser, fetch_user_tds, getDownloadByGid, is_gdrive_link, new_task, sync_to_async, get_readable_time
 from bot.helper.ext_utils.help_messages import CATEGORY_HELP_MESSAGE
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -56,7 +57,9 @@ async def change_category(client, message):
     listener = dl.listener() if dl and hasattr(dl, 'listener') else None
     if listener and not listener.isLeech:
         if not index_link and not drive_id and categories_dict:
-            drive_id, index_link = await open_category_btns(message)
+            drive_id, index_link, is_cancelled = await open_category_btns(message)
+        if is_cancelled:
+            return
         if not index_link and not drive_id:
             return await sendMessage(message, "Time out")
         msg = '<b>Task has been Updated Successfully!</b>'
@@ -83,25 +86,30 @@ async def confirm_category(client, query):
     msg_id = int(data[2])
     if msg_id not in bot_cache:
         return await editMessage(query.message, '<b>Old Task</b>')
-    if user_id != int(data[1]) and not await CustomFilters.sudo(client, query):
+    elif user_id != int(data[1]) and not await CustomFilters.sudo(client, query):
         return await query.answer(text="This task is not for you!", show_alert=True)
-    if data[3] == "sdone":
+    elif data[3] == "sdone":
         bot_cache[msg_id][2] = True
+        return
+    elif data[3] == "scancel":
+        bot_cache[msg_id][3] = True
         return
     await query.answer()
     user_tds = await fetch_user_tds(user_id)
     merged_dict = {**categories_dict, **user_tds}
-    bot_cache[msg_id][0] = merged_dict[data[3].replace('_', ' ')].get('drive_id')
-    bot_cache[msg_id][1] = merged_dict[data[3].replace('_', ' ')].get('index_link')
+    cat_name = data[3].replace('_', ' ')
+    bot_cache[msg_id][0] = merged_dict[cat_name].get('drive_id')
+    bot_cache[msg_id][1] = merged_dict[cat_name].get('index_link')
     buttons = ButtonMaker()
     if user_tds:
         for _name in user_tds.keys():
-            buttons.ibutton(f'{_name}', f"scat {user_id} {data[2]} {_name.replace(' ', '_')}")
+            buttons.ibutton(f'{"✅️" if cat_name == _name else ""} {_name}', f"scat {user_id} {data[2]} {_name.replace(' ', '_')}")
     elif len(categories_dict) > 1:
         for _name in categories_dict.keys():
-            buttons.ibutton(f'{_name}', f"scat {user_id} {data[2]} {_name.replace(' ', '_')}")
-    buttons.ibutton('Done Selecting', f'scat {user_id} {msg_id} sdone', 'footer')
-    await editMessage(query.message, f"<b>Select the category where you want to upload</b>\n\n<i><b>Upload Category:</b></i> <code>{data[3].replace('_', ' ')}</code>\n\n<b>Timeout:</b> 60 sec", buttons.build_menu(3))
+            buttons.ibutton(f'{"✅️" if cat_name == _name else ""} {_name}', f"scat {user_id} {data[2]} {_name.replace(' ', '_')}")
+    buttons.ibutton('Cancel', f'scat {user_id} {msg_id} scancel', 'footer')
+    buttons.ibutton(f'Done ({get_readable_time(time() - bot_cache[msg_id][4])})', f'scat {user_id} {msg_id} sdone', 'footer')
+    await editMessage(query.message, f"<b>Select the category where you want to upload</b>\n\n<i><b>Upload Category:</b></i> <code>{cat_name}</code>\n\n<b>Timeout:</b> 60 sec", buttons.build_menu(3))
 
 
 bot.add_handler(MessageHandler(change_category, filters=command(BotCommands.CategorySelect) & CustomFilters.authorized))

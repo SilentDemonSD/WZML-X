@@ -293,24 +293,31 @@ async def open_category_btns(message):
     user_id = message.from_user.id
     msg_id = message.id
     buttons = ButtonMaker()
-    if utds := await fetch_user_tds(user_id):
+    _tick = True
+    if len(utds := await fetch_user_tds(user_id)) > 1:
         for _name in utds.keys():
-            buttons.ibutton(f'{_name}', f"scat {user_id} {msg_id} {_name.replace(' ', '_')}")
+            buttons.ibutton(f'{"✅️" if _tick else ""} {_name}', f"scat {user_id} {msg_id} {_name.replace(' ', '_')}")
+            if _tick: _tick, cat_name = False, _name
     elif len(categories_dict) > 1:
         for _name in categories_dict.keys():
-            buttons.ibutton(f'{_name}', f"scat {user_id} {msg_id} {_name.replace(' ', '_')}")
-    buttons.ibutton('Done Selecting', f'scat {user_id} {msg_id} sdone', 'footer')
-    prompt = await sendMessage(message, '<b>Select the category where you want to upload</b>\n\n<i><b>Upload Category:</b></i> <code>Root</code>\n\n<b>Timeout:</b> 60 sec', buttons.build_menu(3))
-    bot_cache[msg_id] = [None, None, False]
+            buttons.ibutton(f'{"✅️" if _tick else ""} {_name}', f"scat {user_id} {msg_id} {_name.replace(' ', '_')}")
+            if _tick: _tick, cat_name = False, _name
+    buttons.ibutton('Cancel', f'scat {user_id} {msg_id} scancel', 'footer')
+    buttons.ibutton(f'Done (60)', f'scat {user_id} {msg_id} sdone', 'footer')
+    prompt = await sendMessage(message, f'<b>Select the category where you want to upload</b>\n\n<i><b>Upload Category:</b></i> <code>{cat_name}</code>\n\n<b>Timeout:</b> 60 sec', buttons.build_menu(3))
     start_time = time()
+    bot_cache[msg_id] = [None, None, False, False, start_time]
     while time() - start_time <= 60:
         await sleep(0.5)
-        if bot_cache[msg_id][2]:
+        if bot_cache[msg_id][2] or bot_cache[msg_id][3]:
             break
-    drive_id, index_link, _ = bot_cache[msg_id]
-    await deleteMessage(prompt)
+    drive_id, index_link, _, is_cancelled, __ = bot_cache[msg_id]
+    if not is_cancelled:
+        await deleteMessage(prompt)
+    else:
+        await editMessage(prompt, "<b>Task Cancelled</b>")
     del bot_cache[msg_id]
-    return drive_id, index_link
+    return drive_id, index_link, is_cancelled
     
 
 async def forcesub(message, ids, button=None):

@@ -321,8 +321,11 @@ async def set_custom(client, message, pre_event, key, direct=False):
             for title in list(user_tds.keys()):
                 if td_details[0].casefold() == title.casefold():
                     del user_tds[td_details[0]]
-            if len(td_details) > 1 and await sync_to_async(GoogleDriveHelper().getFolderData, td_details[1]):
-                user_tds[td_details[0]] = {'drive_id': td_details[1],'index_link': td_details[2].rstrip('/') if len(td_details) > 2 else ''}
+            if len(td_details) > 1:
+                if is_gdrive_link(td_details[1]):
+                    td_details[1] = GoogleDriveHelper.getIdFromUrl(td_details[1])
+                if await sync_to_async(GoogleDriveHelper().getFolderData, td_details[1]):
+                    user_tds[td_details[0]] = {'drive_id': td_details[1],'index_link': td_details[2].rstrip('/') if len(td_details) > 2 else ''}
         value = user_tds
         return_key = 'mirror'
     update_user_ldata(user_id, n_key, value)

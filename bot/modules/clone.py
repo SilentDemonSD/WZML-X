@@ -273,8 +273,13 @@ async def clone(client, message):
                 if drive_name.casefold() == gd_cat.replace('_', ' ').casefold():
                     drive_id, index_link = (drive_dict['drive_id'], drive_dict['index_link'])
                     break
-        if not drive_id and (len(categories_dict) > 1 and len(user_tds) == 0 or len(categories_dict) >= 1 and len(user_tds) > 1):
-            drive_id, index_link = await open_category_btns(message)
+        if not drive_id and len(user_tds) == 1:
+            drive_id, index_link = next(iter(user_tds.values())).values()
+        elif not drive_id and (len(categories_dict) > 1 and len(user_tds) == 0 or len(categories_dict) >= 1 and len(user_tds) > 1):
+            drive_id, index_link, is_cancelled = await open_category_btns(message)
+            if is_cancelled:
+                await delete_links(message)
+                return
         if drive_id and not await sync_to_async(GoogleDriveHelper().getFolderData, drive_id):
             return await sendMessage(message, "Google Drive ID validation failed!!")
         if not config_dict['GDRIVE_ID'] and not drive_id:
