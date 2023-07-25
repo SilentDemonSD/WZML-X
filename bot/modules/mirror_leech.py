@@ -53,7 +53,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
                 '-p': '', '-pass': '',
                 '-id': '',
                 '-index': '',
-                '-c': '', '-category',
+                '-c': '', '-category': '',
                 '-ud': '', '-dump': '',
     }
 
