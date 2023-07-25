@@ -69,7 +69,7 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
         buttons.ibutton("Universal Settings", f"userset {user_id} universal")
         buttons.ibutton("Mirror Settings", f"userset {user_id} mirror")
         buttons.ibutton("Leech Settings", f"userset {user_id} leech")
-        if user_dict and any(key in user_dict for key in ['lprefix', 'lsuffix', 'lremname', 'ldump', 'ddl_servers', 'yt_opt', 'bot_pm', 'media_group', 'equal_splits', 'split_size', 'rclone', 'thumb', 'as_doc']):
+        if user_dict and any(key in user_dict for key in list(fname_dict.keys())):
             buttons.ibutton("Reset Setting", f"userset {user_id} reset_all")
         buttons.ibutton("Close", f"userset {user_id} close")
 
@@ -422,8 +422,7 @@ async def edit_user_settings(client, query):
         await query.answer()
         await update_user_settings(query, data[2])
     elif data[2] == "doc":
-        update_user_ldata(user_id, 'as_doc',
-                          not user_dict.get('as_doc', False))
+        update_user_ldata(user_id, 'as_doc', not user_dict.get('as_doc', False))
         await query.answer()
         await update_user_settings(query, 'leech')
         if DATABASE_URL:
@@ -437,8 +436,17 @@ async def edit_user_settings(client, query):
         await update_user_settings(query, 'thumb', 'leech')
     elif data[2] == 'show_tds':
         handler_dict[user_id] = False
-        await sendCustomMsg(from_user.id, user_dict.get('user_tds', {}))
-        await query.answer('User TDs Successfully Send in your PM', show_alert=True)
+        user_tds = user_dict.get('user_tds', {})
+        msg = f'➲ <b><u>User TD(s) Details</u></b>\n\n<b>Total UserTD(s) :</b> {len(user_tds)}\n\n'
+        for index_no, (drive_name, drive_dict) in enumerate(().items(), start=1):
+            msg += f'{index_no}: <b>Name:</b> <code>{drive_name}</code>\n'
+            msg += f"  <b>Drive ID:</b> <code>{drive_dict['drive_id']}</code>\n"
+            msg += f"  <b>Index Link:</b> <code>{ind_url if ind_url := drive_dict['index_link'] else 'Not Provided'}</code>\n\n"
+        try:
+            await sendCustomMsg(from_user.id, msg, debug=True)
+            await query.answer('User TDs Successfully Send in your PM', show_alert=True)
+        except:
+            await query.answer('Start the Bot in PM (Private) and Try Again', show_alert=True)
         await update_user_settings(query, 'user_tds', 'mirror')
     elif data[2] == "dthumb":
         handler_dict[user_id] = False

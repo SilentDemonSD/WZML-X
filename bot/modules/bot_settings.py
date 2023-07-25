@@ -26,6 +26,7 @@ from bot.helper.ext_utils.help_messages import default_desp
 from bot.helper.mirror_utils.rclone_utils.serve import rclone_serve_booter
 from bot.modules.torrent_search import initiate_search_tools
 from bot.modules.rss import addJob
+from bot.helper.themes import AVL_THEMES
 
 START = 0
 STATE = 'view'
@@ -695,10 +696,14 @@ async def get_buttons(key=None, edit_type=None, edit_mode=None, mess=None):
     elif key == 'private':
         buttons.ibutton('Back', "botset back")
         buttons.ibutton('Close', "botset close")
-        msg = '''Send private file: config.env, token.pickle, accounts.zip, list_drives.txt, cookies.txt, terabox.txt, .netrc or any other file!
-To delete private file send only the file name as text message.
-Note: Changing .netrc will not take effect for aria2c until restart.
-Timeout: 60 sec'''
+        msg = '''Send any of these private files:
+        
+<code>config.env, token.pickle, accounts.zip, list_drives.txt, categories.txt, shorteners.txt, cookies.txt, terabox.txt, .netrc or any other file!</code>
+
+<i>To delete private file send only the file name as text message with or without extension.</i>
+<b>NOTE:</b> Changing .netrc will not take effect for aria2c until restart.
+
+<b>Timeout:</b> 60 sec'''
     elif key == 'aria':
         for k in list(aria2_options.keys())[START:10+START]:
             buttons.ibutton(k, f"botset editaria {k}")
@@ -806,6 +811,9 @@ async def edit_variable(_, message, pre_message, key):
         aria2_options['bt-stop-timeout'] = f'{value}'
     elif key == 'LEECH_SPLIT_SIZE':
         value = min(int(value), MAX_SPLIT_SIZE)
+    elif key == 'BOT_THEME':
+        if not value.strip() in AVL_THEMES.keys():
+            value = 'minimal'
     elif key == 'CAP_FONT':
         value = value.strip().lower()
         if value not in ['b', 'i', 'u', 's', 'spoiler', 'code']:
