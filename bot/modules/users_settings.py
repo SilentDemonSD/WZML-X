@@ -441,7 +441,7 @@ async def edit_user_settings(client, query):
         for index_no, (drive_name, drive_dict) in enumerate(().items(), start=1):
             msg += f'{index_no}: <b>Name:</b> <code>{drive_name}</code>\n'
             msg += f"  <b>Drive ID:</b> <code>{drive_dict['drive_id']}</code>\n"
-            msg += f"  <b>Index Link:</b> <code>{ind_url if ind_url := drive_dict['index_link'] else 'Not Provided'}</code>\n\n"
+            msg += f"  <b>Index Link:</b> <code>{ind_url if (ind_url := drive_dict['index_link']) else 'Not Provided'}</code>\n\n"
         try:
             await sendCustomMsg(from_user.id, msg, debug=True)
             await query.answer('User TDs Successfully Send in your PM', show_alert=True)
