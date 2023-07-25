@@ -430,24 +430,25 @@ class MirrorLeechListener:
                 await sendMessage(self.message, msg, photo=self.random_pic)
             else:
                 dispTime = datetime.now(timezone(config_dict['TIMEZONE'])).strftime('%d/%m/%y, %I:%M:%S %p')
-                attachmsg = True
+                attachmsg, saved = True, False
                 fmsg, totalmsg = '\n\n', ''
                 for index, (link, name) in enumerate(files.items(), start=1):
                     fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
                     totalmsg = (msg + BotTheme('LINKS_SOURCE', On=dispTime, Source=self.source_msg) + BotTheme('L_LL_MSG') + fmsg) if attachmsg else fmsg
                     if len(totalmsg.encode()) > 4000:
-                        if config_dict['SAVE_MSG']:
+                        if config_dict['SAVE_MSG'] and not saved:
+                            saved = True
                             buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                         if self.linkslogmsg:
                             await editMessage(self.linkslogmsg, totalmsg, buttons.build_menu(1))
-                            buttons = ButtonMaker()
                             self.linkslogmsg = await sendMessage(self.linkslogmsg, "<i>Fetching Details...</i>")
                         elif not (config_dict['BOT_PM'] or user_dict.get('bot_pm')):
                             await sendMessage(self.message, msg + BotTheme('L_LL_MSG') + fmsg, buttons.build_menu(1))
                         attachmsg = False
                         await sleep(1)
                 if fmsg != '\n\n':
-                    if config_dict['SAVE_MSG']:
+                    if config_dict['SAVE_MSG'] and not saved:
+                        saved = True
                         buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                     if self.linkslogmsg:
                         await editMessage(self.linkslogmsg, totalmsg, buttons.build_menu(1))

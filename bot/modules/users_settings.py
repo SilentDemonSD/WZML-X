@@ -479,6 +479,8 @@ async def edit_user_settings(client, query):
         elif data[2] == 'bot_pm' and config_dict['BOT_PM'] or data[2] == 'mediainfo' and config_dict['SHOW_MEDIAINFO'] or data[2] == 'td_mode' and not config_dict['USER_TD_MODE']:
             mode_up = "Disabled" if data[2] == 'td_mode' else "Enabled"
             return await query.answer(f"Force {mode_up}! Can't Alter Settings", show_alert=True)
+        if data[2] == 'td_mode' and not user_dict.get('user_tds', False):
+            return await query.answer("Set UserTD first to Enable User TD Mode !")
         await query.answer()
         update_user_ldata(user_id, data[2], not user_dict.get(data[2], False))
         if data[2] in ['td_mode']:
@@ -582,6 +584,8 @@ async def edit_user_settings(client, query):
         handler_dict[user_id] = False
         await query.answer()
         update_user_ldata(user_id, data[2][1:], {} if data[2] == 'duser_tds' else '')
+        if data[2] == 'duser_tds':
+            update_user_ldata(user_id, 'td_mode', False)
         await update_user_settings(query, data[2][1:], 'mirror')
         if DATABASE_URL:
             await DbManger().update_user_data(user_id)

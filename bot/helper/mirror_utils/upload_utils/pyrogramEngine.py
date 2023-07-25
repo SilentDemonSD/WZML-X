@@ -370,7 +370,7 @@ class TgUploader:
                 else:
                     width = 480
                     height = 320
-                if not self.__up_path.upper().endswith("MP4"):
+                if not self.__up_path.upper().endswith(("MKV", "MP4")):
                     dirpath, file_ = self.__up_path.rsplit('/', 1)
                     if self.__listener.seed and not self.__listener.newDir and not dirpath.endswith("/splited_files_mltb"):
                         dirpath = f"{dirpath}/copied_mltb"
