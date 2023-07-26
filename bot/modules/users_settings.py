@@ -13,7 +13,7 @@ from io import BytesIO
 from asyncio import sleep
 
 from bot import OWNER_ID, bot, user_data, config_dict, categories_dict, DATABASE_URL, IS_PREMIUM_USER, MAX_SPLIT_SIZE
-from bot.helper.telegram_helper.message_utils import sendMessage, sendCustomMsg, editMessage, deleteMessage, sendFile
+from bot.helper.telegram_helper.message_utils import sendMessage, sendCustomMsg, editMessage, deleteMessage, sendFile, chat_info
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
@@ -28,7 +28,7 @@ desp_dict = {'rcc': ['RClone is a command-line program to sync files and directo
             'lsuffix': ['Leech Filename Suffix is the End Part attached with the Filename of the Leech Files', 'Send Leech Filename Suffix. Timeout: 60 sec'],
             'lremname': ['Leech Filename Remname is combination of Regex(s) used for removing or manipulating Filename of the Leech Files', 'Send Leech Filename Remname. Timeout: 60 sec'],
             'lcaption': ['Leech Caption is the Custom Caption on the Leech Files Uploaded by the bot', 'Send Leech Caption. You can add HTML tags Timeout: 60 sec'],
-            'ldump': ['Leech Files User Dump for Personal Use as a Storage.', 'Send Leech Dump Channel ID. Timeout: 60 sec'],
+            'ldump': ['Leech Files User Dump for Personal Use as a Storage.', 'Send Leech Dump Channel ID\n<b>Format:</b> title chat_id or @ username\ntitle2 chat_id2 or @ username2. \n\n<b>NOTE:</b>Make Bot Admin in the Channel else it will not accept\n<b>Timeout:</b> 60 sec'],
             'mprefix': ['Mirror Filename Prefix is the Front Part attacted with the Filename of the Mirrored/Cloned Files.', 'Send Mirror Filename Prefix. Timeout: 60 sec'],
             'msuffix': ['Mirror Filename Suffix is the End Part attached with the Filename of the Mirrored/Cloned Files', 'Send Mirror Filename Suffix. Timeout: 60 sec'],
             'mremname': ['Mirror Filename Remname is combination of Regex(s) used for removing or manipulating Filename of the Mirrored/Cloned Files', 'Send Mirror Filename Remname. Timeout: 60 sec'],
@@ -316,18 +316,34 @@ async def set_custom(client, message, pre_event, key, direct=False):
             if td_item == '':
                 continue
             td_details = td_item.rsplit(maxsplit=(2 if (td_item.split())[-1].startswith('http') else 1))
-            if td_details[0] in list(categories_dict.keys()):
+            if td_details[0] in list(categories_dict.keys()) or td_details[0] in list(user_tds.keys()):
                 continue
             for title in list(user_tds.keys()):
                 if td_details[0].casefold() == title.casefold():
                     del user_tds[td_details[0]]
             if len(td_details) > 1:
-                if is_gdrive_link(td_details[1]):
+                LOGGER.info(td_details)
+                if is_gdrive_link(td_details[1].strip()):
                     td_details[1] = GoogleDriveHelper.getIdFromUrl(td_details[1])
+                LOGGER.info(td_details[0])
                 if await sync_to_async(GoogleDriveHelper().getFolderData, td_details[1]):
                     user_tds[td_details[0]] = {'drive_id': td_details[1],'index_link': td_details[2].rstrip('/') if len(td_details) > 2 else ''}
         value = user_tds
         return_key = 'mirror'
+    elif key == 'ldump':
+        ldumps = user_dict.get(key, {})
+        for dump_item in value.split('\n'):
+            if dump_item == '':
+                continue
+            dump_info = dump_item.split()
+            if dump_info[0] in list(ldumps.keys()):
+                continue
+            for title in list(ldumps.keys()):
+                if dump_info[0].casefold() == title.casefold():
+                    del ldumps[dump_info[0]]
+            if len(dump_info) > 1 and (dump_chat := await chat_info(td_details[1])):
+                ldumps[dump_info[0]] = dump_chat.id
+        value = ldumps
     update_user_ldata(user_id, n_key, value)
     await deleteMessage(message)
     await update_user_settings(pre_event, key, return_key, msg=message, sdirect=direct)
@@ -438,12 +454,12 @@ async def edit_user_settings(client, query):
         handler_dict[user_id] = False
         user_tds = user_dict.get('user_tds', {})
         msg = f'➲ <b><u>User TD(s) Details</u></b>\n\n<b>Total UserTD(s) :</b> {len(user_tds)}\n\n'
-        for index_no, (drive_name, drive_dict) in enumerate(().items(), start=1):
+        for index_no, (drive_name, drive_dict) in enumerate(user_tds.items(), start=1):
             msg += f'{index_no}: <b>Name:</b> <code>{drive_name}</code>\n'
             msg += f"  <b>Drive ID:</b> <code>{drive_dict['drive_id']}</code>\n"
             msg += f"  <b>Index Link:</b> <code>{ind_url if (ind_url := drive_dict['index_link']) else 'Not Provided'}</code>\n\n"
         try:
-            await sendCustomMsg(from_user.id, msg, debug=True)
+            await sendCustomMsg(user_id, msg, debug=True)
             await query.answer('User TDs Successfully Send in your PM', show_alert=True)
         except:
             await query.answer('Start the Bot in PM (Private) and Try Again', show_alert=True)
@@ -587,7 +603,7 @@ async def edit_user_settings(client, query):
     elif data[2] in ['dlprefix', 'dlsuffix', 'dlremname', 'dlcaption', 'dldump']:
         handler_dict[user_id] = False
         await query.answer()
-        update_user_ldata(user_id, data[2][1:], '')
+        update_user_ldata(user_id, data[2][1:], {} if data[2] == 'dldump' else '')
         await update_user_settings(query, data[2][1:], 'leech')
         if DATABASE_URL:
             await DbManger().update_user_data(user_id)
