@@ -398,6 +398,7 @@ async def wzmlxcb(_, query):
         await query.answer()
         await deleteMessage(message)
         await deleteMessage(message.reply_to_message)
+        await deleteMessage(message.reply_to_message.reply_to_message)
 
 
 async def mirror(client, message):
