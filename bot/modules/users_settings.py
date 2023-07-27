@@ -341,7 +341,7 @@ async def set_custom(client, message, pre_event, key, direct=False):
             for title in list(ldumps.keys()):
                 if dump_info[0].casefold() == title.casefold():
                     del ldumps[dump_info[0]]
-            if len(dump_info) > 1 and (dump_chat := await chat_info(td_details[1])):
+            if len(dump_info) > 1 and (dump_chat := await chat_info(dump_info[1])):
                 ldumps[dump_info[0]] = dump_chat.id
         value = ldumps
     update_user_ldata(user_id, n_key, value)
