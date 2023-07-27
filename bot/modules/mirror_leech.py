@@ -289,13 +289,13 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             await sendMessage(message, 'Wrong Rclone Upload Destination!')
             await delete_links(message)
             return
-    elif user_dump:
-        if user_dump.isdigit() or user_dump.startswith('-'):
+    else:
+        if user_dump and (user_dump.isdigit() or user_dump.startswith('-')):
             up = int(up)
-        elif user_dump.startswith('@'):
+        elif user_dump and user_dump.startswith('@'):
             up = user_dump.strip('@')
         elif (ldumps := await fetch_user_dumps(message.from_user.id)):
-            if user_dump in ldumps.keys():
+            if user_dump and user_dump in ldumps.keys():
                 up = ldumps.get(user_dump)
             elif ldumps == 1:
                 up = next(iter(user_tds.values()))
