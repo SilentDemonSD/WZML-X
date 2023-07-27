@@ -10,7 +10,7 @@ from pyrogram.types import InputMediaPhoto
 from pyrogram.errors import ReplyMarkupInvalid, FloodWait, PeerIdInvalid, ChannelInvalid, RPCError, UserNotParticipant, MessageNotModified, MessageEmpty, PhotoInvalidDimensions, WebpageCurlFailed, MediaEmpty
 
 from bot import config_dict, categories_dict, bot_cache, LOGGER, bot_name, status_reply_dict, status_reply_dict_lock, Interval, bot, user, download_dict_lock
-from bot.helper.ext_utils.bot_utils import get_readable_message, setInterval, sync_to_async, download_image_url, fetch_user_tds
+from bot.helper.ext_utils.bot_utils import get_readable_message, setInterval, sync_to_async, download_image_url, fetch_user_tds, fetch_user_dumps
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.exceptions import TgLinkException
 
@@ -143,6 +143,16 @@ async def editMessage(message, text, buttons=None, photo=None):
         pass
     except ReplyMarkupInvalid:
         return await editMessage(message, text, None, photo)
+    except Exception as e:
+        LOGGER.error(str(e))
+        return str(e)
+
+
+async def editReplyMarkup(message, reply_markup):
+    try:
+        return await message.edit_reply_markup(reply_markup=reply_markup)
+    except MessageNotModified:
+        pass
     except Exception as e:
         LOGGER.error(str(e))
         return str(e)
@@ -321,6 +331,34 @@ async def open_category_btns(message):
     del bot_cache[msg_id]
     return drive_id, index_link, is_cancelled
     
+    
+async def open_dump_btns(message):
+    user_id = message.from_user.id
+    msg_id = message.id
+    buttons = ButtonMaker()
+    _tick = True
+    if len(udmps := await fetch_user_dumps(user_id)) > 1:
+        for _name in udmps.keys():
+            buttons.ibutton(f'{"✅️" if _tick else ""} {_name}', f"dcat {user_id} {msg_id} {_name.replace(' ', '_')}")
+            if _tick: _tick, cat_name = False, _name
+    buttons.ibutton('Upload in All', f'dcat {user_id} {msg_id} dupall', 'header')
+    buttons.ibutton('Cancel', f'dcat {user_id} {msg_id} dcancel', 'footer')
+    buttons.ibutton(f'Done (60)', f'dcat {user_id} {msg_id} ddone', 'footer')
+    prompt = await sendMessage(message, f'<b>Select the Dump category where you want to upload</b>\n\n<i><b>Upload Category:</b></i> <code>{cat_name}</code>\n\n<b>Timeout:</b> 60 sec', buttons.build_menu(3))
+    start_time = time()
+    bot_cache[msg_id] = [None, False, False, start_time]
+    while time() - start_time <= 60:
+        await sleep(0.5)
+        if bot_cache[msg_id][1] or bot_cache[msg_id][2]:
+            break
+    dump_chat, _, is_cancelled, __ = bot_cache[msg_id]
+    if not is_cancelled:
+        await deleteMessage(prompt)
+    else:
+        await editMessage(prompt, "<b>Task Cancelled</b>")
+    del bot_cache[msg_id]
+    return dump_chat, is_cancelled
+
 
 async def forcesub(message, ids, button=None):
     join_button = {}

@@ -10,7 +10,7 @@ from aiofiles.os import path as aiopath
 from cloudscraper import create_scraper
 
 from bot import bot, DOWNLOAD_DIR, LOGGER, config_dict, bot_name, categories_dict, user_data
-from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_mega_link, is_gdrive_link, get_content_type, new_task, sync_to_async, is_rclone_path, is_telegram_link, arg_parser, fetch_user_tds
+from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_mega_link, is_gdrive_link, get_content_type, new_task, sync_to_async, is_rclone_path, is_telegram_link, arg_parser, fetch_user_tds, fetch_user_dumps
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from bot.helper.ext_utils.task_manager import task_utils
 from bot.helper.mirror_utils.download_utils.aria2_download import add_aria2c_download
@@ -25,7 +25,7 @@ from bot.helper.mirror_utils.download_utils.telegram_download import TelegramDow
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage, get_tg_link_content, delete_links, auto_delete_message, open_category_btns
+from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, editReplyMarkup, deleteMessage, get_tg_link_content, delete_links, auto_delete_message, open_category_btns, open_dump_btns
 from bot.helper.listeners.tasks_listener import MirrorLeechListener
 from bot.helper.ext_utils.help_messages import MIRROR_HELP_MESSAGE, CLONE_HELP_MESSAGE, YT_HELP_MESSAGE
 from bot.helper.ext_utils.bulk_links import extract_bulk_links
@@ -78,7 +78,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     drive_id      = args['-id']
     index_link    = args['-index']
     gd_cat        = args['-c'] or args['-category']
-    #user_dump     = args['-ud'] or args['-dump']
+    user_dump     = args['-ud'] or args['-dump']
     bulk_start    = 0
     bulk_end      = 0
     ratio         = None
@@ -289,6 +289,21 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             await sendMessage(message, 'Wrong Rclone Upload Destination!')
             await delete_links(message)
             return
+    elif user_dump:
+        if user_dump.isdigit() or user_dump.startswith('-'):
+            up = int(up)
+        elif user_dump.startswith('@'):
+            up = user_dump.strip('@')
+        elif (ldumps := await fetch_user_dumps(message.from_user.id)):
+            if user_dump in ldumps.keys():
+                up = ldumps.get(user_dump)
+            elif ldumps == 1:
+                up = next(iter(user_tds.values()))
+            else:
+                up, is_cancelled = await open_dump_btns(message)
+                if is_cancelled:
+                    await delete_links(message)
+                    return
 
     if link == 'rcl':
         link = await RcloneList(client, message).get_rclone_path('rcd')
@@ -369,7 +384,7 @@ async def wzmlxcb(_, query):
             btn = ButtonMaker()
             btn.ibutton('Cʟᴏsᴇ', f'wzmlx {user_id} close')
             await sendMessage(message, startLine + escape(Loglines) + endLine, btn.build_menu(1))
-            await query.edit_message_reply_markup(None)
+            await editReplyMarkup(query.message, None)
         except Exception as err:
             LOGGER.error(f"TG Log Display : {str(err)}")
     elif data[2] == "webpaste":
@@ -381,7 +396,7 @@ async def wzmlxcb(_, query):
         if resp['ok']:
             btn = ButtonMaker()
             btn.ubutton('📨 Web Paste', f"http://stashbin.xyz/{resp['data']['key']}")
-            await query.edit_message_reply_markup(btn.build_menu(1))
+            await editReplyMarkup(query.message, btn.build_menu(1))
     elif data[2] == "botpm":
         await query.answer(url=f"https://t.me/{bot_name}?start=wzmlx")
     elif data[2] == "help":

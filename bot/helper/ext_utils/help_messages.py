@@ -66,7 +66,7 @@ MIRROR_HELP_MESSAGE = ["""<i>Send links/files along with cmd or reply to cmd to 
 
 1.  <b>-n or -name :</b> Rename file.
 2.  <b>-z or -zip :</b> Zip files or Links
-3.  <b>-e or-extract or -uz or -unzip :</b> Extract/Unzip files from Archive
+3.  <b>-e or -extract or -uz or -unzip :</b> Extract/Unzip files from Archive
 4.  <b>-up or -upload :</b> Upload to your Drive or RClone or DDL
 6.  <b>-b or -bulk :</b> Download bulk links.
 7.  <b>-i :</b> Download multi links by reply
@@ -77,6 +77,10 @@ MIRROR_HELP_MESSAGE = ["""<i>Send links/files along with cmd or reply to cmd to 
 13. <b>-p or -pass :</b> Enter password for Auth
 14. <b>-j or -join :</b> Join Multiple Files.
 15. <b>-rcf :</b> RClone additional Flags
+16. <b>-id :</b> GDrive Folder id or link
+17. <b>-index:</b> Index url for gdrive_arg
+18. <b>-c or -category :</b> Gdrive category to Upload, Specific Name (case insensitive)
+19. <b>-ud or -dump :</b> Dump category to Upload, Specific Name (case insensitive) or chat_id or chat_username
 """, """
 ➲ <b><i>By along the cmd</i></b>:
 <code>/cmd</code> link -n new name
@@ -111,6 +115,21 @@ To specify ratio and seed time add -d ratio:time. Ex: -d 0.7:10 (ratio and time)
 ➲ <b><i>Multi links within same upload directory only by replying to first link/file</i></b>: -m or -sd or -samedir
 <code>/cmd</code> -i 10(number of links/files) -m folder name (multi message)
 <code>/cmd</code> -b -m folder name (bulk-message/file)
+
+➲ <b><i>Upload Custom Drive:</i></b> -id & -index(Optional)
+<code>/{cmd}</code> -id <code>drive_folder_link</code> or <code>drive_id</code> -index <code>https://example.com/0:</code>
+Here, drive_id must be folder id or folder link and index must be url else it will not accept.
+
+➲ <b><i>Custom Category Select:</i></b> -c or -category
+<code>/{cmd}</code> -c <code>category_name</code>
+This works for both Bot Categories as well as UserTDs (if enabled)
+You can also select Drive Upload from Buttons if having more than 1 and this arg not specified
+
+➲ <b><i>Custom Dump Select:</i></b> -ud or -dump
+<code>/{cmd}</code> -ud <code>dump_name</code> or <code>@username</code> or <code>-100xxxxxx chat_id</code> or all
+You can also select Dump Chat from Buttons if having more than 1 and this arg not specified
+You -ud all for Uploading in all Dump Chats of yours
+Make Sure Bot is already Admin else it will not accept.
 
 ➲ <b><i>Custom Upload</i></b>: -up or -upload
 <code>/cmd</code> link -up <code>rcl</code> (To select rclone config, remote and path)
@@ -170,11 +189,12 @@ Some links need user access so sure you must add USER_SESSION_STRING for it.
 """]
 
 RSS_HELP_MESSAGE = """
-<b>Use this format to add feed url:</b>
+➲ <b>Format to adding feed url(s):</b>
 Title1 link (required)
 Title2 link -c cmd -inf xx -exf xx
 Title3 link -c cmd -d ratio:time -z password
 
+➲ <b><i>Argument Details:</i></b>
 -c command + any arg
 -inf For included words filter.
 -exf For excluded words filter.
@@ -184,7 +204,7 @@ This filter will parse links that it's titles contains `(1080 or 720 or 144p) an
 
 Another example: inf:  1080  or 720p|.web. or .webrip.|hvec or x264. This will parse titles that contains ( 1080  or 720p) and (.web. or .webrip.) and (hvec or x264). I have added space before and after 1080 to avoid wrong matching. If this `10805695` number in title it will match 1080 if added 1080 without spaces after it.
 
-<b>Filter Notes:</b>
+➲ <b><i>Filter Notes:</i></b>
 1. | means and.
 2. Add `or` between similar keys, you can add it between qualities or between extensions, so don't add filter like this f: 1080|mp4 or 720|web because this will parse 1080 and (mp4 or 720) and web ... not (1080 and mp4) or (720 and web)."
 3. You can add `or` and `|` as much as you want."
@@ -201,16 +221,31 @@ Gdrive | Gdtot | Filepress | Filebee | Appdrive | Gdflix link or rclone path
 <code>/cmd</code> -i 10(number of links/paths)
 
 ➲ <b><i>Gdrive Link:</i></b>
-<code>/cmd</code> gdrivelink
+<code>/cmd</code> gdrive_link
 
-➲ <b><i>RClone Path:</i></b>
+➲ <b><i>RClone Path with RC Flags:</i></b> -rcf
 <code>/cmd</code> (rcl or rclone_path) -up (rcl or rclone_path) -rcf flagkey:flagvalue|flagkey|flagkey:flagvalue
 
-<b>NOTE:</b> If -up or -upload not specified then rclone destination will be the RCLONE_PATH from <code>config.env</code>.
+➲ <b><i>Upload Custom Drive:</i></b> -id & -index(Optional)
+<code>/{cmd}</code> -id <code>drive_folder_link</code> or <code>drive_id</code> -index <code>https://example.com/0:</code>
+
+➲ <b><i>Custom Category Select:</i></b> -c or -category
+<code>/{cmd}</code> -c <code>category_name</code>
+
+<b>NOTES:</b>
+1. If -up or -upload not specified then rclone destination will be the RCLONE_PATH from <code>config.env</code>.
+2. If UserTD enabled, then only it will upload to UserTD either by direct arg or category buttons.
+3. For Multi Custom Upload always use Arg in respective msgs and then reply with /cmd -i 10(number)
 """]
 
-CATEGORY_HELP_MESSAGE = """
-.
+CATEGORY_HELP_MESSAGE = """Reply to an active /{cmd} which was used to start the download or add gid along with {cmd}
+This command mainly for change category incase you decided to change category from already added download.
+But you can always use -c or -category with to select category before download start.
+
+➲ <b><i>Upload Custom Drive</i></b>
+<code>/{cmd}</code> -id <code>drive_folder_link</code> or <code>drive_id</code> -index <code>https://example.com/0:</code> gid or by replying to active download
+
+<b>NOTE:</b> drive_id must be folder id or folder link and index must be url else it will not accept.
 """
 
 default_desp = {'AS_DOCUMENT': 'Default type of Telegram file upload. Default is False mean as media.',

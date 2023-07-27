@@ -30,8 +30,7 @@ async def mirror_status(_, message):
             if Interval:
                 Interval[0].cancel()
                 Interval.clear()
-                Interval.append(setInterval(
-                    config_dict['STATUS_UPDATE_INTERVAL'], update_all_messages))
+                Interval.append(setInterval(config_dict['STATUS_UPDATE_INTERVAL'], update_all_messages))
 
 
 @new_task
