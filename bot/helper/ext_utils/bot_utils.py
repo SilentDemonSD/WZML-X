@@ -146,42 +146,46 @@ def get_progress_bar_string(pct):
     return f"[{p_str}]"
 
 
-def get_p7zip_version():
+def get_all_versions():
     try:
         result = srun(['7z', '-version'], capture_output=True, text=True)
-        return result.stdout.split('\n')[2].split(' ')[2]
+        vp = result.stdout.split('\n')[2].split(' ')[2]
     except FileNotFoundError:
-        return ''
-
-
-def get_ffmpeg_version():
+        vp = ''
     try:
         result = srun(['ffmpeg', '-version'], capture_output=True, text=True)
-        return result.stdout.split('\n')[0].split(' ')[2].split('ubuntu')[0]
+        vf = result.stdout.split('\n')[0].split(' ')[2].split('ubuntu')[0]
     except FileNotFoundError:
-        return ''
-
-
-def get_rclone_version():
+        vf = ''
     try:
         result = srun(['rclone', 'version'], capture_output=True, text=True)
-        return result.stdout.split('\n')[0].split(' ')[1]
+        vr = result.stdout.split('\n')[0].split(' ')[1]
     except FileNotFoundError:
-        return ''
+        vr = ''
+    bot_cache['eng_versions'] = {'p7zip':vp, 'ffmpeg': vf, 'rclone': vr,
+                                    'aria': aria2.client.get_version()['version'],
+                                    'aiohttp': get_distribution('aiohttp').version,
+                                    'gapi': get_distribution('google-api-python-client').version,
+                                    'mega': MegaApi('test').getVersion(),
+                                    'qbit': get_client().app.version,
+                                    'pyro': get_distribution('pyrogram').version,
+                                    'ytdlp': get_distribution('yt-dlp').version}
 
 
 class EngineStatus:
-    STATUS_ARIA = f"Aria2 v{aria2.client.get_version()['version']}"
-    STATUS_GD = f"Google-API v{get_distribution('google-api-python-client').version}"
-    STATUS_MEGA = f"MegaSDK v{MegaApi('test').getVersion()}"
-    STATUS_QB = f"qBit {get_client().app.version}"
-    STATUS_TG = f"Pyrogram v{get_distribution('pyrogram').version}"
-    STATUS_YT = f"yt-dlp v{get_distribution('yt-dlp').version}"
+    version_cache = bot_cache['eng_versions']
+    STATUS_ARIA = f"Aria2 v{version_cache['aria2c']}"
+    STATUS_AIOHTTP = f"AioHttp {version_cache['aiohttp']}"
+    STATUS_GD = f"Google-API v{version_cache['gapi']}"
+    STATUS_MEGA = f"MegaSDK v{version_cache['mega']}"
+    STATUS_QB = f"qBit {version_cache['qbit']}"
+    STATUS_TG = f"Pyrogram v{version_cache['pyro']}"
+    STATUS_YT = f"yt-dlp v{version_cache['ytdlp']}"
     STATUS_EXT = "pExtract v2"
-    STATUS_SPLIT_MERGE = f"ffmpeg v{get_ffmpeg_version()}"
-    STATUS_ZIP = f"p7zip v{get_p7zip_version()}"
+    STATUS_SPLIT_MERGE = f"ffmpeg v{version_cache['ffmpeg']}"
+    STATUS_ZIP = f"p7zip v{version_cache['p7zip']}"
     STATUS_QUEUE = "Sleep v0"
-    STATUS_RCLONE = f"RClone {get_rclone_version()}"
+    STATUS_RCLONE = f"RClone {version_cache['rclone']}"
 
 
 def get_readable_message():

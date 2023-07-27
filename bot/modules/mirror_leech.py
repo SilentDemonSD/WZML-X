@@ -406,7 +406,13 @@ async def wzmlxcb(_, query):
         if data[3] == "CLONE":
             await editMessage(query.message, CLONE_HELP_MESSAGE[1], btn.build_menu(1))
         elif data[3] == "MIRROR":
-            await editMessage(query.message, MIRROR_HELP_MESSAGE[1], btn.build_menu(1))
+            if len(data) == 4:
+                msg = MIRROR_HELP_MESSAGE[1][:4000]
+                btn.ibutton('Nᴇxᴛ Pᴀɢᴇ', f'wzmlx {user_id} help MIRROR readmore')
+            else:
+                msg = MIRROR_HELP_MESSAGE[1][4000:]
+                btn.ibutton('Pʀᴇ Pᴀɢᴇ', f'wzmlx {user_id} help MIRROR')
+            await editMessage(query.message, msg, btn.build_menu(2))
         if data[3] == "YT":
             await editMessage(query.message, YT_HELP_MESSAGE[1], btn.build_menu(1))
     else:

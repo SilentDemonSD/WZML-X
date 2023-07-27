@@ -86,8 +86,7 @@ async def chat_info(channel_id):
     else:
         return None
     try:
-        chat = await bot.get_chat(channel_id)
-        return chat
+        return await bot.get_chat(channel_id)
     except (PeerIdInvalid, ChannelInvalid) as e:
         LOGGER.error(f"{e.NAME}: {e.MESSAGE} for {channel_id}")
         return None

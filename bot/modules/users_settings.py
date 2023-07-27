@@ -162,7 +162,7 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
         lremname = 'Not Exists' if (val:=user_dict.get('lremname', config_dict.get('LEECH_FILENAME_REMNAME', ''))) == '' else val
 
         buttons.ibutton("Leech Dump", f"userset {user_id} ldump")
-        ldump = 'Not Exists' if (val:=user_dict.get('ldump', '')) == '' else val
+        ldump = 'Not Exists' if (val:=user_dict.get('ldump', '')) == '' else len(val)
 
         text = BotTheme('LEECH', NAME=name, DL=f"{dailyll} / {dailytlle}",
                 LTYPE=ltype, THUMB=thumbmsg, SPLIT_SIZE=split_size,
@@ -211,6 +211,8 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
                 buttons.ibutton("Enable Media Group", f"userset {user_id} mgroup", "header")
         elif key in ['lprefix', 'lremname', 'lsuffix', 'lcaption', 'ldump']:
             set_exist = 'Not Exists' if (val:=user_dict.get(key, config_dict.get(f'LEECH_FILENAME_{key[1:].upper()}', ''))) == '' else val
+            if set_exist != 'Not Exists' and key == "ldump":
+                set_exist = '\n\n' + '\n'.join([f"{index}. <b>{dump}</b> : <code>{ids}</code>" for index, (dump, ids) in enumerate(val.items(), start=1)])
             text += f"➲ <b>Leech Filename {fname_dict[key]} :</b> {set_exist}\n\n"
         elif key in ['mprefix', 'mremname', 'msuffix']:
             set_exist = 'Not Exists' if (val:=user_dict.get(key, config_dict.get(f'MIRROR_FILENAME_{key[1:].upper()}', ''))) == '' else val

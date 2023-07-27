@@ -48,7 +48,8 @@ default_values = {'AUTO_DELETE_MESSAGE_DURATION': 30,
                   'GD_INFO': 'Uploaded by WZML-X',
                   }
 bool_vars = ['AS_DOCUMENT', 'BOT_PM', 'STOP_DUPLICATE', 'SET_COMMANDS', 'SAVE_MSG', 'SHOW_MEDIAINFO', 'SOURCE_LINK', 'SAFE_MODE', 'SHOW_EXTRA_CMDS',
-             'IS_TEAM_DRIVE', 'USE_SERVICE_ACCOUNTS', 'WEB_PINCODE', 'EQUAL_SPLITS', 'DISABLE_DRIVE_LINK', 'DELETE_LINKS', 'CLEAN_LOG_MSG', 'USER_TD_MODE']
+             'IS_TEAM_DRIVE', 'USE_SERVICE_ACCOUNTS', 'WEB_PINCODE', 'EQUAL_SPLITS', 'DISABLE_DRIVE_LINK', 'DELETE_LINKS', 'CLEAN_LOG_MSG', 'USER_TD_MODE', 
+             'INCOMPLETE_TASK_NOTIFIER']
 
 
 async def load_config():
@@ -293,7 +294,7 @@ async def load_config():
     USER_TD_MODE = environ.get('USER_TD_MODE', '')
     USER_TD_MODE = USER_TD_MODE.lower() == 'true'
 
-    USER_TD_SA = environ.get('USER_TD_MODE', '')
+    USER_TD_SA = environ.get('USER_TD_SA', '')
     if len(USER_TD_SA) != 0:
         USER_TD_SA = USER_TD_SA.lower()
 
@@ -692,11 +693,11 @@ async def get_buttons(key=None, edit_type=None, edit_mode=None, mess=None):
         buttons.ibutton('Close', "botset close")
         for x in range(0, len(config_dict)-1, 10):
             buttons.ibutton(f'{int(x/10)+1}', f"botset start var {x}", position='footer')
-        msg = f'<b>Config Variables<b> | Page: {int(START/10)+1}'
+        msg = f'<b>Config Variables</b> | <b>Page: {int(START/10)+1}</b>'
     elif key == 'private':
         buttons.ibutton('Back', "botset back")
         buttons.ibutton('Close', "botset close")
-        msg = '''Send any of these private files:
+        msg = '''<u>Send any of these private files:</u>
         
 <code>config.env, token.pickle, accounts.zip, list_drives.txt, categories.txt, shorteners.txt, cookies.txt, terabox.txt, .netrc or any other file!</code>
 

@@ -53,8 +53,8 @@ non_queued_up = set()
 
 def get_version():
     MAJOR = '1'
-    MINOR = '1'
-    PATCH = '6'
+    MINOR = '2'
+    PATCH = '0'
     return f"v{MAJOR}.{MINOR}.{PATCH}-x"
 
 
