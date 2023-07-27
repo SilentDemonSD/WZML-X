@@ -256,7 +256,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             user_tds = await fetch_user_tds(message.from_user.id)
             if not drive_id and gd_cat:
                 merged_dict = {**categories_dict, **user_tds}
-                drive_id, index_link = next((drive_dict['drive_id'], drive_dict['index_link']) for drive_name, drive_dict in merged_dict.items() if drive_name.casefold() == gd_cat.replace('_', ' ').casefold(), ('', ''))
+                drive_id, index_link = next(((drive_dict['drive_id'], drive_dict['index_link']) for drive_name, drive_dict in merged_dict.items() if drive_name.casefold() == gd_cat.replace('_', ' ').casefold()), ('', ''))
             if not drive_id and len(user_tds) == 1:
                 drive_id, index_link = next(iter(user_tds.values())).values()
             elif not drive_id and (len(categories_dict) > 1 and len(user_tds) == 0 or len(categories_dict) >= 1 and len(user_tds) > 1):
