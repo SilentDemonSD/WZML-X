@@ -177,6 +177,7 @@ class EngineStatus:
     if not version_cache:
         get_all_versions()
         version_cache = bot_cache.get('eng_versions')
+    LOGGER.info(version_cache)
     STATUS_ARIA = f"Aria2 v{version_cache['aria2c']}"
     STATUS_AIOHTTP = f"AioHttp {version_cache['aiohttp']}"
     STATUS_GD = f"Google-API v{version_cache['gapi']}"
