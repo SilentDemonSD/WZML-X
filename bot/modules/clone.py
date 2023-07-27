@@ -234,8 +234,7 @@ async def clone(client, message):
     if len(link) == 0:
         btn = ButtonMaker()
         btn.ibutton('Cʟɪᴄᴋ Hᴇʀᴇ Tᴏ Rᴇᴀᴅ Mᴏʀᴇ ...', f'wzmlx {message.from_user.id} help CLONE')
-        reply_message = await sendMessage(message, CLONE_HELP_MESSAGE[0], btn.build_menu(1))
-        await auto_delete_message(message, reply_message)
+        await sendMessage(message, CLONE_HELP_MESSAGE[0], btn.build_menu(1))
         await delete_links(message)
         return
 

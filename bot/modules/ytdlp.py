@@ -364,8 +364,7 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
     if not is_url(link):
         btn = ButtonMaker()
         btn.ibutton('Cʟɪᴄᴋ Hᴇʀᴇ Tᴏ Rᴇᴀᴅ Mᴏʀᴇ ...', f'wzmlx {message.from_user.id} help YT')
-        reply_message = await sendMessage(message, YT_HELP_MESSAGE[0], btn.build_menu(1))
-        await auto_delete_message(message, reply_message)
+        await sendMessage(message, YT_HELP_MESSAGE[0], btn.build_menu(1))
         await delete_links(message)
         return
 

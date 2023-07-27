@@ -203,8 +203,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     if not is_url(link) and not is_magnet(link) and not await aiopath.exists(link) and not is_rclone_path(link) and file_ is None:
         btn = ButtonMaker()
         btn.ibutton('Cʟɪᴄᴋ Hᴇʀᴇ Tᴏ Rᴇᴀᴅ Mᴏʀᴇ ...', f'wzmlx {message.from_user.id} help MIRROR')
-        reply_message = await sendMessage(message, MIRROR_HELP_MESSAGE[0], btn.build_menu(1))
-        await auto_delete_message(message, reply_message)
+        await sendMessage(message, MIRROR_HELP_MESSAGE[0], btn.build_menu(1))
         await delete_links(message)
         return
 
