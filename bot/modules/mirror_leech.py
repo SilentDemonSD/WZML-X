@@ -256,10 +256,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             user_tds = await fetch_user_tds(message.from_user.id)
             if not drive_id and gd_cat:
                 merged_dict = {**categories_dict, **user_tds}
-                for drive_name, drive_dict in merged_dict.items():
-                    if drive_name.casefold() == gd_cat.replace('_', ' ').casefold():
-                        drive_id, index_link = (drive_dict['drive_id'], drive_dict['index_link'])
-                        break
+                drive_id, index_link = next((drive_dict['drive_id'], drive_dict['index_link']) for drive_name, drive_dict in merged_dict.items() if drive_name.casefold() == gd_cat.replace('_', ' ').casefold(), ('', ''))
             if not drive_id and len(user_tds) == 1:
                 drive_id, index_link = next(iter(user_tds.values())).values()
             elif not drive_id and (len(categories_dict) > 1 and len(user_tds) == 0 or len(categories_dict) >= 1 and len(user_tds) > 1):
@@ -295,11 +292,11 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         elif user_dump and user_dump.startswith('@'):
             up = user_dump.strip('@')
         elif (ldumps := await fetch_user_dumps(message.from_user.id)):
-            if user_dump and user_dump in ldumps.keys():
-                up = ldumps.get(user_dump)
-            elif ldumps == 1:
+            if user_dump:
+                up = next((dump_id for name_, dump_id in ldumps.items() if user_dump.casefold() == name_.casefold()), '')
+            if not up and ldumps == 1:
                 up = next(iter(user_tds.values()))
-            else:
+            elif not up:
                 up, is_cancelled = await open_dump_btns(message)
                 if is_cancelled:
                     await delete_links(message)
