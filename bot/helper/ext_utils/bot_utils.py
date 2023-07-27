@@ -163,7 +163,7 @@ def get_all_versions():
     except FileNotFoundError:
         vr = ''
     bot_cache['eng_versions'] = {'p7zip':vp, 'ffmpeg': vf, 'rclone': vr,
-                                    'aria': aria2.client.get_version()['version'],
+                                    'aria2': aria2.client.get_version()['version'],
                                     'aiohttp': get_distribution('aiohttp').version,
                                     'gapi': get_distribution('google-api-python-client').version,
                                     'mega': MegaApi('test').getVersion(),
