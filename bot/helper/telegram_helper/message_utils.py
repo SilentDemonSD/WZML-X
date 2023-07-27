@@ -78,7 +78,7 @@ async def sendCustomMsg(chat_id, text, buttons=None, photo=None, debug=False):
 
 
 async def chat_info(channel_id):
-    channel_id = channel_id.strip()
+    channel_id = str(channel_id).strip()
     if channel_id.startswith('-100'):
         channel_id = int(channel_id)
     elif channel_id.startswith('@'):
