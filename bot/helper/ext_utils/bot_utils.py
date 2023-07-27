@@ -163,7 +163,7 @@ def get_all_versions():
     except FileNotFoundError:
         vr = ''
     bot_cache['eng_versions'] = {'p7zip':vp, 'ffmpeg': vf, 'rclone': vr,
-                                    'aria2': aria2.client.get_version()['version'],
+                                    'aria': aria2.client.get_version()['version'],
                                     'aiohttp': get_distribution('aiohttp').version,
                                     'gapi': get_distribution('google-api-python-client').version,
                                     'mega': MegaApi('test').getVersion(),
@@ -177,7 +177,7 @@ class EngineStatus:
     if not version_cache:
         get_all_versions()
         version_cache = bot_cache.get('eng_versions')
-    STATUS_ARIA = f"Aria2 v{version_cache['aria2']}"
+    STATUS_ARIA = f"Aria2 v{version_cache['aria']}"
     STATUS_AIOHTTP = f"AioHttp {version_cache['aiohttp']}"
     STATUS_GD = f"Google-API v{version_cache['gapi']}"
     STATUS_MEGA = f"MegaSDK v{version_cache['mega']}"
