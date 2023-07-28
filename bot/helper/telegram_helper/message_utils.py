@@ -340,7 +340,7 @@ async def open_dump_btns(message):
         for _name in udmps.keys():
             buttons.ibutton(f'{"✅️" if _tick else ""} {_name}', f"dcat {user_id} {msg_id} {_name.replace(' ', '_')}")
             if _tick: _tick, cat_name = False, _name
-    buttons.ibutton('Upload in All', f'dcat {user_id} {msg_id} dupall', 'header')
+    buttons.ibutton('Upload in All', f'dcat {user_id} {msg_id} All', 'header')
     buttons.ibutton('Cancel', f'dcat {user_id} {msg_id} dcancel', 'footer')
     buttons.ibutton(f'Done (60)', f'dcat {user_id} {msg_id} ddone', 'footer')
     prompt = await sendMessage(message, f'<b>Select the Dump category where you want to upload</b>\n\n<i><b>Upload Category:</b></i> <code>{cat_name}</code>\n\n<b>Timeout:</b> 60 sec', buttons.build_menu(3))

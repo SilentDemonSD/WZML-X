@@ -177,12 +177,12 @@ async def log(_, message):
 
 
 async def search_images():
+    LOGGER.info('Test Check')
     if config_dict['IMG_SEARCH']:
         try:
             query_list = config_dict['IMG_SEARCH']
             total_pages = config_dict['IMG_PAGE']
             base_url = "https://www.wallpaperflare.com/search"
-
             for query in query_list:
                 query = query.strip().replace(" ", "+")
                 for page in range(1, total_pages + 1):
@@ -285,7 +285,11 @@ help_string = f'''<b><i>㊂ Help Guide :</i></b>
 
 
 async def bot_help(client, message):
-    await sendMessage(message, help_string)
+    buttons = ButtonMaker()
+    buttons.ibutton('Mirror Help', f'wzmlx guide mirror')
+    buttons.ibutton('Clone Help', f'wzmlx guide clone')
+    buttons.ibutton('yt-dlp Help', f'wzmlx guide ytdlp')
+    await sendMessage(message, help_string, buttons.build_menu(2))
 
 
 async def restart_notification():
@@ -298,12 +302,11 @@ async def restart_notification():
 
     async def send_incompelete_task_message(cid, msg):
         try:
-            if msg.startswith(BotTheme('RESTART_SUCCESS')):
+            if msg.startswith("⌬ <b><i>Restarted Successfully!</i></b>"):
                 await bot.edit_message_text(chat_id=chat_id, message_id=msg_id, text=msg)
                 await aioremove(".restartmsg")
             else:
-                await bot.send_message(chat_id=cid, text=msg, disable_web_page_preview=True,
-                                       disable_notification=True)
+                await bot.send_message(chat_id=cid, text=msg, disable_web_page_preview=True, disable_notification=True)
         except Exception as e:
             LOGGER.error(e)
 

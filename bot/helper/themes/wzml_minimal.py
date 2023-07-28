@@ -232,5 +232,5 @@ class WZMLStyle:
 ┠<b> Leech Caption :</b> <code>{LCAPTION}</code>
 ┠<b> Leech Prefix :</b> <code>{LPREFIX}</code>
 ┠<b> Leech Suffix :</b> <code>{LSUFFIX}</code>
-┠<b> Leech Dump :</b> <code>{LDUMP}</code>
+┠<b> Leech Dumps :</b> <code>{LDUMP}</code>
 ┖<b> Leech Remname :</b> <code>{LREMNAME}</code>'''

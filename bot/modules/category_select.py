@@ -130,13 +130,13 @@ async def confirm_dump(client, query):
     await query.answer()
     user_dumps = await fetch_user_dumps(user_id)
     cat_name = data[3].replace('_', ' ')
-    upall = cat_name == "dupall"
+    upall = cat_name == "All"
     bot_cache[msg_id][0] = user_dumps[cat_name] if not upall else list(user_dumps.values())
     buttons = ButtonMaker()
     if user_dumps:
         for _name in user_dumps.keys():
             buttons.ibutton(f'{"✅️" if upall or cat_name == _name else ""} {_name}', f"dcat {user_id} {msg_id} {_name.replace(' ', '_')}")
-    buttons.ibutton('Upload in All', f'dcat {user_id} {msg_id} dupall', 'header')
+    buttons.ibutton('Upload in All', f'dcat {user_id} {msg_id} All', 'header')
     buttons.ibutton('Cancel', f'dcat {user_id} {msg_id} dcancel', 'footer')
     buttons.ibutton(f'Done ({get_readable_time(60 - (time() - bot_cache[msg_id][3]))})', f'dcat {user_id} {msg_id} ddone', 'footer')
     await editMessage(query.message, f"<b>Select the category where you want to upload</b>\n\n<i><b>Upload Category:</b></i> <code>{cat_name}</code>\n\n<b>Timeout:</b> 60 sec", buttons.build_menu(3))
