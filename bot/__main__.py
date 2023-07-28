@@ -19,7 +19,7 @@ from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.filters import command, private, regex
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from bot import bot, config_dict, user_data, botStartTime, LOGGER, Interval, DATABASE_URL, QbInterval, INCOMPLETE_TASK_NOTIFIER, scheduler, get_version
+from bot import bot, bot_name, config_dict, user_data, botStartTime, LOGGER, Interval, DATABASE_URL, QbInterval, INCOMPLETE_TASK_NOTIFIER, scheduler, get_version
 from .helper.ext_utils.fs_utils import start_cleanup, clean_all, exit_clean_up
 from .helper.ext_utils.bot_utils import get_progress_bar_string, get_readable_file_size, get_readable_time, cmd_exec, sync_to_async, new_task, set_commands, update_user_ldata
 from .helper.ext_utils.db_handler import DbManger
@@ -177,10 +177,10 @@ async def log(_, message):
 
 
 async def search_images():
-    LOGGER.info('Test Check')
-    if config_dict['IMG_SEARCH']:
+    LOGGER.info('Img Debug Starts...')
+    if query_list := config_dict['IMG_SEARCH']:
+        LOGGER.info(query_list)
         try:
-            query_list = config_dict['IMG_SEARCH']
             total_pages = config_dict['IMG_PAGE']
             base_url = "https://www.wallpaperflare.com/search"
             for query in query_list:
@@ -208,6 +208,7 @@ help_string = f'''<b><i>㊂ Help Guide :</i></b>
 
 <b>Use Mirror commands to download your link/file/rcl</b>
 ➥ /{BotCommands.MirrorCommand[0]} or /{BotCommands.MirrorCommand[1]}: Download via file/url/media to Upload to Cloud Drive.
+➥ /{BotCommands.CategorySelect}: Select Custom category to Upload to Cloud Drive from UserTds or Bot Categories.
 
 <b>Use qBit commands for torrents only:</b>
 ➥ /{BotCommands.QbMirrorCommand[0]} or /{BotCommands.QbMirrorCommand[1]}: Download using qBittorrent and Upload to Cloud Drive.
@@ -314,8 +315,9 @@ async def restart_notification():
         if notifier_dict := await DbManger().get_incomplete_tasks():
             for cid, data in notifier_dict.items():
                 msg = BotTheme('RESTART_SUCCESS', time=now.strftime('%I:%M:%S %p'), date=now.strftime('%d/%m/%y'), timz=config_dict['TIMEZONE'], version=get_version()) if cid == chat_id else BotTheme('RESTARTED')
+                msg += "\n\n⌬ <b><i>Incomplete Tasks!</i></b>\n"
                 for tag, links in data.items():
-                    msg += f"\n\n➲ {tag}: "
+                    msg += f"\n➲ {tag}: "
                     for index, link in enumerate(links, start=1):
                         msg += f" <a href='{link}'>{index}</a> |"
                         if len(msg.encode()) > 4000:
@@ -352,7 +354,7 @@ async def main():
         BotCommands.HelpCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
     bot.add_handler(MessageHandler(stats, filters=command(
         BotCommands.StatsCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
-    LOGGER.info("WZML-X Bot Started!")
+    LOGGER.info(f"WZML-X Bot : @{bot_name} Started!")
     signal(SIGINT, exit_clean_up)
 
 bot.loop.run_until_complete(main())

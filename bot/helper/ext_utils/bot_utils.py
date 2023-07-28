@@ -563,7 +563,7 @@ async def set_commands(client):
             BotCommand(BotCommands.StatusCommand[0], f'or /{BotCommands.StatusCommand[1]} Get Bot All Status Stats Message'),
             BotCommand(BotCommands.StatsCommand[0], f'or /{BotCommands.StatsCommand[1]} Check Bot & System stats'),
             BotCommand(BotCommands.BtSelectCommand, 'Select files to download only torrents/magnet qbit/aria2c'),
-            BotCommand(BotCommands.CategoryCommand, 'Select Upload Category with UserTD or Bot Categories to upload only GDrive upload'),
+            BotCommand(BotCommands.CategorySelect, 'Select Upload Category with UserTD or Bot Categories to upload only GDrive upload'),
             BotCommand(BotCommands.CancelMirror, 'Cancel a Task of yours!'),
             BotCommand(BotCommands.CancelAllCommand[0], f'Cancel all Tasks in whole Bots.'),
             BotCommand(BotCommands.ListCommand, 'Search in Drive(s)'),
