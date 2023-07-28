@@ -10,9 +10,9 @@ from time import time
 
 from bot import DOWNLOAD_DIR, bot, categories_dict, config_dict, user_data, LOGGER
 from bot.helper.ext_utils.task_manager import task_utils
-from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage, auto_delete_message, delete_links, open_category_btns
+from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage, auto_delete_message, delete_links, open_category_btns, open_dump_btns
 from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.ext_utils.bot_utils import get_readable_file_size, fetch_user_tds, is_url, is_gdrive_link, new_task, sync_to_async, new_task, is_rclone_path, new_thread, get_readable_time, arg_parser
+from bot.helper.ext_utils.bot_utils import get_readable_file_size, fetch_user_tds, fetch_user_dumps, is_url, is_gdrive_link, new_task, sync_to_async, new_task, is_rclone_path, new_thread, get_readable_time, arg_parser
 from bot.helper.mirror_utils.download_utils.yt_dlp_download import YoutubeDLHelper
 from bot.helper.mirror_utils.rclone_utils.list import RcloneList
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -261,6 +261,7 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
     }
 
     args = arg_parser(input_list[1:], arg_base)
+    cmd = input_list[0].split('@')[0]
 
     try:
         multi = int(args['-i'])
@@ -275,10 +276,11 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
     up          = args['-up'] or args['-upload']
     rcf         = args['-rcf']
     link        = args['link']
-    compress    = args['-z'] or args['-zip'] or 'z' in input_list[0] or 'zip' in input_list[0]
+    compress    = args['-z'] or args['-zip'] or 'z' in cmd or 'zip' in cmd
     drive_id    = args['-id']
     index_link  = args['-index']
     gd_cat      = args['-c'] or args['-category']
+    user_dump   = args['-ud'] or args['-dump']
     bulk_start  = 0
     bulk_end    = 0
 
@@ -428,6 +430,21 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
             await sendMessage(message, 'Wrong Rclone Upload Destination!')
             await delete_links(message)
             return
+    else:
+        if user_dump and (user_dump.isdigit() or user_dump.startswith('-')):
+            up = int(up)
+        elif user_dump and user_dump.startswith('@'):
+            up = user_dump.strip('@')
+        elif (ldumps := await fetch_user_dumps(message.from_user.id)):
+            if user_dump:
+                up = next((dump_id for name_, dump_id in ldumps.items() if user_dump.casefold() == name_.casefold()), '')
+            if not up and ldumps == 1:
+                up = next(iter(user_tds.values()))
+            elif not up:
+                up, is_cancelled = await open_dump_btns(message)
+                if is_cancelled:
+                    await delete_links(message)
+                    return
 
     if up == 'rcl' and not isLeech:
         up = await RcloneList(client, message).get_rclone_path('rcu')

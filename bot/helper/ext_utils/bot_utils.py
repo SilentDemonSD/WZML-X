@@ -514,6 +514,9 @@ async def fetch_user_tds(user_id, force=False):
 async def fetch_user_dumps(user_id):
     user_dict = user_data.get(user_id, {})
     if (dumps := user_dict.get('ldump', False)):
+        if not isinstance(dumps, dict):
+            update_user_ldata(user_id, 'ldump', {})
+            return {}
         return dumps
     return {}
 

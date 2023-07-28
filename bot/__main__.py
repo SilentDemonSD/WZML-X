@@ -177,9 +177,7 @@ async def log(_, message):
 
 
 async def search_images():
-    LOGGER.info('Img Debug Starts...')
     if query_list := config_dict['IMG_SEARCH']:
-        LOGGER.info(query_list)
         try:
             total_pages = config_dict['IMG_PAGE']
             base_url = "https://www.wallpaperflare.com/search"
@@ -192,6 +190,7 @@ async def search_images():
                     images = soup.select('img[data-src^="https://c4.wallpaperflare.com/wallpaper"]')
                     for img in images:
                         img_url = img['data-src']
+                        LOGGER.info(img_url)
                         if img_url not in config_dict['IMAGES']:
                             config_dict['IMAGES'].append(img_url)
             if len(config_dict['IMAGES']) != 0:

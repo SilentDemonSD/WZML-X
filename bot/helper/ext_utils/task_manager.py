@@ -5,7 +5,7 @@ from bot import OWNER_ID, config_dict, queued_dl, queued_up, non_queued_up, non_
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.ext_utils.fs_utils import get_base_name, check_storage_threshold
 from bot.helper.ext_utils.bot_utils import get_user_tasks, getdailytasks, sync_to_async, get_telegraph_list, get_readable_file_size, checking_access
-from bot.helper.telegram_helper.message_utils import forcesub, BotPm_check, user_info
+from bot.helper.telegram_helper.message_utils import forcesub, check_botpm, user_info
 from bot.helper.themes import BotTheme
 
 
@@ -163,8 +163,8 @@ async def limit_checker(size, listener, isTorrent=False, isMega=False, isDriveLi
             if not acpt:
                 limit_exceeded = f'You must leave {get_readable_file_size(limit)} free storage.'
         
-        if (PLAYLIST_LIMIT := config_dict['PLAYLIST_LIMIT']):
-            limit_exceeded = f'Playlist limit is {PLAYLIST_LIMIT}'
+        #if (PLAYLIST_LIMIT := config_dict['PLAYLIST_LIMIT']):
+        #    limit_exceeded = f'Playlist limit is {PLAYLIST_LIMIT}'
 
         if config_dict['DAILY_TASK_LIMIT'] and config_dict['DAILY_TASK_LIMIT'] <= await getdailytasks(user_id):
             limit_exceeded = f"Daily Total Task Limit: {config_dict['DAILY_TASK_LIMIT']}\nYou have exhausted all your Daily Task Limits."
@@ -207,7 +207,7 @@ async def task_utils(message):
         user_dict = user_data.get(user_id, {})
         user = await user_info(message._client, message.from_user.id)
         if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
-            _msg, button = await BotPm_check(message, button)
+            _msg, button = await check_botpm(message, button)
             if _msg:
                 msg.append(_msg)
     if (bmax_tasks := config_dict['BOT_MAX_TASKS']) and len(download_dict) >= bmax_tasks:

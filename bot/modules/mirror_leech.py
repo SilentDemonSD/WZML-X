@@ -58,6 +58,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     }
 
     args = arg_parser(input_list[1:], arg_base)
+    cmd = input_list[0].split('@')[0]
 
     try:
         multi = int(args['-i'])
@@ -71,8 +72,8 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     select        = args['-s'] or args['-select']
     isBulk        = args['-b'] or args['-bulk']
     name          = args['-n'] or args['-name']
-    extract       = args['-e'] or args['-extract'] or args['-uz'] or args['-unzip'] or 'uz' in input_list[0] or 'unzip' in input_list[0]
-    compress      = args['-z'] or args['-zip'] or (not extract and ('z' in input_list[0] or 'zip' in input_list[0]))
+    extract       = args['-e'] or args['-extract'] or args['-uz'] or args['-unzip'] or 'uz' in cmd or 'unzip' in cmd
+    compress      = args['-z'] or args['-zip'] or (not extract and ('z' in cmd or 'zip' in cmd))
     up            = args['-up'] or args['-upload']
     rcf           = args['-rcf']
     drive_id      = args['-id']

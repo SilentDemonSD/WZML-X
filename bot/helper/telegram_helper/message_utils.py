@@ -131,6 +131,7 @@ async def editMessage(message, text, buttons=None, photo=None):
     try:
         if message.media:
             if photo:
+                photo = rchoice(config_dict['IMAGES']) if photo == 'IMAGES' else photo
                 return await message.edit_media(InputMediaPhoto(photo, text), reply_markup=buttons)
             return await message.edit_caption(caption=text, reply_markup=buttons)
         await message.edit(text=text, disable_web_page_preview=True, reply_markup=buttons)
@@ -273,7 +274,7 @@ async def update_all_messages(force=False):
     async with status_reply_dict_lock:
         for chat_id in list(status_reply_dict.keys()):
             if status_reply_dict[chat_id] and msg != status_reply_dict[chat_id][0].text:
-                rmsg = await editMessage(status_reply_dict[chat_id][0], msg, buttons)
+                rmsg = await editMessage(status_reply_dict[chat_id][0], msg, buttons, 'IMAGES')
                 if isinstance(rmsg, str) and rmsg.startswith('Telegram says: [400'):
                     del status_reply_dict[chat_id]
                     continue
@@ -296,8 +297,7 @@ async def sendStatusMessage(msg):
         message.text = progress
         status_reply_dict[chat_id] = [message, time()]
         if not Interval:
-            Interval.append(setInterval(
-                config_dict['STATUS_UPDATE_INTERVAL'], update_all_messages))
+            Interval.append(setInterval(config_dict['STATUS_UPDATE_INTERVAL'], update_all_messages))
 
 
 async def open_category_btns(message):
@@ -389,7 +389,7 @@ async def user_info(client, userId):
     return await client.get_users(userId)
 
 
-async def BotPm_check(message, button=None):
+async def check_botpm(message, button=None):
     try:
         temp_msg = await message._client.send_message(chat_id=message.from_user.id, text='<b>Checking Access...</b>')
         await temp_msg.delete()
