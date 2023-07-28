@@ -53,7 +53,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     rcf =         args['-rcf']
     link =        args['link']
     extract =     args['-e'] or 'uz' in input_list[0] or 'unzip' in input_list[0]
-    compress =    args['-z'] or (not extract and ('z' in input_list[0] or 'zip' in input_list[0]))
+    compress =    args['-z'] or (not extract and not "@" in input_list[0] and ('z' in input_list[0] or 'zip' in input_list[0]))
     join =        args['-j']
 
     bulk_start = 0
