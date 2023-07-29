@@ -294,7 +294,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             if user_dump:
                 up = next((dump_id for name_, dump_id in ldumps.items() if user_dump.casefold() == name_.casefold()), '')
             if not up and len(ldumps) == 1:
-                up = next(iter(user_tds.values()))
+                up = next(iter(ldumps.values()))
             elif not up:
                 up, is_cancelled = await open_dump_btns(message)
                 if is_cancelled:
