@@ -432,13 +432,13 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
             return
     else:
         if user_dump and (user_dump.isdigit() or user_dump.startswith('-')):
-            up = int(up)
+            up = int(user_dump)
         elif user_dump and user_dump.startswith('@'):
             up = user_dump.strip('@')
         elif (ldumps := await fetch_user_dumps(message.from_user.id)):
             if user_dump:
                 up = next((dump_id for name_, dump_id in ldumps.items() if user_dump.casefold() == name_.casefold()), '')
-            if not up and ldumps == 1:
+            if not up and len(ldumps) == 1:
                 up = next(iter(user_tds.values()))
             elif not up:
                 up, is_cancelled = await open_dump_btns(message)

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.filters import command, regex
 from html import escape
@@ -288,13 +287,13 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             return
     else:
         if user_dump and (user_dump.isdigit() or user_dump.startswith('-')):
-            up = int(up)
+            up = int(user_dump)
         elif user_dump and user_dump.startswith('@'):
             up = user_dump.strip('@')
         elif (ldumps := await fetch_user_dumps(message.from_user.id)):
             if user_dump:
                 up = next((dump_id for name_, dump_id in ldumps.items() if user_dump.casefold() == name_.casefold()), '')
-            if not up and ldumps == 1:
+            if not up and len(ldumps) == 1:
                 up = next(iter(user_tds.values()))
             elif not up:
                 up, is_cancelled = await open_dump_btns(message)
