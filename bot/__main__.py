@@ -150,10 +150,10 @@ async def restart(client, message):
     restart_message = await sendMessage(message, BotTheme('RESTARTING'))
     if scheduler.running:
         scheduler.shutdown(wait=False)
+    await delete_all_messages()
     for interval in [QbInterval, Interval]:
         if interval:
             interval[0].cancel()
-    await delete_all_messages()
     await sync_to_async(clean_all)
     proc1 = await create_subprocess_exec('pkill', '-9', '-f', 'gunicorn|aria2c|qbittorrent-nox|ffmpeg|rclone')
     proc2 = await create_subprocess_exec('python3', 'update.py')

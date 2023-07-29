@@ -134,7 +134,7 @@ class MirrorLeechListener:
         if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
             self.botpmmsg = await sendCustomMsg(self.message.from_user.id, BotTheme('PM_START', msg_link=self.source_url))
         if self.isSuperGroup and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL:
-            await DbManger().add_incomplete_task(self.message.chat.id, self.message.link, self.tag)
+            await DbManger().add_incomplete_task(self.message.chat.id, self.source_url, self.tag)
 
     async def onDownloadComplete(self):
         multi_links = False
@@ -464,7 +464,7 @@ class MirrorLeechListener:
                         if self.source_url and config_dict['SOURCE_LINK']:
                             btn.ubutton(BotTheme('SOURCE_URL'), self.source_url)
                         btn = extra_btns(btn)
-                        await sendMessage(self.message, msg + BotTheme('L_BOT_MSG'), btn.build_menu(1), self.random_pic)
+                        await sendMessage(self.message, msg + BotTheme('L_BOT_MSG'), btn.build_menu(2), self.random_pic)
                     else:
                         await deleteMessage(self.botpmmsg)
                 elif self.linkslogmsg:
@@ -472,7 +472,7 @@ class MirrorLeechListener:
                     if self.source_url and config_dict['SOURCE_LINK']:
                         btn.ubutton(BotTheme('SOURCE_URL'), self.source_url)
                     btn = extra_btns(btn)
-                    await sendMessage(self.message, msg + BotTheme('L_LL_MSG'), btn.build_menu(1), self.random_pic)
+                    await sendMessage(self.message, msg + BotTheme('L_LL_MSG'), btn.build_menu(2), self.random_pic)
                     
             if self.seed:
                 if self.newDir:
@@ -548,7 +548,7 @@ class MirrorLeechListener:
                     if self.source_url and config_dict['SOURCE_LINK']:
                         buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
                     buttons = extra_btns(buttons)
-                    await sendMessage(self.message, msg + BotTheme('M_BOT_MSG'), buttons.build_menu(1), self.random_pic)
+                    await sendMessage(self.message, msg + BotTheme('M_BOT_MSG'), buttons.build_menu(2), self.random_pic)
                 else:
                     await deleteMessage(self.botpmmsg)
             elif self.linkslogmsg:
@@ -556,7 +556,7 @@ class MirrorLeechListener:
                 if self.source_url and config_dict['SOURCE_LINK']:
                     buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
                 buttons = extra_btns(buttons)
-                await sendMessage(self.message, msg, buttons.build_menu(1), self.random_pic)
+                await sendMessage(self.message, msg, buttons.build_menu(2), self.random_pic)
 
             if self.seed:
                 if self.newDir:

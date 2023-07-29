@@ -91,15 +91,15 @@ class TgUploader:
         try:
             if self.__upload_dest:
                 for channel_id in self.__upload_dest:
-                    chat = await chat_info(channel_id)
-                    try:
-                        dump_copy = await bot.copy_message(chat_id=chat.id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
-                        if dump_copy and self.__has_buttons:
-                            rply = (InlineKeyboardMarkup(BTN) if (BTN := self.__sent_msg.reply_markup.inline_keyboard[:-1]) else None) if config_dict['SAVE_MSG'] else self.__sent_msg.reply_markup
-                            await editReplyMarkup(dump_copy, rply)
-                    except (ChannelInvalid, PeerIdInvalid) as e:
-                        LOGGER.error(f"{e.NAME}: {e.MESSAGE} for {channel_id}")
-                        continue
+                    if chat := (await chat_info(channel_id)):
+                        try:
+                            dump_copy = await bot.copy_message(chat_id=chat.id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
+                            if dump_copy and self.__has_buttons:
+                                rply = (InlineKeyboardMarkup(BTN) if (BTN := self.__sent_msg.reply_markup.inline_keyboard[:-1]) else None) if config_dict['SAVE_MSG'] else self.__sent_msg.reply_markup
+                                await editReplyMarkup(dump_copy, rply)
+                        except (ChannelInvalid, PeerIdInvalid) as e:
+                            LOGGER.error(f"{e.NAME}: {e.MESSAGE} for {channel_id}")
+                            continue
         except Exception as err:
             if not self.__is_cancelled:
                 LOGGER.error(f"Failed To Send in User Dump:\n{str(err)}")
@@ -222,12 +222,12 @@ class TgUploader:
         try:
             if self.__upload_dest:
                 for channel_id in self.__upload_dest:
-                    dump_chat = await chat_info(channel_id)
-                    try:
-                        await bot.copy_media_group(chat_id=dump_chat.id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
-                    except (ChannelInvalid, PeerIdInvalid) as e:
-                        LOGGER.error(f"{e.NAME}: {e.MESSAGE} for {channel_id}")
-                        continue
+                    if dump_chat := (await chat_info(channel_id)):
+                        try:
+                            await bot.copy_media_group(chat_id=dump_chat.id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
+                        except (ChannelInvalid, PeerIdInvalid) as e:
+                            LOGGER.error(f"{e.NAME}: {e.MESSAGE} for {channel_id}")
+                            continue
         except Exception as err:
             if not self.__is_cancelled:
                 LOGGER.error(f"Failed To Send in User Dump:\n{str(err)}")

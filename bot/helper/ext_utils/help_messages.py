@@ -1,7 +1,24 @@
 #!/usr/bin/env python3
 from bot.helper.telegram_helper.bot_commands import BotCommands
 
-YT_HELP_MESSAGE = [".", """
+YT_HELP_MESSAGE = ["""<i>Send links/files along with cmd or reply to cmd to mirror or leech ytdl supported stes on Telegram or GDrive or DDLs with different Engines like RClone or yt-dlp</i>
+
+➲ <b><u>Available Args</u></b>:
+
+1.  <b>-n or -name :</b> Rename file.
+2.  <b>-z or -zip :</b> Zip files or Links
+3.  <b>-up or -upload :</b> Upload to your Drive or RClone or DDL
+4.  <b>-b or -bulk :</b> Download bulk links.
+5.  <b>-i :</b> Download multi links by reply
+6.  <b>-m or -sd or -samedir :</b> Download multi links within same upload directory.
+7.  <b>-opt or -options :</b> Attach Custom yt-dlp options to link
+8.  <b>-s or -select :</b> Select files from torrent via Bittorrent
+9.  <b>-rcf :</b> RClone additional Flags
+10. <b>-id :</b> GDrive Folder id or link
+11. <b>-index:</b> Index url for gdrive_arg
+12. <b>-c or -category :</b> Gdrive category to Upload, Specific Name (case insensitive)
+13. <b>-ud or -dump :</b> Dump category to Upload, Specific Name (case insensitive) or chat_id or chat_username
+""", """
 <b>Send link along with command line</b>:
 <code>/cmd</code> link -s -n new name -opt x:y|x1:y1
 
