@@ -294,7 +294,7 @@ async def sendStatusMessage(msg):
             await deleteMessage(message)
             del status_reply_dict[chat_id]
         message = await sendMessage(msg, progress, buttons, photo='IMAGES')
-        if hasattr(message, caption):
+        if hasattr(message, 'caption'):
             message.caption = progress
         else:
             message.text = progress
