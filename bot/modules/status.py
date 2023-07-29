@@ -41,7 +41,7 @@ async def status_pages(_, query):
     if data[1] == 'ref':
         bot_cache.setdefault('status_refresh', {})
         if user_id in (refresh_status := bot_cache['status_refresh']) and (curr := (time() - refresh_status[user_id])) <= 7:
-            return await query.answer(f'Already Refreshed! Try after {get_readable_time(7 - curr)}s', show_alert=True)
+            return await query.answer(f'Already Refreshed! Try after {get_readable_time(7 - curr)}', show_alert=True)
         else:
             refresh_status[user_id] = time()
         await editMessage(query.message, f"{(await user_info(user_id)).mention(style='html')}, <i>Refreshing Status...</i>")
