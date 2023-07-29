@@ -317,17 +317,16 @@ async def set_custom(client, message, pre_event, key, direct=False):
         for td_item in value.split('\n'):
             if td_item == '':
                 continue
-            td_details = td_item.rsplit(maxsplit=(2 if (td_item.split())[-1].startswith('http') else 1))
+            split_ck = td_item.split()
+            td_details = td_item.rsplit(maxsplit=(2 if split_ck[-1].startswith('http') and not is_gdrive_link(split_ck[-1]) else 1 if len(split_ck[-1]) > 15 else 0))
             if td_details[0] in list(categories_dict.keys()) or td_details[0] in list(user_tds.keys()):
                 continue
             for title in list(user_tds.keys()):
                 if td_details[0].casefold() == title.casefold():
-                    del user_tds[td_details[0]]
+                    del user_tds[title]
             if len(td_details) > 1:
-                LOGGER.info(td_details)
                 if is_gdrive_link(td_details[1].strip()):
                     td_details[1] = GoogleDriveHelper.getIdFromUrl(td_details[1])
-                LOGGER.info(td_details[0])
                 if await sync_to_async(GoogleDriveHelper().getFolderData, td_details[1]):
                     user_tds[td_details[0]] = {'drive_id': td_details[1],'index_link': td_details[2].rstrip('/') if len(td_details) > 2 else ''}
         value = user_tds
@@ -337,12 +336,12 @@ async def set_custom(client, message, pre_event, key, direct=False):
         for dump_item in value.split('\n'):
             if dump_item == '':
                 continue
-            dump_info = dump_item.split()
+            dump_info = dump_item.rsplit(maxsplit=(1 if dump_item.split()[-1].startswith(('-100', '@')) else 0))
             if dump_info[0] in list(ldumps.keys()):
                 continue
             for title in list(ldumps.keys()):
                 if dump_info[0].casefold() == title.casefold():
-                    del ldumps[dump_info[0]]
+                    del ldumps[title]
             if len(dump_info) > 1 and (dump_chat := await chat_info(dump_info[1])):
                 ldumps[dump_info[0]] = dump_chat.id
         value = ldumps
