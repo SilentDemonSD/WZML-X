@@ -188,9 +188,10 @@ async def search_images():
                     r = rget(url)
                     soup = BeautifulSoup(r.text, "html.parser")
                     images = soup.select('img[data-src^="https://c4.wallpaperflare.com/wallpaper"]')
+                    if len(images) == 0:
+                        LOGGER.info("Maybe Site is Blocked on your Server, Add Images Manually !!")
                     for img in images:
                         img_url = img['data-src']
-                        LOGGER.info(img_url)
                         if img_url not in config_dict['IMAGES']:
                             config_dict['IMAGES'].append(img_url)
             if len(config_dict['IMAGES']) != 0:
@@ -201,10 +202,7 @@ async def search_images():
             LOGGER.error(f"An error occurred: {e}")
 
 
-help_string = f'''<b><i>㊂ Help Guide :</i></b>
-
-<b>NOTE: <i>Click on any CMD to see more minor detalis.</i></b>
-
+help_string = [f'''
 <b>Use Mirror commands to download your link/file/rcl</b>
 ➥ /{BotCommands.MirrorCommand[0]} or /{BotCommands.MirrorCommand[1]}: Download via file/url/media to Upload to Cloud Drive.
 ➥ /{BotCommands.CategorySelect}: Select Custom category to Upload to Cloud Drive from UserTds or Bot Categories.
@@ -281,15 +279,19 @@ help_string = f'''<b><i>㊂ Help Guide :</i></b>
 ➥ /{BotCommands.RssCommand}: Open RSS Menu (Sub/Unsub/Start/Pause)
 
 ⌬ <b>Attention: Read the first line again!</b>
-'''
+''']
 
 
 async def bot_help(client, message):
     buttons = ButtonMaker()
-    buttons.ibutton('Mirror Help', f'wzmlx guide mirror')
-    buttons.ibutton('Clone Help', f'wzmlx guide clone')
-    buttons.ibutton('yt-dlp Help', f'wzmlx guide ytdlp')
-    await sendMessage(message, help_string, buttons.build_menu(2))
+    user_id = message.from_user.id
+    buttons.ibutton('Mirror', f'wzmlx {user_id} guide mirror')
+    buttons.ibutton('Clone', f'wzmlx {user_id} guide clone')
+    buttons.ibutton('yt-dlp', f'wzmlx {user_id} guide ytdlp')
+    buttons.ibutton('Mics', f'wzmlx {user_id} guide miscs')
+    buttons.ibutton('Sudo & Owner', f'wzmlx {user_id} guide admin')
+    buttons.ibutton('Close', f'wzmlx {user_id} close')
+    await sendMessage(message, "㊂ <b><i>Help Guide Menu!</i></b>\n\n<b>NOTE: <i>Click on any CMD to see more minor detalis.</i></b>", buttons.build_menu(2))
 
 
 async def restart_notification():
@@ -314,7 +316,7 @@ async def restart_notification():
         if notifier_dict := await DbManger().get_incomplete_tasks():
             for cid, data in notifier_dict.items():
                 msg = BotTheme('RESTART_SUCCESS', time=now.strftime('%I:%M:%S %p'), date=now.strftime('%d/%m/%y'), timz=config_dict['TIMEZONE'], version=get_version()) if cid == chat_id else BotTheme('RESTARTED')
-                msg += "\n\n⌬ <b><i>Incomplete Tasks!</i></b>\n"
+                msg += "\n\n⌬ <b><i>Incomplete Tasks!</i></b>"
                 for tag, links in data.items():
                     msg += f"\n➲ {tag}: "
                     for index, link in enumerate(links, start=1):
@@ -353,7 +355,7 @@ async def main():
         BotCommands.HelpCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
     bot.add_handler(MessageHandler(stats, filters=command(
         BotCommands.StatsCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
-    LOGGER.info(f"WZML-X Bot : @{bot_name} Started!")
+    LOGGER.info(f"WZML-X Bot [@{bot_name}] Started!")
     signal(SIGINT, exit_clean_up)
 
 bot.loop.run_until_complete(main())

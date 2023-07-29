@@ -444,7 +444,8 @@ class MirrorLeechListener:
                         elif not (config_dict['BOT_PM'] or user_dict.get('bot_pm')):
                             await sendMessage(self.message, msg + BotTheme('L_LL_MSG') + fmsg, buttons.build_menu(1))
                         attachmsg = False
-                        await sleep(1)
+                        await sleep(1.5)
+                        fmsg = ''
                 if fmsg != '\n\n':
                     if config_dict['SAVE_MSG'] and not saved:
                         saved = True
