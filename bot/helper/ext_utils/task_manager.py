@@ -32,6 +32,19 @@ async def stop_duplicate_check(name, listener):
             button = await get_telegraph_list(telegraph_content)
             return msg, button
     return False, None
+    
+
+async def timeval_check(message):
+    bot_cache.setdefault('time_interval', {})
+    if (user_id := message.from_user.id) in time_: 
+        if int(time() - TIME_GAP_STORE[message.from_user.id]) < config_dict['TIME_GAP']: 
+            wtime = timeformatter((int(TIME_GAP_STORE[message.from_user.id]) + config_dict['TIME_GAP'] - int(time())) * 1000) 
+            #rtime = timeformatter(config_dict['TIME_GAP']) 
+            text = f"Please wait {wtime}. Normal Users have Time Restriction for {config_dict['TIME_GAP']} sec. "
+            return True  
+        else: 
+            del TIME_GAP_STORE[message.from_user.id] 
+    return False
 
 
 async def is_queued(uid):

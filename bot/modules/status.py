@@ -49,6 +49,7 @@ async def status_pages(_, query):
         await update_all_messages(True)
     elif data[1] in ['nex', 'pre']:
         await turn_page(data)
+        await update_all_messages(True)
     elif data[1] == 'close':
         await delete_all_messages()
     await query.answer()
