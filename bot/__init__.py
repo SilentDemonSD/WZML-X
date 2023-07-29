@@ -420,7 +420,10 @@ LEECH_LIMIT = environ.get('LEECH_LIMIT', '')
 LEECH_LIMIT = '' if len(LEECH_LIMIT) == 0 else float(LEECH_LIMIT)
 
 USER_MAX_TASKS = environ.get('USER_MAX_TASKS', '')
-USER_MAX_TASKS = '' if len(USER_MAX_TASKS) == 0 else int(USER_MAX_TASKS)
+USER_MAX_TASKS = int(USER_MAX_TASKS) if USER_MAX_TASKS.isdigit() else ''
+
+USER_TIME_INTERVAL = environ.get('USER_TIME_INTERVAL', '')
+USER_TIME_INTERVAL = int(USER_TIME_INTERVAL) if USER_TIME_INTERVAL.isdigit() else 0
 
 PLAYLIST_LIMIT = environ.get('PLAYLIST_LIMIT', '')
 PLAYLIST_LIMIT = '' if len(PLAYLIST_LIMIT) == 0 else int(PLAYLIST_LIMIT)
@@ -590,6 +593,7 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'LEECH_LIMIT': LEECH_LIMIT,
                'FSUB_IDS': FSUB_IDS,
                'USER_MAX_TASKS': USER_MAX_TASKS,
+               'USER_TIME_INTERVAL': USER_TIME_INTERVAL,
                'PLAYLIST_LIMIT': PLAYLIST_LIMIT,
                'DAILY_TASK_LIMIT': DAILY_TASK_LIMIT,
                'DAILY_MIRROR_LIMIT': DAILY_MIRROR_LIMIT,
