@@ -435,7 +435,8 @@ class TgUploader:
                         await self.__send_media_group(pname, key, msgs)
                     else:
                         self.__last_msg_in_group = True
-            await self.__copy_file()
+            if self.__sent_msg:
+                await self.__copy_file()
 
             if self.__thumb is None and thumb is not None and await aiopath.exists(thumb):
                 await aioremove(thumb)
