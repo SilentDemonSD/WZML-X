@@ -205,7 +205,7 @@ async def task_utils(message):
                 msg.append(_msg)
         user_id = message.from_user.id
         user_dict = user_data.get(user_id, {})
-        user = await user_info(message._client, message.from_user.id)
+        user = await user_info(message.from_user.id)
         if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
             _msg, button = await check_botpm(message, button)
             if _msg:

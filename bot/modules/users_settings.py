@@ -13,7 +13,7 @@ from io import BytesIO
 from asyncio import sleep
 
 from bot import OWNER_ID, LOGGER, bot, user_data, config_dict, categories_dict, DATABASE_URL, IS_PREMIUM_USER, MAX_SPLIT_SIZE
-from bot.helper.telegram_helper.message_utils import sendMessage, sendCustomMsg, editMessage, deleteMessage, sendFile, chat_info
+from bot.helper.telegram_helper.message_utils import sendMessage, sendCustomMsg, editMessage, deleteMessage, sendFile, chat_info, user_info
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
@@ -665,12 +665,6 @@ async def edit_user_settings(client, query):
         await query.answer()
         await deleteMessage(message.reply_to_message)
         await deleteMessage(message)
-
-async def getUserInfo(client, id):
-    try:
-        return (await client.get_users(id)).mention(style="html")
-    except Exception:
-        return ''
         
 async def send_users_settings(client, message):
     text = message.text.split(maxsplit=1)
@@ -700,7 +694,7 @@ async def send_users_settings(client, message):
         else:
             await sendMessage(message, msg, button)
     elif int(userid) in user_data:
-        msg = f'{await getUserInfo(client, userid)} ( <code>{userid}</code> ):'
+        msg = f'{(await user_info(userid)).mention(style="html")} ( <code>{userid}</code> ):'
         if data := user_data[int(userid)]:
             buttons = ButtonMaker()
             buttons.ibutton("Delete Data", f"userset {message.from_user.id} user_del {userid}")

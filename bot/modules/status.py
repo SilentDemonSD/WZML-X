@@ -3,6 +3,7 @@ from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.filters import command, regex
 from psutil import cpu_percent, virtual_memory, disk_usage
 from time import time
+from asyncio import sleep
 
 from bot import status_reply_dict_lock, download_dict, download_dict_lock, botStartTime, Interval, config_dict, bot
 from bot.helper.telegram_helper.filters import CustomFilters
@@ -36,8 +37,11 @@ async def mirror_status(_, message):
 @new_task
 async def status_pages(_, query):
     await query.answer()
+    user_id = query.from_user.id
     data = query.data.split()
     if data[1] == "ref":
+        await editMessage(query.message, f"{(await user_info(user_id)).mention(style='html')}, Refreshing the Status...")
+        await sleep(2)
         await update_all_messages(True)
     else:
         await turn_page(data)

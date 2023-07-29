@@ -26,7 +26,7 @@ from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, editReplyMarkup, deleteMessage, get_tg_link_content, delete_links, auto_delete_message, open_category_btns, open_dump_btns
 from bot.helper.listeners.tasks_listener import MirrorLeechListener
-from bot.helper.ext_utils.help_messages import MIRROR_HELP_MESSAGE, CLONE_HELP_MESSAGE, YT_HELP_MESSAGE
+from bot.helper.ext_utils.help_messages import MIRROR_HELP_MESSAGE, CLONE_HELP_MESSAGE, YT_HELP_MESSAGE, help_string
 from bot.helper.ext_utils.bulk_links import extract_bulk_links
 
 
@@ -355,7 +355,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
 
 
 @new_task
-async def wzmlxcb(_, query):
+async def wzmlxcb(client, query):
     message = query.message
     user_id = query.from_user.id
     data = query.data.split()
@@ -413,11 +413,36 @@ async def wzmlxcb(_, query):
             await editMessage(query.message, msg, btn.build_menu(2))
         if data[3] == "YT":
             await editMessage(query.message, YT_HELP_MESSAGE[1], btn.build_menu(1))
+    elif data[2] == "guide":
+        btn = ButtonMaker()
+        btn.ibutton('Bᴀᴄᴋ', f'wzmlx {user_id} guide home')
+        btn.ibutton('Cʟᴏsᴇ', f'wzmlx {user_id} close')
+        if data[3] == "basic":
+            await editMessage(query.message, help_string[0], btn.build_menu(2))
+        elif data[3] == "users":
+            await editMessage(query.message, help_string[1], btn.build_menu(2))
+        elif data[3] == "miscs":
+            await editMessage(query.message, help_string[2], btn.build_menu(2))
+        elif data[3] == "admin":
+            if not CustomFilters.sudo(client, user_id):
+                return await query.answer('Not Sudo or Owner!', show_alert=True)
+            await editMessage(query.message, help_string[3], btn.build_menu(2))
+        else:
+            buttons = ButtonMaker()
+            buttons.ibutton('Basic', f'wzmlx {user_id} guide basic')
+            buttons.ibutton('Users', f'wzmlx {user_id} guide users')
+            buttons.ibutton('Mics', f'wzmlx {user_id} guide miscs')
+            buttons.ibutton('Owner & Sudos', f'wzmlx {user_id} guide admin')
+            buttons.ibutton('Close', f'wzmlx {user_id} close')
+            await editMessage(query.message, "㊂ <b><i>Help Guide Menu!</i></b>\n\n<b>NOTE: <i>Click on any CMD to see more minor detalis.</i></b>", btn.build_menu(2))
+        await query.answer()
     else:
         await query.answer()
         await deleteMessage(message)
-        await deleteMessage(message.reply_to_message)
-        await deleteMessage(message.reply_to_message.reply_to_message)
+        if message.reply_to_message:
+            await deleteMessage(message.reply_to_message)
+        if message.reply_to_message.reply_to_message:
+            await deleteMessage(message.reply_to_message.reply_to_message)
 
 
 async def mirror(client, message):
