@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from .helper.telegram_helper.bot_commands import BotCommands
+from bot.helper.telegram_helper.bot_commands import BotCommands
 
 YT_HELP_MESSAGE = [".", """
 <b>Send link along with command line</b>:
