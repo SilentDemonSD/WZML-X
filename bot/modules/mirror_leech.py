@@ -355,7 +355,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
 
 
 @new_task
-async def wzmlxcb(client, query):
+async def wzmlxcb(_, query):
     message = query.message
     user_id = query.from_user.id
     data = query.data.split()
@@ -424,7 +424,7 @@ async def wzmlxcb(client, query):
         elif data[3] == "miscs":
             await editMessage(query.message, help_string[3], btn.build_menu(2))
         elif data[3] == "admin":
-            if not await CustomFilters.sudo(client, user_id):
+            if not await CustomFilters.sudo('', query):
                 return await query.answer('Not Sudo or Owner!', show_alert=True)
             await editMessage(query.message, help_string[2], btn.build_menu(2))
         else:
