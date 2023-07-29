@@ -434,6 +434,7 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
         if user_dump and (user_dump.isdigit() or user_dump.startswith('-')):
             up = int(user_dump)
         elif user_dump and user_dump.startswith('@'):
+            up = user_dump
         elif (ldumps := await fetch_user_dumps(message.from_user.id)):
             if user_dump and user_dump.casefold() == "all":
                 up = [dump_id for dump_id in ldumps.values()]
