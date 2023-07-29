@@ -319,7 +319,7 @@ async def set_custom(client, message, pre_event, key, direct=False):
                 continue
             split_ck = td_item.split()
             td_details = td_item.rsplit(maxsplit=(2 if split_ck[-1].startswith('http') and not is_gdrive_link(split_ck[-1]) else 1 if len(split_ck[-1]) > 15 else 0))
-            if td_details[0] in list(categories_dict.keys()) or td_details[0] in list(user_tds.keys()):
+            if td_details[0] in list(categories_dict.keys()):
                 continue
             for title in list(user_tds.keys()):
                 if td_details[0].casefold() == title.casefold():
