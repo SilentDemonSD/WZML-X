@@ -289,7 +289,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         if user_dump and (user_dump.isdigit() or user_dump.startswith('-')):
             up = int(user_dump)
         elif user_dump and user_dump.startswith('@'):
-            up = user_dump.strip('@')
+            up = user_dump
         elif (ldumps := await fetch_user_dumps(message.from_user.id)):
             if user_dump:
                 up = next((dump_id for name_, dump_id in ldumps.items() if user_dump.casefold() == name_.casefold()), '')

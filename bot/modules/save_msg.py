@@ -5,8 +5,6 @@ from pyrogram.filters import regex
 from asyncio import sleep
 
 from bot import bot, bot_name, user_data
-from bot.helper.telegram_helper.message_utils import chat_info
-
 
 async def save_message(_, query):
     usr = query.from_user.id
@@ -24,6 +22,5 @@ async def save_message(_, query):
                 await query.answer(url=f"https://t.me/{bot_name}?start=start")
                 await sleep(1)
                 await query.message.copy(usr, reply_markup=InlineKeyboardMarkup(BTN) if (BTN := query.message.reply_markup.inline_keyboard[:-1]) else None)
-
 
 bot.add_handler(CallbackQueryHandler(save_message, filters=regex(r"^save")))
