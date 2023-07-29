@@ -11,7 +11,7 @@ from pyrogram.errors import SessionPasswordNeeded, FloodWait, PhoneNumberInvalid
 
 from bot import bot, LOGGER
 from bot.helper.ext_utils.bot_utils import new_thread, new_task
-from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, sendFile
+from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage, sendFile
 from bot.helper.telegram_helper.filters import CustomFilters
 
 session_dict = {}
@@ -146,7 +146,7 @@ async def set_details(_, message, newkey):
     global isStop
     user_id = message.from_user.id
     value = message.text
-    await message.delete()
+    await deleteMessage(message)
     async with session_lock:
         session_dict[newkey] = value
     session_dict[user_id] = False

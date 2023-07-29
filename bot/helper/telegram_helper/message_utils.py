@@ -294,7 +294,7 @@ async def sendStatusMessage(msg):
             await deleteMessage(message)
             del status_reply_dict[chat_id]
         message = await sendMessage(msg, progress, buttons, photo='IMAGES')
-        if hasattr(message, caption):
+        if hasattr(message, 'caption'):
             message.caption = progress
         else:
             message.text = progress
@@ -398,7 +398,7 @@ async def user_info(user_id):
 async def check_botpm(message, button=None):
     try:
         temp_msg = await message._client.send_message(chat_id=message.from_user.id, text='<b>Checking Access...</b>')
-        await temp_msg.delete()
+        await deleteMessage(temp_msg)
         return None, button
     except Exception as e:
         if button is None:

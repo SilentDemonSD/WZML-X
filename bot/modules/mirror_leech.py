@@ -243,7 +243,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
                     await editMessage(process_msg, str(e))
                     await delete_links(message)
                     return
-            await process_msg.delete()
+            await deleteMessage(process_msg)
 
     if not isLeech:
         if config_dict['DEFAULT_UPLOAD'] == 'rc' and not up or up == 'rc':
@@ -422,11 +422,11 @@ async def wzmlxcb(client, query):
         elif data[3] == "users":
             await editMessage(query.message, help_string[1], btn.build_menu(2))
         elif data[3] == "miscs":
-            await editMessage(query.message, help_string[2], btn.build_menu(2))
-        elif data[3] == "admin":
-            if not CustomFilters.sudo(client, user_id):
-                return await query.answer('Not Sudo or Owner!', show_alert=True)
             await editMessage(query.message, help_string[3], btn.build_menu(2))
+        elif data[3] == "admin":
+            if not await CustomFilters.sudo(client, user_id):
+                return await query.answer('Not Sudo or Owner!', show_alert=True)
+            await editMessage(query.message, help_string[2], btn.build_menu(2))
         else:
             buttons = ButtonMaker()
             buttons.ibutton('Basic', f'wzmlx {user_id} guide basic')
@@ -441,8 +441,8 @@ async def wzmlxcb(client, query):
         await deleteMessage(message)
         if message.reply_to_message:
             await deleteMessage(message.reply_to_message)
-        if message.reply_to_message.reply_to_message:
-            await deleteMessage(message.reply_to_message.reply_to_message)
+            if message.reply_to_message.reply_to_message:
+                await deleteMessage(message.reply_to_message.reply_to_message)
 
 
 async def mirror(client, message):
