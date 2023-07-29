@@ -295,8 +295,7 @@ async def load_config():
     USER_TD_MODE = USER_TD_MODE.lower() == 'true'
 
     USER_TD_SA = environ.get('USER_TD_SA', '')
-    if len(USER_TD_SA) != 0:
-        USER_TD_SA = USER_TD_SA.lower()
+    USER_TD_SA = USER_TD_SA.lower() if len(USER_TD_SA) != 0 else ''
 
     SHOW_MEDIAINFO = environ.get('SHOW_MEDIAINFO', '')
     SHOW_MEDIAINFO = SHOW_MEDIAINFO.lower() == 'true'

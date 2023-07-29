@@ -345,9 +345,8 @@ AS_DOCUMENT = AS_DOCUMENT.lower() == 'true'
 USER_TD_MODE = environ.get('USER_TD_MODE', '')
 USER_TD_MODE = USER_TD_MODE.lower() == 'true'
 
-USER_TD_SA = environ.get('USER_TD_MODE', '')
-if len(USER_TD_SA) != 0:
-    USER_TD_SA = USER_TD_SA.lower()
+USER_TD_SA = environ.get('USER_TD_SA', '')
+USER_TD_SA = USER_TD_SA.lower() if len(USER_TD_SA) != 0 else ''
 
 SHOW_MEDIAINFO = environ.get('SHOW_MEDIAINFO', '')
 SHOW_MEDIAINFO = SHOW_MEDIAINFO.lower() == 'true'
