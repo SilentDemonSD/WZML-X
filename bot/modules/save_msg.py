@@ -8,7 +8,7 @@ from bot import bot, bot_name, user_data
 
 async def save_message(_, query):
     usr = query.from_user.id
-    user_dict = user_data.get(usr.id, {})
+    user_dict = user_data.get(usr, {})
     if query.data == "save":
         if user_dict.get('save_mode'):
             usr = next(iter(user_dict.get('ldump', {}).values()))
