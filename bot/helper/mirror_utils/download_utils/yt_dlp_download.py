@@ -194,21 +194,18 @@ class YoutubeDLHelper:
             self.opts['ignoreerrors'] = True
             self.is_playlist = True
 
-        self.__gid = ''.join(SystemRandom().choices(
-            ascii_letters + digits, k=10))
+        self.__gid = ''.join(SystemRandom().choices(ascii_letters + digits, k=10))
 
         await self.__onDownloadStart()
 
-        self.opts['postprocessors'] = [
-            {'add_chapters': True, 'add_infojson': 'if_exists', 'add_metadata': True, 'key': 'FFmpegMetadata'}]
+        self.opts['postprocessors'] = [{'add_chapters': True, 'add_infojson': 'if_exists', 'add_metadata': True, 'key': 'FFmpegMetadata'}]
 
         if qual.startswith('ba/b-'):
             audio_info = qual.split('-')
             qual = audio_info[0]
             audio_format = audio_info[1]
             rate = audio_info[2]
-            self.opts['postprocessors'].append(
-                {'key': 'FFmpegExtractAudio', 'preferredcodec': audio_format, 'preferredquality': rate})
+            self.opts['postprocessors'].append({'key': 'FFmpegExtractAudio', 'preferredcodec': audio_format, 'preferredquality': rate})
             if audio_format == 'vorbis':
                 self.__ext = '.ogg'
             elif audio_format == 'alac':
@@ -228,8 +225,7 @@ class YoutubeDLHelper:
         base_name, ext = ospath.splitext(self.name)
         trim_name = self.name if self.is_playlist else base_name
         if len(trim_name.encode()) > 200:
-            self.name = self.name[:
-                                  200] if self.is_playlist else f'{base_name[:200]}{ext}'
+            self.name = self.name[:200] if self.is_playlist else f'{base_name[:200]}{ext}'
             base_name = ospath.splitext(self.name)[0]
 
         if self.is_playlist:
@@ -256,9 +252,7 @@ class YoutubeDLHelper:
         if msg:
             await self.__listener.onDownloadError(msg, button)
             return
-        if limit_exceeded := await limit_checker(self.__size, self.__listener, isYtdlp=True):
-            if self.playlist_count > config_dict['PLAYLIST_LIMIT']:
-                limit_exceeded += f'\nYour Playlist has {self.playlist_count} files'
+        if limit_exceeded := await limit_checker(self.__size, self.__listener, isYtdlp=True, isPlayList=self.playlist_count):
             await self.__listener.onDownloadError(limit_exceeded)
             return
         added_to_queue, event = await is_queued(self.__listener.uid)

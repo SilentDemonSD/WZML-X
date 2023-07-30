@@ -125,9 +125,9 @@ async def start_from_queued():
                     start_dl_from_queued(uid)
 
 
-async def limit_checker(size, listener, isTorrent=False, isMega=False, isDriveLink=False, isYtdlp=False):
+async def limit_checker(size, listener, isTorrent=False, isMega=False, isDriveLink=False, isYtdlp=False, isPlayList=None):
     LOGGER.info('Checking Size Limit of link/file/folder/tasks...')
-    user_id = listener.message.from_user.id 
+    user_id = listenfr.message.from_user.id 
     if await CustomFilters.sudo('', listener.message):
         return
     limit_exceeded = ''
@@ -151,6 +151,9 @@ async def limit_checker(size, listener, isTorrent=False, isMega=False, isDriveLi
             limit = YTDLP_LIMIT * 1024**3
             if size > limit:
                 limit_exceeded = f'Ytdlp limit is {get_readable_file_size(limit)}'
+        if isPlayList and (PLAYLIST_LIMIT := config_dict['PLAYLIST_LIMIT']):
+            if isPlayList > PLAYLIST_LIMIT:
+                limit_exceeded = f'Playlist limit is {PLAYLIST_LIMIT}'
     elif isTorrent:
         if TORRENT_LIMIT := config_dict['TORRENT_LIMIT']:
             limit = TORRENT_LIMIT * 1024**3
@@ -160,6 +163,7 @@ async def limit_checker(size, listener, isTorrent=False, isMega=False, isDriveLi
         limit = DIRECT_LIMIT * 1024**3
         if size > limit:
             limit_exceeded = f'Direct limit is {get_readable_file_size(limit)}'
+
     if not limit_exceeded:
         if (LEECH_LIMIT := config_dict['LEECH_LIMIT']) and listener.isLeech:
             limit = LEECH_LIMIT * 1024**3
@@ -172,9 +176,6 @@ async def limit_checker(size, listener, isTorrent=False, isMega=False, isDriveLi
             acpt = await sync_to_async(check_storage_threshold, size, limit, arch)
             if not acpt:
                 limit_exceeded = f'You must leave {get_readable_file_size(limit)} free storage.'
-        
-        #if (PLAYLIST_LIMIT := config_dict['PLAYLIST_LIMIT']):
-        #    limit_exceeded = f'Playlist limit is {PLAYLIST_LIMIT}'
 
         if config_dict['DAILY_TASK_LIMIT'] and config_dict['DAILY_TASK_LIMIT'] <= await getdailytasks(user_id):
             limit_exceeded = f"Daily Total Task Limit: {config_dict['DAILY_TASK_LIMIT']}\nYou have exhausted all your Daily Task Limits."
@@ -196,7 +197,10 @@ async def limit_checker(size, listener, isTorrent=False, isMega=False, isDriveLi
                 lsize = await getdailytasks(user_id, upleech=size, check_leech=True)
                 LOGGER.info(f"User : {user_id} | Daily Leech Size : {get_readable_file_size(lsize)}")
     if limit_exceeded:
-        return f"{limit_exceeded}.\nYour List/File/Folder size is {get_readable_file_size(size)}"
+        if size:
+            return f"{limit_exceeded}.\nYour List/File/Folder size is {get_readable_file_size(size)}."
+        elif isPlayList:
+            return f"{limit_exceeded}.\nYour playlist has {isPlayList} files."
 
 
 async def task_utils(message):
