@@ -62,7 +62,8 @@ if UPSTREAM_REPO is not None:
     if ospath.exists('.git'):
         srun(["rm", "-rf", ".git"])
 
-    if BOT_VERSION := "1.1.5-x":
+    BOT_VERSION = "1.1.5-x"
+    if BOT_VERSION:
         update = srun([f"curl -L -O https://github.com/weebzone/WZML-X/archive/refs/tags/v{BOT_VERSION}.zip \
                      && 7z x v{BOT_VERSION}.zip \
                      && cd WZML-X-{BOT_VERSION} \
