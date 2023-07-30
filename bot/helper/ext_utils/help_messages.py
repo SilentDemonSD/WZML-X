@@ -25,7 +25,7 @@ YT_HELP_MESSAGE = ["""<i>Send links/files along with cmd or reply to cmd to mirr
 ➲ <b><i>By replying to link</i></b>:
 <code>/cmd</code> -n  new name -z password -opt x:y|x1:y1
 
-➲ <b><i>New Name</i></b>: -n
+➲ <b><i>New Name</i></b>: -n or -name
 <code>/cmd</code> link -n new name
 <b>Note:</b> Don't add file extension
 

@@ -51,13 +51,6 @@ non_queued_dl = set()
 non_queued_up = set()
 
 
-def get_version():
-    MAJOR = '1'
-    MINOR = '2'
-    PATCH = '0'
-    return f"v{MAJOR}.{MINOR}.{PATCH}-x"
-
-
 try:
     if bool(environ.get('_____REMOVE_THIS_LINE_____')):
         log_error('The README.md file there to be read! Exiting now!')
