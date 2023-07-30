@@ -194,7 +194,6 @@ async def limit_checker(size, listener, isTorrent=False, isMega=False, isDriveLi
             elif listener.isLeech:
                 lsize = await getdailytasks(user_id, upleech=size, check_leech=True)
                 LOGGER.info(f"User : {user_id} | Daily Leech Size : {get_readable_file_size(lsize)}")
-
     if limit_exceeded:
         return f"{limit_exceeded}.\nYour List/File/Folder size is {get_readable_file_size(size)}"
 
@@ -206,7 +205,7 @@ async def task_utils(message):
     if await CustomFilters.sudo('', message):
         return msg, button
     user_id = message.from_user.id
-    token_msg, button = checking_access(user_id, button)
+    token_msg, button = await checking_access(user_id, button)
     if token_msg is not None:
         msg.append(token_msg)
     if message.chat.type != message.chat.type.BOT:
@@ -219,7 +218,7 @@ async def task_utils(message):
             _msg, button = await check_botpm(message, button)
             if _msg:
                 msg.append(_msg)
-    if (uti := config_dict['USER_TIME_INTERVAL']) != 0 and (ut := timeval_check(user_id)):
+    if (uti := config_dict['USER_TIME_INTERVAL']) != 0 and (ut := await timeval_check(user_id)):
         msg.append(f"Please Wait {get_readable_time(ut)}, Users have time interval Restrictions for {get_readable_time(uti)}.")
     if (bmax_tasks := config_dict['BOT_MAX_TASKS']) and len(download_dict) >= bmax_tasks:
         msg.append(f"Bot Max Tasks limit exceeded.\nBot max tasks limit is {bmax_tasks}.\nPlease wait for the completion of other tasks.")

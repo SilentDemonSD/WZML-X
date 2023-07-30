@@ -521,7 +521,7 @@ async def fetch_user_dumps(user_id):
     return {}
 
 
-def checking_access(user_id, button=None):
+async def checking_access(user_id, button=None):
     if not config_dict['TOKEN_TIMEOUT'] or bool(user_id == OWNER_ID or user_id in user_data and user_data[user_id].get('is_sudo')):
         return None, button
     user_data.setdefault(user_id, {})

@@ -212,9 +212,9 @@ async def __plugin_buttons(user_id):
 async def torrentSearch(_, message):
     user_id = message.from_user.id
     buttons = ButtonMaker()
-    key = message.text.split()
+    key = message.text.split() if message.text else ['/cmd']
     SEARCH_PLUGINS = config_dict['SEARCH_PLUGINS']
-    msg, btn = checking_access(user_id)
+    msg, btn = await checking_access(user_id)
     if msg is not None:
         await sendMessage(message, msg, btn.build_menu(1))
         return

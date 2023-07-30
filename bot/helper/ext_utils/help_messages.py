@@ -231,7 +231,16 @@ Another example: inf:  1080  or 720p|.web. or .webrip.|hvec or x264. This will p
 <b>Timeout:</b> 60 sec.
 """
 
-CLONE_HELP_MESSAGE = ["<i>Send Gdrive | Gdtot | Filepress | Filebee | Appdrive | Gdflix link or RClone path along with or by replying to the link/rc_path by command with args.</i>",
+CLONE_HELP_MESSAGE = ["""<i>Send Gdrive | Gdtot | Filepress | Filebee | Appdrive | Gdflix link or RClone path along with or by replying to the link/rc_path by command with args.</i>
+
+➲ <b><u>Available Args</u></b>:
+
+1. <b>-up or -upload :</b> Upload to your Drive or RClone or DDL
+2. <b>-i :</b> Download multi links by reply
+3. <b>-rcf :</b> RClone additional Flags
+4. <b>-id :</b> GDrive Folder id or link
+5. <b>-index:</b> Index url for gdrive_arg
+6. <b>-c or -category :</b> Gdrive category to Upload, Specific Name (case insensitive)""",
 """➲ <b><i>Links:</i></b>
 Gdrive | Gdtot | Filepress | Filebee | Appdrive | Gdflix link or rclone path
 
