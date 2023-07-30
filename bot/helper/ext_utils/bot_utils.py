@@ -476,10 +476,10 @@ async def compare_versions(v1, v2):
     for i in range(3):
         v1_part, v2_part = v1_parts[i], v2_parts[i]
         if v1_part < v2_part:
-            return "New Update Available! Check Now!"
+            return "New Version Update is Available! Check Now!"
         elif v1_part > v2_part:
-            return "More Updated! Kindly Contribute"
-    return "Already Upto date"
+            return "More Updated! Kindly Contribute in Official Repo"
+    return "Already up to date with latest version"
 
 
 async def get_stats(event, key="home"):
@@ -497,7 +497,6 @@ async def get_stats(event, key="home"):
         total, used, free, disk = disk_usage('/')
         swap = swap_memory()
         memory = virtual_memory()
-        cpuUsage = cpu_percent(interval=0.5)
         msg = BotTheme('BOT_STATS',
             bot_uptime=get_readable_time(time() - botStartTime),
             ram_bar=get_progress_bar_string(memory.percent),
@@ -519,6 +518,7 @@ async def get_stats(event, key="home"):
             disk_f=get_readable_file_size(free),
         )
     elif key == "stsys":
+        cpuUsage = cpu_percent(interval=0.5)
         msg = BotTheme('SYS_STATS',
             os_uptime=get_readable_time(time() - boot_time()),
             os_version=platform.version(),

@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
-
 def get_version() -> str:
-    'Version Control Modulation'
+    '''
+    Returns the version details. Do not Interfere with this !
+
+    :return: The version details in the format 'vMAJOR.MINOR.PATCH-STATE'
+    :rtype: str
+    '''
     MAJOR = '1'
     MINOR = '2'
     PATCH = '0'
