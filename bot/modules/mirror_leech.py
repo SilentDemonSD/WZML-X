@@ -9,7 +9,7 @@ from aiofiles.os import path as aiopath
 from cloudscraper import create_scraper
 
 from bot import bot, DOWNLOAD_DIR, LOGGER, config_dict, bot_name, categories_dict, user_data
-from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_mega_link, is_gdrive_link, get_content_type, new_task, sync_to_async, is_rclone_path, is_telegram_link, arg_parser, fetch_user_tds, fetch_user_dumps
+from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_mega_link, is_gdrive_link, get_content_type, new_task, sync_to_async, is_rclone_path, is_telegram_link, arg_parser, fetch_user_tds, fetch_user_dumps, get_stats
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from bot.helper.ext_utils.task_manager import task_utils
 from bot.helper.mirror_utils.download_utils.aria2_download import add_aria2c_download
@@ -436,6 +436,9 @@ async def wzmlxcb(_, query):
             buttons.ibutton('Close', f'wzmlx {user_id} close')
             await editMessage(query.message, "㊂ <b><i>Help Guide Menu!</i></b>\n\n<b>NOTE: <i>Click on any CMD to see more minor detalis.</i></b>", buttons.build_menu(2))
         await query.answer()
+    elif data[2] == "stats":
+        msg, btn = await get_stats(query, data[3])
+        await editMessage(query.message, msg, btn, 'IMAGES')
     else:
         await query.answer()
         await deleteMessage(message)

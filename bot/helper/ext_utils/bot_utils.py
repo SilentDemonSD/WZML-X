@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import platform
 from base64 import b64encode
 from datetime import datetime
 from os import path as ospath
@@ -10,6 +11,7 @@ from time import time
 from html import escape
 from uuid import uuid4
 from subprocess import run as srun
+from psutil import disk_usage, disk_io_counters, cpu_percent, swap_memory, cpu_count, cpu_freq, getloadavg, virtual_memory, net_io_counters, boot_time
 from asyncio import create_subprocess_exec, create_subprocess_shell, run_coroutine_threadsafe, sleep
 from asyncio.subprocess import PIPE
 from functools import partial, wraps
@@ -25,6 +27,7 @@ from pyrogram.errors import PeerIdInvalid
 
 from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.themes import BotTheme
+from bot.version import get_version
 from bot import OWNER_ID, bot_name, bot_cache, DATABASE_URL, LOGGER, get_client, aria2, download_dict, download_dict_lock, botStartTime, user_data, config_dict, bot_loop, extra_buttons, user
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
@@ -465,6 +468,91 @@ def new_thread(func):
         future = run_coroutine_threadsafe(func(*args, **kwargs), bot_loop)
         return future.result() if wait else future
     return wrapper
+
+
+async def compare_versions(v1, v2):
+    v1_parts = [int(part) for part in v1[1:-2].split('.')]
+    v2_parts = [int(part) for part in v2[1:-2].split('.')]
+    for i in range(3):
+        v1_part, v2_part = v1_parts[i], v2_parts[i]
+        if v1_part < v2_part:
+            return "New Update Available! Check Now!"
+        elif v1_part > v2_part:
+            return "More Updated! Kindly Contribute"
+    return "Already Upto date"
+
+
+async def get_stats(event, key="home"):
+    user_id = event.from_user.id
+    btns = ButtonMaker()
+    btns.ibutton('Back', f'wzmlx {user_id} stats home')
+    if key == "home":
+        btns = ButtonMaker()
+        btns.ibutton('Bot Stats', f'wzmlx {user_id} stats stbot')
+        btns.ibutton('OS Stats', f'wzmlx {user_id} stats stsys')
+        btns.ibutton('Repo Stats', f'wzmlx {user_id} stats strepo')
+        btns.ibutton('Bot Limits', f'wzmlx {user_id} stats botlimits')
+        msg = "⌬ <b><i>Bot & OS Statistics!</i></b>"
+    elif key == "stbot":
+        total, used, free, disk = disk_usage('/')
+        swap = swap_memory()
+        memory = virtual_memory()
+        cpuUsage = cpu_percent(interval=0.5)
+        msg = BotTheme('BOT_STATS',
+            bot_uptime=get_readable_time(time() - botStartTime),
+            ram_bar=get_progress_bar_string(memory.percent),
+            ram=memory.percent,
+            ram_u=get_readable_file_size(memory.used),
+            ram_f=get_readable_file_size(memory.available),
+            ram_t=get_readable_file_size(memory.total),
+            swap_bar=get_progress_bar_string(swap.percent),
+            swap=swap.percent,
+            swap_u=get_readable_file_size(swap.used),
+            swap_f=get_readable_file_size(swap.free),
+            swap_t=get_readable_file_size(swap.total),
+            disk=disk,
+            disk_bar=get_progress_bar_string(disk),
+            disk_read=get_readable_file_size(disk_io_counters().read_bytes) + f" ({get_readable_time(disk_io_counters().read_time / 1000)})",
+            disk_write=get_readable_file_size(disk_io_counters().write_bytes) + f" ({get_readable_time(disk_io_counters().write_time / 1000)})",
+            disk_t=get_readable_file_size(total),
+            disk_u=get_readable_file_size(used),
+            disk_f=get_readable_file_size(free),
+        )
+    elif key == "stsys":
+        msg = BotTheme('SYS_STATS',
+            os_uptime=get_readable_time(time() - boot_time()),
+            os_version=platform.version(),
+            os_arch=platform.platform(),
+            up_data=get_readable_file_size(net_io_counters().bytes_sent),
+            dl_data=get_readable_file_size(net_io_counters().bytes_recv),
+            pkt_sent=str(net_io_counters().packets_sent)[:-3],
+            pkt_recv=str(net_io_counters().packets_recv)[:-3],
+            tl_data=get_readable_file_size(net_io_counters().bytes_recv + net_io_counters().bytes_sent),
+            cpu=cpuUsage,
+            cpu_bar=get_progress_bar_string(cpuUsage),
+            cpu_freq=f"{cpu_freq(percpu=False).current / 1000:.2f} GHz" if cpu_freq() else "Access Denied",
+            sys_load="%, ".join(x / cpu_count() * 100 for x in getloadavg())[:-2] + " (1m, 5m, 15m)",
+            p_core=cpu_count(logical=False),
+            v_core=cpu_count(logical=True) - cpu_count(logical=False),
+            total_core=cpu_count(logical=True),
+        )
+    elif key == "strepo":
+        last_commit, changelog = 'No Data', 'N/A'
+        if await aiopath.exists('.git'):
+            last_commit = (await cmd_exec("git log -1 --pretty='%cd ( %cr )' --date=format-local:'%d/%m/%Y'", True))[0]
+            changelog = (await cmd_exec("git log -1 --pretty=format:'<code>%s</code> <b>By</b> %an'", True))[0]
+        official_v = (await cmd_exec("curl -o latestversion.py https://raw.githubusercontent.com/weebzone/WZML-X/beta/bot/version.py -s && python3 latestversion.py && rm latestversion.py", True))[0]
+        msg = BotTheme('REPO_STATS',
+            last_commit=last_commit,
+            bot_version=get_version(),
+            lat_version=official_v,
+            commit_details=changelog,
+            remarks=await compare_versions(get_version(), official_v),
+        )
+    elif key == "botlimits":
+        msg = BotTheme('BOT_LIMITS')
+    btns.ibutton('Close', f'wzmlx {user_id} close')
+    return msg, btns.build_menu(2)
 
 
 async def getdailytasks(user_id, increase_task=False, upleech=0, upmirror=0, check_mirror=False, check_leech=False):

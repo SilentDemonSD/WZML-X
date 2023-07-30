@@ -13,21 +13,8 @@ class WZMLStyle:
     # ---------------------
 
     # async def stats(client, message):
-    STATS = '''⌬ <b><i>BOT VERSION :</i></b>
-┠ <b>Bot Updated :</b> {last_commit}
-┠ <b>Bot Version :</b> {bot_version}
-┖ <b>Last ChangeLog :</b> {commit_details}
-
-⌬ <b><i>BOT SYSTEM :</i></b>
-┠ <b>Bot Uptime :</b> {bot_uptime}
-┠ <b>OS Uptime :</b> {os_uptime}
-┖ <b>OS Arch :</b> {os_arch}
-
-⌬ <b><i>BOT ANALYSIS :</i></b>
-┎ <b>CPU :</b>
-┃ {cpu_bar} {cpu}%
-┠ <b>CPU Frequency :</b> {cpu_freq}
-┖ <b>P-Core(s) :</b> {p_core} | <b>V-Core(s) :</b> {v_core} ( <b>T :</b> {total_core} )
+    BOT_STATS = '''⌬ <b><i>BOT STATISTICS :</i></b>
+┖ <b>Bot Uptime :</b> {bot_uptime}
 
 ┎ <b><i>RAM ( MEMORY ) :</i></b>
 ┃ {ram_bar} {ram}%
@@ -37,12 +24,42 @@ class WZMLStyle:
 ┃ {swap_bar} {swap}%
 ┖ <b>U :</b> {swap_u} | <b>F :</b> {swap_f} | <b>T :</b> {swap_t}
 
-┎ <b><i>Disk Storage :</i></b>
+┎ <b><i>DISK :</i></b>
 ┃ {disk_bar} {disk}%
+┃ <b>Total Disk Read :</b> {disk_read}
+┃ <b>Total Disk Written :</b> {disk_write}
 ┖ <b>U :</b> {disk_u} | <b>F :</b> {disk_f} | <b>T :</b> {disk_t}
+    
+    '''
+    SYS_STATS = '''⌬ <b><i>OS SYSTEM :</i></b>
+┠ <b>OS Uptime :</b> {os_uptime}
+┠ <b>OS Version :</b> {os_version}
+┖ <b>OS Arch :</b> {os_arch}
 
-⌬ <b><i>BOT DATA :</i></b>
-┖ <b>UP Data:</b> {up_data} | <b>DL Data:</b> {dl_data}'''
+⌬ <b><i>NETWORK STATS :</i></b>
+┠ <b>Upload Data:</b> {up_data}
+┠ <b>Download Data:</b> {dl_data}
+┠ <b>Pkts Sent:</b> {pkt_sent}k
+┠ <b>Pkts Recv:</b> {pkt_recv}k
+┖ <b>Total I/O Data:</b> {tl_data}
+
+┎ <b>CPU :</b>
+┃ {cpu_bar} {cpu}%
+┠ <b>CPU Frequency :</b> {cpu_freq}
+┠ <b>System Avg Load :</b> {sys_load}
+┖ <b>P-Core(s) :</b> {p_core} | <b>V-Core(s) :</b> {v_core} ( <b>T :</b> {total_core} )
+    '''
+    REPO_STATS = '''⌬ <b><i>REPO STATISTICS :</i></b>
+┠ <b>Bot Updated :</b> {last_commit}
+┠ <b>Bot Version :</b> {bot_version}
+┠ <b>Latest Version :</b> {lat_version}
+┖ <b>Last ChangeLog :</b> {commit_details}
+
+⌬ <b>REMARKS :</b> <code>{remarks}</code>
+    '''
+    BOT_LIMITS = '''
+    .
+    '''
     # ---------------------
 
     # async def restart(client, message): ---> __main__.py

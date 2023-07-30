@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-import platform
 from time import time
 from datetime import datetime
 from sys import executable
 from os import execl as osexecl
+from platform import 
 from asyncio import create_subprocess_exec, gather
 from uuid import uuid4
 from base64 import b64decode
@@ -14,15 +14,13 @@ from bs4 import BeautifulSoup
 from signal import signal, SIGINT
 from aiofiles.os import path as aiopath, remove as aioremove
 from aiofiles import open as aiopen
-from psutil import disk_usage, cpu_percent, swap_memory, cpu_count, cpu_freq, virtual_memory, net_io_counters, boot_time
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.filters import command, private, regex
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from bot import bot, bot_name, config_dict, user_data, botStartTime, LOGGER, Interval, DATABASE_URL, QbInterval, INCOMPLETE_TASK_NOTIFIER, scheduler
-from bot.version import get_version
 from .helper.ext_utils.fs_utils import start_cleanup, clean_all, exit_clean_up
-from .helper.ext_utils.bot_utils import get_progress_bar_string, get_readable_file_size, get_readable_time, cmd_exec, sync_to_async, new_task, set_commands, update_user_ldata
+from .helper.ext_utils.bot_utils import get_readable_time, cmd_exec, sync_to_async, new_task, set_commands, update_user_ldata, get_stats
 from .helper.ext_utils.db_handler import DbManger
 from .helper.telegram_helper.bot_commands import BotCommands
 from .helper.telegram_helper.message_utils import sendMessage, editMessage, editReplyMarkup, sendFile, deleteMessage, delete_all_messages
@@ -34,52 +32,9 @@ from .modules import authorize, clone, gd_count, gd_delete, gd_list, cancel_mirr
                      rss, shell, eval, users_settings, bot_settings, speedtest, save_msg, images, imdb, anilist, mediainfo, mydramalist, gen_pyro_sess, \
                      gd_clean, broadcast, category_select
 
-
 async def stats(client, message):
-    if await aiopath.exists('.git'):
-        last_commit = (await cmd_exec("git log -1 --pretty='%cd ( %cr )' --date=format-local:'%d/%m/%Y'", True))[0]
-        changelog = (await cmd_exec("git log -1 --pretty=format:'<code>%s</code> <b>By</b> %an'", True))[0]
-    else:
-        last_commit = 'No Data'
-        changelog = 'N/A'
-    total, used, free, disk = disk_usage('/')
-    swap = swap_memory()
-    memory = virtual_memory()
-    cpuUsage = cpu_percent(interval=0.5)
-    stats = BotTheme('STATS', last_commit=last_commit,
-                     bot_version=get_version(),
-                     commit_details=changelog,
-                     bot_uptime=get_readable_time(time() - botStartTime),
-                     os_uptime=get_readable_time(time() - boot_time()),
-                     os_arch=f"{platform.system()}, {platform.release()}, {platform.machine()}",
-                     cpu=cpuUsage,
-                     cpu_bar=get_progress_bar_string(cpuUsage),
-                     cpu_freq=f"{cpu_freq(percpu=False).current / 1000:.2f} GHz" if cpu_freq() else "Access Denied",
-                     p_core=cpu_count(logical=False),
-                     v_core=cpu_count(logical=True) - cpu_count(logical=False),
-                     total_core=cpu_count(logical=True),
-                     ram_bar=get_progress_bar_string(memory.percent),
-                     ram=memory.percent,
-                     ram_u=get_readable_file_size(memory.used),
-                     ram_f=get_readable_file_size(memory.available),
-                     ram_t=get_readable_file_size(memory.total),
-                     swap_bar=get_progress_bar_string(swap.percent),
-                     swap=swap.percent,
-                     swap_u=get_readable_file_size(swap.used),
-                     swap_f=get_readable_file_size(swap.free),
-                     swap_t=get_readable_file_size(swap.total),
-                     disk=disk,
-                     disk_bar=get_progress_bar_string(disk),
-                     disk_t=get_readable_file_size(total),
-                     disk_u=get_readable_file_size(used),
-                     disk_f=get_readable_file_size(free),
-                     up_data=get_readable_file_size(
-                         net_io_counters().bytes_sent),
-                     dl_data=get_readable_file_size(
-                         net_io_counters().bytes_recv)
-                     )
-    await sendMessage(message, stats, photo='IMAGES')
-
+    msg, btns = await get_stats(message)
+    await sendMessage(message, msg, btns, photo='IMAGES')
 
 @new_task
 async def start(client, message):
