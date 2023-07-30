@@ -7,3 +7,6 @@ def get_version() -> str:
     PATCH = '0'
     STATE = 'x'
     return f"v{MAJOR}.{MINOR}.{PATCH}-{STATE}"
+
+if __name__ == '__main__':
+    print(get_version())
