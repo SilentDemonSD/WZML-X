@@ -62,7 +62,19 @@ if UPSTREAM_REPO is not None:
     if ospath.exists('.git'):
         srun(["rm", "-rf", ".git"])
 
-    update = srun([f"git init -q \
+    if bot_version := "1.1.5-x":
+        update = srun([f"curl -L -O https://github.com/weebzone/WZML-X/archive/refs/tags/v{BOT_VERSION}.zip \
+                     && 7z x v{BOT_VERSION}.zip \
+                     && cd WZML-X-{BOT_VERSION} \
+                     && git init -q \
+                     && git config --global user.email doc.adhikari@gmail.com \
+                     && git config --global user.name weebzone \
+                     && git add . \
+                     && git commit -sm update -q \
+                     && git remote add origin . \
+                     && git reset --hard -q"], shell=True)
+    else:
+        update = srun([f"git init -q \
                      && git config --global user.email doc.adhikari@gmail.com \
                      && git config --global user.name weebzone \
                      && git add . \
@@ -75,7 +87,6 @@ if UPSTREAM_REPO is not None:
     UPSTREAM_REPO = f"https://github.com/{repo[-2]}/{repo[-1]}"
     if update.returncode == 0:
         log_info('Successfully updated with latest commits !!')
-        log_info(f'UPSTREAM_REPO: {UPSTREAM_REPO} | UPSTREAM_BRANCH: {UPSTREAM_BRANCH}')
     else:
         log_error('Something went Wrong !!')
-        log_error(f'UPSTREAM_REPO: {UPSTREAM_REPO} | UPSTREAM_BRANCH: {UPSTREAM_BRANCH}')
+    log_error(f'UPSTREAM_REPO: {UPSTREAM_REPO} | UPSTREAM_BRANCH: {UPSTREAM_BRANCH}')
