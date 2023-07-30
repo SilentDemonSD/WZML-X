@@ -15,7 +15,7 @@ from aria2p import API as ariaAPI, Client as ariaClient
 from qbittorrentapi import Client as qbClient
 from faulthandler import enable as faulthandler_enable
 from socket import setdefaulttimeout
-from logging import getLogger, Formatter, FileHandler, StreamHandler, INFO, basicConfig, error as log_error, info as log_info, warning as log_warning
+from logging import getLogger, Formatter, FileHandler, StreamHandler, ERROR, INFO, basicConfig, error as log_error, info as log_info, warning as log_warning
 from uvloop import install
 
 faulthandler_enable()
@@ -28,6 +28,9 @@ basicConfig(format="[%(asctime)s] [%(levelname)s] - %(message)s", #  [%(filename
             datefmt="%d-%b-%y %I:%M:%S %p",
             handlers=[FileHandler('log.txt'), StreamHandler()],
             level=INFO)
+
+# Set pyrogram Logger 
+getLogger("pyrogram").setLevel(ERROR)
 
 LOGGER = getLogger(__name__)
 
