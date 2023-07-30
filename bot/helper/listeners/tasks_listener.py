@@ -97,6 +97,8 @@ class MirrorLeechListener:
     def __parseSource(self):
         if self.source_url == self.message.link:
             file = self.message.reply_to_message
+            if file:
+                self.source_url = file.link
             if file is not None and file.media is not None:
                 mtype = file.media.value
                 media = getattr(file, mtype)
