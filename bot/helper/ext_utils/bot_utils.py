@@ -478,7 +478,7 @@ async def compare_versions(v1, v2):
         if v1_part < v2_part:
             return "New Version Update is Available! Check Now!"
         elif v1_part > v2_part:
-            return "More Updated! Kindly Contribute in Official Repo"
+            return "More Updated! Kindly Contribute in Official"
     return "Already up to date with latest version"
 
 
@@ -531,7 +531,7 @@ async def get_stats(event, key="home"):
             cpu=cpuUsage,
             cpu_bar=get_progress_bar_string(cpuUsage),
             cpu_freq=f"{cpu_freq(percpu=False).current / 1000:.2f} GHz" if cpu_freq() else "Access Denied",
-            sys_load="%, ".join(x / cpu_count() * 100 for x in getloadavg())[:-2] + " (1m, 5m, 15m)",
+            sys_load="%, ".join(str(x / cpu_count() * 100) for x in getloadavg())[:-2] + " (1m, 5m, 15m)",
             p_core=cpu_count(logical=False),
             v_core=cpu_count(logical=True) - cpu_count(logical=False),
             total_core=cpu_count(logical=True),
