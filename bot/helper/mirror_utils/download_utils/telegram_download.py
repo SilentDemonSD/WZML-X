@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from logging import getLogger, ERROR
 from time import time
 from asyncio import Lock
 
@@ -11,7 +10,6 @@ from bot.helper.ext_utils.task_manager import is_queued, limit_checker, stop_dup
 
 global_lock = Lock()
 GLOBAL_GID = set()
-getLogger("pyrogram").setLevel(ERROR)
 
 
 class TelegramDownloadHelper:
