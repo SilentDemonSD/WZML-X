@@ -3,7 +3,6 @@ from time import time
 from datetime import datetime
 from sys import executable
 from os import execl as osexecl
-from platform import 
 from asyncio import create_subprocess_exec, gather
 from uuid import uuid4
 from base64 import b64decode
