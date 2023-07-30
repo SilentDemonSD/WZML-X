@@ -12,69 +12,89 @@ YT_HELP_MESSAGE = ["""<i>Send links/files along with cmd or reply to cmd to mirr
 5.  <b>-i :</b> Download multi links by reply
 6.  <b>-m or -sd or -samedir :</b> Download multi links within same upload directory.
 7.  <b>-opt or -options :</b> Attach Custom yt-dlp options to link
-8.  <b>-s or -select :</b> Select files from torrent via Bittorrent
+8.  <b>-s or -select :</b> Select files from yt-dlp links even if qual is specified
 9.  <b>-rcf :</b> RClone additional Flags
 10. <b>-id :</b> GDrive Folder id or link
 11. <b>-index:</b> Index url for gdrive_arg
 12. <b>-c or -category :</b> Gdrive category to Upload, Specific Name (case insensitive)
 13. <b>-ud or -dump :</b> Dump category to Upload, Specific Name (case insensitive) or chat_id or chat_username
 """, """
-<b>Send link along with command line</b>:
+➲ <b><i>Send link along with command line</i></b>:
 <code>/cmd</code> link -s -n new name -opt x:y|x1:y1
 
-<b>By replying to link</b>:
+➲ <b><i>By replying to link</i></b>:
 <code>/cmd</code> -n  new name -z password -opt x:y|x1:y1
 
-<b>New Name</b>: -n
+➲ <b><i>New Name</i></b>: -n
 <code>/cmd</code> link -n new name
-Note: Don't add file extension
+<b>Note:</b> Don't add file extension
 
-<b>Quality Buttons</b>: -s
+➲ <b><i>Quality Buttons</i></b>: -s or -select
 Incase default quality added from yt-dlp options using format option and you need to select quality for specific link or links with multi links feature.
 <code>/cmd</code> link -s
 
-<b>Zip</b>: -z password
+➲ <b<i>Zip files (with/without pass)</i></b>: -z or -zip password
 <code>/cmd</code> link -z (zip)
 <code>/cmd</code> link -z password (zip password protected)
 
-<b>Options</b>: -opt
+➲ <b><i>Options</i></b>: -opt or -options
 <code>/cmd</code> link -opt playliststart:^10|fragment_retries:^inf|matchtitle:S13|writesubtitles:true|live_from_start:true|postprocessor_args:{"ffmpeg": ["-threads", "4"]}|wait_for_video:(5, 100)
-Note: Add `^` before integer or float, some values must be numeric and some string.
+<b>Note:</b> Add `^` before integer or float, some values must be numeric and some string.
 Like playlist_items:10 works with string, so no need to add `^` before the number but playlistend works only with integer so you must add `^` before the number like example above.
 You can add tuple and dict also. Use double quotes inside dict.
 
-<b>Multi links only by replying to first link</b>: -i
+➲ <b><i>Multi links only by replying to first link</i></b>: -i
 <code>/cmd</code> -i 10(number of links)
 
-<b>Multi links within same upload directory only by replying to first link</b>: -m
+➲ <b><i>Multi links within same upload directory only by replying to first link</i></b>: -m or -sd or -samedir
 <code>/cmd</code> -i 10(number of links) -m folder name
 
-<b>Upload</b>: -up
+➲ <b><i>Upload Custom Drive:</i></b> -id & -index(Optional)
+<code>/{cmd}</code> -id <code>drive_folder_link</code> or <code>drive_id</code> -index <code>https://example.com/0:</code>
+Here, drive_id must be folder id or folder link and index must be url else it will not accept.
+
+➲ <b><i>Custom Category Select:</i></b> -c or -category
+<code>/{cmd}</code> -c <code>category_name</code>
+This works for both Bot Categories as well as UserTDs (if enabled)
+You can also select Drive Upload from Buttons if having more than 1 and this arg not specified
+
+➲ <b><i>Custom Dump Select:</i></b> -ud or -dump
+<code>/{cmd}</code> -ud <code>dump_name</code> or <code>@username</code> or <code>-100xxxxxx chat_id</code> or all
+You can also select Dump Chat from Buttons if having more than 1 and this arg not specified
+You -ud all for Uploading in all Dump Chats of yours
+Make Sure Bot is already Admin else it will not accept.
+
+➲ <b><i>Upload</i></b>: -up or -upload
 <code>/cmd</code> link -up <code>rcl</code> (To select rclone config, remote and path)
+<code>/cmd</code> link -up <code>ddl</code>
 You can directly add the upload path: -up remote:dir/subdir
+
 If DEFAULT_UPLOAD is `rc` then you can pass up: `gd` to upload using gdrive tools to GDRIVE_ID.
 If DEFAULT_UPLOAD is `gd` then you can pass up: `rc` to upload to RCLONE_PATH.
+If DEFAULT_UPLOAD is `ddl` then you can pass up: `rc` or `gd` to upload to RCLONE_PATH or GDRIVE_ID
 If you want to add path manually from your config (uploaded from usetting) add <code>mrcc:</code> before the path without space
 <code>/cmd</code> link -up <code>mrcc:</code>main:dump
 
-<b>Rclone Flags</b>: -rcf
+➲ <b><i>RClone Flags</i></b>: -rcf
 <code>/cmd</code> link -up path|rcl -rcf --buffer-size:8M|--drive-starred-only|key|key:value
 This will override all other flags except --exclude
 Check here all <a href='https://rclone.org/flags/'>RcloneFlags</a>.
 
-<b>Bulk Download</b>: -b
+➲ <b><i>Bulk Download</i></b>: -b or -bulk
 Bulk can be used by text message and by replying to text file contains links seperated by new line.
 You can use it only by reply to message(text/file).
 All options should be along with link!
-Example:
+<b>Example:</b>
 link1 -n new name -up remote1:path1 -rcf |key:value|key:value
 link2 -z -n new name -up remote2:path2
-link3 -e -n new name -opt ytdlpoptions
-Note: You can't add -m arg for some links only, do it for all links or use multi without bulk!
-link pswd: pass(zip/unzip) opt: ytdlpoptions up: remote2:path2
+link3 -z -n new name -opt ytdlpoptions
+
+<b>Note:</b> You can't add -m arg for some links only, do it for all links or use multi without bulk!
+link pswd: pass(zip) opt: ytdlpoptions up: remote2:path2
 Reply to this example by this cmd <code>/cmd</code> b(bulk)
 You can set start and end of the links from the bulk with -b start:end or only end by -b :end or only start by -b start. The default start is from zero(first link) to inf.
 
+➲ <b>NOTES:</b>
 Check all yt-dlp API options from this <a href='https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L184'>FILE</a>
 """]
 
@@ -197,10 +217,10 @@ If you want to add path manually from your config add <code>mrcc:</code> before 
 ➲ <b><i>TG Links</i></b>:
 Treat tg links like any direct link
 Some links need user access so sure you must add USER_SESSION_STRING for it.
-<b>Three types of links:</b>
-• Public: <code>https://t.me/channel_name/message_id</code>
-• Private: <code>tg://openmessage?user_id=xxxxxx&message_id=xxxxx</code>
-• Super: <code>https://t.me/c/channel_id/message_id</code>
+<b><u>Types of links:</u></b>
+• <b>Public:</b> <code>https://t.me/channel_name/message_id</code>
+• <b>Private:</b> <code>tg://openmessage?user_id=xxxxxx&message_id=xxxxx</code>
+• <b>Super:</b> <code>https://t.me/c/channel_id/message_id</code>
 
 ➲ <b>NOTES:</b>
 1. Commands that start with <b>qb</b> are ONLY for torrents.

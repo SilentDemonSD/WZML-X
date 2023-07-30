@@ -127,7 +127,7 @@ async def start_from_queued():
 
 async def limit_checker(size, listener, isTorrent=False, isMega=False, isDriveLink=False, isYtdlp=False, isPlayList=None):
     LOGGER.info('Checking Size Limit of link/file/folder/tasks...')
-    user_id = listenfr.message.from_user.id 
+    user_id = listener.message.from_user.id 
     if await CustomFilters.sudo('', listener.message):
         return
     limit_exceeded = ''
