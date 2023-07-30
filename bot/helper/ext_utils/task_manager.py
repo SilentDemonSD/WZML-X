@@ -2,11 +2,12 @@
 from time import time
 from asyncio import Event
 
-from bot import bot_cache, OWNER_ID, config_dict, queued_dl, queued_up, non_queued_up, non_queued_dl, queue_dict_lock, LOGGER, user_data, download_dict
+from bot import bot_cache, config_dict, queued_dl, queued_up, non_queued_up, non_queued_dl, queue_dict_lock, LOGGER, user_data, download_dict
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.ext_utils.fs_utils import get_base_name, check_storage_threshold
 from bot.helper.ext_utils.bot_utils import get_user_tasks, getdailytasks, sync_to_async, get_telegraph_list, get_readable_file_size, checking_access, get_readable_time
-from bot.helper.telegram_helper.message_utils import forcesub, check_botpm, user_info
+from bot.helper.telegram_helper.message_utils import forcesub, check_botpm
+from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.themes import BotTheme
 
 
@@ -38,7 +39,7 @@ async def stop_duplicate_check(name, listener):
 async def timeval_check(user_id):
     bot_cache.setdefault('time_interval', {})
     if (time_interval := bot_cache['time_interval'].get(user_id, False)) and (time() - time_interval) < (UTI := config_dict['USER_TIME_INTERVAL']): 
-        return get_readable_time(time() - time_interval + UTI)
+        return UTI - (time() - time_interval)
     bot_cache['time_interval'][user_id] = time()
     return None
 
@@ -126,8 +127,7 @@ async def start_from_queued():
 
 async def limit_checker(size, listener, isTorrent=False, isMega=False, isDriveLink=False, isYtdlp=False):
     LOGGER.info('Checking Size Limit of link/file/folder/tasks...')
-    user_id = listener.message.from_user.id
-    if user_id == OWNER_ID or user_id in user_data and user_data[user_id].get('is_sudo'):
+    if await CustomFilters.sudo('', listener.message):
         return
     limit_exceeded = ''
     if listener.isClone:
@@ -203,8 +203,10 @@ async def task_utils(message):
     LOGGER.info('Running Task Manager ...')
     msg = []
     button = None
+    if await CustomFilters.sudo('', message):
+        return msg, button
     user_id = message.from_user.id
-    token_msg, button = checking_access(message.from_user.id, button)
+    token_msg, button = checking_access(user_id, button)
     if token_msg is not None:
         msg.append(token_msg)
     if message.chat.type != message.chat.type.BOT:
@@ -217,8 +219,8 @@ async def task_utils(message):
             _msg, button = await check_botpm(message, button)
             if _msg:
                 msg.append(_msg)
-    if (ut := timeval_check(user_id)) and (uti := config_dict['USER_TIME_INTERVAL']) != 0:
-        msg.append(f"Please Wait {ut}, Users have time interval Restrictions for {uti}s. ")
+    if (uti := config_dict['USER_TIME_INTERVAL']) != 0 and (ut := timeval_check(user_id)):
+        msg.append(f"Please Wait {get_readable_time(ut)}, Users have time interval Restrictions for {get_readable_time(uti)}.")
     if (bmax_tasks := config_dict['BOT_MAX_TASKS']) and len(download_dict) >= bmax_tasks:
         msg.append(f"Bot Max Tasks limit exceeded.\nBot max tasks limit is {bmax_tasks}.\nPlease wait for the completion of other tasks.")
     if (maxtask := config_dict['USER_MAX_TASKS']) and await get_user_tasks(message.from_user.id, maxtask):

@@ -209,7 +209,8 @@ async def clone(client, message):
         tag = f"@{username}"
     else:
         tag = message.from_user.mention
-    if not link and (reply_to := message.reply_to_message):
+
+    if not link and (reply_to := message.reply_to_message) and reply_to.text:
         link = reply_to.text.split('\n', 1)[0].strip()
 
     @new_task
