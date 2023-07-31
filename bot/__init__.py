@@ -77,9 +77,13 @@ DATABASE_URL = environ.get('DATABASE_URL', '')
 if len(DATABASE_URL) == 0:
     DATABASE_URL = ''
 
+DATABASE_NAME = environ.get('DATABASE_NAME', '')
+if len(DATABASE_NAME) == 0:
+    DATABASE_NAME = 'wzmlx'
+
 if DATABASE_URL:
     conn = MongoClient(DATABASE_URL)
-    db = conn.wzmlx
+    db = conn.get_database(DATABASE_NAME)
     current_config = dict(dotenv_values('config.env'))
     old_config = db.settings.deployConfig.find_one({'_id': bot_id})
     if old_config is None:
