@@ -403,16 +403,13 @@ async def load_config():
     BOT_PM = BOT_PM.lower() == 'true'
 
     DAILY_TASK_LIMIT = environ.get('DAILY_TASK_LIMIT', '')
-    DAILY_TASK_LIMIT = '' if len(
-        DAILY_TASK_LIMIT) == 0 else int(DAILY_TASK_LIMIT)
+    DAILY_TASK_LIMIT = '' if len(DAILY_TASK_LIMIT) == 0 else int(DAILY_TASK_LIMIT)
 
     DAILY_MIRROR_LIMIT = environ.get('DAILY_MIRROR_LIMIT', '')
-    DAILY_MIRROR_LIMIT = '' if len(
-        DAILY_MIRROR_LIMIT) == 0 else float(DAILY_MIRROR_LIMIT)
+    DAILY_MIRROR_LIMIT = '' if len(DAILY_MIRROR_LIMIT) == 0 else float(DAILY_MIRROR_LIMIT)
 
     DAILY_LEECH_LIMIT = environ.get('DAILY_LEECH_LIMIT', '')
-    DAILY_LEECH_LIMIT = '' if len(
-        DAILY_LEECH_LIMIT) == 0 else float(DAILY_LEECH_LIMIT)
+    DAILY_LEECH_LIMIT = '' if len(DAILY_LEECH_LIMIT) == 0 else float(DAILY_LEECH_LIMIT)
 
     DISABLE_DRIVE_LINK = environ.get('DISABLE_DRIVE_LINK', '')
     DISABLE_DRIVE_LINK = DISABLE_DRIVE_LINK.lower() == 'true'
@@ -422,15 +419,13 @@ async def load_config():
         BOT_THEME = 'minimal'
 
     IMG_SEARCH = environ.get('IMG_SEARCH', '')
-    IMG_SEARCH = (IMG_SEARCH.replace("'", '').replace('"', '').replace(
-        '[', '').replace(']', '').replace(",", "")).split()
+    IMG_SEARCH = (IMG_SEARCH.replace("'", '').replace('"', '').replace('[', '').replace(']', '').replace(",", "")).split()
 
     IMG_PAGE = environ.get('IMG_PAGE', '')
     IMG_PAGE = 1 if not IMG_PAGE else int(IMG_PAGE)
 
     IMAGES = environ.get('IMAGES', '')
-    IMAGES = (IMAGES.replace("'", '').replace('"', '').replace(
-        '[', '').replace(']', '').replace(",", "")).split()
+    IMAGES = (IMAGES.replace("'", '').replace('"', '').replace('[', '').replace(']', '').replace(",", "")).split()
 
     AUTHOR_NAME = environ.get('AUTHOR_NAME', '')
     if len(AUTHOR_NAME) == 0:
@@ -1088,13 +1083,15 @@ async def edit_bot_settings(client, query):
                 await (await create_subprocess_exec("pkill", "-9", "-f", "gunicorn")).wait()
                 await create_subprocess_shell("gunicorn web.wserver:app --bind 0.0.0.0:80 --worker-class gevent")
         elif data[2] == 'GDRIVE_ID':
-            if DRIVES_NAMES and DRIVES_NAMES[0] == 'Main':
-                DRIVES_NAMES.pop(0)
-                DRIVES_IDS.pop(0)
-                INDEX_URLS.pop(0)
+            if 'Main' in list_drives_dict:
+                del list_drives_dict['Main']
+            if 'Root' in categories_dict:
+                del categories_dict['Root']
         elif data[2] == 'INDEX_URL':
-            if DRIVES_NAMES and DRIVES_NAMES[0] == 'Main':
-                INDEX_URLS[0] = ''
+            if (GDRIVE_ID := config_dict['GDRIVE_ID']) and 'Main' in list_drives_dict:
+                list_drives_dict['Main'] = {"drive_id": GDRIVE_ID, "index_link": ''}
+            if (GDRIVE_ID := config_dict['GDRIVE_ID']) and 'Root' in categories_dict:
+                categories_dict['Root'] = {"drive_id": GDRIVE_ID, "index_link": ''}
         elif data[2] == 'INCOMPLETE_TASK_NOTIFIER' and DATABASE_URL:
             await DbManger().trunc_table('tasks')
         config_dict[data[2]] = value

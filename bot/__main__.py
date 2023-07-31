@@ -1,4 +1,4 @@
-from time import time
+from time import time, monotonic
 from datetime import datetime
 from sys import executable
 from os import execl as osexecl
@@ -119,10 +119,10 @@ async def restart(client, message):
 
 
 async def ping(_, message):
-    start_time = int(round(time() * 1000))
+    start_time = monotonic()
     reply = await sendMessage(message, BotTheme('PING'))
-    end_time = int(round(time() * 1000))
-    await editMessage(reply, BotTheme('PING_VALUE', value=(end_time - start_time)))
+    end_time = monotonic()
+    await editMessage(reply, BotTheme('PING_VALUE', value=int((end_time - start_time) * 1000)))
 
 
 async def log(_, message):

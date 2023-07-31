@@ -612,7 +612,8 @@ async def fetch_user_tds(user_id, force=False):
     if config_dict['USER_TD_MODE'] and user_dict.get('td_mode', False) or force:
         return user_dict.get('user_tds', {})
     return {}
-    
+
+
 async def fetch_user_dumps(user_id):
     user_dict = user_data.get(user_id, {})
     if (dumps := user_dict.get('ldump', False)):
