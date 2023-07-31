@@ -18,7 +18,7 @@ class DbManger:
     def __connect(self):
         try:
             self.__conn = AsyncIOMotorClient(DATABASE_URL)
-            self.__db = self.__conn.wzmlx # New Section for not conflicting with mltb section !!
+            self.__db = self.__conn.get_database(DATABASE_NAME) # New Section for not conflicting with mltb section !!
         except PyMongoError as e:
             LOGGER.error(f"Error in DB connection: {e}")
             self.__err = True
