@@ -560,7 +560,7 @@ async def get_stats(event, key="home"):
                 CL = ('∞' if (val := config_dict['CLONE_LIMIT']) == '' else val),
                 ML = ('∞' if (val := config_dict['MEGA_LIMIT']) == '' else val),
                 LL = ('∞' if (val := config_dict['LEECH_LIMIT']) == '' else val),
-                TV  = ('Disabled' if (val := config_dict['TOKEN_TIMEOUT']) is None else get_readable_time(val)),
+                TV  = ('Disabled' if (val := config_dict['TOKEN_TIMEOUT']) == '' else get_readable_time(val)),
                 UTI = ('Disabled' if (val := config_dict['USER_TIME_INTERVAL']) == 0 else get_readable_time(val)),
                 UT = ('∞' if (val := config_dict['USER_MAX_TASKS']) == '' else val),
                 BT = ('∞' if (val := config_dict['BOT_MAX_TASKS']) == '' else val),
