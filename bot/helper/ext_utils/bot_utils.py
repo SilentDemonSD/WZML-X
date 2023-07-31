@@ -551,7 +551,20 @@ async def get_stats(event, key="home"):
             remarks=await compare_versions(get_version(), official_v),
         )
     elif key == "botlimits":
-        msg = BotTheme('BOT_LIMITS')
+        msg = BotTheme('BOT_LIMITS',
+                DL = ('∞' if (val := config_dict['DIRECT_LIMIT']) == '' else val),
+                TL = ('∞' if (val := config_dict['TORRENT_LIMIT']) == '' else val),
+                GL = ('∞' if (val := config_dict['GDRIVE_LIMIT']) == '' else val),
+                YL = ('∞' if (val := config_dict['YTDLP_LIMIT']) == '' else val),
+                PL = ('∞' if (val := config_dict['PLAYLIST_LIMIT']) == '' else val),
+                CL = ('∞' if (val := config_dict['CLONE_LIMIT']) == '' else val),
+                ML = ('∞' if (val := config_dict['MEGA_LIMIT']) == '' else val),
+                LL = ('∞' if (val := config_dict['LEECH_LIMIT']) == '' else val),
+                TV  = ('Disabled' if (val := config_dict['TOKEN_TIMEOUT']) is None else get_readable_time(val)),
+                UTI = ('Disabled' if (val := config_dict['USER_TIME_INTERVAL']) == 0 else get_readable_time(val)),
+                UT = ('∞' if (val := config_dict['USER_MAX_TASKS']) == '' else val),
+                BT = ('∞' if (val := config_dict['BOT_MAX_TASKS']) == '' else val),
+        )
     btns.ibutton('Close', f'wzmlx {user_id} close')
     return msg, btns.build_menu(2)
 
