@@ -53,4 +53,4 @@ class YtDlpDownloadStatus:
 
 
     def eng(self):
-        return EngineStatus.STATUS_YT
+        return EngineStatus().STATUS_YT

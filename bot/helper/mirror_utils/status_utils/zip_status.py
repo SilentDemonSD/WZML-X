@@ -73,4 +73,4 @@ class ZipStatus:
 
 
     def eng(self):
-        return EngineStatus.STATUS_ZIP
+        return EngineStatus().STATUS_ZIP

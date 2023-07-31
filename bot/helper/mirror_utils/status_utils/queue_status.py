@@ -51,4 +51,4 @@ class QueueStatus:
 
 
     def eng(self):
-        return EngineStatus.STATUS_QUEUE
+        return EngineStatus().STATUS_QUEUE

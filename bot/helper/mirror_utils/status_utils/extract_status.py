@@ -72,4 +72,4 @@ class ExtractStatus:
         await self.__listener.onUploadError('extracting stopped by user!')
 
     def eng(self):
-        return EngineStatus.STATUS_EXT
+        return EngineStatus().STATUS_EXT

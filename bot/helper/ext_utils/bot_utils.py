@@ -11,7 +11,7 @@ from time import time
 from html import escape
 from uuid import uuid4
 from subprocess import run as srun
-from psutil import disk_usage, disk_io_counters, cpu_percent, swap_memory, cpu_count, cpu_freq, getloadavg, virtual_memory, net_io_counters, boot_time
+from psutil import disk_usage, disk_io_counters, Process, cpu_percent, swap_memory, cpu_count, cpu_freq, getloadavg, virtual_memory, net_io_counters, boot_time
 from asyncio import create_subprocess_exec, create_subprocess_shell, run_coroutine_threadsafe, sleep
 from asyncio.subprocess import PIPE
 from functools import partial, wraps
@@ -176,22 +176,22 @@ def get_all_versions():
 
 
 class EngineStatus:
-    version_cache = bot_cache.get('eng_versions')
-    if not version_cache:
-        get_all_versions()
-        version_cache = bot_cache.get('eng_versions')
-    STATUS_ARIA = f"Aria2 v{version_cache['aria']}"
-    STATUS_AIOHTTP = f"AioHttp {version_cache['aiohttp']}"
-    STATUS_GD = f"Google-API v{version_cache['gapi']}"
-    STATUS_MEGA = f"MegaSDK v{version_cache['mega']}"
-    STATUS_QB = f"qBit {version_cache['qbit']}"
-    STATUS_TG = f"Pyrogram v{version_cache['pyro']}"
-    STATUS_YT = f"yt-dlp v{version_cache['ytdlp']}"
-    STATUS_EXT = "pExtract v2"
-    STATUS_SPLIT_MERGE = f"ffmpeg v{version_cache['ffmpeg']}"
-    STATUS_ZIP = f"p7zip v{version_cache['p7zip']}"
-    STATUS_QUEUE = "Sleep v0"
-    STATUS_RCLONE = f"RClone {version_cache['rclone']}"
+    def __init__(self):
+        if not (version_cache := bot_cache.get('eng_versions')):
+            get_all_versions()
+            version_cache = bot_cache.get('eng_versions')
+        self.STATUS_ARIA = f"Aria2 v{version_cache['aria']}"
+        self.STATUS_AIOHTTP = f"AioHttp {version_cache['aiohttp']}"
+        self.STATUS_GD = f"Google-API v{version_cache['gapi']}"
+        self.STATUS_MEGA = f"MegaSDK v{version_cache['mega']}"
+        self.STATUS_QB = f"qBit {version_cache['qbit']}"
+        self.STATUS_TG = f"Pyrogram v{version_cache['pyro']}"
+        self.STATUS_YT = f"yt-dlp v{version_cache['ytdlp']}"
+        self.STATUS_EXT = "pExtract v2"
+        self.STATUS_SPLIT_MERGE = f"ffmpeg v{version_cache['ffmpeg']}"
+        self.STATUS_ZIP = f"p7zip v{version_cache['p7zip']}"
+        self.STATUS_QUEUE = "Sleep v0"
+        self.STATUS_RCLONE = f"RClone {version_cache['rclone']}"
 
 
 def get_readable_message():
@@ -531,10 +531,11 @@ async def get_stats(event, key="home"):
             cpu=cpuUsage,
             cpu_bar=get_progress_bar_string(cpuUsage),
             cpu_freq=f"{cpu_freq(percpu=False).current / 1000:.2f} GHz" if cpu_freq() else "Access Denied",
-            sys_load="%, ".join(str(round((x / cpu_count() * 100), 2)) for x in getloadavg()) + " (1m, 5m, 15m)",
+            sys_load="%, ".join(str(round((x / cpu_count() * 100), 2)) for x in getloadavg()) + "%, (1m, 5m, 15m)",
             p_core=cpu_count(logical=False),
             v_core=cpu_count(logical=True) - cpu_count(logical=False),
             total_core=cpu_count(logical=True),
+            cpu_use=len(Process().cpu_affinity()),
         )
     elif key == "strepo":
         last_commit, changelog = 'No Data', 'N/A'
