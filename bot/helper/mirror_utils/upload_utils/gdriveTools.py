@@ -656,7 +656,7 @@ class GoogleDriveHelper:
             if noMulti:
                 break
 
-        if msg != '':
+        if msg != f"""<figure><img src='{config_dict["COVER_IMAGE"]}'></figure>""":
             telegraph_content.append(msg)
 
         return telegraph_content, contents_no
