@@ -13,8 +13,8 @@ from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload, MediaIoBaseDownload
 from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type, RetryError
 
-from bot import config_dict, list_drives_dict, GLOBAL_EXTENSION_FILTER
-from bot.helper.ext_utils.bot_utils import setInterval, async_to_sync, get_readable_file_size
+from bot import OWNER_ID, config_dict, list_drives_dict, GLOBAL_EXTENSION_FILTER
+from bot.helper.ext_utils.bot_utils import setInterval, async_to_sync, get_readable_file_size, fetch_user_tds
 from bot.helper.ext_utils.fs_utils import get_mime_type
 from bot.helper.ext_utils.leech_utils import format_filename
 
@@ -574,17 +574,21 @@ class GoogleDriveHelper:
             LOGGER.error(err)
             return {'files': []}
 
-    def drive_list(self, fileName, stopDup=False, noMulti=False, isRecursive=True, itemType=""):
-        msg = ""
+    def drive_list(self, fileName, stopDup=False, noMulti=False, isRecursive=True, itemType="", userId=None):
+        msg = f"""<figure><img src='{config_dict["COVER_IMAGE"]}'></figure>"""
         fileName = self.__escapes(str(fileName))
         contents_no = 0
         telegraph_content = []
         Title = False
-        if len(list_drives_dict) > 1:
+        merged_dict = list_drives_dict
+        if userId:
+            user_tds = async_to_sync(fetch_user_tds, userId)
+            merged_dict = {**list_drives_dict, **user_tds}
+        if len(merged_dict) > 1:
             token_service = self.__alt_authorize()
             if token_service is not None:
                 self.__service = token_service
-        for drive_name, drives_dict in list_drives_dict.items():
+        for drive_name, drives_dict in merged_dict.items():
             dir_id = drives_dict['drive_id']
             index_url = drives_dict['index_link']
             isRecur = False if isRecursive and len(
@@ -596,17 +600,19 @@ class GoogleDriveHelper:
                 else:
                     continue
             if not Title:
-                msg += f'<h4>Search Result For {fileName}</h4>'
+                msg += f'<h4>📌 Drive Query : {fileName}</h4>'
                 Title = True
             if drive_name:
-                msg += f"╾────────────╼<br><b>{drive_name}</b><br>╾────────────╼<br>"
+                msg += f"<aside>╾──────────────────────╼</aside><br><aside><b>{drive_name}</b></aside><br><aside>╾──────────────────────╼</aside><br>"
+            msg += "<ol>"
             for file in response.get('files', []):
                 mime_type = file.get('mimeType')
+                msg += "<li>"
                 if mime_type == "application/vnd.google-apps.folder":
                     furl = f"https://drive.google.com/drive/folders/{file.get('id')}"
                     msg += f"📁 <code>{file.get('name')}<br>(folder)</code><br>"
-                    if not config_dict['DISABLE_DRIVE_LINK']:
-                        msg += f"<b><a href={furl}>Drive Link</a></b>"
+                    if userId == OWNER_ID or not config_dict['DISABLE_DRIVE_LINK']:
+                        msg += f"<b>🗃 <a href={furl}>Drive Link</a> |</b>"
                     if index_url:
                         if isRecur:
                             url_path = "/".join([rquote(n, safe='')
@@ -614,7 +620,7 @@ class GoogleDriveHelper:
                         else:
                             url_path = rquote(f'{file.get("name")}', safe='')
                         url = f'{index_url}/{url_path}/'
-                        msg += f' <b>| <a href="{url}">Index Link</a></b>'
+                        msg += f' <b>⚡️ <a href="{url}">Index Link</a></b>'
                 elif mime_type == 'application/vnd.google-apps.shortcut':
                     furl = f"https://drive.google.com/drive/folders/{file.get('id')}"
                     msg += f"⁍<a href='https://drive.google.com/drive/folders/{file.get('id')}'>{file.get('name')}" \
@@ -622,24 +628,24 @@ class GoogleDriveHelper:
                 else:
                     furl = f"https://drive.google.com/uc?id={file.get('id')}&export=download"
                     msg += f"📄 <code>{file.get('name')}<br>({get_readable_file_size(int(file.get('size', 0)))})</code><br>"
-                    if not config_dict['DISABLE_DRIVE_LINK']:
-                        msg += f"<b><a href={furl}>Drive Link</a></b>"
+                    if userId == OWNER_ID or not config_dict['DISABLE_DRIVE_LINK']:
+                        msg += f"<b>🗃 <a href={furl}>Drive Link</a> |</b>"
                     if index_url:
                         if isRecur:
-                            url_path = "/".join(rquote(n, safe='')
-                                                for n in self.__get_recursive_list(file, dir_id))
+                            url_path = "/".join(rquote(n, safe='') for n in self.__get_recursive_list(file, dir_id))
                         else:
                             url_path = rquote(f'{file.get("name")}')
                         url = f'{index_url}/{url_path}'
-                        msg += f' <b>| <a href="{url}">Index Link</a></b>'
+                        msg += f' <b>⚡️ <a href="{url}">Index Link</a></b>'
                         if mime_type.startswith(('image', 'video', 'audio')):
                             urlv = f'{index_url}/{url_path}?a=view'
-                            msg += f' <b>| <a href="{urlv}">View Link</a></b>'
-                msg += '<br><br>'
+                            msg += f' <b>| 🔍 <a href="{urlv}">View Link</a></b>'
+                msg += '</li><br><br>'
                 contents_no += 1
                 if len(msg.encode('utf-8')) > 39000:
                     telegraph_content.append(msg)
                     msg = ''
+            msg += "</ol>"
             if noMulti:
                 break
 

@@ -485,6 +485,10 @@ if len(AUTHOR_URL) == 0:
 TITLE_NAME = environ.get('TITLE_NAME', '')
 if len(TITLE_NAME) == 0:
     TITLE_NAME = 'WZ-M/L-X'
+    
+COVER_IMAGE = environ.get('COVER_IMAGE', '')
+if len(COVER_IMAGE) == 0:
+    COVER_IMAGE = 'https://graph.org/file/60f9f8bcb97d27f76f5c0.jpg'
 
 GD_INFO = environ.get('GD_INFO', '')
 if len(GD_INFO) == 0:
@@ -604,6 +608,7 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'IMDB_TEMPLATE': IMDB_TEMPLATE,
                'AUTHOR_NAME': AUTHOR_NAME,
                'AUTHOR_URL': AUTHOR_URL,
+               'COVER_IMAGE': COVER_IMAGE,
                'TITLE_NAME': TITLE_NAME,
                'TIMEZONE': TIMEZONE,
                'GD_INFO': GD_INFO,
