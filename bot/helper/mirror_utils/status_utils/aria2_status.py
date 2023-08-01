@@ -118,4 +118,4 @@ class Aria2Status:
             await sync_to_async(aria2.remove, [self.__download], force=True, files=True)
 
     def eng(self):
-        return EngineStatus.STATUS_ARIA
+        return EngineStatus().STATUS_ARIA

@@ -651,5 +651,5 @@ def addJob(delay):
 addJob(config_dict['RSS_DELAY'])
 scheduler.start()
 bot.add_handler(MessageHandler(getRssMenu, filters=command(
-    BotCommands.RssCommand) & CustomFilters.authorized))
-bot.add_handler(CallbackQueryHandler(rssListener, filters=regex("^rss")))
+    BotCommands.RssCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
+bot.add_handler(CallbackQueryHandler(rssListener, filters=regex(r"^rss")))

@@ -12,31 +12,33 @@ from html import escape
 from io import BytesIO
 from asyncio import sleep
 
-from bot import OWNER_ID, bot, user_data, config_dict, DATABASE_URL, IS_PREMIUM_USER, MAX_SPLIT_SIZE
-from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, sendFile
+from bot import OWNER_ID, LOGGER, bot, user_data, config_dict, categories_dict, DATABASE_URL, IS_PREMIUM_USER, MAX_SPLIT_SIZE
+from bot.helper.telegram_helper.message_utils import sendMessage, sendCustomMsg, editMessage, deleteMessage, sendFile, chat_info, user_info
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
+from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.ext_utils.db_handler import DbManger
-from bot.helper.ext_utils.bot_utils import getdailytasks, update_user_ldata, get_readable_file_size, sync_to_async, new_thread
+from bot.helper.ext_utils.bot_utils import getdailytasks, update_user_ldata, get_readable_file_size, sync_to_async, new_thread, is_gdrive_link
 from bot.helper.themes import BotTheme
 
 handler_dict = {}
-desp_dict = {'rcc': ['RClone is a command-line program to sync files and directories to and from different cloud storage providers like GDrive, OneDrive...', 'Send rclone.conf. Timeout: 60 sec'],
-            'lprefix': ['Leech Filename Prefix is the Front Part attacted with the Filename of the Leech Files.', 'Send Leech Filename Prefix. Timeout: 60 sec'],
-            'lsuffix': ['Leech Filename Suffix is the End Part attached with the Filename of the Leech Files', 'Send Leech Filename Suffix. Timeout: 60 sec'],
-            'lremname': ['Leech Filename Remname is combination of Regex(s) used for removing or manipulating Filename of the Leech Files', 'Send Leech Filename Remname. Timeout: 60 sec'],
-            'lcaption': ['Leech Caption is the Custom Caption on the Leech Files Uploaded by the bot', 'Send Leech Caption. You can add HTML tags Timeout: 60 sec'],
-            'ldump': ['Leech Files User Dump for Personal Use as a Storage.', 'Send Leech Dump Channel ID. Timeout: 60 sec'],
-            'mprefix': ['Mirror Filename Prefix is the Front Part attacted with the Filename of the Mirrored/Cloned Files.', 'Send Mirror Filename Prefix. Timeout: 60 sec'],
-            'msuffix': ['Mirror Filename Suffix is the End Part attached with the Filename of the Mirrored/Cloned Files', 'Send Mirror Filename Suffix. Timeout: 60 sec'],
-            'mremname': ['Mirror Filename Remname is combination of Regex(s) used for removing or manipulating Filename of the Mirrored/Cloned Files', 'Send Mirror Filename Remname. Timeout: 60 sec'],
-            'thumb': ['Custom Thumbnail to appear on the Leeched files uploaded by the bot', 'Send a photo to save it as custom thumbnail. Timeout: 60 sec'],
-            'yt_opt': ['YT-DLP Options is the Custom Quality for the extraction of videos from the yt-dlp supported sites.', 'Send YT-DLP Options. Timeout: 60 sec\nFormat: key:value|key:value|key:value.\nExample: format:bv*+mergeall[vcodec=none]|nocheckcertificate:True\nCheck all yt-dlp api options from this <a href="https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L184">FILE</a> or use this <a href="https://t.me/mltb_official/177">script</a> to convert cli arguments to api options.'],
-            'split_size': ['Leech Splits Size is the size to split the Leeched File before uploading', f'Send Leech split size in bytes. IS_PREMIUM_USER: {IS_PREMIUM_USER}. Timeout: 60 sec'],
+desp_dict = {'rcc': ['RClone is a command-line program to sync files and directories to and from different cloud storage providers like GDrive, OneDrive...', 'Send rclone.conf. \n<b>Timeout:</b> 60 sec'],
+            'lprefix': ['Leech Filename Prefix is the Front Part attacted with the Filename of the Leech Files.', 'Send Leech Filename Prefix. Documentation Here : <a href="https://t.me/WZML_X/77">Click Me</a> \n<b>Timeout:</b> 60 sec'],
+            'lsuffix': ['Leech Filename Suffix is the End Part attached with the Filename of the Leech Files', 'Send Leech Filename Suffix. Documentation Here : <a href="https://t.me/WZML_X/77">Click Me</a> \n<b>Timeout:</b> 60 sec'],
+            'lremname': ['Leech Filename Remname is combination of Regex(s) used for removing or manipulating Filename of the Leech Files', 'Send Leech Filename Remname. Documentation Here : <a href="https://t.me/WZML_X/77">Click Me</a> \n<b>Timeout:</b> 60 sec'],
+            'lcaption': ['Leech Caption is the Custom Caption on the Leech Files Uploaded by the bot', 'Send Leech Caption. You can add HTML tags. Documentation Here : <a href="https://t.me/WZML_X/77">Click Me</a> \n<b>Timeout:</b> 60 sec'],
+            'ldump': ['Leech Files User Dump for Personal Use as a Storage.', 'Send Leech Dump Channel ID\n➲ <b>Format:</b> \ntitle chat_id/@username\ntitle2 chat_id2/@username2. \n\n<b>NOTE:</b>Make Bot Admin in the Channel else it will not accept\n<b>Timeout:</b> 60 sec'],
+            'mprefix': ['Mirror Filename Prefix is the Front Part attacted with the Filename of the Mirrored/Cloned Files.', 'Send Mirror Filename Prefix. \n<b>Timeout:</b> 60 sec'],
+            'msuffix': ['Mirror Filename Suffix is the End Part attached with the Filename of the Mirrored/Cloned Files', 'Send Mirror Filename Suffix. \n<b>Timeout:</b> 60 sec'],
+            'mremname': ['Mirror Filename Remname is combination of Regex(s) used for removing or manipulating Filename of the Mirrored/Cloned Files', 'Send Mirror Filename Remname. \n<b>Timeout:</b> 60 sec'],
+            'thumb': ['Custom Thumbnail to appear on the Leeched files uploaded by the bot', 'Send a photo to save it as custom thumbnail. \n<b>Alternatively: </b><code>/cmd [photo] -s thumb</code> \n<b>Timeout:</b> 60 sec'],
+            'yt_opt': ['YT-DLP Options is the Custom Quality for the extraction of videos from the yt-dlp supported sites.', 'Send YT-DLP Options. Timeout: 60 sec\nFormat: key:value|key:value|key:value.\nExample: format:bv*+mergeall[vcodec=none]|nocheckcertificate:True\nCheck all yt-dlp api options from this <a href="https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L184">FILE</a> to convert cli arguments to api options.'],
+            'split_size': ['Leech Splits Size is the size to split the Leeched File before uploading', f'Send Leech split size in any comfortable size, like 2Gb, 500MB or 1.46gB. \n<b>PREMIUM ACTIVE:</b> {IS_PREMIUM_USER}. \n<b>Timeout:</b> 60 sec'],
             'ddl_servers': ['DDL Servers which uploads your File to their Specific Hosting', ''],
-            'gofile': ['Gofile is a free file sharing and storage platform. You can store and share your content without any limit.', "Send GoFile's API Key. Get it on https://gofile.io/myProfile"],
-            'streamsb': ['StreamSB', "Send StreamSB's API Key"],
+            'user_tds': [f'UserTD helps to Upload files via Bot to your Custom Drive Destination via Global SA mail\n\n➲ <b>SA Mail :</b> {SA if (SA := config_dict["USER_TD_SA"]) else "Not Specified"}', 'Send User TD details for Use while Mirror/Clone\n➲ <b>Format:</b> \nname id/link index(optional)\nname2 link2/id2 index(optional)\n\n<b>NOTE:</b> \n<i>1. Drive ID must be valid, then only it will accept\n2. Names can have spaces \n3. All UserTDs are updated on every change \n4. To delete specific UserTD, give Name(s) separated by each line</i>\n\n<b>Timeout:</b> 60 sec'],
+            'gofile': ['Gofile is a free file sharing and storage platform. You can store and share your content without any limit.', "Send GoFile's API Key. Get it on https://gofile.io/myProfile\n<b>Timeout:</b> 60 sec"],
+            'streamsb': ['StreamSB', "Send StreamSB's API Key\n<b>Timeout:</b> 60 sec"],
             }
 fname_dict = {'rcc': 'RClone',
              'lprefix': 'Prefix',
@@ -45,12 +47,13 @@ fname_dict = {'rcc': 'RClone',
              'mprefix': 'Prefix',
              'msuffix': 'Suffix',
              'mremname': 'Remname',
-             'ldump': 'Dump',
+             'ldump': 'User Dump',
              'lcaption': 'Caption',
              'thumb': 'Thumbnail',
              'yt_opt': 'YT-DLP Options',
              'split_size': 'Leech Splits',
              'ddl_servers': 'DDL Servers',
+             'user_tds': 'User Custom TDs',
              'gofile': 'GoFile',
              'streamsb': 'StreamSB',
              }
@@ -66,7 +69,7 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
         buttons.ibutton("Universal Settings", f"userset {user_id} universal")
         buttons.ibutton("Mirror Settings", f"userset {user_id} mirror")
         buttons.ibutton("Leech Settings", f"userset {user_id} leech")
-        if user_dict and any(key in user_dict for key in ['lprefix', 'lsuffix', 'lremname', 'ldump', 'ddl_servers', 'yt_opt', 'bot_pm', 'media_group', 'equal_splits', 'split_size', 'rclone', 'thumb', 'as_doc']):
+        if user_dict and any(key in user_dict for key in list(fname_dict.keys())):
             buttons.ibutton("Reset Setting", f"userset {user_id} reset_all")
         buttons.ibutton("Close", f"userset {user_id} close")
 
@@ -84,15 +87,16 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
         buttons.ibutton('Disable MediaInfo' if mediainfo == 'Enabled' else 'Enable MediaInfo', f"userset {user_id} mediainfo")
         if config_dict['SHOW_MEDIAINFO']:
             mediainfo = "Force Enabled"
+        save_mode = "Save As Dump" if user_dict.get('save_mode') else "Save As BotPM"
+        buttons.ibutton('Save As BotPM' if save_mode == 'Save As Dump' else 'Save As Dump', f"userset {user_id} save_mode")
         dailytl = config_dict['DAILY_TASK_LIMIT'] if config_dict['DAILY_TASK_LIMIT'] else "♾️"
-        dailytas = user_dict.get('dly_tasks')[1] if user_dict and user_dict.get('dly_tasks') and user_id != OWNER_ID and config_dict['DAILY_TASK_LIMIT'] else config_dict.get('DAILY_TASK_LIMIT', "♾️") if user_id != OWNER_ID else "♾️"        
-        
+        dailytas = user_dict.get('dly_tasks')[1] if user_dict and user_dict.get('dly_tasks') and user_id != OWNER_ID and config_dict['DAILY_TASK_LIMIT'] else config_dict.get('DAILY_TASK_LIMIT', "♾️") if user_id != OWNER_ID else "♾️"
         if user_dict.get('dly_tasks', False):
             t = str(datetime.now() - user_dict['dly_tasks'][0]).split(':')
             lastused = f"{t[0]}h {t[1]}m {t[2].split('.')[0]}s ago"
         else: lastused = "Bot Not Used"
 
-        text = BotTheme('UNIVERSAL', NAME=name, YT=escape(ytopt), DT=f"{dailytas} / {dailytl}", LAST_USED=lastused, BOT_PM=bot_pm, MEDIAINFO=mediainfo)
+        text = BotTheme('UNIVERSAL', NAME=name, YT=escape(ytopt), DT=f"{dailytas} / {dailytl}", LAST_USED=lastused, BOT_PM=bot_pm, MEDIAINFO=mediainfo, SAVE_MODE=save_mode)
         buttons.ibutton("Back", f"userset {user_id} back", "footer")
         buttons.ibutton("Close", f"userset {user_id} close", "footer")
         button = buttons.build_menu(2)
@@ -110,11 +114,18 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
         buttons.ibutton("Mirror Remname", f"userset {user_id} mremname")
         mremname = 'Not Exists' if (val:=user_dict.get('mremname', config_dict.get('MIRROR_FILENAME_REMNAME', ''))) == '' else val
 
-        ddl_serv = len(val.keys()) if (val := user_dict.get('ddl_servers', False)) else 0
+        ddl_serv = len(val) if (val := user_dict.get('ddl_servers', False)) else 0
         buttons.ibutton("DDL Servers", f"userset {user_id} ddl_servers")
+        
+        tds_mode = "Enabled" if user_dict.get('td_mode', config_dict['BOT_PM']) else "Disabled"
+        if not config_dict['USER_TD_MODE']:
+            tds_mode = "Force Disabled"
+        
+        user_tds = len(val) if (val := user_dict.get('user_tds', False)) else 0
+        buttons.ibutton("User TDs", f"userset {user_id} user_tds")
 
         text = BotTheme('MIRROR', NAME=name, RCLONE=rccmsg, DDL_SERVER=ddl_serv, DM=f"{dailyup} / {dailytlup}", MREMNAME=escape(mremname), MPREFIX=escape(mprefix),
-                MSUFFIX=escape(msuffix))
+                MSUFFIX=escape(msuffix), TMODE=tds_mode, USERTD=user_tds)
         
         buttons.ibutton("Back", f"userset {user_id} back", "footer")
         buttons.ibutton("Close", f"userset {user_id} close", "footer")
@@ -151,7 +162,7 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
         lremname = 'Not Exists' if (val:=user_dict.get('lremname', config_dict.get('LEECH_FILENAME_REMNAME', ''))) == '' else val
 
         buttons.ibutton("Leech Dump", f"userset {user_id} ldump")
-        ldump = 'Not Exists' if (val:=user_dict.get('ldump', '')) == '' else val
+        ldump = 'Not Exists' if (val:=user_dict.get('ldump', '')) == '' else len(val)
 
         text = BotTheme('LEECH', NAME=name, DL=f"{dailyll} / {dailytlle}",
                 LTYPE=ltype, THUMB=thumbmsg, SPLIT_SIZE=split_size,
@@ -200,6 +211,8 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
                 buttons.ibutton("Enable Media Group", f"userset {user_id} mgroup", "header")
         elif key in ['lprefix', 'lremname', 'lsuffix', 'lcaption', 'ldump']:
             set_exist = 'Not Exists' if (val:=user_dict.get(key, config_dict.get(f'LEECH_FILENAME_{key[1:].upper()}', ''))) == '' else val
+            if set_exist != 'Not Exists' and key == "ldump":
+                set_exist = '\n\n' + '\n'.join([f"{index}. <b>{dump}</b> : <code>{ids}</code>" for index, (dump, ids) in enumerate(val.items(), start=1)])
             text += f"➲ <b>Leech Filename {fname_dict[key]} :</b> {set_exist}\n\n"
         elif key in ['mprefix', 'mremname', 'msuffix']:
             set_exist = 'Not Exists' if (val:=user_dict.get(key, config_dict.get(f'MIRROR_FILENAME_{key[1:].upper()}', ''))) == '' else val
@@ -210,7 +223,16 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
             text = f"➲ <b>Upload {fname_dict[key]} :</b> {ddl_mode}\n" \
                    f"➲ <b>{fname_dict[key]}'s API Key :</b> {set_exist}\n\n"
             buttons.ibutton('Disable DDL' if ddl_mode == 'Enabled' else 'Enable DDL', f"userset {user_id} s{key}", "header")
-        else: return
+        elif key == 'user_tds':
+            set_exist = len(val) if (val:=user_dict.get(key, False)) else 'Not Exists'
+            tds_mode = "Enabled" if user_dict.get('td_mode', config_dict['BOT_PM']) else "Disabled"
+            buttons.ibutton('Disable UserTDs' if tds_mode == 'Enabled' else 'Enable UserTDs', f"userset {user_id} td_mode", "header")
+            if not config_dict['USER_TD_MODE']:
+                tds_mode = "Force Disabled"
+            text += f"➲ <b>User TD Mode :</b> {tds_mode}\n"
+            text += f"➲ <b>{fname_dict[key]} :</b> {set_exist}\n\n"
+        else: 
+            return
         text += f"➲ <b>Description :</b> <i>{desp_dict[key][0]}</i>"
         if not edit_mode:
             buttons.ibutton(f"Change {fname_dict[key]}" if set_exist and set_exist != 'Not Exists' and (set_exist != get_readable_file_size(config_dict['LEECH_SPLIT_SIZE']) + ' (Default)') else f"Set {fname_dict[key]}", f"userset {user_id} {key} edit")
@@ -220,6 +242,8 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
         if set_exist and set_exist != 'Not Exists' and (set_exist != get_readable_file_size(config_dict['LEECH_SPLIT_SIZE']) + ' (Default)'):
             if key == 'thumb':
                 buttons.ibutton("View Thumbnail", f"userset {user_id} vthumb", "header")
+            elif key == 'user_tds':
+                buttons.ibutton('Show UserTDs', f"userset {user_id} show_tds", "header")
             buttons.ibutton("↻ Delete", f"userset {user_id} d{key}")
         buttons.ibutton("Back", f"userset {user_id} back {edit_type}", "footer")
         buttons.ibutton("Close", f"userset {user_id} close", "footer")
@@ -268,7 +292,7 @@ async def set_yt_options(client, message, pre_event):
     handler_dict[user_id] = False
     value = message.text
     update_user_ldata(user_id, 'yt_opt', value)
-    await message.delete()
+    await deleteMessage(message)
     await update_user_settings(pre_event, 'yt_opt', 'universal')
     if DATABASE_URL:
         await DbManger().update_user_data(user_id)
@@ -280,16 +304,49 @@ async def set_custom(client, message, pre_event, key, direct=False):
     value = message.text
     return_key = 'leech'
     n_key = key
+    user_dict = user_data.get(user_id, {})
     if key in ['gofile', 'streamsb']:
-        user_dict = user_data.get(user_id, {})
         ddl_dict = user_dict.get('ddl_servers', {})
         mode, api = ddl_dict.get(key, [False, ""])
         ddl_dict[key] = [mode, value]
         value = ddl_dict
         n_key = 'ddl_servers'
         return_key = 'ddl_servers'
+    elif key == 'user_tds':
+        user_tds = user_dict.get(key, {})
+        for td_item in value.split('\n'):
+            if td_item == '':
+                continue
+            split_ck = td_item.split()
+            td_details = td_item.rsplit(maxsplit=(2 if split_ck[-1].startswith('http') and not is_gdrive_link(split_ck[-1]) else 1 if len(split_ck[-1]) > 15 else 0))
+            if td_details[0] in list(categories_dict.keys()):
+                continue
+            for title in list(user_tds.keys()):
+                if td_details[0].casefold() == title.casefold():
+                    del user_tds[title]
+            if len(td_details) > 1:
+                if is_gdrive_link(td_details[1].strip()):
+                    td_details[1] = GoogleDriveHelper.getIdFromUrl(td_details[1])
+                if await sync_to_async(GoogleDriveHelper().getFolderData, td_details[1]):
+                    user_tds[td_details[0]] = {'drive_id': td_details[1],'index_link': td_details[2].rstrip('/') if len(td_details) > 2 else ''}
+        value = user_tds
+        return_key = 'mirror'
+    elif key == 'ldump':
+        ldumps = user_dict.get(key, {})
+        for dump_item in value.split('\n'):
+            if dump_item == '':
+                continue
+            dump_info = dump_item.rsplit(maxsplit=(1 if dump_item.split()[-1].startswith(('-100', '@')) else 0))
+            if dump_info[0] in list(ldumps.keys()):
+                continue
+            for title in list(ldumps.keys()):
+                if dump_info[0].casefold() == title.casefold():
+                    del ldumps[title]
+            if len(dump_info) > 1 and (dump_chat := await chat_info(dump_info[1])):
+                ldumps[dump_info[0]] = dump_chat.id
+        value = ldumps
     update_user_ldata(user_id, n_key, value)
-    await message.delete()
+    await deleteMessage(message)
     await update_user_settings(pre_event, key, return_key, msg=message, sdirect=direct)
     if DATABASE_URL:
         await DbManger().update_user_data(user_id)
@@ -306,7 +363,7 @@ async def set_thumb(client, message, pre_event, key, direct=False):
     await sync_to_async(Image.open(photo_dir).convert("RGB").save, des_dir, "JPEG")
     await aioremove(photo_dir)
     update_user_ldata(user_id, 'thumb', des_dir)
-    await message.delete()
+    await deleteMessage(message)
     await update_user_settings(pre_event, key, 'leech', msg=message, sdirect=direct)
     if DATABASE_URL:
         await DbManger().update_user_doc(user_id, 'thumb', des_dir)
@@ -321,7 +378,7 @@ async def add_rclone(client, message, pre_event):
     des_dir = ospath.join(path, f'{user_id}.conf')
     await message.download(file_name=des_dir)
     update_user_ldata(user_id, 'rclone', f'rclone/{user_id}.conf')
-    await message.delete()
+    await deleteMessage(message)
     await update_user_settings(pre_event, 'rcc', 'mirror')
     if DATABASE_URL:
         await DbManger().update_user_doc(user_id, 'rclone', des_dir)
@@ -337,7 +394,7 @@ async def leech_split_size(client, message, pre_event):
     if out in sdic:
         value = min((float(value[:slice].strip()) * 1024**sdic.index(out)), MAX_SPLIT_SIZE)
     update_user_ldata(user_id, 'split_size', int(round(value)))
-    await message.delete()
+    await deleteMessage(message)
     await update_user_settings(pre_event, 'split_size', 'leech')
     if DATABASE_URL:
         await DbManger().update_user_data(user_id)
@@ -382,8 +439,7 @@ async def edit_user_settings(client, query):
         await query.answer()
         await update_user_settings(query, data[2])
     elif data[2] == "doc":
-        update_user_ldata(user_id, 'as_doc',
-                          not user_dict.get('as_doc', False))
+        update_user_ldata(user_id, 'as_doc', not user_dict.get('as_doc', False))
         await query.answer()
         await update_user_settings(query, 'leech')
         if DATABASE_URL:
@@ -391,8 +447,24 @@ async def edit_user_settings(client, query):
     elif data[2] == 'vthumb':
         handler_dict[user_id] = False
         await query.answer()
-        await sendFile(message, thumb_path, from_user.mention)
+        buttons = ButtonMaker()
+        buttons.ibutton('Cʟᴏsᴇ', f'wzmlx {user_id} close')
+        await sendMessage(message, from_user.mention, buttons.build_menu(1), thumb_path)
         await update_user_settings(query, 'thumb', 'leech')
+    elif data[2] == 'show_tds':
+        handler_dict[user_id] = False
+        user_tds = user_dict.get('user_tds', {})
+        msg = f'➲ <b><u>User TD(s) Details</u></b>\n\n<b>Total UserTD(s) :</b> {len(user_tds)}\n\n'
+        for index_no, (drive_name, drive_dict) in enumerate(user_tds.items(), start=1):
+            msg += f'{index_no}: <b>Name:</b> <code>{drive_name}</code>\n'
+            msg += f"  <b>Drive ID:</b> <code>{drive_dict['drive_id']}</code>\n"
+            msg += f"  <b>Index Link:</b> <code>{ind_url if (ind_url := drive_dict['index_link']) else 'Not Provided'}</code>\n\n"
+        try:
+            await sendCustomMsg(user_id, msg, debug=True)
+            await query.answer('User TDs Successfully Send in your PM', show_alert=True)
+        except:
+            await query.answer('Start the Bot in PM (Private) and Try Again', show_alert=True)
+        await update_user_settings(query, 'user_tds', 'mirror')
     elif data[2] == "dthumb":
         handler_dict[user_id] = False
         if await aiopath.exists(thumb_path):
@@ -428,13 +500,21 @@ async def edit_user_settings(client, query):
         await update_user_settings(query, 'yt_opt', 'universal')
         if DATABASE_URL:
             await DbManger().update_user_data(user_id)
-    elif data[2] in ['bot_pm', 'mediainfo']:
+    elif data[2] in ['bot_pm', 'mediainfo', 'save_mode', 'td_mode']:
         handler_dict[user_id] = False
-        if data[2] == 'bot_pm' and config_dict['BOT_PM'] or data[2] == 'mediainfo' and config_dict['SHOW_MEDIAINFO']:
-            return await query.answer("Force Enabled! Can't Alter Settings", show_alert=True)
+        if data[2] == 'save_mode' and not user_dict.get(data[2], False) and not user_dict.get('ldump'):
+            return await query.answer("Set User Dump first to Change Save Msg Mode !", show_alert=True)
+        elif data[2] == 'bot_pm' and config_dict['BOT_PM'] or data[2] == 'mediainfo' and config_dict['SHOW_MEDIAINFO'] or data[2] == 'td_mode' and not config_dict['USER_TD_MODE']:
+            mode_up = "Disabled" if data[2] == 'td_mode' else "Enabled"
+            return await query.answer(f"Force {mode_up}! Can't Alter Settings", show_alert=True)
+        if data[2] == 'td_mode' and not user_dict.get('user_tds', False):
+            return await query.answer("Set UserTD first to Enable User TD Mode !", show_alert=True)
         await query.answer()
         update_user_ldata(user_id, data[2], not user_dict.get(data[2], False))
-        await update_user_settings(query, 'universal')
+        if data[2] in ['td_mode']:
+            await update_user_settings(query, 'user_tds', 'mirror')
+        else:
+            await update_user_settings(query, 'universal')
         if DATABASE_URL:
             await DbManger().update_user_data(user_id)
     elif data[2] == 'split_size':
@@ -502,14 +582,14 @@ async def edit_user_settings(client, query):
         else:
             await query.answer("Old Settings", show_alert=True)
             await update_user_settings(query)
-    elif data[2] in ['ddl_servers', 'gofile', 'streamsb']:
+    elif data[2] in ['ddl_servers', 'user_tds', 'gofile', 'streamsb']:
         handler_dict[user_id] = False
         await query.answer()
         edit_mode = len(data) == 4
-        await update_user_settings(query, data[2], 'mirror' if data[2] == 'ddl_servers' else 'ddl_servers', edit_mode)
+        await update_user_settings(query, data[2], 'mirror' if data[2] in ['ddl_servers', 'user_tds'] else 'ddl_servers', edit_mode)
         if not edit_mode: return
         pfunc = partial(set_custom, pre_event=query, key=data[2])
-        rfunc = partial(update_user_settings, query, data[2], 'mirror' if data[2] == "ddl_servers" else "ddl_servers")
+        rfunc = partial(update_user_settings, query, data[2], 'mirror' if data[2] in ['ddl_servers', 'user_tds'] else "ddl_servers")
         await event_handler(client, query, pfunc, rfunc)
     elif data[2] in ['lprefix', 'lsuffix', 'lremname', 'lcaption', 'ldump', 'mprefix', 'msuffix', 'mremname']:
         handler_dict[user_id] = False
@@ -524,14 +604,16 @@ async def edit_user_settings(client, query):
     elif data[2] in ['dlprefix', 'dlsuffix', 'dlremname', 'dlcaption', 'dldump']:
         handler_dict[user_id] = False
         await query.answer()
-        update_user_ldata(user_id, data[2][1:], '')
+        update_user_ldata(user_id, data[2][1:], {} if data[2] == 'dldump' else '')
         await update_user_settings(query, data[2][1:], 'leech')
         if DATABASE_URL:
             await DbManger().update_user_data(user_id)
-    elif data[2] in ['dmprefix', 'dmsuffix', 'dmremname']:
+    elif data[2] in ['dmprefix', 'dmsuffix', 'dmremname', 'duser_tds']:
         handler_dict[user_id] = False
         await query.answer()
-        update_user_ldata(user_id, data[2][1:], '')
+        update_user_ldata(user_id, data[2][1:], {} if data[2] == 'duser_tds' else '')
+        if data[2] == 'duser_tds':
+            update_user_ldata(user_id, 'td_mode', False)
         await update_user_settings(query, data[2][1:], 'mirror')
         if DATABASE_URL:
             await DbManger().update_user_data(user_id)
@@ -581,14 +663,8 @@ async def edit_user_settings(client, query):
     else:
         handler_dict[user_id] = False
         await query.answer()
-        await message.reply_to_message.delete()
-        await message.delete()
-
-async def getUserInfo(client, id):
-    try:
-        return (await client.get_users(id)).mention(style="html")
-    except Exception:
-        return ''
+        await deleteMessage(message.reply_to_message)
+        await deleteMessage(message)
         
 async def send_users_settings(client, message):
     text = message.text.split(maxsplit=1)
@@ -618,7 +694,7 @@ async def send_users_settings(client, message):
         else:
             await sendMessage(message, msg, button)
     elif int(userid) in user_data:
-        msg = f'{await getUserInfo(client, userid)} ( <code>{userid}</code> ):'
+        msg = f'{(await user_info(userid)).mention(style="html")} ( <code>{userid}</code> ):'
         if data := user_data[int(userid)]:
             buttons = ButtonMaker()
             buttons.ibutton("Delete Data", f"userset {message.from_user.id} user_del {userid}")

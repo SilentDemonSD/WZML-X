@@ -7,10 +7,10 @@ from time import time
 from re import match as re_match
 
 from pyrogram.types import InputMediaPhoto
-from pyrogram.errors import ReplyMarkupInvalid, FloodWait, PeerIdInvalid, RPCError, UserNotParticipant, MessageNotModified, MessageEmpty, PhotoInvalidDimensions, WebpageCurlFailed, MediaEmpty
+from pyrogram.errors import ReplyMarkupInvalid, FloodWait, PeerIdInvalid, ChannelInvalid, RPCError, UserNotParticipant, MessageNotModified, MessageEmpty, PhotoInvalidDimensions, WebpageCurlFailed, MediaEmpty
 
-from bot import config_dict, LOGGER, bot_name, status_reply_dict, status_reply_dict_lock, Interval, bot, user, download_dict_lock
-from bot.helper.ext_utils.bot_utils import get_readable_message, setInterval, sync_to_async, download_image_url
+from bot import config_dict, categories_dict, bot_cache, LOGGER, bot_name, status_reply_dict, status_reply_dict_lock, Interval, bot, user, download_dict_lock
+from bot.helper.ext_utils.bot_utils import get_readable_message, setInterval, sync_to_async, download_image_url, fetch_user_tds, fetch_user_dumps
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.exceptions import TgLinkException
 
@@ -45,7 +45,7 @@ async def sendMessage(message, text, buttons=None, photo=None):
         return str(e)
 
 
-async def sendCustomMsg(chat_id, text, buttons=None, photo=None):
+async def sendCustomMsg(chat_id, text, buttons=None, photo=None, debug=False):
     try:
         if photo:
             try:
@@ -71,11 +71,14 @@ async def sendCustomMsg(chat_id, text, buttons=None, photo=None):
     except ReplyMarkupInvalid:
         return await sendCustomMsg(chat_id, text, None, photo)
     except Exception as e:
+        if debug:
+            raise e
         LOGGER.error(format_exc())
         return str(e)
 
 
 async def chat_info(channel_id):
+    channel_id = str(channel_id).strip()
     if channel_id.startswith('-100'):
         channel_id = int(channel_id)
     elif channel_id.startswith('@'):
@@ -83,9 +86,8 @@ async def chat_info(channel_id):
     else:
         return None
     try:
-        chat = await bot.get_chat(channel_id)
-        return chat
-    except PeerIdInvalid as e:
+        return await bot.get_chat(channel_id)
+    except (PeerIdInvalid, ChannelInvalid) as e:
         LOGGER.error(f"{e.NAME}: {e.MESSAGE} for {channel_id}")
         return None
 
@@ -129,6 +131,7 @@ async def editMessage(message, text, buttons=None, photo=None):
     try:
         if message.media:
             if photo:
+                photo = rchoice(config_dict['IMAGES']) if photo == 'IMAGES' else photo
                 return await message.edit_media(InputMediaPhoto(photo, text), reply_markup=buttons)
             return await message.edit_caption(caption=text, reply_markup=buttons)
         await message.edit(text=text, disable_web_page_preview=True, reply_markup=buttons)
@@ -140,6 +143,16 @@ async def editMessage(message, text, buttons=None, photo=None):
         pass
     except ReplyMarkupInvalid:
         return await editMessage(message, text, None, photo)
+    except Exception as e:
+        LOGGER.error(str(e))
+        return str(e)
+
+
+async def editReplyMarkup(message, reply_markup):
+    try:
+        return await message.edit_reply_markup(reply_markup=reply_markup)
+    except MessageNotModified:
+        pass
     except Exception as e:
         LOGGER.error(str(e))
         return str(e)
@@ -209,17 +222,17 @@ async def delete_all_messages():
 
 async def get_tg_link_content(link):
     message = None
-    if link.startswith('https://t.me/'):
+    if link.startswith(('https://t.me/', 'https://telegram.me/', 'https://telegram.dog/', 'https://telegram.space/')):
         private = False
-        msg = re_match(r"https:\/\/t\.me\/(?:c\/)?([^\/]+)(?:\/[^\/]+)?\/([0-9]+)", link)
+        msg = re_match(r"https:\/\/(t\.me|telegram\.me|telegram\.dog|telegram\.space)\/(?:c\/)?([^\/]+)(?:\/[^\/]+)?\/([0-9]+)", link)
     else:
         private = True
         msg = re_match(r"tg:\/\/openmessage\?user_id=([0-9]+)&message_id=([0-9]+)", link)
         if not user:
             raise TgLinkException('USER_SESSION_STRING required for this private link!')
 
-    chat = msg.group(1)
-    msg_id = int(msg.group(2))
+    chat = msg.group(2)
+    msg_id = int(msg.group(3))
     if chat.isdigit():
         chat = int(chat) if private else int(f'-100{chat}')
 
@@ -237,8 +250,7 @@ async def get_tg_link_content(link):
         try:
             user_message = await user.get_messages(chat_id=chat, message_ids=msg_id)
         except Exception as e:
-            raise TgLinkException(
-                f"You don't have access to this chat!. ERROR: {e}") from e
+            raise TgLinkException(f"You don't have access to this chat!. ERROR: {e}") from e
         if not user_message.empty:
             return user_message, 'user'
         else:
@@ -246,8 +258,7 @@ async def get_tg_link_content(link):
     elif not private:
         return message, 'bot'
     else:
-        raise TgLinkException(
-            "Bot can't download from GROUPS without joining!")
+        raise TgLinkException("Bot can't download from GROUPS without joining!")
 
 
 async def update_all_messages(force=False):
@@ -263,7 +274,7 @@ async def update_all_messages(force=False):
     async with status_reply_dict_lock:
         for chat_id in list(status_reply_dict.keys()):
             if status_reply_dict[chat_id] and msg != status_reply_dict[chat_id][0].text:
-                rmsg = await editMessage(status_reply_dict[chat_id][0], msg, buttons)
+                rmsg = await editMessage(status_reply_dict[chat_id][0], msg, buttons, 'IMAGES')
                 if isinstance(rmsg, str) and rmsg.startswith('Telegram says: [400'):
                     del status_reply_dict[chat_id]
                     continue
@@ -283,11 +294,72 @@ async def sendStatusMessage(msg):
             await deleteMessage(message)
             del status_reply_dict[chat_id]
         message = await sendMessage(msg, progress, buttons, photo='IMAGES')
-        message.text = progress
+        if hasattr(message, 'caption'):
+            message.caption = progress
+        else:
+            message.text = progress
         status_reply_dict[chat_id] = [message, time()]
         if not Interval:
-            Interval.append(setInterval(
-                config_dict['STATUS_UPDATE_INTERVAL'], update_all_messages))
+            Interval.append(setInterval(config_dict['STATUS_UPDATE_INTERVAL'], update_all_messages))
+
+
+async def open_category_btns(message):
+    user_id = message.from_user.id
+    msg_id = message.id
+    buttons = ButtonMaker()
+    _tick = True
+    if len(utds := await fetch_user_tds(user_id)) > 1:
+        for _name in utds.keys():
+            buttons.ibutton(f'{"✅️" if _tick else ""} {_name}', f"scat {user_id} {msg_id} {_name.replace(' ', '_')}")
+            if _tick: _tick, cat_name = False, _name
+    elif len(categories_dict) > 1:
+        for _name in categories_dict.keys():
+            buttons.ibutton(f'{"✅️" if _tick else ""} {_name}', f"scat {user_id} {msg_id} {_name.replace(' ', '_')}")
+            if _tick: _tick, cat_name = False, _name
+    buttons.ibutton('Cancel', f'scat {user_id} {msg_id} scancel', 'footer')
+    buttons.ibutton(f'Done (60)', f'scat {user_id} {msg_id} sdone', 'footer')
+    prompt = await sendMessage(message, f'<b>Select the category where you want to upload</b>\n\n<i><b>Upload Category:</b></i> <code>{cat_name}</code>\n\n<b>Timeout:</b> 60 sec', buttons.build_menu(3))
+    start_time = time()
+    bot_cache[msg_id] = [None, None, False, False, start_time]
+    while time() - start_time <= 60:
+        await sleep(0.5)
+        if bot_cache[msg_id][2] or bot_cache[msg_id][3]:
+            break
+    drive_id, index_link, _, is_cancelled, __ = bot_cache[msg_id]
+    if not is_cancelled:
+        await deleteMessage(prompt)
+    else:
+        await editMessage(prompt, "<b>Task Cancelled</b>")
+    del bot_cache[msg_id]
+    return drive_id, index_link, is_cancelled
+    
+    
+async def open_dump_btns(message):
+    user_id = message.from_user.id
+    msg_id = message.id
+    buttons = ButtonMaker()
+    _tick = True
+    if len(udmps := await fetch_user_dumps(user_id)) > 1:
+        for _name in udmps.keys():
+            buttons.ibutton(f'{"✅️" if _tick else ""} {_name}', f"dcat {user_id} {msg_id} {_name.replace(' ', '_')}")
+            if _tick: _tick, cat_name = False, _name
+    buttons.ibutton('Upload in All', f'dcat {user_id} {msg_id} All', 'header')
+    buttons.ibutton('Cancel', f'dcat {user_id} {msg_id} dcancel', 'footer')
+    buttons.ibutton(f'Done (60)', f'dcat {user_id} {msg_id} ddone', 'footer')
+    prompt = await sendMessage(message, f'<b>Select the Dump category where you want to upload</b>\n\n<i><b>Upload Category:</b></i> <code>{cat_name}</code>\n\n<b>Timeout:</b> 60 sec', buttons.build_menu(3))
+    start_time = time()
+    bot_cache[msg_id] = [None, False, False, start_time]
+    while time() - start_time <= 60:
+        await sleep(0.5)
+        if bot_cache[msg_id][1] or bot_cache[msg_id][2]:
+            break
+    dump_chat, _, is_cancelled, __ = bot_cache[msg_id]
+    if not is_cancelled:
+        await deleteMessage(prompt)
+    else:
+        await editMessage(prompt, "<b>Task Cancelled</b>")
+    del bot_cache[msg_id]
+    return dump_chat, is_cancelled
 
 
 async def forcesub(message, ids, button=None):
@@ -316,14 +388,17 @@ async def forcesub(message, ids, button=None):
     return _msg, button
 
 
-async def user_info(client, userId):
-    return await client.get_users(userId)
+async def user_info(user_id):
+    try:
+        return await bot.get_users(user_id)
+    except Exception:
+        return ''
 
 
-async def BotPm_check(message, button=None):
+async def check_botpm(message, button=None):
     try:
         temp_msg = await message._client.send_message(chat_id=message.from_user.id, text='<b>Checking Access...</b>')
-        await temp_msg.delete()
+        await deleteMessage(temp_msg)
         return None, button
     except Exception as e:
         if button is None:

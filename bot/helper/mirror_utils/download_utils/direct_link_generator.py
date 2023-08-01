@@ -1,14 +1,4 @@
-# Copyright (C) 2019 The Raphielscape Company LLC.
-#
-# Licensed under the Raphielscape Public License, Version 1.c (the "License");
-# you may not use this file except in compliance with the License.
-#
-""" Helper Module containing various sites direct links generators. This module is copied and modified as per need
-from https://github.com/AvinashReddy3108/PaperplaneExtended . I hereby take no credit of the following code other
-than the modifications. See https://github.com/AvinashReddy3108/PaperplaneExtended/commits/master/userbot/modules/direct_links.py
-for original authorship. """
-
-
+#!/usr/bin/env python3
 from base64 import b64decode
 from http.cookiejar import MozillaCookieJar
 from json import loads
@@ -23,9 +13,7 @@ from cloudscraper import create_scraper
 from lk21 import Bypass
 from lxml import etree
 from requests import session
-
 import requests
-
 
 from bot import LOGGER, config_dict
 from bot.helper.ext_utils.bot_utils import get_readable_time, is_share_link
@@ -38,15 +26,36 @@ anonfilesBaseSites = ['anonfiles.com', 'hotfile.io', 'bayfiles.com', 'megaupload
                       'filechan.org', 'myfile.is', 'vshare.is', 'rapidshare.nu', 'lolabits.se',
                       'openload.cc', 'share-online.is', 'upvid.cc']
 
+debrid_sites = ['1fichier.com', '2shared.com', '4shared.com', 'alfafile.net', 'anzfile.net', 'backin.net',
+                'bayfiles.com', 'bdupload.in', 'brupload.net', 'btafile.com', 'catshare.net', 'clicknupload.me', 
+                'clipwatching.com', 'cosmobox.org', 'dailymotion.com', 'dailyuploads.net', 'daofile.com', 
+                'datafilehost.com', 'ddownload.com', 'depositfiles.com', 'dl.free.fr', 'douploads.net', 
+                'drop.download', 'earn4files.com', 'easybytez.com', 'ex-load.com', 'extmatrix.com', 
+                'down.fast-down.com', 'fastclick.to', 'faststore.org', 'file.al', 'file4safe.com', 'fboom.me', 
+                'filefactory.com', 'filefox.cc', 'filenext.com', 'filer.net', 'filerio.in', 'filesabc.com', 'filespace.com', 
+                'file-up.org', 'fileupload.pw', 'filezip.cc', 'fireget.com', 'flashbit.cc', 'flashx.tv', 'florenfile.com', 
+                'fshare.vn', 'gigapeta.com', 'goloady.com', 'docs.google.com', 'gounlimited.to', 'heroupload.com', 
+                'hexupload.net', 'hitfile.net', 'hotlink.cc', 'hulkshare.com', 'icerbox.com', 'inclouddrive.com', 
+                'isra.cloud', 'katfile.com', 'keep2share.cc', 'letsupload.cc', 'load.to', 'down.mdiaload.com', 'mediafire.com', 
+                'mega.co.nz', 'mixdrop.co', 'mixloads.com', 'mp4upload.com', 'nelion.me', 'ninjastream.to', 'nitroflare.com', 
+                'nowvideo.club', 'oboom.com', 'prefiles.com', 'sky.fm', 'rapidgator.net', 'rapidrar.com', 'rapidu.net', 
+                'rarefile.net', 'real-debrid.com', 'redbunker.net', 'redtube.com', 'rockfile.eu', 'rutube.ru', 'scribd.com', 
+                'sendit.cloud', 'sendspace.com', 'simfileshare.net', 'solidfiles.com', 'soundcloud.com', 'speed-down.org', 
+                'streamon.to', 'streamtape.com', 'takefile.link', 'tezfiles.com', 'thevideo.me', 'turbobit.net', 'tusfiles.com', 
+                'ubiqfile.com', 'uloz.to', 'unibytes.com', 'uploadbox.io', 'uploadboy.com', 'uploadc.com', 'uploaded.net', 
+                'uploadev.org', 'uploadgig.com', 'uploadrar.com', 'uppit.com', 'upstore.net', 'upstream.to', 'uptobox.com', 
+                'userscloud.com', 'usersdrive.com', 'vidcloud.ru', 'videobin.co', 'vidlox.tv', 'vidoza.net', 'vimeo.com', 
+                'vivo.sx', 'vk.com', 'voe.sx', 'wdupload.com', 'wipfiles.net', 'world-files.com', 'worldbytez.com', 'wupfile.com', 
+                'wushare.com', 'xubster.com', 'youporn.com', 'youtube.com']
 
 def direct_link_generator(link: str):
-    """ direct links generator """
     domain = urlparse(link).hostname
     if not domain:
         raise DirectDownloadLinkException("ERROR: Invalid URL")
     if 'youtube.com' in domain or 'youtu.be' in domain:
-        raise DirectDownloadLinkException(
-            "ERROR: Use ytdl cmds for Youtube links")
+        raise DirectDownloadLinkException("ERROR: Use ytdl cmds for Youtube links")
+    elif config_dict['DEBRID_API_KEY'] and any(x in domain for x in debrid_sites):
+        return debrid_extractor(link)
     elif 'yadi.sk' in domain or 'disk.yandex.com' in domain:
         return yandex_disk(link)
     elif 'mediafire.com' in domain:
@@ -105,9 +114,21 @@ def direct_link_generator(link: str):
     elif 'zippyshare.com' in domain:
         raise DirectDownloadLinkException('ERROR: R.I.P Zippyshare')
     else:
-        raise DirectDownloadLinkException(
-            f'No Direct link function found for {link}')
+        raise DirectDownloadLinkException(f'No Direct link function found for {link}')
 
+
+def debrid_extractor(url: str) -> str:
+    """ Debrid Link Extractor (VPN Must)"""
+    cget = create_scraper().request
+    try:
+        resp = cget('POST', f"https://api.real-debrid.com/rest/1.0/unrestrict/link?auth_token={config_dict['DEBRID_API_KEY']}", data={'link': url})
+        if resp.status_code == 200:
+            return resp.json()['download']
+        else:
+            raise DirectDownloadLinkException(f"ERROR: {resp['error']}")
+    except Exception as e:
+        raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}")
+    
 
 def yandex_disk(url: str) -> str:
     """ Yandex.Disk direct link generator
@@ -574,30 +595,36 @@ def filepress(url):
 def gdtot(url):
     cget = create_scraper().request
     try:
-        res = cget('GET', f'https://gdbot.xyz/file/{url.split("/")[-1]}')
+        res = cget('GET', f'https://gdtot.pro/file/{url.split("/")[-1]}')
     except Exception as e:
         raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
-    token_url = etree.HTML(res.content).xpath(
-        "//a[contains(@class,'inline-flex items-center justify-center')]/@href")
+    token_url = etree.HTML(res.content).xpath("//a[contains(@class,'inline-flex items-center justify-center')]/@href")
     if not token_url:
         try:
             url = cget('GET', url).url
             p_url = urlparse(url)
-            res = cget(
-                "GET", f"{p_url.scheme}://{p_url.hostname}/ddl/{url.split('/')[-1]}")
+            res = cget("GET", f"{p_url.scheme}://{p_url.hostname}/ddl/{url.split('/')[-1]}")
         except Exception as e:
             raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
         if (drive_link := findall(r"myDl\('(.*?)'\)", res.text)) and "drive.google.com" in drive_link[0]:
             return drive_link[0]
+        elif config_dict['GDTOT_CRYPT']:
+            cget('GET', url, cookies={'crypt': config_dict['GDTOT_CRYPT']})
+            p_url = urlparse(url)
+            js_script = cget('GET', f"{p_url.scheme}://{p_url.hostname}/dld?id={url.split('/')[-1]}")
+            g_id = findall('gd=(.*?)&', js_script.text)
+            try:
+                decoded_id = b64decode(str(g_id[0])).decode('utf-8')
+            except:
+                raise DirectDownloadLinkException("ERROR: Try in your browser, mostly file not found or user limit exceeded!")
+            return f'https://drive.google.com/open?id={decoded_id}'
         else:
-            raise DirectDownloadLinkException(
-                'ERROR: Drive Link not found, Try in your broswer')
+            raise DirectDownloadLinkException('ERROR: Drive Link not found, Try in your broswer! GDTOT_CRYPT not Provided, it increases efficiency!')
     token_url = token_url[0]
     try:
         token_page = cget('GET', token_url)
     except Exception as e:
-        raise DirectDownloadLinkException(
-            f'ERROR: {e.__class__.__name__} with {token_url}')
+        raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__} with {token_url}')
     path = findall('\("(.*?)"\)', token_page.text)
     if not path:
         raise DirectDownloadLinkException('ERROR: Cannot bypass this')

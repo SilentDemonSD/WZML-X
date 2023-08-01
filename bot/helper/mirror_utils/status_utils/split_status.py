@@ -49,4 +49,4 @@ class SplitStatus:
 
 
     def eng(self):
-        return EngineStatus.STATUS_SPLIT_MERGE
+        return EngineStatus().STATUS_SPLIT_MERGE

@@ -13,21 +13,8 @@ class WZMLStyle:
     # ---------------------
 
     # async def stats(client, message):
-    STATS = '''⌬ <b><i>BOT VERSION :</i></b>
-┠ <b>Bot Updated :</b> {last_commit}
-┠ <b>Bot Version :</b> {bot_version}
-┖ <b>Last ChangeLog :</b> {commit_details}
-
-⌬ <b><i>BOT SYSTEM :</i></b>
-┠ <b>Bot Uptime :</b> {bot_uptime}
-┠ <b>OS Uptime :</b> {os_uptime}
-┖ <b>OS Arch :</b> {os_arch}
-
-⌬ <b><i>BOT ANALYSIS :</i></b>
-┎ <b>CPU :</b>
-┃ {cpu_bar} {cpu}%
-┠ <b>CPU Frequency :</b> {cpu_freq}
-┖ <b>P-Core(s) :</b> {p_core} | <b>V-Core(s) :</b> {v_core} ( <b>T :</b> {total_core} )
+    BOT_STATS = '''⌬ <b><i>BOT STATISTICS :</i></b>
+┖ <b>Bot Uptime :</b> {bot_uptime}
 
 ┎ <b><i>RAM ( MEMORY ) :</i></b>
 ┃ {ram_bar} {ram}%
@@ -37,12 +24,56 @@ class WZMLStyle:
 ┃ {swap_bar} {swap}%
 ┖ <b>U :</b> {swap_u} | <b>F :</b> {swap_f} | <b>T :</b> {swap_t}
 
-┎ <b><i>Disk Storage :</i></b>
+┎ <b><i>DISK :</i></b>
 ┃ {disk_bar} {disk}%
+┃ <b>Total Disk Read :</b> {disk_read}
+┃ <b>Total Disk Write :</b> {disk_write}
 ┖ <b>U :</b> {disk_u} | <b>F :</b> {disk_f} | <b>T :</b> {disk_t}
+    
+    '''
+    SYS_STATS = '''⌬ <b><i>OS SYSTEM :</i></b>
+┠ <b>OS Uptime :</b> {os_uptime}
+┠ <b>OS Version :</b> {os_version}
+┖ <b>OS Arch :</b> {os_arch}
 
-⌬ <b><i>BOT DATA :</i></b>
-┖ <b>UP Data:</b> {up_data} | <b>DL Data:</b> {dl_data}'''
+⌬ <b><i>NETWORK STATS :</i></b>
+┠ <b>Upload Data:</b> {up_data}
+┠ <b>Download Data:</b> {dl_data}
+┠ <b>Pkts Sent:</b> {pkt_sent}k
+┠ <b>Pkts Received:</b> {pkt_recv}k
+┖ <b>Total I/O Data:</b> {tl_data}
+
+┎ <b>CPU :</b>
+┃ {cpu_bar} {cpu}%
+┠ <b>CPU Frequency :</b> {cpu_freq}
+┠ <b>System Avg Load :</b> {sys_load}
+┠ <b>P-Core(s) :</b> {p_core} | <b>V-Core(s) :</b> {v_core}
+┠ <b>Total Core(s) :</b> {total_core}
+┖ <b>Usable CPU(s) :</b> {cpu_use}
+    '''
+    REPO_STATS = '''⌬ <b><i>REPO STATISTICS :</i></b>
+┠ <b>Bot Updated :</b> {last_commit}
+┠ <b>Current Version :</b> {bot_version}
+┠ <b>Latest Version :</b> {lat_version}
+┖ <b>Last ChangeLog :</b> {commit_details}
+
+⌬ <b>REMARKS :</b> <code>{remarks}</code>
+    '''
+    BOT_LIMITS = '''⌬ <b><i>BOT LIMITATIONS :</i></b>
+┠ <b>Direct Limit :</b> {DL} GB
+┠ <b>Torrent Limit :</b> {TL} GB
+┠ <b>GDrive Limit :</b> {GL} GB
+┠ <b>YT-DLP Limit :</b> {YL} GB
+┠ <b>Playlist Limit :</b> {PL}
+┠ <b>Mega Limit :</b> {ML} GB
+┠ <b>Clone Limit :</b> {CL} GB
+┖ <b>Leech Limit :</b> {LL} GB
+
+┎ <b>Token Validity :</b> {TV}
+┠ <b>User Time Limit :</b> {UTI} / task
+┠ <b>User Parallel Tasks :</b> {UT}
+┖ <b>Bot Parallel Tasks :</b> {BT}
+    '''
     # ---------------------
 
     # async def restart(client, message): ---> __main__.py
@@ -105,7 +136,8 @@ class WZMLStyle:
     RCLONE_LINK =     '♻️ RClone Link'
     DDL_LINK =        '📎 {Serv} Link'
     SOURCE_URL =      '🔐 Source Link'
-    INDEX_LINK =      '⚡ Index Link'
+    INDEX_LINK_F =    '🗂 Index Link'
+    INDEX_LINK_D =    '⚡ Index Link'
     VIEW_LINK =       '🌐 View Link'
     CHECK_PM =        '📥 View in Bot PM'
     CHECK_LL =        '🖇 View in Links Log'
@@ -206,6 +238,7 @@ class WZMLStyle:
 ┠<b> Daily Tasks :</b> <code>{DT}</code> per day
 ┠<b> Last Bot Used :</b> <code>{LAST_USED}</code>
 ┠<b> MediaInfo Mode :</b> <code>{MEDIAINFO}</code>
+┠<b> Save Mode :</b> <code>{SAVE_MODE}</code>
 ┖<b> User Bot PM :</b> <code>{BOT_PM}</code>'''
 
     MIRROR = '''㊂ <b><u>Mirror/Clone Settings : {NAME}</u></b>
@@ -215,6 +248,8 @@ class WZMLStyle:
 ┠<b> Mirror Suffix :</b> <code>{MSUFFIX}</code>
 ┠<b> Mirror Remname :</b> <code>{MREMNAME}</code>
 ┠<b> DDL Server(s) :</b> <i>{DDL_SERVER}</i>
+┠<b> User TD Mode :</b> <i>{TMODE}</i>
+┠<b> Total User TD(s) :</b> <i>{USERTD}</i>
 ┖<b> Daily Mirror :</b> <code>{DM}</code> per day'''
 
     LEECH = '''㊂ <b><u>Leech Settings for {NAME}</u></b>
@@ -228,5 +263,5 @@ class WZMLStyle:
 ┠<b> Leech Caption :</b> <code>{LCAPTION}</code>
 ┠<b> Leech Prefix :</b> <code>{LPREFIX}</code>
 ┠<b> Leech Suffix :</b> <code>{LSUFFIX}</code>
-┠<b> Leech Dump :</b> <code>{LDUMP}</code>
+┠<b> Leech Dumps :</b> <code>{LDUMP}</code>
 ┖<b> Leech Remname :</b> <code>{LREMNAME}</code>'''

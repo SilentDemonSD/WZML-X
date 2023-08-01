@@ -11,7 +11,7 @@ from pyrogram.errors import SessionPasswordNeeded, FloodWait, PhoneNumberInvalid
 
 from bot import bot, LOGGER
 from bot.helper.ext_utils.bot_utils import new_thread, new_task
-from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, sendFile
+from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage, sendFile
 from bot.helper.telegram_helper.filters import CustomFilters
 
 session_dict = {}
@@ -145,17 +145,18 @@ Get from https://my.telegram.org</i>.
 async def set_details(_, message, newkey):
     global isStop
     user_id = message.from_user.id
-    session_dict[user_id] = False
     value = message.text
-    await message.delete()
+    await deleteMessage(message)
+    async with session_lock:
+        session_dict[newkey] = value
+    session_dict[user_id] = False
     if value.lower() == '/stop':
         isStop = True
         return await editMessage(session_dict['message'], '⌬ <b>Process Stopped</b>')
-    async with session_lock:
-        session_dict[newkey] = value
+
 
 @new_thread
-async def invoke(client, message, key, wait=True):
+async def invoke(client, message, key):
     global isStop
     user_id = message.from_user.id
     session_dict[user_id] = True
@@ -170,4 +171,4 @@ async def invoke(client, message, key, wait=True):
     client.remove_handler(*handler)
 
 
-bot.add_handler(MessageHandler(genPyroString, filters=command('exportsession') & private & CustomFilters.owner))
+bot.add_handler(MessageHandler(genPyroString, filters=command('exportsession') & private & CustomFilters.sudo))

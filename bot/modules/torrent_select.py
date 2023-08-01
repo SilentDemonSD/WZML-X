@@ -6,7 +6,7 @@ from aiofiles.os import remove as aioremove, path as aiopath
 from bot import bot, bot_name, aria2, download_dict, download_dict_lock, OWNER_ID, user_data, LOGGER
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import sendMessage, sendStatusMessage
+from bot.helper.telegram_helper.message_utils import sendMessage, sendStatusMessage, deleteMessage
 from bot.helper.ext_utils.bot_utils import getDownloadByGid, MirrorStatus, bt_selection_buttons, sync_to_async
 
 
@@ -78,14 +78,14 @@ async def get_confirm(client, query):
     dl = await getDownloadByGid(data[2])
     if dl is None:
         await query.answer("This task has been cancelled!", show_alert=True)
-        await message.delete()
+        await deleteMessage(message)
         return
     if hasattr(dl, 'listener'):
         listener = dl.listener()
     else:
         await query.answer("Not in download state anymore! Keep this message to resume the seed if seed enabled!", show_alert=True)
         return
-    if user_id != listener.message.from_user.id and not await CustomFilters.sudo_user(client, query):
+    if user_id != listener.message.from_user.id and not await CustomFilters.sudo(client, query):
         await query.answer("This task is not for you!", show_alert=True)
     elif data[1] == "pin":
         await query.answer(data[3], show_alert=True)
@@ -122,13 +122,13 @@ async def get_confirm(client, query):
                 except Exception as e:
                     LOGGER.error(f"{e} Error in resume, this mostly happens after abuse aria2. Try to use select cmd again!")
         await sendStatusMessage(message)
-        await message.delete()
+        await deleteMessage(message)
     elif data[1] == "rm":
         await query.answer()
         await (dl.download()).cancel_download()
-        await message.delete()
+        await deleteMessage(message)
 
 
 bot.add_handler(MessageHandler(select, filters=regex(
-    f"^/{BotCommands.BtSelectCommand}(_\w+)?") & CustomFilters.authorized))
+    f"^/{BotCommands.BtSelectCommand}(_\w+)?") & CustomFilters.authorized & ~CustomFilters.blacklisted))
 bot.add_handler(CallbackQueryHandler(get_confirm, filters=regex("^btsel")))

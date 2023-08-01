@@ -94,7 +94,7 @@ async def pics_callback(_, query):
             await DbManger().update_config({'IMAGES': config_dict['IMAGES']})
         query.answer("Image Successfully Deleted", show_alert=True)
         if len(config_dict['IMAGES']) == 0:
-            await query.message.delete()
+            await deleteMessage(query.message)
             await sendMessage(message, f"<b>No Photo to Show !</b> Add by /{BotCommands.AddImageCommand}")
             return
         ind = int(data[3])+1
@@ -113,13 +113,14 @@ async def pics_callback(_, query):
             await DbManger().update_config({'IMAGES': config_dict['IMAGES']})
         await query.answer("All Images Successfully Deleted", show_alert=True)
         await sendMessage(message, f"<b>No Images to Show !</b> Add by /{BotCommands.AddImageCommand}")
-        await message.delete()
+        await deleteMessage(message)
     else:
         await query.answer()
-        await message.delete()
-        await message.reply_to_message.delete()
+        await deleteMessage(message)
+        if message.reply_to_message:
+            await deleteMessage(message.reply_to_message)
 
 
-bot.add_handler(MessageHandler(picture_add, filters=command(BotCommands.AddImageCommand) & CustomFilters.authorized))
-bot.add_handler(MessageHandler(pictures, filters=command(BotCommands.ImagesCommand) & CustomFilters.authorized))
+bot.add_handler(MessageHandler(picture_add, filters=command(BotCommands.AddImageCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
+bot.add_handler(MessageHandler(pictures, filters=command(BotCommands.ImagesCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
 bot.add_handler(CallbackQueryHandler(pics_callback, filters=regex(r'^images')))

@@ -243,5 +243,5 @@ async def imdb_callback(_, query):
         await query.message.reply_to_message.delete()
 
 
-bot.add_handler(MessageHandler(imdb_search, filters=command(BotCommands.IMDBCommand) & CustomFilters.authorized))
+bot.add_handler(MessageHandler(imdb_search, filters=command(BotCommands.IMDBCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
 bot.add_handler(CallbackQueryHandler(imdb_callback, filters=regex(r'^imdb')))

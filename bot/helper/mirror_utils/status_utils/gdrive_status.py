@@ -55,4 +55,4 @@ class GdriveStatus:
         return self.__obj
 
     def eng(self):
-        return EngineStatus.STATUS_GD
+        return EngineStatus().STATUS_GD

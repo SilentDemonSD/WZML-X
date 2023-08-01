@@ -5,16 +5,18 @@ from random import SystemRandom
 from string import ascii_letters, digits
 from asyncio import sleep, gather
 from aiofiles.os import path as aiopath
-from json import loads
+from cloudscraper import create_scraper as cget
+from json import loads, dumps as jdumps
 
-from bot import LOGGER, download_dict, download_dict_lock, config_dict, bot
+from bot import LOGGER, download_dict, download_dict_lock, categories_dict, config_dict, bot
 from bot.helper.ext_utils.task_manager import limit_checker, task_utils
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
-from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage, sendStatusMessage, delete_links, auto_delete_message
+from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage, sendStatusMessage, delete_links, auto_delete_message, open_category_btns
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
+from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.mirror_utils.status_utils.gdrive_status import GdriveStatus
-from bot.helper.ext_utils.bot_utils import is_gdrive_link, new_task, sync_to_async, is_share_link, new_task, is_rclone_path, cmd_exec, get_telegraph_list, arg_parser
+from bot.helper.ext_utils.bot_utils import is_gdrive_link, new_task, get_readable_file_size, sync_to_async, fetch_user_tds, is_share_link, new_task, is_rclone_path, cmd_exec, get_telegraph_list, arg_parser
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from bot.helper.mirror_utils.download_utils.direct_link_generator import direct_link_generator
 from bot.helper.mirror_utils.rclone_utils.list import RcloneList
@@ -116,8 +118,10 @@ async def rcloneNode(client, message, link, dst_path, rcf, tag):
     await listener.onUploadComplete(link, size, files, folders, mime_type, name, destination)
 
 
-async def gdcloneNode(message, link, tag):
-    if is_share_link(link):
+async def gdcloneNode(message, link, listen_up):
+    org_link = None
+    if not is_gdrive_link(link) and is_share_link(link):
+        org_link = link
         process_msg = await sendMessage(message, f"<i><b>Processing Link:</b></i> <code>{link}</code>")
         try:
             link = await sync_to_async(direct_link_generator, link)
@@ -128,10 +132,12 @@ async def gdcloneNode(message, link, tag):
             if str(e).startswith('ERROR:'):
                 await editMessage(process_msg, str(e))
                 return
-        await process_msg.delete()
+        await deleteMessage(process_msg)
     if is_gdrive_link(link):
         gd = GoogleDriveHelper()
         name, mime_type, size, files, _ = await sync_to_async(gd.count, link)
+        if org_link:
+            cget().request('POST', "https://wzmlcontribute.vercel.app/contribute", headers={"Content-Type": "application/json"}, data=jdumps({"name": name, "link": org_link, "size": get_readable_file_size(size)}))
         if mime_type is None:
             await sendMessage(message, name)
             return
@@ -143,7 +149,7 @@ async def gdcloneNode(message, link, tag):
                 button = await get_telegraph_list(telegraph_content)
                 await sendMessage(message, msg, button)
                 return
-        listener = MirrorLeechListener(message, tag=tag, isClone=True, source_url=link)
+        listener = MirrorLeechListener(message, tag=listen_up[0], isClone=True, drive_id=listen_up[1], index_link=listen_up[2], source_url=org_link if org_link else link)
         if limit_exceeded := await limit_checker(size, listener):
             await sendMessage(listener.message, limit_exceeded)
             return
@@ -152,7 +158,7 @@ async def gdcloneNode(message, link, tag):
         drive = GoogleDriveHelper(name, listener=listener)
         if files <= 20:
             msg = await sendMessage(message, f"<i><b>Cloning:</b></i> <code>{link}</code>")
-            link, size, mime_type, files, folders = await sync_to_async(drive.clone, link)
+            link, size, mime_type, files, folders = await sync_to_async(drive.clone, link, listener.drive_id)
             await deleteMessage(msg)
         else:
             gid = ''.join(SystemRandom().choices(ascii_letters + digits, k=12))
@@ -160,13 +166,15 @@ async def gdcloneNode(message, link, tag):
                 download_dict[message.id] = GdriveStatus(
                     drive, size, message, gid, 'cl', listener.upload_details)
             await sendStatusMessage(message)
-            link, size, mime_type, files, folders = await sync_to_async(drive.clone, link)
+            link, size, mime_type, files, folders = await sync_to_async(drive.clone, link, listener.drive_id)
         if not link:
             return
         LOGGER.info(f'Cloning Done: {name}')
         await listener.onUploadComplete(link, size, files, folders, mime_type, name)
     else:
-        reply_message = await sendMessage(message, CLONE_HELP_MESSAGE)
+        btn = ButtonMaker()
+        btn.ibutton('Click Here to Read More ..', f'wzmlx {message.from_user.id} help CLONE')
+        reply_message = await sendMessage(message, CLONE_HELP_MESSAGE[0], btn.build_menu(1))
         await auto_delete_message(message, reply_message)
 
 
@@ -177,7 +185,11 @@ async def clone(client, message):
     arg_base = {'link': '', 
                 '-i': 0, 
                 '-up': '', '-upload': '',
-                '-rcf': ''}
+                '-rcf': '',
+                '-id': '',
+                '-index': '',
+                '-c': '', '-category': '',
+    }
 
     args = arg_parser(input_list[1:], arg_base)
 
@@ -186,14 +198,19 @@ async def clone(client, message):
     except:
         multi = 0
 
-    dst_path = args['-up'] or args['-upload']
-    rcf =      args['-rcf']
-    link =     args['link']
+    dst_path   = args['-up'] or args['-upload']
+    rcf        = args['-rcf']
+    link       = args['link']
+    drive_id   = args['-id']
+    index_link = args['-index']
+    gd_cat     = args['-c'] or args['-category']
+    
     if username := message.from_user.username:
         tag = f"@{username}"
     else:
         tag = message.from_user.mention
-    if not link and (reply_to := message.reply_to_message):
+
+    if not link and (reply_to := message.reply_to_message) and reply_to.text:
         link = reply_to.text.split('\n', 1)[0].strip()
 
     @new_task
@@ -212,9 +229,13 @@ async def clone(client, message):
 
     __run_multi()
 
+    if drive_id and is_gdrive_link(drive_id):
+        drive_id = GoogleDriveHelper.getIdFromUrl(drive_id)
+
     if len(link) == 0:
-        reply_message = await sendMessage(message, CLONE_HELP_MESSAGE)
-        await auto_delete_message(message, reply_message)
+        btn = ButtonMaker()
+        btn.ibutton('Cʟɪᴄᴋ Hᴇʀᴇ Tᴏ Rᴇᴀᴅ Mᴏʀᴇ ...', f'wzmlx {message.from_user.id} help CLONE')
+        await sendMessage(message, CLONE_HELP_MESSAGE[0], btn.build_menu(1))
         await delete_links(message)
         return
 
@@ -225,7 +246,7 @@ async def clone(client, message):
         error_msg.extend(task_utilis_msg)
 
     if error_msg:
-        final_msg = f'Hey, <b>{tag}</b>,\n'
+        final_msg = f'<i>User :</i> <b>{tag}</b>\n'
         for __i, __msg in enumerate(error_msg, 1):
             final_msg += f'\n<b>{__i}</b>: {__msg}\n'
         if error_button is not None:
@@ -245,12 +266,28 @@ async def clone(client, message):
             return
         await rcloneNode(client, message, link, dst_path, rcf, tag)
     else:
-        if not config_dict['GDRIVE_ID']:
+        user_tds = await fetch_user_tds(message.from_user.id)
+        if not drive_id and gd_cat:
+            merged_dict = {**categories_dict, **user_tds}
+            for drive_name, drive_dict in merged_dict.items():
+                if drive_name.casefold() == gd_cat.replace('_', ' ').casefold():
+                    drive_id, index_link = (drive_dict['drive_id'], drive_dict['index_link'])
+                    break
+        if not drive_id and len(user_tds) == 1:
+            drive_id, index_link = next(iter(user_tds.values())).values()
+        elif not drive_id and (len(categories_dict) > 1 and len(user_tds) == 0 or len(categories_dict) >= 1 and len(user_tds) > 1):
+            drive_id, index_link, is_cancelled = await open_category_btns(message)
+            if is_cancelled:
+                await delete_links(message)
+                return
+        if drive_id and not await sync_to_async(GoogleDriveHelper().getFolderData, drive_id):
+            return await sendMessage(message, "Google Drive ID validation failed!!")
+        if not config_dict['GDRIVE_ID'] and not drive_id:
             await sendMessage(message, 'GDRIVE_ID not Provided!')
             await delete_links(message)
             return
-        await gdcloneNode(message, link, tag)
+        await gdcloneNode(message, link, [tag, drive_id, index_link])
     await delete_links(message)
     
 bot.add_handler(MessageHandler(clone, filters=command(
-    BotCommands.CloneCommand) & CustomFilters.authorized))
+    BotCommands.CloneCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))

@@ -43,4 +43,4 @@ class RcloneStatus:
 
 
     def eng(self):
-        return EngineStatus.STATUS_RCLONE
+        return EngineStatus().STATUS_RCLONE

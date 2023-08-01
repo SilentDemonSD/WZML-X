@@ -51,4 +51,4 @@ class TelegramStatus:
 
 
     def eng(self):
-        return EngineStatus.STATUS_TG
+        return EngineStatus().STATUS_TG

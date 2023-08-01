@@ -35,8 +35,8 @@ class DbManger:
         if await self.__db.settings.qbittorrent.find_one({'_id': bot_id}) is None:
             await self.__db.settings.qbittorrent.update_one({'_id': bot_id}, {'$set': qbit_options}, upsert=True)
         # User Data
-        if await self.__db.users.find_one():
-            rows = self.__db.users.find({})
+        if await self.__db.users[bot_id].find_one():
+            rows = self.__db.users[bot_id].find({})
             # return a dict ==> {_id, is_sudo, is_auth, as_doc, thumb, yt_opt, media_group, equal_splits, split_size, rclone}
             async for row in rows:
                 uid = row['_id']
@@ -116,7 +116,7 @@ class DbManger:
             del data['thumb']
         if data.get('rclone'):
             del data['rclone']
-        await self.__db.users.replace_one({'_id': user_id}, data, upsert=True)
+        await self.__db.users[bot_id].replace_one({'_id': user_id}, data, upsert=True)
         self.__conn.close
 
     async def update_user_doc(self, user_id, key, path=''):
@@ -127,7 +127,7 @@ class DbManger:
                 doc_bin = await doc.read()
         else:
             doc_bin = ''
-        await self.__db.users.update_one({'_id': user_id}, {'$set': {key: doc_bin}}, upsert=True)
+        await self.__db.users[bot_id].update_one({'_id': user_id}, {'$set': {key: doc_bin}}, upsert=True)
         self.__conn.close
 
     async def get_pm_uids(self):

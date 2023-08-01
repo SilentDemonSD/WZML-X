@@ -120,4 +120,4 @@ class QbittorrentStatus:
                     del QbTorrents[self.__info.tags]
 
     def eng(self):
-        return EngineStatus.STATUS_QB
+        return EngineStatus().STATUS_QB

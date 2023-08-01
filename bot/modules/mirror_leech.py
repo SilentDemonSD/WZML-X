@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.filters import command, regex
 from html import escape
@@ -7,9 +6,10 @@ from re import match as re_match
 from asyncio import sleep
 from aiofiles import open as aiopen
 from aiofiles.os import path as aiopath
+from cloudscraper import create_scraper
 
-from bot import bot, DOWNLOAD_DIR, LOGGER, config_dict, bot_name
-from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_mega_link, is_gdrive_link, get_content_type, new_task, sync_to_async, is_rclone_path, is_telegram_link, arg_parser
+from bot import bot, DOWNLOAD_DIR, LOGGER, config_dict, bot_name, categories_dict, user_data
+from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_mega_link, is_gdrive_link, get_content_type, new_task, sync_to_async, is_rclone_path, is_telegram_link, arg_parser, fetch_user_tds, fetch_user_dumps, get_stats
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from bot.helper.ext_utils.task_manager import task_utils
 from bot.helper.mirror_utils.download_utils.aria2_download import add_aria2c_download
@@ -18,14 +18,15 @@ from bot.helper.mirror_utils.download_utils.qbit_download import add_qb_torrent
 from bot.helper.mirror_utils.download_utils.mega_download import add_mega_download
 from bot.helper.mirror_utils.download_utils.rclone_download import add_rclone_download
 from bot.helper.mirror_utils.rclone_utils.list import RcloneList
+from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.mirror_utils.download_utils.direct_link_generator import direct_link_generator
 from bot.helper.mirror_utils.download_utils.telegram_download import TelegramDownloadHelper
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, get_tg_link_content, delete_links, auto_delete_message
+from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, editReplyMarkup, deleteMessage, get_tg_link_content, delete_links, auto_delete_message, open_category_btns, open_dump_btns
 from bot.helper.listeners.tasks_listener import MirrorLeechListener
-from bot.helper.ext_utils.help_messages import MIRROR_HELP_MESSAGE
+from bot.helper.ext_utils.help_messages import MIRROR_HELP_MESSAGE, CLONE_HELP_MESSAGE, YT_HELP_MESSAGE, help_string
 from bot.helper.ext_utils.bulk_links import extract_bulk_links
 
 
@@ -34,35 +35,58 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     text = message.text.split('\n')
     input_list = text[0].split(' ')
 
-    arg_base = {'link': '', '-i': 0, '-m': '', '-d': False, '-j': False, '-s': False, '-b': False,
-                '-n': '', '-e': False, '-z': False, '-up': '', '-rcf': '', '-au': '', '-ap': ''}
+    arg_base = {'link': '', 
+                '-i': 0,
+                '-m': '', '-sd': '', '-samedir': '',
+                '-d': False, '-seed': False,
+                '-j': False, '-join': False,
+                '-s': False, '-select': False,
+                '-b': False, '-bulk': False,
+                '-n': '', '-name': '',
+                '-e': False, '-extract': False,
+                '-uz': False, '-unzip': False,
+                '-z': False, '-zip': False,
+                '-up': '', '-upload': '',
+                '-rcf': '', 
+                '-u': '', '-user': '',
+                '-p': '', '-pass': '',
+                '-id': '',
+                '-index': '',
+                '-c': '', '-category': '',
+                '-ud': '', '-dump': '',
+    }
 
     args = arg_parser(input_list[1:], arg_base)
+    cmd = input_list[0].split('@')[0]
 
     try:
         multi = int(args['-i'])
     except:
         multi = 0
-
-    select =      args['-s']
-    seed =        args['-d']
-    isBulk =      args['-b']
-    folder_name = args['-m']
-    name =        args['-n']
-    up =          args['-up']
-    rcf =         args['-rcf']
-    link =        args['link']
-    extract =     args['-e'] or 'uz' in input_list[0] or 'unzip' in input_list[0]
-    compress =    args['-z'] or (not extract and ('z' in input_list[0] or 'zip' in input_list[0]))
-    join =        args['-j']
-
-    bulk_start = 0
-    bulk_end = 0
-    ratio = None
-    seed_time = None
-    reply_to = None
-    file_ = None
-    session = ''
+    
+    link          = args['link']
+    folder_name   = args['-m'] or args['-sd'] or args['-samedir']
+    seed          = args['-d'] or args['-seed']
+    join          = args['-j'] or args['-join']
+    select        = args['-s'] or args['-select']
+    isBulk        = args['-b'] or args['-bulk']
+    name          = args['-n'] or args['-name']
+    extract       = args['-e'] or args['-extract'] or args['-uz'] or args['-unzip'] or 'uz' in cmd or 'unzip' in cmd
+    compress      = args['-z'] or args['-zip'] or (not extract and ('z' in cmd or 'zip' in cmd))
+    up            = args['-up'] or args['-upload']
+    rcf           = args['-rcf']
+    drive_id      = args['-id']
+    index_link    = args['-index']
+    gd_cat        = args['-c'] or args['-category']
+    user_dump     = args['-ud'] or args['-dump']
+    bulk_start    = 0
+    bulk_end      = 0
+    ratio         = None
+    seed_time     = None
+    reply_to      = None
+    file_         = None
+    session       = ''
+    
     if not isinstance(seed, bool):
         dargs = seed.split(':')
         ratio = dargs[0] or None
@@ -76,6 +100,9 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         if len(dargs) == 2:
             bulk_end = dargs[1] or None
         isBulk = True
+        
+    if drive_id and is_gdrive_link(drive_id):
+        drive_id = GoogleDriveHelper.getIdFromUrl(drive_id)
 
     if folder_name and not isBulk:
         seed = False
@@ -165,7 +192,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
 
     if reply_to:
         file_ = getattr(reply_to, reply_to.media.value) if reply_to.media else None
-        if file_ is None:
+        if file_ is None and reply_to.text:
             reply_text = reply_to.text.split('\n', 1)[0].strip()
             if is_url(reply_text) or is_magnet(reply_text):
                 link = reply_text
@@ -174,8 +201,9 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             file_ = None
 
     if not is_url(link) and not is_magnet(link) and not await aiopath.exists(link) and not is_rclone_path(link) and file_ is None:
-        reply_message = await sendMessage(message, MIRROR_HELP_MESSAGE)
-        await auto_delete_message(message, reply_message)
+        btn = ButtonMaker()
+        btn.ibutton('Cʟɪᴄᴋ Hᴇʀᴇ Tᴏ Rᴇᴀᴅ Mᴏʀᴇ ...', f'wzmlx {message.from_user.id} help MIRROR')
+        await sendMessage(message, MIRROR_HELP_MESSAGE[0], btn.build_menu(1))
         await delete_links(message)
         return
 
@@ -195,8 +223,10 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         await delete_links(message)
         return
 
+    org_link = None
     if link:
         LOGGER.info(link)
+        org_link = link
 
     if not is_mega_link(link) and not isQbit and not is_magnet(link) and not is_rclone_path(link) \
        and not is_gdrive_link(link) and not link.endswith('.torrent') and file_ is None:
@@ -213,7 +243,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
                     await editMessage(process_msg, str(e))
                     await delete_links(message)
                     return
-            await process_msg.delete()
+            await deleteMessage(process_msg)
 
     if not isLeech:
         if config_dict['DEFAULT_UPLOAD'] == 'rc' and not up or up == 'rc':
@@ -222,7 +252,20 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             up = 'ddl'
         if not up and config_dict['DEFAULT_UPLOAD'] == 'gd':
             up = 'gd'
-        if up == 'gd' and not config_dict['GDRIVE_ID']:
+            user_tds = await fetch_user_tds(message.from_user.id)
+            if not drive_id and gd_cat:
+                merged_dict = {**categories_dict, **user_tds}
+                drive_id, index_link = next(((drive_dict['drive_id'], drive_dict['index_link']) for drive_name, drive_dict in merged_dict.items() if drive_name.casefold() == gd_cat.replace('_', ' ').casefold()), ('', ''))
+            if not drive_id and len(user_tds) == 1:
+                drive_id, index_link = next(iter(user_tds.values())).values()
+            elif not drive_id and (len(categories_dict) > 1 and len(user_tds) == 0 or len(categories_dict) >= 1 and len(user_tds) > 1):
+                drive_id, index_link, is_cancelled = await open_category_btns(message)
+                if is_cancelled:
+                    await delete_links(message)
+                    return
+            if drive_id and not await sync_to_async(GoogleDriveHelper().getFolderData, drive_id):
+                return await sendMessage(message, "Google Drive ID validation failed!!")
+        if up == 'gd' and not config_dict['GDRIVE_ID'] and not drive_id:
             await sendMessage(message, 'GDRIVE_ID not Provided!')
             return
         elif not up:
@@ -242,6 +285,23 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             await sendMessage(message, 'Wrong Rclone Upload Destination!')
             await delete_links(message)
             return
+    else:
+        if user_dump and (user_dump.isdigit() or user_dump.startswith('-')):
+            up = int(user_dump)
+        elif user_dump and user_dump.startswith('@'):
+            up = user_dump
+        elif (ldumps := await fetch_user_dumps(message.from_user.id)):
+            if user_dump and user_dump.casefold() == "all":
+                up = [dump_id for dump_id in ldumps.values()]
+            elif user_dump:
+                up = next((dump_id for name_, dump_id in ldumps.items() if user_dump.casefold() == name_.casefold()), '')
+            if not up and len(ldumps) == 1:
+                up = next(iter(ldumps.values()))
+            elif not up:
+                up, is_cancelled = await open_dump_btns(message)
+                if is_cancelled:
+                    await delete_links(message)
+                    return
 
     if link == 'rcl':
         link = await RcloneList(client, message).get_rclone_path('rcd')
@@ -257,7 +317,8 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             await delete_links(message)
             return
 
-    listener = MirrorLeechListener(message, compress, extract, isQbit, isLeech, tag, select, seed, sameDir, rcf, up, join, source_url=link)
+    listener = MirrorLeechListener(message, compress, extract, isQbit, isLeech, tag, select, seed, 
+                                    sameDir, rcf, up, join, drive_id=drive_id, index_link=index_link, source_url=org_link if org_link else link)
 
     if file_ is not None:
         await delete_links(message)
@@ -275,15 +336,15 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         await add_rclone_download(link, config_path, f'{path}/', name, listener)
     elif is_gdrive_link(link):
         await delete_links(message)
-        await add_gd_download(link, path, listener, name)
+        await add_gd_download(link, path, listener, name, org_link)
     elif is_mega_link(link):
         await delete_links(message)
         await add_mega_download(link, f'{path}/', listener, name)
     elif isQbit:
         await add_qb_torrent(link, path, listener, ratio, seed_time)
     else:
-        ussr = args['-au']
-        pssw = args['-ap']
+        ussr = args['-u'] or args['-user']
+        pssw = args['-p'] or args['-pass']
         if ussr or pssw:
             auth = f"{ussr}:{pssw}"
             auth = "Basic " + b64encode(auth.encode()).decode('ascii')
@@ -299,7 +360,7 @@ async def wzmlxcb(_, query):
     user_id = query.from_user.id
     data = query.data.split()
     if user_id != int(data[1]):
-        return await query.answer(text="Not Message User!", show_alert=True)
+        return await query.answer(text="Not Yours!", show_alert=True)
     elif data[2] == "logdisplay":
         await query.answer()
         async with aiopen('log.txt', 'r') as f:
@@ -319,16 +380,72 @@ async def wzmlxcb(_, query):
             startLine = f"<b>Showing Last {ind} Lines from log.txt:</b> \n\n----------<b>START LOG</b>----------\n\n"
             endLine = "\n----------<b>END LOG</b>----------"
             btn = ButtonMaker()
-            btn.ibutton('Close', f'wzmlx {user_id} close')
+            btn.ibutton('Cʟᴏsᴇ', f'wzmlx {user_id} close')
             await sendMessage(message, startLine + escape(Loglines) + endLine, btn.build_menu(1))
-            await query.edit_message_reply_markup(None)
+            await editReplyMarkup(message, None)
         except Exception as err:
             LOGGER.error(f"TG Log Display : {str(err)}")
+    elif data[2] == "webpaste":
+        await query.answer()
+        async with aiopen('log.txt', 'r') as f:
+            logFile = await f.read()
+        cget = create_scraper().request
+        resp = cget('POST', 'http://stashbin.xyz/api/document', data={'content': logFile}).json()
+        if resp['ok']:
+            btn = ButtonMaker()
+            btn.ubutton('📨 Web Paste', f"http://stashbin.xyz/{resp['data']['key']}")
+            await editReplyMarkup(message, btn.build_menu(1))
     elif data[2] == "botpm":
         await query.answer(url=f"https://t.me/{bot_name}?start=wzmlx")
+    elif data[2] == "help":
+        await query.answer()
+        btn = ButtonMaker()
+        btn.ibutton('Cʟᴏsᴇ', f'wzmlx {user_id} close')
+        if data[3] == "CLONE":
+            await editMessage(message, CLONE_HELP_MESSAGE[1], btn.build_menu(1))
+        elif data[3] == "MIRROR":
+            if len(data) == 4:
+                msg = MIRROR_HELP_MESSAGE[1][:4000]
+                btn.ibutton('Nᴇxᴛ Pᴀɢᴇ', f'wzmlx {user_id} help MIRROR readmore')
+            else:
+                msg = MIRROR_HELP_MESSAGE[1][4000:]
+                btn.ibutton('Pʀᴇ Pᴀɢᴇ', f'wzmlx {user_id} help MIRROR')
+            await editMessage(message, msg, btn.build_menu(2))
+        if data[3] == "YT":
+            await editMessage(message, YT_HELP_MESSAGE[1], btn.build_menu(1))
+    elif data[2] == "guide":
+        btn = ButtonMaker()
+        btn.ibutton('Bᴀᴄᴋ', f'wzmlx {user_id} guide home')
+        btn.ibutton('Cʟᴏsᴇ', f'wzmlx {user_id} close')
+        if data[3] == "basic":
+            await editMessage(message, help_string[0], btn.build_menu(2))
+        elif data[3] == "users":
+            await editMessage(message, help_string[1], btn.build_menu(2))
+        elif data[3] == "miscs":
+            await editMessage(message, help_string[3], btn.build_menu(2))
+        elif data[3] == "admin":
+            if not await CustomFilters.sudo('', query):
+                return await query.answer('Not Sudo or Owner!', show_alert=True)
+            await editMessage(message, help_string[2], btn.build_menu(2))
+        else:
+            buttons = ButtonMaker()
+            buttons.ibutton('Basic', f'wzmlx {user_id} guide basic')
+            buttons.ibutton('Users', f'wzmlx {user_id} guide users')
+            buttons.ibutton('Mics', f'wzmlx {user_id} guide miscs')
+            buttons.ibutton('Owner & Sudos', f'wzmlx {user_id} guide admin')
+            buttons.ibutton('Close', f'wzmlx {user_id} close')
+            await editMessage(message, "㊂ <b><i>Help Guide Menu!</i></b>\n\n<b>NOTE: <i>Click on any CMD to see more minor detalis.</i></b>", buttons.build_menu(2))
+        await query.answer()
+    elif data[2] == "stats":
+        msg, btn = await get_stats(query, data[3])
+        await editMessage(message, msg, btn, 'IMAGES')
     else:
         await query.answer()
-        await message.delete()
+        await deleteMessage(message)
+        if message.reply_to_message:
+            await deleteMessage(message.reply_to_message)
+            if message.reply_to_message.reply_to_message:
+                await deleteMessage(message.reply_to_message.reply_to_message)
 
 
 async def mirror(client, message):
@@ -348,11 +465,11 @@ async def qb_leech(client, message):
 
 
 bot.add_handler(MessageHandler(mirror, filters=command(
-    BotCommands.MirrorCommand) & CustomFilters.authorized))
+    BotCommands.MirrorCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
 bot.add_handler(MessageHandler(qb_mirror, filters=command(
-    BotCommands.QbMirrorCommand) & CustomFilters.authorized))
+    BotCommands.QbMirrorCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
 bot.add_handler(MessageHandler(leech, filters=command(
-    BotCommands.LeechCommand) & CustomFilters.authorized))
+    BotCommands.LeechCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
 bot.add_handler(MessageHandler(qb_leech, filters=command(
-    BotCommands.QbLeechCommand) & CustomFilters.authorized))
+    BotCommands.QbLeechCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
 bot.add_handler(CallbackQueryHandler(wzmlxcb, filters=regex(r'^wzmlx')))

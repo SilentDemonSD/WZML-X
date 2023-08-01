@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import platform
 from base64 import b64encode
 from datetime import datetime
 from os import path as ospath
@@ -10,6 +11,7 @@ from time import time
 from html import escape
 from uuid import uuid4
 from subprocess import run as srun
+from psutil import disk_usage, disk_io_counters, Process, cpu_percent, swap_memory, cpu_count, cpu_freq, getloadavg, virtual_memory, net_io_counters, boot_time
 from asyncio import create_subprocess_exec, create_subprocess_shell, run_coroutine_threadsafe, sleep
 from asyncio.subprocess import PIPE
 from functools import partial, wraps
@@ -25,38 +27,35 @@ from pyrogram.errors import PeerIdInvalid
 
 from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.themes import BotTheme
-from bot import OWNER_ID, bot_name, DATABASE_URL, LOGGER, get_client, aria2, download_dict, download_dict_lock, botStartTime, user_data, config_dict, bot_loop, extra_buttons, user
+from bot.version import get_version
+from bot import OWNER_ID, bot_name, bot_cache, DATABASE_URL, LOGGER, get_client, aria2, download_dict, download_dict_lock, botStartTime, user_data, config_dict, bot_loop, extra_buttons, user
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.telegraph_helper import telegraph
 from bot.helper.ext_utils.shortners import short_url
 
-THREADPOOL = ThreadPoolExecutor(max_workers=1000)
-
+THREADPOOL   = ThreadPoolExecutor(max_workers=1000)
 MAGNET_REGEX = r'magnet:\?xt=urn:(btih|btmh):[a-zA-Z0-9]*\s*'
-
-URL_REGEX = r'^(?!\/)(rtmps?:\/\/|mms:\/\/|rtsp:\/\/|https?:\/\/|ftp:\/\/)?([^\/:]+:[^\/@]+@)?(www\.)?(?=[^\/:\s]+\.[^\/:\s]+)([^\/:\s]+\.[^\/:\s]+)(:\d+)?(\/[^#\s]*[\s\S]*)?(\?[^#\s]*)?(#.*)?$'
-
-SIZE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
-
+URL_REGEX    = r'^(?!\/)(rtmps?:\/\/|mms:\/\/|rtsp:\/\/|https?:\/\/|ftp:\/\/)?([^\/:]+:[^\/@]+@)?(www\.)?(?=[^\/:\s]+\.[^\/:\s]+)([^\/:\s]+\.[^\/:\s]+)(:\d+)?(\/[^#\s]*[\s\S]*)?(\?[^#\s]*)?(#.*)?$'
+SIZE_UNITS   = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB']
 STATUS_START = 0
-PAGES = 1
-PAGE_NO = 1
+PAGES        = 1
+PAGE_NO      = 1
 
 
 class MirrorStatus:
-    STATUS_UPLOADING = "Upload"
+    STATUS_UPLOADING   = "Upload"
     STATUS_DOWNLOADING = "Download"
-    STATUS_CLONING = "Clone"
-    STATUS_QUEUEDL = "QueueDL"
-    STATUS_QUEUEUP = "QueueUp"
-    STATUS_PAUSED = "Pause"
-    STATUS_ARCHIVING = "Archive"
-    STATUS_EXTRACTING = "Extract"
-    STATUS_SPLITTING = "Split"
-    STATUS_CHECKING = "CheckUp"
-    STATUS_SEEDING = "Seed"
-    STATUS_UPLOADDDL = "Upload DDL"
+    STATUS_CLONING     = "Clone"
+    STATUS_QUEUEDL     = "QueueDL"
+    STATUS_QUEUEUP     = "QueueUp"
+    STATUS_PAUSED      = "Pause"
+    STATUS_ARCHIVING   = "Archive"
+    STATUS_EXTRACTING  = "Extract"
+    STATUS_SPLITTING   = "Split"
+    STATUS_CHECKING    = "CheckUp"
+    STATUS_SEEDING     = "Seed"
+    STATUS_UPLOADDDL   = "Upload DDL"
 
 
 class setInterval:
@@ -150,42 +149,49 @@ def get_progress_bar_string(pct):
     return f"[{p_str}]"
 
 
-def get_p7zip_version():
+def get_all_versions():
     try:
         result = srun(['7z', '-version'], capture_output=True, text=True)
-        return result.stdout.split('\n')[2].split(' ')[2]
+        vp = result.stdout.split('\n')[2].split(' ')[2]
     except FileNotFoundError:
-        return ''
-
-
-def get_ffmpeg_version():
+        vp = ''
     try:
         result = srun(['ffmpeg', '-version'], capture_output=True, text=True)
-        return result.stdout.split('\n')[0].split(' ')[2].split('ubuntu')[0]
+        vf = result.stdout.split('\n')[0].split(' ')[2].split('ubuntu')[0]
     except FileNotFoundError:
-        return ''
-
-
-def get_rclone_version():
+        vf = ''
     try:
         result = srun(['rclone', 'version'], capture_output=True, text=True)
-        return result.stdout.split('\n')[0].split(' ')[1]
+        vr = result.stdout.split('\n')[0].split(' ')[1]
     except FileNotFoundError:
-        return ''
+        vr = ''
+    bot_cache['eng_versions'] = {'p7zip':vp, 'ffmpeg': vf, 'rclone': vr,
+                                    'aria': aria2.client.get_version()['version'],
+                                    'aiohttp': get_distribution('aiohttp').version,
+                                    'gapi': get_distribution('google-api-python-client').version,
+                                    'mega': MegaApi('test').getVersion(),
+                                    'qbit': get_client().app.version,
+                                    'pyro': get_distribution('pyrogram').version,
+                                    'ytdlp': get_distribution('yt-dlp').version}
 
 
 class EngineStatus:
-    STATUS_ARIA = f"Aria2 v{aria2.client.get_version()['version']}"
-    STATUS_GD = f"Google-API v{get_distribution('google-api-python-client').version}"
-    STATUS_MEGA = f"MegaSDK v{MegaApi('test').getVersion()}"
-    STATUS_QB = f"qBit {get_client().app.version}"
-    STATUS_TG = f"Pyrogram v{get_distribution('pyrogram').version}"
-    STATUS_YT = f"yt-dlp v{get_distribution('yt-dlp').version}"
-    STATUS_EXT = "pExtract v2"
-    STATUS_SPLIT_MERGE = f"ffmpeg v{get_ffmpeg_version()}"
-    STATUS_ZIP = f"p7zip v{get_p7zip_version()}"
-    STATUS_QUEUE = "Sleep v0"
-    STATUS_RCLONE = f"RClone {get_rclone_version()}"
+    def __init__(self):
+        if not (version_cache := bot_cache.get('eng_versions')):
+            get_all_versions()
+            version_cache = bot_cache.get('eng_versions')
+        self.STATUS_ARIA = f"Aria2 v{version_cache['aria']}"
+        self.STATUS_AIOHTTP = f"AioHttp {version_cache['aiohttp']}"
+        self.STATUS_GD = f"Google-API v{version_cache['gapi']}"
+        self.STATUS_MEGA = f"MegaSDK v{version_cache['mega']}"
+        self.STATUS_QB = f"qBit {version_cache['qbit']}"
+        self.STATUS_TG = f"Pyrogram v{version_cache['pyro']}"
+        self.STATUS_YT = f"yt-dlp v{version_cache['ytdlp']}"
+        self.STATUS_EXT = "pExtract v2"
+        self.STATUS_SPLIT_MERGE = f"ffmpeg v{version_cache['ffmpeg']}"
+        self.STATUS_ZIP = f"p7zip v{version_cache['p7zip']}"
+        self.STATUS_QUEUE = "Sleep v0"
+        self.STATUS_RCLONE = f"RClone {version_cache['rclone']}"
 
 
 def get_readable_message():
@@ -327,7 +333,7 @@ def is_gdrive_link(url):
 
 
 def is_telegram_link(url):
-    return url.startswith(('https://t.me/', 'tg://openmessage?user_id='))
+    return url.startswith(('https://t.me/', 'https://telegram.me/', 'https://telegram.dog/', 'https://telegram.space/', 'tg://openmessage?user_id='))
 
 
 def is_share_link(url):
@@ -396,8 +402,8 @@ async def get_content_type(url):
 
 
 def update_user_ldata(id_, key=None, value=None):
-    exception_keys = ['is_sudo', 'is_auth', 'dly_tasks']
-    if not key and not value:
+    exception_keys = ['is_sudo', 'is_auth', 'dly_tasks', 'is_blacklist']
+    if key is None and value is None:
         if id_ in user_data:
             updated_data = {}
             for k, v in user_data[id_].items():
@@ -464,6 +470,105 @@ def new_thread(func):
     return wrapper
 
 
+async def compare_versions(v1, v2):
+    v1_parts = [int(part) for part in v1[1:-2].split('.')]
+    v2_parts = [int(part) for part in v2[1:-2].split('.')]
+    for i in range(3):
+        v1_part, v2_part = v1_parts[i], v2_parts[i]
+        if v1_part < v2_part:
+            return "New Version Update is Available! Check Now!"
+        elif v1_part > v2_part:
+            return "More Updated! Kindly Contribute in Official"
+    return "Already up to date with latest version"
+
+
+async def get_stats(event, key="home"):
+    user_id = event.from_user.id
+    btns = ButtonMaker()
+    btns.ibutton('Back', f'wzmlx {user_id} stats home')
+    if key == "home":
+        btns = ButtonMaker()
+        btns.ibutton('Bot Stats', f'wzmlx {user_id} stats stbot')
+        btns.ibutton('OS Stats', f'wzmlx {user_id} stats stsys')
+        btns.ibutton('Repo Stats', f'wzmlx {user_id} stats strepo')
+        btns.ibutton('Bot Limits', f'wzmlx {user_id} stats botlimits')
+        msg = "⌬ <b><i>Bot & OS Statistics!</i></b>"
+    elif key == "stbot":
+        total, used, free, disk = disk_usage('/')
+        swap = swap_memory()
+        memory = virtual_memory()
+        msg = BotTheme('BOT_STATS',
+            bot_uptime=get_readable_time(time() - botStartTime),
+            ram_bar=get_progress_bar_string(memory.percent),
+            ram=memory.percent,
+            ram_u=get_readable_file_size(memory.used),
+            ram_f=get_readable_file_size(memory.available),
+            ram_t=get_readable_file_size(memory.total),
+            swap_bar=get_progress_bar_string(swap.percent),
+            swap=swap.percent,
+            swap_u=get_readable_file_size(swap.used),
+            swap_f=get_readable_file_size(swap.free),
+            swap_t=get_readable_file_size(swap.total),
+            disk=disk,
+            disk_bar=get_progress_bar_string(disk),
+            disk_read=get_readable_file_size(disk_io_counters().read_bytes) + f" ({get_readable_time(disk_io_counters().read_time / 1000)})",
+            disk_write=get_readable_file_size(disk_io_counters().write_bytes) + f" ({get_readable_time(disk_io_counters().write_time / 1000)})",
+            disk_t=get_readable_file_size(total),
+            disk_u=get_readable_file_size(used),
+            disk_f=get_readable_file_size(free),
+        )
+    elif key == "stsys":
+        cpuUsage = cpu_percent(interval=0.5)
+        msg = BotTheme('SYS_STATS',
+            os_uptime=get_readable_time(time() - boot_time()),
+            os_version=platform.version(),
+            os_arch=platform.platform(),
+            up_data=get_readable_file_size(net_io_counters().bytes_sent),
+            dl_data=get_readable_file_size(net_io_counters().bytes_recv),
+            pkt_sent=str(net_io_counters().packets_sent)[:-3],
+            pkt_recv=str(net_io_counters().packets_recv)[:-3],
+            tl_data=get_readable_file_size(net_io_counters().bytes_recv + net_io_counters().bytes_sent),
+            cpu=cpuUsage,
+            cpu_bar=get_progress_bar_string(cpuUsage),
+            cpu_freq=f"{cpu_freq(percpu=False).current / 1000:.2f} GHz" if cpu_freq() else "Access Denied",
+            sys_load="%, ".join(str(round((x / cpu_count() * 100), 2)) for x in getloadavg()) + "%, (1m, 5m, 15m)",
+            p_core=cpu_count(logical=False),
+            v_core=cpu_count(logical=True) - cpu_count(logical=False),
+            total_core=cpu_count(logical=True),
+            cpu_use=len(Process().cpu_affinity()),
+        )
+    elif key == "strepo":
+        last_commit, changelog = 'No Data', 'N/A'
+        if await aiopath.exists('.git'):
+            last_commit = (await cmd_exec("git log -1 --pretty='%cd ( %cr )' --date=format-local:'%d/%m/%Y'", True))[0]
+            changelog = (await cmd_exec("git log -1 --pretty=format:'<code>%s</code> <b>By</b> %an'", True))[0]
+        official_v = (await cmd_exec("curl -o latestversion.py https://raw.githubusercontent.com/weebzone/WZML-X/master/bot/version.py -s && python3 latestversion.py && rm latestversion.py", True))[0]
+        msg = BotTheme('REPO_STATS',
+            last_commit=last_commit,
+            bot_version=get_version(),
+            lat_version=official_v,
+            commit_details=changelog,
+            remarks=await compare_versions(get_version(), official_v),
+        )
+    elif key == "botlimits":
+        msg = BotTheme('BOT_LIMITS',
+                DL = ('∞' if (val := config_dict['DIRECT_LIMIT']) == '' else val),
+                TL = ('∞' if (val := config_dict['TORRENT_LIMIT']) == '' else val),
+                GL = ('∞' if (val := config_dict['GDRIVE_LIMIT']) == '' else val),
+                YL = ('∞' if (val := config_dict['YTDLP_LIMIT']) == '' else val),
+                PL = ('∞' if (val := config_dict['PLAYLIST_LIMIT']) == '' else val),
+                CL = ('∞' if (val := config_dict['CLONE_LIMIT']) == '' else val),
+                ML = ('∞' if (val := config_dict['MEGA_LIMIT']) == '' else val),
+                LL = ('∞' if (val := config_dict['LEECH_LIMIT']) == '' else val),
+                TV  = ('Disabled' if (val := config_dict['TOKEN_TIMEOUT']) == '' else get_readable_time(val)),
+                UTI = ('Disabled' if (val := config_dict['USER_TIME_INTERVAL']) == 0 else get_readable_time(val)),
+                UT = ('∞' if (val := config_dict['USER_MAX_TASKS']) == '' else val),
+                BT = ('∞' if (val := config_dict['BOT_MAX_TASKS']) == '' else val),
+        )
+    btns.ibutton('Close', f'wzmlx {user_id} close')
+    return msg, btns.build_menu(2)
+
+
 async def getdailytasks(user_id, increase_task=False, upleech=0, upmirror=0, check_mirror=False, check_leech=False):
     task, lsize, msize = 0, 0, 0
     if user_id in user_data and user_data[user_id].get('dly_tasks'):
@@ -502,7 +607,24 @@ async def getdailytasks(user_id, increase_task=False, upleech=0, upmirror=0, che
     return task
 
 
-def checking_access(user_id, button=None):
+async def fetch_user_tds(user_id, force=False):
+    user_dict = user_data.get(user_id, {})
+    if config_dict['USER_TD_MODE'] and user_dict.get('td_mode', False) or force:
+        return user_dict.get('user_tds', {})
+    return {}
+
+
+async def fetch_user_dumps(user_id):
+    user_dict = user_data.get(user_id, {})
+    if (dumps := user_dict.get('ldump', False)):
+        if not isinstance(dumps, dict):
+            update_user_ldata(user_id, 'ldump', {})
+            return {}
+        return dumps
+    return {}
+
+
+async def checking_access(user_id, button=None):
     if not config_dict['TOKEN_TIMEOUT'] or bool(user_id == OWNER_ID or user_id in user_data and user_data[user_id].get('is_sudo')):
         return None, button
     user_data.setdefault(user_id, {})
@@ -521,7 +643,7 @@ def checking_access(user_id, button=None):
             button = ButtonMaker()
         encrypt_url = b64encode(f"{token}&&{user_id}".encode()).decode()
         button.ubutton('Generate New Token', short_url(f'https://t.me/{bot_name}?start={encrypt_url}'))
-        return 'Temp Token is expired, generate a new temp token and try again.', button
+        return f'<i>Temporary Token has been expired,</i> Kindly generate a New Temp Token to start using bot Again.\n<b>Validity :</b> <code>{get_readable_time(config_dict["TOKEN_TIMEOUT"])}</code>', button
     return None, button
 
 
@@ -530,6 +652,7 @@ def extra_btns(buttons):
         for btn_name, btn_url in extra_buttons.items():
             buttons.ubutton(btn_name, btn_url)
     return buttons
+
 
 async def set_commands(client):
     if config_dict['SET_COMMANDS']:
@@ -546,6 +669,7 @@ async def set_commands(client):
             BotCommand(BotCommands.StatusCommand[0], f'or /{BotCommands.StatusCommand[1]} Get Bot All Status Stats Message'),
             BotCommand(BotCommands.StatsCommand[0], f'or /{BotCommands.StatsCommand[1]} Check Bot & System stats'),
             BotCommand(BotCommands.BtSelectCommand, 'Select files to download only torrents/magnet qbit/aria2c'),
+            BotCommand(BotCommands.CategorySelect, 'Select Upload Category with UserTD or Bot Categories to upload only GDrive upload'),
             BotCommand(BotCommands.CancelMirror, 'Cancel a Task of yours!'),
             BotCommand(BotCommands.CancelAllCommand[0], f'Cancel all Tasks in whole Bots.'),
             BotCommand(BotCommands.ListCommand, 'Search in Drive(s)'),
