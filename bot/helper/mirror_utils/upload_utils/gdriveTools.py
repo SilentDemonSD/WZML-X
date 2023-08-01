@@ -587,7 +587,7 @@ class GoogleDriveHelper:
             token_service = self.__alt_authorize()
             if token_service is not None:
                 self.__service = token_service
-        for no, drive_name, drives_dict in enumerate(merged_dict.items(), start=1):
+        for no, (drive_name, drives_dict) in enumerate(merged_dict.items(), start=1):
             dir_id = drives_dict['drive_id']
             index_url = drives_dict['index_link']
             isRecur = False if isRecursive and len(
