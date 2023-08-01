@@ -610,9 +610,13 @@ class GoogleDriveHelper:
                 if mime_type == "application/vnd.google-apps.folder":
                     furl = f"https://drive.google.com/drive/folders/{file.get('id')}"
                     msg += f"📁 <code>{file.get('name')}<br>(folder)</code><br>"
+                    drive_link = False
                     if userId == OWNER_ID or not config_dict['DISABLE_DRIVE_LINK']:
-                        msg += f"<b>🗃 <a href={furl}>Drive Link</a> |</b>"
+                        msg += f"<b>🗃 <a href={furl}>Drive Link</a></b>"
+                        drive_link = True
                     if index_url:
+                        if drive_link:
+                            msg += "<b> |</b>"
                         if isRecur:
                             url_path = "/".join([rquote(n, safe='')
                                                 for n in self.__get_recursive_list(file, dir_id)])
@@ -627,9 +631,13 @@ class GoogleDriveHelper:
                 else:
                     furl = f"https://drive.google.com/uc?id={file.get('id')}&export=download"
                     msg += f"📄 <code>{file.get('name')}<br>({get_readable_file_size(int(file.get('size', 0)))})</code><br>"
+                    drive_link = False
                     if userId == OWNER_ID or not config_dict['DISABLE_DRIVE_LINK']:
-                        msg += f"<b>🗃 <a href={furl}>Drive Link</a> |</b>"
+                        msg += f"<b>🗃 <a href={furl}>Drive Link</a></b>"
+                        drive_link = True
                     if index_url:
+                        if drive_link:
+                            msg += "<b> |</b>"
                         if isRecur:
                             url_path = "/".join(rquote(n, safe='') for n in self.__get_recursive_list(file, dir_id))
                         else:
