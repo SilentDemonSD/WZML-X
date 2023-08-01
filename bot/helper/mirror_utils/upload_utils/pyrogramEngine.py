@@ -1,6 +1,7 @@
+
 #!/usr/bin/env python3
 from traceback import format_exc
-from logging import getLogger, ERROR
+from logging import getLogger
 from aiofiles.os import remove as aioremove, path as aiopath, rename as aiorename, makedirs
 from os import walk, path as ospath
 from time import time
@@ -22,7 +23,6 @@ from bot.helper.ext_utils.bot_utils import get_readable_file_size, sync_to_async
 from bot.helper.ext_utils.leech_utils import get_media_info, get_document_type, take_ss, get_mediainfo_link, format_filename
 
 LOGGER = getLogger(__name__)
-getLogger("pyrogram").setLevel(ERROR)
 
 
 class TgUploader:
