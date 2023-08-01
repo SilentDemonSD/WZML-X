@@ -581,14 +581,13 @@ class GoogleDriveHelper:
         telegraph_content = []
         Title = False
         merged_dict = list_drives_dict
-        if userId:
-            user_tds = async_to_sync(fetch_user_tds, userId)
+        if userId and (user_tds := async_to_sync(fetch_user_tds, userId)):
             merged_dict = {**list_drives_dict, **user_tds}
         if len(merged_dict) > 1:
             token_service = self.__alt_authorize()
             if token_service is not None:
                 self.__service = token_service
-        for drive_name, drives_dict in merged_dict.items():
+        for no, drive_name, drives_dict in enumerate(merged_dict.items(), start=1):
             dir_id = drives_dict['drive_id']
             index_url = drives_dict['index_link']
             isRecur = False if isRecursive and len(
@@ -603,7 +602,7 @@ class GoogleDriveHelper:
                 msg += f'<h4>📌 Drive Query : {fileName}</h4>'
                 Title = True
             if drive_name:
-                msg += f"<aside>╾──────────────────────╼</aside><br><aside><b>{drive_name}</b></aside><br><aside>╾──────────────────────╼</aside><br>"
+                msg += f"<aside>╾──────────────────────╼</aside><br><aside><b>#{no} {drive_name} Drive</b></aside><br><aside>╾──────────────────────╼</aside><br>"
             msg += "<ol>"
             for file in response.get('files', []):
                 mime_type = file.get('mimeType')
