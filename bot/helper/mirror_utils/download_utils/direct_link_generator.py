@@ -56,6 +56,8 @@ def direct_link_generator(link: str):
         raise DirectDownloadLinkException("ERROR: Use ytdl cmds for Youtube links")
     elif config_dict['DEBRID_API_KEY'] and any(x in domain for x in debrid_sites):
         return debrid_extractor(link)
+    elif 'gofile.io' in domain:
+        return nURL_resolver(link)
     elif 'yadi.sk' in domain or 'disk.yandex.com' in domain:
         return yandex_disk(link)
     elif 'mediafire.com' in domain:
@@ -118,7 +120,8 @@ def direct_link_generator(link: str):
 
 
 def debrid_extractor(url: str) -> str:
-    """ Debrid Link Extractor (VPN Must)"""
+    """ Debrid Link Extractor (VPN Must)
+    Based on https://github.com/weebzone/WZML-X (SilentDemonSD) """
     cget = create_scraper().request
     try:
         resp = cget('POST', f"https://api.real-debrid.com/rest/1.0/unrestrict/link?auth_token={config_dict['DEBRID_API_KEY']}", data={'link': url})
@@ -128,7 +131,23 @@ def debrid_extractor(url: str) -> str:
             raise DirectDownloadLinkException(f"ERROR: {resp['error']}")
     except Exception as e:
         raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}")
-    
+
+
+def nURL_resolver(url: str) -> str:
+    """ NodeJS URL resolver
+    Based on https://github.com/mnsrulz/nurlresolver/tree/master/src/libs
+    """
+    cget = create_scraper().request
+    try:
+        resp = cget('GET', f"https://nurlresolver.netlify.app/.netlify/functions/server/resolve?q={url}&m=&r=false").json()
+        if len(resp) == 0:
+            raise DirectDownloadLinkException(f'ERROR: Failed to extract Direct Link!')
+        for header, value in (resp[0].get("headers") or {}).items():
+            headers = f"{header}: {value}"
+        return [resp[0].get("link"), headers]
+    except Exception as e:
+        raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}")
+
 
 def yandex_disk(url: str) -> str:
     """ Yandex.Disk direct link generator
