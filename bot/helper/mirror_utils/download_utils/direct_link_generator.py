@@ -56,7 +56,7 @@ def direct_link_generator(link: str):
         raise DirectDownloadLinkException("ERROR: Use ytdl cmds for Youtube links")
     elif config_dict['DEBRID_API_KEY'] and any(x in domain for x in debrid_sites):
         return debrid_extractor(link)
-    elif any(x in domain for x in ['gofile.io', 'send.cm', 'desiupload.co', 'streamtape.to']):
+    elif any(x in domain for x in ['gofile.io', 'send.cm', 'desiupload.co']):
         return nURL_resolver(link)
     elif 'yadi.sk' in domain or 'disk.yandex.com' in domain:
         return yandex_disk(link)
@@ -137,6 +137,7 @@ def nURL_resolver(url: str) -> str:
     resp = cget('GET', f"https://nurlresolver.netlify.app/.netlify/functions/server/resolve?q={url}&m=&r=false").json()
     if len(resp) == 0:
         raise DirectDownloadLinkException(f'ERROR: Failed to extract Direct Link!')
+    headers = ""
     for header, value in (resp[0].get("headers") or {}).items():
         headers = f"{header}: {value}"
     return [resp[0].get("link"), headers]
