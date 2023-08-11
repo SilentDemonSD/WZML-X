@@ -12,8 +12,7 @@ from bs4 import BeautifulSoup
 from cloudscraper import create_scraper
 from lk21 import Bypass
 from lxml import etree
-from requests import session
-import requests
+from requests import Session, resource_type
 
 from bot import LOGGER, config_dict
 from bot.helper.ext_utils.bot_utils import get_readable_time, is_share_link
@@ -56,7 +55,9 @@ def direct_link_generator(link: str):
         raise DirectDownloadLinkException("ERROR: Use ytdl cmds for Youtube links")
     elif config_dict['DEBRID_API_KEY'] and any(x in domain for x in debrid_sites):
         return debrid_extractor(link)
-    elif any(x in domain for x in ['gofile.io', 'send.cm', 'desiupload.co']):
+    elif 'gofile.io' in domain:
+        return gofile_dl(link)
+    elif any(x in domain for x in ['send.cm', 'desiupload.co']):
         return nURL_resolver(link)
     elif 'yadi.sk' in domain or 'disk.yandex.com' in domain:
         return yandex_disk(link)
@@ -130,8 +131,42 @@ def debrid_extractor(url: str) -> str:
         raise DirectDownloadLinkException(f"ERROR: {resp['error']}")
 
 
+def gofile_dl(url: str) -> str:
+    """ GoFile DL (Folder Support Added)
+    Based on https://github.com/weebzone/WZML-X (SilentDemonSD)"""
+    rget = Session()
+    resp = rget.get('https://api.gofile.io/createAccount')
+    if resp.status_code == 200:
+        data = resp.json()
+        if data['status'] == 'ok' and data.get('data', {}).get('token', None):
+            token = data['data']['token']
+        else:
+            raise DirectDownloadLinkException(f'ERROR: Failed to Create GoFile Account')
+    else:
+        raise DirectDownloadLinkException(f'ERROR: GoFile Server Response Failed')
+    headers = f'Cookie: accountToken={token}'
+    def getNextedFolder(contentId):
+        params = {'contentId': contentId, 'token': token, 'websiteToken': '7fd94ds12fds4'}
+        res = rget.get('https://api.gofile.io/getContent', params=params)
+        if res.status_code == 200:
+            json_data = res.json()
+            if json_data['status'] == 'ok':
+                links = []
+                for content in json_data['data']['contents'].values():
+                    if content["type"] == "folder":
+                        links.append(getNextedFolder(content['id']))
+                    elif content["type"] == "file":
+                        links.append(content['link'])
+                return links
+            else:
+                raise DirectDownloadLinkException(f'ERROR: Failed to Receive All Files List')
+        else:
+            raise DirectDownloadLinkException(f'ERROR: GoFile Server Response Failed')
+    return [getNextedFolder(url[url.rfind('/')+1:]), headers]
+    
+
 def nURL_resolver(url: str) -> str:
-    """ NodeJS URL resolver
+    """ NodeJS URL Resolver
     Based on https://github.com/mnsrulz/nurlresolver/tree/master/src/libs"""
     cget = create_scraper().request
     resp = cget('GET', f"https://nurlresolver.netlify.app/.netlify/functions/server/resolve?q={url}&m=&r=false").json()
@@ -777,10 +812,7 @@ def linkbox(url):
 
 
 def route_intercept(route, request):
-    if request.resource_type == 'script':
+    if resource_type == 'script':
         route.abort()
     else:
         route.continue_()
-
-
-
