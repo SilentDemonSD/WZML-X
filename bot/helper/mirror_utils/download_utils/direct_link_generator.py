@@ -56,7 +56,7 @@ def direct_link_generator(link: str):
         raise DirectDownloadLinkException("ERROR: Use ytdl cmds for Youtube links")
     elif config_dict['DEBRID_API_KEY'] and any(x in domain for x in debrid_sites):
         return debrid_extractor(link)
-    elif 'gofile.io' in domain:
+    elif any(x in domain for x in ['gofile.io', 'send.cm', 'desiupload.co', 'streamtape.to']):
         return nURL_resolver(link)
     elif 'yadi.sk' in domain or 'disk.yandex.com' in domain:
         return yandex_disk(link)
@@ -123,30 +123,23 @@ def debrid_extractor(url: str) -> str:
     """ Debrid Link Extractor (VPN Must)
     Based on https://github.com/weebzone/WZML-X (SilentDemonSD) """
     cget = create_scraper().request
-    try:
-        resp = cget('POST', f"https://api.real-debrid.com/rest/1.0/unrestrict/link?auth_token={config_dict['DEBRID_API_KEY']}", data={'link': url})
-        if resp.status_code == 200:
-            return resp.json()['download']
-        else:
-            raise DirectDownloadLinkException(f"ERROR: {resp['error']}")
-    except Exception as e:
-        raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}")
+    resp = cget('POST', f"https://api.real-debrid.com/rest/1.0/unrestrict/link?auth_token={config_dict['DEBRID_API_KEY']}", data={'link': url})
+    if resp.status_code == 200:
+        return resp.json()['download']
+    else:
+        raise DirectDownloadLinkException(f"ERROR: {resp['error']}")
 
 
 def nURL_resolver(url: str) -> str:
     """ NodeJS URL resolver
-    Based on https://github.com/mnsrulz/nurlresolver/tree/master/src/libs
-    """
+    Based on https://github.com/mnsrulz/nurlresolver/tree/master/src/libs"""
     cget = create_scraper().request
-    try:
-        resp = cget('GET', f"https://nurlresolver.netlify.app/.netlify/functions/server/resolve?q={url}&m=&r=false").json()
-        if len(resp) == 0:
-            raise DirectDownloadLinkException(f'ERROR: Failed to extract Direct Link!')
-        for header, value in (resp[0].get("headers") or {}).items():
-            headers = f"{header}: {value}"
-        return [resp[0].get("link"), headers]
-    except Exception as e:
-        raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}")
+    resp = cget('GET', f"https://nurlresolver.netlify.app/.netlify/functions/server/resolve?q={url}&m=&r=false").json()
+    if len(resp) == 0:
+        raise DirectDownloadLinkException(f'ERROR: Failed to extract Direct Link!')
+    for header, value in (resp[0].get("headers") or {}).items():
+        headers = f"{header}: {value}"
+    return [resp[0].get("link"), headers]
 
 
 def yandex_disk(url: str) -> str:
@@ -161,8 +154,7 @@ def yandex_disk(url: str) -> str:
     try:
         return cget('get', api.format(link)).json()['href']
     except KeyError:
-        raise DirectDownloadLinkException(
-            "ERROR: File not found/Download limit reached")
+        raise DirectDownloadLinkException("ERROR: File not found/Download limit reached")
 
 
 def uptobox(url: str) -> str:
