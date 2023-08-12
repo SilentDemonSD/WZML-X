@@ -3,6 +3,7 @@ from random import choice
 from time import time
 from pytz import timezone
 from datetime import datetime
+from traceback import format_exc
 from urllib.parse import unquote, quote
 from requests import utils as rutils
 from aiofiles.os import path as aiopath, remove as aioremove, listdir, makedirs
@@ -171,17 +172,19 @@ class MirrorLeechListener:
             gid = download.gid()
         LOGGER.info(f"Download Completed: {name}")
 
-        if len(self.multiAria) > 0 and len(self.multiAria[0]) > 0:
-            headers = self.multiAria[1]
-            link = list(self.multiAria[0].keys())[0]
-            path = self.dir
-            if (folder_name := self.multiAria[0][link]):
-                path = f"{self.dir}/{folder_name}"
-                await makedirs(path, exist_ok=True)
-            self.multiAria[0].pop(link)
-            LOGGER.info("MultiAria :" + self.multiAria)
-            await add_aria2c_download(link, path, self, '', headers, None, None)
-            return
+        try:
+            if len(self.multiAria) > 0 and len(self.multiAria[0]) > 0:
+                link = list(self.multiAria[0].keys())[0]
+                path = self.dir
+                if (folder_name := self.multiAria[0][link]):
+                    path = f"{self.dir}/{folder_name}"
+                    await makedirs(path, exist_ok=True)
+                self.multiAria[0].pop(link)
+                LOGGER.info("MultiAria :" + self.multiAria)
+                await add_aria2c_download(link, path, self, '', headers, None, None)
+                return
+        except:
+            LOGGER.info(format_exc())
 
         if multi_links:
             await self.onUploadError('Downloaded! Starting other part of the Task...')
