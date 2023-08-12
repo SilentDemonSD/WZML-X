@@ -180,7 +180,6 @@ class MirrorLeechListener:
                     path = f"{self.dir}/{folder_name}"
                     await makedirs(path, exist_ok=True)
                 self.multiAria[0].pop(link)
-                LOGGER.info("MultiAria :" + self.multiAria)
                 await add_aria2c_download(link, path, self, '', headers, None, None)
                 return
         except:
