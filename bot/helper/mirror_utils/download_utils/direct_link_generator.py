@@ -181,7 +181,7 @@ def nURL_resolver(url: str):
     return [resp[0].get("link"), headers]
 
 page_token, turn_page = '', False
-def gdindex(url: str, usr: str = 'None', pswd: str = 'None'):
+def gdindex(url: str, usr: str = None, pswd: str = None):
     """ Google-Drive-Index Scrapper
     Based on AnimeKaizoku, Modified Nested Folders via SilentDemonSD"""
     links, path, pgNo = {}, '', 0

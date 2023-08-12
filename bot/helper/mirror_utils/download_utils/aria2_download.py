@@ -30,6 +30,7 @@ async def add_aria2c_download(link, path, listener, filename, headers, ratio, se
             a2c_opt['pause-metadata'] = 'true'
         else:
             a2c_opt['pause'] = 'true'
+    LOGGER.info("Aria :" + link)
     try:
         download = (await sync_to_async(aria2.add, link, a2c_opt))[0]
     except Exception as e:

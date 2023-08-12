@@ -54,7 +54,7 @@ async def __onDownloadStarted(api, gid):
                 await sleep(3)
                 download = download.live
             size = download.total_length
-            LOGGER.info(f"listener size : {size}")
+            LOGGER.info(f"Size : {size}")
             if limit_exceeded := await limit_checker(size, listener):
                 await listener.onDownloadError(limit_exceeded)
                 await sync_to_async(api.remove, [download], force=True, files=True)
