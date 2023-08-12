@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from base64 import b64decode
+from base64 import b64decode, b64encode
 from http.cookiejar import MozillaCookieJar
 from json import loads
 from os import path
