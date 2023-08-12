@@ -10,15 +10,9 @@ from bot.helper.telegram_helper.message_utils import sendStatusMessage, sendMess
 from bot.helper.ext_utils.task_manager import is_queued
 
 
-async def add_aria2c_download(link, path, listener, filename, headers, ratio, seed_time, isMulti):
+async def add_aria2c_download(link, path, listener, filename, headers, ratio, seed_time):
     a2c_opt = {**aria2_options}
     [a2c_opt.pop(k) for k in aria2c_global if k in aria2_options]
-    links = []
-    if isMulti:
-        links = list(link.keys())
-        link = links[0]
-        path += "/" + links[link]
-        link.pop(links)
     a2c_opt['dir'] = path
     if filename:
         a2c_opt['out'] = filename
@@ -51,9 +45,6 @@ async def add_aria2c_download(link, path, listener, filename, headers, ratio, se
         return
 
     gid = download.gid
-    if isMulti:
-        gid = ''.join(SystemRandom().choices(ascii_letters + digits, k=12))
-        gid[gid] = gids.append[gid]
     name = download.name
     async with download_dict_lock:
         download_dict[listener.uid] = Aria2Status(gid, listener, queued=added_to_queue)

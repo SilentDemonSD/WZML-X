@@ -21,6 +21,7 @@ from bot.helper.ext_utils.fs_utils import get_base_name, get_path_size, clean_do
 from bot.helper.ext_utils.leech_utils import split_file, format_filename
 from bot.helper.ext_utils.exceptions import NotSupportedExtractionArchive
 from bot.helper.ext_utils.task_manager import start_from_queued
+from bot.helper.mirror_utils.download_utils.aria2_download import add_aria2c_download
 from bot.helper.mirror_utils.status_utils.extract_status import ExtractStatus
 from bot.helper.mirror_utils.status_utils.zip_status import ZipStatus
 from bot.helper.mirror_utils.status_utils.split_status import SplitStatus
@@ -40,7 +41,7 @@ from bot.helper.themes import BotTheme
 
 
 class MirrorLeechListener:
-    def __init__(self, message, compress=False, extract=False, isQbit=False, isLeech=False, tag=None, select=False, seed=False, sameDir=None, rcFlags=None, upPath=None, isClone=False, join=False, drive_id=None, index_link=None, isYtdlp=False, source_url=None, ):
+    def __init__(self, message, compress=False, extract=False, isQbit=False, isLeech=False, tag=None, select=False, seed=False, sameDir=None, rcFlags=None, upPath=None, isClone=False, join=False, drive_id=None, index_link=None, isYtdlp=False, source_url=None, multiAria=[]):
         if sameDir is None:
             sameDir = {}
         self.message = message
@@ -74,6 +75,7 @@ class MirrorLeechListener:
         self.upload_details = {}
         self.source_url = source_url if source_url and source_url.startswith('http') else ("https://t.me/share/url?url=" + source_url) if source_url else message.link
         self.source_msg = ''
+        self.multiAria = multiAria
         self.__setModeEng()
         self.__parseSource()
 
@@ -139,6 +141,16 @@ class MirrorLeechListener:
             await DbManger().add_incomplete_task(self.message.chat.id, self.source_url, self.tag)
 
     async def onDownloadComplete(self):
+        
+        if len(self.multiAria[0]) != 0:
+            headers = self.multiAria[1]
+            link = list(self.multiAria[0].keys())[0]
+            if (folder_name := self.multiAria[0][link]):
+                path = self.dir + "/" + folder_name
+                await makedirs(path, exist_ok=True)
+            del folder_name
+            return await add_aria2c_download(link, path, self, '', headers, None, None)
+        
         multi_links = False
         while True:
             if self.sameDir:

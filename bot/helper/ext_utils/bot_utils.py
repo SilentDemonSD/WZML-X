@@ -167,7 +167,6 @@ def get_all_versions():
         vr = ''
     bot_cache['eng_versions'] = {'p7zip':vp, 'ffmpeg': vf, 'rclone': vr,
                                     'aria': aria2.client.get_version()['version'],
-                                    'aiohttp': get_distribution('aiohttp').version,
                                     'gapi': get_distribution('google-api-python-client').version,
                                     'mega': MegaApi('test').getVersion(),
                                     'qbit': get_client().app.version,
@@ -181,7 +180,6 @@ class EngineStatus:
             get_all_versions()
             version_cache = bot_cache.get('eng_versions')
         self.STATUS_ARIA = f"Aria2 v{version_cache['aria']}"
-        self.STATUS_AIOHTTP = f"AioHttp {version_cache['aiohttp']}"
         self.STATUS_GD = f"Google-API v{version_cache['gapi']}"
         self.STATUS_MEGA = f"MegaSDK v{version_cache['mega']}"
         self.STATUS_QB = f"qBit {version_cache['qbit']}"
@@ -337,7 +335,7 @@ def is_telegram_link(url):
 
 
 def is_share_link(url):
-    return bool(re_match(r'https?:\/\/.+\.gdtot\.\S+|https?:\/\/(filepress|filebee|appdrive|gdflix)\.\S+', url))
+    return bool(re_match(r'https?:\/\/.+\.gdtot\.\S+|https?:\/\/(filepress|filebee|appdrive)\.\S+', url))
 
 
 def is_mega_link(url):
