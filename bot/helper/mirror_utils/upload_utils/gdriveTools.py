@@ -223,6 +223,7 @@ class GoogleDriveHelper:
         self.__is_uploading = True
         item_path = f"{self.__path}/{file_name}"
         if self.__listener.multiAria:
+            file_name = self.__path.rsplit('/', 1)[1]
             item_path = self.__path
         LOGGER.info(f"Uploading: {item_path}")
         self.__updater = setInterval(self.__update_interval, self.__progress)
