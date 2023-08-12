@@ -46,10 +46,11 @@ async def __onDownloadStarted(api, gid):
             dl = await getDownloadByGid(gid)
         if dl:
             if not hasattr(dl, 'listener'):
-                LOGGER.warning(
-                    f"onDownloadStart: {gid}. at Download limit didn't pass since download completed earlier!")
+                LOGGER.warning(f"onDownloadStart: {gid}. at Download limit didn't pass since download completed earlier!")
                 return
             listener = dl.listener()
+            if listener.multiAria:
+                return
             download = await sync_to_async(api.get_download, gid)
             if not download.is_torrent:
                 await sleep(3)
@@ -65,8 +66,7 @@ async def __onDownloadStarted(api, gid):
             dl = await getDownloadByGid(gid)
         if dl:
             if not hasattr(dl, 'listener'):
-                LOGGER.warning(
-                    f"onDownloadStart: {gid}. STOP_DUPLICATE didn't pass since download completed earlier!")
+                LOGGER.warning(f"onDownloadStart: {gid}. STOP_DUPLICATE didn't pass since download completed earlier!")
                 return
             listener = dl.listener()
             if not listener.isLeech and not listener.select and listener.upPath == 'gd':

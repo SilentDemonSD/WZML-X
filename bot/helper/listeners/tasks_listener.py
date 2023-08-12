@@ -213,8 +213,7 @@ class MirrorLeechListener:
                     up_path = get_base_name(dl_path)
                 LOGGER.info(f"Extracting: {name}")
                 async with download_dict_lock:
-                    download_dict[self.uid] = ExtractStatus(
-                        name, size, gid, self)
+                    download_dict[self.uid] = ExtractStatus(name, size, gid, self)
                 if await aiopath.isdir(dl_path):
                     if self.seed:
                         self.newDir = f"{self.dir}10000"
