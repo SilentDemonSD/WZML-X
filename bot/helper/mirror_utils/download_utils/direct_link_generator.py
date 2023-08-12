@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 from cloudscraper import create_scraper
 from lk21 import Bypass
 from lxml import etree
-from requests import Session, resource_type
+from requests import Session
 
 from bot import LOGGER, config_dict
 from bot.helper.ext_utils.bot_utils import get_readable_time, is_share_link
@@ -813,7 +813,7 @@ def linkbox(url):
 
 
 def route_intercept(route, request):
-    if resource_type == 'script':
+    if request.resource_type == 'script':
         route.abort()
     else:
         route.continue_()
