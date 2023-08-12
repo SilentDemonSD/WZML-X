@@ -3,6 +3,7 @@ from pyrogram.filters import command, regex
 from html import escape
 from base64 import b64encode
 from re import match as re_match
+from urllib.parse import unquote
 from asyncio import sleep
 from aiofiles import open as aiopen
 from aiofiles.os import path as aiopath
@@ -238,7 +239,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
                 if isinstance(link, list):
                     link, headers = link
                     if isinstance(link, dict):
-                        multiAria = [link, headers]
+                        multiAria = [link, headers, unquote(org_link.rstrip('/').rsplit('/', 1)[1])]
                         link = list(multiAria[0].keys())[0]
                         if (folder_name := multiAria[0][link]):
                             path += "/" + folder_name

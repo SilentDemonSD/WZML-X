@@ -149,7 +149,7 @@ class MirrorLeechListener:
             if (folder_name := self.multiAria[0][link]):
                 path = f"{self.dir}{folder_name}"
             self.multiAria[0].pop(link)
-            return await add_aria2c_download(link, path, self, '', self.multiAria[1], None, None)
+            return await add_aria2c_download(link, path, self, '', self.multiAria[1], None, None, True)
         
         multi_links = False
         while True:
@@ -380,16 +380,19 @@ class MirrorLeechListener:
             size = await get_path_size(up_dir)
             for s in m_size:
                 size = size - s
+            if self.__listener.multiAria:
+                up_name = self.__listener.multiAria[2]
             LOGGER.info(f"Leech Name: {up_name}")
             tg = TgUploader(up_name, up_dir, self)
-            tg_upload_status = TelegramStatus(
-                tg, size, self.message, gid, 'up', self.upload_details)
+            tg_upload_status = TelegramStatus(tg, size, self.message, gid, 'up', self.upload_details)
             async with download_dict_lock:
                 download_dict[self.uid] = tg_upload_status
             await update_all_messages()
             await tg.upload(o_files, m_size, size)
         elif self.upPath == 'gd':
             size = await get_path_size(up_path)
+            if self.__listener.multiAria:
+                up_name = self.__listener.multiAria[2]
             LOGGER.info(f"Upload Name: {up_name}")
             drive = GoogleDriveHelper(up_name, up_dir, self)
             upload_status = GdriveStatus(drive, size, self.message, gid, 'up', self.upload_details)
@@ -412,8 +415,7 @@ class MirrorLeechListener:
             LOGGER.info(f"Upload Name: {up_name} via RClone")
             RCTransfer = RcloneTransferHelper(self, up_name)
             async with download_dict_lock:
-                download_dict[self.uid] = RcloneStatus(
-                    RCTransfer, self.message, gid, 'up', self.upload_details)
+                download_dict[self.uid] = RcloneStatus(RCTransfer, self.message, gid, 'up', self.upload_details)
             await update_all_messages()
             await RCTransfer.upload(up_path, size)
 
