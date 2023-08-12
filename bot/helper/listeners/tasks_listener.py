@@ -142,6 +142,17 @@ class MirrorLeechListener:
             await DbManger().add_incomplete_task(self.message.chat.id, self.source_url, self.tag)
 
     async def onDownloadComplete(self):
+        
+        if len(self.multiAria) > 0 and len(self.multiAria[0]) > 0:
+            link = list(self.multiAria[0].keys())[0]
+            path = self.dir
+            if (folder_name := self.multiAria[0][link]):
+                path = f"{self.dir}/{folder_name}"
+                await makedirs(path, exist_ok=True)
+            self.multiAria[0].pop(link)
+            await add_aria2c_download(link, path, self, '', self.multiAria[1], None, None)
+            return
+        
         multi_links = False
         while True:
             if self.sameDir:
@@ -171,20 +182,6 @@ class MirrorLeechListener:
             name = str(download.name()).replace('/', '')
             gid = download.gid()
         LOGGER.info(f"Download Completed: {name}")
-
-        try:
-            if len(self.multiAria) > 0 and len(self.multiAria[0]) > 0:
-                link = list(self.multiAria[0].keys())[0]
-                path = self.dir
-                if (folder_name := self.multiAria[0][link]):
-                    path = f"{self.dir}/{folder_name}"
-                    await makedirs(path, exist_ok=True)
-                self.multiAria[0].pop(link)
-                await add_aria2c_download(link, path, self, '', self.multiAria[1], None, None)
-                return
-        except:
-            LOGGER.info(format_exc())
-
         if multi_links:
             await self.onUploadError('Downloaded! Starting other part of the Task...')
             return
