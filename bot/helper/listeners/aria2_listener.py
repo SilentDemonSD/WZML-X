@@ -123,7 +123,8 @@ async def __onDownloadComplete(api, gid):
         if dl := await getDownloadByGid(gid):
             listener = dl.listener()
             await listener.onDownloadComplete()
-            await sync_to_async(api.remove, [download], force=True, files=True)
+            if not listener.multiAria:
+                await sync_to_async(api.remove, [download], force=True, files=True)
 
 
 @new_thread
