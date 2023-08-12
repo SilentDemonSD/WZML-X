@@ -147,7 +147,7 @@ class MirrorLeechListener:
             link = list(self.multiAria[0].keys())[0]
             path = self.dir
             if (folder_name := self.multiAria[0][link]):
-                path = f"{self.dir}/{folder_name}"
+                path = f"{self.dir}{folder_name}"
             self.multiAria[0].pop(link)
             return await add_aria2c_download(link, path, self, '', self.multiAria[1], None, None)
         
