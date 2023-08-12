@@ -223,7 +223,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         await delete_links(message)
         return
 
-    org_link, headers, multiAria = None, '', {}
+    org_link, headers, multiAria = None, '', []
     if link:
         LOGGER.info(f"Link: {link}")
         org_link = link
@@ -243,7 +243,6 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
                         if (folder_name := multiAria[0][link]):
                             path += "/" + folder_name
                         multiAria[0].pop(link)
-                        LOGGER.info(multiAria)
                 LOGGER.info(f"Generated link: {link}")
                 await editMessage(process_msg, f"<i><b>Generated link:</b></i> <code>{link}</code>")
             except DirectDownloadLinkException as e:

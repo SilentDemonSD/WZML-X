@@ -142,14 +142,13 @@ class MirrorLeechListener:
 
     async def onDownloadComplete(self):
         
-        if len(self.multiAria[0]) != 0:
+        if len(self.multiAria) != 0 and len(self.multiAria[0]) != 0:
             headers = self.multiAria[1]
             link = list(self.multiAria[0].keys())[0]
             if (folder_name := self.multiAria[0][link]):
                 path = self.dir + "/" + folder_name
                 await makedirs(path, exist_ok=True)
             self.multiAria[0].pop(link)
-            LOGGER.info(self.multiAria)
             await add_aria2c_download(link, path, self, '', headers, None, None)
             return
         
