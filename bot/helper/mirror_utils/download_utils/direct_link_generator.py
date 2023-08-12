@@ -191,7 +191,7 @@ def gdindex(url: str, usr: str = 'None', pswd: str = 'None'):
         return "Basic " + b64encode(f"{user}:{password}".encode()).decode('ascii')
     
     def gdindexScrape(link, auth, payload, npath):
-        link = link.rtrip('/') + '/'
+        link = link.rstrip('/') + '/'
         cget = create_scraper(allow_brotli=False).request
         resp = cget('POST', link, data=payload, headers= {"authorization": auth})
         if resp.status_code != 200:
