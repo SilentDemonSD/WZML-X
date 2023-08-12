@@ -222,6 +222,8 @@ class GoogleDriveHelper:
             gdrive_id = config_dict['GDRIVE_ID']
         self.__is_uploading = True
         item_path = f"{self.__path}/{file_name}"
+        if self.__listener.multiAria:
+            item_path = self.__path
         LOGGER.info(f"Uploading: {item_path}")
         self.__updater = setInterval(self.__update_interval, self.__progress)
         try:

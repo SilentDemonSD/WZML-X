@@ -174,14 +174,9 @@ class MirrorLeechListener:
         if len(self.multiAria) > 0 and len(self.multiAria[0]) > 0:
             headers = self.multiAria[1]
             link = list(self.multiAria[0].keys())[0]
-            if len(self.multiAria) == 2:
-                dir_name = name
-                self.multiAria.append({'dir_name': name})
-            else:
-                dir_name = self.multiAria[2]['dir_name']
-            path = f"{self.dir}/{dir_name}"
+            path = self.dir
             if (folder_name := self.multiAria[0][link]):
-                path = f"{self.dir}/{dir_name}/{folder_name}"
+                path = f"{self.dir}/{folder_name}"
                 await makedirs(path, exist_ok=True)
             self.multiAria[0].pop(link)
             LOGGER.info("MultiAria :" + self.multiAria)
