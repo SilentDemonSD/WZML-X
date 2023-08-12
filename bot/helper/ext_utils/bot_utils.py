@@ -338,6 +338,10 @@ def is_share_link(url):
     return bool(re_match(r'https?:\/\/.+\.gdtot\.\S+|https?:\/\/(filepress|filebee|appdrive)\.\S+', url))
 
 
+def is_index_link(url):
+    return bool(re_match(r'https?:\/\/.+\/\d+\:\/', url))
+
+
 def is_mega_link(url):
     return "mega.nz" in url or "mega.co.nz" in url
 

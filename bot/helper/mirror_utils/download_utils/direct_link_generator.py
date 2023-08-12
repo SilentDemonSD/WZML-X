@@ -15,7 +15,7 @@ from lxml import etree
 from requests import Session
 
 from bot import LOGGER, config_dict
-from bot.helper.ext_utils.bot_utils import get_readable_time, is_share_link
+from bot.helper.ext_utils.bot_utils import get_readable_time, is_share_link, is_index_link
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 
 fmed_list = ['fembed.net', 'fembed.com', 'femax20.com', 'fcdn.stream', 'feurl.com', 'layarkacaxxi.icu',
@@ -107,6 +107,8 @@ def direct_link_generator(link: str):
         return fembed(link)
     elif any(x in domain for x in ['sbembed.com', 'watchsb.com', 'streamsb.net', 'sbplay.org']):
         return sbembed(link)
+    elif is_index_link(link):
+        return gdindex(link)
     elif is_share_link(link):
         if 'gdtot' in domain:
             return gdtot(link)
@@ -131,9 +133,9 @@ def debrid_extractor(url: str) -> str:
         raise DirectDownloadLinkException(f"ERROR: {resp['error']}")
 
 
-def gofile_dl(url: str) -> str:
-    """ GoFile DL (Folder Support Added)
-    Based on https://github.com/weebzone/WZML-X (SilentDemonSD)"""
+def gofile_dl(url: str):
+    """ GoFile DL (Nested Folder Support Added)
+    Based on https://github.com/weebzone/WZML-X"""
     rget = Session()
     resp = rget.get('https://api.gofile.io/createAccount')
     if resp.status_code == 200:
@@ -164,9 +166,9 @@ def gofile_dl(url: str) -> str:
         else:
             raise DirectDownloadLinkException(f'ERROR: GoFile Server Response Failed')
     return [getNextedFolder(url[url.rfind('/')+1:], ""), headers]
-    
 
-def nURL_resolver(url: str) -> str:
+
+def nURL_resolver(url: str):
     """ NodeJS URL Resolver
     Based on https://github.com/mnsrulz/nurlresolver/tree/master/src/libs"""
     cget = create_scraper().request
@@ -174,9 +176,54 @@ def nURL_resolver(url: str) -> str:
     if len(resp) == 0:
         raise DirectDownloadLinkException(f'ERROR: Failed to extract Direct Link!')
     headers = ""
-    for header, value in (resp[0].get("headers") or {}).items():
+    for header, value in (resp[0].get("headers", {})).items():
         headers = f"{header}: {value}"
     return [resp[0].get("link"), headers]
+
+
+def gdindex(url: str, usr: str = 'None', pswd: str = 'None'):
+    """ Google-Drive-Index Scrapper
+    Based on AnimeKaizoku, Modified Nested Folders via SilentDemonSD"""
+    links, path = {}, ''
+    page_token, pgNo, turn_page = '', 0, False
+    
+    def authenticate(user, password):
+        return "Basic " + b64encode(f"{user}:{password}".encode()).decode('ascii')
+    
+    def gdindexScrape(link, auth, payload, npath):
+        link = link.rtrip('/') + '/'
+        cget = create_scraper(allow_brotli=False).request
+        resp = cget('POST', link, data=payload, headers= {"authorization": auth})
+        if resp.status_code != 200:
+            raise DirectDownloadLinkException("ERROR: Could not Access your Entered URL!, Check your Username / Password")
+        try: 
+            nresp = loads(b64decode((resp.text)[::-1][24:-20]).decode('utf-8'))
+        except: 
+            raise DirectDownloadLinkException("ERROR: Something Went Wrong. Check Index Link / Username / Password Valid or Not")
+        if (new_page_token := nresp.get("nextPageToken", False)):
+            turn_page = True
+            page_token = new_page_token
+        
+        if list(nresp.get("data").keys())[0] == "error":
+            raise DirectDownloadLinkException("Nothing Found in your provided URL")
+        
+        data = {}
+        files = nresp["data"]["files"]
+        for i, _ in enumerate(range(len(files))):
+            files_name = files[i]["name"]
+            dl_link = f"{link}{quote(files_name)}"
+            if files[i]["mimeType"] == "application/vnd.google-apps.folder":
+                data.update(gdindexScrape(dl_link, auth, {"page_token": page_token, "page_index": 0}, npath + f"/{files_name}"))
+            else:
+                data[dl_link] = npath
+        return data
+
+    auth = authenticate(usr, pswd)
+    links.update(gdindexScrape(url, auth, {"page_token": page_token, "page_index": pgNo}, path))
+    while turn_page == True:
+        links.update(gdindexScrape(url, auth, {"page_token": page_token, "page_index": pgNo}, path))
+        pgNo += 1
+    return [links, f"authorization: {auth}"]
 
 
 def yandex_disk(url: str) -> str:
