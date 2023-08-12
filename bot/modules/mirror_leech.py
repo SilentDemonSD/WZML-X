@@ -238,7 +238,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
                 link = await sync_to_async(direct_link_generator, link)
                 if isinstance(link, list):
                     link, dl_headers = link
-                    if isinstance(link, list):
+                    if isinstance(link, dict):
                         link = list(link.keys())[0]
                 LOGGER.info(f"Generated link: {link}")
                 await editMessage(process_msg, f"<i><b>Generated link:</b></i> <code>{link}</code>")

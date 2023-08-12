@@ -151,13 +151,13 @@ def gofile_dl(url: str) -> str:
         if res.status_code == 200:
             json_data = res.json()
             if json_data['status'] == 'ok':
-                links = []
+                links = {}
                 for content in json_data['data']['contents'].values():
                     if content["type"] == "folder":
                         path = path+"/"+content['name']
-                        links.extend(getNextedFolder(content['id'], path))
+                        links.update(getNextedFolder(content['id'], path))
                     elif content["type"] == "file":
-                        links.append({content['link']: path})
+                        links[content['link']] = path
                 return links
             else:
                 raise DirectDownloadLinkException(f'ERROR: Failed to Receive All Files List')
