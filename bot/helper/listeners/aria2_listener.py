@@ -49,8 +49,6 @@ async def __onDownloadStarted(api, gid):
                 LOGGER.warning(f"onDownloadStart: {gid}. at Download limit didn't pass since download completed earlier!")
                 return
             listener = dl.listener()
-            if listener.multiAria:
-                return
             download = await sync_to_async(api.get_download, gid)
             if not download.is_torrent:
                 await sleep(3)
