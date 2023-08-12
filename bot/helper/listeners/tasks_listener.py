@@ -141,17 +141,6 @@ class MirrorLeechListener:
             await DbManger().add_incomplete_task(self.message.chat.id, self.source_url, self.tag)
 
     async def onDownloadComplete(self):
-        
-        if len(self.multiAria) != 0 and len(self.multiAria[0]) != 0:
-            headers = self.multiAria[1]
-            link = list(self.multiAria[0].keys())[0]
-            if (folder_name := self.multiAria[0][link]):
-                path = self.dir + "/" + folder_name
-                await makedirs(path, exist_ok=True)
-            self.multiAria[0].pop(link)
-            await add_aria2c_download(link, path, self, '', headers, None, None)
-            return
-        
         multi_links = False
         while True:
             if self.sameDir:
@@ -181,6 +170,17 @@ class MirrorLeechListener:
             name = str(download.name()).replace('/', '')
             gid = download.gid()
         LOGGER.info(f"Download Completed: {name}")
+
+        if len(self.multiAria) != 0 and len(self.multiAria[0]) != 0:
+            headers = self.multiAria[1]
+            link = list(self.multiAria[0].keys())[0]
+            if (folder_name := self.multiAria[0][link]):
+                path = f"{self.dir}/{name}/{folder_name}"
+                await makedirs(path, exist_ok=True)
+            self.multiAria[0].pop(link)
+            await add_aria2c_download(link, path, self, '', headers, None, None)
+            return
+
         if multi_links:
             await self.onUploadError('Downloaded! Starting other part of the Task...')
             return
@@ -325,8 +325,7 @@ class MirrorLeechListener:
             o_files = []
             if not self.compress:
                 checked = False
-                LEECH_SPLIT_SIZE = user_dict.get(
-                    'split_size', False) or config_dict['LEECH_SPLIT_SIZE']
+                LEECH_SPLIT_SIZE = user_dict.get('split_size', False) or config_dict['LEECH_SPLIT_SIZE']
                 for dirpath, _, files in await sync_to_async(walk, up_dir, topdown=False):
                     for file_ in files:
                         f_path = ospath.join(dirpath, file_)
@@ -335,8 +334,7 @@ class MirrorLeechListener:
                             if not checked:
                                 checked = True
                                 async with download_dict_lock:
-                                    download_dict[self.uid] = SplitStatus(
-                                        up_name, size, gid, self)
+                                    download_dict[self.uid] = SplitStatus(up_name, size, gid, self)
                                 LOGGER.info(f"Splitting: {up_name}")
                             res = await split_file(f_path, f_size, file_, dirpath, LEECH_SPLIT_SIZE, self)
                             if not res:

@@ -107,7 +107,7 @@ def direct_link_generator(link: str):
         return fembed(link)
     elif any(x in domain for x in ['sbembed.com', 'watchsb.com', 'streamsb.net', 'sbplay.org']):
         return sbembed(link)
-    elif is_index_link(link):
+    elif is_index_link(link) and link.endswith('/'):
         return gdindex(link)
     elif is_share_link(link):
         if 'gdtot' in domain:
@@ -180,20 +180,21 @@ def nURL_resolver(url: str):
         headers = f"{header}: {value}"
     return [resp[0].get("link"), headers]
 
-
+page_token, turn_page = '', False
 def gdindex(url: str, usr: str = 'None', pswd: str = 'None'):
     """ Google-Drive-Index Scrapper
     Based on AnimeKaizoku, Modified Nested Folders via SilentDemonSD"""
-    links, path = {}, ''
-    page_token, pgNo, turn_page = '', 0, False
+    links, path, pgNo = {}, '', 0
+    global page_token, turn_page
     
     def authenticate(user, password):
         return "Basic " + b64encode(f"{user}:{password}".encode()).decode('ascii')
     
     def gdindexScrape(link, auth, payload, npath):
+        global page_token, turn_page
         link = link.rstrip('/') + '/'
         cget = create_scraper(allow_brotli=False).request
-        resp = cget('POST', link, data=payload, headers= {"authorization": auth})
+        resp = cget('POST', link, data=payload, headers= {"authorization": auth} if auth else {})
         if resp.status_code != 200:
             raise DirectDownloadLinkException("ERROR: Could not Access your Entered URL!, Check your Username / Password")
         try: 
@@ -218,12 +219,12 @@ def gdindex(url: str, usr: str = 'None', pswd: str = 'None'):
                 data[dl_link] = npath
         return data
 
-    auth = authenticate(usr, pswd)
+    auth = authenticate(usr, pswd) if usr and pswd else None
     links.update(gdindexScrape(url, auth, {"page_token": page_token, "page_index": pgNo}, path))
     while turn_page == True:
         links.update(gdindexScrape(url, auth, {"page_token": page_token, "page_index": pgNo}, path))
         pgNo += 1
-    return [links, f"authorization: {auth}"]
+    return [links, f"authorization: {auth}" if auth else ""]
 
 
 def yandex_disk(url: str) -> str:
