@@ -60,7 +60,9 @@ async def add_aria2c_download(link, path, listener, filename, headers, ratio, se
     await listener.onDownloadStart()
 
     if not added_to_queue and (not listener.select or not config_dict['BASE_URL']):
-        await sendStatusMessage(listener.message)
+        async with download_dict_lock:
+            if listener.uid not in download_dict:
+                await sendStatusMessage(listener.message)
     elif listener.select and download.is_torrent and not download.is_metadata:
         if not added_to_queue:
             await sync_to_async(aria2.client.force_pause, gid)
