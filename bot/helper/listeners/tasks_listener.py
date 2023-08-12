@@ -376,12 +376,14 @@ class MirrorLeechListener:
             LOGGER.info(f'Start from Queued/Upload: {name}')
         async with queue_dict_lock:
             non_queued_up.add(self.uid)
+            
+        if self.multiAria:
+            up_name = self.multiAria[2]
+        
         if self.isLeech:
             size = await get_path_size(up_dir)
             for s in m_size:
                 size = size - s
-            if self.__listener.multiAria:
-                up_name = self.__listener.multiAria[2]
             LOGGER.info(f"Leech Name: {up_name}")
             tg = TgUploader(up_name, up_dir, self)
             tg_upload_status = TelegramStatus(tg, size, self.message, gid, 'up', self.upload_details)
@@ -391,15 +393,12 @@ class MirrorLeechListener:
             await tg.upload(o_files, m_size, size)
         elif self.upPath == 'gd':
             size = await get_path_size(up_path)
-            if self.__listener.multiAria:
-                up_name = self.__listener.multiAria[2]
             LOGGER.info(f"Upload Name: {up_name}")
             drive = GoogleDriveHelper(up_name, up_dir, self)
             upload_status = GdriveStatus(drive, size, self.message, gid, 'up', self.upload_details)
             async with download_dict_lock:
                 download_dict[self.uid] = upload_status
             await update_all_messages()
-
             await sync_to_async(drive.upload, up_name, size, self.drive_id)
         elif self.upPath == 'ddl':
             size = await get_path_size(up_path)
