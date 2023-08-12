@@ -145,7 +145,7 @@ def gofile_dl(url: str) -> str:
     else:
         raise DirectDownloadLinkException(f'ERROR: GoFile Server Response Failed')
     headers = f'Cookie: accountToken={token}'
-    def getNextedFolder(contentId):
+    def getNextedFolder(contentId, path):
         params = {'contentId': contentId, 'token': token, 'websiteToken': '7fd94ds12fds4'}
         res = rget.get('https://api.gofile.io/getContent', params=params)
         if res.status_code == 200:
@@ -154,15 +154,16 @@ def gofile_dl(url: str) -> str:
                 links = []
                 for content in json_data['data']['contents'].values():
                     if content["type"] == "folder":
-                        links.append(getNextedFolder(content['id']))
+                        path = path+"/"+content['name']
+                        links.extend(getNextedFolder(content['id'], path))
                     elif content["type"] == "file":
-                        links.append(content['link'])
+                        links.append({content['link']: path})
                 return links
             else:
                 raise DirectDownloadLinkException(f'ERROR: Failed to Receive All Files List')
         else:
             raise DirectDownloadLinkException(f'ERROR: GoFile Server Response Failed')
-    return [getNextedFolder(url[url.rfind('/')+1:]), headers]
+    return [getNextedFolder(url[url.rfind('/')+1:], ""), headers]
     
 
 def nURL_resolver(url: str) -> str:

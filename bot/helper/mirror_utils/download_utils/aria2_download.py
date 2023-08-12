@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from random import SystemRandom
+from string import ascii_letters, digits
 from aiofiles.os import remove as aioremove, path as aiopath
 
 from bot import aria2, download_dict_lock, download_dict, LOGGER, config_dict, aria2_options, aria2c_global, non_queued_dl, queue_dict_lock
@@ -8,9 +10,15 @@ from bot.helper.telegram_helper.message_utils import sendStatusMessage, sendMess
 from bot.helper.ext_utils.task_manager import is_queued
 
 
-async def add_aria2c_download(link, path, listener, filename, headers, ratio, seed_time):
+async def add_aria2c_download(link, path, listener, filename, headers, ratio, seed_time, isMulti):
     a2c_opt = {**aria2_options}
     [a2c_opt.pop(k) for k in aria2c_global if k in aria2_options]
+    links = []
+    if isMulti:
+        links = list(link.keys())
+        link = links[0]
+        path += "/" + links[link]
+        link.pop(links)
     a2c_opt['dir'] = path
     if filename:
         a2c_opt['out'] = filename
@@ -43,10 +51,12 @@ async def add_aria2c_download(link, path, listener, filename, headers, ratio, se
         return
 
     gid = download.gid
+    if isMulti:
+        gid = ''.join(SystemRandom().choices(ascii_letters + digits, k=12))
+        gid[gid] = gids.append[gid]
     name = download.name
     async with download_dict_lock:
-        download_dict[listener.uid] = Aria2Status(
-            gid, listener, queued=added_to_queue)
+        download_dict[listener.uid] = Aria2Status(gid, listener, queued=added_to_queue)
     if added_to_queue:
         LOGGER.info(f"Added to Queue/Download: {name}. Gid: {gid}")
         if not listener.select or not download.is_torrent:

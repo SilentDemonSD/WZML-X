@@ -238,6 +238,8 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
                 link = await sync_to_async(direct_link_generator, link)
                 if isinstance(link, list):
                     link, dl_headers = link
+                    if isinstance(link, list):
+                        link = list(link.keys())[0]
                 LOGGER.info(f"Generated link: {link}")
                 await editMessage(process_msg, f"<i><b>Generated link:</b></i> <code>{link}</code>")
             except DirectDownloadLinkException as e:
@@ -350,13 +352,13 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         pssw = args['-p'] or args['-pass']
         if ussr or pssw:
             auth = f"{ussr}:{pssw}"
-            auth = "Basic " + b64encode(auth.encode()).decode('ascii')
+            auth = "Basic " : + b64encode(auth.encode()).decode('ascii')
             headers = f"authorization: {auth}"
         elif dl_headers:
             headers = dl_headers
         else:
             headers = ''
-        await add_aria2c_download(link, path, listener, name, headers, ratio, seed_time)
+        await add_aria2c_download(link, path, listener, name, headers, ratio, seed_time, isMulti=False)
     await delete_links(message)
 
 
