@@ -352,8 +352,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         pssw = args['-p'] or args['-pass']
         if ussr or pssw:
             auth = f"{ussr}:{pssw}"
-            auth = "Basic " : + b64encode(auth.encode()).decode('ascii')
-            headers = f"authorization: {auth}"
+            headers = f"authorization: Basic {b64encode(auth.encode()).decode('ascii')}"
         elif dl_headers:
             headers = dl_headers
         else:
