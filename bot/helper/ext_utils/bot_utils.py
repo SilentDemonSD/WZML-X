@@ -170,7 +170,7 @@ def get_all_versions():
                                     'gapi': get_distribution('google-api-python-client').version,
                                     'mega': MegaApi('test').getVersion(),
                                     'qbit': get_client().app.version,
-                                    'pyro': get_distribution('pyrogram').version,
+                                    'pyro': get_distribution('pyrofork').version,
                                     'ytdlp': get_distribution('yt-dlp').version}
 
 
@@ -183,7 +183,7 @@ class EngineStatus:
         self.STATUS_GD = f"Google-API v{version_cache['gapi']}"
         self.STATUS_MEGA = f"MegaSDK v{version_cache['mega']}"
         self.STATUS_QB = f"qBit {version_cache['qbit']}"
-        self.STATUS_TG = f"Pyrogram v{version_cache['pyro']}"
+        self.STATUS_TG = f"PyroFork v{version_cache['pyro']}"
         self.STATUS_YT = f"yt-dlp v{version_cache['ytdlp']}"
         self.STATUS_EXT = "pExtract v2"
         self.STATUS_SPLIT_MERGE = f"ffmpeg v{version_cache['ffmpeg']}"
