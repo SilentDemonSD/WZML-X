@@ -410,7 +410,7 @@ class MirrorLeechListener:
 
     async def onUploadComplete(self, link, size, files, folders, mime_type, name, rclonePath=''):
         if self.isSuperGroup and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL:
-            await DbManger().rm_complete_task(self.message.link)
+            await DbManger().rm_complete_task(self.source_url)
         user_id = self.message.from_user.id
         name, _ = await format_filename(name, user_id, isMirror=not self.isLeech)
         user_dict = user_data.get(user_id, {})
@@ -609,7 +609,7 @@ class MirrorLeechListener:
             await update_all_messages()
 
         if self.isSuperGroup and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL:
-            await DbManger().rm_complete_task(self.message.link)
+            await DbManger().rm_complete_task(self.source_url)
 
         async with queue_dict_lock:
             if self.uid in queued_dl:
@@ -647,7 +647,7 @@ class MirrorLeechListener:
             await update_all_messages()
 
         if self.isSuperGroup and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL:
-            await DbManger().rm_complete_task(self.message.link)
+            await DbManger().rm_complete_task(self.source_url)
 
         async with queue_dict_lock:
             if self.uid in queued_dl:

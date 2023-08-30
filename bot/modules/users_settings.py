@@ -36,7 +36,7 @@ desp_dict = {'rcc': ['RClone is a command-line program to sync files and directo
             'yt_opt': ['YT-DLP Options is the Custom Quality for the extraction of videos from the yt-dlp supported sites.', 'Send YT-DLP Options. Timeout: 60 sec\nFormat: key:value|key:value|key:value.\nExample: format:bv*+mergeall[vcodec=none]|nocheckcertificate:True\nCheck all yt-dlp api options from this <a href="https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L184">FILE</a> to convert cli arguments to api options.'],
             'split_size': ['Leech Splits Size is the size to split the Leeched File before uploading', f'Send Leech split size in any comfortable size, like 2Gb, 500MB or 1.46gB. \n<b>PREMIUM ACTIVE:</b> {IS_PREMIUM_USER}. \n<b>Timeout:</b> 60 sec'],
             'ddl_servers': ['DDL Servers which uploads your File to their Specific Hosting', ''],
-            'user_tds': [f'UserTD helps to Upload files via Bot to your Custom Drive Destination via Global SA mail\n\n➲ <b>SA Mail :</b> {SA if (SA := config_dict["USER_TD_SA"]) else "Not Specified"}', 'Send User TD details for Use while Mirror/Clone\n➲ <b>Format:</b> \nname id/link index(optional)\nname2 link2/id2 index(optional)\n\n<b>NOTE:</b> \n<i>1. Drive ID must be valid, then only it will accept\n2. Names can have spaces \n3. All UserTDs are updated on every change \n4. To delete specific UserTD, give Name(s) separated by each line</i>\n\n<b>Timeout:</b> 60 sec'],
+            'user_tds': [f'UserTD helps to Upload files via Bot to your Custom Drive Destination via Global SA mail\n\n➲ <b>SA Mail :</b> {"Not Specified" if "USER_TD_SA" not in config_dict else config_dict["USER_TD_SA"]}', 'Send User TD details for Use while Mirror/Clone\n➲ <b>Format:</b>\nname id/link index(optional)\nname2 link2/id2 index(optional)\n\n<b>NOTE:</b>\n<i>1. Drive ID must be valid, then only it will accept\n2. Names can have spaces\n3. All UserTDs are updated on every change\n4. To delete specific UserTD, give Name(s) separated by each line</i>\n\n<b>Timeout:</b> 60 sec'],
             'gofile': ['Gofile is a free file sharing and storage platform. You can store and share your content without any limit.', "Send GoFile's API Key. Get it on https://gofile.io/myProfile\n<b>Timeout:</b> 60 sec"],
             'streamsb': ['StreamSB', "Send StreamSB's API Key\n<b>Timeout:</b> 60 sec"],
             }
@@ -117,7 +117,7 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
         ddl_serv = len(val) if (val := user_dict.get('ddl_servers', False)) else 0
         buttons.ibutton("DDL Servers", f"userset {user_id} ddl_servers")
         
-        tds_mode = "Enabled" if user_dict.get('td_mode', config_dict['BOT_PM']) else "Disabled"
+        tds_mode = "Enabled" if user_dict.get('td_mode', False) else "Disabled"
         if not config_dict['USER_TD_MODE']:
             tds_mode = "Force Disabled"
         
@@ -225,7 +225,7 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
             buttons.ibutton('Disable DDL' if ddl_mode == 'Enabled' else 'Enable DDL', f"userset {user_id} s{key}", "header")
         elif key == 'user_tds':
             set_exist = len(val) if (val:=user_dict.get(key, False)) else 'Not Exists'
-            tds_mode = "Enabled" if user_dict.get('td_mode', config_dict['BOT_PM']) else "Disabled"
+            tds_mode = "Enabled" if user_dict.get('td_mode', False) else "Disabled"
             buttons.ibutton('Disable UserTDs' if tds_mode == 'Enabled' else 'Enable UserTDs', f"userset {user_id} td_mode", "header")
             if not config_dict['USER_TD_MODE']:
                 tds_mode = "Force Disabled"

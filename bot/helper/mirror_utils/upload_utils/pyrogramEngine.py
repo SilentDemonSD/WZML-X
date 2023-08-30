@@ -71,38 +71,56 @@ class TgUploader:
     async def __copy_file(self):
         try:
             if self.__bot_pm and (self.__leechmsg and not self.__listener.excep_chat or self.__listener.isSuperGroup):
-                copied = await bot.copy_message(chat_id=self.__user_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id, reply_to_message_id=self.__listener.botpmmsg.id) 
+                copied = await bot.copy_message(
+                    chat_id=self.__user_id,
+                    from_chat_id=self.__sent_msg.chat.id,
+                    message_id=self.__sent_msg.id,
+                    reply_to_message_id=self.__listener.botpmmsg.id
+                )
                 if copied and self.__has_buttons:
-                    await editReplyMarkup(copied, (InlineKeyboardMarkup(BTN) if (BTN := self.__sent_msg.reply_markup.inline_keyboard[:-1]) else None) if config_dict['SAVE_MSG'] else self.__sent_msg.reply_markup)
+                    btn_markup = InlineKeyboardMarkup(BTN) if (BTN := self.__sent_msg.reply_markup.inline_keyboard[:-1]) else None
+                    await editReplyMarkup(copied, btn_markup if config_dict['SAVE_MSG'] else self.__sent_msg.reply_markup)
         except Exception as err:
             if not self.__is_cancelled:
                 LOGGER.error(f"Failed To Send in BotPM:\n{str(err)}")
+        
         try:
             if len(self.__leechmsg) > 1 and not self.__listener.excep_chat:
                 for chat_id, msg in list(self.__leechmsg.items())[1:]:
-                    self.__leechmsg[chat_id] = await bot.copy_message(chat_id=chat_id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id, reply_to_message_id=msg.id)
+                    leech_copy = await bot.copy_message(
+                        chat_id=chat_id,
+                        from_chat_id=self.__sent_msg.chat.id,
+                        message_id=self.__sent_msg.id,
+                        reply_to_message_id=msg.id
+                    )
                     if config_dict['CLEAN_LOG_MSG'] and msg.text:
                         await deleteMessage(msg)
-                    if (leechmsg := self.__leechmsg[chat_id]) and self.__has_buttons:
-                        await editReplyMarkup(leechmsg, self.__sent_msg.reply_markup)
+                    if leech_copy and self.__has_buttons:
+                        await editReplyMarkup(leech_copy, self.__sent_msg.reply_markup)
         except Exception as err:
             if not self.__is_cancelled:
                 LOGGER.error(f"Failed To Send in Leech Log [ {chat_id} ]:\n{str(err)}")
+        
         try:
             if self.__upload_dest:
                 for channel_id in self.__upload_dest:
                     if chat := (await chat_info(channel_id)):
                         try:
-                            dump_copy = await bot.copy_message(chat_id=chat.id, from_chat_id=self.__sent_msg.chat.id, message_id=self.__sent_msg.id)
+                            dump_copy = await bot.copy_message(
+                                chat_id=chat.id,
+                                from_chat_id=self.__sent_msg.chat.id,
+                                message_id=self.__sent_msg.id
+                            )
                             if dump_copy and self.__has_buttons:
-                                rply = (InlineKeyboardMarkup(BTN) if (BTN := self.__sent_msg.reply_markup.inline_keyboard[:-1]) else None) if config_dict['SAVE_MSG'] else self.__sent_msg.reply_markup
-                                await editReplyMarkup(dump_copy, rply)
+                                btn_markup = InlineKeyboardMarkup(BTN) if (BTN := self.__sent_msg.reply_markup.inline_keyboard[:-1]) else None
+                                await editReplyMarkup(dump_copy, btn_markup if config_dict['SAVE_MSG'] else self.__sent_msg.reply_markup)
                         except (ChannelInvalid, PeerIdInvalid) as e:
                             LOGGER.error(f"{e.NAME}: {e.MESSAGE} for {channel_id}")
                             continue
         except Exception as err:
             if not self.__is_cancelled:
                 LOGGER.error(f"Failed To Send in User Dump:\n{str(err)}")
+
 
     async def __upload_progress(self, current, total):
         if self.__is_cancelled:
