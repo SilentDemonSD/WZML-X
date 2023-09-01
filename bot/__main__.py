@@ -217,20 +217,21 @@ async def restart_notification():
 
 
 async def main():
+    global bot_name, bot_loop, scheduler
     if user != "":
         await gather(bot.start(), user.start())
         globals()['IS_PREMIUM_USER'] = user.me.is_premium
     else:
         await bot.start()
-    globals()['bot_loop'] = bot.loop
-    globals()['bot_name'] = bot.me.username
+    bot_loop = bot.loop
+    bot_name = bot.me.username
     
     if DATABASE_URL:
         await DbManger().db_load()
     await telegraph.create_account()
     await rclone_serve_booter()
     
-    globals()['scheduler'] = AsyncIOScheduler(timezone=str(get_localzone()), event_loop=bot_loop)
+    scheduler = AsyncIOScheduler(timezone=str(get_localzone()), event_loop=bot_loop)
     rss.addJob(config_dict['RSS_DELAY'])
     scheduler.start()
     
