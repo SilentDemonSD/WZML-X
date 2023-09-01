@@ -224,6 +224,9 @@ async def main():
     globals()['bot_name'] = bot.me.username
     globals()['scheduler'] = AsyncIOScheduler(timezone=str(get_localzone()), event_loop=bot_loop)
 
+    if DATABASE_URL:
+        await DbManger().db_load()
+
     await gather(start_cleanup(), torrent_search.initiate_search_tools(), restart_notification(), search_images(), set_commands(bot))
     await sync_to_async(start_aria2_listener, wait=False)
     
