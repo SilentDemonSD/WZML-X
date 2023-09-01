@@ -215,15 +215,14 @@ async def restart_notification():
 
 
 async def main():
-    global IS_PREMIUM_USER, bot_loop, bot_name, scheduler
     if user != "":
         await gather(bot.start(), user.start())
-        IS_PREMIUM_USER = user.me.is_premium
+        globals()['IS_PREMIUM_USER'] = user.me.is_premium
     else:
         await bot.start()
-    bot_loop = bot.loop
-    bot_name = bot.me.username
-    scheduler = AsyncIOScheduler(timezone=str(get_localzone()), event_loop=bot_loop)
+    globals()['bot_loop'] = bot.loop
+    globals()['bot_name'] = bot.me.username
+    globals()['scheduler'] = AsyncIOScheduler(timezone=str(get_localzone()), event_loop=bot_loop)
 
     await gather(start_cleanup(), torrent_search.initiate_search_tools(), restart_notification(), search_images(), set_commands(bot))
     await sync_to_async(start_aria2_listener, wait=False)
