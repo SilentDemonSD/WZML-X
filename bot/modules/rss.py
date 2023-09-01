@@ -648,8 +648,6 @@ def addJob(delay):
                       max_instances=1, next_run_time=datetime.now()+timedelta(seconds=20), replace_existing=True)
 
 
-addJob(config_dict['RSS_DELAY'])
-scheduler.start()
 bot.add_handler(MessageHandler(getRssMenu, filters=command(
     BotCommands.RssCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
 bot.add_handler(CallbackQueryHandler(rssListener, filters=regex(r"^rss")))

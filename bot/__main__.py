@@ -25,10 +25,12 @@ from bot.version import get_version
 from .helper.ext_utils.fs_utils import start_cleanup, clean_all, exit_clean_up
 from .helper.ext_utils.bot_utils import get_readable_time, cmd_exec, sync_to_async, new_task, set_commands, update_user_ldata, get_stats
 from .helper.ext_utils.db_handler import DbManger
+from .helper.ext_utils.telegram_helper import telegraph
 from .helper.telegram_helper.bot_commands import BotCommands
 from .helper.telegram_helper.message_utils import sendMessage, editMessage, editReplyMarkup, sendFile, deleteMessage, delete_all_messages
 from .helper.telegram_helper.filters import CustomFilters
 from .helper.telegram_helper.button_build import ButtonMaker
+from .helper.mirror_utils.rclone_utils.serve import rclone_serve_booter
 from .helper.listeners.aria2_listener import start_aria2_listener
 from .helper.themes import BotTheme
 from .modules import authorize, clone, gd_count, gd_delete, gd_list, cancel_mirror, mirror_leech, status, torrent_search, torrent_select, ytdlp, \
@@ -222,11 +224,16 @@ async def main():
         await bot.start()
     globals()['bot_loop'] = bot.loop
     globals()['bot_name'] = bot.me.username
-    globals()['scheduler'] = AsyncIOScheduler(timezone=str(get_localzone()), event_loop=bot_loop)
-
+    
     if DATABASE_URL:
         await DbManger().db_load()
-
+    await telegraph.create_account()
+    await rclone_serve_booter()
+    
+    globals()['scheduler'] = AsyncIOScheduler(timezone=str(get_localzone()), event_loop=bot_loop)
+    rss.addJob(config_dict['RSS_DELAY'])
+    scheduler.start()
+    
     await gather(start_cleanup(), torrent_search.initiate_search_tools(), restart_notification(), search_images(), set_commands(bot))
     await sync_to_async(start_aria2_listener, wait=False)
     
