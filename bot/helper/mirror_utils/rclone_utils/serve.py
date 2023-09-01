@@ -44,4 +44,5 @@ async def rclone_serve_booter():
     rcs = await create_subprocess_exec(*cmd)
     RcloneServe.append(rcs)
 
-bot_loop.run_until_complete(rclone_serve_booter())
+if bot_loop:
+    bot_loop.run_until_complete(rclone_serve_booter())

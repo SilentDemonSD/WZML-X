@@ -80,4 +80,5 @@ class TelegraphHelper:
 telegraph = TelegraphHelper(config_dict['AUTHOR_NAME'],
                             config_dict['AUTHOR_URL'])
 
-bot_loop.run_until_complete(telegraph.create_account())
+if bot_loop:
+    bot_loop.run_until_complete(telegraph.create_account())
