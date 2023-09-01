@@ -16,6 +16,8 @@ from requests import Session, session as req_session
 import requests
 from threading import Thread
 from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
 from bot import LOGGER, config_dict
 from bot.helper.ext_utils.bot_utils import get_readable_time, is_share_link
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
