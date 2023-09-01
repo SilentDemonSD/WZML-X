@@ -1,8 +1,9 @@
 from time import time, monotonic
 from datetime import datetime
+from tzlocal import get_localzone
 from sys import executable
 from os import execl as osexecl
-from asyncio import create_subprocess_exec, gather
+from asyncio import create_subprocess_exec, gather, run as asyrun
 from uuid import uuid4
 from base64 import b64decode
 
@@ -10,13 +11,16 @@ from requests import get as rget
 from pytz import timezone
 from bs4 import BeautifulSoup
 from signal import signal, SIGINT
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from aiofiles.os import path as aiopath, remove as aioremove
 from aiofiles import open as aiopen
+from pyrogram import idle
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.filters import command, private, regex
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from bot import bot, bot_name, config_dict, user_data, botStartTime, LOGGER, Interval, DATABASE_URL, QbInterval, INCOMPLETE_TASK_NOTIFIER, scheduler
+                bot_loop, scheduler, IS_PREMIUM_USER
 from bot.version import get_version
 from .helper.ext_utils.fs_utils import start_cleanup, clean_all, exit_clean_up
 from .helper.ext_utils.bot_utils import get_readable_time, cmd_exec, sync_to_async, new_task, set_commands, update_user_ldata, get_stats
@@ -211,6 +215,16 @@ async def restart_notification():
 
 
 async def main():
+    global IS_PREMIUM_USER, bot_loop, bot_name, scheduler
+    if user != "":
+        await gather(bot.start(), user.start())
+        IS_PREMIUM_USER = user.me.is_premium
+    else:
+        await bot.start()
+    bot_loop = bot.loop
+    bot_name = bot.me.username
+    scheduler = AsyncIOScheduler(timezone=str(get_localzone()), event_loop=bot_loop)
+
     await gather(start_cleanup(), torrent_search.initiate_search_tools(), restart_notification(), search_images(), set_commands(bot))
     await sync_to_async(start_aria2_listener, wait=False)
     
@@ -232,6 +246,12 @@ async def main():
         BotCommands.StatsCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
     LOGGER.info(f"WZML-X Bot [@{bot_name}] Started!")
     signal(SIGINT, exit_clean_up)
-
-bot.loop.run_until_complete(main())
-bot.loop.run_forever()
+    
+    await idle()
+    
+    if user != "":
+        await gather(bot.stop(), user.stop())
+    else:
+        await bot.stop()
+    
+asyrun(main())
