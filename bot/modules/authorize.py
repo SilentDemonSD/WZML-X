@@ -15,7 +15,7 @@ async def authorize(client, message):
     tid_ = ""
     if len(msg) > 1:
         id_ = int(msg[1].strip())
-    elif reply_to := message.reply_to_message and (reply_to.text is None and reply_to.caption is None):
+    elif (reply_to := message.reply_to_message) and (reply_to.text is None and reply_to.caption is None):
         id_ = message.chat.id
         tid_ = message.reply_to_message_id
     elif reply_to:
@@ -49,7 +49,7 @@ async def unauthorize(client, message):
     tid_ = ""
     if len(msg) > 1:
         id_ = int(msg[1].strip())
-    elif reply_to := message.reply_to_message and (reply_to.text is None and reply_to.caption is None):
+    elif (reply_to := message.reply_to_message) and (reply_to.text is None and reply_to.caption is None):
         id_ = message.chat.id
         tid_ = message.reply_to_message_id
     elif reply_to := message.reply_to_message:
