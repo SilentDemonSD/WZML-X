@@ -232,8 +232,8 @@ async def main():
     await rclone_serve_booter()
     
     bot_pkg.scheduler = AsyncIOScheduler(timezone=str(get_localzone()), event_loop=bot_pkg.bot_loop)
-    rss.addJob(config_dict['RSS_DELAY'])
-    bot_pkg.scheduler.start()
+    #rss.addJob(config_dict['RSS_DELAY'])
+    #bot_pkg.scheduler.start()
     
     reload(bot_pkg)
     await gather(start_cleanup(), torrent_search.initiate_search_tools(), restart_notification(), search_images(), set_commands(bot))
