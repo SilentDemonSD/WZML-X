@@ -21,7 +21,7 @@ class CustomFilters:
         chat_id = message.chat.id
         auth_chat = False
         if chat_id in user_data and user_data[chat_id].get('is_auth', False):
-            if not (topic_ids := user_data[chat_id].get('topic_ids', []])):
+            if not (topic_ids := user_data[chat_id].get('topic_ids', [])):
                 auth_chat = True
         if not auth_chat and (is_forum := message.reply_to_message) 
             and ((is_forum.text is None and is_forum.caption is None and is_forum.id in topic_ids)
