@@ -188,7 +188,6 @@ class EngineStatus:
         self.STATUS_TG = f"Pyrogram v{version_cache['pyro']}"
         self.STATUS_YT = f"yt-dlp v{version_cache['ytdlp']}"
         self.STATUS_EXT = "pExtract v2"
-        self.STATUS_DDL = "Gofile"
         self.STATUS_SPLIT_MERGE = f"ffmpeg v{version_cache['ffmpeg']}"
         self.STATUS_ZIP = f"p7zip v{version_cache['p7zip']}"
         self.STATUS_QUEUE = "Sleep v0"
