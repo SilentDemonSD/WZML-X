@@ -231,7 +231,7 @@ async def main():
     await telegraph.create_account()
     await rclone_serve_booter()
     
-    bot_pkg.scheduler = AsyncIOScheduler(timezone=str(get_localzone()), event_loop=bot_loop)
+    bot_pkg.scheduler = AsyncIOScheduler(timezone=str(get_localzone()), event_loop=bot_pkg.bot_loop)
     rss.addJob(config_dict['RSS_DELAY'])
     bot_pkg.scheduler.start()
     
