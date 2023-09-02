@@ -1,30 +1,36 @@
 from time import time, monotonic
 from datetime import datetime
+from tzlocal import get_localzone
 from sys import executable
 from os import execl as osexecl
-from asyncio import create_subprocess_exec, gather
+from asyncio import create_subprocess_exec, gather, run as asyrun
 from uuid import uuid4
 from base64 import b64decode
+from importlib import import_module, reload
 
 from requests import get as rget
 from pytz import timezone
 from bs4 import BeautifulSoup
 from signal import signal, SIGINT
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from aiofiles.os import path as aiopath, remove as aioremove
 from aiofiles import open as aiopen
+from pyrogram import idle
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.filters import command, private, regex
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from bot import bot, bot_name, config_dict, user_data, botStartTime, LOGGER, Interval, DATABASE_URL, QbInterval, INCOMPLETE_TASK_NOTIFIER, scheduler
+from bot import bot, user, bot_name, config_dict, user_data, botStartTime, LOGGER, Interval, DATABASE_URL, QbInterval, INCOMPLETE_TASK_NOTIFIER, scheduler
 from bot.version import get_version
 from .helper.ext_utils.fs_utils import start_cleanup, clean_all, exit_clean_up
 from .helper.ext_utils.bot_utils import get_readable_time, cmd_exec, sync_to_async, new_task, set_commands, update_user_ldata, get_stats
 from .helper.ext_utils.db_handler import DbManger
+from .helper.ext_utils.telegraph_helper import telegraph
 from .helper.telegram_helper.bot_commands import BotCommands
 from .helper.telegram_helper.message_utils import sendMessage, editMessage, editReplyMarkup, sendFile, deleteMessage, delete_all_messages
 from .helper.telegram_helper.filters import CustomFilters
 from .helper.telegram_helper.button_build import ButtonMaker
+from .helper.mirror_utils.rclone_utils.serve import rclone_serve_booter
 from .helper.listeners.aria2_listener import start_aria2_listener
 from .helper.themes import BotTheme
 from .modules import authorize, clone, gd_count, gd_delete, gd_list, cancel_mirror, mirror_leech, status, torrent_search, torrent_select, ytdlp, \
@@ -211,6 +217,25 @@ async def restart_notification():
 
 
 async def main():
+    bot_pkg = import_module("bot")
+    if user != "":
+        await gather(bot.start(), user.start())
+        bot_pkg.IS_PREMIUM_USER = user.me.is_premium
+    else:
+        await bot.start()
+    bot_pkg.bot_loop = bot.loop
+    bot_pkg.bot_name = bot.me.username
+    
+    if DATABASE_URL:
+        await DbManger().db_load()
+    await telegraph.create_account()
+    await rclone_serve_booter()
+    
+    bot_pkg.scheduler = AsyncIOScheduler(timezone=str(get_localzone()), event_loop=bot_pkg.bot_loop)
+    #rss.addJob(config_dict['RSS_DELAY'])
+    #bot_pkg.scheduler.start()
+    
+    reload(bot_pkg)
     await gather(start_cleanup(), torrent_search.initiate_search_tools(), restart_notification(), search_images(), set_commands(bot))
     await sync_to_async(start_aria2_listener, wait=False)
     
@@ -232,6 +257,12 @@ async def main():
         BotCommands.StatsCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
     LOGGER.info(f"WZML-X Bot [@{bot_name}] Started!")
     signal(SIGINT, exit_clean_up)
-
-bot.loop.run_until_complete(main())
-bot.loop.run_forever()
+    
+    await idle()
+    
+    if user != "":
+        await gather(bot.stop(), user.stop())
+    else:
+        await bot.stop()
+    
+asyrun(main())
