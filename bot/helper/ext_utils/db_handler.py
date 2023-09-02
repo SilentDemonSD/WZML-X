@@ -206,3 +206,6 @@ class DbManger:
             return
         await self.__db[name][bot_id].drop()
         self.__conn.close
+
+if DATABASE_URL:
+    bot_loop.run_until_complete(DbManger().db_load())
