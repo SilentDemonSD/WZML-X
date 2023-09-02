@@ -53,6 +53,6 @@ class CustomFilters:
     async def blacklist_user(self, _, message):
         user = message.from_user or message.sender_chat
         uid = user.id
-        return bool(uid in user_data and user_data[uid].get('is_blacklist') and uid != OWNER_ID)
+        return bool(uid != OWNER_ID and uid in user_data and user_data[uid].get('is_blacklist'))
         
     blacklisted = create(blacklist_user)

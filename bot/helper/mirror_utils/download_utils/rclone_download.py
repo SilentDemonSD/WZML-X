@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from asyncio import gather
 from json import loads
-from secrets import token_urlsafe
+from secrets import token_hex
 
 from bot import download_dict, download_dict_lock, queue_dict_lock, non_queued_dl, LOGGER
 from bot.helper.ext_utils.bot_utils import cmd_exec
@@ -40,7 +40,7 @@ async def add_rclone_download(rc_path, config_path, path, name, listener):
     else:
         name = rc_path.rsplit('/', 1)[-1]
     size = rsize['bytes']
-    gid = token_urlsafe(12)
+    gid = token_hex(5)
     msg, button = await stop_duplicate_check(name, listener)
     if msg:
         await sendMessage(listener.message, msg, button)

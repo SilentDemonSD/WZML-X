@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from secrets import token_urlsafe
+from secrets import token_hex
 from aiofiles.os import makedirs
 from asyncio import Event
 from mega import MegaApi, MegaListener, MegaRequest, MegaTransfer, MegaError
@@ -155,7 +155,7 @@ async def add_mega_download(mega_link, path, listener, name):
             await executor.do(folder_api.logout, ())
         return
 
-    gid = token_urlsafe(8)
+    gid = token_hex(5)
     size = api.getSize(node)
     if limit_exceeded := await limit_checker(size, listener, isMega=True):
         await sendMessage(listener.message, limit_exceeded)

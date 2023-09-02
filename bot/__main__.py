@@ -130,7 +130,7 @@ async def ping(_, message):
 async def log(_, message):
     buttons = ButtonMaker()
     buttons.ibutton('📑 Log Display', f'wzmlx {message.from_user.id} logdisplay')
-    buttons.ibutton('📨 Web Paste', f'wzmlx {message.from_user.id} webpaste')
+    buttons.ibutton('📨 Web Paste (SB)', f'wzmlx {message.from_user.id} webpaste')
     await sendFile(message, 'log.txt', buttons=buttons.build_menu(1))
 
 
@@ -234,6 +234,8 @@ async def main():
     bot.add_handler(MessageHandler(stats, filters=command(
         BotCommands.StatsCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
     LOGGER.info(f"WZML-X Bot [@{bot_name}] Started!")
+    if user:
+        LOGGER.info(f"WZ's User [@{user.me.first_name}] Ready!")
     signal(SIGINT, exit_clean_up)
 
 async def stop_signals():

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from secrets import token_urlsafe
+from secrets import token_hex
 
 from bot import (LOGGER, aria2_options, aria2c_global, download_dict,
                  download_dict_lock, non_queued_dl, queue_dict_lock)
@@ -35,7 +35,7 @@ async def add_direct_download(details, path, listener, foldername):
         await sendMessage(listener.message, msg, button)
         return
 
-    gid = token_urlsafe(10)
+    gid = token_hex(5)
     added_to_queue, event = await is_queued(listener.uid)
     if added_to_queue:
         LOGGER.info(f"Added to Queue/Download: {foldername}")

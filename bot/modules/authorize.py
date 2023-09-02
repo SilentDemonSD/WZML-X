@@ -12,32 +12,54 @@ from bot.helper.ext_utils.bot_utils import update_user_ldata
 
 async def authorize(client, message):
     msg = message.text.split()
+    tid_ = ""
     if len(msg) > 1:
         id_ = int(msg[1].strip())
-    elif reply_to := message.reply_to_message:
+    elif reply_to := message.reply_to_message and (reply_to.text is None and reply_to.caption is None):
+        id_ = message.chat.id
+        tid_ = message.reply_to_message_id
+    elif reply_to:
         id_ = reply_to.from_user.id
     else:
         id_ = message.chat.id
     if id_ in user_data and user_data[id_].get('is_auth'):
         msg = 'Already Authorized!'
+        if tid_:
+            if tid_ not in (tids_ := user_data[id_].get('topic_ids', [])):
+                update_user_ldata(id_, 'topic_ids', tids_.append(tid_))
+                if DATABASE_URL:
+                    await DbManger().update_user_data(id_)
+                msg = 'Topic Authorized!'
+            else:
+                msg = 'Topic Already Authorized!'
     else:
         update_user_ldata(id_, 'is_auth', True)
+        if tid_:
+            update_user_ldata(id_, 'topic_ids', [tid_])
+            msg = 'Topic Authorized!'
+        else:
+            msg = 'Authorized'
         if DATABASE_URL:
             await DbManger().update_user_data(id_)
-        msg = 'Authorized'
     await sendMessage(message, msg)
 
 
 async def unauthorize(client, message):
     msg = message.text.split()
+    tid_ = ""
     if len(msg) > 1:
         id_ = int(msg[1].strip())
+    elif reply_to := message.reply_to_message and (reply_to.text is None and reply_to.caption is None):
+        id_ = message.chat.id
+        tid_ = message.reply_to_message_id
     elif reply_to := message.reply_to_message:
         id_ = reply_to.from_user.id
     else:
         id_ = message.chat.id
     if id_ not in user_data or user_data[id_].get('is_auth'):
         update_user_ldata(id_, 'is_auth', False)
+        if tid_ and id_ in user_data and tid_ in (tids_ := user_data[id_].get('topic_ids')):
+            update_user_ldata(id_, 'topic_ids', tids_.remove(tid_))
         if DATABASE_URL:
             await DbManger().update_user_data(id_)
         msg = 'Unauthorized'
