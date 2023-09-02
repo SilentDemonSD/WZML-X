@@ -6,7 +6,7 @@ from os import execl as osexecl
 from asyncio import create_subprocess_exec, gather, run as asyrun
 from uuid import uuid4
 from base64 import b64decode
-from importlib import import_module
+from importlib import import_module, reload
 
 from requests import get as rget
 from pytz import timezone
@@ -235,6 +235,7 @@ async def main():
     rss.addJob(config_dict['RSS_DELAY'])
     bot_pkg.scheduler.start()
     
+    reload(bot_pkg)
     await gather(start_cleanup(), torrent_search.initiate_search_tools(), restart_notification(), search_images(), set_commands(bot))
     await sync_to_async(start_aria2_listener, wait=False)
     

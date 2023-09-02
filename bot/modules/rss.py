@@ -10,6 +10,7 @@ from aiohttp import ClientSession
 from apscheduler.triggers.interval import IntervalTrigger
 from re import split as re_split
 from io import BytesIO
+from importlib import import_module, reload
 
 from bot import scheduler, rss_dict, LOGGER, DATABASE_URL, config_dict, bot
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, sendRss, sendFile
@@ -644,6 +645,7 @@ async def rssMonitor():
 
 
 def addJob(delay):
+    reload(import_module("bot"))
     scheduler.add_job(rssMonitor, trigger=IntervalTrigger(seconds=delay), id='0', name='RSS', misfire_grace_time=15,
                       max_instances=1, next_run_time=datetime.now()+timedelta(seconds=20), replace_existing=True)
 
