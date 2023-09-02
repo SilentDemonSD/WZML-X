@@ -2,7 +2,7 @@
 from pyrogram.handlers import MessageHandler
 from pyrogram.filters import command, regex
 
-from bot import user_data, DATABASE_URL, bot
+from bot import user_data, DATABASE_URL, bot, LOGGER
 from bot.helper.telegram_helper.message_utils import sendMessage
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -26,6 +26,7 @@ async def authorize(client, message):
         msg = 'Already Authorized!'
         if tid_:
             if tid_ not in (tids_ := user_data[id_].get('topic_ids', [])):
+                LOGGER.info(tids_.append(tid_))
                 update_user_ldata(id_, 'topic_ids', tids_.append(tid_))
                 if DATABASE_URL:
                     await DbManger().update_user_data(id_)

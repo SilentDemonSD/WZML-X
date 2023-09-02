@@ -23,7 +23,7 @@ class TelegraphHelper:
             author_url=self.author_url
         )
         self.access_token = self.telegraph.get_access_token()
-        LOGGER.info(f"Telegraph Account Generated : {self.access_token}")
+        LOGGER.info(f"Telegraph Account Generated : {self.short_name}")
 
     async def create_page(self, title, content):
         try:
