@@ -6,6 +6,7 @@ from os import execl as osexecl
 from asyncio import create_subprocess_exec, gather, run as asyrun
 from uuid import uuid4
 from base64 import b64decode
+from importlib import import_module
 
 from requests import get as rget
 from pytz import timezone
@@ -19,8 +20,7 @@ from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.filters import command, private, regex
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from bot import bot, user, bot_name, config_dict, user_data, botStartTime, LOGGER, Interval, DATABASE_URL, QbInterval, INCOMPLETE_TASK_NOTIFIER, scheduler, \
-                bot_loop, scheduler, IS_PREMIUM_USER
+from bot import bot, user, bot_name, config_dict, user_data, botStartTime, LOGGER, Interval, DATABASE_URL, QbInterval, INCOMPLETE_TASK_NOTIFIER, scheduler
 from bot.version import get_version
 from .helper.ext_utils.fs_utils import start_cleanup, clean_all, exit_clean_up
 from .helper.ext_utils.bot_utils import get_readable_time, cmd_exec, sync_to_async, new_task, set_commands, update_user_ldata, get_stats
@@ -217,23 +217,23 @@ async def restart_notification():
 
 
 async def main():
-    global bot_name, bot_loop, scheduler
+    bot_pkg = import_module("bot")
     if user != "":
         await gather(bot.start(), user.start())
-        globals()['IS_PREMIUM_USER'] = user.me.is_premium
+        bot_pkg.IS_PREMIUM_USER = user.me.is_premium
     else:
         await bot.start()
-    bot_loop = bot.loop
-    bot_name = bot.me.username
+    bot_pkg.bot_loop = bot.loop
+    bot_pkg.bot_name = bot.me.username
     
     if DATABASE_URL:
         await DbManger().db_load()
     await telegraph.create_account()
     await rclone_serve_booter()
     
-    scheduler = AsyncIOScheduler(timezone=str(get_localzone()), event_loop=bot_loop)
+    bot_pkg.scheduler = AsyncIOScheduler(timezone=str(get_localzone()), event_loop=bot_loop)
     rss.addJob(config_dict['RSS_DELAY'])
-    scheduler.start()
+    bot_pkg.scheduler.start()
     
     await gather(start_cleanup(), torrent_search.initiate_search_tools(), restart_notification(), search_images(), set_commands(bot))
     await sync_to_async(start_aria2_listener, wait=False)
