@@ -14,7 +14,10 @@ async def authorize(client, message):
     msg = message.text.split()
     tid_ = ""
     if len(msg) > 1:
-        id_ = int(msg[1].strip())
+        nid_ = msg[1].split(':')
+        id_ = int(nid_[0])
+        if len(nid_) > 1:
+            tid_ = int(nid_[1])
     elif (reply_to := message.reply_to_message) and (reply_to.text is None and reply_to.caption is None):
         id_ = message.chat.id
         tid_ = message.reply_to_message_id
@@ -49,7 +52,10 @@ async def unauthorize(client, message):
     msg = message.text.split()
     tid_ = ""
     if len(msg) > 1:
-        id_ = int(msg[1].strip())
+        nid_ = msg[1].split(':')
+        id_ = int(nid_[0])
+        if len(nid_) > 1:
+            tid_ = int(nid_[1])
     elif (reply_to := message.reply_to_message) and (reply_to.text is None and reply_to.caption is None):
         id_ = message.chat.id
         tid_ = message.reply_to_message_id
@@ -57,11 +63,13 @@ async def unauthorize(client, message):
         id_ = reply_to.from_user.id
     else:
         id_ = message.chat.id
+    tids_ = []
+    if tid_ and id_ in user_data and tid_ in (tids_ := user_data[id_].get('topic_ids', [])):
+        tids_.remove(tid_)
+        update_user_ldata(id_, 'topic_ids', tids_)
     if id_ not in user_data or user_data[id_].get('is_auth'):
-        update_user_ldata(id_, 'is_auth', False)
-        if tid_ and id_ in user_data and tid_ in (tids_ := user_data[id_].get('topic_ids', [])):
-            tids_.remove(tid_)
-            update_user_ldata(id_, 'topic_ids', tids_)
+        if not tids_:
+            update_user_ldata(id_, 'is_auth', False)
         if DATABASE_URL:
             await DbManger().update_user_data(id_)
         msg = 'Unauthorized'
