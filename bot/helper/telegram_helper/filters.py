@@ -19,8 +19,19 @@ class CustomFilters:
         user = message.from_user or message.sender_chat
         uid = user.id
         chat_id = message.chat.id
-        return bool(uid == OWNER_ID or (uid in user_data and (user_data[uid].get('is_auth', False) or
-                                                              user_data[uid].get('is_sudo', False))) or (chat_id in user_data and user_data[chat_id].get('is_auth', False)))
+        auth_chat = False
+        if chat_id in user_data and user_data[chat_id].get('is_auth', False):
+            if not (topic_ids := user_data[chat_id].get('topic_ids', []])):
+                auth_chat = True
+        if not auth_chat and (is_forum := message.reply_to_message) 
+            and ((is_forum.text is None and is_forum.caption is None and is_forum.id in topic_ids)
+            or ((is_forum.text or is_forum.caption) and ((not is_forum.reply_to_top_message_id and is_forum.reply_to_message_id in topic_ids)
+            or (is_forum.reply_to_top_message_id in topic_ids)))):
+            auth_chat = True
+    
+        return bool(uid == OWNER_ID or (uid in user_data and (user_data[uid].get('is_auth', False) or user_data[uid].get('is_sudo', False))) or
+                auth_chat)
+    
     authorized = create(authorized_user)
     
     async def authorized_usetting(self, _, message):

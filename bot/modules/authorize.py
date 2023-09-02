@@ -58,7 +58,7 @@ async def unauthorize(client, message):
         id_ = message.chat.id
     if id_ not in user_data or user_data[id_].get('is_auth'):
         update_user_ldata(id_, 'is_auth', False)
-        if tid_ and id_ in user_data and tid_ in (tids_ := user_data[id_].get('topic_ids')):
+        if tid_ and id_ in user_data and tid_ in (tids_ := user_data[id_].get('topic_ids', [])):
             update_user_ldata(id_, 'topic_ids', tids_.remove(tid_))
         if DATABASE_URL:
             await DbManger().update_user_data(id_)
