@@ -55,6 +55,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
                 '-index': '',
                 '-c': '', '-category': '',
                 '-ud': '', '-dump': '',
+                '-h': '',
     }
 
     args = arg_parser(input_list[1:], arg_base)
@@ -80,6 +81,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     index_link    = args['-index']
     gd_cat        = args['-c'] or args['-category']
     user_dump     = args['-ud'] or args['-dump']
+    headers       = args['-h']
     bulk_start    = 0
     bulk_end      = 0
     ratio         = None
@@ -236,7 +238,9 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             process_msg = await sendMessage(message, f"<i><b>Processing:</b></i> <code>{link}</code>")
             try:
                 link = await sync_to_async(direct_link_generator, link)
-                if not isinstance(link, dict):
+                if isinstance(link, tuple):
+                    link, headers = link
+                if isinstance(link, str):
                     LOGGER.info(f"Generated link: {link}")
                 await editMessage(process_msg, f"<i><b>Generated link:</b></i> <code>{link}</code>")
             except DirectDownloadLinkException as e:
@@ -351,9 +355,11 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         pssw = args['-p'] or args['-pass']
         if ussr or pssw:
             auth = f"{ussr}:{pssw}"
-            auth = "Basic " + b64encode(auth.encode()).decode('ascii')
+            auth = f"authorization: Basic {b64encode(auth.encode()).decode('ascii')}"
         else:
             auth = ''
+        if headers:
+            auth += f'{auth} {headers}'
         await add_aria2c_download(link, path, listener, name, auth, ratio, seed_time)
     await delete_links(message)
 

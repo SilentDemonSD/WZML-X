@@ -254,6 +254,10 @@ def get_readable_message():
             return float(spd.split('K')[0]) * 1024
         elif 'M' in spd:
             return float(spd.split('M')[0]) * 1048576
+        elif 'G' in spd:
+            return float(spd.split('G')[0]) * 1073741824
+        elif 'T' in spd:
+            return float(spd.split('T')[0]) * 1099511627776
         else:
             return 0
 
