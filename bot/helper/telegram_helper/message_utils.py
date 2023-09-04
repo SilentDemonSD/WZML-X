@@ -96,7 +96,7 @@ async def sendMultiMessage(chat_ids, text, buttons=None, photo=None):
     msg_dict = {}
     for channel_id in chat_ids.split():
         channel_id, *topic_id = channel_id.split(':')
-        topic_id = topic_id[0] if len(topic_id) else None
+        topic_id = int(topic_id[0]) if len(topic_id) else None
         chat = await chat_info(channel_id)
         try:
             if photo:
