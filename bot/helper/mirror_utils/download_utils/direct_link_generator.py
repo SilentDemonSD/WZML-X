@@ -1,26 +1,33 @@
 #!/usr/bin/env python3
-from base64 import b64decode
-from http.cookiejar import MozillaCookieJar
-from json import loads
-from os import path
-from re import findall, match, search, sub
-from time import sleep
+
+# Standard Library Imports
+import os
+import time
+import uuid
+import hashlib
+from threading import Thread
+
+# Third-party Library Imports
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+from lxml.etree import HTML
+from requests import Session, session as req_session
 from urllib.parse import parse_qs, quote, unquote, urlparse
-from uuid import uuid4
-from hashlib import sha256
 from bs4 import BeautifulSoup
 from cloudscraper import create_scraper
 from lk21 import Bypass
-from lxml import etree
-from requests import Session, session as req_session
-import requests
-from threading import Thread
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
+from base64 import b64decode
+from http.cookiejar import MozillaCookieJar
+from json import loads
+from re import findall, match, search, sub
+from requests import post
 
+# Local Imports
 from bot import LOGGER, config_dict
 from bot.helper.ext_utils.bot_utils import get_readable_time, is_share_link
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
+
 
 _caches = {}
 
@@ -32,33 +39,35 @@ anonfilesBaseSites = ['anonfiles.com', 'hotfile.io', 'bayfiles.com', 'megaupload
                       'openload.cc', 'share-online.is', 'upvid.cc']
 
 debrid_sites = ['1fichier.com', '2shared.com', '4shared.com', 'alfafile.net', 'anzfile.net', 'backin.net',
-                'bayfiles.com', 'bdupload.in', 'brupload.net', 'btafile.com', 'catshare.net', 'clicknupload.me', 
-                'clipwatching.com', 'cosmobox.org', 'dailymotion.com', 'dailyuploads.net', 'daofile.com', 
-                'datafilehost.com', 'ddownload.com', 'depositfiles.com', 'dl.free.fr', 'douploads.net', 
-                'drop.download', 'earn4files.com', 'easybytez.com', 'ex-load.com', 'extmatrix.com', 
-                'down.fast-down.com', 'fastclick.to', 'faststore.org', 'file.al', 'file4safe.com', 'fboom.me', 
-                'filefactory.com', 'filefox.cc', 'filenext.com', 'filer.net', 'filerio.in', 'filesabc.com', 'filespace.com', 
-                'file-up.org', 'fileupload.pw', 'filezip.cc', 'fireget.com', 'flashbit.cc', 'flashx.tv', 'florenfile.com', 
-                'fshare.vn', 'gigapeta.com', 'goloady.com', 'docs.google.com', 'gounlimited.to', 'heroupload.com', 
-                'hexupload.net', 'hitfile.net', 'hotlink.cc', 'hulkshare.com', 'icerbox.com', 'inclouddrive.com', 
-                'isra.cloud', 'katfile.com', 'keep2share.cc', 'letsupload.cc', 'load.to', 'down.mdiaload.com', 'mediafire.com', 
-                'mega.co.nz', 'mixdrop.co', 'mixloads.com', 'mp4upload.com', 'nelion.me', 'ninjastream.to', 'nitroflare.com', 
-                'nowvideo.club', 'oboom.com', 'prefiles.com', 'sky.fm', 'rapidgator.net', 'rapidrar.com', 'rapidu.net', 
-                'rarefile.net', 'real-debrid.com', 'redbunker.net', 'redtube.com', 'rockfile.eu', 'rutube.ru', 'scribd.com', 
-                'sendit.cloud', 'sendspace.com', 'simfileshare.net', 'solidfiles.com', 'soundcloud.com', 'speed-down.org', 
-                'streamon.to', 'streamtape.com', 'takefile.link', 'tezfiles.com', 'thevideo.me', 'turbobit.net', 'tusfiles.com', 
-                'ubiqfile.com', 'uloz.to', 'unibytes.com', 'uploadbox.io', 'uploadboy.com', 'uploadc.com', 'uploaded.net', 
-                'uploadev.org', 'uploadgig.com', 'uploadrar.com', 'uppit.com', 'upstore.net', 'upstream.to', 'uptobox.com', 
-                'userscloud.com', 'usersdrive.com', 'vidcloud.ru', 'videobin.co', 'vidlox.tv', 'vidoza.net', 'vimeo.com', 
-                'vivo.sx', 'vk.com', 'voe.sx', 'wdupload.com', 'wipfiles.net', 'world-files.com', 'worldbytez.com', 'wupfile.com', 
+                'bayfiles.com', 'bdupload.in', 'brupload.net', 'btafile.com', 'catshare.net', 'clicknupload.me',
+                'clipwatching.com', 'cosmobox.org', 'dailymotion.com', 'dailyuploads.net', 'daofile.com',
+                'datafilehost.com', 'ddownload.com', 'depositfiles.com', 'dl.free.fr', 'douploads.net',
+                'drop.download', 'earn4files.com', 'easybytez.com', 'ex-load.com', 'extmatrix.com',
+                'down.fast-down.com', 'fastclick.to', 'faststore.org', 'file.al', 'file4safe.com', 'fboom.me',
+                'filefactory.com', 'filefox.cc', 'filenext.com', 'filer.net', 'filerio.in', 'filesabc.com', 'filespace.com',
+                'file-up.org', 'fileupload.pw', 'filezip.cc', 'fireget.com', 'flashbit.cc', 'flashx.tv', 'florenfile.com',
+                'fshare.vn', 'gigapeta.com', 'goloady.com', 'docs.google.com', 'gounlimited.to', 'heroupload.com',
+                'hexupload.net', 'hitfile.net', 'hotlink.cc', 'hulkshare.com', 'icerbox.com', 'inclouddrive.com',
+                'isra.cloud', 'katfile.com', 'keep2share.cc', 'letsupload.cc', 'load.to', 'down.mdiaload.com', 'mediafire.com',
+                'mega.co.nz', 'mixdrop.co', 'mixloads.com', 'mp4upload.com', 'nelion.me', 'ninjastream.to', 'nitroflare.com',
+                'nowvideo.club', 'oboom.com', 'prefiles.com', 'sky.fm', 'rapidgator.net', 'rapidrar.com', 'rapidu.net',
+                'rarefile.net', 'real-debrid.com', 'redbunker.net', 'redtube.com', 'rockfile.eu', 'rutube.ru', 'scribd.com',
+                'sendit.cloud', 'sendspace.com', 'simfileshare.net', 'solidfiles.com', 'soundcloud.com', 'speed-down.org',
+                'streamon.to', 'streamtape.com', 'takefile.link', 'tezfiles.com', 'thevideo.me', 'turbobit.net', 'tusfiles.com',
+                'ubiqfile.com', 'uloz.to', 'unibytes.com', 'uploadbox.io', 'uploadboy.com', 'uploadc.com', 'uploaded.net',
+                'uploadev.org', 'uploadgig.com', 'uploadrar.com', 'uppit.com', 'upstore.net', 'upstream.to', 'uptobox.com',
+                'userscloud.com', 'usersdrive.com', 'vidcloud.ru', 'videobin.co', 'vidlox.tv', 'vidoza.net', 'vimeo.com',
+                'vivo.sx', 'vk.com', 'voe.sx', 'wdupload.com', 'wipfiles.net', 'world-files.com', 'worldbytez.com', 'wupfile.com',
                 'wushare.com', 'xubster.com', 'youporn.com', 'youtube.com']
+
 
 def direct_link_generator(link: str):
     domain = urlparse(link).hostname
     if not domain:
         raise DirectDownloadLinkException("ERROR: Invalid URL")
     if 'youtube.com' in domain or 'youtu.be' in domain:
-        raise DirectDownloadLinkException("ERROR: Use ytdl cmds for Youtube links")
+        raise DirectDownloadLinkException(
+            "ERROR: Use ytdl cmds for Youtube links")
     elif config_dict['DEBRID_API_KEY'] and any(x in domain for x in debrid_sites):
         return debrid_extractor(link)
     elif 'yadi.sk' in domain or 'disk.yandex.com' in domain:
@@ -99,6 +108,8 @@ def direct_link_generator(link: str):
         return letsupload(link)
     elif 'gofile.io' in domain:
         return gofile(link)
+    elif 'doods.pro' in domain:
+        return doods(link)
     elif any(x in domain for x in ['streamtape.com', 'streamtape.co', 'streamtape.cc', 'streamtape.to', 'streamtape.net', 'streamta.pe', 'streamtape.xyz']):
         return streamtape(link)
     elif any(x in domain for x in ['wetransfer.com', 'we.tl']):
@@ -121,21 +132,23 @@ def direct_link_generator(link: str):
     elif 'zippyshare.com' in domain:
         raise DirectDownloadLinkException('ERROR: R.I.P Zippyshare')
     else:
-        raise DirectDownloadLinkException(f'No Direct link function found for {link}')
+        raise DirectDownloadLinkException(
+            f'No Direct link function found for {link}')
 
 
 def debrid_extractor(url: str) -> str:
     """ Debrid Link Extractor (VPN Must)"""
     cget = create_scraper().request
     try:
-        resp = cget('POST', f"https://api.real-debrid.com/rest/1.0/unrestrict/link?auth_token={config_dict['DEBRID_API_KEY']}", data={'link': url})
+        resp = cget(
+            'POST', f"https://api.real-debrid.com/rest/1.0/unrestrict/link?auth_token={config_dict['DEBRID_API_KEY']}", data={'link': url})
         if resp.status_code == 200:
             return resp.json()['download']
         else:
             raise DirectDownloadLinkException(f"ERROR: {resp['error']}")
     except Exception as e:
         raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}")
-    
+
 
 def yandex_disk(url: str) -> str:
     """ Yandex.Disk direct link generator
@@ -392,7 +405,7 @@ def racaty(url):
             res = scraper.post(url, data=json_data)
     except Exception as e:
         raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
-    if (direct_link := etree.HTML(res.text).xpath("//a[contains(@id,'uniqueExpirylink')]/@href")):
+    if (direct_link := HTML(res.text).xpath("//a[contains(@id,'uniqueExpirylink')]/@href")):
         return direct_link[0]
     else:
         raise DirectDownloadLinkException('ERROR: Direct link not found')
@@ -467,7 +480,6 @@ def fichier(link):
             "ERROR: Error trying to generate Direct Link from 1fichier!")
 
 
-
 def solidfiles(url: str) -> str:
     """ Solidfiles direct link generator
     Based on https://github.com/Xonshiz/SolidFiles-Downloader
@@ -491,28 +503,30 @@ def krakenfiles(url):
         _res = session.get(url)
     except Exception as e:
         raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
-    html = etree.HTML(_res.text)
-    if post_url:= html.xpath('//form[@id="dl-form"]/@action'):
+    html = HTML(_res.text)
+    if post_url := html.xpath('//form[@id="dl-form"]/@action'):
         post_url = f'https:{post_url[0]}'
     else:
         session.close()
         raise DirectDownloadLinkException('ERROR: Unable to find post link.')
-    if token:= html.xpath('//input[@id="dl-token"]/@value'):
+    if token := html.xpath('//input[@id="dl-token"]/@value'):
         data = {'token': token[0]}
     else:
         session.close()
-        raise DirectDownloadLinkException('ERROR: Unable to find token for post.')
+        raise DirectDownloadLinkException(
+            'ERROR: Unable to find token for post.')
     try:
         _json = session.post(post_url, data=data).json()
     except Exception as e:
         session.close()
-        raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__} While send post request')
+        raise DirectDownloadLinkException(
+            f'ERROR: {e.__class__.__name__} While send post request')
     if _json['status'] != 'ok':
         session.close()
-        raise DirectDownloadLinkException("ERROR: Unable to find download after post request")
+        raise DirectDownloadLinkException(
+            "ERROR: Unable to find download after post request")
     session.close()
     return _json['url']
-
 
 
 def uploadee(url: str) -> str:
@@ -521,7 +535,7 @@ def uploadee(url: str) -> str:
             _res = scraper.get(url)
     except Exception as e:
         raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
-    if link := etree.HTML(_res.text).xpath("//a[@id='d_l']/@href"):
+    if link := HTML(_res.text).xpath("//a[@id='d_l']/@href"):
         return link[0]
     else:
         raise DirectDownloadLinkException("ERROR: Direct Link not found")
@@ -554,28 +568,31 @@ def terabox(url) -> str:
     if not shortUrl:
         raise DirectDownloadLinkException("ERROR: Could not find surl")
 
-    details = {'contents':[], 'title': '', 'total_size': 0}
-    details["header"] = ' '.join(f'{key}: {value}' for key, value in cookies.items())
+    details = {'contents': [], 'title': '', 'total_size': 0}
+    details["header"] = ' '.join(
+        f'{key}: {value}' for key, value in cookies.items())
 
     def __fetch_links(dir_='', folderPath=''):
         params = {
             'app_id': '250528',
             'jsToken': jsToken,
             'shorturl': shortUrl
-            }
+        }
         if dir_:
             params['dir'] = dir_
         else:
             params['root'] = '1'
         try:
-            _json = session.get("https://www.1024tera.com/share/list", params=params, cookies=cookies).json()
+            _json = session.get(
+                "https://www.1024tera.com/share/list", params=params, cookies=cookies).json()
         except Exception as e:
             raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
         if _json['errno'] not in [0, '0']:
             if 'errmsg' in _json:
                 raise DirectDownloadLinkException(f"ERROR: {_json['errmsg']}")
             else:
-                raise DirectDownloadLinkException('ERROR: Something went wrong!')
+                raise DirectDownloadLinkException(
+                    'ERROR: Something went wrong!')
 
         if "list" not in _json:
             return
@@ -587,9 +604,11 @@ def terabox(url) -> str:
                         details['title'] = content['server_filename']
                         newFolderPath = path.join(details['title'])
                     else:
-                        newFolderPath = path.join(details['title'], content['server_filename'])
+                        newFolderPath = path.join(
+                            details['title'], content['server_filename'])
                 else:
-                    newFolderPath = path.join(folderPath, content['server_filename'])
+                    newFolderPath = path.join(
+                        folderPath, content['server_filename'])
                 __fetch_links(content['path'], newFolderPath)
             else:
                 if not folderPath:
@@ -599,7 +618,7 @@ def terabox(url) -> str:
                 item = {
                     'url': content['dlink'],
                     'filename': content['server_filename'],
-                    'path' : path.join(folderPath),
+                    'path': path.join(folderPath),
                 }
                 if 'size' in content:
                     size = content["size"]
@@ -653,9 +672,10 @@ def gofile(url):
         session.close()
         raise DirectDownloadLinkException(e)
 
-    details = {'contents':[], 'title': '', 'total_size': 0}
+    details = {'contents': [], 'title': '', 'total_size': 0}
     headers = {"Cookie": f"accountToken={token}"}
-    details["header"] = ' '.join(f'{key}: {value}' for key, value in headers.items())
+    details["header"] = ' '.join(
+        f'{key}: {value}' for key, value in headers.items())
 
     def __fetch_links(_id, folderPath=''):
         _url = f"https://api.gofile.io/getContent?contentId={_id}&token={token}&websiteToken=7fd94ds12fds4&cache=true"
@@ -666,13 +686,17 @@ def gofile(url):
         except Exception as e:
             raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}")
         if _json['status'] in 'error-passwordRequired':
-            raise DirectDownloadLinkException(f'ERROR: This link requires a password!\n\n<b>This link requires a password!</b>\n- Insert sign <b>::</b> after the link and write the password after the sign.\n\n<b>Example:</b> {url}::love you\n\n* No spaces between the signs <b>::</b>\n* For the password, you can use a space!')
+            raise DirectDownloadLinkException(
+                f'ERROR: This link requires a password!\n\n<b>This link requires a password!</b>\n- Insert sign <b>::</b> after the link and write the password after the sign.\n\n<b>Example:</b> {url}::love you\n\n* No spaces between the signs <b>::</b>\n* For the password, you can use a space!')
         if _json['status'] in 'error-passwordWrong':
-            raise DirectDownloadLinkException('ERROR: This password is wrong !')
+            raise DirectDownloadLinkException(
+                'ERROR: This password is wrong !')
         if _json['status'] in 'error-notFound':
-            raise DirectDownloadLinkException("ERROR: File not found on gofile's server")
+            raise DirectDownloadLinkException(
+                "ERROR: File not found on gofile's server")
         if _json['status'] in 'error-notPublic':
-            raise DirectDownloadLinkException("ERROR: This folder is not public")
+            raise DirectDownloadLinkException(
+                "ERROR: This folder is not public")
 
         data = _json["data"]
 
@@ -685,7 +709,8 @@ def gofile(url):
                 if not content['public']:
                     continue
                 if not folderPath:
-                    newFolderPath = path.join(details['title'], content["name"])
+                    newFolderPath = path.join(
+                        details['title'], content["name"])
                 else:
                     newFolderPath = path.join(folderPath, content["name"])
                 __fetch_links(content["id"], newFolderPath)
@@ -712,6 +737,7 @@ def gofile(url):
     session.close()
     return details
 
+
 def filepress(url):
     cget = create_scraper().request
     try:
@@ -737,12 +763,14 @@ def gdtot(url):
         res = cget('GET', f'https://gdtot.pro/file/{url.split("/")[-1]}')
     except Exception as e:
         raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
-    token_url = etree.HTML(res.content).xpath("//a[contains(@class,'inline-flex items-center justify-center')]/@href")
+    token_url = HTML(res.text).xpath(
+        "//a[contains(@class,'inline-flex items-center justify-center')]/@href")
     if not token_url:
         try:
             url = cget('GET', url).url
             p_url = urlparse(url)
-            res = cget("GET", f"{p_url.scheme}://{p_url.hostname}/ddl/{url.split('/')[-1]}")
+            res = cget(
+                "GET", f"{p_url.scheme}://{p_url.hostname}/ddl/{url.split('/')[-1]}")
         except Exception as e:
             raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
         if (drive_link := findall(r"myDl\('(.*?)'\)", res.text)) and "drive.google.com" in drive_link[0]:
@@ -750,20 +778,24 @@ def gdtot(url):
         elif config_dict['GDTOT_CRYPT']:
             cget('GET', url, cookies={'crypt': config_dict['GDTOT_CRYPT']})
             p_url = urlparse(url)
-            js_script = cget('GET', f"{p_url.scheme}://{p_url.hostname}/dld?id={url.split('/')[-1]}")
+            js_script = cget(
+                'GET', f"{p_url.scheme}://{p_url.hostname}/dld?id={url.split('/')[-1]}")
             g_id = findall('gd=(.*?)&', js_script.text)
             try:
                 decoded_id = b64decode(str(g_id[0])).decode('utf-8')
             except:
-                raise DirectDownloadLinkException("ERROR: Try in your browser, mostly file not found or user limit exceeded!")
+                raise DirectDownloadLinkException(
+                    "ERROR: Try in your browser, mostly file not found or user limit exceeded!")
             return f'https://drive.google.com/open?id={decoded_id}'
         else:
-            raise DirectDownloadLinkException('ERROR: Drive Link not found, Try in your broswer! GDTOT_CRYPT not Provided, it increases efficiency!')
+            raise DirectDownloadLinkException(
+                'ERROR: Drive Link not found, Try in your broswer! GDTOT_CRYPT not Provided, it increases efficiency!')
     token_url = token_url[0]
     try:
         token_page = cget('GET', token_url)
     except Exception as e:
-        raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__} with {token_url}')
+        raise DirectDownloadLinkException(
+            f'ERROR: {e.__class__.__name__} with {token_url}')
     path = findall('\("(.*?)"\)', token_page.text)
     if not path:
         raise DirectDownloadLinkException('ERROR: Cannot bypass this')
@@ -787,7 +819,7 @@ def sharer_scraper(url):
     if not key:
         raise DirectDownloadLinkException("ERROR: Key not found!")
     key = key[0]
-    if not etree.HTML(res.content).xpath("//button[@id='drc']"):
+    if not HTML(res.text).xpath("//button[@id='drc']"):
         raise DirectDownloadLinkException(
             "ERROR: This link don't have direct download button")
     boundary = uuid4()
@@ -815,11 +847,12 @@ def sharer_scraper(url):
         res = cget('GET', res["url"])
     except Exception as e:
         raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
-    if (drive_link := etree.HTML(res.content).xpath("//a[contains(@class,'btn')]/@href")) and "drive.google.com" in drive_link[0]:
+    if (drive_link := HTML(res.text).xpath("//a[contains(@class,'btn')]/@href")) and "drive.google.com" in drive_link[0]:
         return drive_link[0]
     else:
         raise DirectDownloadLinkException(
             'ERROR: Drive Link not found, Try in your broswer')
+
 
 def wetransfer(url):
     cget = create_scraper().request
@@ -854,7 +887,7 @@ def akmfiles(url):
         res = cget('POST', url, data=json_data)
     except Exception as e:
         raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
-    if (direct_link := etree.HTML(res.content).xpath("//a[contains(@class,'btn btn-dow')]/@href")):
+    if (direct_link := HTML(res.text).xpath("//a[contains(@class,'btn btn-dow')]/@href")):
         return direct_link[0]
     else:
         raise DirectDownloadLinkException('ERROR: Direct link not found')
@@ -910,7 +943,6 @@ def route_intercept(route, request):
         route.continue_()
 
 
-
 def mediafireFolder(url: str):
     try:
         raw = url.split('/', 4)[-1]
@@ -944,7 +976,8 @@ def mediafireFolder(url: str):
                 'response_format': 'json'
             }).json()
         except Exception as e:
-            raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__} While getting info")
+            raise DirectDownloadLinkException(
+                f"ERROR: {e.__class__.__name__} While getting info")
         _res = _json['response']
         if 'folder_infos' in _res:
             folder_infos.extend(_res['folder_infos'])
@@ -963,7 +996,7 @@ def mediafireFolder(url: str):
 
     def __scraper(url):
         try:
-            html = etree.HTML(session.get(url).text)
+            html = HTML(session.get(url).text)
         except:
             return
         if final_link := html.xpath("//a[@id='downloadButton']/@href"):
@@ -976,9 +1009,11 @@ def mediafireFolder(url: str):
                 'folder_key': folderKey,
                 'response_format': 'json',
             }
-            _json = session.get('https://www.mediafire.com/api/1.5/folder/get_content.php', params=params).json()
+            _json = session.get(
+                'https://www.mediafire.com/api/1.5/folder/get_content.php', params=params).json()
         except Exception as e:
-            raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__} While getting content")
+            raise DirectDownloadLinkException(
+                f"ERROR: {e.__class__.__name__} While getting content")
         _res = _json['response']
         if 'message' in _res:
             raise DirectDownloadLinkException(f"ERROR: {_res['message']}")
@@ -1012,7 +1047,8 @@ def mediafireFolder(url: str):
     try:
         threads = []
         for folder in folder_infos:
-            thread = Thread(target=__get_content, args=(folder['folderkey'], folder['name']))
+            thread = Thread(target=__get_content, args=(
+                folder['folderkey'], folder['name']))
             threads.append(thread)
         for thread in threads:
             thread.start()
@@ -1023,3 +1059,26 @@ def mediafireFolder(url: str):
         raise DirectDownloadLinkException(e)
     session.close()
     return details
+
+
+def doods(url):
+    parsed_url = urlparse(url)
+    session = create_scraper()
+    try:
+        _res = session.get(url)
+        html = HTML(_res.text)
+    except Exception as e:
+        raise DirectDownloadLinkException(
+            f'ERROR: {e.__class__.__name__} While fetching token link')
+    if not (link := html.xpath("//div[@class='download-content']//a/@href")):
+        raise DirectDownloadLinkException('ERROR: Token Link not found')
+    link = f'{parsed_url.scheme}://{parsed_url.hostname}/{link[0]}'
+    try:
+        _res = session.get(link)
+    except Exception as e:
+        raise DirectDownloadLinkException(
+            f'ERROR: {e.__class__.__name__} While fetching download link')
+    if not (link := search(r"window\.open\('(\S+)'", _res.text)):
+        raise DirectDownloadLinkException(
+            "ERROR: Download link not found try again")
+    return (link.group(1), f'Referer: {parsed_url.scheme}://{parsed_url.hostname}/')
