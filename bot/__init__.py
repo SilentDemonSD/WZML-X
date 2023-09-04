@@ -174,7 +174,6 @@ if AUTHORIZED_CHATS:
         if topic_ids:
             user_data[chat_id].setdefault('topic_ids', []).extend(map(int, topic_ids))
 
-
 SUDO_USERS = environ.get('SUDO_USERS', '')
 if len(SUDO_USERS) != 0:
     aid = SUDO_USERS.split()

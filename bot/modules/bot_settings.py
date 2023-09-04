@@ -104,10 +104,11 @@ async def load_config():
     if len(AUTHORIZED_CHATS) != 0:
         aid = AUTHORIZED_CHATS.split()
         for id_ in aid:
-            nid_ = id_.rsplit(':')
-            chat_id = int(nid_[0])
+            chat_id, *topic_ids = id_.split(':')
+            chat_id = int(chat_id)
             user_data.setdefault(chat_id, {'is_auth': True})
-            user_data[chat_id].setdefault('topic_ids', []).append(int(nid_[1]) if len(nid_) > 1 else None)
+            if topic_ids:
+                user_data[chat_id].setdefault('topic_ids', []).extend(map(int, topic_ids))
 
     SUDO_USERS = environ.get('SUDO_USERS', '')
     if len(SUDO_USERS) != 0:
