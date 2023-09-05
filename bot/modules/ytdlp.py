@@ -430,6 +430,8 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
             await sendMessage(message, 'Wrong Rclone Upload Destination!')
             await delete_links(message)
             return
+    elif up.isdigit() or up.startswith('-'):
+        up = int(up)
     else:
         if user_dump and (user_dump.isdigit() or user_dump.startswith('-')):
             up = int(user_dump)

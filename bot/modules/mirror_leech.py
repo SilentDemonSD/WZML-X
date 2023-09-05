@@ -291,6 +291,9 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             await sendMessage(message, 'Wrong Rclone Upload Destination!')
             await delete_links(message)
             return
+    elif up.isdigit() or up.startswith('-'):
+        up = int(up)
+        
     else:
         if user_dump and (user_dump.isdigit() or user_dump.startswith('-')):
             up = int(user_dump)

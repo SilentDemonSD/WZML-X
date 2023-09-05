@@ -283,7 +283,9 @@ async def user_settings(client, message):
 ➲ <b>Leech User Dump :</b>
     /cmd -s ldump''')
     else:
-        msg, button = await get_user_settings(message.from_user)
+        from_user = message.from_user
+        handler_dict[from_user.id] = False
+        msg, button = await get_user_settings(from_user)
         await sendMessage(message, msg, button, 'IMAGES')
 
 

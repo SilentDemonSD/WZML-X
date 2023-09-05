@@ -5,7 +5,7 @@ from pyrogram.filters import command, regex, create
 from pyrogram.enums import ChatType
 from functools import partial
 from collections import OrderedDict
-from asyncio import create_subprocess_exec, create_subprocess_shell, sleep
+from asyncio import create_subprocess_exec, create_subprocess_shell, sleep, gather
 from aiofiles.os import remove, rename, path as aiopath
 from aiofiles import open as aiopen
 from os import environ, getcwd
@@ -126,10 +126,9 @@ async def load_config():
     if len(EXTENSION_FILTER) > 0:
         fx = EXTENSION_FILTER.split()
         GLOBAL_EXTENSION_FILTER.clear()
-        GLOBAL_EXTENSION_FILTER.append('aria2')
+        GLOBAL_EXTENSION_FILTER.append(['aria2', '!qB'])
         for x in fx:
-            if x.strip().startswith('.'):
-                x = x.lstrip('.')
+            x = x.lstrip('.')
             GLOBAL_EXTENSION_FILTER.append(x.strip().lower())
 
     MEGA_EMAIL = environ.get('MEGA_EMAIL', '')
@@ -231,8 +230,8 @@ async def load_config():
     STATUS_LIMIT = environ.get('STATUS_LIMIT', '')
     STATUS_LIMIT = 10 if len(STATUS_LIMIT) == 0 else int(STATUS_LIMIT)
 
-    RSS_CHAT_ID = environ.get('RSS_CHAT_ID', '')
-    RSS_CHAT_ID = '' if len(RSS_CHAT_ID) == 0 else int(RSS_CHAT_ID)
+    RSS_CHAT = environ.get('RSS_CHAT', '')
+    RSS_CHAT = '' if len(RSS_CHAT) == 0 else int(RSS_CHAT)
 
     RSS_DELAY = environ.get('RSS_DELAY', '')
     RSS_DELAY = 900 if len(RSS_DELAY) == 0 else int(RSS_DELAY)
@@ -647,7 +646,7 @@ async def load_config():
                         'RCLONE_SERVE_USER': RCLONE_SERVE_USER,
                         'RCLONE_SERVE_PASS': RCLONE_SERVE_PASS,
                         'RCLONE_SERVE_PORT': RCLONE_SERVE_PORT,
-                        'RSS_CHAT_ID': RSS_CHAT_ID,
+                        'RSS_CHAT': RSS_CHAT,
                         'RSS_DELAY': RSS_DELAY,
                         'SAVE_MSG': SAVE_MSG,
                         'SAFE_MODE': SAFE_MODE,
@@ -679,9 +678,7 @@ async def load_config():
 
     if DATABASE_URL:
         await DbManger().update_config(config_dict)
-    await initiate_search_tools()
-    await start_from_queued()
-    await rclone_serve_booter()
+    await gather(initiate_search_tools(), start_from_queued(), rclone_serve_booter())
 
 
 async def get_buttons(key=None, edit_type=None, edit_mode=None, mess=None):
@@ -797,7 +794,7 @@ async def edit_variable(_, message, pre_message, key):
     elif key == 'DOWNLOAD_DIR':
         if not value.endswith('/'):
             value += '/'
-    elif key in ['LINKS_LOG_ID', 'RSS_CHAT_ID']:
+    elif key in ['LINKS_LOG_ID', 'RSS_CHAT']:
         value = int(value)
     elif key == 'STATUS_UPDATE_INTERVAL':
         value = int(value)

@@ -303,8 +303,10 @@ STATUS_LIMIT = 6 if len(STATUS_LIMIT) == 0 else int(STATUS_LIMIT)
 
 CMD_SUFFIX = environ.get('CMD_SUFFIX', '')
 
-RSS_CHAT_ID = environ.get('RSS_CHAT_ID', '')
-RSS_CHAT_ID = '' if len(RSS_CHAT_ID) == 0 else int(RSS_CHAT_ID)
+RSS_CHAT = environ.get('RSS_CHAT', '')
+RSS_CHAT = '' if len(RSS_CHAT) == 0 else RSS_CHAT
+if RSS_CHAT.isdigit() or RSS_CHAT.startswith('-'):
+    RSS_CHAT = int(RSS_CHAT)
 
 RSS_DELAY = environ.get('RSS_DELAY', '')
 RSS_DELAY = 600 if len(RSS_DELAY) == 0 else int(RSS_DELAY)
@@ -647,7 +649,7 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'RCLONE_SERVE_USER': RCLONE_SERVE_USER,
                'RCLONE_SERVE_PASS': RCLONE_SERVE_PASS,
                'RCLONE_SERVE_PORT': RCLONE_SERVE_PORT,
-               'RSS_CHAT_ID': RSS_CHAT_ID,
+               'RSS_CHAT': RSS_CHAT,
                'RSS_DELAY': RSS_DELAY,
                'SAVE_MSG': SAVE_MSG,
                'SAFE_MODE': SAFE_MODE,
