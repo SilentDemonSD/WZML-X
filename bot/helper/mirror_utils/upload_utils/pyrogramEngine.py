@@ -143,21 +143,9 @@ class TgUploader:
             self.__thumb = None
 
     async def __msg_to_reply(self):
-        if self.__upload_dest:
-            msg = self.__listener.message.link if self.__listener.isSuperGroup else self.__listener.message.text.lstrip('/')
-            try:
-                if IS_PREMIUM_USER:
-                    self.__sent_msg = await user.send_message(chat_id=self.__upload_dest, text=msg,
-                                                            disable_web_page_preview=False, disable_notification=True)
-                else:
-                    self.__sent_msg = await bot.send_message(chat_id=self.__upload_dest, text=msg,
-                                                            disable_web_page_preview=False, disable_notification=True)
-            except Exception as e:
-                await self.__listener.onUploadError(str(e))
-                return False
-        elif config_dict['LEECH_LOG_ID'] and not self.__listener.excep_chat:
-            msg_link = self.__listener.message.link if self.__listener.isSuperGroup else ''
-            msg_user = self.__listener.message.from_user
+        msg_link = self.__listener.message.link if self.__listener.isSuperGroup else ''
+        msg_user = self.__listener.message.from_user
+        if config_dict['LEECH_LOG_ID'] and not self.__listener.excep_chat:
             try:
                 self.__leechmsg = await sendMultiMessage(config_dict['LEECH_LOG_ID'], BotTheme('L_LOG_START', mention=msg_user.mention(style='HTML'), uid=msg_user.id, msg_link=self.__listener.source_url))
             except Exception as er:
@@ -166,10 +154,9 @@ class TgUploader:
             self.__sent_msg = list(self.__leechmsg.values())[0]
         elif IS_PREMIUM_USER:
             if not self.__listener.isSuperGroup:
-                await self.__listener.onUploadError('Use SuperGroup to leech with User!')
+                await self.__listener.onUploadError('Use SuperGroup to leech with User Client! or Set LEECH_LOG_ID to Leech in PM')
                 return False
-            self.__sent_msg = await user.get_messages(chat_id=self.__listener.message.chat.id,
-                                                    message_ids=self.__listener.uid)
+            self.__sent_msg = self.__listener.message
         else:
             self.__sent_msg = self.__listener.message
         return True
@@ -240,7 +227,7 @@ class TgUploader:
                 del self.__msgs_dict[msg.link]
             await deleteMessage(msg)
         del self.__media_dict[key][subkey]
-        if self.__listener.isSuperGroup or self.__upload_dest:
+        if self.__listener.isSuperGroup or config_dict['LEECH_LOG_ID']:
             for m in msgs_list:
                 self.__msgs_dict[m.link] = m.caption
         self.__sent_msg = msgs_list[-1]
@@ -307,7 +294,7 @@ class TgUploader:
                         isDeleted = True
                     if self.__is_cancelled:
                         return
-                    if not self.__is_corrupted and (self.__listener.isSuperGroup or self.__upload_dest):
+                    if not self.__is_corrupted and (self.__listener.isSuperGroup or config_dict['LEECH_LOG_ID']):
                         self.__msgs_dict[self.__sent_msg.link] = file_
                     await sleep(1)
                 except Exception as err:
