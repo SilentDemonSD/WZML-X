@@ -145,7 +145,12 @@ async def rssSub(client, message, pre_event):
     if msg:
         await sendMessage(message, msg)
     await updateRssMenu(pre_event)
-
+    is_sudo = await CustomFilters.sudo(client, message)
+    if scheduler.state == 2:
+        scheduler.resume()
+    elif is_sudo and not scheduler.running:
+        addJob(config_dict['RSS_DELAY'])
+        scheduler.start()
 
 async def getUserId(title):
     async with rss_dict_lock:
@@ -564,7 +569,6 @@ async def rssMonitor():
     all_paused = True
     for user, items in list(rss_dict.items()):
         for title, data in list(items.items()):
-            await sleep(0)
             try:
                 if data['paused']:
                     continue
@@ -576,11 +580,11 @@ async def rssMonitor():
                     last_link = rss_d.entries[0]['links'][1]['href']
                 except IndexError:
                     last_link = rss_d.entries[0]['link']
+                finally:
+                    all_paused = False
                 last_title = rss_d.entries[0]['title']
                 if data['last_feed'] == last_link or data['last_title'] == last_title:
-                    all_paused = False
                     continue
-                all_paused = False
                 feed_count = 0
                 while True:
                     try:
@@ -637,7 +641,7 @@ async def rssMonitor():
                 break
             except Exception as e:
                 LOGGER.error(
-                    f"{e} Feed Name: {title} - Feed Link: {data['link']}")
+                    f"{e} - Feed Name: {title} - Feed Link: {data['link']}")
                 continue
     if all_paused:
         scheduler.pause()
