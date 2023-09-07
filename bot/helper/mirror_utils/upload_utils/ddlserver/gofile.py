@@ -3,13 +3,13 @@ import os
 from asyncio import sleep
 from aiohttp import ClientSession
 
-from bot.helper.mirror_utils.upload_utils.ddlEngine import DDLUploader
 from bot.helper.ext_utils.bot_utils import is_valid_token
 
 
-class Gofile(DDLUploader):
-    def __init__(self, token=None):
+class Gofile:
+    def __init__(self, dluploader=None, token=None):
         self.api_url = "https://api.gofile.io/"
+        self.dluploader = dluploader
         self.token = token
         if self.token is not None:
             is_valid_token(url=self.api_url, token=self.token)
@@ -111,7 +111,7 @@ class Gofile(DDLUploader):
         if expire:
             req_dict["expire"] = expire
             
-        upload_file = await self.upload_aiohttp(f"https://{server}.gofile.io/uploadFile", file, req_dict)
+        upload_file = await self.dluploader.upload_aiohttp(f"https://{server}.gofile.io/uploadFile", file, req_dict)
         return await self._api_resp_handler(upload_file)
 
     async def create_folder(self, parentFolderId, folderName):
