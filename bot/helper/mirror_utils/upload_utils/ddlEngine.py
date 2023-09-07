@@ -9,7 +9,6 @@ from aiohttp import ClientSession
 
 from bot import LOGGER, user_data
 from bot.helper.ext_utils.fs_utils import get_mime_type
-from bot.helper.ext_utils.bot_utils import setInterval
 
 
 class ProgressFileReader(BufferedReader):
@@ -43,14 +42,13 @@ class DDLUploader:
         self.__ddl_servers = {}
         self.__engine = ''
         self.__total_time = 0
-        self.__update_interval = 3
         self.__user_id = self.__listener.message.from_user.id
     
     async def __user_settings(self):
         user_dict = user_data.get(self.__user_id, {})
         self.__ddl_servers = user_dict.get('ddl_servers', {})
         
-    async def __progress_callback(self, current, total):
+    def __progress_callback(self, current, total):
         self.__processed_bytes = current
         
     async def upload_aiohttp(self, url, file_path, data):
