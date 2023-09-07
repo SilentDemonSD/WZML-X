@@ -94,8 +94,7 @@ class Gofile(DDLUploader):
         if password and len(password) < 4:
             raise ValueError("Password Length must be greater than 4")
 
-        server = await self.get_Server(pre_session=session)
-        server = server["server"]
+        server = (await self.get_Server())["server"]
         token = self.token if self.token else ""
 
         req_dict = {}
