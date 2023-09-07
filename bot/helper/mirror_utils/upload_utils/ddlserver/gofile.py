@@ -26,12 +26,9 @@ class Gofile:
             raise Exception(error)
 
     async def __getServer(self):
-       async with ClientSession() as session:
-        try:
+        async with ClientSession() as session:
             async with session.get(f"{self.api_url}getServer") as resp:
                 return await self.__resp_handler(await resp.json())
-        except Exception as e:
-            raise e
 
     async def __getAccount(self, check_account=False):
         if self.token is None:
@@ -39,14 +36,11 @@ class Gofile:
         
         api_url = f"{self.api_url}getAccountDetails?token={self.token}&allDetails=true"
         async with ClientSession() as session:
-            try:
-                resp = await (await session.get(url=api_url)).json()
-                if check_account:
-                    return resp["status"] == "ok" if True else await self.__resp_handler(resp)
-                else:
-                    return await self.__resp_handler(resp)
-            except Exception as e:
-                raise e
+            resp = await (await session.get(url=api_url)).json()
+            if check_account:
+                return resp["status"] == "ok" if True else await self.__resp_handler(resp)
+            else:
+                return await self.__resp_handler(resp)
 
     async def upload_folder(self, path: str, folderId: str = "", delay: int = 2):
         if not ospath.isdir(path):
@@ -157,33 +151,23 @@ class Gofile:
         if self.token is None:
             raise Exception()
         async with ClientSession() as session:
-            try:
-                copy_content_resp = await session.put(
-                    url=f"{self.api_url}copyContent",
+            async with session.put(url=f"{self.api_url}copyContent",
                     data={
                         "token": self.token,
                         "contentsId": contentsId,
                         "folderIdDest": folderIdDest
                     }
-                )
-                copy_content_resp = await copy_content_resp.json()
-                return await self.__resp_handler(copy_content_resp)
-            except Exception as e:
-                raise Exception(e)
+                ) as resp:
+                return await self.__resp_handler(await resp.json())
 
     async def delete_content(self, contentId):
         if self.token is None:
             raise Exception()
         async with ClientSession() as session:
-            try:
-                del_content_resp = await session.delete(
-                    url=f"{self.api_url}deleteContent",
+            async with session.delete(url=f"{self.api_url}deleteContent",
                     data={
                         "contentId": contentId,
                         "token": self.token
                     }
-                )
-                del_content_resp = await del_content_resp.json()
-                return await self.__resp_handler(del_content_resp)
-            except Exception as e:
-                raise Exception(e)
+                ) as resp:
+                return await self.__resp_handler(await resp.json())
