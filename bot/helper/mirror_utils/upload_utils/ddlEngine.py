@@ -49,8 +49,7 @@ class DDLUploader:
         self.__ddl_servers = user_dict.get('ddl_servers', {})
         
     def __progress_callback(self, current, total):
-        LOGGER.info(current)
-        self.__processed_bytes = current
+        self.__processed_bytes = int(current)
         
     async def upload_aiohttp(self, url, file_path, data):
         with ProgressFileReader(filename=file_path, read_callback=self.__progress_callback) as file:
