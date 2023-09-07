@@ -134,16 +134,14 @@ def direct_link_generator(link: str):
     elif 'zippyshare.com' in domain:
         raise DirectDownloadLinkException('ERROR: R.I.P Zippyshare')
     else:
-        raise DirectDownloadLinkException(
-            f'No Direct link function found for {link}')
+        raise DirectDownloadLinkException(f'No Direct link function found for {link}')
 
 
 def debrid_extractor(url: str) -> str:
     """ Debrid Link Extractor (VPN Must)"""
     cget = create_scraper().request
     try:
-        resp = cget(
-            'POST', f"https://api.real-debrid.com/rest/1.0/unrestrict/link?auth_token={config_dict['DEBRID_API_KEY']}", data={'link': url})
+        resp = cget('POST', f"https://api.real-debrid.com/rest/1.0/unrestrict/link?auth_token={config_dict['DEBRID_API_KEY']}", data={'link': url})
         if resp.status_code == 200:
             return resp.json()['download']
         else:
@@ -765,14 +763,12 @@ def gdtot(url):
         res = cget('GET', f'https://gdtot.pro/file/{url.split("/")[-1]}')
     except Exception as e:
         raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
-    token_url = HTML(res.text).xpath(
-        "//a[contains(@class,'inline-flex items-center justify-center')]/@href")
+    token_url = HTML(res.text).xpath("//a[contains(@class,'inline-flex items-center justify-center')]/@href")
     if not token_url:
         try:
             url = cget('GET', url).url
             p_url = urlparse(url)
-            res = cget(
-                "GET", f"{p_url.scheme}://{p_url.hostname}/ddl/{url.split('/')[-1]}")
+            res = cget("POST", f"{p_url.scheme}://{p_url.hostname}/ddl", data={'dl': str(url.split('/')[-1])})
         except Exception as e:
             raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
         if (drive_link := findall(r"myDl\('(.*?)'\)", res.text)) and "drive.google.com" in drive_link[0]:
@@ -780,24 +776,20 @@ def gdtot(url):
         elif config_dict['GDTOT_CRYPT']:
             cget('GET', url, cookies={'crypt': config_dict['GDTOT_CRYPT']})
             p_url = urlparse(url)
-            js_script = cget(
-                'GET', f"{p_url.scheme}://{p_url.hostname}/dld?id={url.split('/')[-1]}")
+            js_script = cget('POST', f"{p_url.scheme}://{p_url.hostname}/dld", data={'dwnld': url.split('/')[-1]})
             g_id = findall('gd=(.*?)&', js_script.text)
             try:
                 decoded_id = b64decode(str(g_id[0])).decode('utf-8')
             except:
-                raise DirectDownloadLinkException(
-                    "ERROR: Try in your browser, mostly file not found or user limit exceeded!")
+                raise DirectDownloadLinkException("ERROR: Try in your browser, mostly file not found or user limit exceeded!")
             return f'https://drive.google.com/open?id={decoded_id}'
         else:
-            raise DirectDownloadLinkException(
-                'ERROR: Drive Link not found, Try in your broswer! GDTOT_CRYPT not Provided, it increases efficiency!')
+            raise DirectDownloadLinkException('ERROR: Drive Link not found, Try in your broswer! GDTOT_CRYPT not Provided, it increases efficiency!')
     token_url = token_url[0]
     try:
         token_page = cget('GET', token_url)
     except Exception as e:
-        raise DirectDownloadLinkException(
-            f'ERROR: {e.__class__.__name__} with {token_url}')
+        raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__} with {token_url}')
     path = findall('\("(.*?)"\)', token_page.text)
     if not path:
         raise DirectDownloadLinkException('ERROR: Cannot bypass this')
@@ -812,8 +804,7 @@ def sharer_scraper(url):
     try:
         url = cget('GET', url).url
         raw = urlparse(url)
-        header = {
-            "useragent": "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/534.10 (KHTML, like Gecko) Chrome/7.0.548.0 Safari/534.10"}
+        header = {"useragent": "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/534.10 (KHTML, like Gecko) Chrome/7.0.548.0 Safari/534.10"}
         res = cget('GET', url, headers=header)
     except Exception as e:
         raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
@@ -822,8 +813,7 @@ def sharer_scraper(url):
         raise DirectDownloadLinkException("ERROR: Key not found!")
     key = key[0]
     if not HTML(res.text).xpath("//button[@id='drc']"):
-        raise DirectDownloadLinkException(
-            "ERROR: This link don't have direct download button")
+        raise DirectDownloadLinkException("ERROR: This link don't have direct download button")
     boundary = uuid4()
     headers = {
         'Content-Type': f'multipart/form-data; boundary=----WebKitFormBoundary{boundary}',
@@ -841,8 +831,7 @@ def sharer_scraper(url):
     except Exception as e:
         raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}')
     if "url" not in res:
-        raise DirectDownloadLinkException(
-            'ERROR: Drive Link not found, Try in your broswer')
+        raise DirectDownloadLinkException('ERROR: Drive Link not found, Try in your broswer')
     if "drive.google.com" in res["url"]:
         return res["url"]
     try:
@@ -852,8 +841,7 @@ def sharer_scraper(url):
     if (drive_link := HTML(res.text).xpath("//a[contains(@class,'btn')]/@href")) and "drive.google.com" in drive_link[0]:
         return drive_link[0]
     else:
-        raise DirectDownloadLinkException(
-            'ERROR: Drive Link not found, Try in your broswer')
+        raise DirectDownloadLinkException('ERROR: Drive Link not found, Try in your broswer')
 
 
 def wetransfer(url):
@@ -1070,17 +1058,14 @@ def doods(url):
         _res = session.get(url)
         html = HTML(_res.text)
     except Exception as e:
-        raise DirectDownloadLinkException(
-            f'ERROR: {e.__class__.__name__} While fetching token link')
+        raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__} While fetching token link')
     if not (link := html.xpath("//div[@class='download-content']//a/@href")):
         raise DirectDownloadLinkException('ERROR: Token Link not found')
     link = f'{parsed_url.scheme}://{parsed_url.hostname}/{link[0]}'
     try:
         _res = session.get(link)
     except Exception as e:
-        raise DirectDownloadLinkException(
-            f'ERROR: {e.__class__.__name__} While fetching download link')
+        raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__} While fetching download link')
     if not (link := search(r"window\.open\('(\S+)'", _res.text)):
-        raise DirectDownloadLinkException(
-            "ERROR: Download link not found try again")
+        raise DirectDownloadLinkException("ERROR: Download link not found try again")
     return (link.group(1), f'Referer: {parsed_url.scheme}://{parsed_url.hostname}/')
