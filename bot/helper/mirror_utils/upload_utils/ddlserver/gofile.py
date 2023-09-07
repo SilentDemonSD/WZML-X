@@ -3,10 +3,11 @@ import os
 from asyncio import sleep
 from aiohttp import ClientSession
 
+from bot.helper.mirror_utils.upload_utils.ddlEngine import DDLUploader
 from bot.helper.ext_utils.bot_utils import is_valid_token
 
 
-class Async_Gofile:
+class Gofile(DDLUploader):
     def __init__(self, token=None):
         self.api_url = "https://api.gofile.io/"
         self.token = token
@@ -90,38 +91,29 @@ class Async_Gofile:
         return uploaded
 
     async def upload(self, file: str, folderId: str = "", description: str = "", password: str = "", tags: str = "", expire: str = ""):
-        async with ClientSession() as session:
-            # Check time
-            if password and len(password) < 4:
-                raise ValueError("Password Length must be greater than 4")
+        if password and len(password) < 4:
+            raise ValueError("Password Length must be greater than 4")
 
-            server = await self.get_Server(pre_session=session)
-            server = server["server"]
-            token = self.token if self.token else ""
+        server = await self.get_Server(pre_session=session)
+        server = server["server"]
+        token = self.token if self.token else ""
 
-            # Making dict
-            req_dict = {}
-            if token:
-                req_dict["token"] = token
-            if folderId:
-                req_dict["folderId"] = folderId
-            if description:
-                req_dict["description"] = description
-            if password:
-                req_dict["password"] = password
-            if tags:
-                req_dict["tags"] = tags
-            if expire:
-                req_dict["expire"] = expire
-
-            with open(file, "rb") as go_file_d:
-                req_dict["file"] = go_file_d
-                upload_file = await session.post(
-                    url=f"https://{server}.gofile.io/uploadFile",
-                    data=req_dict
-                )
-                upload_file = await upload_file.json()
-                return await self._api_resp_handler(upload_file)
+        req_dict = {}
+        if token:
+            req_dict["token"] = token
+        if folderId:
+            req_dict["folderId"] = folderId
+        if description:
+            req_dict["description"] = description
+        if password:
+            req_dict["password"] = password
+        if tags:
+            req_dict["tags"] = tags
+        if expire:
+            req_dict["expire"] = expire
+            
+        upload_file = self.upload_aiohttp(f"https://{server}.gofile.io/uploadFile", file, req_dict)
+        return await self._api_resp_handler(upload_file)
 
     async def create_folder(self, parentFolderId, folderName):
         if self.token is None:

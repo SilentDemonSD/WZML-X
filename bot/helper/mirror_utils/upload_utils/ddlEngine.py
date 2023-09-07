@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import asyncio
+from pathlib import Path
+from io import BufferedReader
 from re import findall as re_findall
 from os import path as ospath
 from time import time
@@ -7,7 +9,24 @@ from time import time
 from bot import LOGGER, user_data
 from bot.helper.ext_utils.fs_utils import get_mime_type
 from bot.helper.ext_utils.bot_utils import setInterval
-from bot.helper.mirror_utils.upload_utils.ddlserver.gofile import Async_Gofile
+from bot.helper.mirror_utils.upload_utils.ddlserver.gofile import Gofile
+
+
+class ProgressFileReader(BufferedReader):
+    def __init__(self, filename, read_callback=None):
+        f = open(filename, "rb")
+        self.__read_callback = read_callback
+        super().__init__(raw=f)
+        self.length = Path(filename).stat().st_size
+
+    def read(self, size=None):
+        calc_sz = size
+        if not calc_sz:
+            calc_sz = self.length - self.tell()
+        if self.__read_callback:
+            self.__read_callback(self.tell(), self.length)
+        return super(ProgressFileReader, self).read(size)
+
 
 class DDLUploader:
 
@@ -32,12 +51,18 @@ class DDLUploader:
         user_dict = user_data.get(self.__user_id, {})
         self.__ddl_servers = user_dict.get('ddl_servers', {})
         
-    async def __progress(self):
-        if self.__updater is not None:
-            self.__processed_bytes += self.__updater.interval
+    async def __progress_callback(self, current, total):
+        self.__processed_bytes = current
+        
+    async def upload_aiohttp(self, url, file_path, data):
+        with ProgressFileReader(filename=file_path, read_callback=self.__progress_callback) as file:
+            data['file'] = file
+            async with ClientSession() as session:
+                async with session.post(url, data=data) as resp:
+                    return await resp.json()
 
     async def __upload_to_gofile(self, file_path, token):
-        gf = Async_Gofile(token=token)
+        gf = Gofile(token=token)
         if ospath.isfile(file_path):
             cmd = await gf.upload(file=file_path)
         elif ospath.isdir(file_path):
@@ -54,9 +79,9 @@ class DDLUploader:
                 if serv == 'gofile':
                     self.__engine = 'GoFile API'
                     return await self.__upload_to_gofile(file_path, api_key)
-                elif serv == 'streamsb':
-                    self.__engine = 'StreamSB API'
-                    # return await self.__upload_to_streamsb(file_path, api_key)
+                elif serv == 'streamtape':
+                    self.__engine = 'StreamTape API'
+                    # return await self.__upload_to_streamtape(file_path, api_key)
         raise Exception("No DDL Enabled to Upload.")
 
     async def upload(self, file_name, size):
