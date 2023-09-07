@@ -5,6 +5,7 @@ from io import BufferedReader
 from re import findall as re_findall
 from os import path as ospath
 from time import time
+from aiohttp import ClientSession
 
 from bot import LOGGER, user_data
 from bot.helper.ext_utils.fs_utils import get_mime_type
