@@ -14,22 +14,19 @@ from bot.helper.ext_utils.fs_utils import get_mime_type
 
 class ProgressFileReader(BufferedReader):
     def __init__(self, filename, read_callback=None):
-        f = open(filename, "rb")
+        super().__init__(open(filename, "rb"))
         self.__read_callback = read_callback
-        super().__init__(raw=f)
         self.length = Path(filename).stat().st_size
-
+        
     def read(self, size=None):
-        calc_sz = size
-        if not calc_sz:
-            calc_sz = self.length - self.tell()
+        size = size or (self.length - self.tell())
         if self.__read_callback:
-            self.__read_callback(self.tell(), self.length)
-        return super(ProgressFileReader, self).read(size)
-
+            self.__read_callback(self.tell())
+        return super().read(size)
+        
 
 class DDLUploader:
-    def __init__(self, name=None, path=None, listener=None):
+    def __init__(self, listener=None, name=None, path=None):
         self.name = name
         self.__processed_bytes = 0
         self.__listener = listener
@@ -41,42 +38,30 @@ class DDLUploader:
         self.__is_cancelled = False
         self.__is_errored = False
         self.__ddl_servers = {}
-        self.__engine = ''
-        self.__total_time = 0
+        self.__engine = 'DDL v1'
+        self.__aioSession = None
         self.__user_id = self.__listener.message.from_user.id
     
     async def __user_settings(self):
         user_dict = user_data.get(self.__user_id, {})
         self.__ddl_servers = user_dict.get('ddl_servers', {})
         
-    def __progress_callback(self, current, total):
+    def __progress_callback(self, current):
         self.__processed_bytes = int(current)
         
     async def upload_aiohttp(self, url, file_path, data):
         with ProgressFileReader(filename=file_path, read_callback=self.__progress_callback) as file:
             data['file'] = file
-            async with ClientSession() as session:
-                async with session.post(url, data=data) as resp:
+            async with ClientSession() as self.__aioSession:
+                async with self.__aioSession.post(url, data=data) as resp:
                     return await resp.json()
-
-    async def __upload_to_gofile(self, file_path, token):
-        gf = Gofile(self, token)
-        if ospath.isfile(file_path):
-            cmd = await gf.upload(file=file_path)
-        elif ospath.isdir(file_path):
-            cmd = await gf.upload_folder(path=file_path)
-            if cmd and 'parentFolder' in cmd:
-                await gf.set_option(contentId=cmd['parentFolder'], option="public", value="true")
-        if cmd and 'downloadPage' in cmd:
-            return cmd['downloadPage'] 
-        raise Exception("Failed to upload file/folder")
-
+    
     async def __upload_to_ddl(self, file_path):
         for serv, (enabled, api_key) in self.__ddl_servers.items():
             if enabled:
                 if serv == 'gofile':
                     self.__engine = 'GoFile API'
-                    return await self.__upload_to_gofile(file_path, api_key)
+                    return await Gofile(self, api_key).upload(file_path)
                 elif serv == 'streamtape':
                     self.__engine = 'StreamTape API'
                     # return await self.__upload_to_streamtape(file_path, api_key)
@@ -104,8 +89,11 @@ class DDLUploader:
                     return
                 LOGGER.info(f"Uploaded To DDL: {file_name}")
         except Exception as err:
-            LOGGER.info(err)
-            LOGGER.info(f"DDL Upload has been Cancelled")
+            LOGGER.info("DDL Upload has been Cancelled")
+            if self.__aioSession:
+                self.__aioSession.close()
+            err = str(err).replace('>', '').replace('<', '')
+            await self.__listener.onUploadError(err)
             self.__is_errored = True
         finally:
             if self.__is_cancelled or self.__is_errored:
@@ -115,7 +103,7 @@ class DDLUploader:
     @property
     def speed(self):
         try:
-            return self.__processed_bytes / self.__total_time
+            return self.__processed_bytes / int(time() - self.__start_time)
         except ZeroDivisionError:
             return 0
 
@@ -130,4 +118,6 @@ class DDLUploader:
     async def cancel_download(self):
         self.__is_cancelled = True
         LOGGER.info(f"Cancelling Upload: {self.name}")
+        if self.__aioSession:
+            self.__aioSession.close()
         await self.__listener.onUploadError('Your upload has been stopped!')

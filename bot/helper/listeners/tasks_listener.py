@@ -391,7 +391,7 @@ class MirrorLeechListener:
         elif self.upPath == 'ddl':
             size = await get_path_size(up_path)
             LOGGER.info(f"Upload Name: {up_name} via DDL")
-            ddl = DDLUploader(up_name, up_dir, self)
+            ddl = DDLUploader(self, up_name, up_dir)
             ddl_upload_status = DDLStatus(ddl, size, self.message, gid, self.upload_details)
             async with download_dict_lock:
                 download_dict[self.uid] = ddl_upload_status

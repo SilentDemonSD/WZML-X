@@ -55,7 +55,6 @@ class MirrorStatus:
     STATUS_SPLITTING   = "Split"
     STATUS_CHECKING    = "CheckUp"
     STATUS_SEEDING     = "Seed"
-    STATUS_UPLOADDDL   = "Upload DDL"
 
 
 class setInterval:
@@ -208,11 +207,9 @@ def get_readable_message():
             ChatType.SUPERGROUP, ChatType.CHANNEL] and not config_dict['DELETE_LINKS'] else ''
         msg += BotTheme('STATUS_NAME', Name="Task is being Processed!" if config_dict['SAFE_MODE'] else escape(f'{download.name()}'))
         if download.status() not in [MirrorStatus.STATUS_SPLITTING, MirrorStatus.STATUS_SEEDING]:
-            #if download.status() != MirrorStatus.STATUS_UPLOADDDL:
             msg += BotTheme('BAR', Bar=f"{get_progress_bar_string(download.progress())} {download.progress()}")
             msg += BotTheme('PROCESSED', Processed=f"{download.processed_bytes()} of {download.size()}")
             msg += BotTheme('STATUS', Status=download.status(), Url=msg_link)
-            #if download.status() != MirrorStatus.STATUS_UPLOADDDL:
             msg += BotTheme('ETA', Eta=download.eta())
             msg += BotTheme('SPEED', Speed=download.speed())
             msg += BotTheme('ELAPSED', Elapsed=get_readable_time(time() - download.message.date.timestamp()))
@@ -706,7 +703,7 @@ async def set_commands(client):
             LOGGER.error(err)
 
 
-def is_valid_token(url, token):
+def is_gofile_token(url, token):
     resp = rget(url=f"{url}getAccountDetails?token={token}&allDetails=true").json()
     if resp["status"] == "error-wrongToken":
         raise Exception("Invalid Gofile Token, Get your Gofile token from --> https://gofile.io/myProfile")

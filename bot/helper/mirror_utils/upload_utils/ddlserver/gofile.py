@@ -1,10 +1,10 @@
-import os
-
+#!/usr/bin/env python3
+from os import path as ospath, walk
 from asyncio import sleep
 from aiohttp import ClientSession
 
-from bot.helper.ext_utils.bot_utils import is_valid_token
-
+from bot import LOGGER
+from bot.helper.ext_utils.bot_utils import is_gofile_token, sync_to_async
 
 class Gofile:
     def __init__(self, dluploader=None, token=None):
@@ -12,9 +12,9 @@ class Gofile:
         self.dluploader = dluploader
         self.token = token
         if self.token is not None:
-            is_valid_token(url=self.api_url, token=self.token)
+            is_gofile_token(url=self.api_url, token=self.token)
 
-    async def _api_resp_handler(self, response):
+    async def __resp_handler(self, response):
         api_status = response["status"]
         if api_status == "ok":
             return response["data"]
@@ -25,78 +25,67 @@ class Gofile:
                 error = "Response Status is not ok and reason is unknown"
             raise Exception(error)
 
-    async def get_Server(self, pre_session=None):
-        if pre_session:
-            server_resp = await pre_session.get(f"{self.api_url}getServer")
-            server_resp = await server_resp.json()
-            return await self._api_resp_handler(server_resp)
-        else:
-            async with ClientSession() as session:
-                try:
-                    server_resp = await session.get(f"{self.api_url}getServer")
-                    server_resp = await server_resp.json()
-                    return await self._api_resp_handler(server_resp)
-                except Exception as e:
-                    raise Exception(e)
+    async def __getServer(self):
+       async with ClientSession() as session:
+        try:
+            async with session.get(f"{self.api_url}getServer") as resp:
+                return await self.__resp_handler(await resp.json())
+        except Exception as e:
+            raise e
 
-    async def get_Account(self, check_account=False):
+    async def __getAccount(self, check_account=False):
         if self.token is None:
             raise Exception()
+        
+        api_url = f"{self.api_url}getAccountDetails?token={self.token}&allDetails=true"
         async with ClientSession() as session:
             try:
-                get_account_resp = await session.get(url=f"{self.api_url}getAccountDetails?token={self.token}&allDetails=true")
-                get_account_resp = await get_account_resp.json()
-                if check_account is True:
-                    if get_account_resp["status"] == "ok":
-                        return True
-                    elif get_account_resp["status"] == "error-wrongToken":
-                        return False
-                    else:
-                        return await self._api_resp_handler(get_account_resp)
+                resp = await (await session.get(url=api_url)).json()
+                if check_account:
+                    return resp["status"] == "ok" if True else await self.__resp_handler(resp)
                 else:
-                    return await self._api_resp_handler(get_account_resp)
+                    return await self.__resp_handler(resp)
             except Exception as e:
-                raise Exception(e)
+                raise e
 
     async def upload_folder(self, path: str, folderId: str = "", delay: int = 2):
-        if not os.path.isdir(path):
+        if not ospath.isdir(path):
             raise Exception(f"{path} is not a valid directory")
 
-        folder_name = os.path.basename(path)
+        folder_name = ospath.basename(path)
         if not folderId:
-            account_data = await self.get_Account()
+            account_data = await self.__getAccount()
             rtfid = account_data["rootFolder"]
             folder_data = await self.create_folder(rtfid, folder_name)
             folderId = folder_data["id"]
 
         uploaded = None
-        folder_ids = {".": folderId}  # Dictionary to store created folder IDs
-        for root, dirs, files in os.walk(path):
-            relative_path = os.path.relpath(root, path)
+        folder_ids = {".": folderId}
+        for root, dirs, files in await sync_to_async(walk, path):
+            relative_path = ospath.relpath(root, path)
             if relative_path == ".":
                 current_folder_id = folderId
             else:
-                parent_folder_id = folder_ids.get(os.path.dirname(relative_path), folderId)
-                folder_name = os.path.basename(relative_path)
+                parent_folder_id = folder_ids.get(ospath.dirname(relative_path), folderId)
+                folder_name = ospath.basename(relative_path)
                 folder_data = await self.create_folder(parent_folder_id, folder_name)
                 current_folder_id = folder_data["id"]
                 folder_ids[relative_path] = current_folder_id
             
             for file in files:
-                file_path = os.path.join(root, file)
-                udt = await self.upload(file_path, current_folder_id)
+                file_path = ospath.join(root, file)
+                udt = await self.upload_file(file_path, current_folder_id)
                 if uploaded is None:
                     uploaded = udt
                 await sleep(delay)
         return uploaded
 
-    async def upload(self, file: str, folderId: str = "", description: str = "", password: str = "", tags: str = "", expire: str = ""):
+    async def upload_file(self, file: str, folderId: str = "", description: str = "", password: str = "", tags: str = "", expire: str = ""):
         if password and len(password) < 4:
             raise ValueError("Password Length must be greater than 4")
 
-        server = (await self.get_Server())["server"]
+        server = (await self.__getServer())["server"]
         token = self.token if self.token else ""
-
         req_dict = {}
         if token:
             req_dict["token"] = token
@@ -112,57 +101,57 @@ class Gofile:
             req_dict["expire"] = expire
             
         upload_file = await self.dluploader.upload_aiohttp(f"https://{server}.gofile.io/uploadFile", file, req_dict)
-        return await self._api_resp_handler(upload_file)
+        return await self.__resp_handler(upload_file)
+        
+    async def upload(self, file_path):
+        if ospath.isfile(file_path):
+            cmd = await self.upload_file(file=file_path)
+        elif ospath.isdir(file_path):
+            cmd = await self.upload_folder(path=file_path)
+            if cmd and 'parentFolder' in cmd:
+                await self.__setOptions(contentId=cmd['parentFolder'], option="public", value="true")
+        if cmd and 'downloadPage' in cmd:
+            return cmd['downloadPage'] 
+        raise Exception("Failed to upload file/folder")
 
     async def create_folder(self, parentFolderId, folderName):
         if self.token is None:
             raise Exception()
+        
         async with ClientSession() as session:
-            try:
-                folder_resp = await session.put(
-                    url=f"{self.api_url}createFolder",
-                    data={
+            async with session.put(url=f"{self.api_url}createFolder",
+                data={
                         "parentFolderId": parentFolderId,
                         "folderName": folderName,
                         "token": self.token
                     }
-                )
-                folder_resp = await folder_resp.json()
-                return await self._api_resp_handler(folder_resp)
-            except Exception as e:
-                raise Exception(e)
+                ) as resp:
+                return await self.__resp_handler(await resp.json())
 
-    async def set_option(self, contentId, option, value):
+    async def __setOptions(self, contentId, option, value):
         if self.token is None:
             raise Exception()
+        
         if not option in ["public", "password", "description", "expire", "tags"]:
-            raise Exception(option)
+            raise Exception(f"Invalid GoFile Option Specified : {option}")
         async with ClientSession() as session:
-            try:
-                set_resp = await session.put(
-                    url=f"{self.api_url}setOption",
-                    data={
+            async with session.put(url=f"{self.api_url}setOption",
+                data={
                         "token": self.token,
                         "contentId": contentId,
                         "option": option,
                         "value": value
                     }
-                )
-                set_resp = await set_resp.json()
-                return await self._api_resp_handler(set_resp)
-            except Exception as e:
-                raise Exception(e)
+                ) as resp:
+                return await self.__resp_handler(await resp.json())
 
     async def get_content(self, contentId):
         if self.token is None:
             raise Exception()
+        
         async with ClientSession() as session:
-            try:
-                get_content_resp = await session.get(url=f"{self.api_url}getContent?contentId={contentId}&token={self.token}")
-                get_content_resp = await get_content_resp.json()
-                return await self._api_resp_handler(get_content_resp)
-            except Exception as e:
-                raise Exception(e)
+            async with session.get(url=f"{self.api_url}getContent?contentId={contentId}&token={self.token}") as resp:
+                return await self.__resp_handler(await resp.json())
 
     async def copy_content(self, contentsId, folderIdDest):
         if self.token is None:
@@ -178,7 +167,7 @@ class Gofile:
                     }
                 )
                 copy_content_resp = await copy_content_resp.json()
-                return await self._api_resp_handler(copy_content_resp)
+                return await self.__resp_handler(copy_content_resp)
             except Exception as e:
                 raise Exception(e)
 
@@ -195,6 +184,6 @@ class Gofile:
                     }
                 )
                 del_content_resp = await del_content_resp.json()
-                return await self._api_resp_handler(del_content_resp)
+                return await self.__resp_handler(del_content_resp)
             except Exception as e:
                 raise Exception(e)

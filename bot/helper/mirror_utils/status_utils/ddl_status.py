@@ -11,7 +11,6 @@ class DDLStatus:
         self.message = message
 
     def processed_bytes(self):
-        LOGGER.info(self.__obj.processed_bytes)
         return get_readable_file_size(self.__obj.processed_bytes)
 
     def size(self):
