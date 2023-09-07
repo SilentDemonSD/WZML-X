@@ -112,7 +112,7 @@ class Gofile(DDLUploader):
         if expire:
             req_dict["expire"] = expire
             
-        upload_file = self.upload_aiohttp(f"https://{server}.gofile.io/uploadFile", file, req_dict)
+        upload_file = await self.upload_aiohttp(f"https://{server}.gofile.io/uploadFile", file, req_dict)
         return await self._api_resp_handler(upload_file)
 
     async def create_folder(self, parentFolderId, folderName):

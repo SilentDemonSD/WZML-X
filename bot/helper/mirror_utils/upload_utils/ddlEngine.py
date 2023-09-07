@@ -9,7 +9,6 @@ from time import time
 from bot import LOGGER, user_data
 from bot.helper.ext_utils.fs_utils import get_mime_type
 from bot.helper.ext_utils.bot_utils import setInterval
-from bot.helper.mirror_utils.upload_utils.ddlserver.gofile import Gofile
 
 
 class ProgressFileReader(BufferedReader):
@@ -62,6 +61,8 @@ class DDLUploader:
                     return await resp.json()
 
     async def __upload_to_gofile(self, file_path, token):
+        from bot.helper.mirror_utils.upload_utils.ddlserver.gofile import Gofile
+        
         gf = Gofile(token=token)
         if ospath.isfile(file_path):
             cmd = await gf.upload(file=file_path)
