@@ -28,7 +28,6 @@ class ProgressFileReader(BufferedReader):
 
 
 class DDLUploader:
-
     def __init__(self, name=None, path=None, listener=None):
         self.name = name
         self.__processed_bytes = 0
@@ -88,7 +87,6 @@ class DDLUploader:
     async def upload(self, file_name, size):
         item_path = f"{self.__path}/{file_name}"
         LOGGER.info(f"Uploading: {item_path} via DDL")
-        self.__updater = setInterval(self.__update_interval, self.__progress)
         await self.__user_settings()
         try:
             if ospath.isfile(item_path):
