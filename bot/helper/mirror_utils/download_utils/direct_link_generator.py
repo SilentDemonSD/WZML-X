@@ -12,7 +12,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from lxml.etree import HTML
 from requests import Session, session as req_session, post
-from urllib.parse import parse_qs, quote, unquote, urlparse
+from urllib.parse import parse_qs, quote, unquote, urlparse, urljoin
 from bs4 import BeautifulSoup
 from cloudscraper import create_scraper
 from lk21 import Bypass
