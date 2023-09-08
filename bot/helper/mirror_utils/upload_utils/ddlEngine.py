@@ -29,6 +29,7 @@ class DDLUploader:
     def __init__(self, listener=None, name=None, path=None):
         self.name = name
         self.__processed_bytes = 0
+        self.last_uploaded = 0
         self.__listener = listener
         self.__path = path
         self.__updater = None
@@ -47,7 +48,9 @@ class DDLUploader:
         self.__ddl_servers = user_dict.get('ddl_servers', {})
         
     def __progress_callback(self, current):
-        self.__processed_bytes = int(current)
+        chunk_size = current - self.last_uploaded
+        self.last_uploaded = current
+        self.__processed_bytes += chunk_size
         
     async def upload_aiohttp(self, url, file_path, data):
         with ProgressFileReader(filename=file_path, read_callback=self.__progress_callback) as file:

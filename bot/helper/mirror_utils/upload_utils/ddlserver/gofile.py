@@ -94,6 +94,7 @@ class Gofile:
         if expire:
             req_dict["expire"] = expire
             
+        self.dluploader.last_uploaded = 0
         upload_file = await self.dluploader.upload_aiohttp(f"https://{server}.gofile.io/uploadFile", file, req_dict)
         return await self.__resp_handler(upload_file)
         
