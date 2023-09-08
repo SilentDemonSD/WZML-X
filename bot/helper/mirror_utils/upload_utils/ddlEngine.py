@@ -58,7 +58,7 @@ class DDLUploader:
             form = FormData()
             for key, value in data.items():
                 form.add_field(key, value)
-            form.add_field('file', file, filename=file)
+            form.add_field('file', file, filename=ospath.basename(file))
             async with ClientSession() as self.__aioSession:
                 async with self.__aioSession.post(url, data=form) as resp:
                     return await resp.json()
