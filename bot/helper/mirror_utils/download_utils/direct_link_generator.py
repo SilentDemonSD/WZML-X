@@ -1,33 +1,25 @@
 #!/usr/bin/env python3
-
-# Standard Library Imports
-import os
-import time
 from threading import Thread
-
-# Third-party Library Imports
-import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
-from lxml.etree import HTML
-from requests import Session, session as req_session
-from urllib.parse import parse_qs, quote, unquote, urlparse
-from bs4 import BeautifulSoup
-from cloudscraper import create_scraper
-from lk21 import Bypass
 from base64 import b64decode
-from http.cookiejar import MozillaCookieJar
 from json import loads
 from os import path
 from uuid import uuid4
 from hashlib import sha256
-from re import findall, match, search, sub
-from requests import post
 from time import sleep
+from re import findall, match, search, sub
 
-# Local Imports
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+from lxml.etree import HTML
+from requests import Session, session as req_session, post
+from urllib.parse import parse_qs, quote, unquote, urlparse
+from bs4 import BeautifulSoup
+from cloudscraper import create_scraper
+from lk21 import Bypass
+from http.cookiejar import MozillaCookieJar
+
 from bot import LOGGER, config_dict
-from bot.helper.ext_utils.bot_utils import get_readable_time, is_share_link
+from bot.helper.ext_utils.bot_utils import get_readable_time, is_share_link, is_index_link
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from bot.helper.ext_utils.help_messages import PASSWORD_ERROR_MESSAGE
 
@@ -63,13 +55,16 @@ debrid_sites = ['1fichier.com', '2shared.com', '4shared.com', 'alfafile.net', 'a
                 'wushare.com', 'xubster.com', 'youporn.com', 'youtube.com']
 
 
-def direct_link_generator(link: str):
+def direct_link_generator(link):
+    if isinstance(link, tuple):
+        link, auth = link
+    else:
+        auth = None
     domain = urlparse(link).hostname
     if not domain:
         raise DirectDownloadLinkException("ERROR: Invalid URL")
     if 'youtube.com' in domain or 'youtu.be' in domain:
-        raise DirectDownloadLinkException(
-            "ERROR: Use ytdl cmds for Youtube links")
+        raise DirectDownloadLinkException("ERROR: Use ytdl cmds for Youtube links")
     elif config_dict['DEBRID_API_KEY'] and any(x in domain for x in debrid_sites):
         return debrid_extractor(link)
     elif 'yadi.sk' in domain or 'disk.yandex.com' in domain:
@@ -109,7 +104,7 @@ def direct_link_generator(link: str):
     elif 'letsupload.io' in domain:
         return letsupload(link)
     elif 'gofile.io' in domain:
-        return gofile(link)
+        return gofile(link, auth)
     elif 'easyupload.io' in domain:
         return easyupload(link)
     elif any(x in domain for x in ['dood.watch', 'doodstream.com', 'dood.to', 'dood.so', 'dood.cx', 'dood.la', 'dood.ws', 'dood.sh', 'doodstream.co', 'dood.pm', 'dood.wf', 'dood.re', 'dood.video', 'dooood.com', 'dood.yt', 'dood.stream', 'doods.pro']):
@@ -126,6 +121,8 @@ def direct_link_generator(link: str):
         return fembed(link)
     elif any(x in domain for x in ['sbembed.com', 'watchsb.com', 'streamsb.net', 'sbplay.org']):
         return sbembed(link)
+    elif is_index_link(link) and link.endswith('/'):
+        return gd_index(link, auth)
     elif is_share_link(link):
         if 'gdtot' in domain:
             return gdtot(link)
@@ -163,6 +160,7 @@ def get_captcha_token(session, params):
     res = session.post(f'{recaptcha_api}/reload', params=params)
     if token := findall(r'"rresp","(.*?)"', res.text):
         return token[0]
+
 
 def yandex_disk(url: str) -> str:
     """ Yandex.Disk direct link generator
@@ -656,12 +654,10 @@ def terabox(url) -> str:
     return details
 
 
-def gofile(url):
+def gofile(url, auth):
     try:
-        if "::" in url:
-            _password = url.split("::")[-1]
-            _password = sha256(_password.encode("utf-8")).hexdigest()
-            url = url.split("::")[-2]
+        if auth:
+            _password = sha256(auth[1].encode("utf-8")).hexdigest()
         else:
             _password = ''
         _id = url.split("/")[-1]
@@ -694,8 +690,7 @@ def gofile(url):
 
     details = {'contents': [], 'title': '', 'total_size': 0}
     headers = {"Cookie": f"accountToken={token}"}
-    details["header"] = ' '.join(
-        f'{key}: {value}' for key, value in headers.items())
+    details["header"] = ' '.join(f'{key}: {value}' for key, value in headers.items())
 
     def __fetch_links(_id, folderPath=''):
         _url = f"https://api.gofile.io/getContent?contentId={_id}&token={token}&websiteToken=7fd94ds12fds4&cache=true"
@@ -756,6 +751,60 @@ def gofile(url):
     session.close()
     if len(details['contents']) == 1:
         return (details['contents'][0]['url'], details['header'])
+    return details
+
+
+def gd_index(url, auth):
+    if not auth:
+        auth = ("admin", "admin")
+    try:
+        _title = url.rstrip('/').split("/")[-1]
+    except Exception as e:
+        raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}")
+
+    details = {'contents': [], 'title': _title, 'total_size': 0}
+
+    def __fetch_links(url, folderPath, username, password):
+        with create_scraper() as session:
+            payload = {
+                "id": "",
+                "type": "folder",
+                "username": username,
+                "password": password,
+                "page_token": "",
+                "page_index": 0
+            }
+            try:
+                data = (session.post(url, json=payload)).json()
+            except:
+                raise DirectDownloadLinkException("Use Latest Bhadoo Index Link")
+        
+        if "data" in data:
+            for file_info in data["data"]["files"]:
+                if file_info.get("mimeType", "") == "application/vnd.google-apps.folder":
+                    if not folderPath: 
+                         newFolderPath = path.join(details['title'], file_info["name"]) 
+                    else: 
+                         newFolderPath = path.join(folderPath, file_info["name"])
+                    __fetch_links(f"{url}{file_info['name']}/", newFolderPath, username, password)
+                else:
+                    if not folderPath:
+                        folderPath = details['title']
+                    item = { 
+                         "path": path.join(folderPath, file_info["name"]), 
+                         "filename": file_info["name"], 
+                         "url": urljoin(url, file_info.get("link", "") or ""), 
+                     } 
+                    if 'size' in file_info:
+                         details['total_size'] += int(file_info["size"])
+                    details['contents'].append(item)
+
+    try:
+        __fetch_links(url, "", auth[0], auth[1])
+    except Exception as e:
+        raise DirectDownloadLinkException(e)
+    if len(details['contents']) == 1:
+        return details['contents'][0]['url']
     return details
 
 

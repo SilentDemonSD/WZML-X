@@ -55,7 +55,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
                 '-index': '',
                 '-c': '', '-category': '',
                 '-ud': '', '-dump': '',
-                '-h': '',
+                '-h': '', '-headers': '',
     }
 
     args = arg_parser(input_list[1:], arg_base)
@@ -81,7 +81,9 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     index_link    = args['-index']
     gd_cat        = args['-c'] or args['-category']
     user_dump     = args['-ud'] or args['-dump']
-    headers       = args['-h']
+    headers       = args['-h'] or args['-headers']
+    ussr          = args['-u'] or args['-user']
+    pssw          = args['-p'] or args['-pass']
     bulk_start    = 0
     bulk_end      = 0
     ratio         = None
@@ -237,6 +239,8 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         if content_type is None or re_match(r'text/html|text/plain', content_type):
             process_msg = await sendMessage(message, f"<i><b>Processing:</b></i> <code>{link}</code>")
             try:
+                if ussr or pssw:
+                    link = (link, (ussr, pssw))
                 link = await sync_to_async(direct_link_generator, link)
                 if isinstance(link, tuple):
                     link, headers = link
@@ -353,8 +357,6 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     elif isQbit:
         await add_qb_torrent(link, path, listener, ratio, seed_time)
     else:
-        ussr = args['-u'] or args['-user']
-        pssw = args['-p'] or args['-pass']
         if ussr or pssw:
             auth = f"{ussr}:{pssw}"
             auth = f"authorization: Basic {b64encode(auth.encode()).decode('ascii')}"
