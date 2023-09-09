@@ -68,7 +68,9 @@ class Streamtape:
         self.dluploader.last_uploaded = 0
         uploaded = await self.dluploader.upload_aiohttp(upload_info["url"], file_path, file_name, {})
         if uploaded:
-            return await self.list_folder(folder=folder_id)
+            file_id = (await self.list_folder(folder=folder_id))['files'][0]['linkid']
+            await rename(file_id, file_name)
+            return f"https://streamtape.com/v/{file_id}"
         return None
 
     async def create_folder(self, name, parent=None):
@@ -82,6 +84,15 @@ class Streamtape:
         url = f"{self.base_url}/file/createfolder?login={self.__userLogin}&key={self.__passKey}&name={name}"
         if parent is not None:
             url += f"&pid={parent}"
+        async with ClientSession() as session, session.get(url) as response:
+            if response.status == 200:
+                data = await response.json()
+                if data.get("status") == 200:
+                    return data.get("result")
+        return None
+        
+    async def rename(self, file_id, name):
+        url = f"{self.base_url}/file/rename?login={self.__userLogin}&key={self.__passKey}&file={file_id}&name={name}"
         async with ClientSession() as session, session.get(url) as response:
             if response.status == 200:
                 data = await response.json()
