@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 from pathlib import Path
-from io import BufferedReader, BytesIO
+from io import BufferedReader
 from re import findall as re_findall
 from os import path as ospath
 from time import time
-from aiohttp import ClientSession, FormData
+from aiohttp import ClientSession
 
 from bot import LOGGER, user_data
 from bot.helper.mirror_utils.upload_utils.ddlserver.gofile import Gofile
@@ -52,13 +52,10 @@ class DDLUploader:
         self.__processed_bytes += chunk_size
         
     async def upload_aiohttp(self, url, file_path, data):
-        form = FormData()
-        for key, value in data.items():
-            form.add_field(key, value)
         with ProgressFileReader(filename=file_path, read_callback=self.__progress_callback) as file:
-            form.add_field('file', BytesIO(file.read()), filename=ospath.basename(file))
+            data['file'] = file
             async with ClientSession() as self.__aioSession:
-                async with self.__aioSession.post(url, data=form) as resp:
+                async with self.__aioSession.post(url, data=data) as resp:
                     return await resp.json()
     
     async def __upload_to_ddl(self, file_path):
