@@ -157,7 +157,7 @@ def debrid_extractor(url: str, tor=False):
         cget = create_scraper().request
         hash_ = search(r'(?<=xt=urn:btih:)[a-zA-Z0-9]+', magnet).group(0)
         resp = cget('GET', f"https://api.real-debrid.com/rest/1.0/torrents/instantAvailability/{hash_}?auth_token={config_dict['DEBRID_API_KEY']}")
-        if resp.status_code != 200 or len(resp.json()[hash_]) == 0:
+        if resp.status_code != 200 or len(resp.json()[hash_.lower()]['rd']) == 0:
             return magnet
         resp = cget('POST', f"https://api.real-debrid.com/rest/1.0/torrents/addMagnet?auth_token={config_dict['DEBRID_API_KEY']}", data={'magnet': magnet})
         if resp.status_code == 201:
