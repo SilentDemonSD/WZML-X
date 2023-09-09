@@ -148,7 +148,7 @@ def debrid_extractor(url: str, tor=False):
             if tor:
                 _res = resp.json()
                 return (_res['filename'], _res['download'])
-            elif:
+            else:
                 return resp.json()['download']
         else:
             raise DirectDownloadLinkException(f"ERROR: {resp['error']}")
