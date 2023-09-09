@@ -2,7 +2,7 @@
 from pathlib import Path
 from io import BufferedReader
 from re import findall as re_findall
-from os import path as ospath
+from aiofiles.os import path as aiopath
 from time import time
 from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
 from aiohttp import ClientSession
@@ -32,11 +32,10 @@ class DDLUploader:
         self.last_uploaded = 0
         self.__listener = listener
         self.__path = path
-        self.__updater = None
         self.__start_time = time()
         self.total_files = 0
         self.total_folders = 0
-        self.__is_cancelled = False
+        self.is_cancelled = False
         self.__is_errored = False
         self.__ddl_servers = {}
         self.__engine = 'DDL v1'
@@ -82,14 +81,14 @@ class DDLUploader:
         LOGGER.info(f"Uploading: {item_path} via DDL")
         await self.__user_settings()
         try:
-            if ospath.isfile(item_path):
+            if await aiopath.isfile(item_path):
                 mime_type = get_mime_type(item_path)
             else:
                 mime_type = 'Folder'
             link = await self.__upload_to_ddl(item_path)
             if link is None:
                 raise Exception('Upload has been manually cancelled!')
-            if self.__is_cancelled:
+            if self.is_cancelled:
                 return
             LOGGER.info(f"Uploaded To DDL: {item_path}")
         except Exception as err:
@@ -100,7 +99,7 @@ class DDLUploader:
             await self.__listener.onUploadError(err)
             self.__is_errored = True
         finally:
-            if self.__is_cancelled or self.__is_errored:
+            if self.is_cancelled or self.__is_errored:
                 return
             await self.__listener.onUploadComplete(link, size, self.total_files, self.total_folders, mime_type, file_name)
 
@@ -120,7 +119,7 @@ class DDLUploader:
         return self.__engine
 
     async def cancel_download(self):
-        self.__is_cancelled = True
+        self.is_cancelled = True
         LOGGER.info(f"Cancelling Upload: {self.name}")
         if self.__aioSession:
             await self.__aioSession.close()

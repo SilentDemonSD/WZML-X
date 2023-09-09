@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from os import path as ospath, walk
+from aiofiles.os import path as aiopath
 from asyncio import sleep
 from aiohttp import ClientSession
 
@@ -43,7 +44,7 @@ class Gofile:
                 return await self.__resp_handler(resp)
 
     async def upload_folder(self, path: str, folderId: str = "", delay: int = 2):
-        if not ospath.isdir(path):
+        if not await aiopath.isdir(path):
             raise Exception(f"{path} is not a valid directory")
 
         folder_name = ospath.basename(path)
@@ -95,15 +96,18 @@ class Gofile:
             req_dict["tags"] = tags
         if expire:
             req_dict["expire"] = expire
-            
+        
+        if self.dluploader.is_cancelled:
+            return
         self.dluploader.last_uploaded = 0
         upload_file = await self.dluploader.upload_aiohttp(f"https://{server}.gofile.io/uploadFile", file, req_dict)
         return await self.__resp_handler(upload_file)
         
     async def upload(self, file_path):
-        if ospath.isfile(file_path):
+            return
+        if await aiopath.isfile(file_path):
             cmd = await self.upload_file(file=file_path)
-        elif ospath.isdir(file_path):
+        elif await aiopath.isdir(file_path):
             cmd = await self.upload_folder(path=file_path)
             if cmd and 'parentFolder' in cmd:
                 await self.__setOptions(contentId=cmd['parentFolder'], option="public", value="true")

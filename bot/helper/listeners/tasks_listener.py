@@ -480,7 +480,7 @@ class MirrorLeechListener:
                 msg += BotTheme('M_SUBFOLD', Folder=folders)
                 msg += BotTheme('TOTAL_FILES', Files=files)
             if link or rclonePath and config_dict['RCLONE_SERVE_URL'] and not private:
-                if isinstance(link, dict):
+                if (is_DDL := isinstance(link, dict)):
                     for dlup, dlink in link.items():
                         buttons.ubutton(BotTheme('DDL_LINK', Serv=dlup), dlink)
                 elif link:

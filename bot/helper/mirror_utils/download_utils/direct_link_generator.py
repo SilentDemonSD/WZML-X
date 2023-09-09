@@ -815,7 +815,7 @@ def gd_index(url, auth):
     except Exception as e:
         raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}")
 
-    details = {'contents': [], 'title': _title, 'total_size': 0}
+    details = {'contents': [], 'title': unquote(_title), 'total_size': 0}
 
     def __fetch_links(url, folderPath, username, password):
         with create_scraper() as session:
