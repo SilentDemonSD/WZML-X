@@ -100,7 +100,7 @@ class Gofile:
         if self.dluploader.is_cancelled:
             return
         self.dluploader.last_uploaded = 0
-        upload_file = await self.dluploader.upload_aiohttp(f"https://{server}.gofile.io/uploadFile", file, req_dict)
+        upload_file = await self.dluploader.upload_aiohttp(f"https://{server}.gofile.io/uploadFile", file, "file", req_dict)
         return await self.__resp_handler(upload_file)
         
     async def upload(self, file_path):

@@ -9,6 +9,7 @@ from aiohttp import ClientSession
 
 from bot import LOGGER, user_data
 from bot.helper.mirror_utils.upload_utils.ddlserver.gofile import Gofile
+from bot.helper.mirror_utils.upload_utils.ddlserver.streamtape import Streamtape
 from bot.helper.ext_utils.fs_utils import get_mime_type
 
 
@@ -53,12 +54,13 @@ class DDLUploader:
     
     @retry(wait=wait_exponential(multiplier=2, min=4, max=8), stop=stop_after_attempt(3),
         retry=retry_if_exception_type(Exception))
-    async def upload_aiohttp(self, url, file_path, data):
+    async def upload_aiohttp(self, url, file_path, req_file, data):
         with ProgressFileReader(filename=file_path, read_callback=self.__progress_callback) as file:
-            data['file'] = file
+            data[req_file] = file
             async with ClientSession() as self.__aioSession:
                 async with self.__aioSession.post(url, data=data) as resp:
-                    return await resp.json()
+                    if resp.status == 200:
+                        return await resp.json() if resp.headers.get("Content-Type") == "application/json" else "Uploaded"
     
     async def __upload_to_ddl(self, file_path):
         all_links = {}
@@ -70,7 +72,9 @@ class DDLUploader:
                     all_links['GoFile'] = nlink
                 if serv == 'streamtape':
                     self.__engine = 'StreamTape API'
-                    #nlink = await Streamtape(self, api_key).upload(file_path)
+                    login, key = api_key.split(':')
+                    nlink = await Streamtape(self, login, key).upload(file_path)
+                    LOGGER.info(nlink)
                     all_links['StreamTape'] = nlink
         if not all_links:
             raise Exception("No DDL Enabled to Upload.")
