@@ -518,6 +518,7 @@ class MirrorLeechListener:
                 message += BotTheme('L_LL_MSG')
             elif self.isSuperGroup and self.isPM:
                 message += BotTheme('PM_BOT_MSG')
+                await sendMessage(self.botpmmsg, message, button, self.random_pic)
             if config_dict['MIRROR_LOG_ID']:
                 await sendMultiMessage(config_dict['MIRROR_LOG_ID'], message, buttons.build_menu(1), self.random_pic)
                 await sendMessage(self.message, message , buttons.build_menu(1), photo=self.random_pic if self.isPM else None)
