@@ -450,9 +450,9 @@ class MirrorLeechListener:
                                     await sendMessage(self.message, msg + fmsg, buttons.build_menu(1))
                             else:
                                 if config_dict['LEECH_LOG_ID']:
-                                    await sendMessage(self.botpmmsg, msg + BotTheme('PM_BOT_MSG') + fmsg, buttons.build_menu(1), photo=self.random_pic)
+                                    await sendMessage(self.message, msg + BotTheme('PM_BOT_MSG') + fmsg, buttons.build_menu(1), photo=self.random_pic)
                                 else:
-                                    await sendMessage(self.botpmmsg, msg + BotTheme('PM_BOT_MSG') + fmsg, buttons.build_menu(1), photo=self.random_pic)
+                                    await sendMessage(self.message, msg + BotTheme('PM_BOT_MSG') + fmsg, buttons.build_menu(1), photo=self.random_pic)
                         else:
                             if not self.isPM:
                                 if config_dict['LEECH_LOG_ID']:
@@ -475,9 +475,9 @@ class MirrorLeechListener:
                                 await sendMessage(self.message, msg + fmsg, buttons.build_menu(1))
                         else:
                             if config_dict['LEECH_LOG_ID']:
-                                await sendMessage(self.botpmmsg, msg + BotTheme('PM_BOT_MSG') + fmsg, buttons.build_menu(1), photo=self.random_pic)
+                                await sendMessage(self.message, msg + BotTheme('PM_BOT_MSG') + fmsg, buttons.build_menu(1), photo=self.random_pic)
                             else:
-                                await sendMessage(self.botpmmsg, msg + BotTheme('PM_BOT_MSG') + fmsg, buttons.build_menu(1), photo=self.random_pic)
+                                await sendMessage(self.message, msg + BotTheme('PM_BOT_MSG') + fmsg, buttons.build_menu(1), photo=self.random_pic)
                     else:
                         if not self.isPM:
                             if config_dict['LEECH_LOG_ID']:
