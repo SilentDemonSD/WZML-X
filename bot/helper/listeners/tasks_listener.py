@@ -442,53 +442,28 @@ class MirrorLeechListener:
                 for index, (link, name) in enumerate(files.items(), start=1):
                     fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
                     if len(totalmsg.encode()) > 4000:
-                        if self.isSuperGroup:
-                            if not self.isPM:
-                                if config_dict['LEECH_LOG_ID']:
-                                    await sendMessage(self.message, msg + BotTheme('L_LL_MSG') + fmsg, buttons.build_menu(1))
-                                else:
-                                    await sendMessage(self.message, msg + fmsg, buttons.build_menu(1))
-                            else:
-                                if config_dict['LEECH_LOG_ID']:
-                                    await sendMessage(self.message, msg + BotTheme('PM_BOT_MSG') + fmsg, buttons.build_menu(1), photo=self.random_pic)
-                                else:
-                                    await sendMessage(self.message, msg + BotTheme('PM_BOT_MSG') + fmsg, buttons.build_menu(1), photo=self.random_pic)
+                        message = msg
+                        if self.isSuperGroup and not self.isPM:
+                            message += BotTheme('L_LL_MSG')
+                        elif self.isSuperGroup and self.isPM:
+                            message += BotTheme('PM_BOT_MSG')
+                        if config_dict['LEECH_LOG_ID']:
+                            await sendMessage(self.message, message + fmsg, buttons.build_menu(1), photo=self.random_pic if self.isPM else None)
                         else:
-                            if not self.isPM:
-                                if config_dict['LEECH_LOG_ID']:
-                                    await sendMessage(self.message, msg + fmsg, buttons.build_menu(1))
-                                else:
-                                    await sendMessage(self.message, msg, buttons.build_menu(1))
-                            else:
-                                if config_dict['LEECH_LOG_ID']:
-                                    await sendMessage(self.message, msg + fmsg, buttons.build_menu(1))
-                                else:
-                                    await sendMessage(self.message, msg, buttons.build_menu(1))  
+                            await sendMessage(self.message, message + fmsg, buttons.build_menu(1))
                         await sleep(1.5)
                         fmsg = ''
+
                 if fmsg != '\n\n':
-                    if self.isSuperGroup:
-                        if not self.isPM:
-                            if config_dict['LEECH_LOG_ID']:
-                                await sendMessage(self.message, msg + BotTheme('L_LL_MSG') + fmsg, buttons.build_menu(1))
-                            else:
-                                await sendMessage(self.message, msg + fmsg, buttons.build_menu(1))
-                        else:
-                            if config_dict['LEECH_LOG_ID']:
-                                await sendMessage(self.message, msg + BotTheme('PM_BOT_MSG') + fmsg, buttons.build_menu(1), photo=self.random_pic)
-                            else:
-                                await sendMessage(self.message, msg + BotTheme('PM_BOT_MSG') + fmsg, buttons.build_menu(1), photo=self.random_pic)
+                    message = msg
+                    if self.isSuperGroup and not self.isPM:
+                        message += BotTheme('L_LL_MSG')
+                    elif self.isSuperGroup and self.isPM:
+                        message += BotTheme('PM_BOT_MSG')
+                    if config_dict['LEECH_LOG_ID']:
+                        await sendMessage(self.message, message + fmsg, buttons.build_menu(1), photo=self.random_pic if self.isPM else None)
                     else:
-                        if not self.isPM:
-                            if config_dict['LEECH_LOG_ID']:
-                                await sendMessage(self.message, msg + fmsg, buttons.build_menu(1))
-                            else:
-                                await sendMessage(self.message, msg, buttons.build_menu(1))
-                        else:
-                            if config_dict['LEECH_LOG_ID']:
-                                await sendMessage(self.message, msg + fmsg, buttons.build_menu(1))
-                            else:
-                                await sendMessage(self.message, msg, buttons.build_menu(1))  
+                        await sendMessage(self.message, message + fmsg, buttons.build_menu(1))
                     await sleep(1.5)
 
 
