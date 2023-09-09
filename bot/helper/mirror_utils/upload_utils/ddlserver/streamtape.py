@@ -54,6 +54,7 @@ class Streamtape:
     async def upload_file(self, file_path, sha256=None, httponly=False):
         if Path(file_path).suffix.lower() not in ALLOWED_EXTS:
             return f"Skipping '{file_path}' due to disallowed extension."
+        file_name = Path(file_path).name
         folder_name = file_name.rsplit(".", 1)[0]
         create_folder_result = await self.create_folder(name=folder_name)
         if create_folder_result is None:
@@ -65,7 +66,7 @@ class Streamtape:
         if self.dluploader.is_cancelled:
             return
         self.dluploader.last_uploaded = 0
-        uploaded = await self.dluploader.upload_aiohttp(upload_info["url"], file_path, Path(file_path).name, {})
+        uploaded = await self.dluploader.upload_aiohttp(upload_info["url"], file_path, file_name, {})
         if uploaded:
             return await self.list_folder(folder=folder_id)
         return None
