@@ -4,6 +4,7 @@ from io import BufferedReader
 from re import findall as re_findall
 from os import path as ospath
 from time import time
+from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
 from aiohttp import ClientSession
 
 from bot import LOGGER, user_data
@@ -50,7 +51,9 @@ class DDLUploader:
         chunk_size = current - self.last_uploaded
         self.last_uploaded = current
         self.__processed_bytes += chunk_size
-        
+    
+    @retry(wait=wait_exponential(multiplier=2, min=4, max=8), stop=stop_after_attempt(3),
+        retry=retry_if_exception_type(Exception))
     async def upload_aiohttp(self, url, file_path, data):
         with ProgressFileReader(filename=file_path, read_callback=self.__progress_callback) as file:
             data['file'] = file

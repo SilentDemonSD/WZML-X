@@ -19,7 +19,7 @@ from lk21 import Bypass
 from http.cookiejar import MozillaCookieJar
 
 from bot import LOGGER, config_dict
-from bot.helper.ext_utils.bot_utils import get_readable_time, is_share_link, is_index_link
+from bot.helper.ext_utils.bot_utils import get_readable_time, is_share_link, is_index_link, is_magnet
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from bot.helper.ext_utils.help_messages import PASSWORD_ERROR_MESSAGE
 
@@ -56,10 +56,12 @@ debrid_sites = ['1fichier.com', '2shared.com', '4shared.com', 'alfafile.net', 'a
 
 
 def direct_link_generator(link):
+    auth = None
     if isinstance(link, tuple):
         link, auth = link
-    else:
-        auth = None
+    if is_magnet(link):
+        return debrid_extractor(link, True)
+
     domain = urlparse(link).hostname
     if not domain:
         raise DirectDownloadLinkException("ERROR: Invalid URL")
@@ -113,8 +115,8 @@ def direct_link_generator(link):
         return streamtape(link)
     elif any(x in domain for x in ['wetransfer.com', 'we.tl']):
         return wetransfer(link)
-    elif any(x in domain for x in anonfilesBaseSites):
-        return anonfilesBased(link)
+    #elif any(x in domain for x in anonfilesBaseSites):
+    #    return anonfilesBased(link)
     elif any(x in domain for x in ['terabox.com', 'nephobox.com', '4funbox.com', 'mirrobox.com', 'momerybox.com', 'teraboxapp.com', '1024tera.com']):
         return terabox(link)
     elif any(x in domain for x in fmed_list):
@@ -136,17 +138,67 @@ def direct_link_generator(link):
         raise DirectDownloadLinkException(f'No Direct link function found for {link}')
 
 
-def debrid_extractor(url: str) -> str:
-    """ Debrid Link Extractor (VPN Must)"""
-    cget = create_scraper().request
-    try:
+def debrid_extractor(url: str, tor=False):
+    """ Real-Debrid Link Extractor (VPN Must)
+    Based on Debrid v1 API (Use Gluetun)"""
+    def __unrestrict(url, tor=False):
+        cget = create_scraper().request
         resp = cget('POST', f"https://api.real-debrid.com/rest/1.0/unrestrict/link?auth_token={config_dict['DEBRID_API_KEY']}", data={'link': url})
         if resp.status_code == 200:
-            return resp.json()['download']
+            if tor:
+                _res = resp.json()
+                return (_res['filename'], _res['download'])
+            elif:
+                return resp.json()['download']
         else:
             raise DirectDownloadLinkException(f"ERROR: {resp['error']}")
+            
+    def __addMagnet(magnet):
+        cget = create_scraper().request
+        hash_ = search(r'(?<=xt=urn:btih:)[a-zA-Z0-9]+', magnet).group(0)
+        resp = cget('GET', f"https://api.real-debrid.com/rest/1.0/torrents/instantAvailability/{hash_}?auth_token={config_dict['DEBRID_API_KEY']}")
+        if resp.status_code != 200 or len(resp.json()[hash_]) == 0:
+            return magnet
+        resp = cget('POST', f"https://api.real-debrid.com/rest/1.0/torrents/addMagnet?auth_token={config_dict['DEBRID_API_KEY']}", data={'magnet': magnet})
+        if resp.status_code == 200:
+            _id = resp.json()['id']
+        else:
+            raise DirectDownloadLinkException(f"ERROR: {resp['error']}")
+        if _id:
+            # Connect with Web to Select Files ! ToDo !
+            cget('POST', f"https://api.real-debrid.com/rest/1.0/torrents/selectFiles/{_id}?auth_token={config_dict['DEBRID_API_KEY']}", data={'files': 'all'})
+            
+        contents = {'links': []}
+        while len(contents['links']) == 0:
+            _res = cget('GET', f"https://api.real-debrid.com/rest/1.0/torrents/info/{_id}?auth_token={config_dict['DEBRID_API_KEY']}")
+            if _res.status_code == 200:
+                contents = _res.json()
+            else:
+                raise DirectDownloadLinkException(f"ERROR: {_res['error']}")
+            sleep(0.5)
+        
+        details = {'contents': [], 'title': contents['original_filename'], 'total_size': contents['bytes']}
+
+        for file_info, link in zip(contents['files'], contents['links']):
+            link_info = __unrestrict(link, tor=True)
+            item = {
+                "path": path.join(details['title'] + file_info['path']), 
+                "filename": link_info[0],
+                "url": link_info[1],
+            }
+            details['contents'].append(item)
+        return details
+    
+    try:
+        if tor:
+            details = __addMagnet(url)
+        else:
+            return __unrestrict(url)
     except Exception as e:
-        raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}")
+        raise DirectDownloadLinkException(e)
+    if isinstance(details, dict) and len(details['contents']) == 1:
+        return details['contents'][0]['url']
+    return details
 
 
 def get_captcha_token(session, params):

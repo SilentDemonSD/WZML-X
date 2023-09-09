@@ -233,20 +233,20 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         LOGGER.info(link)
         org_link = link
 
-    if not is_mega_link(link) and not isQbit and not is_magnet(link) and not is_rclone_path(link) \
+    if not is_mega_link(link) and not isQbit and (not is_magnet(link) or (config_dict['DEBRID_API_KEY'] and is_magnet(link))) and not is_rclone_path(link) \
        and not is_gdrive_link(link) and not link.endswith('.torrent') and file_ is None:
         content_type = await get_content_type(link)
         if content_type is None or re_match(r'text/html|text/plain', content_type):
             process_msg = await sendMessage(message, f"<i><b>Processing:</b></i> <code>{link}</code>")
             try:
-                if ussr or pssw:
+                if not is_magnet(link) and (ussr or pssw):
                     link = (link, (ussr, pssw))
                 link = await sync_to_async(direct_link_generator, link)
                 if isinstance(link, tuple):
                     link, headers = link
                 if isinstance(link, str):
                     LOGGER.info(f"Generated link: {link}")
-                await editMessage(process_msg, f"<i><b>Generated link:</b></i> <code>{link}</code>")
+                    await editMessage(process_msg, f"<i><b>Generated link:</b></i> <code>{link}</code>")
             except DirectDownloadLinkException as e:
                 e = str(e)
                 if 'This link requires a password!' not in e:
