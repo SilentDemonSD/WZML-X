@@ -44,8 +44,7 @@ class Streamtape:
         upload_info = await self.__getUploadURL(folder=folder, sha256=sha256, httponly=httponly)
         if not upload_info:
             return None
-        upload_url, file_extension = , Path(file_path).suffix.lower()
-        if file_extension not in ALLOWED_EXTS:
+        if Path(file_path).suffix.lower() not in ALLOWED_EXTS:
             return f"Skipping '{file_path}' due to disallowed extension."
         if self.dluploader.is_cancelled:
             return
