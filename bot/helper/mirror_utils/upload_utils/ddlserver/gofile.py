@@ -104,7 +104,6 @@ class Gofile:
         return await self.__resp_handler(upload_file)
         
     async def upload(self, file_path):
-            return
         if await aiopath.isfile(file_path):
             cmd = await self.upload_file(file=file_path)
         elif await aiopath.isdir(file_path):
