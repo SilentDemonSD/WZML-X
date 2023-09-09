@@ -104,12 +104,11 @@ class Streamtape:
     
         if genfolder:
             new_folder_id = genfolder.get("folderid")
-            async for scandir(folder_path) as entries:
-                for entry in entries:
-                    if entry.is_file():
-                        await self.upload_single(file_path=entry.path, folder=new_folder_id)
-                    elif entry.is_dir():
-                        await self.upload_folder(folder_path=entry.path, parent_folder_id=new_folder_id)
+            for entry in await scandir(folder_path):
+                if entry.is_file():
+                    await self.upload_single(file_path=entry.path, folder=new_folder_id)
+                elif entry.is_dir():
+                    await self.upload_folder(folder_path=entry.path, parent_folder_id=new_folder_id)
             return await self.list_folder(folder=new_folder_id)
         return None
         
