@@ -160,13 +160,14 @@ def debrid_extractor(url: str, tor=False):
         if resp.status_code != 200 or len(resp.json()[hash_]) == 0:
             return magnet
         resp = cget('POST', f"https://api.real-debrid.com/rest/1.0/torrents/addMagnet?auth_token={config_dict['DEBRID_API_KEY']}", data={'magnet': magnet})
-        if resp.status_code == 200:
+        if resp.status_code == 201:
             _id = resp.json()['id']
         else:
             raise DirectDownloadLinkException(f"ERROR: {resp.json()['error']}")
         if _id:
-            # Connect with Web to Select Files ! ToDo !
-            cget('POST', f"https://api.real-debrid.com/rest/1.0/torrents/selectFiles/{_id}?auth_token={config_dict['DEBRID_API_KEY']}", data={'files': 'all'})
+            _file = cget('POST', f"https://api.real-debrid.com/rest/1.0/torrents/selectFiles/{_id}?auth_token={config_dict['DEBRID_API_KEY']}", data={'files': 'all'})
+            if _file.status_code != 204:
+                raise DirectDownloadLinkException(f"ERROR: {resp.json()['error']}")
             
         contents = {'links': []}
         while len(contents['links']) == 0:
