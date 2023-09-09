@@ -34,8 +34,8 @@ class DDLUploader:
         self.__path = path
         self.__updater = None
         self.__start_time = time()
-        self.__total_files = 0
-        self.__total_folders = 0
+        self.total_files = 0
+        self.total_folders = 0
         self.__is_cancelled = False
         self.__is_errored = False
         self.__ddl_servers = {}
@@ -62,15 +62,20 @@ class DDLUploader:
                     return await resp.json()
     
     async def __upload_to_ddl(self, file_path):
+        all_links = {}
         for serv, (enabled, api_key) in self.__ddl_servers.items():
             if enabled:
                 if serv == 'gofile':
                     self.__engine = 'GoFile API'
-                    return await Gofile(self, api_key).upload(file_path)
-                elif serv == 'streamtape':
+                    nlink = await Gofile(self, api_key).upload(file_path)
+                    all_links['GoFile'] = nlink
+                if serv == 'streamtape':
                     self.__engine = 'StreamTape API'
-                    # return await self.__upload_to_streamtape(file_path, api_key)
-        raise Exception("No DDL Enabled to Upload.")
+                    #nlink = await Streamtape(self, api_key).upload(file_path)
+                    all_links['StreamTape'] = nlink
+        if not all_links:
+            raise Exception("No DDL Enabled to Upload.")
+        return all_links
 
     async def upload(self, file_name, size):
         item_path = f"{self.__path}/{file_name}"
@@ -79,31 +84,25 @@ class DDLUploader:
         try:
             if ospath.isfile(item_path):
                 mime_type = get_mime_type(item_path)
-                link = await self.__upload_to_ddl(item_path)
-                if self.__is_cancelled:
-                    return
-                if link is None:
-                    raise Exception('Upload has been manually cancelled')
-                LOGGER.info(f"Uploaded To DDL: {item_path}")
             else:
                 mime_type = 'Folder'
-                link = await self.__upload_to_ddl(item_path)
-                if link is None:
-                    raise Exception('Upload has been manually cancelled!')
-                if self.__is_cancelled:
-                    return
-                LOGGER.info(f"Uploaded To DDL: {file_name}")
+            link = await self.__upload_to_ddl(item_path)
+            if link is None:
+                raise Exception('Upload has been manually cancelled!')
+            if self.__is_cancelled:
+                return
+            LOGGER.info(f"Uploaded To DDL: {item_path}")
         except Exception as err:
             LOGGER.info("DDL Upload has been Cancelled")
             if self.__aioSession:
-                self.__aioSession.close()
+                await self.__aioSession.close()
             err = str(err).replace('>', '').replace('<', '')
             await self.__listener.onUploadError(err)
             self.__is_errored = True
         finally:
             if self.__is_cancelled or self.__is_errored:
                 return
-            await self.__listener.onUploadComplete(link, size, self.__total_files, self.__total_folders, mime_type, file_name)
+            await self.__listener.onUploadComplete(link, size, self.total_files, self.total_folders, mime_type, file_name)
 
     @property
     def speed(self):
@@ -124,5 +123,5 @@ class DDLUploader:
         self.__is_cancelled = True
         LOGGER.info(f"Cancelling Upload: {self.name}")
         if self.__aioSession:
-            self.__aioSession.close()
+            await self.__aioSession.close()
         await self.__listener.onUploadError('Your upload has been stopped!')

@@ -139,8 +139,8 @@ def direct_link_generator(link):
 
 
 def debrid_extractor(url: str, tor=False):
-    """ Real-Debrid Link Extractor (VPN Must)
-    Based on Debrid v1 API (Use Gluetun)"""
+    """ Real-Debrid Link Extractor (VPN Maybe Needed)
+    Based on Real-Debrid v1 API (Heroku/VPS) [Without VPN]"""
     def __unrestrict(url, tor=False):
         cget = create_scraper().request
         resp = cget('POST', f"https://api.real-debrid.com/rest/1.0/unrestrict/link?auth_token={config_dict['DEBRID_API_KEY']}", data={'link': url})
@@ -184,7 +184,7 @@ def debrid_extractor(url: str, tor=False):
             link_info = __unrestrict(link, tor=True)
             item = {
                 "path": path.join(details['title'] + file_info['path']), 
-                "filename": link_info[0],
+                "filename": unquote(link_info[0]),
                 "url": link_info[1],
             }
             details['contents'].append(item)

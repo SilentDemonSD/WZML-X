@@ -65,10 +65,12 @@ class Gofile:
                 folder_data = await self.create_folder(parent_folder_id, folder_name)
                 current_folder_id = folder_data["id"]
                 folder_ids[relative_path] = current_folder_id
+            self.dluploader.total_folders += 1
             
             for file in files:
                 file_path = ospath.join(root, file)
                 udt = await self.upload_file(file_path, current_folder_id)
+                self.dluploader.total_files += 1
                 if uploaded is None:
                     uploaded = udt
                 await sleep(delay)

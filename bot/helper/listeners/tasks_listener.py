@@ -475,14 +475,14 @@ class MirrorLeechListener:
                 await start_from_queued()
                 return
         else:
-            is_DDL = 'gofile' in link or 'streamtape' in link
             msg += BotTheme('M_TYPE', Mimetype=mime_type)
-            if mime_type == "Folder" and not is_DDL:
+            if mime_type == "Folder":
                 msg += BotTheme('M_SUBFOLD', Folder=folders)
                 msg += BotTheme('TOTAL_FILES', Files=files)
             if link or rclonePath and config_dict['RCLONE_SERVE_URL'] and not private:
-                if is_DDL:
-                    buttons.ubutton(BotTheme('DDL_LINK', Serv='GoFile'), link)
+                if isinstance(link, dict):
+                    for dlup, dlink in link.items():
+                        buttons.ubutton(BotTheme('DDL_LINK', Serv=dlup), dlink)
                 elif link:
                     if user_id == OWNER_ID or not config_dict['DISABLE_DRIVE_LINK']:
                         buttons.ubutton(BotTheme('CLOUD_LINK'), link)
