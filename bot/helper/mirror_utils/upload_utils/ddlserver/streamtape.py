@@ -69,7 +69,7 @@ class Streamtape:
         uploaded = await self.dluploader.upload_aiohttp(upload_info["url"], file_path, file_name, {})
         if uploaded:
             file_id = (await self.list_folder(folder=folder_id))['files'][0]['linkid']
-            await rename(file_id, file_name)
+            await self.rename(file_id, file_name)
             return f"https://streamtape.com/v/{file_id}"
         return None
 
