@@ -183,7 +183,7 @@ def debrid_extractor(url: str, tor=False):
         for file_info, link in zip(contents['files'], contents['links']):
             link_info = __unrestrict(link, tor=True)
             item = {
-                "path": path.join(details['title'] + file_info['path']), 
+                "path": path.join(details['title'], path.dirname(file_info['path']).lstrip("/")), 
                 "filename": unquote(link_info[0]),
                 "url": link_info[1],
             }
@@ -756,14 +756,11 @@ def gofile(url, auth):
         if _json['status'] in 'error-passwordRequired':
             raise DirectDownloadLinkException(f"ERROR:\n{PASSWORD_ERROR_MESSAGE.format(url)}")
         if _json['status'] in 'error-passwordWrong':
-            raise DirectDownloadLinkException(
-                'ERROR: This password is wrong !')
+            raise DirectDownloadLinkException('ERROR: This password is wrong !')
         if _json['status'] in 'error-notFound':
-            raise DirectDownloadLinkException(
-                "ERROR: File not found on gofile's server")
+            raise DirectDownloadLinkException("ERROR: File not found on gofile's server")
         if _json['status'] in 'error-notPublic':
-            raise DirectDownloadLinkException(
-                "ERROR: This folder is not public")
+            raise DirectDownloadLinkException("ERROR: This folder is not public")
 
         data = _json["data"]
 
@@ -844,7 +841,7 @@ def gd_index(url, auth):
                     if not folderPath:
                         folderPath = details['title']
                     item = { 
-                         "path": path.join(folderPath, file_info["name"]), 
+                         "path": path.join(folderPath), 
                          "filename": file_info["name"], 
                          "url": urljoin(url, file_info.get("link", "") or ""), 
                      } 

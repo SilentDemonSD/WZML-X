@@ -84,6 +84,7 @@ class TgUploader:
             if not self.__is_cancelled:
                 LOGGER.error(f"Failed To Send in BotPM:\n{str(err)}")
         
+        LOGGER.info(self.__leechmsg)
         try:
             if len(self.__leechmsg) > 1 and not self.__listener.excep_chat:
                 for chat_id, msg in list(self.__leechmsg.items())[1:]:

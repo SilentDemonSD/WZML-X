@@ -100,7 +100,7 @@ class Streamtape:
             tg_html += await self.list_telegraph(fid['id'], True)
         tg_html += "<ol>"
         for finfo in contents['files']:
-            tg_html += f"""<li> <code>{finfo['name']}</code><br>🔗 <a href="https://streamtape.to/v/{finfo['linkid']}>StreamTape URL</a><br> </li>"""
+            tg_html += f"""<li> <code>{finfo['name']}</code><br>🔗 <a href="https://streamtape.to/v/{finfo['linkid']}">StreamTape URL</a><br> </li>"""
         tg_html += "</ol>"
         if nested:
             return tg_html
