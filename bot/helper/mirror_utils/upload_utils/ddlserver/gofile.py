@@ -106,8 +106,8 @@ class Gofile:
             if cmd and 'parentFolder' in cmd:
                 await self.__setOptions(contentId=cmd['parentFolder'], option="public", value="true")
         if cmd and 'downloadPage' in cmd:
-            return cmd['downloadPage'] 
-        raise Exception("Failed to upload file/folder")
+            return cmd['downloadPage']
+        raise Exception("Failed to upload file/folder to Gofile API, Try Again or Try after sometimes...")
 
     async def create_folder(self, parentFolderId, folderName):
         if self.token is None:

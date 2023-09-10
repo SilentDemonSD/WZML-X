@@ -45,8 +45,7 @@ class Streamtape:
             return f"Skipping '{file_path}' due to disallowed extension."
         file_name = Path(file_path).name
         if not folder_id:
-            folder_name = file_name.rsplit(".", 1)[0]
-            genfolder = await self.create_folder(name=folder_name)
+            genfolder = await self.create_folder(file_name.rsplit(".", 1)[0])
             if genfolder is None:
                 return None
             folder_id = genfolder["folderid"]
@@ -121,6 +120,6 @@ class Streamtape:
             stlink = await self.upload_folder(file_path)
         if stlink:
             return stlink
-        raise Exception("Failed to upload file/folder")
+        raise Exception("Failed to upload file/folder to StreamTape API, Retry! or Try after sometimes...")
         
         
