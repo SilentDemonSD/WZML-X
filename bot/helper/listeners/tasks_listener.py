@@ -450,9 +450,9 @@ class MirrorLeechListener:
                     if len(fmsg.encode()) > 4000:
                         if self.isPrivate:
                             if config_dict['LEECH_LOG_ID']:
-                                await sendMessage(self.botpmmsg, msg + fmsg, btn.build_menu(2), self.random_pic)
+                                await sendMessage(self.message, msg + fmsg, btn.build_menu(2), self.random_pic)
                             else:
-                                await sendMessage(self.botpmmsg, msg, btn.build_menu(2), self.random_pic)
+                                await sendMessage(self.message, msg, btn.build_menu(2), self.random_pic)
                         else:
                             if config_dict['LEECH_LOG_ID']:
                                 msg += BotTheme('L_LL_MSG')
