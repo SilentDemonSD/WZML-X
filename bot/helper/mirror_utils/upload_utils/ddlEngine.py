@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
+from traceback import format_exc
 from io import BufferedReader
 from re import findall as re_findall
 from aiofiles.os import path as aiopath
@@ -72,7 +73,10 @@ class DDLUploader:
                     all_links['GoFile'] = nlink
                 if serv == 'streamtape':
                     self.__engine = 'StreamTape API'
-                    login, key = api_key.split(':')
+                    try:
+                        login, key = api_key.split(':')
+                    except IndexError:
+                        raise Exception("StreamTape Login & Key not Found, Kindly Recheck !")
                     nlink = await Streamtape(self, login, key).upload(file_path)
                     LOGGER.info(nlink)
                     all_links['StreamTape'] = nlink
@@ -100,6 +104,7 @@ class DDLUploader:
             if self.__aioSession:
                 await self.__aioSession.close()
             err = str(err).replace('>', '').replace('<', '')
+            LOGGER.info(format_exc())
             await self.__listener.onUploadError(err)
             self.__is_errored = True
         finally:

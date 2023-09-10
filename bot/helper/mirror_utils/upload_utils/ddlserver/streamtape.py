@@ -39,27 +39,17 @@ class Streamtape:
                     if (data := await response.json()) and data["status"] == 200:
                         return data["result"]
         return None
-        
-    async def upload_single(self, file_path, folder=None, sha256=None, httponly=False):
-        upload_info = await self.__getUploadURL(folder=folder, sha256=sha256, httponly=httponly)
-        if not upload_info:
-            return None
-        if Path(file_path).suffix.lower() not in ALLOWED_EXTS:
-            return f"Skipping '{file_path}' due to disallowed extension."
-        if self.dluploader.is_cancelled:
-            return
-        self.dluploader.last_uploaded = 0
-        return await self.dluploader.upload_aiohttp(upload_info["url"], file_path, Path(file_path).name, {})
 
-    async def upload_file(self, file_path, sha256=None, httponly=False):
+    async def upload_file(self, file_path, folder_id=None, sha256=None, httponly=False):
         if Path(file_path).suffix.lower() not in ALLOWED_EXTS:
             return f"Skipping '{file_path}' due to disallowed extension."
         file_name = Path(file_path).name
-        folder_name = file_name.rsplit(".", 1)[0]
-        create_folder_result = await self.create_folder(name=folder_name)
-        if create_folder_result is None:
-            return None
-        folder_id = create_folder_result["folderid"]
+        if not folder_id:
+            folder_name = file_name.rsplit(".", 1)[0]
+            genfolder = await self.create_folder(name=folder_name)
+            if genfolder is None:
+                return None
+            folder_id = genfolder["folderid"]
         upload_info = await self.__getUploadURL(folder=folder_id, sha256=sha256, httponly=httponly)
         if upload_info is None:
             return None
@@ -70,7 +60,7 @@ class Streamtape:
         if uploaded:
             file_id = (await self.list_folder(folder=folder_id))['files'][0]['linkid']
             await self.rename(file_id, file_name)
-            return f"https://streamtape.com/v/{file_id}"
+            return f"https://streamtape.to/v/{file_id}"
         return None
 
     async def create_folder(self, name, parent=None):
@@ -114,23 +104,23 @@ class Streamtape:
         folder_name = Path(folder_path).name
         genfolder = await self.create_folder(name=folder_name, parent=parent_folder_id)
     
-        if genfolder:
-            new_folder_id = genfolder.get("folderid")
+        if genfolder and (newfid := genfolder.get("folderid")):
             for entry in await scandir(folder_path):
                 if entry.is_file():
-                    await self.upload_single(file_path=entry.path, folder=new_folder_id)
+                    await self.upload_file(entry.path, newfid)
                 elif entry.is_dir():
-                    await self.upload_folder(folder_path=entry.path, parent_folder_id=new_folder_id)
-            return await self.list_folder(folder=new_folder_id)
+                    await self.upload_folder(entry.path, newfid)
+            return await self.list_folder(newfid)
         return None
         
     async def upload(self, file_path):
+        stlink = None
         if await aiopath.isfile(file_path):
-            cmd = await self.upload_file(file_path)
+            stlink = await self.upload_file(file_path)
         elif await aiopath.isdir(file_path):
-            cmd = await self.upload_folder(file_path)
-        if cmd:
-            return cmd
+            stlink = await self.upload_folder(file_path)
+        if stlink:
+            return stlink
         raise Exception("Failed to upload file/folder")
         
         
