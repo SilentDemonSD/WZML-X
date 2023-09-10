@@ -16,8 +16,6 @@ class Gofile:
             is_gofile_token(url=self.api_url, token=self.token)
 
     async def __resp_handler(self, response):
-        if isinstance(response, dict):
-            raise ValueError
         api_resp = response.get("status", "")
         if api_resp == "ok":
             return response["data"]
