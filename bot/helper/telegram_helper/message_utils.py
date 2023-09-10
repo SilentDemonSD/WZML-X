@@ -5,7 +5,7 @@ from aiofiles.os import remove as aioremove
 from random import choice as rchoice
 from time import time
 from re import match as re_match
-
+from pyrogram import ReplyKeyboardMarkup
 from pyrogram.types import InputMediaPhoto
 from pyrogram.errors import ReplyMarkupInvalid, FloodWait, PeerIdInvalid, ChannelInvalid, RPCError, UserNotParticipant, MessageNotModified, MessageEmpty, PhotoInvalidDimensions, WebpageCurlFailed, MediaEmpty
 
@@ -21,8 +21,13 @@ async def sendMessage(message, text, buttons=None, photo=None):
             try:
                 if photo == 'IMAGES':
                     photo = rchoice(config_dict['IMAGES'])
-                return await message.reply_photo(photo=photo, reply_to_message_id=message.id,
-                                                 caption=text, reply_markup=buttons, disable_notification=True)
+                return await message.reply_photo(
+                    photo=photo,
+                    reply_to_message_id=message.id,
+                    caption=text,
+                    reply_markup=buttons,
+                    disable_notification=True
+                )
             except IndexError:
                 pass
             except (PhotoInvalidDimensions, WebpageCurlFailed, MediaEmpty):
@@ -32,8 +37,17 @@ async def sendMessage(message, text, buttons=None, photo=None):
                 return
             except Exception as e:
                 LOGGER.error(format_exc())
-        return await message.reply(text=text, quote=True, disable_web_page_preview=True,
-                                   disable_notification=True, reply_markup=buttons)
+    
+        if buttons and isinstance(buttons, list):
+            buttons = ReplyKeyboardMarkup(buttons)
+
+        return await message.reply(
+            text=text,
+            quote=True,
+            disable_web_page_preview=True,
+            disable_notification=True,
+            reply_markup=buttons
+        )
     except FloodWait as f:
         LOGGER.warning(str(f))
         await sleep(f.value * 1.2)
