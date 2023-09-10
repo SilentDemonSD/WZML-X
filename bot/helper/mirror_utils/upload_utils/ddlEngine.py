@@ -66,7 +66,7 @@ class DDLUploader:
                             return await resp.json()
                         except JSONDecodeError:
                             return "Uploaded"
-    _
+
     async def __upload_to_ddl(self, file_path):
         all_links = {}
         for serv, (enabled, api_key) in self.__ddl_servers.items():
