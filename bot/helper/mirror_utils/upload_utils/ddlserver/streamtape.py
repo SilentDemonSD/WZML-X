@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
+from pathlib import Path
+
 from aiofiles.os import scandir, path as aiopath
 from aiofiles import open as aiopen
-
 from aiohttp import ClientSession
-from pathlib import Path
+
+from bot.helper.ext_utils.telegraph_helper import telegraph
 
 ALLOWED_EXTS = [
     '.avi', '.mkv', '.mpg', '.mpeg', '.vob', '.wmv', '.flv', '.mp4', '.mov', '.m4v',
@@ -88,6 +90,19 @@ class Streamtape:
                 if data.get("status") == 200:
                     return data.get("result")
         return None
+        
+    async def list_telegraph(self, folder_id, nested=False):
+        tg_html = ""
+        contents = await self.list_folder(folder_id)
+        for fid in contents['folders']:
+            tg_html += f"<h4>{fid['name']}</h4><br><br>"
+            tg_html += await self.list_telegraph(fid['id'], True)
+        for finfo in contents['files']:
+            tg_html += f"<code>{finfo['name']}</code><br><i>https://streamtape.to/v/{finfo['linkid']}</i><br><br>"
+        if nested
+            return tg_html
+        path = (await telegraph.create_page(title=f"StreamTape X", content=tg_html))["path"]
+        return f"https://te.legra.ph/{path}"
 
     async def list_folder(self, folder=None):
         url = f"{self.base_url}/file/listfolder?login={self.__userLogin}&key={self.__passKey}"
@@ -109,7 +124,7 @@ class Streamtape:
                     await self.upload_file(entry.path, newfid)
                 elif entry.is_dir():
                     await self.upload_folder(entry.path, newfid)
-            return await self.list_folder(newfid)
+            return await self.list_telegraph(newfid)
         return None
         
     async def upload(self, file_path):

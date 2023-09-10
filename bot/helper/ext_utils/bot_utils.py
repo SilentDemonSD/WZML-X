@@ -124,7 +124,7 @@ async def get_telegraph_list(telegraph_content):
     if len(path) > 1:
         await telegraph.edit_telegraph(path, telegraph_content)
     buttons = ButtonMaker()
-    buttons.ubutton("🔎 VIEW", f"https://telegra.ph/{path[0]}")
+    buttons.ubutton("🔎 VIEW", f"https://te.legra.ph/{path[0]}")
     buttons = extra_btns(buttons)
     return buttons.build_menu(1)
 
