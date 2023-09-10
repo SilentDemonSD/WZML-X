@@ -93,17 +93,18 @@ class Streamtape:
         return None
         
     async def list_telegraph(self, folder_id, nested=False):
-        tg_html =  f"""<figure><img src='{config_dict["COVER_IMAGE"]}'></figure>"""
+        tg_html = ""
         contents = await self.list_folder(folder_id)
         for fid in contents['folders']:
             tg_html += f"<aside>╾──────────────────────╼</aside><br><aside><b>🗂 {fid['name']}</b></aside><br><aside>╾──────────────────────╼</aside><br>"
             tg_html += await self.list_telegraph(fid['id'], True)
         tg_html += "<ol>"
         for finfo in contents['files']:
-            tg_html += f"""<li> 🎞 <code>{finfo['name']}</code><br><a href="https://streamtape.to/v/{finfo['linkid']}>StreamTape URL</a></li><br><br>"""
+            tg_html += f"""<li> <code>{finfo['name']}</code><br>🔗 <a href="https://streamtape.to/v/{finfo['linkid']}>StreamTape URL</a><br> </li>"""
         tg_html += "</ol>"
         if nested:
             return tg_html
+        tg_html =  f"""<figure><img src='{config_dict["COVER_IMAGE"]}'></figure>""" + tg_html
         path = (await telegraph.create_page(title=f"StreamTape X", content=tg_html))["path"]
         return f"https://te.legra.ph/{path}"
 
