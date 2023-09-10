@@ -8,6 +8,7 @@ from aiofiles.os import path as aiopath
 from time import time
 from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
 from aiohttp import ClientSession
+from aiohttp.client_exceptions import ContentTypeError
 
 from bot import LOGGER, user_data
 from bot.helper.mirror_utils.upload_utils.ddlserver.gofile import Gofile
@@ -64,8 +65,10 @@ class DDLUploader:
                     if resp.status == 200:
                         try:
                             return await resp.json()
-                        except JSONDecodeError:
+                        except ContentTypeError:
                             return "Uploaded"
+                        except JSONDecodeError:
+                            return None
 
     async def __upload_to_ddl(self, file_path):
         all_links = {}
