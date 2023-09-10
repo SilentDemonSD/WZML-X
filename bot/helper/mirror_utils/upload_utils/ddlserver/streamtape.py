@@ -99,7 +99,7 @@ class Streamtape:
             tg_html += await self.list_telegraph(fid['id'], True)
         for finfo in contents['files']:
             tg_html += f"<code>{finfo['name']}</code><br><i>https://streamtape.to/v/{finfo['linkid']}</i><br><br>"
-        if nested
+        if nested:
             return tg_html
         path = (await telegraph.create_page(title=f"StreamTape X", content=tg_html))["path"]
         return f"https://te.legra.ph/{path}"
