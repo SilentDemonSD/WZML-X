@@ -458,14 +458,20 @@ class MirrorLeechListener:
                         if self.isSuperGroup:
                             await sendMessage(self.message, msg + fmsg, btn.build_menu(2), photo=self.random_pic)
                         else:
-                            await sendMessage(self.message, msg + fmsg, photo=self.random_pic)
+                            if config_dict['LEECH_LOG_ID']:
+                                await sendMessage(self.message, msg + fmsg, photo=self.random_pic)
+                            else:
+                                await sendMessage(self.message, msg, photo=self.random_pic)
                         await sleep(1.5) 
                         fmsg = ''
                 if fmsg != '\n':
                     if self.isSuperGroup:
                         await sendMessage(self.message, msg + fmsg, btn.build_menu(2), photo=self.random_pic)
                     else:
-                        await sendMessage(self.message, msg + fmsg, photo=self.random_pic)
+                        if config_dict['LEECH_LOG_ID']:
+                            await sendMessage(self.message, msg + fmsg, photo=self.random_pic)
+                        else:
+                            await sendMessage(self.message, msg, photo=self.random_pic)
                     await sleep(1.5)    
             if self.seed:
                 if self.newDir:
