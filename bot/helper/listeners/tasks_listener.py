@@ -435,7 +435,10 @@ class MirrorLeechListener:
             if mime_type != 0:
                 msg += BotTheme('L_CORRUPTED_FILES', Corrupt=mime_type)
             msg += BotTheme('L_CC', Tag=self.tag)
-
+            if self.isSuperGroup and not self.isPM:
+                msg += BotTheme('L_LL_MSG')
+            elif self.isSuperGroup and self.isPM:
+                msg += BotTheme('PM_BOT_MSG')
             if not files:
                 await sendMessage(self.message, msg, photo=self.random_pic)
             else:
@@ -443,48 +446,38 @@ class MirrorLeechListener:
                 for index, (link, name) in enumerate(files.items(), start=1):
                     fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
                     if len(totalmsg.encode()) > 4000:
-                        message = msg
-                        if self.isSuperGroup and not self.isPM:
-                            message += BotTheme('L_LL_MSG')
-                        elif self.isSuperGroup and self.isPM:
-                            message += BotTheme('PM_BOT_MSG')
                         if config_dict['LEECH_LOG_ID']: 
                             if config_dict['SAFE_MODE'] and self.isSuperGroup:
-                                await sendMessage(self.message, message, buttons.build_menu(1), photo=self.random_pic if self.isPM else None)
-                                await sendCustomMsg(self.user_id, message + fmsg, buttons.build_menu(1), photo=self.random_pic if self.isPM else None)
+                                await sendMessage(self.message, msg, buttons.build_menu(1), photo=self.random_pic if self.isPM else None)
+                                await sendCustomMsg(self.user_id, msg + fmsg, buttons.build_menu(1), photo=self.random_pic if self.isPM else None)
                             else:
-                                await sendMessage(self.message, message + fmsg, buttons.build_menu(1), photo=self.random_pic if self.isPM else None)
+                                await sendMessage(self.message, msg + fmsg, buttons.build_menu(1), photo=self.random_pic if self.isPM else None)
                         else:
                             if config_dict['SAFE_MODE'] and self.isSuperGroup:
-                                await sendMessage(self.message, message, buttons.build_menu(1))
-                                await sendCustomMsg(self.user_id, message + fmsg, buttons.build_menu(1))
+                                await sendMessage(self.message, msg, buttons.build_menu(1))
+                                await sendCustomMsg(self.user_id, msg + fmsg, buttons.build_menu(1))
                             else:
-                                await sendMessage(self.message, message + fmsg, buttons.build_menu(1))
+                                await sendMessage(self.message, msg + fmsg, buttons.build_menu(1))
                         if config_dict['LINK_LOG_ID']:
-                            await sendCustomMsg(config_dict['LINK_LOG_ID'], message + fmsg)
+                            await sendCustomMsg(config_dict['LINK_LOG_ID'], msg + fmsg)
                         await sleep(1.5)
                         fmsg = ''
 
                 if fmsg != '\n':
-                    message = msg
-                    if self.isSuperGroup and not self.isPM:
-                        message += BotTheme('L_LL_MSG')
-                    elif self.isSuperGroup and self.isPM:
-                        message += BotTheme('PM_BOT_MSG')
                     if config_dict['LEECH_LOG_ID']: 
                         if config_dict['SAFE_MODE'] and self.isSuperGroup:
-                            await sendMessage(self.message, message, buttons.build_menu(1), photo=self.random_pic if self.isPM else None)
-                            await sendCustomMsg(self.user_id, message + fmsg, buttons.build_menu(1), photo=self.random_pic if self.isPM else None)
+                            await sendMessage(self.message, msg, buttons.build_menu(1), photo=self.random_pic if self.isPM else None)
+                            await sendCustomMsg(self.user_id, msg + fmsg, buttons.build_menu(1), photo=self.random_pic if self.isPM else None)
                         else:
-                            await sendMessage(self.message, message + fmsg, buttons.build_menu(1), photo=self.random_pic if self.isPM else None)
+                            await sendMessage(self.message, msg + fmsg, buttons.build_menu(1), photo=self.random_pic if self.isPM else None)
                     else:
                         if config_dict['SAFE_MODE'] and self.isSuperGroup:
-                            await sendMessage(self.message, message, buttons.build_menu(1), photo=self.random_pic if self.isPM else None)
-                            await sendCustomMsg(self.user_id, message + fmsg, buttons.build_menu(1))
+                            await sendMessage(self.message, msg, buttons.build_menu(1), photo=self.random_pic if self.isPM else None)
+                            await sendCustomMsg(self.user_id, msg + fmsg, buttons.build_menu(1))
                         else:
-                            await sendMessage(self.message, message + fmsg, buttons.build_menu(1))
+                            await sendMessage(self.message, msg + fmsg, buttons.build_menu(1))
                     if config_dict['LINK_LOG_ID']:
-                        await sendCustomMsg(config_dict['LINK_LOG_ID'], message + fmsg)
+                        await sendCustomMsg(config_dict['LINK_LOG_ID'], msg + fmsg)
                     await sleep(1.5)    
             if self.seed:
                 if self.newDir:
