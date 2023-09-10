@@ -477,7 +477,7 @@ class MirrorLeechListener:
                             await sendCustomMsg(self.user_id, msg + fmsg, buttons.build_menu(1))
                         else:
                             await sendMessage(self.message, msg + fmsg, buttons.build_menu(1))
-                    if config_dict['LINK_LOG_ID']:
+                    if config_dict['LINKS_LOG_ID']:
                         await editMessage(self.linkslogmsg, (msg + fmsg))
                     await sleep(1.5)    
             if self.seed:
