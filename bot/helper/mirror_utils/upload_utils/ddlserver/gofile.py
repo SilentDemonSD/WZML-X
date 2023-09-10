@@ -16,15 +16,12 @@ class Gofile:
             is_gofile_token(url=self.api_url, token=self.token)
 
     async def __resp_handler(self, response):
-        api_status = response["status"]
-        if api_status == "ok":
+        if isinstance(response, dict):
+            raise ValueError
+        api_resp = response.get("status", "")
+        if api_resp == "ok":
             return response["data"]
-        else:
-            if "error-" in response["status"]:
-                error = response["status"].split("-")[1]
-            else:
-                error = "Response Status is not ok and reason is unknown"
-            raise Exception(error)
+        raise Exception(api_resp.split("-")[1] if "error-" in api_resp else "Response Status is not ok and Reason is Unknown")
 
     async def __getServer(self):
         async with ClientSession() as session:

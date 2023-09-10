@@ -61,7 +61,10 @@ class DDLUploader:
             async with ClientSession() as self.__aioSession:
                 async with self.__aioSession.post(url, data=data) as resp:
                     if resp.status == 200:
-                        return await resp.json() if resp.headers.get("Content-Type") == "application/json" else "Uploaded"
+                        try:
+                            return await resp.json()
+                        except:
+                            return None
     
     async def __upload_to_ddl(self, file_path):
         all_links = {}
