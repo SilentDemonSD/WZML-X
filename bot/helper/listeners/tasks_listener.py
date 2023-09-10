@@ -455,11 +455,17 @@ class MirrorLeechListener:
                 for index, (link, name) in enumerate(files.items(), start=1):
                     fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
                     if len(fmsg.encode()) > 4000:
-                        await sendMessage(self.message, msg + fmsg, btn.build_menu(2), self.random_pic)
+                        if self.isSuperGroup:
+                            await sendMessage(self.message, msg + fmsg, btn.build_menu(2), self.random_pic)
+                        else:
+                            await sendMessage(self.message, msg + fmsg, self.random_pic)
                         await sleep(1.5) 
                         fmsg = ''
                 if fmsg != '\n':
-                    await sendMessage(self.message, msg + fmsg, btn.build_menu(2), self.random_pic)
+                    if self.isSuperGroup:
+                        await sendMessage(self.message, msg + fmsg, btn.build_menu(2), self.random_pic)
+                    else:
+                        await sendMessage(self.message, msg + fmsg, self.random_pic)
                     await sleep(1.5)    
             if self.seed:
                 if self.newDir:
