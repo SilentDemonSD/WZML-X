@@ -40,7 +40,7 @@ from bot.helper.themes import BotTheme
 
 
 class MirrorLeechListener:
-    def __init__(self, message, compress=False, extract=False, isQbit=False, isLeech=False, tag=None, select=False, seed=False, sameDir=None, rcFlags=None, upPath=None, isClone=False, join=False, drive_id=None, index_link=None, isYtdlp=False, source_url=None, ):
+    def __init__(self, message, compress=False, extract=False, isQbit=False, isLeech=False, tag=None, select=False, seed=False, sameDir=None, rcFlags=None, upPath=None, isClone=False, join=False, drive_id=None, index_link=None, isYtdlp=False, source_url=None, logMessage=None):
         if sameDir is None:
             sameDir = {}
         self.message = message
@@ -72,6 +72,7 @@ class MirrorLeechListener:
         self.join = join
         self.drive_id = drive_id
         self.index_link = index_link
+        self.logMessage = logMessage
         self.linkslogmsg = None
         self.botpmmsg = None
         self.upload_details = {}
@@ -422,63 +423,70 @@ class MirrorLeechListener:
         msg += BotTheme('MODE', Mode=self.upload_details['mode'])
         LOGGER.info(f'Task Done: {name}')
         buttons = ButtonMaker()
+        btn = ButtonMaker()
         saved = False
-        if config_dict['SAVE_MSG'] and not saved and not self.isPrivate:
-            saved = True
-            buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
-        if self.source_url and config_dict['SOURCE_LINK']:
-            buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
-        if self.isPM and self.isSuperGroup:
-            buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
+
+       
+
         if self.isLeech:
             msg += BotTheme('L_TOTAL_FILES', Files=folders)
             if mime_type != 0:
                 msg += BotTheme('L_CORRUPTED_FILES', Corrupt=mime_type)
             msg += BotTheme('L_CC', Tag=self.tag)
-            if self.isSuperGroup and not self.isPM:
-                msg += BotTheme('L_LL_MSG')
-            elif self.isSuperGroup and self.isPM:
-                msg += BotTheme('PM_BOT_MSG')
+            # if self.isSuperGroup and not self.isPM:
+            #     msg += BotTheme('L_LL_MSG')
+            # elif self.isSuperGroup and self.isPM:
+            #     msg += BotTheme('PM_BOT_MSG')
             if not files:
-                await sendMessage(self.message, msg, photo=self.random_pic)
+                await sendMessage(self.message, msg, self.random_pic)
             else:
-                fmsg, totalmsg = '\n', ''
-                dispTime = datetime.now(timezone(config_dict['TIMEZONE'])).strftime('%d/%m/%y, %I:%M:%S %p')
+                if self.isPM and not self.isPrivate and not config_dict['SAFE_MODE']:
+                    btn.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
+                if self.source_url and config_dict['SOURCE_LINK']:
+                    btn.ubutton(BotTheme('SOURCE_URL'), self.source_url)
+                fmsg = '\n'
                 for index, (link, name) in enumerate(files.items(), start=1):
                     fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
-                    if len(totalmsg.encode()) > 4000:
-                        if config_dict['LEECH_LOG_ID']: 
-                            if config_dict['SAFE_MODE'] and self.isSuperGroup:
-                                await sendMessage(self.message, msg, buttons.build_menu(1), photo=self.random_pic if self.isPM else None)
-                                await sendCustomMsg(self.user_id, msg + fmsg, buttons.build_menu(1), photo=self.random_pic if self.isPM else None)
+                    if len(fmsg.encode()) > 4000:
+                        if self.isPrivate:
+                            if config_dict['LEECH_LOG_ID']:
+                                await sendMessage(self.botpmmsg, msg + fmsg, btn.build_menu(2), self.random_pic)
                             else:
-                                await sendMessage(self.message, msg + fmsg, buttons.build_menu(1), photo=self.random_pic if self.isPM else None)
+                                await sendMessage(self.botpmmsg, msg, btn.build_menu(2), self.random_pic)
                         else:
-                            if config_dict['SAFE_MODE'] and self.isSuperGroup:
-                                await sendMessage(self.message, msg, buttons.build_menu(1))
-                                await sendCustomMsg(self.user_id, msg + fmsg, buttons.build_menu(1))
-                            else:
-                                await sendMessage(self.message, msg + fmsg, buttons.build_menu(1))
-                        if config_dict['LINKS_LOG_ID']:
-                            await editMessage(self.linkslogmsg, (msg + BotTheme('LINKS_SOURCE', On=dispTime, Source=self.source_msg) + BotTheme('L_LL_MSG') + fmsg))
+                            if config_dict['LEECH_LOG_ID']:
+                                msg += BotTheme('L_LL_MSG')
+                            elif self.isPM:
+                                msg += BotTheme('L_BOT_MSG')
+                            if config_dict['SAVE_MSG'] and not saved:
+                                saved = True
+                                btn.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
+                            if config_dict['SAFE_MODE']:
+                                await sendMessage(self.botpmmsg, msg + fmsg, btn.build_menu(2), self.random_pic)
+                                btn.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
+                                await sendCustomMsg(self.message.chat.id, msg, btn.build_menu(2), self.random_pic)
+                            await sendMessage(self.message, msg + fmsg, btn.build_menu(2), self.random_pic)
                         await sleep(1.5)
                         fmsg = ''
-
                 if fmsg != '\n':
-                    if config_dict['LEECH_LOG_ID']: 
-                        if config_dict['SAFE_MODE'] and self.isSuperGroup:
-                            await sendMessage(self.message, msg, buttons.build_menu(1), photo=self.random_pic if self.isPM else None)
-                            await sendCustomMsg(self.user_id, msg + fmsg, buttons.build_menu(1), photo=self.random_pic if self.isPM else None)
+                    if self.isPrivate:
+                        if config_dict['LEECH_LOG_ID']:
+                            await sendMessage(self.botpmmsg, msg + fmsg, btn.build_menu(2), self.random_pic)
                         else:
-                            await sendMessage(self.message, msg + fmsg, buttons.build_menu(1), photo=self.random_pic if self.isPM else None)
+                            await sendMessage(self.botpmmsg, msg, btn.build_menu(2), self.random_pic)
                     else:
-                        if config_dict['SAFE_MODE'] and self.isSuperGroup:
-                            await sendMessage(self.message, msg, buttons.build_menu(1), photo=self.random_pic if self.isPM else None)
-                            await sendCustomMsg(self.user_id, msg + fmsg, buttons.build_menu(1))
-                        else:
-                            await sendMessage(self.message, msg + fmsg, buttons.build_menu(1))
-                    if config_dict['LINKS_LOG_ID']:
-                        await editMessage(self.linkslogmsg, (msg + BotTheme('LINKS_SOURCE', On=dispTime, Source=self.source_msg) + BotTheme('L_LL_MSG') + fmsg))
+                        if config_dict['LEECH_LOG_ID']:
+                            msg += BotTheme('L_LL_MSG')
+                        elif self.isPM:
+                            msg += BotTheme('L_BOT_MSG')
+                        if config_dict['SAVE_MSG'] and not saved:
+                            saved = True
+                            btn.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
+                        if config_dict['SAFE_MODE']:
+                            await sendMessage(self.botpmmsg, msg + fmsg, btn.build_menu(2), self.random_pic)
+                            btn.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
+                            await sendCustomMsg(self.message.chat.id, msg, btn.build_menu(2), self.random_pic)
+                        await sendMessage(self.message, msg + fmsg, btn.build_menu(2), self.random_pic)
                     await sleep(1.5)    
             if self.seed:
                 if self.newDir:
