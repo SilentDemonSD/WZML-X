@@ -443,6 +443,7 @@ class MirrorLeechListener:
                 await sendMessage(self.message, msg, photo=self.random_pic)
             else:
                 fmsg, totalmsg = '\n', ''
+                dispTime = datetime.now(timezone(config_dict['TIMEZONE'])).strftime('%d/%m/%y, %I:%M:%S %p')
                 for index, (link, name) in enumerate(files.items(), start=1):
                     fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
                     if len(totalmsg.encode()) > 4000:
@@ -459,8 +460,7 @@ class MirrorLeechListener:
                             else:
                                 await sendMessage(self.message, msg + fmsg, buttons.build_menu(1))
                         if config_dict['LINKS_LOG_ID']:
-                            await editMessage(self.linkslogmsg, (msg + fmsg))
-                            # await sendCustomMsg(config_dict['LINKS_LOG_ID'], msg + fmsg)
+                            await editMessage(self.linkslogmsg, (msg + BotTheme('LINKS_SOURCE', On=dispTime, Source=self.source_msg) + BotTheme('L_LL_MSG') + fmsg))
                         await sleep(1.5)
                         fmsg = ''
 
@@ -478,7 +478,7 @@ class MirrorLeechListener:
                         else:
                             await sendMessage(self.message, msg + fmsg, buttons.build_menu(1))
                     if config_dict['LINKS_LOG_ID']:
-                        await editMessage(self.linkslogmsg, (msg + fmsg))
+                        await editMessage(self.linkslogmsg, (msg + BotTheme('LINKS_SOURCE', On=dispTime, Source=self.source_msg) + BotTheme('L_LL_MSG') + fmsg))
                     await sleep(1.5)    
             if self.seed:
                 if self.newDir:
