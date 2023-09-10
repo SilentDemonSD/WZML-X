@@ -446,14 +446,14 @@ class MirrorLeechListener:
                     if len(fmsg.encode()) > 4000:
                         if config_dict['LEECH_LOG_ID'] and self.isSuperGroup:
                             msg += BotTheme('L_LL_MSG')
-                        elif self.isPM and self.isSuperGroup:
+                        if self.isPM and self.isSuperGroup:
                             msg += BotTheme('L_BOT_MSG')
                         if self.source_url and config_dict['SOURCE_LINK']:
                             btn.ubutton(BotTheme('SOURCE_URL'), self.source_url)
-                        elif config_dict['SAVE_MSG'] and not saved and self.isSuperGroup:
+                        if config_dict['SAVE_MSG'] and not saved and self.isSuperGroup:
                             saved = True
                             btn.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
-                        elif self.isPM and self.isSuperGroup:
+                        if self.isPM and self.isSuperGroup:
                             btn.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
                         await sendMessage(self.message, msg + fmsg, btn.build_menu(2), self.random_pic)
                         await sleep(1.5) 
@@ -461,14 +461,14 @@ class MirrorLeechListener:
                 if fmsg != '\n':
                     if config_dict['LEECH_LOG_ID'] and self.isSuperGroup:
                         msg += BotTheme('L_LL_MSG')
-                    elif self.isPM and self.isSuperGroup:
+                    if self.isPM and self.isSuperGroup:
                         msg += BotTheme('L_BOT_MSG')
                     if self.source_url and config_dict['SOURCE_LINK']:
                         btn.ubutton(BotTheme('SOURCE_URL'), self.source_url)
-                    elif config_dict['SAVE_MSG'] and not saved and self.isSuperGroup:
+                    if config_dict['SAVE_MSG'] and not saved and self.isSuperGroup:
                         saved = True
                         btn.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
-                    elif self.isPM and self.isSuperGroup:
+                    if self.isPM and self.isSuperGroup:
                         btn.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
                     await sendMessage(self.message, msg + fmsg, btn.build_menu(2), self.random_pic)
                     await sleep(1.5)    
