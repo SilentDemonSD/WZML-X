@@ -455,11 +455,8 @@ class MirrorLeechListener:
                             btn.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                         elif self.isPM and self.isSuperGroup:
                             btn.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
-                        if config_dict['LEECH_LOG_ID']:
-                            await sendMessage(self.message, message + fmsg, buttons.build_menu(1), photo=self.random_pic if self.isPM else None)
-                        else:
-                            await sendMessage(self.message, message + fmsg, buttons.build_menu(1))
-                        await sleep(1.5)
+                        await sendMessage(self.message, msg + fmsg, btn.build_menu(2), self.random_pic)
+                        await sleep(1.5) 
                         fmsg = ''
                 if fmsg != '\n':
                     if config_dict['LEECH_LOG_ID'] and self.isSuperGroup:
@@ -473,10 +470,7 @@ class MirrorLeechListener:
                         btn.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                     elif self.isPM and self.isSuperGroup:
                         btn.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
-                    if config_dict['LEECH_LOG_ID']:
-                        await sendMessage(self.message, message + fmsg, buttons.build_menu(1), photo=self.random_pic if self.isPM else None)
-                    else:
-                        await sendMessage(self.message, message + fmsg, buttons.build_menu(1))
+                    await sendMessage(self.message, msg + fmsg, btn.build_menu(2), self.random_pic)
                     await sleep(1.5)    
             if self.seed:
                 if self.newDir:
