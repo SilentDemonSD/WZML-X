@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
 from traceback import format_exc
+from json import JSONDecodeError
 from io import BufferedReader
 from re import findall as re_findall
 from aiofiles.os import path as aiopath
@@ -63,9 +64,9 @@ class DDLUploader:
                     if resp.status == 200:
                         try:
                             return await resp.json()
-                        except:
-                            return None
-    
+                        except JSONDecodeError:
+                            return "Uploaded"
+    _
     async def __upload_to_ddl(self, file_path):
         all_links = {}
         for serv, (enabled, api_key) in self.__ddl_servers.items():
