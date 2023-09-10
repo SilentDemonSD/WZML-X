@@ -471,11 +471,13 @@ class MirrorLeechListener:
                         message += BotTheme('PM_BOT_MSG')
                     if config_dict['LEECH_LOG_ID']: 
                         if config_dict['SAFE_MODE'] and self.isSuperGroup:
+                            await sendMessage(self.message, message, buttons.build_menu(1), photo=self.random_pic if self.isPM else None)
                             await sendCustomMsg(self.user_id, message + fmsg, buttons.build_menu(1), photo=self.random_pic if self.isPM else None)
                         else:
                             await sendMessage(self.message, message + fmsg, buttons.build_menu(1), photo=self.random_pic if self.isPM else None)
                     else:
                         if config_dict['SAFE_MODE'] and self.isSuperGroup:
+                            await sendMessage(self.message, message, buttons.build_menu(1), photo=self.random_pic if self.isPM else None)
                             await sendCustomMsg(self.user_id, message + fmsg, buttons.build_menu(1))
                         else:
                             await sendMessage(self.message, message + fmsg, buttons.build_menu(1))
