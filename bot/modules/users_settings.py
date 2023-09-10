@@ -141,9 +141,9 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
         dailytlle = get_readable_file_size(config_dict['DAILY_LEECH_LIMIT'] * 1024**3) if config_dict['DAILY_LEECH_LIMIT'] else "️∞"
         dailyll = get_readable_file_size(await getdailytasks(user_id, check_leech=True)) if config_dict['DAILY_LEECH_LIMIT'] and user_id != OWNER_ID else "∞"
 
-        buttons.ibutton("Thumbnail", f"userset {user_id} thumb")
         thumbmsg = "Exists" if await aiopath.exists(thumbpath) else "Not Exists"
-            
+        buttons.ibutton(f"{'✅️' if thumbmsg == 'Exists' else ''} Thumbnail", f"userset {user_id} thumb")
+        
         buttons.ibutton("Leech Splits", f"userset {user_id} split_size")
         split_size = get_readable_file_size(config_dict['LEECH_SPLIT_SIZE']) + ' (Default)' if user_dict.get('split_size', '') == '' else get_readable_file_size(user_dict['split_size'])
         equal_splits = 'Enabled' if user_dict.get('equal_splits', config_dict.get('EQUAL_SPLITS')) else 'Disabled'
@@ -183,7 +183,7 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
                f"➲ <b>Enabled DDL Server(s) :</b> <i>{ddl_serv}</i>\n\n" \
                f"➲ <b>Description :</b> <i>{desp_dict[key][0]}</i>"
         for btn in ['gofile', 'streamtape']:
-            buttons.ibutton(fname_dict[btn], f"userset {user_id} {btn}")
+            buttons.ibutton(f"{'✅️' if btn in ddl_dict.keys() else ''} {fname_dict[btn]}", f"userset {user_id} {btn}")
         buttons.ibutton("Back", f"userset {user_id} back mirror", "footer")
         buttons.ibutton("Close", f"userset {user_id} close", "footer")
         button = buttons.build_menu(2)

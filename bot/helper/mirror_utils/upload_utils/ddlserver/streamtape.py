@@ -5,6 +5,7 @@ from aiofiles.os import scandir, path as aiopath
 from aiofiles import open as aiopen
 from aiohttp import ClientSession
 
+from bot import config_dict, LOGGER
 from bot.helper.ext_utils.telegraph_helper import telegraph
 
 ALLOWED_EXTS = [
@@ -92,13 +93,15 @@ class Streamtape:
         return None
         
     async def list_telegraph(self, folder_id, nested=False):
-        tg_html = ""
+        tg_html =  f"""<figure><img src='{config_dict["COVER_IMAGE"]}'></figure>"""
         contents = await self.list_folder(folder_id)
         for fid in contents['folders']:
-            tg_html += f"<h4>{fid['name']}</h4><br><br>"
+            tg_html += f"<aside>╾──────────────────────╼</aside><br><aside><b>🗂 {fid['name']}</b></aside><br><aside>╾──────────────────────╼</aside><br>"
             tg_html += await self.list_telegraph(fid['id'], True)
+        tg_html += "<ol>"
         for finfo in contents['files']:
-            tg_html += f"<code>{finfo['name']}</code><br><i>https://streamtape.to/v/{finfo['linkid']}</i><br><br>"
+            tg_html += f"""<li> 🎞 <code>{finfo['name']}</code><br><a href="https://streamtape.to/v/{finfo['linkid']}>StreamTape URL</a></li><br><br>"""
+        tg_html += "</ol>"
         if nested:
             return tg_html
         path = (await telegraph.create_page(title=f"StreamTape X", content=tg_html))["path"]
