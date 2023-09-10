@@ -459,7 +459,8 @@ class MirrorLeechListener:
                             else:
                                 await sendMessage(self.message, msg + fmsg, buttons.build_menu(1))
                         if config_dict['LINKS_LOG_ID']:
-                            await sendCustomMsg(config_dict['LINKS_LOG_ID'], msg + fmsg)
+                            await editMessage(self.linkslogmsg, (msg + fmsg))
+                            # await sendCustomMsg(config_dict['LINKS_LOG_ID'], msg + fmsg)
                         await sleep(1.5)
                         fmsg = ''
 
@@ -477,7 +478,7 @@ class MirrorLeechListener:
                         else:
                             await sendMessage(self.message, msg + fmsg, buttons.build_menu(1))
                     if config_dict['LINK_LOG_ID']:
-                        await sendCustomMsg(config_dict['LINKS_LOG_ID'], msg + fmsg)
+                        await editMessage(self.linkslogmsg, (msg + fmsg))
                     await sleep(1.5)    
             if self.seed:
                 if self.newDir:
