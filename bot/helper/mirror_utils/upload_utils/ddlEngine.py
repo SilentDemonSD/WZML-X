@@ -7,7 +7,8 @@ from re import findall as re_findall
 from aiofiles.os import path as aiopath
 from time import time
 from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
-from httpx import Client
+from aiohttp import ClientSession 
+from aiohttp.client_exceptions import ContentTypeError
 
 from bot import LOGGER, user_data
 from bot.helper.mirror_utils.upload_utils.ddlserver.gofile import Gofile
@@ -56,16 +57,18 @@ class DDLUploader:
     
     @retry(wait=wait_exponential(multiplier=2, min=4, max=8), stop=stop_after_attempt(3),
         retry=retry_if_exception_type(Exception))
-    def upload_aiohttp(self, url, file_path, req_file, data):
+    async def upload_aiohttp(self, url, file_path, req_file, data):
         with ProgressFileReader(filename=file_path, read_callback=self.__progress_callback) as file:
             data[req_file] = file
-            with Client() as self.__asyncSession:
-                resp = self.__asyncSession.post(url, data=data)
-                if resp.status_code == 200:
-                    try:
-                        return resp.json()
-                    except JSONDecodeError:
-                        return "Uploaded"
+            async with ClientSession() as self.__asyncSession:
+                async with self.__asyncSession.post(url, data=data) as resp:
+                    if resp.status == 200:
+                        try:
+                            return await resp.json()
+                        except ContentTypeError:
+                            return "Uploaded"
+                        except JSONDecodeError:
+                            return None
 
     async def __upload_to_ddl(self, file_path):
         all_links = {}
@@ -110,7 +113,7 @@ class DDLUploader:
         except Exception as err:
             LOGGER.info("DDL Upload has been Cancelled")
             if self.__asyncSession:
-                self.__asyncSession.close()
+                await self.__asyncSession.close()
             err = str(err).replace('>', '').replace('<', '')
             LOGGER.info(format_exc())
             await self.__listener.onUploadError(err)
@@ -139,5 +142,5 @@ class DDLUploader:
         self.is_cancelled = True
         LOGGER.info(f"Cancelling Upload: {self.name}")
         if self.__asyncSession:
-            self.__asyncSession.close()
+            await self.__asyncSession.close()
         await self.__listener.onUploadError('Your upload has been stopped!')
