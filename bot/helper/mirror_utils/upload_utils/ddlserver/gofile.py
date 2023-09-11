@@ -44,6 +44,9 @@ class Gofile:
 
         folderId = folderId or (await self.create_folder((await self.__getAccount())["rootFolder"], ospath.basename(path)))["id"]
         LOGGER.info(folderId)
+        folderCode = folderId["code"]
+        self.set_option(folderId["id"], "public", "true")
+        LOGGER.info(f"https://gofile.io/d/{folderCode}")
         folder_ids = {".": folderId}
         for root, _, files in await sync_to_async(walk, path):
             rel_path = ospath.relpath(root, path)
