@@ -43,7 +43,7 @@ class Gofile:
             raise Exception(f"Path: {path} is not a valid directory")
 
         folderId = folderId or (await self.create_folder((await self.__getAccount())["rootFolder"], ospath.basename(path)))["id"]
-
+        LOGGER.info(folderId)
         folder_ids = {".": folderId}
         for root, _, files in await sync_to_async(walk, path):
             rel_path = ospath.relpath(root, path)
@@ -54,8 +54,9 @@ class Gofile:
 
             for file in files:
                 file_path = ospath.join(root, file)
-                await self.upload_file(file_path, currFolderId)
-        
+                up = await self.upload_file(file_path, currFolderId)
+                LOGGER.info(up)
+        LOGGER.info(folderId)
         return folderId
 
     async def upload_file(self, file: str, folderId: str = "", description: str = "", password: str = "", tags: str = "", expire: str = ""):
