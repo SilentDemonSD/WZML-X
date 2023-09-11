@@ -55,7 +55,7 @@ class Gofile:
         # Set the first folder's link to public
         if folder_data["code"]:
             await self.set_option(folder_data["id"], "public", "true")
-
+        LOGGER.info(folder_data["code"])
         return folder_data["code"]
 
 
