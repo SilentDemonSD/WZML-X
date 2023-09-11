@@ -110,7 +110,7 @@ class DDLUploader:
         except Exception as err:
             LOGGER.info("DDL Upload has been Cancelled")
             if self.__asyncSession:
-                await self.__asyncSession.close()
+                await self.__asyncSession.aclose()
             err = str(err).replace('>', '').replace('<', '')
             LOGGER.info(format_exc())
             await self.__listener.onUploadError(err)
@@ -139,5 +139,5 @@ class DDLUploader:
         self.is_cancelled = True
         LOGGER.info(f"Cancelling Upload: {self.name}")
         if self.__asyncSession:
-            await self.__asyncSession.close()
+            await self.__asyncSession.aclose()
         await self.__listener.onUploadError('Your upload has been stopped!')
