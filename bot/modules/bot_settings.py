@@ -145,9 +145,13 @@ async def load_config():
     if len(GDTOT_CRYPT) == 0:
         GDTOT_CRYPT = ''
         
-    DEBRID_API_KEY = environ.get('DEBRID_API_KEY', '')
-    if len(DEBRID_API_KEY) == 0:
-        DEBRID_API_KEY = ''
+    REAL_DEBRID_API = environ.get('REAL_DEBRID_API', '')
+    if len(REAL_DEBRID_API) == 0:
+        REAL_DEBRID_API = ''
+        
+    DEBRID_LINK_API = environ.get('DEBRID_LINK_API', '')
+    if len(DEBRID_LINK_API) == 0:
+        DEBRID_LINK_API = ''
 
     INDEX_URL = environ.get('INDEX_URL', '').rstrip("/")
     if len(INDEX_URL) == 0:
@@ -580,7 +584,8 @@ async def load_config():
                         'CAP_FONT': CAP_FONT,
                         'CMD_SUFFIX': CMD_SUFFIX,
                         'DATABASE_URL': DATABASE_URL,
-                        'DEBRID_API_KEY': DEBRID_API_KEY,
+                        'REAL_DEBRID_API': REAL_DEBRID_API,
+                        'DEBRID_LINK_API': DEBRID_LINK_API,
                         'DELETE_LINKS': DELETE_LINKS,
                         'DEFAULT_UPLOAD': DEFAULT_UPLOAD,
                         'DOWNLOAD_DIR': DOWNLOAD_DIR,

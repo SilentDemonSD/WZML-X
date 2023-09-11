@@ -233,7 +233,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         LOGGER.info(link)
         org_link = link
 
-    if not is_mega_link(link) and (not isQbit or (isQbit and config_dict['DEBRID_API_KEY'])) and (not is_magnet(link) or (config_dict['DEBRID_API_KEY'] and is_magnet(link))) and not is_rclone_path(link) \
+    if not is_mega_link(link) and (not isQbit or (isQbit and config_dict['REAL_DEBRID_API'])) and (not is_magnet(link) or (config_dict['REAL_DEBRID_API'] and is_magnet(link))) and not is_rclone_path(link) \
        and not is_gdrive_link(link) and not link.endswith('.torrent') and file_ is None:
         content_type = await get_content_type(link)
         if content_type is None or re_match(r'text/html|text/plain', content_type):
@@ -356,7 +356,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         await add_mega_download(link, f'{path}/', listener, name)
     elif isQbit:
         await add_qb_torrent(link, path, listener, ratio, seed_time)
-    else:
+    elif not is_telegram_link(link):
         if ussr or pssw:
             auth = f"{ussr}:{pssw}"
             auth = f"authorization: Basic {b64encode(auth.encode()).decode('ascii')}"
