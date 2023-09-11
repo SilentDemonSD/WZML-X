@@ -74,6 +74,10 @@ class DDLUploader:
         all_links = {}
         for serv, (enabled, api_key) in self.__ddl_servers.items():
             if enabled:
+                if self.total_files != 0:
+                    self.total_files = 0
+                if self.total_folders != 0:
+                    self.total_folders = 0
                 if serv == 'gofile':
                     self.__engine = 'GoFile API'
                     nlink = await Gofile(self, api_key).upload(file_path)
@@ -85,7 +89,6 @@ class DDLUploader:
                     except IndexError:
                         raise Exception("StreamTape Login & Key not Found, Kindly Recheck !")
                     nlink = await Streamtape(self, login, key).upload(file_path)
-                    LOGGER.info(nlink)
                     all_links['StreamTape'] = nlink
                 self.__processed_bytes = 0
         if not all_links:

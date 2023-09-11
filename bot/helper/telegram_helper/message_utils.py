@@ -105,7 +105,7 @@ async def sendMultiMessage(chat_ids, text, buttons=None, photo=None):
                         photo = rchoice(config_dict['IMAGES'])
                     sent = await bot.send_photo(chat_id=chat.id, photo=photo, caption=text,
                                                      reply_markup=buttons, reply_to_message_id=topic_id, disable_notification=True)
-                    msg_dict[chat.id] = sent
+                    msg_dict[f"{chat.id}:{topic_id}"] = sent
                     continue
                 except IndexError:
                     pass
@@ -118,7 +118,7 @@ async def sendMultiMessage(chat_ids, text, buttons=None, photo=None):
                     LOGGER.error(str(e))
             sent = await bot.send_message(chat_id=chat.id, text=text, disable_web_page_preview=True,
                                                disable_notification=True, reply_to_message_id=topic_id, reply_markup=buttons)
-            msg_dict[chat.id] = sent
+            msg_dict[f"{chat.id}:{topic_id}"] = sent
         except FloodWait as f:
             LOGGER.warning(str(f))
             await sleep(f.value * 1.2)

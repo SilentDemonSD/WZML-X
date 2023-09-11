@@ -37,40 +37,26 @@ class Gofile:
                 return resp["status"] == "ok" if True else await self.__resp_handler(resp)
             else:
                 return await self.__resp_handler(resp)
+        
+    async def upload_folder(self, path, folderId=""):
+        if not ospath.isdir(path):
+            raise Exception(f"Path: {path} is not a valid directory")
 
-    async def upload_folder(self, path: str, folderId: str = "", delay: int = 2):
-        if not await aiopath.isdir(path):
-            raise Exception(f"{path} is not a valid directory")
+        folderId = folderId or (await self.create_folder(self.__getAccount()["rootFolder"], ospath.basename(path)))["id"]
 
-        folder_name = ospath.basename(path)
-        if not folderId:
-            account_data = await self.__getAccount()
-            rtfid = account_data["rootFolder"]
-            folder_data = await self.create_folder(rtfid, folder_name)
-            folderId = folder_data["id"]
-
-        uploaded = None
         folder_ids = {".": folderId}
-        for root, dirs, files in await sync_to_async(walk, path):
-            relative_path = ospath.relpath(root, path)
-            if relative_path == ".":
-                current_folder_id = folderId
-            else:
-                parent_folder_id = folder_ids.get(ospath.dirname(relative_path), folderId)
-                folder_name = ospath.basename(relative_path)
-                folder_data = await self.create_folder(parent_folder_id, folder_name)
-                current_folder_id = folder_data["id"]
-                folder_ids[relative_path] = current_folder_id
-            self.dluploader.total_folders += 1
-            
+        for root, _, files in await walk(path):
+            rel_path = ospath.relpath(root, path)
+            parentFolderId = folder_ids.get(ospath.dirname(rel_path), folderId)
+            folder_name = ospath.basename(rel_path)
+            currFolderId = (await self.create_folder(parentFolderId, folder_name))["id"]
+            folder_ids[rel_path] = currFolderId
+
             for file in files:
                 file_path = ospath.join(root, file)
-                udt = await self.upload_file(file_path, current_folder_id)
-                self.dluploader.total_files += 1
-                if uploaded is None:
-                    uploaded = udt
-                await sleep(delay)
-        return uploaded
+                await self.upload_file(file_path, currFolderId)
+        
+        return folderId
 
     async def upload_file(self, file: str, folderId: str = "", description: str = "", password: str = "", tags: str = "", expire: str = ""):
         if password and len(password) < 4:
@@ -103,8 +89,8 @@ class Gofile:
             cmd = await self.upload_file(file=file_path)
         elif await aiopath.isdir(file_path):
             cmd = await self.upload_folder(path=file_path)
-            if cmd and 'parentFolder' in cmd:
-                await self.__setOptions(contentId=cmd['parentFolder'], option="public", value="true")
+            if cmd:
+                await self.__setOptions(contentId=cmd, option="public", value="true")
         if cmd and 'downloadPage' in cmd:
             return cmd['downloadPage']
         raise Exception("Failed to upload file/folder to Gofile API, Retry or Try after sometimes...")

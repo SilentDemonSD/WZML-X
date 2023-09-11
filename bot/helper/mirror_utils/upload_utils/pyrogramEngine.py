@@ -84,12 +84,12 @@ class TgUploader:
             if not self.__is_cancelled:
                 LOGGER.error(f"Failed To Send in BotPM:\n{str(err)}")
         
-        LOGGER.info(self.__leechmsg)
         try:
             if len(self.__leechmsg) > 1 and not self.__listener.excep_chat:
                 for chat_id, msg in list(self.__leechmsg.items())[1:]:
+                    chat_id, *topics = chat_id.split(':')
                     leech_copy = await bot.copy_message(
-                        chat_id=chat_id,
+                        chat_id=int(chat_id),
                         from_chat_id=self.__sent_msg.chat.id,
                         message_id=self.__sent_msg.id,
                         reply_to_message_id=msg.id

@@ -126,8 +126,10 @@ class Streamtape:
             for entry in await scandir(folder_path):
                 if entry.is_file():
                     await self.upload_file(entry.path, newfid)
+                    self.dluploader.total_files += 1
                 elif entry.is_dir():
                     await self.upload_folder(entry.path, newfid)
+                    self.dluploader.total_folders += 1
             return await self.list_telegraph(newfid)
         return None
         
