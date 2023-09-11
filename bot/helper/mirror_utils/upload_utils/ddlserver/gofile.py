@@ -38,7 +38,7 @@ class Gofile:
             else:
                 return await self.__resp_handler(resp)
         
-    async def upload_folder(self, path, folderId=""):
+    async def upload_folder(self, path, folderId=None):
         if not await aiopath.isdir(path):
             raise Exception(f"Path: {path} is not a valid directory")
 
