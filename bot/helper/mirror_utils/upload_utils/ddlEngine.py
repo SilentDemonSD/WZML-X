@@ -7,13 +7,13 @@ from re import findall as re_findall
 from aiofiles.os import path as aiopath
 from time import time
 from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
-from httpx import AsyncClient
+import httpx
+from httpx import Request, Response, TimeoutException, ConnectTimeout
 
 from bot import LOGGER, user_data
 from bot.helper.mirror_utils.upload_utils.ddlserver.gofile import Gofile
 from bot.helper.mirror_utils.upload_utils.ddlserver.streamtape import Streamtape
 from bot.helper.ext_utils.fs_utils import get_mime_type
-
 
 class ProgressFileReader(BufferedReader):
     def __init__(self, filename, read_callback=None):
@@ -26,7 +26,6 @@ class ProgressFileReader(BufferedReader):
         if self.__read_callback:
             self.__read_callback(self.tell())
         return super().read(size)
-        
 
 class DDLUploader:
     def __init__(self, listener=None, name=None, path=None):
@@ -42,7 +41,7 @@ class DDLUploader:
         self.__is_errored = False
         self.__ddl_servers = {}
         self.__engine = 'DDL v1'
-        self.__asyncSession = None
+        self.__httpx_client = httpx.AsyncClient()
         self.__user_id = self.__listener.message.from_user.id
     
     async def __user_settings(self):
@@ -56,16 +55,19 @@ class DDLUploader:
     
     @retry(wait=wait_exponential(multiplier=2, min=4, max=8), stop=stop_after_attempt(3),
         retry=retry_if_exception_type(Exception))
-    async def upload_aiohttp(self, url, file_path, req_file, data):
+    async def upload_httpx(self, url, file_path, req_file, data):
         with ProgressFileReader(filename=file_path, read_callback=self.__progress_callback) as file:
             data[req_file] = file
-            async with AsyncClient() as self.__asyncSession:
-                resp = await self.__asyncSession.post(url, data=data)
-                if resp.status_code == 200:
+            try:
+                response = await self.__httpx_client.post(url, data=data)
+                if response.status_code == 200:
                     try:
-                        return await resp.json()
+                        return response.json()
                     except JSONDecodeError:
                         return "Uploaded"
+            except (TimeoutException, ConnectTimeout):
+                pass
+            return None
 
     async def __upload_to_ddl(self, file_path):
         all_links = {}
@@ -109,8 +111,8 @@ class DDLUploader:
             LOGGER.info(f"Uploaded To DDL: {item_path}")
         except Exception as err:
             LOGGER.info("DDL Upload has been Cancelled")
-            if self.__asyncSession:
-                await self.__asyncSession.aclose()
+            if self.__httpx_client:
+                await self.__httpx_client.aclose()
             err = str(err).replace('>', '').replace('<', '')
             LOGGER.info(format_exc())
             await self.__listener.onUploadError(err)
@@ -138,6 +140,6 @@ class DDLUploader:
     async def cancel_download(self):
         self.is_cancelled = True
         LOGGER.info(f"Cancelling Upload: {self.name}")
-        if self.__asyncSession:
-            await self.__asyncSession.aclose()
+        if self.__httpx_client:
+            await self.__httpx_client.aclose()
         await self.__listener.onUploadError('Your upload has been stopped!')
