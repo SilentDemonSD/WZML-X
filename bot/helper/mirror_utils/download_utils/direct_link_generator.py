@@ -118,7 +118,7 @@ def direct_link_generator(link):
     if 'youtube.com' in domain or 'youtu.be' in domain:
         raise DirectDownloadLinkException("ERROR: Use ytdl cmds for Youtube links")
     elif config_dict['DEBRID_LINK_API'] and any(x in domain for x in debrid_link_sites):
-        return real_debrid(link)
+        return debrid_link(link)
     elif config_dict['REAL_DEBRID_API'] and any(x in domain for x in debrid_sites):
         return real_debrid(link)
     elif 'yadi.sk' in domain or 'disk.yandex.com' in domain:
