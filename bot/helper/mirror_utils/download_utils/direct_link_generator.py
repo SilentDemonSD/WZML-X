@@ -917,8 +917,8 @@ def gd_index(url, auth):
                     if not folderPath:
                         folderPath = details['title']
                     item = { 
-                         "path": path.join(folderPath), 
-                         "filename": file_info["name"], 
+                         "path": path.join(folderPath),
+                         "filename": unquote(file_info["name"]),
                          "url": urljoin(url, file_info.get("link", "") or ""), 
                      } 
                     if 'size' in file_info:

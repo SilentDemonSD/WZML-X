@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-from os import path as ospath, walk
-from aiofiles.os import path as aiopath
+from os import path as ospath
+from aiofiles.os import path as aiopath, walk
 from asyncio import sleep
 from aiohttp import ClientSession
 
@@ -39,7 +39,7 @@ class Gofile:
                 return await self.__resp_handler(resp)
         
     async def upload_folder(self, path, folderId=""):
-        if not ospath.isdir(path):
+        if not await aiopath.isdir(path):
             raise Exception(f"Path: {path} is not a valid directory")
 
         folderId = folderId or (await self.create_folder(self.__getAccount()["rootFolder"], ospath.basename(path)))["id"]
