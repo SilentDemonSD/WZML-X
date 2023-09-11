@@ -38,29 +38,26 @@ class Gofile:
             else:
                 return await self.__resp_handler(resp)
         
-    async def upload_folder(self, path, folderId=None):
-        if not await aiopath.isdir(path):
-            raise Exception(f"Path: {path} is not a valid directory")
+    async def upload_folder(self, folder_path, parent_folder_id=None):
+        if not os.path.exists(folder_path):
+            raise Exception("Folder does not exist")
 
-        folderId = folderId or (await self.create_folder((await self.__getAccount())["rootFolder"], ospath.basename(path)))["id"]
-        LOGGER.info(folderId)
-        folderCode = folderId["code"]
-        self.set_option(folderId["id"], "public", "true")
-        LOGGER.info(f"https://gofile.io/d/{folderCode}")
-        folder_ids = {".": folderId}
-        for root, _, files in await sync_to_async(walk, path):
-            rel_path = ospath.relpath(root, path)
-            parentFolderId = folder_ids.get(ospath.dirname(rel_path), folderId)
-            folder_name = ospath.basename(rel_path)
-            currFolderId = (await self.create_folder(parentFolderId, folder_name))["id"]
-            folder_ids[rel_path] = currFolderId
+        folder_name = os.path.basename(folder_path)
+        folder_data = self.create_folder(parent_folder_id, folder_name)
 
-            for file in files:
-                file_path = ospath.join(root, file)
-                up = await self.upload_file(file_path, currFolderId)
-                LOGGER.info(up)
-        LOGGER.info(folderId)
-        return folderId
+        for item in os.listdir(folder_path):
+            item_path = os.path.join(folder_path, item)
+            if os.path.isfile(item_path):
+                await self.upload_file(item_path, folder_data["id"])
+            elif os.path.isdir(item_path):
+                await self.upload_folder(item_path, folder_data["id"])
+
+        # Set the first folder's link to public
+        if folder_data["code"]:
+            await self.set_option(folder_data["id"], "public", "true")
+
+        return folder_data["code"]
+
 
     async def upload_file(self, file: str, folderId: str = "", description: str = "", password: str = "", tags: str = "", expire: str = ""):
         if password and len(password) < 4:
@@ -91,12 +88,13 @@ class Gofile:
     async def upload(self, file_path):
         if await aiopath.isfile(file_path):
             cmd = await self.upload_file(file=file_path)
+            if cmd and 'downloadPage' in cmd:
+                return cmd['downloadPage']
         elif await aiopath.isdir(file_path):
             cmd = await self.upload_folder(path=file_path)
             if cmd:
-                await self.__setOptions(contentId=cmd, option="public", value="true")
-        if cmd and 'downloadPage' in cmd:
-            return cmd['downloadPage']
+                folderurl = f"https://gofile.io/d{cmd}"
+                return folderurl
         raise Exception("Failed to upload file/folder to Gofile API, Retry or Try after sometimes...")
 
     async def create_folder(self, parentFolderId, folderName):
