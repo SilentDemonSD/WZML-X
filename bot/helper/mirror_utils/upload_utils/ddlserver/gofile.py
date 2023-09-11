@@ -2,7 +2,7 @@
 from os import path as ospath, walk
 from aiofiles.os import path as aiopath
 from asyncio import sleep
-from aiohttp import ClientSession
+import httpx
 
 from bot import LOGGER
 from bot.helper.ext_utils.bot_utils import is_gofile_token, sync_to_async
@@ -14,6 +14,7 @@ class Gofile:
         self.token = token
         if self.token is not None:
             is_gofile_token(url=self.api_url, token=self.token)
+        self.httpx_client = httpx.AsyncClient()
 
     async def __resp_handler(self, response):
         api_resp = response.get("status", "")
@@ -22,7 +23,7 @@ class Gofile:
         raise Exception(api_resp.split("-")[1] if "error-" in api_resp else "Response Status is not ok and Reason is Unknown")
 
     async def __getServer(self):
-        async with ClientSession() as session:
+        async with self.httpx_client as session:
             async with session.get(f"{self.api_url}getServer") as resp:
                 return await self.__resp_handler(await resp.json())
 
@@ -31,7 +32,7 @@ class Gofile:
             raise Exception()
         
         api_url = f"{self.api_url}getAccountDetails?token={self.token}&allDetails=true"
-        async with ClientSession() as session:
+        async with self.httpx_client as session:
             resp = await (await session.get(url=api_url)).json()
             if check_account:
                 return resp["status"] == "ok" if True else await self.__resp_handler(resp)
@@ -100,7 +101,7 @@ class Gofile:
         if self.token is None:
             raise Exception()
         
-        async with ClientSession() as session:
+        async with self.httpx_client as session:
             async with session.put(url=f"{self.api_url}createFolder",
                 data={
                         "parentFolderId": parentFolderId,
@@ -116,7 +117,7 @@ class Gofile:
         
         if not option in ["public", "password", "description", "expire", "tags"]:
             raise Exception(f"Invalid GoFile Option Specified : {option}")
-        async with ClientSession() as session:
+        async with self.httpx_client as session:
             async with session.put(url=f"{self.api_url}setOption",
                 data={
                         "token": self.token,
@@ -131,14 +132,14 @@ class Gofile:
         if self.token is None:
             raise Exception()
         
-        async with ClientSession() as session:
+        async with self.httpx_client as session:
             async with session.get(url=f"{self.api_url}getContent?contentId={contentId}&token={self.token}") as resp:
                 return await self.__resp_handler(await resp.json())
 
     async def copy_content(self, contentsId, folderIdDest):
         if self.token is None:
             raise Exception()
-        async with ClientSession() as session:
+        async with self.httpx_client as session:
             async with session.put(url=f"{self.api_url}copyContent",
                     data={
                         "token": self.token,
@@ -151,7 +152,7 @@ class Gofile:
     async def delete_content(self, contentId):
         if self.token is None:
             raise Exception()
-        async with ClientSession() as session:
+        async with self.httpx_client as session:
             async with session.delete(url=f"{self.api_url}deleteContent",
                     data={
                         "contentId": contentId,
