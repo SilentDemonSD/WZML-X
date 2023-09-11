@@ -4,15 +4,16 @@ from traceback import format_exc
 from json import JSONDecodeError
 from io import BufferedReader
 from re import findall as re_findall
-import aiofiles.os.path as aiopath  # Use the synchronous version
+from aiofiles.os import path as aiopath
 from time import time
 from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
-import requests  # Use the synchronous requests library
+from httpx import AsyncClient
 
 from bot import LOGGER, user_data
 from bot.helper.mirror_utils.upload_utils.ddlserver.gofile import Gofile
 from bot.helper.mirror_utils.upload_utils.ddlserver.streamtape import Streamtape
 from bot.helper.ext_utils.fs_utils import get_mime_type
+
 
 class ProgressFileReader(BufferedReader):
     def __init__(self, filename, read_callback=None):
@@ -25,6 +26,7 @@ class ProgressFileReader(BufferedReader):
         if self.__read_callback:
             self.__read_callback(self.tell())
         return super().read(size)
+        
 
 class DDLUploader:
     def __init__(self, listener=None, name=None, path=None):
@@ -40,6 +42,7 @@ class DDLUploader:
         self.__is_errored = False
         self.__ddl_servers = {}
         self.__engine = 'DDL v1'
+        self.__asyncSession = None
         self.__user_id = self.__listener.message.from_user.id
     
     async def __user_settings(self):
@@ -53,21 +56,18 @@ class DDLUploader:
     
     @retry(wait=wait_exponential(multiplier=2, min=4, max=8), stop=stop_after_attempt(3),
         retry=retry_if_exception_type(Exception))
-    def upload_httpx(self, url, file_path, req_file, data):
+    async def upload_aiohttp(self, url, file_path, req_file, data):
         with ProgressFileReader(filename=file_path, read_callback=self.__progress_callback) as file:
             data[req_file] = file
-            try:
-                response = requests.post(url, files=data)
-                if response.status_code == 200:
+            async with AsyncClient() as self.__asyncSession:
+                resp = await self.__asyncSession.post(url, data=data)
+                if resp.status_code == 200:
                     try:
-                        return response.json()
+                        return await resp.json()
                     except JSONDecodeError:
                         return "Uploaded"
-            except requests.exceptions.Timeout:
-                pass
-            return None
 
-    def __upload_to_ddl(self, file_path):
+    async def __upload_to_ddl(self, file_path):
         all_links = {}
         for serv, (enabled, api_key) in self.__ddl_servers.items():
             if enabled:
@@ -77,7 +77,7 @@ class DDLUploader:
                     self.total_folders = 0
                 if serv == 'gofile':
                     self.__engine = 'GoFile API'
-                    nlink = Gofile(self, api_key).upload(file_path)
+                    nlink = await Gofile(self, api_key).upload(file_path)
                     all_links['GoFile'] = nlink
                 if serv == 'streamtape':
                     self.__engine = 'StreamTape API'
@@ -85,23 +85,23 @@ class DDLUploader:
                         login, key = api_key.split(':')
                     except IndexError:
                         raise Exception("StreamTape Login & Key not Found, Kindly Recheck !")
-                    nlink = Streamtape(self, login, key).upload(file_path)
+                    nlink = await Streamtape(self, login, key).upload(file_path)
                     all_links['StreamTape'] = nlink
                 self.__processed_bytes = 0
         if not all_links:
             raise Exception("No DDL Enabled to Upload.")
         return all_links
 
-    def upload(self, file_name, size):
+    async def upload(self, file_name, size):
         item_path = f"{self.__path}/{file_name}"
         LOGGER.info(f"Uploading: {item_path} via DDL")
-        self.__user_settings()  # Removed "await"
+        await self.__user_settings()
         try:
-            if aiopath.isfile(item_path):  # Used the synchronous version
+            if await aiopath.isfile(item_path):
                 mime_type = get_mime_type(item_path)
             else:
                 mime_type = 'Folder'
-            link = self.__upload_to_ddl(item_path)
+            link = await self.__upload_to_ddl(item_path)
             if link is None:
                 raise Exception('Upload has been manually cancelled!')
             if self.is_cancelled:
@@ -109,14 +109,16 @@ class DDLUploader:
             LOGGER.info(f"Uploaded To DDL: {item_path}")
         except Exception as err:
             LOGGER.info("DDL Upload has been Cancelled")
+            if self.__asyncSession:
+                await self.__asyncSession.aclose()
             err = str(err).replace('>', '').replace('<', '')
             LOGGER.info(format_exc())
-            self.__listener.onUploadError(err)  # Removed "await"
+            await self.__listener.onUploadError(err)
             self.__is_errored = True
         finally:
             if self.is_cancelled or self.__is_errored:
                 return
-            self.__listener.onUploadComplete(link, size, self.total_files, self.total_folders, mime_type, file_name)  # Removed "await"
+            await self.__listener.onUploadComplete(link, size, self.total_files, self.total_folders, mime_type, file_name)
 
     @property
     def speed(self):
@@ -133,7 +135,9 @@ class DDLUploader:
     def engine(self):
         return self.__engine
 
-    def cancel_download(self):
+    async def cancel_download(self):
         self.is_cancelled = True
         LOGGER.info(f"Cancelling Upload: {self.name}")
-        self.__listener.onUploadError('Your upload has been stopped!')  # Removed "await"
+        if self.__asyncSession:
+            await self.__asyncSession.aclose()
+        await self.__listener.onUploadError('Your upload has been stopped!')
