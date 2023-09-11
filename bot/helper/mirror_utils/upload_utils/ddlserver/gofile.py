@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-from os import path as ospath
-from aiofiles.os import path as aiopath, walk
+from os import path as ospath, walk
+from aiofiles.os import path as aiopath
 from asyncio import sleep
 from aiohttp import ClientSession
 
@@ -45,7 +45,7 @@ class Gofile:
         folderId = folderId or (await self.create_folder(self.__getAccount()["rootFolder"], ospath.basename(path)))["id"]
 
         folder_ids = {".": folderId}
-        for root, _, files in await walk(path):
+        for root, _, files in await sync_to_async(walk, path):
             rel_path = ospath.relpath(root, path)
             parentFolderId = folder_ids.get(ospath.dirname(rel_path), folderId)
             folder_name = ospath.basename(rel_path)
