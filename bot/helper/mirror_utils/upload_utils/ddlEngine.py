@@ -60,6 +60,7 @@ class DDLUploader:
         with ProgressFileReader(filename=file_path, read_callback=self.__progress_callback) as file:
             data[req_file] = file
             async with AsyncClient() as self.__asyncSession:
+                resp = await self.__asyncSession.post(url, data=data)
                 if resp.status_code == 200:
                     try:
                         return await resp.json()
