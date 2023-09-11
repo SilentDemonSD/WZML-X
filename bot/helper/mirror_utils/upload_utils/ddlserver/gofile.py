@@ -41,10 +41,10 @@ class Gofile:
     async def upload_folder(self, path, folderId=None):
         if not await aiopath.isdir(path):
             raise Exception(f"Path: {path} is not a valid directory")
-        folder_data = await self.create_folder((await self.__getAccount())["rootFolder"], os.path.basename(path))
-        await self.__setOptions(contentId=folder_data['id'], option="public", value="true")
-        folderId = folderId or folder_data['id']
-        folderCode = folder_data['code']
+        folder_data = await self.create_folder((await self.__getAccount())["rootFolder"], ospath.basename(path))
+        await self.__setOptions(contentId=folder_data["id"], option="public", value="true")
+        folderId = folderId or folder_data["id"]
+        folderCode = folder_data["code"]
         folder_ids = {".": folderId}
         for root, _, files in await sync_to_async(walk, path):
             rel_path = ospath.relpath(root, path)
