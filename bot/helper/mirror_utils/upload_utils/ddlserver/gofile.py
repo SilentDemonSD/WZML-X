@@ -42,7 +42,7 @@ class Gofile:
         if not await aiopath.isdir(path):
             raise Exception(f"Path: {path} is not a valid directory")
 
-        folderId = folderId or (await self.create_folder(self.__getAccount()["rootFolder"], ospath.basename(path)))["id"]
+        folderId = folderId or (await self.create_folder((await self.__getAccount())["rootFolder"], ospath.basename(path)))["id"]
 
         folder_ids = {".": folderId}
         for root, _, files in await sync_to_async(walk, path):
