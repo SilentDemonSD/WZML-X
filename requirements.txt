@@ -39,4 +39,4 @@ tenacity
 tgcrypto
 uvloop
 xattr
-yt-dlp==2023.3.4
+yt-dlp
