@@ -40,14 +40,15 @@ async def is_multi_streams(path):
 async def get_media_info(path):
     try:
         result = await cmd_exec(["ffprobe", "-hide_banner", "-loglevel", "error", "-print_format",
-                                 "json", "-show_format", path])
+                                 "json", "-show_format", "-show_streams", path])
         if res := result[1]:
             LOGGER.warning(f'Get Media Info: {res}')
     except Exception as e:
         LOGGER.error(f'Get Media Info: {e}. Mostly File not found!')
         return 0, None, None
-    LOGGER.info(result)
-    fields = eval(result[0]).get('format')
+    ffresult = eval(result[0])
+    LOGGER.info(ffresult)
+    fields, streams = ffresult.get('format'), ffresult.get('streams', {})
     if fields is None:
         LOGGER.error(f"Get Media Info: {result}")
         return 0, None, None
@@ -55,6 +56,7 @@ async def get_media_info(path):
     tags = fields.get('tags', {})
     artist = tags.get('artist') or tags.get('ARTIST') or tags.get("Artist")
     title = tags.get('title') or tags.get('TITLE') or tags.get("Title")
+    metadata = streams.get('tags', {})
     return duration, artist, title
 
 
