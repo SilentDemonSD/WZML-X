@@ -54,6 +54,7 @@ class YoutubeDLHelper:
         self.__ext = ''
         self.name = ''
         self.is_playlist = False
+        self.playlist_count = 0
         self.opts = {'progress_hooks': [self.__onDownloadProgress],
                      'logger': MyLogger(self),
                      'usenetrc': True,
@@ -162,6 +163,10 @@ class YoutubeDLHelper:
                 self.name = f"{name}{ext}" if name else realName
                 if not self.__ext:
                     self.__ext = ext
+                if result.get('filesize'):
+                    self.__size = result['filesize']
+                elif result.get('filesize_approx'):
+                    self.__size = result['filesize_approx']
 
     def __download(self, link, path):
         try:
