@@ -526,6 +526,10 @@ LOGIN_PASS = environ.get('LOGIN_PASS', '')
 if len(LOGIN_PASS) == 0:
     LOGIN_PASS = None
 
+FILELION_API = environ.get('FILELION_API', '')
+if len(FILELION_API) == 0:
+    FILELION_API = ''
+
 IMDB_TEMPLATE = environ.get('IMDB_TEMPLATE', '')
 if len(IMDB_TEMPLATE) == 0:
     IMDB_TEMPLATE = '''<b>Title: </b> {title} [{year}]
@@ -588,6 +592,7 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'DATABASE_URL': DATABASE_URL,
                'REAL_DEBRID_API': REAL_DEBRID_API,
                'DEBRID_LINK_API': DEBRID_LINK_API,
+               'FILELION_API': FILELION_API,
                'DELETE_LINKS': DELETE_LINKS,
                'DEFAULT_UPLOAD': DEFAULT_UPLOAD,
                'DOWNLOAD_DIR': DOWNLOAD_DIR,
