@@ -442,7 +442,7 @@ class MirrorLeechListener:
                     if len(totalmsg.encode()) > 4000:
                         message = msg
                         if config_dict['SAFE_MODE']:
-                            await sendMessage(self.botpmmsg, msg + fmsg, buttons.build_menu(2), self.random_pic)
+                            await sendMessage(self.botpmmsg, msg + BotTheme('L_LL_MSG') + fmsg, buttons.build_menu(2), self.random_pic)
                         if config_dict['SAVE_MSG'] and not saved and self.isSuperGroup:
                             saved = True
                             buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
@@ -462,7 +462,7 @@ class MirrorLeechListener:
                 if fmsg != '\n':
                     message = msg
                     if config_dict['SAFE_MODE']:
-                        await sendMessage(self.botpmmsg, msg + fmsg, buttons.build_menu(2), self.random_pic)
+                        await sendMessage(self.botpmmsg, msg + BotTheme('L_LL_MSG') + fmsg, buttons.build_menu(2), self.random_pic)
                     if config_dict['SAVE_MSG'] and not saved and self.isSuperGroup:
                         saved = True
                         buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
