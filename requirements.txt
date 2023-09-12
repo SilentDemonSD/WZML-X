@@ -18,6 +18,7 @@ google-auth-oauthlib
 gunicorn
 git+https://github.com/zevtyardt/lk21.git
 httpx
+langcodes[data]
 lxml
 motor
 mutagen

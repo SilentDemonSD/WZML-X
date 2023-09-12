@@ -1,4 +1,4 @@
-import hashlib
+from hashlib import md5
 from re import sub as re_sub
 from shlex import split as ssplit
 from os import path as ospath
@@ -7,6 +7,7 @@ from time import time
 from re import search as re_search
 from asyncio import create_subprocess_exec
 from asyncio.subprocess import PIPE
+from langcodes import Language
 
 from bot import LOGGER, MAX_SPLIT_SIZE, config_dict, user_data
 from bot.modules.mediainfo import parseinfo
@@ -37,7 +38,7 @@ async def is_multi_streams(path):
     return videos > 1 or audios > 1
 
 
-async def get_media_info(path):
+async def get_media_info(path, metadata=False):
     try:
         result = await cmd_exec(["ffprobe", "-hide_banner", "-loglevel", "error", "-print_format",
                                  "json", "-show_format", "-show_streams", path])
@@ -47,8 +48,7 @@ async def get_media_info(path):
         LOGGER.error(f'Get Media Info: {e}. Mostly File not found!')
         return 0, None, None
     ffresult = eval(result[0])
-    LOGGER.info(ffresult)
-    fields, streams = ffresult.get('format'), ffresult.get('streams', {})
+    fields, streams = ffresult.get('format'), ffresult.get('streams')
     if fields is None:
         LOGGER.error(f"Get Media Info: {result}")
         return 0, None, None
@@ -56,7 +56,13 @@ async def get_media_info(path):
     tags = fields.get('tags', {})
     artist = tags.get('artist') or tags.get('ARTIST') or tags.get("Artist")
     title = tags.get('title') or tags.get('TITLE') or tags.get("Title")
-    metadata = streams.get('tags', {})
+    if metadata and streams and (meta := streams[0].get('codec_type') == 'video'):
+        lang = ""
+        qual = f"{meta.get('height')}p"
+        for stream in streams:
+            if stream.get('codec_type') == 'audio' and (lc := stream.get('tags', {}).get('language')):
+                lang += Language.get(lc).display_name() + ", "
+        return duration, qual, lang[:-2]
     return duration, artist, title
 
 
@@ -265,10 +271,13 @@ async def format_filename(file_, user_id, dirpath=None, isMirror=False):
         lcaption = lcaption.replace('\|', '%%').replace('\s', ' ')
         slit = lcaption.split("|")
         up_path = ospath.join(dirpath, prefile_)
+        dur, qual, lang = await get_media_info(up_path, True)
         cap_mono = slit[0].format(
             filename = nfile_,
             size = get_readable_file_size(await aiopath.getsize(up_path)),
-            duration = get_readable_time((await get_media_info(up_path))[0]),
+            duration = get_readable_time(dur),
+            quality = qual,
+            languages = lang,
             md5_hash = get_md5_hash(up_path)
         )
         if len(slit) > 1:
@@ -294,7 +303,7 @@ async def get_mediainfo_link(up_path):
 
 
 def get_md5_hash(up_path):
-    md5_hash = hashlib.md5()
+    md5_hash = md5()
     with open(up_path, "rb") as f:
         for byte_block in iter(lambda: f.read(4096), b""):
             md5_hash.update(byte_block)
