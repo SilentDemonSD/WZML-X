@@ -50,17 +50,15 @@ async def start(client, message):
         encrypted_url = message.command[1]
         input_token, pre_uid = (b64decode(encrypted_url.encode()).decode()).split('&&')
         if int(pre_uid) != userid:
-            return await sendMessage(message, '<b>Temporary Token is not yours!</b>\n\n<i>Kindly generate your own.</i>')
+            return await sendMessage(message, BotTheme('OWN_TOKEN_GENERATE'))
         data = user_data.get(userid, {})
         if 'token' not in data or data['token'] != input_token:
-            return await sendMessage(message, '<b>Temporary Token already used!</b>\n\n<i>Kindly generate a new one.</i>')
+            return await sendMessage(message, BotTheme('USED_TOKEN'))
         elif config_dict['LOGIN_PASS'] is not None and data['token'] == config_dict['LOGIN_PASS']:
-            return await sendMessage(message, '<b>Bot Already Logged In via Password</b>\n\n<i>No Need to Accept Temp Tokens.</i>')
-        buttons.ibutton('Activate Temporary Token', f'pass {input_token}', 'header')
+            return await sendMessage(message, BotTheme('LOGGED_PASSWORD'))
+        buttons.ibutton(BotTheme('ACTIVATE_BUTTON'), f'pass {input_token}', 'header')
         reply_markup = buttons.build_menu(2)
-        msg = '<b><u>Generated Temporary Login Token!</u></b>\n\n'
-        msg += f'<b>Temp Token:</b> <code>{input_token}</code>\n\n'
-        msg += f'<b>Validity:</b> {get_readable_time(int(config_dict["TOKEN_TIMEOUT"]))}'
+        msg = BotTheme('TOKEN_MSG', token=input_token, validity=get_readable_time(int(config_dict["TOKEN_TIMEOUT"])))
         return await sendMessage(message, msg, reply_markup)
     elif await CustomFilters.authorized(client, message):
         start_string = BotTheme('ST_MSG', help_command=f"/{BotCommands.HelpCommand}")
@@ -82,7 +80,7 @@ async def token_callback(_, query):
     update_user_ldata(user_id, 'time', time())
     await query.answer('Activated Temporary Token!', show_alert=True)
     kb = query.message.reply_markup.inline_keyboard[1:]
-    kb.insert(0, [InlineKeyboardButton('✅️ Activated ✅', callback_data='pass activated')])
+    kb.insert(0, [InlineKeyboardButton(BotTheme('ACTIVATED'), callback_data='pass activated')])
     await editReplyMarkup(query.message, InlineKeyboardMarkup(kb))
 
 
@@ -93,14 +91,13 @@ async def login(_, message):
         user_id = message.from_user.id
         input_pass = message.command[1]
         if user_data.get(user_id, {}).get('token', '') == config_dict['LOGIN_PASS']:
-            return await sendMessage(message, '<b>Already Bot Login In!</b>')
-        if input_pass == config_dict['LOGIN_PASS']:
-            update_user_ldata(user_id, 'token', config_dict['LOGIN_PASS'])
-            return await sendMessage(message, '<b>Bot Permanent Login Successfully!</b>')
-        else:
-            return await sendMessage(message, '<b>Invalid Password!</b>\n\nKindly put the correct Password .')
+            return await sendMessage(message, BotTheme('LOGGED_IN'))
+        if input_pass != config_dict['LOGIN_PASS']:
+            return await sendMessage(message, BotTheme('INVALID_PASS'))
+        update_user_ldata(user_id, 'token', config_dict['LOGIN_PASS'])
+        return await sendMessage(message, BotTheme('PASS_LOGGED'))
     else:
-        await sendMessage(message, '<b>Bot Login Usage :</b>\n\n<code>/cmd {password}</code>')
+        await sendMessage(message, BotTheme('LOGIN_USED', password=password))
 
 
 async def restart(client, message):
@@ -129,46 +126,47 @@ async def ping(_, message):
 
 async def log(_, message):
     buttons = ButtonMaker()
-    buttons.ibutton('📑 Log Display', f'wzmlx {message.from_user.id} logdisplay')
-    buttons.ibutton('📨 Web Paste (SB)', f'wzmlx {message.from_user.id} webpaste')
+    buttons.ibutton(BotTheme('LOG_DISPLAY_BT'), f'wzmlx {message.from_user.id} logdisplay')
+    buttons.ibutton(BotTheme('WEB_PASTE_BT'), f'wzmlx {message.from_user.id} webpaste')
     await sendFile(message, 'log.txt', buttons=buttons.build_menu(1))
 
 
 async def search_images():
-    if query_list := config_dict['IMG_SEARCH']:
-        try:
-            total_pages = config_dict['IMG_PAGE']
-            base_url = "https://www.wallpaperflare.com/search"
-            for query in query_list:
-                query = query.strip().replace(" ", "+")
-                for page in range(1, total_pages + 1):
-                    url = f"{base_url}?wallpaper={query}&width=1280&height=720&page={page}"
-                    r = rget(url)
-                    soup = BeautifulSoup(r.text, "html.parser")
-                    images = soup.select('img[data-src^="https://c4.wallpaperflare.com/wallpaper"]')
-                    if len(images) == 0:
-                        LOGGER.info("Maybe Site is Blocked on your Server, Add Images Manually !!")
-                    for img in images:
-                        img_url = img['data-src']
-                        if img_url not in config_dict['IMAGES']:
-                            config_dict['IMAGES'].append(img_url)
-            if len(config_dict['IMAGES']) != 0:
-                config_dict['STATUS_LIMIT'] = 2
-            if DATABASE_URL:
-                await DbManger().update_config({'IMAGES': config_dict['IMAGES'], 'STATUS_LIMIT': config_dict['STATUS_LIMIT']})
-        except Exception as e:
-            LOGGER.error(f"An error occurred: {e}")
+    if not (query_list := config_dict['IMG_SEARCH']):
+        return
+    try:
+        total_pages = config_dict['IMG_PAGE']
+        base_url = "https://www.wallpaperflare.com/search"
+        for query in query_list:
+            query = query.strip().replace(" ", "+")
+            for page in range(1, total_pages + 1):
+                url = f"{base_url}?wallpaper={query}&width=1280&height=720&page={page}"
+                r = rget(url)
+                soup = BeautifulSoup(r.text, "html.parser")
+                images = soup.select('img[data-src^="https://c4.wallpaperflare.com/wallpaper"]')
+                if len(images) == 0:
+                    LOGGER.info("Maybe Site is Blocked on your Server, Add Images Manually !!")
+                for img in images:
+                    img_url = img['data-src']
+                    if img_url not in config_dict['IMAGES']:
+                        config_dict['IMAGES'].append(img_url)
+        if len(config_dict['IMAGES']) != 0:
+            config_dict['STATUS_LIMIT'] = 2
+        if DATABASE_URL:
+            await DbManger().update_config({'IMAGES': config_dict['IMAGES'], 'STATUS_LIMIT': config_dict['STATUS_LIMIT']})
+    except Exception as e:
+        LOGGER.error(f"An error occurred: {e}")
 
 
 async def bot_help(client, message):
     buttons = ButtonMaker()
     user_id = message.from_user.id
-    buttons.ibutton('Basic', f'wzmlx {user_id} guide basic')
-    buttons.ibutton('Users', f'wzmlx {user_id} guide users')
-    buttons.ibutton('Mics', f'wzmlx {user_id} guide miscs')
-    buttons.ibutton('Owner & Sudos', f'wzmlx {user_id} guide admin')
-    buttons.ibutton('Close', f'wzmlx {user_id} close')
-    await sendMessage(message, "㊂ <b><i>Help Guide Menu!</i></b>\n\n<b>NOTE: <i>Click on any CMD to see more minor detalis.</i></b>", buttons.build_menu(2))
+    buttons.ibutton(BotTheme('BASIC_BT'), f'wzmlx {user_id} guide basic')
+    buttons.ibutton(BotTheme('USER_BT'), f'wzmlx {user_id} guide users')
+    buttons.ibutton(BotTheme('MICS_BT'), f'wzmlx {user_id} guide miscs')
+    buttons.ibutton(BotTheme('O_S_BT'), f'wzmlx {user_id} guide admin')
+    buttons.ibutton(BotTheme('CLOSE_BT'), f'wzmlx {user_id} close')
+    await sendMessage(message, BotTheme('HELP_HEADER'), buttons.build_menu(2))
 
 
 async def restart_notification():
