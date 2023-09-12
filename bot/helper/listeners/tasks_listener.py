@@ -522,7 +522,6 @@ class MirrorLeechListener:
                 message += BotTheme('M_BOT_MSG')
                 await sendMessage(self.botpmmsg, msg, buttons.build_menu(2), self.random_pic)
                 buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm")
-                await deleteMessage(self.botpmmsg)
             await sendMessage(self.message, message , buttons.build_menu(2), photo=self.random_pic)
 
 
@@ -569,7 +568,7 @@ class MirrorLeechListener:
                         non_queued_up.remove(self.uid)
                 await start_from_queued()
                 return
-
+        
         await clean_download(self.dir)
         async with download_dict_lock:
             if self.uid in download_dict.keys():
@@ -585,6 +584,7 @@ class MirrorLeechListener:
                 non_queued_up.remove(self.uid)
 
         await start_from_queued()
+        await deleteMessage(self.botpmmsg)
         await delete_links(self.message)
 
 
