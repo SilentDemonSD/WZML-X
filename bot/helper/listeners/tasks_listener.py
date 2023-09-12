@@ -423,6 +423,7 @@ class MirrorLeechListener:
         msg += BotTheme('MODE', Mode=self.upload_details['mode'])
         LOGGER.info(f'Task Done: {name}')
         buttons = ButtonMaker()
+        btn = ButtonMaker()
         saved = False
 
         if self.isLeech:
@@ -546,18 +547,41 @@ class MirrorLeechListener:
                 msg += BotTheme('RCPATH', RCpath=rclonePath)
             msg += BotTheme('M_CC', Tag=self.tag)
             message = msg
-            if config_dict['SAVE_MSG'] and not saved and self.isSuperGroup:
-                saved = True
-                buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
             if self.source_url and config_dict['SOURCE_LINK']:
                 buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
+                btn.ubutton(BotTheme('SOURCE_URL'), self.source_url)
             if config_dict['MIRROR_LOG_ID']:
                 await sendMultiMessage(config_dict['MIRROR_LOG_ID'], message, buttons.build_menu(2), self.random_pic)
-            if self.isSuperGroup and self.isPM:
-                message += BotTheme('M_BOT_MSG')
-                await sendMessage(self.botpmmsg, msg, buttons.build_menu(2), self.random_pic)
-                buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm")
-            await sendMessage(self.message, message , buttons.build_menu(2), photo=self.random_pic)
+
+            if config_dict['SAFE_MODE']:
+                if self.isSuperGroup:
+                    await sendMessage(self.botpmmsg, message, buttons.build_menu(2), photo=self.random_pic)
+                    if config_dict['SAVE_MSG'] and not saved and self.isSuperGroup:
+                        saved = True
+                        btn.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
+                    if self.isPM:
+                        btn.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm")
+                        message += BotTheme('M_BOT_MSG')
+                        await sendMessage(self.message, message, btn.build_menu(2), photo=self.random_pic)
+                    else:
+                        await sendMessage(self.message, message + BotTheme('M_PM_WARN'), btn.build_menu(2), photo=self.random_pic)
+                else:
+                    await sendMessage(self.message, message, buttons.build_menu(2), photo=self.random_pic)
+            else:
+                if config_dict['SAVE_MSG'] and not saved and self.isSuperGroup:
+                    saved = True
+                    buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
+                if self.isPM and self.isSuperGroup:
+                    buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm")
+                    message += BotTheme('M_BOT_MSG')
+                await sendMessage(self.message, message , buttons.build_menu(2), photo=self.random_pic)
+
+
+            # if self.isSuperGroup and self.isPM:
+            #     message += BotTheme('M_BOT_MSG')
+            #     await sendMessage(self.botpmmsg, msg, buttons.build_menu(2), self.random_pic)
+            #     buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm")
+            # await sendMessage(self.message, message , buttons.build_menu(2), photo=self.random_pic)
 
 
             # if config_dict['MIRROR_LOG_ID']:
