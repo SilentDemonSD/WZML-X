@@ -6,6 +6,7 @@ from random import choice as rchoice
 from time import time
 from re import match as re_match
 
+from pyrogram.enums import ParseMode
 from pyrogram.types import InputMediaPhoto
 from pyrogram.errors import ReplyMarkupInvalid, FloodWait, PeerIdInvalid, ChannelInvalid, RPCError, UserNotParticipant, MessageNotModified, MessageEmpty, PhotoInvalidDimensions, WebpageCurlFailed, MediaEmpty
 
@@ -15,14 +16,14 @@ from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.exceptions import TgLinkException
 
 
-async def sendMessage(message, text, buttons=None, photo=None):
+async def sendMessage(message, text, buttons=None, photo=None, **kwargs):
     try:
         if photo:
             try:
                 if photo == 'IMAGES':
                     photo = rchoice(config_dict['IMAGES'])
                 return await message.reply_photo(photo=photo, reply_to_message_id=message.id,
-                                                 caption=text, reply_markup=buttons, disable_notification=True)
+                                                 caption=text, reply_markup=buttons, disable_notification=True, **kwargs)
             except IndexError:
                 pass
             except (PhotoInvalidDimensions, WebpageCurlFailed, MediaEmpty):
@@ -33,13 +34,15 @@ async def sendMessage(message, text, buttons=None, photo=None):
             except Exception as e:
                 LOGGER.error(format_exc())
         return await message.reply(text=text, quote=True, disable_web_page_preview=True,
-                                   disable_notification=True, reply_markup=buttons)
+                                   disable_notification=True, reply_markup=buttons, **kwargs)
     except FloodWait as f:
         LOGGER.warning(str(f))
         await sleep(f.value * 1.2)
         return await sendMessage(message, text, buttons, photo)
     except ReplyMarkupInvalid:
         return await sendMessage(message, text, None, photo)
+    except MessageEmpty:
+        return await sendMessage(message, text, parse_mode=ParseMode.DISABLED)
     except Exception as e:
         LOGGER.error(format_exc())
         return str(e)
@@ -71,8 +74,6 @@ async def sendCustomMsg(chat_id, text, buttons=None, photo=None, debug=False):
     except ReplyMarkupInvalid:
         return await sendCustomMsg(chat_id, text, None, photo)
     except Exception as e:
-        if debug:
-            raise e
         LOGGER.error(format_exc())
         return str(e)
 

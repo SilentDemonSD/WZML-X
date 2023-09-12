@@ -56,6 +56,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
                 '-c': '', '-category': '',
                 '-ud': '', '-dump': '',
                 '-h': '', '-headers': '',
+                '-t': '', '-thumb': '',
     }
 
     args = arg_parser(input_list[1:], arg_base)
@@ -84,6 +85,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     headers       = args['-h'] or args['-headers']
     ussr          = args['-u'] or args['-user']
     pssw          = args['-p'] or args['-pass']
+    thumb         = args['-t'] or args['-thumb']
     bulk_start    = 0
     bulk_end      = 0
     ratio         = None
@@ -233,9 +235,9 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         LOGGER.info(link)
         org_link = link
 
-    if (not is_mega_link(link) or (is_mega_link(link) and config_dict['DEBRID_LINK_API'])) and (not isQbit or (isQbit and config_dict['REAL_DEBRID_API'])) \
-        and (not is_magnet(link) or (config_dict['REAL_DEBRID_API'] and is_magnet(link))) and not is_rclone_path(link) \
-        and not is_gdrive_link(link) and not link.endswith('.torrent') and file_ is None:
+    if (not is_mega_link(link) or (is_mega_link(link) and not config_dict['MEGA_EMAIL'] and config_dict['DEBRID_LINK_API'])) \
+        and (not is_magnet(link) or (config_dict['REAL_DEBRID_API'] and is_magnet(link))) and not isQbit \
+        and not is_rclone_path(link) and not is_gdrive_link(link) and not link.endswith('.torrent') and file_ is None:
         content_type = await get_content_type(link)
         if content_type is None or re_match(r'text/html|text/plain', content_type):
             process_msg = await sendMessage(message, f"<i><b>Processing:</b></i> <code>{link}</code>")

@@ -41,7 +41,7 @@ async def send(msg, message):
         LOGGER.info(f"OUTPUT: '{msg}'")
         if not bool(match(r'<(spoiler|b|i|code|s|u|/a)>', msg)):
             msg = f"<code>{msg}</code>"
-        elif msg == "":
+        if not msg:
             msg = "MessageEmpty"
         await sendMessage(message, msg)
 

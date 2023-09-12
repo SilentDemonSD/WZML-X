@@ -94,6 +94,7 @@ class TgUploader:
                         message_id=self.__sent_msg.id,
                         reply_to_message_id=msg.id
                     )
+                    # Layer 161 Needed for Topics !
                     if config_dict['CLEAN_LOG_MSG'] and msg.text:
                         await deleteMessage(msg)
                     if leech_copy and self.__has_buttons:
