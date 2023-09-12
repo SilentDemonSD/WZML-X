@@ -476,7 +476,6 @@ class MirrorLeechListener:
                     elif self.isSuperGroup and self.isPM:
                         message += BotTheme('L_LL_MSG')
                         message += BotTheme('L_BOT_MSG')
-                        buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm")
                     if config_dict['SAFE_MODE']:
                         if self.isSuperGroup:
                             await sendMessage(self.botpmmsg, msg + BotTheme('L_LL_MSG') + fmsg, buttons.build_menu(2), photo=self.random_pic)
