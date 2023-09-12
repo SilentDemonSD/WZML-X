@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import contextlib
+from contextlib import suppress
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.filters import regex
 from aiofiles.os import remove as aioremove, path as aiopath
@@ -103,7 +103,7 @@ async def get_confirm(client, query):
                     f_paths = [f"{path}/{f.name}", f"{path}/{f.name}.!qB"]
                     for f_path in f_paths:
                         if await aiopath.exists(f_path):
-                            with contextlib.suppress(Exception):
+                            with suppress(Exception):
                                 await aioremove(f_path)
             if not dl.queued:
                 await sync_to_async(client.torrents_resume, torrent_hashes=id_)
@@ -111,7 +111,7 @@ async def get_confirm(client, query):
             res = await sync_to_async(aria2.client.get_files, id_)
             for f in res:
                 if f['selected'] == 'false' and await aiopath.exists(f['path']):
-                    with contextlib.suppress(Exception):
+                    with suppress(Exception):
                         await aioremove(f['path'])
             if not dl.queued:
                 try:

@@ -2,18 +2,19 @@
 from pyrogram.handlers import MessageHandler
 from pyrogram.filters import command
 from os import path as ospath, getcwd, chdir
+from aiofiles import open as aiopen
 from traceback import format_exc
 from textwrap import indent
 from io import StringIO, BytesIO
-from contextlib import redirect_stdout
+from re import match
+from contextlib import redirect_stdout, suppress
 
-from bot import LOGGER, bot
+from bot import LOGGER, bot, user
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.message_utils import sendFile, sendMessage
 from bot.helper.ext_utils.bot_utils import new_task
 
-from contextlib import suppress
 namespaces = {}
 
 def namespace_of(message):
@@ -22,15 +23,13 @@ def namespace_of(message):
             '__builtins__': globals()['__builtins__'],
             'bot': bot,
             'message': message,
-            'user': message.from_user or message.sender_chat,
-            'chat': message.chat}
-
+            'user': user,
+        }
     return namespaces[message.chat.id]
 
 
 def log_input(message):
-    LOGGER.info(
-        f"IN: {message.text} (user={message.from_user.id}, chat={message.chat.id})")
+    LOGGER.info(f"INPUT: {message.text} (User ID ={message.from_user.id} | Chat ID ={message.chat.id})")
 
 
 async def send(msg, message):
@@ -39,8 +38,12 @@ async def send(msg, message):
             out_file.name = "output.txt"
             await sendFile(message, out_file)
     else:
-        LOGGER.info(f"OUT: '{msg}'")
-        await sendMessage(message, f"{msg}")
+        LOGGER.info(f"OUTPUT: '{msg}'")
+        if not bool(match(r'<(spoiler|b|i|code|s|u|/a)>', msg)):
+            msg = f"<code>{msg}</code>"
+        elif msg == "":
+            msg = "MessageEmpty"
+        await sendMessage(message, msg)
 
 
 @new_task
@@ -66,8 +69,8 @@ async def do(func, message):
     env = namespace_of(message)
 
     chdir(getcwd())
-    with open(ospath.join(getcwd(), 'bot/modules/temp.txt'), 'w') as temp:
-        temp.write(body)
+    async with aiopen(ospath.join(getcwd(), 'bot/modules/temp.txt'), 'w') as temp:
+        await temp.write(body)
 
     stdout = StringIO()
 
@@ -106,7 +109,9 @@ async def clear(client, message):
     global namespaces
     if message.chat.id in namespaces:
         del namespaces[message.chat.id]
-    await send("Locals Cleared.", message)
+        await send("<b>Cached Locals Cleared !</b>", message)
+    else:
+        await send("<b>No Cache Locals Found !</b>", message)
 
 
 bot.add_handler(MessageHandler(evaluate, filters=command(

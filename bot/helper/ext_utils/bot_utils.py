@@ -484,8 +484,8 @@ def new_thread(func):
 
 
 async def compare_versions(v1, v2):
-    v1_parts = [int(part) for part in v1[1:-2].split('.')]
-    v2_parts = [int(part) for part in v2[1:-2].split('.')]
+    v1_parts = [int(part) for part in v1.split('-')[0][1:].split('.')]
+    v2_parts = [int(part) for part in v2.split('-')[0][1:].split('.')]
     for i in range(3):
         v1_part, v2_part = v1_parts[i], v2_parts[i]
         if v1_part < v2_part:

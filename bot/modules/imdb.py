@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import contextlib
+from contextlib import suppress
 from re import findall, IGNORECASE
 from imdb import Cinemagoer
 from pycountry import countries as conn
@@ -146,7 +146,7 @@ def list_to_hash(k, flagg=False, emoji=False):
         for elem in k:
             ele = elem.replace(" ", "_").replace("-", "_")
             if flagg:
-                with contextlib.suppress(AttributeError):
+                with suppress(AttributeError):
                     conflag = (conn.get(name=elem)).flag
                     listing += f'{conflag} '
             if emoji:

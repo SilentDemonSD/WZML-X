@@ -46,9 +46,10 @@ async def get_media_info(path):
     except Exception as e:
         LOGGER.error(f'Get Media Info: {e}. Mostly File not found!')
         return 0, None, None
+    LOGGER.info(result[0])
     fields = eval(result[0]).get('format')
     if fields is None:
-        LOGGER.error(f"get_media_info: {result}")
+        LOGGER.error(f"Get Media Info: {result}")
         return 0, None, None
     duration = round(float(fields.get('duration', 0)))
     tags = fields.get('tags', {})
@@ -213,9 +214,7 @@ async def format_filename(file_, user_id, dirpath=None, isMirror=False):
     lcaption = config_dict['LEECH_FILENAME_CAPTION'] if (val:=user_dict.get('lcaption', '')) == '' else val
  
     prefile_ = file_
-    # SD-Style V2 ~ WZML-X
-    if file_.startswith('www'): #Remove all www.xyz.xyz domains
-        file_ = ' '.join(file_.split()[1:])
+    file_ = re_sub(r'www\S+', '', file_)
         
     if remname:
         if not remname.startswith('|'):
@@ -237,7 +236,7 @@ async def format_filename(file_, user_id, dirpath=None, isMirror=False):
     nfile_ = file_
     if prefix:
         nfile_ = prefix.replace('\s', ' ') + file_
-        prefix = re_sub('<.*?>', '', prefix).replace('\s', ' ')
+        prefix = re_sub(r'<.*?>', '', prefix).replace('\s', ' ')
         if not file_.startswith(prefix):
             file_ = f"{prefix}{file_}"
 
