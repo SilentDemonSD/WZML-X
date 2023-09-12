@@ -5,7 +5,7 @@ from logging import getLogger
 from yt_dlp import YoutubeDL, DownloadError
 from re import search as re_search
 
-from bot import download_dict_lock, download_dict, non_queued_dl, queue_dict_lock, config_dict
+from bot import download_dict_lock, download_dict, non_queued_dl, queue_dict_lock
 from bot.helper.telegram_helper.message_utils import sendStatusMessage
 from ..status_utils.yt_dlp_download_status import YtDlpDownloadStatus
 from bot.helper.mirror_utils.status_utils.queue_status import QueueStatus
@@ -54,7 +54,6 @@ class YoutubeDLHelper:
         self.__ext = ''
         self.name = ''
         self.is_playlist = False
-        self.playlist_count = 0
         self.opts = {'progress_hooks': [self.__onDownloadProgress],
                      'logger': MyLogger(self),
                      'usenetrc': True,
@@ -163,10 +162,6 @@ class YoutubeDLHelper:
                 self.name = f"{name}{ext}" if name else realName
                 if not self.__ext:
                     self.__ext = ext
-                if result.get('filesize'):
-                    self.__size = result['filesize']
-                elif result.get('filesize_approx'):
-                    self.__size = result['filesize_approx']
 
     def __download(self, link, path):
         try:
@@ -195,14 +190,16 @@ class YoutubeDLHelper:
         self.__gid = token_hex(5)
         await self.__onDownloadStart()
 
-        self.opts['postprocessors'] = [{'add_chapters': True, 'add_infojson': 'if_exists', 'add_metadata': True, 'key': 'FFmpegMetadata'}]
+        self.opts['postprocessors'] = [
+            {'add_chapters': True, 'add_infojson': 'if_exists', 'add_metadata': True, 'key': 'FFmpegMetadata'}]
 
         if qual.startswith('ba/b-'):
             audio_info = qual.split('-')
             qual = audio_info[0]
             audio_format = audio_info[1]
             rate = audio_info[2]
-            self.opts['postprocessors'].append({'key': 'FFmpegExtractAudio', 'preferredcodec': audio_format, 'preferredquality': rate})
+            self.opts['postprocessors'].append(
+                {'key': 'FFmpegExtractAudio', 'preferredcodec': audio_format, 'preferredquality': rate})
             if audio_format == 'vorbis':
                 self.__ext = '.ogg'
             elif audio_format == 'alac':
@@ -222,7 +219,8 @@ class YoutubeDLHelper:
         base_name, ext = ospath.splitext(self.name)
         trim_name = self.name if self.is_playlist else base_name
         if len(trim_name.encode()) > 200:
-            self.name = self.name[:200] if self.is_playlist else f'{base_name[:200]}{ext}'
+            self.name = self.name[:
+                                  200] if self.is_playlist else f'{base_name[:200]}{ext}'
             base_name = ospath.splitext(self.name)[0]
 
         if self.is_playlist:
@@ -241,7 +239,7 @@ class YoutubeDLHelper:
         if self.__listener.isLeech:
             self.opts['postprocessors'].append(
                 {'format': 'jpg', 'key': 'FFmpegThumbnailsConvertor', 'when': 'before_dl'})
-        if self.__ext in ['.mp3', '.mkv', '.mka', '.ogg', '.opus', '.flac', '.m4a', '.mp4', '.mov']:
+        if self.__ext in ['.mp3', '.mkv', '.mka', '.ogg', '.opus', '.flac', '.m4a', '.mp4', '.mov', 'm4v']:
             self.opts['postprocessors'].append(
                 {'already_have_thumbnail': self.__listener.isLeech, 'key': 'EmbedThumbnail'})
         elif not self.__listener.isLeech:
