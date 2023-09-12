@@ -139,7 +139,8 @@ Get from https://my.telegram.org</i>.
     try:
         await aioremove(f'WZML-X-{message.from_user.id}.session')
         await aioremove(f'WZML-X-{message.from_user.id}.session-journal')
-    except: pass
+    except Exception:
+        pass
     
 
 async def set_details(_, message, newkey):

@@ -81,7 +81,7 @@ class YtSelection:
             pfunc, filters=regex('^ytq') & user(self.__user_id)), group=-1)
         try:
             await wait_for(self.event.wait(), timeout=self.__timeout)
-        except:
+        except Exception:
             await editMessage(self.__reply_to, 'Timed Out. Task has been cancelled!')
             self.qual = None
             self.is_cancelled = True

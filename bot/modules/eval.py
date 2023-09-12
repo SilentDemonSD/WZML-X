@@ -13,6 +13,7 @@ from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.message_utils import sendFile, sendMessage
 from bot.helper.ext_utils.bot_utils import new_task
 
+from contextlib import suppress
 namespaces = {}
 
 def namespace_of(message):
@@ -92,10 +93,8 @@ async def do(func, message):
             if value:
                 result = f'{value}'
             else:
-                try:
+                with suppress(Exception):
                     result = f'{repr(eval(body, env))}'
-                except:
-                    pass
         else:
             result = f'{value}{func_return}'
         if result:

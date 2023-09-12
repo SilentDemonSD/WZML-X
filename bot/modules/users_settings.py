@@ -89,7 +89,7 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
             mediainfo = "Force Enabled"
         save_mode = "Save As Dump" if user_dict.get('save_mode') else "Save As BotPM"
         buttons.ibutton('Save As BotPM' if save_mode == 'Save As Dump' else 'Save As Dump', f"userset {user_id} save_mode")
-        dailytl = config_dict['DAILY_TASK_LIMIT'] if config_dict['DAILY_TASK_LIMIT'] else "♾️"
+        dailytl = config_dict['DAILY_TASK_LIMIT'] or "♾️"
         dailytas = user_dict.get('dly_tasks')[1] if user_dict and user_dict.get('dly_tasks') and user_id != OWNER_ID and config_dict['DAILY_TASK_LIMIT'] else config_dict.get('DAILY_TASK_LIMIT', "♾️") if user_id != OWNER_ID else "♾️"
         if user_dict.get('dly_tasks', False):
             t = str(datetime.now() - user_dict['dly_tasks'][0]).split(':')
@@ -465,7 +465,7 @@ async def edit_user_settings(client, query):
         try:
             await sendCustomMsg(user_id, msg, debug=True)
             await query.answer('User TDs Successfully Send in your PM', show_alert=True)
-        except:
+        except Exception:
             await query.answer('Start the Bot in PM (Private) and Try Again', show_alert=True)
         await update_user_settings(query, 'user_tds', 'mirror')
     elif data[2] == "dthumb":

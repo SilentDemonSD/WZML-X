@@ -149,7 +149,7 @@ async def gdcloneNode(message, link, listen_up):
                 button = await get_telegraph_list(telegraph_content)
                 await sendMessage(message, msg, button)
                 return
-        listener = MirrorLeechListener(message, tag=listen_up[0], isClone=True, drive_id=listen_up[1], index_link=listen_up[2], source_url=org_link if org_link else link)
+        listener = MirrorLeechListener(message, tag=listen_up[0], isClone=True, drive_id=listen_up[1], index_link=listen_up[2], source_url=org_link or link)
         if limit_exceeded := await limit_checker(size, listener):
             await sendMessage(listener.message, limit_exceeded)
             return
@@ -195,7 +195,7 @@ async def clone(client, message):
 
     try:
         multi = int(args['-i'])
-    except:
+    except Exception:
         multi = 0
 
     dst_path   = args['-up'] or args['-upload']
@@ -204,7 +204,7 @@ async def clone(client, message):
     drive_id   = args['-id']
     index_link = args['-index']
     gd_cat     = args['-c'] or args['-category']
-    
+
     if username := message.from_user.username:
         tag = f"@{username}"
     else:
