@@ -423,55 +423,46 @@ class MirrorLeechListener:
         msg += BotTheme('MODE', Mode=self.upload_details['mode'])
         LOGGER.info(f'Task Done: {name}')
         buttons = ButtonMaker()
-        btn = ButtonMaker()
         saved = False
-
-       
 
         if self.isLeech:
             msg += BotTheme('L_TOTAL_FILES', Files=folders)
             if mime_type != 0:
                 msg += BotTheme('L_CORRUPTED_FILES', Corrupt=mime_type)
             msg += BotTheme('L_CC', Tag=self.tag)
-            # if self.isSuperGroup and not self.isPM:
-            #     msg += BotTheme('L_LL_MSG')
-            # elif self.isSuperGroup and self.isPM:
-            #     msg += BotTheme('PM_BOT_MSG')
+
             if not files:
-                await sendMessage(self.message, msg, self.random_pic)
+                await sendMessage(self.message, msg, photo=self.random_pic)
             else:
-                if config_dict['LEECH_LOG_ID'] and self.isSuperGroup:
-                    msg += BotTheme('L_LL_MSG')
-                if self.isPM and self.isSuperGroup:
-                    msg += BotTheme('L_BOT_MSG')
-                if self.source_url and config_dict['SOURCE_LINK']:
-                    btn.ubutton(BotTheme('SOURCE_URL'), self.source_url, 'header')
                 if config_dict['SAVE_MSG'] and not saved and self.isSuperGroup:
                     saved = True
-                    btn.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
-                if self.isPM and self.isSuperGroup:
-                    btn.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
-                fmsg = '\n'
+                    buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
+                if self.source_url and config_dict['SOURCE_LINK']:
+                    buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
+                fmsg, totalmsg = '\n', ''
                 for index, (link, name) in enumerate(files.items(), start=1):
                     fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
-                    if len(fmsg.encode()) > 4000:
-                        if self.isSuperGroup:
-                            await sendMessage(self.message, msg + fmsg, btn.build_menu(2), photo=self.random_pic)
-                        else:
-                            if config_dict['LEECH_LOG_ID']:
-                                await sendMessage(self.message, msg + fmsg, photo=self.random_pic)
-                            else:
-                                await sendMessage(self.message, msg, photo=self.random_pic)
-                        await sleep(1.5) 
+                    if len(totalmsg.encode()) > 4000:
+                        message = msg
+                        if self.isSuperGroup and not self.isPM:
+                            message += BotTheme('L_LL_MSG')
+                        elif self.isSuperGroup and self.isPM:
+                            message += BotTheme('L_LL_MSG')
+                            message += BotTheme('L_BOT_MSG')
+                            buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
+                        await sendMessage(self.message, message + fmsg, buttons.build_menu(2), photo=self.random_pic)
+                        await sleep(1.5)
                         fmsg = ''
+
                 if fmsg != '\n':
-                    if self.isSuperGroup:
-                        await sendMessage(self.message, msg + fmsg, btn.build_menu(2), photo=self.random_pic)
-                    else:
-                        if config_dict['LEECH_LOG_ID']:
-                            await sendMessage(self.message, msg + fmsg, photo=self.random_pic)
-                        else:
-                            await sendMessage(self.message, msg, photo=self.random_pic)
+                    message = msg
+                    if self.isSuperGroup and not self.isPM:
+                        message += BotTheme('L_LL_MSG')
+                    elif self.isSuperGroup and self.isPM:
+                        message += BotTheme('L_LL_MSG')
+                        message += BotTheme('L_BOT_MSG')
+                        buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
+                    await sendMessage(self.message, message + fmsg, buttons.build_menu(2), photo=self.random_pic)
                     await sleep(1.5)    
             if self.seed:
                 if self.newDir:
@@ -516,21 +507,22 @@ class MirrorLeechListener:
                                 share_urls = f'{INDEX_URL}/{url_path}?a=view'
                                 buttons.ubutton(BotTheme('VIEW_LINK'), share_urls)
                 buttons = extra_btns(buttons)
-                button = buttons.build_menu(2)
             else:
                 msg += BotTheme('RCPATH', RCpath=rclonePath)
             msg += BotTheme('M_CC', Tag=self.tag)
             message = msg
-            if self.isSuperGroup and not self.isPM:
-                message += BotTheme('L_LL_MSG')
-            elif self.isSuperGroup and self.isPM:
-                message += BotTheme('PM_BOT_MSG')
-                await sendMessage(self.botpmmsg, message, button, self.random_pic)
+            if config_dict['SAVE_MSG'] and not saved and self.isSuperGroup:
+                saved = True
+                buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
+            if self.source_url and config_dict['SOURCE_LINK']:
+                buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
             if config_dict['MIRROR_LOG_ID']:
-                await sendMultiMessage(config_dict['MIRROR_LOG_ID'], message, buttons.build_menu(1), self.random_pic)
-                await sendMessage(self.message, message , buttons.build_menu(1), photo=self.random_pic if self.isPM else None)
-            else:
-                await sendMessage(self.message, message, buttons.build_menu(1))
+                await sendMultiMessage(config_dict['MIRROR_LOG_ID'], message, buttons.build_menu(2), self.random_pic)
+            if self.isSuperGroup and self.isPM:
+                message += BotTheme('M_BOT_MSG')
+                buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
+            await sendMessage(self.message, message , buttons.build_menu(2), photo=self.random_pic)
+
 
             # if config_dict['MIRROR_LOG_ID']:
             #     buttonss = button
@@ -592,6 +584,7 @@ class MirrorLeechListener:
 
         await start_from_queued()
         await delete_links(self.message)
+
 
     async def onDownloadError(self, error, button=None):
         async with download_dict_lock:
