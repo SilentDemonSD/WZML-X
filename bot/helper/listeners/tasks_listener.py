@@ -434,6 +434,9 @@ class MirrorLeechListener:
             if not files:
                 await sendMessage(self.message, msg, photo=self.random_pic)
             else:
+                if config_dict['SAVE_MSG'] and not saved and self.isSuperGroup:
+                    saved = True
+                    buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                 if self.source_url and config_dict['SOURCE_LINK']:
                     buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
                 fmsg, totalmsg = '\n', ''
@@ -441,41 +444,25 @@ class MirrorLeechListener:
                     fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
                     if len(totalmsg.encode()) > 4000:
                         message = msg
-                        if config_dict['SAFE_MODE']:
-                            await sendMessage(self.botpmmsg, msg + BotTheme('L_LL_MSG') + fmsg, buttons.build_menu(2), self.random_pic)
-                        if config_dict['SAVE_MSG'] and not saved and self.isSuperGroup:
-                            saved = True
-                            buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                         if self.isSuperGroup and not self.isPM:
                             message += BotTheme('L_LL_MSG')
                         elif self.isSuperGroup and self.isPM:
                             message += BotTheme('L_LL_MSG')
                             message += BotTheme('L_BOT_MSG')
                             buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm")
-                        if not config_dict['SAFE_MODE'] and self.isSuperGroup:
-                            await sendMessage(self.message, message + fmsg, buttons.build_menu(2), photo=self.random_pic)
-                        else:
-                            await sendMessage(self.message, message, buttons.build_menu(2), photo=self.random_pic)
+                        await sendMessage(self.message, message + fmsg, buttons.build_menu(2), photo=self.random_pic)
                         await sleep(1.5)
                         fmsg = ''
 
                 if fmsg != '\n':
                     message = msg
-                    if config_dict['SAFE_MODE']:
-                        await sendMessage(self.botpmmsg, msg + BotTheme('L_LL_MSG') + fmsg, buttons.build_menu(2), self.random_pic)
-                    if config_dict['SAVE_MSG'] and not saved and self.isSuperGroup:
-                        saved = True
-                        buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                     if self.isSuperGroup and not self.isPM:
                         message += BotTheme('L_LL_MSG')
                     elif self.isSuperGroup and self.isPM:
                         message += BotTheme('L_LL_MSG')
                         message += BotTheme('L_BOT_MSG')
                         buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm")
-                    if not config_dict['SAFE_MODE'] and self.isSuperGroup:
-                        await sendMessage(self.message, message + fmsg, buttons.build_menu(2), photo=self.random_pic)
-                    else:
-                        await sendMessage(self.message, message, buttons.build_menu(2), photo=self.random_pic)
+                    await sendMessage(self.message, message + fmsg, buttons.build_menu(2), photo=self.random_pic)
                     await sleep(1.5)    
             if self.seed:
                 if self.newDir:
