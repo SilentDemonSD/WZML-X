@@ -39,10 +39,10 @@ async def send(msg, message):
             await sendFile(message, out_file)
     else:
         LOGGER.info(f"OUTPUT: '{msg}'")
-        if not bool(match(r'<(spoiler|b|i|code|s|u|/a)>', msg)):
-            msg = f"<code>{msg}</code>"
         if not msg:
             msg = "MessageEmpty"
+        elif not bool(match(r'<(spoiler|b|i|code|s|u|/a)>', msg)):
+            msg = f"<code>{msg}</code>"
         await sendMessage(message, msg)
 
 

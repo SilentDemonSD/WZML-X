@@ -46,7 +46,7 @@ async def get_media_info(path):
     except Exception as e:
         LOGGER.error(f'Get Media Info: {e}. Mostly File not found!')
         return 0, None, None
-    LOGGER.info(result[0])
+    LOGGER.info(result)
     fields = eval(result[0]).get('format')
     if fields is None:
         LOGGER.error(f"Get Media Info: {result}")
@@ -118,8 +118,7 @@ async def take_ss(video_file, duration):
     status = await create_subprocess_exec(*cmd, stderr=PIPE)
     if await status.wait() != 0 or not await aiopath.exists(des_dir):
         err = (await status.stderr.read()).decode().strip()
-        LOGGER.error(
-            f'Error while extracting thumbnail from video. Name: {video_file} stderr: {err}')
+        LOGGER.error(f'Error while extracting thumbnail from video. Name: {video_file} stderr: {err}')
         return None
     return des_dir
 
