@@ -449,7 +449,7 @@ class MirrorLeechListener:
                         elif self.isSuperGroup and self.isPM:
                             message += BotTheme('L_LL_MSG')
                             message += BotTheme('L_BOT_MSG')
-                            buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
+                            buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm")
                         await sendMessage(self.message, message + fmsg, buttons.build_menu(2), photo=self.random_pic)
                         await sleep(1.5)
                         fmsg = ''
@@ -461,7 +461,7 @@ class MirrorLeechListener:
                     elif self.isSuperGroup and self.isPM:
                         message += BotTheme('L_LL_MSG')
                         message += BotTheme('L_BOT_MSG')
-                        buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
+                        buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm")
                     await sendMessage(self.message, message + fmsg, buttons.build_menu(2), photo=self.random_pic)
                     await sleep(1.5)    
             if self.seed:
@@ -520,7 +520,7 @@ class MirrorLeechListener:
                 await sendMultiMessage(config_dict['MIRROR_LOG_ID'], message, buttons.build_menu(2), self.random_pic)
             if self.isSuperGroup and self.isPM:
                 message += BotTheme('M_BOT_MSG')
-                buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
+                buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm")
             await sendMessage(self.message, message , buttons.build_menu(2), photo=self.random_pic)
 
 
