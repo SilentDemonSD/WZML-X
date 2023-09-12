@@ -484,7 +484,10 @@ class MirrorLeechListener:
                                 buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                             if self.isPM:
                                 buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm")
-                            await sendMessage(self.message, message, buttons.build_menu(2), photo=self.random_pic)
+                                await sendMessage(self.message, message, buttons.build_menu(2), photo=self.random_pic)
+                            else:
+                                warn = f"BOT PM Is Off Turn It On To Get The Leech Indexing Link"
+                                await sendMessage(self.message, message + warn, buttons.build_menu(2), photo=self.random_pic)
                         else:
                             await sendMessage(self.message, message + fmsg, buttons.build_menu(2), photo=self.random_pic)
                     else:
