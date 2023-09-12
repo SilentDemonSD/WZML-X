@@ -56,9 +56,9 @@ async def get_media_info(path, metadata=False):
     tags = fields.get('tags', {})
     artist = tags.get('artist') or tags.get('ARTIST') or tags.get("Artist")
     title = tags.get('title') or tags.get('TITLE') or tags.get("Title")
-    if metadata and streams and (meta := streams[0].get('codec_type') == 'video'):
+    if metadata and streams and streams[0].get('codec_type') == 'video':
         lang = ""
-        qual = f"{meta.get('height')}p"
+        qual = f"{streams[0].get('height')}p"
         for stream in streams:
             if stream.get('codec_type') == 'audio' and (lc := stream.get('tags', {}).get('language')):
                 lang += Language.get(lc).display_name() + ", "
