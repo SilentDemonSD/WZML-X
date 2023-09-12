@@ -569,11 +569,11 @@ class MirrorLeechListener:
                         btn.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                     if self.isPM:
                         btn.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm")
-                        btn = extra_btns(buttons)
+                        btn = extra_btns(btn)
                         message += BotTheme('M_BOT_MSG')
                         await sendMessage(self.message, message, btn.build_menu(2), photo=self.random_pic)
                     else:
-                        btn = extra_btns(buttons)
+                        btn = extra_btns(btn)
                         await sendMessage(self.message, message + BotTheme('M_PM_WARN'), btn.build_menu(2), photo=self.random_pic)
                 else:
                     await sendMessage(self.message, message, buttons.build_menu(2), photo=self.random_pic)
