@@ -457,8 +457,10 @@ class MirrorLeechListener:
                                     buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                                 if self.isPM:
                                     buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm")
+                                    buttons = extra_btns(buttons)
                                     await sendMessage(self.message, message, buttons.build_menu(2), photo=self.random_pic)
                                 else:
+                                    buttons = extra_btns(buttons)
                                     await sendMessage(self.message, message + BotTheme('L_PM_WARN'), buttons.build_menu(2), photo=self.random_pic)
                             else:
                                 await sendMessage(self.message, message + fmsg, buttons.build_menu(2), photo=self.random_pic)
@@ -468,6 +470,8 @@ class MirrorLeechListener:
                                 buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                             if self.isPM and self.isSuperGroup:
                                 buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm")
+                            if self.isSuperGroup:
+                                buttons = extra_btns(buttons)
                             await sendMessage(self.message, message + fmsg, buttons.build_menu(2), photo=self.random_pic)
                         await sleep(1.5)
                         fmsg = ''
@@ -487,8 +491,10 @@ class MirrorLeechListener:
                                 buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                             if self.isPM:
                                 buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm")
+                                buttons = extra_btns(buttons)
                                 await sendMessage(self.message, message, buttons.build_menu(2), photo=self.random_pic)
                             else:
+                                buttons = extra_btns(buttons)
                                 await sendMessage(self.message, message + BotTheme('L_PM_WARN'), buttons.build_menu(2), photo=self.random_pic)
                         else:
                             await sendMessage(self.message, message + fmsg, buttons.build_menu(2), photo=self.random_pic)
@@ -498,6 +504,8 @@ class MirrorLeechListener:
                             buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                         if self.isPM and self.isSuperGroup:
                             buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm")
+                        if self.isSuperGroup:
+                            buttons = extra_btns(buttons)
                         await sendMessage(self.message, message + fmsg, buttons.build_menu(2), photo=self.random_pic)
                     await sleep(1.5)    
             if self.seed:
@@ -542,7 +550,7 @@ class MirrorLeechListener:
                             if mime_type.startswith(('image', 'video', 'audio')):
                                 share_urls = f'{INDEX_URL}/{url_path}?a=view'
                                 buttons.ubutton(BotTheme('VIEW_LINK'), share_urls)
-                buttons = extra_btns(buttons)
+                
             else:
                 msg += BotTheme('RCPATH', RCpath=rclonePath)
             msg += BotTheme('M_CC', Tag=self.tag)
@@ -561,9 +569,11 @@ class MirrorLeechListener:
                         btn.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                     if self.isPM:
                         btn.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm")
+                        btn = extra_btns(buttons)
                         message += BotTheme('M_BOT_MSG')
                         await sendMessage(self.message, message, btn.build_menu(2), photo=self.random_pic)
                     else:
+                        btn = extra_btns(buttons)
                         await sendMessage(self.message, message + BotTheme('M_PM_WARN'), btn.build_menu(2), photo=self.random_pic)
                 else:
                     await sendMessage(self.message, message, buttons.build_menu(2), photo=self.random_pic)
@@ -575,6 +585,8 @@ class MirrorLeechListener:
                     buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm")
                     await sendMessage(self.botpmmsg, msg, buttons.build_menu(2), self.random_pic)
                     message += BotTheme('M_BOT_MSG')
+                if self.isSuperGroup:
+                    buttons = extra_btns(buttons)
                 await sendMessage(self.message, message , buttons.build_menu(2), photo=self.random_pic)
 
 
