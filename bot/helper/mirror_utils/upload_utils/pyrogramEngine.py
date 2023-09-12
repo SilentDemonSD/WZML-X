@@ -167,6 +167,7 @@ class TgUploader:
         try:
             file_, cap_mono = await format_filename(prefile_, self.__user_id, dirpath)
         except Exception as err:
+            LOGGER.info(format_exc())
             return await self.__listener.onUploadError(f'Error in Format Filename : {err}')
         if prefile_ != file_:
             if self.__listener.seed and not self.__listener.newDir and not dirpath.endswith("/splited_files_mltb"):
