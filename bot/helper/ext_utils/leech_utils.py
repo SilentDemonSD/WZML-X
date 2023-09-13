@@ -127,7 +127,7 @@ async def take_ss(video_file, duration, total=1):
     for eq_thumb in range(1, total+1):
         cmd[5] = str(duration // 2) if total == 1 else str((duration // total) * eq_thumb)
         cmd[-1] = ospath.join(des_dir, f"wz_thumb_{eq_thumb}.jpg")
-        task.append(create_task(create_subprocess_exec(*cmd, stderr=PIPE)))
+        tasks.append(create_task(create_subprocess_exec(*cmd, stderr=PIPE)))
     status = await gather(*tasks)
     for task, eq_thumb in zip(status, range(1, total+1)):
         if await task.wait() != 0 or not await aiopath.exists(os.path.join(des_dir, f"wz_thumb_{eq_thumb}.jpg")):
