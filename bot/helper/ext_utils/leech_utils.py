@@ -97,6 +97,7 @@ async def get_document_type(path):
             is_audio = True
     return is_video, is_audio, is_image
 
+
 async def get_audio_thumb(audio_file):
     des_dir = 'Thumbnails'
     if not await aiopath.exists(des_dir):
@@ -112,11 +113,11 @@ async def get_audio_thumb(audio_file):
         return None
     return des_dir
 
+
 async def take_ss(video_file, duration, total=1):
-    des_dir = 'Thumbnails'
+    des_dir = ospath.join('Thumbnails', f"{time()}")
     if not await aiopath.exists(des_dir):
         await mkdir(des_dir)
-    des_dir = ospath.join(des_dir, f"{time()}")
     if duration is None:
         duration = (await get_media_info(video_file))[0]
     if duration == 0:
