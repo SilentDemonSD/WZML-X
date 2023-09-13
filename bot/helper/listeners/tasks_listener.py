@@ -582,12 +582,14 @@ class MirrorLeechListener:
                 else:
                     await sendMessage(self.message, message, buttons.build_menu(2), photo=self.random_pic)
             else:   
-                if self.isPM and self.isSuperGroup:
-                    await sendMessage(self.botpmmsg, msg, buttons.build_menu(2), self.random_pic)
+
                 if config_dict['SAVE_MSG'] and not saved and self.isSuperGroup:
                     saved = True
                     buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                 await sendMessage(self.message, message , buttons.build_menu(2), photo=self.random_pic)
+                if self.isPM and self.isSuperGroup:
+                    saved = False
+                    await sendMessage(self.botpmmsg, msg, buttons.build_menu(2), self.random_pic)
 
                 
 
