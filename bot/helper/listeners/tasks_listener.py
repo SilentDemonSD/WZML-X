@@ -567,14 +567,14 @@ class MirrorLeechListener:
             if self.isSuperGroup:
                 btn = extra_btns(btn)[0]
                 buttons = extra_btns(buttons)[0]
-                if config_dict['SAVE_MSG'] and not saved and self.isSuperGroup:
-                    saved = True
-                    btn.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
-                    buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
+
              
             if config_dict['SAFE_MODE']:
                 if self.isSuperGroup:
                     await sendMessage(self.botpmmsg, message, buttons.build_menu(2), photo=self.random_pic)
+                    if config_dict['SAVE_MSG'] and not saved and self.isSuperGroup:
+                        saved = True
+                        btn.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                     if self.isPM:
                         await sendMessage(self.message, message, btn.build_menu(2), photo=self.random_pic)
                     else:
@@ -582,9 +582,13 @@ class MirrorLeechListener:
                 else:
                     await sendMessage(self.message, message, buttons.build_menu(2), photo=self.random_pic)
             else:   
-                await sendMessage(self.message, message , buttons.build_menu(2), photo=self.random_pic)
                 if self.isPM and self.isSuperGroup:
                     await sendMessage(self.botpmmsg, msg, buttons.build_menu(2), self.random_pic)
+                if config_dict['SAVE_MSG'] and not saved and self.isSuperGroup:
+                    saved = True
+                    buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
+                await sendMessage(self.message, message , buttons.build_menu(2), photo=self.random_pic)
+
                 
 
 
