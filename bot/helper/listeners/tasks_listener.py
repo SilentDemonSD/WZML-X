@@ -446,6 +446,7 @@ class MirrorLeechListener:
                 elif self.isSuperGroup and self.isPM:
                     message += BotTheme('L_LL_MSG')
                     message += BotTheme('L_BOT_MSG')
+                    buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
                 fmsg = '\n'
                 for index, (link, name) in enumerate(files.items(), start=1):
                     fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
@@ -459,7 +460,6 @@ class MirrorLeechListener:
                                     saved = True
                                     buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                                 if self.isPM:
-                                    buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
                                     await sendMessage(self.message, message, buttons.build_menu(2), photo=self.random_pic)
                                 else:
                                     await sendMessage(self.message, message + BotTheme('L_PM_WARN'), buttons.build_menu(2), photo=self.random_pic)
@@ -469,8 +469,6 @@ class MirrorLeechListener:
                             if config_dict['SAVE_MSG'] and not saved and self.isSuperGroup:
                                 saved = True
                                 buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
-                            if self.isPM and self.isSuperGroup:
-                                buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
                             await sendMessage(self.message, message + fmsg, buttons.build_menu(2), photo=self.random_pic)
                         await sleep(1.5)
                         fmsg = ''
@@ -483,7 +481,6 @@ class MirrorLeechListener:
                                 saved = True
                                 buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                             if self.isPM:
-                                buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
                                 await sendMessage(self.message, message, buttons.build_menu(2), photo=self.random_pic)
                             else:
                                 await sendMessage(self.message, message + BotTheme('L_PM_WARN'), buttons.build_menu(2), photo=self.random_pic)
@@ -493,8 +490,6 @@ class MirrorLeechListener:
                         if config_dict['SAVE_MSG'] and not saved and self.isSuperGroup:
                             saved = True
                             buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
-                        if self.isPM and self.isSuperGroup:
-                            buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
                         await sendMessage(self.message, message + fmsg, buttons.build_menu(2), photo=self.random_pic)
                     await sleep(1.5)    
             if self.seed:
