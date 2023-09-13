@@ -122,6 +122,7 @@ async def take_ss(video_file, duration, total=1):
         duration = (await get_media_info(video_file))[0]
     if duration == 0:
         duration = 3
+    duration = duration - (duration * 2 / 100)
     cmd = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", "",
            "-i", video_file, "-vf", "thumbnail", "-frames:v", "1", des_dir]
     tasks = []
