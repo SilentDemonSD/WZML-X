@@ -569,11 +569,11 @@ class MirrorLeechListener:
                         btn.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                     if self.isPM:
                         btn.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm")
-                        btn = extra_btns(btn)
+                        btn = extra_btns(btn)[0]
                         message += BotTheme('M_BOT_MSG')
                         await sendMessage(self.message, message, btn.build_menu(2), photo=self.random_pic)
                     else:
-                        btn = extra_btns(btn)
+                        btn = extra_btns(btn)[0]
                         await sendMessage(self.message, message + BotTheme('M_PM_WARN'), btn.build_menu(2), photo=self.random_pic)
                 else:
                     await sendMessage(self.message, message, buttons.build_menu(2), photo=self.random_pic)
@@ -586,7 +586,7 @@ class MirrorLeechListener:
                     await sendMessage(self.botpmmsg, msg, buttons.build_menu(2), self.random_pic)
                     message += BotTheme('M_BOT_MSG')
                 if self.isSuperGroup:
-                    buttons = extra_btns(buttons)
+                    buttons = extra_btns(buttons)[0]
                 await sendMessage(self.message, message , buttons.build_menu(2), photo=self.random_pic)
 
 
@@ -619,7 +619,7 @@ class MirrorLeechListener:
             #             buttons.ubutton(BotTheme('CHECK_LL'), self.linkslogmsg.link)
             #         if self.source_url and config_dict['SOURCE_LINK']:
             #             buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
-            #         buttons = extra_btns(buttons)
+            #         buttons = extra_btns(buttons)[0]
             #         await sendMessage(self.message, msg + BotTheme('M_BOT_MSG'), buttons.build_menu(2), self.random_pic)
             #     else:
             #         await deleteMessage(self.botpmmsg)
@@ -627,7 +627,7 @@ class MirrorLeechListener:
             #     buttons.ubutton(BotTheme('CHECK_LL'), self.linkslogmsg.link)
             #     if self.source_url and config_dict['SOURCE_LINK']:
             #         buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
-            #     buttons = extra_btns(buttons)
+            #     buttons = extra_btns(buttons)[0]
             #     await sendMessage(self.message, msg, buttons.build_menu(2), self.random_pic)
 
             if self.seed:

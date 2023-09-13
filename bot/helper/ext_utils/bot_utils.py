@@ -125,7 +125,7 @@ async def get_telegraph_list(telegraph_content):
         await telegraph.edit_telegraph(path, telegraph_content)
     buttons = ButtonMaker()
     buttons.ubutton("🔎 VIEW", f"https://te.legra.ph/{path[0]}")
-    buttons = extra_btns(buttons)
+    buttons, _ = extra_btns(buttons)
     return buttons.build_menu(1)
 
 def handleIndex(index, dic):
@@ -665,9 +665,7 @@ def extra_btns(buttons, already=False):
     if extra_buttons and not already:
         for btn_name, btn_url in extra_buttons.items():
             buttons.ubutton(btn_name, btn_url)
-    if already:
-        return buttons, not already
-    return buttons
+    return buttons, True
 
 
 async def set_commands(client):
