@@ -5,7 +5,7 @@ from os import path as ospath
 from aiofiles.os import remove as aioremove, path as aiopath, mkdir
 from time import time
 from re import search as re_search
-from asyncio import create_subprocess_exec
+from asyncio import create_subprocess_exec, create_task, gather
 from asyncio.subprocess import PIPE
 from langcodes import Language
 
@@ -48,7 +48,7 @@ async def get_media_info(path, metadata=False):
         LOGGER.error(f'Get Media Info: {e}. Mostly File not found!')
         return 0, None, None
     ffresult = eval(result[0])
-    fields, streams = ffresult.get('format'), ffresult.get('streams')
+    fields = ffresult.get('format')
     if fields is None:
         LOGGER.error(f"Get Media Info: {result}")
         return 0, None, None
@@ -56,12 +56,13 @@ async def get_media_info(path, metadata=False):
     tags = fields.get('tags', {})
     artist = tags.get('artist') or tags.get('ARTIST') or tags.get("Artist")
     title = tags.get('title') or tags.get('TITLE') or tags.get("Title")
-    if metadata and streams and streams[0].get('codec_type') == 'video':
-        lang = ""
-        qual = f"{streams[0].get('height')}p"
-        for stream in streams:
-            if stream.get('codec_type') == 'audio' and (lc := stream.get('tags', {}).get('language')):
-                lang += Language.get(lc).display_name() + ", "
+    if metadata:
+        lang, qual = "", ""
+        if (streams := ffresult.get('streams')) and streams[0].get('codec_type') == 'video':
+            qual = f"{streams[0].get('height')}p"
+            for stream in streams:
+                if stream.get('codec_type') == 'audio' and (lc := stream.get('tags', {}).get('language')):
+                    lang += Language.get(lc).display_name() + ", "
         return duration, qual, lang[:-2]
     return duration, artist, title
 
@@ -111,24 +112,29 @@ async def get_audio_thumb(audio_file):
         return None
     return des_dir
 
-async def take_ss(video_file, duration):
+async def take_ss(video_file, duration, total=1):
     des_dir = 'Thumbnails'
     if not await aiopath.exists(des_dir):
         await mkdir(des_dir)
-    des_dir = ospath.join(des_dir, f"{time()}.jpg")
+    des_dir = ospath.join(des_dir, f"{time()}")
     if duration is None:
         duration = (await get_media_info(video_file))[0]
     if duration == 0:
         duration = 3
-    duration = duration // 2
-    cmd = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", str(duration),
+    cmd = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", "",
            "-i", video_file, "-vf", "thumbnail", "-frames:v", "1", des_dir]
-    status = await create_subprocess_exec(*cmd, stderr=PIPE)
-    if await status.wait() != 0 or not await aiopath.exists(des_dir):
-        err = (await status.stderr.read()).decode().strip()
-        LOGGER.error(f'Error while extracting thumbnail from video. Name: {video_file} stderr: {err}')
-        return None
-    return des_dir
+    tasks = []
+    for eq_thumb in range(1, total+1):
+        cmd[5] = str(duration // 2) if total == 1 else str((duration // total) * eq_thumb)
+        cmd[-1] = ospath.join(des_dir, f"wz_thumb_{eq_thumb}.jpg")
+        task.append(create_task(create_subprocess_exec(*cmd, stderr=PIPE)))
+    status = await gather(*tasks)
+    for task, eq_thumb in zip(status, range(1, total+1)):
+        if await task.wait() != 0 or not await aiopath.exists(os.path.join(des_dir, f"wz_thumb_{eq_thumb}.jpg")):
+            err = (await task.stderr.read()).decode().strip()
+            LOGGER.error(f'Error while extracting thumbnail {eq_thumb} from video. Name: {video_file} stderr: {err}')
+            return None
+    return des_dir if total != 1 else ospath.join(des_dir, "wz_thumb_1.jpg")
 
 
 async def split_file(path, size, file_, dirpath, split_size, listener, start_time=0, i=1, inLoop=False, multi_streams=True):
