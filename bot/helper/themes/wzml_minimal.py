@@ -25,7 +25,7 @@ class WZMLStyle:
     LOGGED_IN = '<b>Already Bot Login In!</b>'
     INVALID_PASS = '<b>Invalid Password!</b>\n\nKindly put the correct Password .'
     PASS_LOGGED = '<b>Bot Permanent Login Successfully!</b>'
-    LOGIN_USED = '<b>Bot Login Usage :</b>\n\n<code>/cmd {password}</code>'
+    LOGIN_USED = '<b>Bot Login Usage :</b>\n\n<code>/cmd [password]</code>'
     # ---------------------
     # async def log(_, message): ---> __main__.py
     LOG_DISPLAY_BT = '📑 Log Display'

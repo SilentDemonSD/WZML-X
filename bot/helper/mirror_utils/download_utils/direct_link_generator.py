@@ -116,9 +116,9 @@ def direct_link_generator(link):
         raise DirectDownloadLinkException("ERROR: Invalid URL")
     if 'youtube.com' in domain or 'youtu.be' in domain:
         raise DirectDownloadLinkException("ERROR: Use ytdl cmds for Youtube links")
-    elif config_dict['DEBRID_LINK_API'] and any(x in domain for x in debrid_link_sites):
+    elif config_dict['DEBRID_LINK_API'] and not config_dict['UPTOBOX_TOKEN'] and any(x in domain for x in debrid_link_sites):
         return debrid_link(link)
-    elif config_dict['REAL_DEBRID_API'] and any(x in domain for x in debrid_sites):
+    elif config_dict['REAL_DEBRID_API'] and not config_dict['UPTOBOX_TOKEN'] and any(x in domain for x in debrid_sites):
         return real_debrid(link)
     elif any(x in domain for x in ['filelions.com', 'filelions.live', 'filelions.to']):
         return filelions(link)

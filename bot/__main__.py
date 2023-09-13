@@ -97,7 +97,7 @@ async def login(_, message):
         update_user_ldata(user_id, 'token', config_dict['LOGIN_PASS'])
         return await sendMessage(message, BotTheme('PASS_LOGGED'))
     else:
-        await sendMessage(message, BotTheme('LOGIN_USED', password=password))
+        await sendMessage(message, BotTheme('LOGIN_USED'))
 
 
 async def restart(client, message):
