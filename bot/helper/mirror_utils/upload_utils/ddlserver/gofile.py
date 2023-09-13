@@ -101,7 +101,7 @@ class Gofile:
         if not await self.is_goapi(self.token):
             raise Exception("Invalid Gofile API Key, Recheck your account !!")
         if await aiopath.isfile(file_path):
-            if (gCode := await self.upload_file(file=file_path)) and gCode.get("downloadPage", False):
+            if (gCode := await self.upload_file(path=file_path)) and gCode.get("downloadPage", False):
                 return gCode['downloadPage']
         elif await aiopath.isdir(file_path):
             if (gCode := await self.upload_folder(path=file_path)):
