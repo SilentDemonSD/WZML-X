@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from os import path as ospath, walk
-from aiofiles.os import path as aiopath
+from aiofiles.os import path as aiopath, rename as aiorename
 from asyncio import sleep
 from aiohttp import ClientSession
 
@@ -69,7 +69,7 @@ class Gofile:
                 
         return folder_data["code"]
 
-    async def upload_file(self, file: str, folderId: str = "", description: str = "", password: str = "", tags: str = "", expire: str = ""):
+    async def upload_file(self, path: str, folderId: str = "", description: str = "", password: str = "", tags: str = "", expire: str = ""):
         if password and len(password) < 4:
             raise ValueError("Password Length must be greater than 4")
 
@@ -91,8 +91,10 @@ class Gofile:
         
         if self.dluploader.is_cancelled:
             return
+        new_path = ospath.join(ospath.dirname(path), ospath.basename(path).replace(' ', '.'))
+        await aiorename(path, new_path)
         self.dluploader.last_uploaded = 0
-        upload_file = await self.dluploader.upload_aiohttp(f"https://{server}.gofile.io/uploadFile", file, "file", req_dict)
+        upload_file = await self.dluploader.upload_aiohttp(f"https://{server}.gofile.io/uploadFile", new_path, "file", req_dict)
         return await self.__resp_handler(upload_file)
         
     async def upload(self, file_path):
