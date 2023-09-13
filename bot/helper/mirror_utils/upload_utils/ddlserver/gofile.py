@@ -20,7 +20,8 @@ class Gofile:
         async with ClientSession() as session:
             async with session.get(f"https://api.gofile.io/getAccountDetails?token={token}&allDetails=true") as resp:
                 if resp.json()["status"] == "error-wrongToken":
-                    raise Exception("Invalid Gofile Token, Get your Gofile token from --> https://gofile.io/myProfile")
+                    return False
+        return True
 
     async def __resp_handler(self, response):
         api_resp = response.get("status", "")
@@ -95,7 +96,8 @@ class Gofile:
         return await self.__resp_handler(upload_file)
         
     async def upload(self, file_path):
-        await self.is_goapi(self.token)
+        if not await self.is_goapi(self.token):
+            raise Exception("Invalid Gofile API Key, Recheck your account !!")
         if await aiopath.isfile(file_path):
             if (gCode := await self.upload_file(file=file_path)) and gCode.get("downloadPage", False):
                 return gCode['downloadPage']
