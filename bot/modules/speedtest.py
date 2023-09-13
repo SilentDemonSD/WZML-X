@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from speedtest import Speedtest
+from speedtest import Speedtest, ConfigRetrievalError
 from pyrogram.handlers import MessageHandler
 from pyrogram.filters import command
 
@@ -11,8 +11,12 @@ from bot.helper.ext_utils.bot_utils import get_readable_file_size, new_task
 
 @new_task
 async def speedtest(_, message):
-    speed = await sendMessage(message, "<i>Initializing Speedtest...</i>")
-    test = Speedtest()
+    speed = await sendMessage(message, "<i>Initiating Speedtest...</i>")
+    try:
+        test = Speedtest()
+    except ConfigRetrievalError:
+        await editMessage(speed, "<b>ERROR:</b> <i>Can't connect to Server at the Moment, Try Again Later !</i>")
+        return
     test.get_best_server()
     test.download()
     test.upload()
@@ -49,7 +53,7 @@ async def speedtest(_, message):
         await deleteMessage(speed)
     except Exception as e:
         LOGGER.error(str(e))
-        pho = await editMessage(speed, string_speed)
+        await editMessage(speed, string_speed)
 
 bot.add_handler(MessageHandler(speedtest, filters=command(
     BotCommands.SpeedCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
