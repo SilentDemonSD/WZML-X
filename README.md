@@ -979,13 +979,14 @@ Where host is the name of extractor (eg. instagram, Twitch). Multiple accounts o
     
 -----
 
-### 🏅 ***Bot Authors***
+## 🏅 **Bot Authors**
 <details>
     <summary><b>Click Here For Description</b></summary>
 
-|![](https://avatars.githubusercontent.com/u/105407900)|![](https://avatars.githubusercontent.com/u/113664541)|![](https://avatars.githubusercontent.com/u/84721324)|
+|<img width="80" src="https://avatars.githubusercontent.com/u/105407900">|<img width="80" src="https://avatars.githubusercontent.com/u/113664541">|<img width="80" src="https://avatars.githubusercontent.com/u/84721324">|
 |:---:|:---:|:---:|
 |[`SilentDemonSD`](https://github.com/SilentDemonSD)|[`CodeWithWeeb`](https://github.com/weebzone)|[`Maverick`](https://github.com/MajnuRangeela)|
 |Author and DDL, UI Design, More Customs..|Author and Wraps Up Features|Co-Author & Bug Tester|
 
 </details>
+
