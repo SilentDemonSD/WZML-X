@@ -481,7 +481,6 @@ help - All cmds with description
     - `UPTOBOX_TOKEN`: Uptobox token to mirror uptobox links. Get it from [Uptobox Premium Account](https://uptobox.com/my_account). `str`
     </details></li>
 
-    </details></li>
     <li><details>
         <summary><b>RClone</b></summary>
 
@@ -595,7 +594,7 @@ help - All cmds with description
     - `AUTHOR_URL`: Author `URL` for Telegraph page
     - `COVER_IMAGE`: telegraph header image. use `graph.org` link of image
     </details></li>
-    
+
     <li><details>
         <summary><b>Extra</b></summary>
         
@@ -613,7 +612,7 @@ help - All cmds with description
     - `IMG_PAGE`: Set the page value for downloading a image. Each page have approx 70 images. Deafult is `1`. `Int`
     - `BOT_THEME`: Change the theme of bot. For now theme availabe is `minimal`. 
       - You can make your own theme checkout this link https://t.ly/9rVXq
-    </details></li>
+
     - `EXCEP_CHATS`: `CHAT_ID` of a `SuperGroup` where you want to disable the logging feature for that specific group. Logging features will remain active in other authorized chats that have been filled. Add `-100` before superGroup id. In short don't add bot id or your id!.
 
     <li><details>
