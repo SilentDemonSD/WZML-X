@@ -2,7 +2,7 @@ from hashlib import md5
 from re import sub as re_sub
 from shlex import split as ssplit
 from os import path as ospath
-from aiofiles.os import remove as aioremove, path as aiopath, mkdir
+from aiofiles.os import remove as aioremove, path as aiopath, mkdir, makedirs
 from time import time
 from re import search as re_search
 from asyncio import create_subprocess_exec, create_task, gather
@@ -116,8 +116,7 @@ async def get_audio_thumb(audio_file):
 
 async def take_ss(video_file, duration, total=1):
     des_dir = ospath.join('Thumbnails', f"{time()}")
-    if not await aiopath.exists(des_dir):
-        await mkdir(des_dir)
+    await makedirs(des_dir, exist_ok=True)
     if duration is None:
         duration = (await get_media_info(video_file))[0]
     if duration == 0:

@@ -661,10 +661,12 @@ async def checking_access(user_id, button=None):
     return None, button
 
 
-def extra_btns(buttons):
-    if extra_buttons:
+def extra_btns(buttons, already=False):
+    if extra_buttons and not already:
         for btn_name, btn_url in extra_buttons.items():
             buttons.ubutton(btn_name, btn_url)
+    if already:
+        return buttons, not already
     return buttons
 
 
