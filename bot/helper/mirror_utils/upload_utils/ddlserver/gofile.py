@@ -5,15 +5,22 @@ from asyncio import sleep
 from aiohttp import ClientSession
 
 from bot import LOGGER
-from bot.helper.ext_utils.bot_utils import is_gofile_token, sync_to_async
+from bot.helper.ext_utils.bot_utils import sync_to_async
 
 class Gofile:
     def __init__(self, dluploader=None, token=None):
         self.api_url = "https://api.gofile.io/"
         self.dluploader = dluploader
         self.token = token
-        if self.token is not None:
-            is_gofile_token(url=self.api_url, token=self.token)
+
+    @staticmethod
+    async def is_goapi(token):
+        if token is None:
+            return
+        async with ClientSession() as session:
+            async with session.get(f"https://api.gofile.io/getAccountDetails?token={token}&allDetails=true") as resp:
+                if resp.json()["status"] == "error-wrongToken":
+                    raise Exception("Invalid Gofile Token, Get your Gofile token from --> https://gofile.io/myProfile")
 
     async def __resp_handler(self, response):
         api_resp = response.get("status", "")
@@ -88,6 +95,7 @@ class Gofile:
         return await self.__resp_handler(upload_file)
         
     async def upload(self, file_path):
+        await self.is_goapi(self.token)
         if await aiopath.isfile(file_path):
             if (gCode := await self.upload_file(file=file_path)) and gCode.get("downloadPage", False):
                 return gCode['downloadPage']

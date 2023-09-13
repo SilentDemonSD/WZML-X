@@ -713,9 +713,3 @@ async def set_commands(client):
             LOGGER.info('Bot Commands have been Set & Updated')
         except Exception as err:
             LOGGER.error(err)
-
-
-def is_gofile_token(url, token):
-    resp = rget(url=f"{url}getAccountDetails?token={token}&allDetails=true").json()
-    if resp["status"] == "error-wrongToken":
-        raise Exception("Invalid Gofile Token, Get your Gofile token from --> https://gofile.io/myProfile")
