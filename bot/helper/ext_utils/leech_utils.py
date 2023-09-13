@@ -131,7 +131,7 @@ async def take_ss(video_file, duration, total=1):
         tasks.append(create_task(create_subprocess_exec(*cmd, stderr=PIPE)))
     status = await gather(*tasks)
     for task, eq_thumb in zip(status, range(1, total+1)):
-        if await task.wait() != 0 or not await aiopath.exists(os.path.join(des_dir, f"wz_thumb_{eq_thumb}.jpg")):
+        if await task.wait() != 0 or not await aiopath.exists(ospath.join(des_dir, f"wz_thumb_{eq_thumb}.jpg")):
             err = (await task.stderr.read()).decode().strip()
             LOGGER.error(f'Error while extracting thumbnail {eq_thumb} from video. Name: {video_file} stderr: {err}')
             return None
