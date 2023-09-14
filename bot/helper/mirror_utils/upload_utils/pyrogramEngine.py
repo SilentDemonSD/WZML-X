@@ -467,6 +467,8 @@ class TgUploader:
 
             if self.__thumb is None and thumb is not None and await aiopath.exists(thumb):
                 await aioremove(thumb)
+                if (dir_name := ospath.dirname(thumb)) and dir_name != "Thumbnails" and await aiopath.exists(dir_name):
+                    await rmdir(dir_name)
             self.__retry_error = False
         except FloodWait as f:
             LOGGER.warning(str(f))
