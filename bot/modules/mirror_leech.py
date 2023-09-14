@@ -56,16 +56,14 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
                 '-c': '', '-category': '',
                 '-ud': '', '-dump': '',
                 '-h': '', '-headers': '',
+                '-ss': 0, '-screenshots': '',
                 '-t': '', '-thumb': '',
     }
 
     args = arg_parser(input_list[1:], arg_base)
     cmd = input_list[0].split('@')[0]
 
-    try:
-        multi = int(args['-i'])
-    except:
-        multi = 0
+    multi = int(args['-i']) if args['-i'].isdigit() else 0
     
     link          = args['link']
     folder_name   = args['-m'] or args['-sd'] or args['-samedir']
@@ -86,6 +84,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     ussr          = args['-u'] or args['-user']
     pssw          = args['-p'] or args['-pass']
     thumb         = args['-t'] or args['-thumb']
+    sshots        = int(ss) if (ss := (args['-ss'] or args['-screenshots'])).isdigit() else 0
     bulk_start    = 0
     bulk_end      = 0
     ratio         = None
@@ -334,7 +333,8 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             return
 
     listener = MirrorLeechListener(message, compress, extract, isQbit, isLeech, tag, select, seed, 
-                                    sameDir, rcf, up, join, drive_id=drive_id, index_link=index_link, source_url=org_link or link)
+                                    sameDir, rcf, up, join, drive_id=drive_id, index_link=index_link, 
+                                    source_url=org_link or link, leech_utils={'screenshots': sshots, 'thumb': thumb})
 
     if file_ is not None:
         await delete_links(message)

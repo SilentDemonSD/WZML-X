@@ -2,11 +2,12 @@ from hashlib import md5
 from re import sub as re_sub
 from shlex import split as ssplit
 from os import path as ospath
-from aiofiles.os import remove as aioremove, path as aiopath, mkdir, makedirs
+from aiofiles.os import remove as aioremove, path as aiopath, mkdir, makedirs, listdir
 from time import time
 from re import search as re_search
 from asyncio import create_subprocess_exec, create_task, gather
 from asyncio.subprocess import PIPE
+from telegraph import upload_file
 from langcodes import Language
 
 from bot import LOGGER, MAX_SPLIT_SIZE, config_dict, user_data
@@ -114,7 +115,7 @@ async def get_audio_thumb(audio_file):
     return des_dir
 
 
-async def take_ss(video_file, duration, total=1):
+async def take_ss(video_file, duration=None, total=1):
     des_dir = ospath.join('Thumbnails', f"{time()}")
     await makedirs(des_dir, exist_ok=True)
     if duration is None:
@@ -298,7 +299,14 @@ async def format_filename(file_, user_id, dirpath=None, isMirror=False):
                     cap_mono = cap_mono.replace(args[0], '')
         cap_mono = cap_mono.replace('%%', '|')
     return file_, cap_mono
-    
+
+
+async def get_ss(up_path, ss_no):
+    thumbs_path = await take_ss(up_path, total=ss_no)
+    th_html = f"📌 <h4>{ospath.basename(up_path)}</h4><br><br>"
+    th_html += ''.join(f'<img src="https://graph.org{upload_file(photo_dir)[0]}"><br>' for thumb in await listdir(thumbs_path))
+    link_id = (await telegraph.create_page(title="ScreenShots X", content=th_html))["path"]
+    return f"https://graph.org/{link_id}"
     
 async def get_mediainfo_link(up_path):
     stdout, __, _ = await cmd_exec(ssplit(f'mediainfo "{up_path}"'))

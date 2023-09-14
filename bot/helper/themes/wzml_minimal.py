@@ -170,6 +170,7 @@ class WZMLStyle:
     CHECK_PM =        '📥 View in Bot PM'
     CHECK_LL =        '🖇 View in Links Log'
     MEDIAINFO_LINK =  '📃 MediaInfo'
+    SCREENSHOTS =     '🖼 ScreenShots'
     # ---------------------
 
     # def get_readable_message(): ---> bot_utilis.py
