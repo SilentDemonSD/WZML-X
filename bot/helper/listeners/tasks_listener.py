@@ -549,8 +549,7 @@ class MirrorLeechListener:
                     m_btns.ubutton(BotTheme('SOURCE_URL'), self.source_url)
                 if config_dict['SAVE_MSG']:
                     m_btns.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
-                await sendMultiMessage(config_dict['MIRROR_LOG_ID'], message, m_btns.build_menu(2), self.random_pic)
-                log_msg = list((await sendMultiMessage(config_dict['MIRROR_LOG_ID'], msg, buttonss, self.random_pic)).values())[0]
+                log_msg = list((await sendMultiMessage(config_dict['MIRROR_LOG_ID'], message, m_btns.build_menu(2), self.random_pic)).values())[0]
                 if self.linkslogmsg:
                     dispTime = datetime.now(timezone(config_dict['TIMEZONE'])).strftime('%d/%m/%y, %I:%M:%S %p')
                     btns = ButtonMaker()
