@@ -440,9 +440,9 @@ class MirrorLeechListener:
                     btn.ubutton(BotTheme('SOURCE_URL'), self.source_url)
                 if self.isSuperGroup:
                     btn = extra_btns(btn)[0]
-                    LOGGER.info(btn)
                 message = msg
                 btns = btn.build_menu(2)
+                buttons = btn
                 if self.isSuperGroup and not self.isPM:
                     message += BotTheme('L_LL_MSG')
                 elif self.isSuperGroup and self.isPM:
@@ -450,7 +450,7 @@ class MirrorLeechListener:
                     message += BotTheme('L_BOT_MSG')
                     buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
                 
-                buttons = btn
+                
                 fmsg = '\n'
                 for index, (link, name) in enumerate(files.items(), start=1):
                     fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
