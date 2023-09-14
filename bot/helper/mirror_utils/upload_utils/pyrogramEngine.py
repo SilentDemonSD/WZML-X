@@ -57,10 +57,10 @@ class TgUploader:
         self.__leechmsg = {}
         self.__leech_utils = self.__listener.leech_utils
 
-    async def __buttons(self, up_path):
+    async def __buttons(self, up_path, is_video=False):
         buttons = ButtonMaker()
         try:
-            if bool(self.__leech_utils['screenshots']):
+            if is_video and bool(self.__leech_utils['screenshots']):
                 buttons.ubutton(BotTheme('SCREENSHOTS'), await get_ss(up_path, self.__leech_utils['screenshots']))
         except Exception as e:
             LOGGER.error(f"ScreenShots Error: {e}")
@@ -364,6 +364,7 @@ class TgUploader:
                     thumb = await take_ss(self.__up_path, None)
                 if self.__is_cancelled:
                     return
+                buttons = await self.__buttons(self.__up_path, is_video)
                 nrml_media = await self.__client.send_document(chat_id=self.__sent_msg.chat.id,
                                                                        reply_to_message_id=self.__sent_msg.id,
                                                                        document=self.__up_path,
@@ -372,11 +373,11 @@ class TgUploader:
                                                                        force_document=True,
                                                                        disable_notification=True,
                                                                        progress=self.__upload_progress,
-                                                                       reply_markup=await self.__buttons(self.__up_path))
+                                                                       reply_markup=buttons)
                 
                 if self.__prm_media and (self.__has_buttons or not self.__leechmsg):
                     try:
-                        self.__sent_msg = await bot.copy_message(nrml_media.chat.id, nrml_media.chat.id, nrml_media.id, reply_to_message_id=self.__sent_msg.id, reply_markup=await self.__buttons(self.__up_path))
+                        self.__sent_msg = await bot.copy_message(nrml_media.chat.id, nrml_media.chat.id, nrml_media.id, reply_to_message_id=self.__sent_msg.id, reply_markup=buttons)
                         if self.__sent_msg: await deleteMessage(nrml_media)
                     except:
                         self.__sent_msg = nrml_media
@@ -407,6 +408,7 @@ class TgUploader:
                         self.__up_path = new_path
                 if self.__is_cancelled:
                     return
+                buttons = await self.__buttons(self.__up_path, is_video)
                 nrml_media = await self.__client.send_video(chat_id=self.__sent_msg.chat.id,
                                                                     reply_to_message_id=self.__sent_msg.id,
                                                                     video=self.__up_path,
@@ -418,10 +420,10 @@ class TgUploader:
                                                                     supports_streaming=True,
                                                                     disable_notification=True,
                                                                     progress=self.__upload_progress,
-                                                                    reply_markup=await self.__buttons(self.__up_path))
+                                                                    reply_markup=buttons)
                 if self.__prm_media and (self.__has_buttons or not self.__leechmsg):
                     try:
-                        self.__sent_msg = await bot.copy_message(nrml_media.chat.id, nrml_media.chat.id, nrml_media.id, reply_to_message_id=self.__sent_msg.id, reply_markup=await self.__buttons(self.__up_path))
+                        self.__sent_msg = await bot.copy_message(nrml_media.chat.id, nrml_media.chat.id, nrml_media.id, reply_to_message_id=self.__sent_msg.id, reply_markup=buttons)
                         if self.__sent_msg: await deleteMessage(nrml_media)
                     except:
                         self.__sent_msg = nrml_media

@@ -1,4 +1,5 @@
 from hashlib import md5
+from time import strftime, gmtime
 from re import sub as re_sub
 from shlex import split as ssplit
 from natsort import natsorted
@@ -117,7 +118,7 @@ async def get_audio_thumb(audio_file):
     return des_dir
 
 
-async def take_ss(video_file, duration=None, total=1):
+async def take_ss(video_file, duration=None, total=1, gen_ss=False):
     des_dir = ospath.join('Thumbnails', f"{time()}")
     await makedirs(des_dir, exist_ok=True)
     if duration is None:
@@ -126,10 +127,12 @@ async def take_ss(video_file, duration=None, total=1):
         duration = 3
     duration = duration - (duration * 2 / 100)
     cmd = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", "",
-           "-i", video_file, "-vf", "thumbnail", "-frames:v", "1", "-q:v", "1", des_dir]
+           "-i", video_file, "-vf", "thumbnail", "-frames:v", "1", des_dir]
     tasks = []
+    tstamps = {}
     for eq_thumb in range(1, total+1):
         cmd[5] = str((duration // total) * eq_thumb)
+        tstamps[f"wz_thumb_{eq_thumb}.jpg"] = strftime("%H:%M:%S", gmtime(cmd[5]))
         cmd[-1] = ospath.join(des_dir, f"wz_thumb_{eq_thumb}.jpg")
         tasks.append(create_task(create_subprocess_exec(*cmd, stderr=PIPE)))
     status = await gather(*tasks)
@@ -138,7 +141,7 @@ async def take_ss(video_file, duration=None, total=1):
             err = (await task.stderr.read()).decode().strip()
             LOGGER.error(f'Error while extracting thumbnail no. {eq_thumb} from video. Name: {video_file} stderr: {err}')
             return None
-    return des_dir if total != 1 else ospath.join(des_dir, "wz_thumb_1.jpg")
+    return (des_dir, tstamps) if gen_ss else ospath.join(des_dir, "wz_thumb_1.jpg")
 
 
 async def split_file(path, size, file_, dirpath, split_size, listener, start_time=0, i=1, inLoop=False, multi_streams=True):
@@ -304,9 +307,9 @@ async def format_filename(file_, user_id, dirpath=None, isMirror=False):
 
 
 async def get_ss(up_path, ss_no):
-    thumbs_path = await take_ss(up_path, total=ss_no)
-    th_html = f"📌 <h4>{ospath.basename(up_path)}</h4><br><br>"
-    th_html += ''.join(f'<img src="https://graph.org{upload_file(ospath.join(thumbs_path, thumb))[0]}"><br>' for thumb in natsorted(await listdir(thumbs_path)))
+    thumbs_path, tstamps = await take_ss(up_path, total=ss_no, gen_ss=True)
+    th_html = f"📌 <h4>{ospath.basename(up_path)}</h4><br>📇 <b>Total Screenshots:</b> {ss_no}<br><br>"
+    th_html += ''.join(f'<img src="https://graph.org{upload_file(ospath.join(thumbs_path, thumb))[0]}"><br><pre>Screenshot at {tstamps[thumb]}</pre>' for thumb in natsorted(await listdir(thumbs_path)))
     await aiormtree(thumbs_path)
     link_id = (await telegraph.create_page(title="ScreenShots X", content=th_html))["path"]
     return f"https://graph.org/{link_id}"
