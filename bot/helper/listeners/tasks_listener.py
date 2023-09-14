@@ -564,16 +564,16 @@ class MirrorLeechListener:
             buttons = extra_btns(buttons)[0]
             if config_dict['SAFE_MODE']:
                 if self.isSuperGroup:
+                    s_btn = deepcopy(buttons)
+                    if self.source_url and config_dict['SOURCE_LINK']:
+                        buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
                     if self.botpmmsg:
                         await sendMessage(self.botpmmsg, message, buttons.build_menu(2), photo=self.random_pic)
-                    s_btn = deepcopy(buttons)
                     if config_dict['SAVE_MSG'] and self.isSuperGroup:
-                        buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
+                        s_btn.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                     if self.botpmmsg:
                         s_btn.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
                         await sendMessage(self.message, message, s_btn.build_menu(2), photo=self.random_pic)
-                    else:
-                        await sendMessage(self.message, message + BotTheme('M_PM_WARN'), buttons.build_menu(2), photo=self.random_pic)
                 else:
                     await sendMessage(self.message, message, buttons.build_menu(2), photo=self.random_pic)
             else:
