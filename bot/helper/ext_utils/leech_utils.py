@@ -3,7 +3,8 @@ from re import sub as re_sub
 from shlex import split as ssplit
 from natsort import natsorted
 from os import path as ospath
-from aiofiles.os import remove as aioremove, path as aiopath, mkdir, rmdir, makedirs, listdir
+from aiofiles.os import remove as aioremove, path as aiopath, mkdir, makedirs, listdir
+from aioshutil import rmtree as aiormtree
 from time import time
 from re import search as re_search
 from asyncio import create_subprocess_exec, create_task, gather
@@ -306,7 +307,7 @@ async def get_ss(up_path, ss_no):
     thumbs_path = await take_ss(up_path, total=ss_no)
     th_html = f"📌 <h4>{ospath.basename(up_path)}</h4><br><br>"
     th_html += ''.join(f'<img src="https://graph.org{upload_file(ospath.join(thumbs_path, thumb))[0]}"><br>' for thumb in natsorted(await listdir(thumbs_path)))
-    await rmdir(ospath.dirname(thumbs_path))
+    await aiormtree(thumbs_path)
     link_id = (await telegraph.create_page(title="ScreenShots X", content=th_html))["path"]
     return f"https://graph.org/{link_id}"
 
