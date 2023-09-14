@@ -106,6 +106,8 @@ class Gofile:
         elif await aiopath.isdir(file_path):
             if (gCode := await self.upload_folder(path=file_path)):
                 return f"https://gofile.io/d/{gCode}"
+        if self.dluploader.is_cancelled:
+            return
         raise Exception("Failed to upload file/folder to Gofile API, Retry or Try after sometimes...")
 
     async def create_folder(self, parentFolderId, folderName):

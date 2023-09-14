@@ -141,6 +141,8 @@ class Streamtape:
             stlink = await self.upload_folder(file_path)
         if stlink:
             return stlink
+        if self.dluploader.is_cancelled:
+            return
         raise Exception("Failed to upload file/folder to StreamTape API, Retry! or Try after sometimes...")
         
         
