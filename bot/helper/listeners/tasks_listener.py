@@ -438,6 +438,7 @@ class MirrorLeechListener:
             else:
                 if self.source_url and config_dict['SOURCE_LINK']:
                     btn.ubutton(BotTheme('SOURCE_URL'), self.source_url)
+                btns = btn.build_menu(2)
                 if self.isSuperGroup:
                     btn = extra_btns(buttons)[0]
                 message = msg
