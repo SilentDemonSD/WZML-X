@@ -437,9 +437,10 @@ class MirrorLeechListener:
                 await sendMessage(self.message, msg, photo=self.random_pic)
             else:
                 if self.source_url and config_dict['SOURCE_LINK']:
-                    btn = btn.ubutton(BotTheme('SOURCE_URL'), self.source_url)
+                    btn.ubutton(BotTheme('SOURCE_URL'), self.source_url)
                 if self.isSuperGroup:
                     btn = extra_btns(btn)[0]
+                    LOGGER.info(btn)
                 message = msg
                 btns = btn.build_menu(2)
                 if self.isSuperGroup and not self.isPM:
