@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from random import choice
 from time import time
+from copy import deepcopy
 from pytz import timezone
 from datetime import datetime
 from urllib.parse import unquote, quote
@@ -544,7 +545,7 @@ class MirrorLeechListener:
             
             # <Section : MIRROR LOGS>
             if config_dict['MIRROR_LOG_ID']:
-                m_btns = buttons
+                m_btns = deepcopy(buttons)
                 if self.source_url and config_dict['SOURCE_LINK']:
                     m_btns.ubutton(BotTheme('SOURCE_URL'), self.source_url)
                 if config_dict['SAVE_MSG']:
@@ -565,7 +566,7 @@ class MirrorLeechListener:
                 if self.isSuperGroup:
                     if self.botpmmsg:
                         await sendMessage(self.botpmmsg, message, buttons.build_menu(2), photo=self.random_pic)
-                    s_btn = buttons
+                    s_btn = deepcopy(buttons)
                     if config_dict['SAVE_MSG'] and self.isSuperGroup:
                         buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                     if self.isPM and self.botpmmsg:
