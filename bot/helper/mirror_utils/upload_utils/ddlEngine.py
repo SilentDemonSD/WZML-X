@@ -74,10 +74,8 @@ class DDLUploader:
         all_links = {}
         for serv, (enabled, api_key) in self.__ddl_servers.items():
             if enabled:
-                if self.total_files != 0:
-                    self.total_files = 0
-                if self.total_folders != 0:
-                    self.total_folders = 0
+                self.total_files = 0
+                self.total_folders = 0
                 if serv == 'gofile':
                     self.__engine = 'GoFile API'
                     nlink = await Gofile(self, api_key).upload(file_path)

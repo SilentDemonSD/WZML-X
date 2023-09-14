@@ -136,8 +136,7 @@ class MirrorLeechListener:
         if config_dict['LINKS_LOG_ID'] and not self.excep_chat:
             dispTime = datetime.now(timezone(config_dict['TIMEZONE'])).strftime('%d/%m/%y, %I:%M:%S %p')
             self.linkslogmsg = await sendCustomMsg(config_dict['LINKS_LOG_ID'], BotTheme('LINKS_START', Mode=self.upload_details['mode'], Tag=self.tag) + BotTheme('LINKS_SOURCE', On=dispTime, Source=self.source_msg))
-        user_dict = user_data.get(self.message.from_user.id, {})
-        if config_dict['BOT_PM'] or user_dict.get('bot_pm') and self.isSuperGroup:
+        if self.isPM and self.isSuperGroup:
             self.botpmmsg = await sendCustomMsg(self.message.from_user.id, BotTheme('PM_START', msg_link=self.source_url))
         if self.isSuperGroup and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL:
             await DbManger().add_incomplete_task(self.message.chat.id, self.message.link, self.tag, self.source_url)
@@ -513,8 +512,7 @@ class MirrorLeechListener:
                 if (is_DDL := isinstance(link, dict)):
                     for dlup, dlink in link.items():
                         buttons.ubutton(BotTheme('DDL_LINK', Serv=dlup), dlink)
-                elif link:
-                    if user_id == OWNER_ID or not config_dict['DISABLE_DRIVE_LINK']:
+                elif link and (user_id == OWNER_ID or not config_dict['DISABLE_DRIVE_LINK']):
                         buttons.ubutton(BotTheme('CLOUD_LINK'), link)
                 else:
                     msg += BotTheme('RCPATH', RCpath=rclonePath)
@@ -543,85 +541,52 @@ class MirrorLeechListener:
                 msg += BotTheme('RCPATH', RCpath=rclonePath)
             msg += BotTheme('M_CC', Tag=self.tag)
             message = msg
-            if self.source_url and config_dict['SOURCE_LINK']:
-                buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
-                btn.ubutton(BotTheme('SOURCE_URL'), self.source_url)
+            
+            # <Section : MIRROR LOGS>
             if config_dict['MIRROR_LOG_ID']:
+                m_btns = buttons
+                if self.source_url and config_dict['SOURCE_LINK']:
+                    m_btns.ubutton(BotTheme('SOURCE_URL'), self.source_url)
                 if config_dict['SAVE_MSG']:
-                    buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
-                await sendMultiMessage(config_dict['MIRROR_LOG_ID'], message, buttons.build_menu(2), self.random_pic)
+                    m_btns.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
+                await sendMultiMessage(config_dict['MIRROR_LOG_ID'], message, m_btns.build_menu(2), self.random_pic)
+                log_msg = list((await sendMultiMessage(config_dict['MIRROR_LOG_ID'], msg, buttonss, self.random_pic)).values())[0]
+                if self.linkslogmsg:
+                    dispTime = datetime.now(timezone(config_dict['TIMEZONE'])).strftime('%d/%m/%y, %I:%M:%S %p')
+                    btns = ButtonMaker()
+                    if config_dict['SAVE_MSG']:
+                        btns.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
+                    await editMessage(self.linkslogmsg, (msg + BotTheme('LINKS_SOURCE', On=dispTime, Source=self.source_msg) + BotTheme('L_LL_MSG') + f"\n\n<a href='{log_msg.link}'>{escape(name)}</a>\n"), btns.build_menu(1))
+            
+            # <Section : MESSAGE LOGS>
             if self.isPM and self.isSuperGroup:
                 message += BotTheme('M_BOT_MSG')
-            if self.isSuperGroup:
-                btn = extra_btns(btn)[0]
-                buttons = extra_btns(buttons)[0]
+            buttons = extra_btns(buttons)[0]
             if config_dict['SAFE_MODE']:
                 if self.isSuperGroup:
-                    await sendMessage(self.botpmmsg, message, buttons.build_menu(2), photo=self.random_pic)
-                    if config_dict['SAVE_MSG'] and not saved and self.isSuperGroup:
-                        saved = True
-                        btn.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
-                    if self.isPM:
-                        btn.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
-                        await sendMessage(self.message, message, btn.build_menu(2), photo=self.random_pic)
+                    if self.botpmmsg:
+                        await sendMessage(self.botpmmsg, message, buttons.build_menu(2), photo=self.random_pic)
+                    s_btn = buttons
+                    if config_dict['SAVE_MSG'] and self.isSuperGroup:
+                        buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
+                    if self.isPM and self.botpmmsg:
+                        if self.source_url and config_dict['SOURCE_LINK']:
+                            s_btn.ubutton(BotTheme('SOURCE_URL'), self.source_url)
+                        s_btn.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
+                        await sendMessage(self.message, message, s_btn.build_menu(2), photo=self.random_pic)
                     else:
-                        await sendMessage(self.message, message + BotTheme('M_PM_WARN'), btn.build_menu(2), photo=self.random_pic)
+                        await sendMessage(self.message, message + BotTheme('M_PM_WARN'), buttons.build_menu(2), photo=self.random_pic)
                 else:
+                    if self.source_url and config_dict['SOURCE_LINK']:
+                        buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
                     await sendMessage(self.message, message, buttons.build_menu(2), photo=self.random_pic)
             else:   
-                if self.isPM and self.isSuperGroup:
-                    saved = False
+                if self.isPM and self.botpmmsg and self.isSuperGroup:
                     await sendMessage(self.botpmmsg, msg, buttons.build_menu(2), self.random_pic)
                     buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
-                if config_dict['SAVE_MSG'] and not saved and self.isSuperGroup:
-                    saved = True
+                if config_dict['SAVE_MSG'] and self.isSuperGroup:
                     buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
-                    
-                await sendMessage(self.message, message , buttons.build_menu(2), photo=self.random_pic)
-
-
-                
-
-
-            # if self.isSuperGroup and self.isPM:
-            #     message += BotTheme('M_BOT_MSG')
-            #     await sendMessage(self.botpmmsg, msg, buttons.build_menu(2), self.random_pic)
-            #     buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm")
-            # await sendMessage(self.message, message , buttons.build_menu(2), photo=self.random_pic)
-
-
-            # if config_dict['MIRROR_LOG_ID']:
-            #     buttonss = button
-            #     if button is not None and config_dict['SAVE_MSG']:
-            #         buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
-            #         buttonss = buttons.build_menu(2)
-            #     log_msg = list((await sendMultiMessage(config_dict['MIRROR_LOG_ID'], msg, buttonss, self.random_pic)).values())[0]
-            #     if self.linkslogmsg:
-            #         dispTime = datetime.now(timezone(config_dict['TIMEZONE'])).strftime('%d/%m/%y, %I:%M:%S %p')
-            #         btns = ButtonMaker()
-            #         if config_dict['SAVE_MSG']:
-            #             btns.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
-            #         await editMessage(self.linkslogmsg, (msg + BotTheme('LINKS_SOURCE', On=dispTime, Source=self.source_msg) + BotTheme('L_LL_MSG') + f"\n\n<a href='{log_msg.link}'>{escape(name)}</a>\n"), btns.build_menu(1))
-            
-            # buttons = ButtonMaker()
-            # if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
-            #     await sendMessage(self.botpmmsg, msg, button, self.random_pic)
-            #     if self.isSuperGroup:
-            #         buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
-            #         if self.linkslogmsg:
-            #             buttons.ubutton(BotTheme('CHECK_LL'), self.linkslogmsg.link)
-            #         if self.source_url and config_dict['SOURCE_LINK']:
-            #             buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
-            #         buttons = extra_btns(buttons)[0]
-            #         await sendMessage(self.message, msg + BotTheme('M_BOT_MSG'), buttons.build_menu(2), self.random_pic)
-            #     else:
-            #         await deleteMessage(self.botpmmsg)
-            # elif self.linkslogmsg:
-            #     buttons.ubutton(BotTheme('CHECK_LL'), self.linkslogmsg.link)
-            #     if self.source_url and config_dict['SOURCE_LINK']:
-            #         buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
-            #     buttons = extra_btns(buttons)[0]
-            #     await sendMessage(self.message, msg, buttons.build_menu(2), self.random_pic)
+                await sendMessage(self.message, message, buttons.build_menu(2), photo=self.random_pic)
 
             if self.seed:
                 if self.newDir:
@@ -633,6 +598,9 @@ class MirrorLeechListener:
                         non_queued_up.remove(self.uid)
                 await start_from_queued()
                 return
+        
+        if not config_dict['DELETE_LINKS'] or config_dict['CLEAN_LOG_MSG']:
+            await deleteMessage(self.botpmmsg)
         
         await clean_download(self.dir)
         async with download_dict_lock:
@@ -649,7 +617,6 @@ class MirrorLeechListener:
                 non_queued_up.remove(self.uid)
 
         await start_from_queued()
-        await deleteMessage(self.botpmmsg)
         await delete_links(self.message)
 
 
