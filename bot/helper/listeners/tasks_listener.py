@@ -579,12 +579,12 @@ class MirrorLeechListener:
                     if self.source_url and config_dict['SOURCE_LINK']:
                         buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
                     await sendMessage(self.message, message, buttons.build_menu(2), photo=self.random_pic)
-            else:   
+            else:
+                if self.source_url and config_dict['SOURCE_LINK']:
+                    buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
                 if self.isPM and self.botpmmsg and self.isSuperGroup:
                     await sendMessage(self.botpmmsg, msg, buttons.build_menu(2), self.random_pic)
                     buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
-                if self.source_url and config_dict['SOURCE_LINK']:
-                    buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
                 if config_dict['SAVE_MSG'] and self.isSuperGroup:
                     buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                 await sendMessage(self.message, message, buttons.build_menu(2), photo=self.random_pic)

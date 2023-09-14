@@ -664,7 +664,7 @@ async def checking_access(user_id, button=None):
 def extra_btns(buttons, already=False):
     if extra_buttons and not already:
         for btn_name, btn_url in extra_buttons.items():
-            buttons.ubutton(btn_name, btn_url)
+            buttons.ubutton(btn_name, btn_url, 'l_body')
     return buttons, True
 
 
