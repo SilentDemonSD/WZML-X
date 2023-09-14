@@ -64,7 +64,7 @@ class MirrorLeechListener:
         self.isPrivate = message.chat.type == ChatType.BOT
         self.user_id = self.message.from_user.id
         self.user_dict = user_data.get(self.user_id, {})
-        self.isPM = config_dict['BOT_PM'] or self.user_dict.get('bot_pm')
+        self.isPM = config_dict['BOT_PM'] or self.user_dict.get('bot_pm') or config_dict['SAFE_MODE']
         self.suproc = None
         self.sameDir = sameDir
         self.rcFlags = rcFlags
@@ -569,16 +569,12 @@ class MirrorLeechListener:
                     s_btn = deepcopy(buttons)
                     if config_dict['SAVE_MSG'] and self.isSuperGroup:
                         buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
-                    if self.isPM and self.botpmmsg:
-                        if self.source_url and config_dict['SOURCE_LINK']:
-                            s_btn.ubutton(BotTheme('SOURCE_URL'), self.source_url)
+                    if self.botpmmsg:
                         s_btn.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
                         await sendMessage(self.message, message, s_btn.build_menu(2), photo=self.random_pic)
                     else:
                         await sendMessage(self.message, message + BotTheme('M_PM_WARN'), buttons.build_menu(2), photo=self.random_pic)
                 else:
-                    if self.source_url and config_dict['SOURCE_LINK']:
-                        buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
                     await sendMessage(self.message, message, buttons.build_menu(2), photo=self.random_pic)
             else:
                 if self.source_url and config_dict['SOURCE_LINK']:
