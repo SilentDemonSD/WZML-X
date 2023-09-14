@@ -37,7 +37,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     input_list = text[0].split(' ')
 
     arg_base = {'link': '', 
-                '-i': 0,
+                '-i': '0',
                 '-m': '', '-sd': '', '-samedir': '',
                 '-d': False, '-seed': False,
                 '-j': False, '-join': False,
@@ -56,7 +56,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
                 '-c': '', '-category': '',
                 '-ud': '', '-dump': '',
                 '-h': '', '-headers': '',
-                '-ss': 0, '-screenshots': '',
+                '-ss': '0', '-screenshots': '',
                 '-t': '', '-thumb': '',
     }
 
