@@ -1,6 +1,7 @@
 from hashlib import md5
 from re import sub as re_sub
 from shlex import split as ssplit
+from natsort import natsorted
 from os import path as ospath
 from aiofiles.os import remove as aioremove, path as aiopath, mkdir, rmdir, makedirs, listdir
 from time import time
@@ -304,7 +305,7 @@ async def format_filename(file_, user_id, dirpath=None, isMirror=False):
 async def get_ss(up_path, ss_no):
     thumbs_path = await take_ss(up_path, total=ss_no)
     th_html = f"📌 <h4>{ospath.basename(up_path)}</h4><br><br>"
-    th_html += ''.join(f'<img src="https://graph.org{upload_file(thumb)[0]}"><br>' for thumb in await listdir(thumbs_path))
+    th_html += ''.join(f'<img src="https://graph.org{upload_file(ospath.join(thumbs_path, thumb))[0]}"><br>' for thumb in natsorted(await listdir(thumbs_path)))
     await rmdir(ospath.dirname(thumbs_path))
     link_id = (await telegraph.create_page(title="ScreenShots X", content=th_html))["path"]
     return f"https://graph.org/{link_id}"
