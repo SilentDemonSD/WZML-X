@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from traceback import format_exc
 from logging import getLogger, ERROR
-from aiofiles.os import remove as aioremove, path as aiopath, rename as aiorename, makedirs
+from aiofiles.os import remove as aioremove, path as aiopath, rename as aiorename, makedirs, rmdir
 from os import walk, path as ospath
 from time import time
 from PIL import Image
@@ -475,6 +475,8 @@ class TgUploader:
             self.__retry_error = True
             if self.__thumb is None and thumb is not None and await aiopath.exists(thumb):
                 await aioremove(thumb)
+                if (dir_name := ospath.dirname(thumb)) and dir_name != "Thumbnails" and await aiopath.exists(dir_name):
+                    await rmdir(dir_name)
             LOGGER.error(f"{format_exc()}. Path: {self.__up_path}")
             if 'Telegram says: [400' in str(err) and key != 'documents':
                 LOGGER.error(f"Retrying As Document. Path: {self.__up_path}")

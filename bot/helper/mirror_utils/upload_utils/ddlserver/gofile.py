@@ -19,9 +19,9 @@ class Gofile:
             return
         async with ClientSession() as session:
             async with session.get(f"https://api.gofile.io/getAccountDetails?token={token}&allDetails=true") as resp:
-                if (await resp.json())["status"] == "error-wrongToken":
-                    return False
-        return True
+                if (await resp.json())["status"] == "ok":
+                    return True
+        return False
 
     async def __resp_handler(self, response):
         api_resp = response.get("status", "")
