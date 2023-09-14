@@ -547,8 +547,7 @@ class MirrorLeechListener:
                 buttons.ubutton(BotTheme('SOURCE_URL'), self.source_url)
                 btn.ubutton(BotTheme('SOURCE_URL'), self.source_url)
             if config_dict['MIRROR_LOG_ID']:
-                if config_dict['SAVE_MSG'] and not saved:
-                    saved = True
+                if config_dict['SAVE_MSG']:
                     buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
                 await sendMultiMessage(config_dict['MIRROR_LOG_ID'], message, buttons.build_menu(2), self.random_pic)
             if self.isPM and self.isSuperGroup:
