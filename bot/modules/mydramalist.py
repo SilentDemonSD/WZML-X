@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
+from contextlib import suppress
 from aiohttp import ClientSession
 from requests import get as rget
 from urllib.parse import quote as q
 from pycountry import countries as conn
 
 from pyrogram.filters import command, regex
-from pyrogram.handlers import MessageHandler, CallbackQueryHandler 
+from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.errors import MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty, ReplyMarkupInvalid
 
 from bot import LOGGER, bot, config_dict, user_data
@@ -103,11 +104,9 @@ def list_to_hash(k, flagg=False, emoji=False):
         for elem in k:
             ele = elem.replace(" ", "_").replace("-", "_")
             if flagg:
-                try:
+                with suppress(AttributeError):
                     conflag = (conn.get(name=elem)).flag
                     listing += f'{conflag} '
-                except AttributeError:
-                    pass
             if emoji:
                 listing += f"{IMDB_GENRE_EMOJI.get(elem, '')} "
             listing += f'#{ele}, '

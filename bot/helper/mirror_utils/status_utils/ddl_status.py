@@ -16,7 +16,7 @@ class DDLStatus:
         return get_readable_file_size(self.__size)
 
     def status(self):
-        return MirrorStatus.STATUS_UPLOADDDL
+        return MirrorStatus.STATUS_UPLOADING
     
     def name(self):
         return self.__obj.name

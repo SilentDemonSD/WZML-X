@@ -15,7 +15,7 @@ async def save_message(_, query):
         try:
             await query.message.copy(usr, reply_markup=InlineKeyboardMarkup(BTN) if (BTN := query.message.reply_markup.inline_keyboard[:-1]) else None)
             await query.answer("Message/Media Successfully Saved !", show_alert=True)
-        except:
+        except Exception:
             if user_dict.get('save_mode'):
                 await query.answer('Make Bot as Admin and give Post Permissions and Try Again', show_alert=True)
             else:

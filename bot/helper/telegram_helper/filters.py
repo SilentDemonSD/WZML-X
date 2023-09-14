@@ -18,9 +18,20 @@ class CustomFilters:
     async def authorized_user(self, _, message):
         user = message.from_user or message.sender_chat
         uid = user.id
+        if bool(uid == OWNER_ID or (uid in user_data and (user_data[uid].get('is_auth', False) or user_data[uid].get('is_sudo', False)))):
+            return True
+        
+        auth_chat = False
         chat_id = message.chat.id
-        return bool(uid == OWNER_ID or (uid in user_data and (user_data[uid].get('is_auth', False) or
-                                                              user_data[uid].get('is_sudo', False))) or (chat_id in user_data and user_data[chat_id].get('is_auth', False)))
+        if chat_id in user_data and user_data[chat_id].get('is_auth', False):
+            if len(topic_ids := user_data[chat_id].get('topic_ids', [])) == 0:
+                auth_chat = True
+            elif (is_forum := message.reply_to_message) and ((is_forum.text is None and is_forum.caption is None and is_forum.id in topic_ids)
+                or ((is_forum.text or is_forum.caption) and ((not is_forum.reply_to_top_message_id and is_forum.reply_to_message_id in topic_ids)
+                or (is_forum.reply_to_top_message_id in topic_ids)))):
+                auth_chat = True
+        return auth_chat
+    
     authorized = create(authorized_user)
     
     async def authorized_usetting(self, _, message):
@@ -53,6 +64,6 @@ class CustomFilters:
     async def blacklist_user(self, _, message):
         user = message.from_user or message.sender_chat
         uid = user.id
-        return bool(uid in user_data and user_data[uid].get('is_blacklist') and uid != OWNER_ID)
+        return bool(uid != OWNER_ID and uid in user_data and user_data[uid].get('is_blacklist'))
         
     blacklisted = create(blacklist_user)

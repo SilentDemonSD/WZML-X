@@ -23,7 +23,7 @@ class TelegraphHelper:
             author_url=self.author_url
         )
         self.access_token = self.telegraph.get_access_token()
-        LOGGER.info("Creating Telegraph Account")
+        LOGGER.info(f"Telegraph Account Generated : {self.short_name}")
 
     async def create_page(self, title, content):
         try:
@@ -34,8 +34,7 @@ class TelegraphHelper:
                 html_content=content
             )
         except RetryAfterError as st:
-            LOGGER.warning(
-                f'Telegraph Flood control exceeded. I will sleep for {st.retry_after} seconds.')
+            LOGGER.warning(f'Telegraph Flood control exceeded. I will sleep for {st.retry_after} seconds.')
             await sleep(st.retry_after)
             return await self.create_page(title, content)
 
@@ -49,8 +48,7 @@ class TelegraphHelper:
                 html_content=content
             )
         except RetryAfterError as st:
-            LOGGER.warning(
-                f'Telegraph Flood control exceeded. I will sleep for {st.retry_after} seconds.')
+            LOGGER.warning(f'Telegraph Flood control exceeded. I will sleep for {st.retry_after} seconds.')
             await sleep(st.retry_after)
             return await self.edit_page(path, title, content)
 

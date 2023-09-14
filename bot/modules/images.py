@@ -20,13 +20,12 @@ async def picture_add(_, message):
     editable = await sendMessage(message, "<i>Fetching Input ...</i>")
     if len(message.command) > 1 or resm and resm.text:
         msg_text = resm.text if resm else message.command[1]
-        if msg_text.startswith("http"):
-            pic_add = msg_text.strip()
-            await editMessage(editable, f"<b>Adding your Link :</b> <code>{pic_add}</code>")
-        else:
+        if not msg_text.startswith("http"):
             return await editMessage(editable, "<b>Not a Valid Link, Must Start with 'http'</b>")
+        pic_add = msg_text.strip()
+        await editMessage(editable, f"<b>Adding your Link :</b> <code>{pic_add}</code>")
     elif resm and resm.photo:
-        if not (resm.photo and resm.photo.file_size <= 5242880*2):
+        if resm.photo.file_size > 5242880 * 2:
             return await editMessage(editable, "<i>Media is Not Supported! Only Photos!!</i>")
         try:
             photo_dir = await resm.download()
@@ -53,12 +52,12 @@ async def picture_add(_, message):
 
 
 async def pictures(_, message):
-    user_id = message.from_user.id
     if not config_dict['IMAGES']:
         await sendMessage(message, f"<b>No Photo to Show !</b> Add by /{BotCommands.AddImageCommand}")
     else:
         to_edit = await sendMessage(message, "<i>Generating Grid of your Images...</i>")
         buttons = ButtonMaker()
+        user_id = message.from_user.id
         buttons.ibutton("<<", f"images {user_id} turn -1")
         buttons.ibutton(">>", f"images {user_id} turn 1")
         buttons.ibutton("Remove Image", f"images {user_id} remov 0")

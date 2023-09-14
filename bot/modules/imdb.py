@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from contextlib import suppress
 from re import findall, IGNORECASE
 from imdb import Cinemagoer
 from pycountry import countries as conn
@@ -28,10 +29,10 @@ async def imdb_search(_, message):
         buttons = ButtonMaker()
         if title.lower().startswith("https://www.imdb.com/title/tt"):
             movieid = title.replace("https://www.imdb.com/title/tt", "")
-            movie = imdb.get_movie(movieid)
-            if not movie:
+            if movie := imdb.get_movie(movieid):
+                buttons.ibutton(f"🎬 {movie.get('title')} ({movie.get('year')})", f"imdb {user_id} movie {movieid}")
+            else:
                 return await editMessage(k, "<i>No Results Found</i>")
-            buttons.ibutton(f"🎬 {movie.get('title')} ({movie.get('year')})", f"imdb {user_id} movie {movieid}")
         else:
             movies = get_poster(title, bulk=True)
             if not movies:
@@ -62,14 +63,10 @@ def get_poster(query, bulk=False, id=False, file=None):
         if not movieid:
             return None
         if year:
-            filtered=list(filter(lambda k: str(k.get('year')) == str(year), movieid))
-            if not filtered:
-                filtered = movieid
+            filtered = list(filter(lambda k: str(k.get('year')) == str(year), movieid)) or movieid
         else:
             filtered = movieid
-        movieid=list(filter(lambda k: k.get('kind') in ['movie', 'tv series'], filtered))
-        if not movieid:
-            movieid = filtered
+        movieid = list(filter(lambda k: k.get('kind') in ['movie', 'tv series'], filtered)) or filtered
         if bulk:
             return movieid
         movieid = movieid[0].movieID
@@ -83,10 +80,7 @@ def get_poster(query, bulk=False, id=False, file=None):
     else:
         date = "N/A"
     plot = movie.get('plot')
-    if plot and len(plot) > 0:
-        plot = plot[0]
-    else:
-        plot = movie.get('plot outline')
+    plot = plot[0] if plot and len(plot) > 0 else movie.get('plot outline')
     if plot and len(plot) > 300:
         plot = f"{plot[:300]}..."
     return {
@@ -152,11 +146,9 @@ def list_to_hash(k, flagg=False, emoji=False):
         for elem in k:
             ele = elem.replace(" ", "_").replace("-", "_")
             if flagg:
-                try:
+                with suppress(AttributeError):
                     conflag = (conn.get(name=elem)).flag
                     listing += f'{conflag} '
-                except AttributeError:
-                    pass
             if emoji:
                 listing += f"{IMDB_GENRE_EMOJI.get(elem, '')} "
             listing += f'#{ele}, '

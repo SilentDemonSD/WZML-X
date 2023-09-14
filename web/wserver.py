@@ -620,13 +620,13 @@ section span{
           src="https://graph.org/file/1a6ad157f55bc42b548df.png"
           alt="logo"
         />
-        <a href="https://t.me/krn_adhikari">
+        <a href="https://t.me/WZML_X">
           <h2 class="name">Bittorrent Selection</h2>
         </a>
       </div>
       <div class="social">
-        <a href="https://www.github.com/weebzone/WZML"><i class="fab fa-github"></i></a>
-        <a href="https://t.me/krn_adhikari"><i class="fab fa-telegram"></i></a>
+        <a href="https://www.github.com/weebzone/WZML-X"><i class="fab fa-github"></i></a>
+        <a href="https://t.me/WZML_X"><i class="fab fa-telegram"></i></a>
       </div>
     </header>
     <section>
@@ -781,7 +781,70 @@ def set_priority(id_):
 
 @app.route('/')
 def homepage():
-    return "<h1>Checkout WZML-X <a href='https://www.github.com/weebzone/WZML-X'>@GitHub</a> By <a href='https://github.com/weebzone'>WZML-X Devs</a></h1>"
+    return """
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+        body {
+            background-color: #0D1117;
+            color: white;
+            font-family: "Ubuntu", sans-serif;
+        }
+        .header {
+            background-color: black;
+            text-align: center;
+            width: 100%;
+            padding: 1px;
+        }
+        .footer {
+            background-color: black;
+            padding: 10px;
+            text-align: center;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+        }
+        .content {
+            padding: 20px;
+            text-align: center;
+        }
+        .button {
+            background-color: #0001f0;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .image {
+            border-radius: 12px;
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>WZML-X</h1>
+    </div>
+    <div class="content">
+        <img src="https://graph.org/file/639fe4239b78e5862b302.jpg" class="image">
+        <a href="https://telegram.me/WZML_X" style="text-decoration: none;">
+            <button class="button">Join Updates Channel Now</button>
+        </a>
+    </div>
+    <div class="footer">
+© 2022-23 WZML-X. All Rights Reserved.
+    </div>
+</body>
+</html>
+"""
 
 
 @app.errorhandler(Exception)

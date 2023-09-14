@@ -64,6 +64,15 @@
         
     </details></li>
     <li><details>
+      <summary><b>DDL Upload</b></summary>
+
+    - Upload Files/Folder in the Supported Sites
+      - Gofile.io
+      - Streamtape.com
+    - Upload on multiple sites at a time
+    - User api/key is need for the upload        
+    </details></li>
+    <li><details>
       <summary><b>Google Drive</b></summary>
 
     - Stop duplicates for all tasks
@@ -118,6 +127,7 @@
     - Torrent search support
     - Search on torrents with Torrent Search API
     - Search on torrents with variable plugins using qBittorrent search engine
+    - Cached Magnet support for real-derbid api
 
     </details></li>
     <li><details>
@@ -196,7 +206,7 @@
 - Extract these filetypes
   > ZIP, RAR, TAR, 7z, ISO, WIM, CAB, GZIP, BZIP2, APM, ARJ, CHM, CPIO, CramFS, DEB, DMG, FAT, HFS, LZH, LZMA, LZMA2, MBR, MSI, MSLZ, NSIS, NTFS, RPM, SquashFS, UDF, VHD, XAR, Z, TAR.XZ
 - Direct links Supported:
-  > mediafire, letsupload.io, hxfile.co, antfiles, fembed.com, fembed.net, femax20.com, layarkacaxxi.icu, fcdn.stream, sbplay.org, naniplay.com, naniplay.nanime.in, naniplay.nanime.biz, sbembed.com, streamtape.com, streamsb.net, feurl.com, upload.ee, pixeldrain.com, racaty.net, 1fichier.com, 1drv.ms (Only works for file not folder or business account), uptobox.com and solidfiles.com, linkbox.to, shrdsk.me (sharedisk.io), akmfiles.com, wetransfer.com, mdisk.me (with ytdl), terabox.com (you need to add cookies txt with name) [terabox.txt](https://github.com/ytdl-org/youtube-dl#how-do-i-pass-cookies-to-youtube-dl) and almost every anonfiles based sites
+  > mediafire(folder), letsupload.io, hxfile.co, antfiles, fembed.com, fembed.net, femax20.com, layarkacaxxi.icu, fcdn.stream, sbplay.org, naniplay.com, naniplay.nanime.in, naniplay.nanime.biz, sbembed.com, streamtape.com, streamsb.net, feurl.com, upload.ee, pixeldrain.com, racaty.net, 1fichier.com, 1drv.ms (Only works for file not folder or business account), uptobox.com and solidfiles.com, linkbox.to, shrdsk.me (sharedisk.io), akmfiles.com, wetransfer.com, mdisk.me (with ytdl), gofile.io(folder), filelion, terabox.com (you need to add cookies txt with name) [terabox.txt](https://github.com/ytdl-org/youtube-dl#how-do-i-pass-cookies-to-youtube-dl) and almost every anonfiles based sites
 
 </details>
 
@@ -432,34 +442,45 @@ help - All cmds with description
     - `CMD_SUFFIX`: commands index number. This number will added at the end all commands. `Str`|`Int`
     - `AUTHORIZED_CHATS`: Fill user_id and chat_id of groups/users you want to authorize. Separate them by space. `Int`
     - `SUDO_USERS`: Fill user_id of users whom you want to give sudo permission. Separate them by space. `Int`
+    - `BLACKLIST_USERS` : Fill user_id of users you wish to prohibit from using the bot. Separate them by space. `Int`
+    - `STATUS_LIMIT`: Limit the no. of tasks shown in status message with buttons. Default is `10`. **NOTE**: Recommended limit is `4` tasks. `Int`
     - `DEFAULT_UPLOAD`: Whether `rc` to upload to `RCLONE_PATH` or `gd` to upload to `GDRIVE_ID` or `ddl` to upload to `DDL`. Default is `gd`. Read More [HERE](https://github.com/weebzone/WZML-X/tree/master#upload).`Str`
     - `STATUS_UPDATE_INTERVAL`: Time in seconds after which the progress/status message will be updated. Recommended `10` seconds at least. `Int`
     - `AUTO_DELETE_MESSAGE_DURATION`: Interval of time (in seconds), after which the bot deletes it's message and command message which is expected to be viewed instantly. **NOTE**: Set to `-1` to disable auto message deletion. `Int`
-    - `STATUS_LIMIT`: Limit the no. of tasks shown in status message with buttons. Default is `10`. **NOTE**: Recommended limit is `4` tasks. `Int`
-    - `EXTENSION_FILTER`: File extensions that won't upload/clone. Separate them by space. `Str`
     - `INCOMPLETE_TASK_NOTIFIER`: Get incomplete task messages after restart. Require database and superGroup. Default is `False`. `Bool`
-    - `UPTOBOX_TOKEN`: Uptobox token to mirror uptobox links. Get it from [Uptobox Premium Account](https://uptobox.com/my_account). `str`
+    - `SET_COMMANDS`: Automatically set the Bot Commands no need to set from `@botfather`. Default is `False`. `Bool`
+    - `EXTENSION_FILTER`: File extensions that won't upload/clone. Separate them by space. No need to add `.` `Str`
     - `YT_DLP_OPTIONS`: Default yt-dlp options. Check all possible options [HERE](https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L184) or use this [script](https://t.me/mltb_official/177) to convert cli arguments to api options. Format: key:value|key:value|key:value. Add `^` before integer or float, some numbers must be numeric and some string. `str`
       - Example: "format:bv*+mergeall[vcodec=none]|nocheckcertificate:True"
-    - `USE_SERVICE_ACCOUNTS`: Whether to use Service Accounts or not, with google-api-python-client. For this to work see [Using Service Accounts](https://github.com/weebzone/WZML-X#generate-service-accounts-what-is-service-account) section below. Default is `False`. `Bool`
-    - `SAVE_MSG`: Save Button in each file and link so that every user direcly save it without forwarding. Default is `False`. `Bool`
-    - `SET_COMMANDS`: Automatically set the Bot Commands no need to set from `@botfather`. Default is `False`. `Bool`
     - `FSUB_IDS`: Fill chat_id(-100xxxxxx) of groups/channel you want to force subscribe. Separate them by space. Int
       - Note: Bot should be added in the filled chat_id as admin
     - `BOT_PM`: File/links send to the BOT PM. Default is `False`. `Bool`
-    - `BOT_MAX_TASKS`: Limit the Maximum task for bots of group at a time. `Int`
+
     </details></li>
     <li><details>
         <summary><b>GDrive Tools</b></summary>
 
     - `GDRIVE_ID`: This is the Folder/TeamDrive ID of the Google Drive OR `root` to which you want to upload all the mirrors using google-api-python-client. `Str`
-    - `IS_TEAM_DRIVE`: Set `True` if uploading to TeamDrive using google-api-python-client. Default is `False`. `Bool`
+    - `USER_TD_MODE`: Enable the User-TD feature i.e user can upload file into their own drive. Default is `False`. `Bool`
+    - `USER_TD_SA`: Show your SA account in the usetting so that user can add that in its own TD to enable uploading Using SA. SA will be an email/group_email like `wzml-x@googlegroups.com`
     - `INDEX_URL`: Refer to <https://gitlab.com/ParveenBhadooOfficial/Google-Drive-Index>. `Str`
+    - `USE_SERVICE_ACCOUNTS`: Whether to use Service Accounts or not, with google-api-python-client. For this to work see [Using Service Accounts](https://github.com/weebzone/WZML-X#generate-service-accounts-what-is-service-account) section below. Default is `False`. `Bool`
+    - `IS_TEAM_DRIVE`: Set `True` if uploading to TeamDrive using google-api-python-client. Default is `False`. `Bool`
     - `STOP_DUPLICATE`: Bot will check file/folder name in Drive incase uploading to `GDRIVE_ID`. If it's present in Drive then downloading or cloning will be stopped. (**NOTE**: Item will be checked using name and not hash, so this feature is not perfect yet). Default is `False`. `Bool`
     - `DISABLE_DRIVE_LINK`: Disable drive link button. Default is `False`. `Bool`
     - `GD_INFO`: Description of file/folder uploaded to Google Drive.
-    
+
     </details></li>
+    <li><details>
+        <summary><b>API's/Cookies</b></summary>
+
+    - `REAL_DEBRID_API`: Api of `real-debrid.com`. Support the Premium `Bypass Download limit` and support the `Cached Magnets`.
+    - `DEBRID_LINK_API` : Api of `debrid-link.com`. Support the Premium `Bypass Download limit`.
+    - `FILELION_API`: Api of `filelions.com` to download the link from the filelion site
+    - `GDTOT_CRYPT`: Use Gdtot crpyt to bypass the GDTOT links.
+    - `UPTOBOX_TOKEN`: Uptobox token to mirror uptobox links. Get it from [Uptobox Premium Account](https://uptobox.com/my_account). `str`
+    </details></li>
+
     <li><details>
         <summary><b>RClone</b></summary>
 
@@ -496,13 +517,15 @@ help - All cmds with description
 
     </details></li>
     <li><details>
-        <summary><b>Log Channel</b></summary>
+        <summary><b>Log Channel/superGroup(Support topics)</b></summary>
 
-    - `LEECH_LOG_ID`: Chat ID to where leeched files would be uploaded. `Int`. **NOTE**: Only available for superGroup/channel. Add `-100` before channel/superGroup id. In short don't add bot id or your id!
-    - `MIRROR_LOG_ID`: Chat ID to where Mirror files would be Send. `Int`. **NOTE**: Only available for superGroup/channel. Add `-100` before channel/superGroup id. In short don't add bot id or your id!.
+    - `LEECH_LOG_ID`: Chat ID to where leeched files would be uploaded. `Int`. **NOTE**: Only available for superGroup/channel. Add `-100` before channel/superGroup id. In short don't add bot id or your id!. For topic support make this format `chat_id:topic_id`
+    - `MIRROR_LOG_ID`: Chat ID to where Mirror files would be Send. `Int`. **NOTE**: Only available for superGroup/channel. Add `-100` before channel/superGroup id. In short don't add bot id or your id!. For topic support make this format `chat_id:topic_id`
     - `LINKS_LOG_ID`: Chat ID to where Link logs would be Send. `Int`. **NOTE**: Only available for superGroup/channel. Add `-100` before channel/superGroup id. In short don't add bot id or your id!.
-      - **Note**: LEECH_LOG_ID & MIRROR_LOG_ID it's multiple, For multiple id Separate them by space.
+      - **Note**: LEECH_LOG_ID & MIRROR_LOG_ID it's multiple, For multiple id Separate them by space. 
+      - **Warning**: leech log is multiple only in case of channel. i.e it doesn't support multiple Topics (for now)
     </details></li>
+
     <li><details>
         <summary><b>qBittorrent/Aria2c</b></summary>
 
@@ -543,6 +566,7 @@ help - All cmds with description
     - `DAILY_MIRROR_LIMIT`: Total size upto which user can Mirror in one day. the default unit is `GB`. `Int`
     - `DAILY_LEECH_LIMIT`: Total size upto which user can Leech in one day. the default unit is `GB`. `Int`
     - `USER_MAX_TASKS`: Limit the Maximum task for users of group at a time. `Int`
+    - `BOT_MAX_TASKS`: Limit the Maximum task for bots of group at a time. `Int`
     - `TORRENT_LIMIT`: To limit the size of torrent download. the default unit is `GB`. `Int`
     - `DIRECT_LIMIT`: To limit the size of direct link download. the default unit is `GB`. `Int`
     - `GDRIVE_LIMIT`: To limit the size of Google Drive folder/file link for leech, Zip, Unzip. the default unit is `GB`. `Int`
@@ -552,12 +576,15 @@ help - All cmds with description
     - `LEECH_LIMIT`: To limit the Torrent/Direct/ytdlp leech size. the default unit is `GB`. `Int`
     - `MEGA_LIMIT`: To limit the size of Mega download. the default unit is `GB`. `Int`
     - `STORAGE_THRESHOLD`: To leave specific storage free and any download will lead to leave free storage less than this value will be cancelled the default unit is `GB`. `Int`
+    - `USER_TIME_INTERVAL`: Time Gap between two consecutive link/file mirror/leech operations. The default value is set to `0` seconds. unit is `sec`. `int` 
     </details></li>
+
     <li><details>
         <summary><b>Templates</b></summary>
 
     - `ANIME_TEMPLATE`: Set template for anime...
     - `IMDB_TEMPLATE`: Set your imdb template...
+    - `MDL_TEMPLATE`: Set your MyDramaList template...
     </details></li>
 
     <li><details>
@@ -566,24 +593,36 @@ help - All cmds with description
     - `TITLE_NAME`: Title `name` for Telegraph pages (while using /list command)
     - `AUTHOR_NAME`: Author `name` for Telegraph pages
     - `AUTHOR_URL`: Author `URL` for Telegraph page
+    - `COVER_IMAGE`: telegraph header image. use `graph.org` link of image
     </details></li>
-
 
     <li><details>
         <summary><b>Extra</b></summary>
         
-    - `SAFE_MODE`: Remove all file names. Not from BOT_PM & LINK_LOGS. Default is `False`. `Bool`
+    - `SAFE_MODE`: Include 
+      - Remove filename from the auth group
+      - Remove Leech file index link from auth group (leech index directly send to BOT_PM)
+      - Remove Mirror link from auth group (Link directly send to BOT_PM)
+        - **NOTE**: `BOT_PM` Should be `True` to get the Links in PM while `SAFE_MODE` is `True`
     - `DELETE_LINKS`: Delete links after used. Default is `False`. `Bool`
-    - `CLEAN_LOG_MSG`: Clean log msg. Default is `False`. `Bool`
+    - `CLEAN_LOG_MSG`: Clean log messages i.e remove the LEECH started msg from the leech log. Default is `False`. `Bool`
     - `SHOW_EXTRA_CMDS`: Add old cmds like zipleech... Default is `False`. `Bool`
-    - `SOURCE_LINK`: Source button of files and links. Default is `False`. `Bool`
+    - `TIMEZONE`: Set timezone for the bot. Checkout the [list](https://gist.github.com/heyalexej/8bf688fd67d7199be4a1682b3eec7568) to get the proper timezone. Default is `Asia/Kolkata`.
     - `IMAGES`: Add multiple telgraph(graph.org) image links that are seperated by spaces.
     - `IMG_SEARCH`: Put Keyword to Download Images. Sperarte each name by , like `anime`, `iron man`, `god of war`
     - `IMG_PAGE`: Set the page value for downloading a image. Each page have approx 70 images. Deafult is `1`. `Int`
     - `BOT_THEME`: Change the theme of bot. For now theme availabe is `minimal`. 
       - You can make your own theme checkout this link https://t.ly/9rVXq
-    </details></li>
 
+    - `EXCEP_CHATS`: `CHAT_ID` of a `SuperGroup` where you want to disable the logging feature for that specific group. Logging features will remain active in other authorized chats that have been filled. Add `-100` before superGroup id. In short don't add bot id or your id!.
+
+    <li><details>
+        <summary><b>M/L Buttons</b></summary>
+
+    - `SHOW_MEDIAINFO`: Mediainfo button of file. Default is `False`. `Bool`
+    - `SAVE_MSG`: Save Button in each file and link so that every user direcly save it without forwarding. Default is `False`. `Bool`
+    - `SOURCE_LINK`: Source button of files and links. Default is `False`. `Bool`
+    </details></li>
 
     <li><details>
         <summary><b>Token system</b></summary>
@@ -940,13 +979,14 @@ Where host is the name of extractor (eg. instagram, Twitch). Multiple accounts o
     
 -----
 
-### 🏅 ***Bot Authors***
+## 🏅 **Bot Authors**
 <details>
     <summary><b>Click Here For Description</b></summary>
 
-|![](https://avatars.githubusercontent.com/u/105407900)|![](https://avatars.githubusercontent.com/u/113664541)|![](https://avatars.githubusercontent.com/u/84721324)|![](https://avatars.githubusercontent.com/u/77075674)|
-|:---:|:---:|:---:|:---:|
-|[`SilentDemonSD`](https://github.com/SilentDemonSD)|[`CodeWithWeeb`](https://github.com/weebzone)|[`Maverick`](https://github.com/MajnuRangeela)|[`Anasty17`](https://github.com/anasty17)|
-|Author and DDL, UI Design, More Customs..|Author and Wraps Up Features|Co-Author & Bug Tester|Base Repo: MLTB|
+|<img width="80" src="https://avatars.githubusercontent.com/u/105407900">|<img width="80" src="https://avatars.githubusercontent.com/u/113664541">|<img width="80" src="https://avatars.githubusercontent.com/u/84721324">|
+|:---:|:---:|:---:|
+|[`SilentDemonSD`](https://github.com/SilentDemonSD)|[`CodeWithWeeb`](https://github.com/weebzone)|[`Maverick`](https://github.com/MajnuRangeela)|
+|Author and DDL, UI Design, More Customs..|Author and Wraps Up Features|Co-Author & Bug Tester|
 
 </details>
+

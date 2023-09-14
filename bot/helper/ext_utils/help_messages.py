@@ -119,6 +119,7 @@ MIRROR_HELP_MESSAGE = ["""<i>Send links/files along with cmd or reply to cmd to 
 17. <b>-index:</b> Index url for gdrive_arg
 18. <b>-c or -category :</b> Gdrive category to Upload, Specific Name (case insensitive)
 19. <b>-ud or -dump :</b> Dump category to Upload, Specific Name (case insensitive) or chat_id or chat_username
+20. <b>-ss or -screenshots :</b> Generate Screenshots for Leeched Files, Specify 1, 3, .. after this.
 """, """
 ➲ <b><i>By along the cmd</i></b>:
 <code>/cmd</code> link -n new name
@@ -132,6 +133,12 @@ MIRROR_HELP_MESSAGE = ["""<i>Send links/files along with cmd or reply to cmd to 
 
 ➲ <b><i>Direct Link Authorization</i></b>: -u -p or -user -pass
 <code>/cmd</code> link -u username -p password
+
+➲ <b>Direct link custom headers</b>: -h or -headers
+<code>/cmd</code> link -h key: value key1: value1
+
+➲ <b>Screenshot Generation</b>: -ss or -screenshots
+<code>/cmd</code> link -ss number ,Screenshots for each Video File
 
 ➲ <b><i>Extract / Zip</i></b>: -uz -z or -zip -unzip or -e -extract
 <code>/cmd</code> link -e password (extract password protected)
@@ -396,6 +403,15 @@ f'''⌬ <b><i>Miscellaneous Commands!</i></b>
 ┖ /{BotCommands.MyDramaListCommand}: Search in MyDramaList.
 ''']
 
+
+PASSWORD_ERROR_MESSAGE = """
+<b>This link requires a password!</b>
+- Insert sign <b>::</b> after the link and write the password after the sign.
+<b>Example:</b> {}::love you
+Note: No spaces between the signs <b>::</b>
+For the password, you can use a space!
+"""
+
 default_desp = {'AS_DOCUMENT': 'Default type of Telegram file upload. Default is False mean as media.',
                 'ANIME_TEMPLATE': 'Set template for AniList Template. HTML Tags supported',
                 'AUTHORIZED_CHATS': 'Fill user_id and chat_id of groups/users you want to authorize. Separate them by space.',
@@ -450,6 +466,8 @@ default_desp = {'AS_DOCUMENT': 'Default type of Telegram file upload. Default is
                 'LEECH_FILENAME_REMNAME': 'Remove custom word from the leeched file name. Str',
                 'LOGIN_PASS': 'Permanent pass for user to skip the token system',
                 'TOKEN_TIMEOUT': 'Token timeout for each group member in sec. Int',
+                'DEBRID_LINK_API': 'Set debrid-link.com API for 172 Supported Hosters Leeching Support. Str',
+                'REAL_DEBRID_API': 'Set real-debrid.com API for Torrent Cache & Few Supported Hosters (VPN Maybe). Str',
                 'LEECH_SPLIT_SIZE': 'Size of split in bytes. Default is 2GB. Default is 4GB if your account is premium.',
                 'MEDIA_GROUP': 'View Uploaded splitted file parts in media group. Default is False.',
                 'MEGA_EMAIL': 'E-Mail used to sign-in on mega.nz for using premium account. Str',
@@ -479,6 +497,7 @@ default_desp = {'AS_DOCUMENT': 'Default type of Telegram file upload. Default is
                 'TORRENT_TIMEOUT': 'Timeout of dead torrents downloading with qBittorrent and Aria2c in seconds. Int',
                 'UPSTREAM_REPO': "Your github repository link, if your repo is private add https://username:{githubtoken}@github.com/{username}/{reponame} format. Get token from Github settings. So you can update your bot from filled repository on each restart.",
                 'UPSTREAM_BRANCH': 'Upstream branch for update. Default is master.',
+                'UPGRADE_PACKAGES': 'Install New Requirements File without thinking of Crash. Bool',
                 'SAVE_MSG': 'Add button of save message. Bool',
                 'SET_COMMANDS': 'Set bot command automatically. Bool',
                 'UPTOBOX_TOKEN': 'Uptobox token to mirror uptobox links. Get it from <a href="https://uptobox.com/my_account">Uptobox Premium Account</a>.',

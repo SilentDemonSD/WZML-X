@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from contextlib import suppress
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.filters import regex
 from aiofiles.os import remove as aioremove, path as aiopath
@@ -62,7 +63,7 @@ async def select(client, message):
                     LOGGER.error(
                         f"{e} Error in pause, this mostly happens after abuse aria2")
         listener.select = True
-    except:
+    except Exception:
         await sendMessage(message, "This is not a bittorrent task!")
         return
 
@@ -102,20 +103,16 @@ async def get_confirm(client, query):
                     f_paths = [f"{path}/{f.name}", f"{path}/{f.name}.!qB"]
                     for f_path in f_paths:
                         if await aiopath.exists(f_path):
-                            try:
+                            with suppress(Exception):
                                 await aioremove(f_path)
-                            except:
-                                pass
             if not dl.queued:
                 await sync_to_async(client.torrents_resume, torrent_hashes=id_)
         else:
             res = await sync_to_async(aria2.client.get_files, id_)
             for f in res:
                 if f['selected'] == 'false' and await aiopath.exists(f['path']):
-                    try:
+                    with suppress(Exception):
                         await aioremove(f['path'])
-                    except:
-                        pass
             if not dl.queued:
                 try:
                     await sync_to_async(aria2.client.unpause, id_)

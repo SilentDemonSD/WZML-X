@@ -6,6 +6,7 @@ from random import choice as rchoice
 from time import time
 from re import match as re_match
 
+from pyrogram.enums import ParseMode
 from pyrogram.types import InputMediaPhoto
 from pyrogram.errors import ReplyMarkupInvalid, FloodWait, PeerIdInvalid, ChannelInvalid, RPCError, UserNotParticipant, MessageNotModified, MessageEmpty, PhotoInvalidDimensions, WebpageCurlFailed, MediaEmpty
 
@@ -15,14 +16,14 @@ from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.exceptions import TgLinkException
 
 
-async def sendMessage(message, text, buttons=None, photo=None):
+async def sendMessage(message, text, buttons=None, photo=None, **kwargs):
     try:
         if photo:
             try:
                 if photo == 'IMAGES':
                     photo = rchoice(config_dict['IMAGES'])
                 return await message.reply_photo(photo=photo, reply_to_message_id=message.id,
-                                                 caption=text, reply_markup=buttons, disable_notification=True)
+                                                 caption=text, reply_markup=buttons, disable_notification=True, **kwargs)
             except IndexError:
                 pass
             except (PhotoInvalidDimensions, WebpageCurlFailed, MediaEmpty):
@@ -33,13 +34,15 @@ async def sendMessage(message, text, buttons=None, photo=None):
             except Exception as e:
                 LOGGER.error(format_exc())
         return await message.reply(text=text, quote=True, disable_web_page_preview=True,
-                                   disable_notification=True, reply_markup=buttons)
+                                   disable_notification=True, reply_markup=buttons, **kwargs)
     except FloodWait as f:
         LOGGER.warning(str(f))
         await sleep(f.value * 1.2)
         return await sendMessage(message, text, buttons, photo)
     except ReplyMarkupInvalid:
         return await sendMessage(message, text, None, photo)
+    except MessageEmpty:
+        return await sendMessage(message, text, parse_mode=ParseMode.DISABLED)
     except Exception as e:
         LOGGER.error(format_exc())
         return str(e)
@@ -71,8 +74,6 @@ async def sendCustomMsg(chat_id, text, buttons=None, photo=None, debug=False):
     except ReplyMarkupInvalid:
         return await sendCustomMsg(chat_id, text, None, photo)
     except Exception as e:
-        if debug:
-            raise e
         LOGGER.error(format_exc())
         return str(e)
 
@@ -95,6 +96,8 @@ async def chat_info(channel_id):
 async def sendMultiMessage(chat_ids, text, buttons=None, photo=None):
     msg_dict = {}
     for channel_id in chat_ids.split():
+        channel_id, *topic_id = channel_id.split(':')
+        topic_id = int(topic_id[0]) if len(topic_id) else None
         chat = await chat_info(channel_id)
         try:
             if photo:
@@ -102,8 +105,8 @@ async def sendMultiMessage(chat_ids, text, buttons=None, photo=None):
                     if photo == 'IMAGES':
                         photo = rchoice(config_dict['IMAGES'])
                     sent = await bot.send_photo(chat_id=chat.id, photo=photo, caption=text,
-                                                     reply_markup=buttons, disable_notification=True)
-                    msg_dict[chat.id] = sent
+                                                     reply_markup=buttons, reply_to_message_id=topic_id, disable_notification=True)
+                    msg_dict[f"{chat.id}:{topic_id}"] = sent
                     continue
                 except IndexError:
                     pass
@@ -115,8 +118,8 @@ async def sendMultiMessage(chat_ids, text, buttons=None, photo=None):
                 except Exception as e:
                     LOGGER.error(str(e))
             sent = await bot.send_message(chat_id=chat.id, text=text, disable_web_page_preview=True,
-                                               disable_notification=True, reply_markup=buttons)
-            msg_dict[chat.id] = sent
+                                               disable_notification=True, reply_to_message_id=topic_id, reply_markup=buttons)
+            msg_dict[f"{chat.id}:{topic_id}"] = sent
         except FloodWait as f:
             LOGGER.warning(str(f))
             await sleep(f.value * 1.2)
@@ -173,10 +176,10 @@ async def sendFile(message, file, caption=None, buttons=None):
 async def sendRss(text):
     try:
         if user:
-            return await user.send_message(chat_id=config_dict['RSS_CHAT_ID'], text=text, disable_web_page_preview=True,
+            return await user.send_message(chat_id=config_dict['RSS_CHAT'], text=text, disable_web_page_preview=True,
                                            disable_notification=True)
         else:
-            return await bot.send_message(chat_id=config_dict['RSS_CHAT_ID'], text=text, disable_web_page_preview=True,
+            return await bot.send_message(chat_id=config_dict['RSS_CHAT'], text=text, disable_web_page_preview=True,
                                           disable_notification=True)
     except FloodWait as f:
         LOGGER.warning(str(f))
@@ -293,11 +296,11 @@ async def sendStatusMessage(msg):
             message = status_reply_dict[chat_id][0]
             await deleteMessage(message)
             del status_reply_dict[chat_id]
-        message = await sendMessage(msg, progress, buttons, photo='IMAGES')
-        if hasattr(message, 'caption'):
-            message.caption = progress
-        else:
-            message.text = progress
+        if message := await sendMessage(msg, progress, buttons, photo='IMAGES'):
+            if hasattr(message, 'caption'):
+                message.caption = progress
+            else:
+                message.text = progress
         status_reply_dict[chat_id] = [message, time()]
         if not Interval:
             Interval.append(setInterval(config_dict['STATUS_UPDATE_INTERVAL'], update_all_messages))

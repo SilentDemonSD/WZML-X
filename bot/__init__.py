@@ -165,10 +165,14 @@ elif not DOWNLOAD_DIR.endswith("/"):
     DOWNLOAD_DIR = f'{DOWNLOAD_DIR}/'
 
 AUTHORIZED_CHATS = environ.get('AUTHORIZED_CHATS', '')
-if len(AUTHORIZED_CHATS) != 0:
+if AUTHORIZED_CHATS:
     aid = AUTHORIZED_CHATS.split()
     for id_ in aid:
-        user_data[int(id_.strip())] = {'is_auth': True}
+        chat_id, *topic_ids = id_.split(':')
+        chat_id = int(chat_id)
+        user_data.setdefault(chat_id, {'is_auth': True})
+        if topic_ids:
+            user_data[chat_id].setdefault('topic_ids', []).extend(map(int, topic_ids))
 
 SUDO_USERS = environ.get('SUDO_USERS', '')
 if len(SUDO_USERS) != 0:
@@ -195,7 +199,7 @@ if len(USER_SESSION_STRING) != 0:
     log_info("Creating client from USER_SESSION_STRING")
     try:
         user = tgClient('user', TELEGRAM_API, TELEGRAM_HASH, session_string=USER_SESSION_STRING,
-                        parse_mode=enums.ParseMode.HTML).start()
+                        parse_mode=enums.ParseMode.HTML, no_updates=True).start()
         IS_PREMIUM_USER = user.me.is_premium
     except Exception as e:
         log_error(f"Failed making client from USER_SESSION_STRING : {e}")
@@ -216,9 +220,13 @@ GDTOT_CRYPT = environ.get('GDTOT_CRYPT', '')
 if len(GDTOT_CRYPT) == 0:
     GDTOT_CRYPT = ''
 
-DEBRID_API_KEY = environ.get('DEBRID_API_KEY', '')
-if len(DEBRID_API_KEY) == 0:
-    DEBRID_API_KEY = ''
+REAL_DEBRID_API = environ.get('REAL_DEBRID_API', '')
+if len(REAL_DEBRID_API) == 0:
+    REAL_DEBRID_API = ''
+    
+DEBRID_LINK_API = environ.get('DEBRID_LINK_API', '')
+if len(DEBRID_LINK_API) == 0:
+    DEBRID_LINK_API = ''
 
 INDEX_URL = environ.get('INDEX_URL', '').rstrip("/")
 if len(INDEX_URL) == 0:
@@ -299,8 +307,10 @@ STATUS_LIMIT = 6 if len(STATUS_LIMIT) == 0 else int(STATUS_LIMIT)
 
 CMD_SUFFIX = environ.get('CMD_SUFFIX', '')
 
-RSS_CHAT_ID = environ.get('RSS_CHAT_ID', '')
-RSS_CHAT_ID = '' if len(RSS_CHAT_ID) == 0 else int(RSS_CHAT_ID)
+RSS_CHAT = environ.get('RSS_CHAT', '')
+RSS_CHAT = '' if len(RSS_CHAT) == 0 else RSS_CHAT
+if RSS_CHAT.isdigit() or RSS_CHAT.startswith('-'):
+    RSS_CHAT = int(RSS_CHAT)
 
 RSS_DELAY = environ.get('RSS_DELAY', '')
 RSS_DELAY = 600 if len(RSS_DELAY) == 0 else int(RSS_DELAY)
@@ -371,6 +381,9 @@ if len(UPSTREAM_REPO) == 0:
 UPSTREAM_BRANCH = environ.get('UPSTREAM_BRANCH', '')
 if len(UPSTREAM_BRANCH) == 0:
     UPSTREAM_BRANCH = 'master'
+    
+UPGRADE_PACKAGES = environ.get('UPGRADE_PACKAGES', '')
+UPGRADE_PACKAGES = UPGRADE_PACKAGES.lower() == 'true'
 
 RCLONE_SERVE_URL = environ.get('RCLONE_SERVE_URL', '')
 if len(RCLONE_SERVE_URL) == 0:
@@ -516,6 +529,10 @@ LOGIN_PASS = environ.get('LOGIN_PASS', '')
 if len(LOGIN_PASS) == 0:
     LOGIN_PASS = None
 
+FILELION_API = environ.get('FILELION_API', '')
+if len(FILELION_API) == 0:
+    FILELION_API = ''
+
 IMDB_TEMPLATE = environ.get('IMDB_TEMPLATE', '')
 if len(IMDB_TEMPLATE) == 0:
     IMDB_TEMPLATE = '''<b>Title: </b> {title} [{year}]
@@ -576,7 +593,9 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'CAP_FONT': CAP_FONT,
                'CMD_SUFFIX': CMD_SUFFIX,
                'DATABASE_URL': DATABASE_URL,
-               'DEBRID_API_KEY': DEBRID_API_KEY,
+               'REAL_DEBRID_API': REAL_DEBRID_API,
+               'DEBRID_LINK_API': DEBRID_LINK_API,
+               'FILELION_API': FILELION_API,
                'DELETE_LINKS': DELETE_LINKS,
                'DEFAULT_UPLOAD': DEFAULT_UPLOAD,
                'DOWNLOAD_DIR': DOWNLOAD_DIR,
@@ -643,7 +662,7 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'RCLONE_SERVE_USER': RCLONE_SERVE_USER,
                'RCLONE_SERVE_PASS': RCLONE_SERVE_PASS,
                'RCLONE_SERVE_PORT': RCLONE_SERVE_PORT,
-               'RSS_CHAT_ID': RSS_CHAT_ID,
+               'RSS_CHAT': RSS_CHAT,
                'RSS_DELAY': RSS_DELAY,
                'SAVE_MSG': SAVE_MSG,
                'SAFE_MODE': SAFE_MODE,
@@ -664,6 +683,7 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'TORRENT_TIMEOUT': TORRENT_TIMEOUT,
                'UPSTREAM_REPO': UPSTREAM_REPO,
                'UPSTREAM_BRANCH': UPSTREAM_BRANCH,
+               'UPGRADE_PACKAGES': UPGRADE_PACKAGES,
                'UPTOBOX_TOKEN': UPTOBOX_TOKEN,
                'USER_SESSION_STRING': USER_SESSION_STRING,
                'USER_TD_MODE':USER_TD_MODE,
@@ -787,6 +807,4 @@ bot = tgClient('bot', TELEGRAM_API, TELEGRAM_HASH, bot_token=BOT_TOKEN, workers=
                parse_mode=enums.ParseMode.HTML).start()
 bot_loop = bot.loop
 bot_name = bot.me.username
-scheduler = AsyncIOScheduler(timezone=str(
-    get_localzone()), event_loop=bot_loop)
-    
+scheduler = AsyncIOScheduler(timezone=str(get_localzone()), event_loop=bot_loop)

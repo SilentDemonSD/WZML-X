@@ -131,7 +131,7 @@ async def confirm_dump(client, query):
     user_dumps = await fetch_user_dumps(user_id)
     cat_name = data[3].replace('_', ' ')
     upall = cat_name == "All"
-    bot_cache[msg_id][0] = user_dumps[cat_name] if not upall else list(user_dumps.values())
+    bot_cache[msg_id][0] = list(user_dumps.values()) if upall else user_dumps[cat_name]
     buttons = ButtonMaker()
     if user_dumps:
         for _name in user_dumps.keys():

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from json import dumps as jdumps
-from random import SystemRandom
-from string import ascii_letters, digits
+from secrets import token_hex
 from cloudscraper import create_scraper as cget
 
 from bot import download_dict, download_dict_lock, LOGGER, non_queued_dl, queue_dict_lock
@@ -23,8 +22,7 @@ async def add_gd_download(link, path, listener, newname, org_link):
         return
 
     name = newname or name
-    gid = ''.join(SystemRandom().choices(ascii_letters + digits, k=12))
-
+    gid = token_hex(5)
     msg, button = await stop_duplicate_check(name, listener)
     if msg:
         await sendMessage(listener.message, msg, button)

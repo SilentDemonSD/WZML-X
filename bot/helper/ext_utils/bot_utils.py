@@ -3,7 +3,7 @@ import platform
 from base64 import b64encode
 from datetime import datetime
 from os import path as ospath
-from pkg_resources import get_distribution
+from pkg_resources import get_distribution, DistributionNotFound
 from aiofiles import open as aiopen
 from aiofiles.os import remove as aioremove, path as aiopath, mkdir
 from re import match as re_match
@@ -55,7 +55,6 @@ class MirrorStatus:
     STATUS_SPLITTING   = "Split"
     STATUS_CHECKING    = "CheckUp"
     STATUS_SEEDING     = "Seed"
-    STATUS_UPLOADDDL   = "Upload DDL"
 
 
 class setInterval:
@@ -125,8 +124,8 @@ async def get_telegraph_list(telegraph_content):
     if len(path) > 1:
         await telegraph.edit_telegraph(path, telegraph_content)
     buttons = ButtonMaker()
-    buttons.ubutton("🔎 VIEW", f"https://telegra.ph/{path[0]}")
-    buttons = extra_btns(buttons)
+    buttons.ubutton("🔎 VIEW", f"https://te.legra.ph/{path[0]}")
+    buttons, _ = extra_btns(buttons)
     return buttons.build_menu(1)
 
 def handleIndex(index, dic):
@@ -165,13 +164,20 @@ def get_all_versions():
         vr = result.stdout.split('\n')[0].split(' ')[1]
     except FileNotFoundError:
         vr = ''
+    try:
+        vpy = get_distribution('pyrogram').version
+    except DistributionNotFound:
+        try:
+            vpy = get_distribution('pyrofork').version
+        except DistributionNotFound:
+            vpy = "2.xx.xx"
     bot_cache['eng_versions'] = {'p7zip':vp, 'ffmpeg': vf, 'rclone': vr,
                                     'aria': aria2.client.get_version()['version'],
                                     'aiohttp': get_distribution('aiohttp').version,
                                     'gapi': get_distribution('google-api-python-client').version,
                                     'mega': MegaApi('test').getVersion(),
                                     'qbit': get_client().app.version,
-                                    'pyro': get_distribution('pyrogram').version,
+                                    'pyro': vpy,
                                     'ytdlp': get_distribution('yt-dlp').version}
 
 
@@ -185,7 +191,7 @@ class EngineStatus:
         self.STATUS_GD = f"Google-API v{version_cache['gapi']}"
         self.STATUS_MEGA = f"MegaSDK v{version_cache['mega']}"
         self.STATUS_QB = f"qBit {version_cache['qbit']}"
-        self.STATUS_TG = f"Pyrogram v{version_cache['pyro']}"
+        self.STATUS_TG = f"PyroMulti v{version_cache['pyro']}"
         self.STATUS_YT = f"yt-dlp v{version_cache['ytdlp']}"
         self.STATUS_EXT = "pExtract v2"
         self.STATUS_SPLIT_MERGE = f"ffmpeg v{version_cache['ffmpeg']}"
@@ -206,16 +212,15 @@ def get_readable_message():
     for download in list(download_dict.values())[STATUS_START:STATUS_LIMIT+STATUS_START]:
         msg_link = download.message.link if download.message.chat.type in [
             ChatType.SUPERGROUP, ChatType.CHANNEL] and not config_dict['DELETE_LINKS'] else ''
-        msg += BotTheme('STATUS_NAME', Name="Task is being Processed!" if config_dict['SAFE_MODE'] else escape(f'{download.name()}'))
+        elapsed = time() - download.message.date.timestamp()
+        msg += BotTheme('STATUS_NAME', Name="Task is being Processed!" if config_dict['SAFE_MODE'] and elapsed >= config_dict['STATUS_UPDATE_INTERVAL'] else escape(f'{download.name()}'))
         if download.status() not in [MirrorStatus.STATUS_SPLITTING, MirrorStatus.STATUS_SEEDING]:
-            if download.status() != MirrorStatus.STATUS_UPLOADDDL:
-                msg += BotTheme('BAR', Bar=f"{get_progress_bar_string(download.progress())} {download.progress()}")
-                msg += BotTheme('PROCESSED', Processed=f"{download.processed_bytes()} of {download.size()}")
+            msg += BotTheme('BAR', Bar=f"{get_progress_bar_string(download.progress())} {download.progress()}")
+            msg += BotTheme('PROCESSED', Processed=f"{download.processed_bytes()} of {download.size()}")
             msg += BotTheme('STATUS', Status=download.status(), Url=msg_link)
-            if download.status() != MirrorStatus.STATUS_UPLOADDDL:
-                msg += BotTheme('ETA', Eta=download.eta())
-                msg += BotTheme('SPEED', Speed=download.speed())
-            msg += BotTheme('ELAPSED', Elapsed=get_readable_time(time() - download.message.date.timestamp()))
+            msg += BotTheme('ETA', Eta=download.eta())
+            msg += BotTheme('SPEED', Speed=download.speed())
+            msg += BotTheme('ELAPSED', Elapsed=get_readable_time(elapsed))
             msg += BotTheme('ENGINE', Engine=download.eng())
             msg += BotTheme('STA_MODE', Mode=download.upload_details['mode'])
             if hasattr(download, 'seeders_num'):
@@ -254,6 +259,10 @@ def get_readable_message():
             return float(spd.split('K')[0]) * 1024
         elif 'M' in spd:
             return float(spd.split('M')[0]) * 1048576
+        elif 'G' in spd:
+            return float(spd.split('G')[0]) * 1073741824
+        elif 'T' in spd:
+            return float(spd.split('T')[0]) * 1099511627776
         else:
             return 0
 
@@ -338,6 +347,10 @@ def is_telegram_link(url):
 
 def is_share_link(url):
     return bool(re_match(r'https?:\/\/.+\.gdtot\.\S+|https?:\/\/(filepress|filebee|appdrive|gdflix)\.\S+', url))
+
+
+def is_index_link(url): 
+     return bool(re_match(r'https?:\/\/.+\/\d+\:\/', url))    
 
 
 def is_mega_link(url):
@@ -471,8 +484,8 @@ def new_thread(func):
 
 
 async def compare_versions(v1, v2):
-    v1_parts = [int(part) for part in v1[1:-2].split('.')]
-    v2_parts = [int(part) for part in v2[1:-2].split('.')]
+    v1_parts = [int(part) for part in v1.split('-')[0][1:].split('.')]
+    v2_parts = [int(part) for part in v2.split('-')[0][1:].split('.')]
     for i in range(3):
         v1_part, v2_part = v1_parts[i], v2_parts[i]
         if v1_part < v2_part:
@@ -497,6 +510,7 @@ async def get_stats(event, key="home"):
         total, used, free, disk = disk_usage('/')
         swap = swap_memory()
         memory = virtual_memory()
+        disk_io = disk_io_counters()
         msg = BotTheme('BOT_STATS',
             bot_uptime=get_readable_time(time() - botStartTime),
             ram_bar=get_progress_bar_string(memory.percent),
@@ -511,8 +525,8 @@ async def get_stats(event, key="home"):
             swap_t=get_readable_file_size(swap.total),
             disk=disk,
             disk_bar=get_progress_bar_string(disk),
-            disk_read=get_readable_file_size(disk_io_counters().read_bytes) + f" ({get_readable_time(disk_io_counters().read_time / 1000)})",
-            disk_write=get_readable_file_size(disk_io_counters().write_bytes) + f" ({get_readable_time(disk_io_counters().write_time / 1000)})",
+            disk_read=get_readable_file_size(disk_io.read_bytes) + f" ({get_readable_time(disk_io.read_time / 1000)})" if disk_io else "Access Denied",
+            disk_write=get_readable_file_size(disk_io.write_bytes) + f" ({get_readable_time(disk_io.write_time / 1000)})" if disk_io else "Access Denied",
             disk_t=get_readable_file_size(total),
             disk_u=get_readable_file_size(used),
             disk_f=get_readable_file_size(free),
@@ -542,7 +556,7 @@ async def get_stats(event, key="home"):
         if await aiopath.exists('.git'):
             last_commit = (await cmd_exec("git log -1 --pretty='%cd ( %cr )' --date=format-local:'%d/%m/%Y'", True))[0]
             changelog = (await cmd_exec("git log -1 --pretty=format:'<code>%s</code> <b>By</b> %an'", True))[0]
-        official_v = (await cmd_exec("curl -o latestversion.py https://raw.githubusercontent.com/weebzone/WZML-X/master/bot/version.py -s && python3 latestversion.py && rm latestversion.py", True))[0]
+        official_v = (await cmd_exec(f"curl -o latestversion.py https://raw.githubusercontent.com/weebzone/WZML-X/{config_dict['UPSTREAM_BRANCH']}/bot/version.py -s && python3 latestversion.py && rm latestversion.py", True))[0]
         msg = BotTheme('REPO_STATS',
             last_commit=last_commit,
             bot_version=get_version(),
@@ -647,11 +661,11 @@ async def checking_access(user_id, button=None):
     return None, button
 
 
-def extra_btns(buttons):
-    if extra_buttons:
+def extra_btns(buttons, already=False):
+    if extra_buttons and not already:
         for btn_name, btn_url in extra_buttons.items():
-            buttons.ubutton(btn_name, btn_url)
-    return buttons
+            buttons.ubutton(btn_name, btn_url, 'l_body')
+    return buttons, True
 
 
 async def set_commands(client):
@@ -699,9 +713,3 @@ async def set_commands(client):
             LOGGER.info('Bot Commands have been Set & Updated')
         except Exception as err:
             LOGGER.error(err)
-
-
-def is_valid_token(url, token):
-    resp = rget(url=f"{url}getAccountDetails?token={token}&allDetails=true").json()
-    if resp["status"] == "error-wrongToken":
-        raise Exception("Invalid Gofile Token, Get your Gofile token from --> https://gofile.io/myProfile")

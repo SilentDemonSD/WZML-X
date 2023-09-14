@@ -85,7 +85,7 @@ async def broadcast(_, message):
             except FloodWait as e:
                 await sleep(e.value)
                 await msg.edit(text=rply.text, entities=rply.entities, reply_markup=rply.reply_markup)
-            except:
+            except Exception:
                 u += 1
             t += 1
         return await editMessage(temp_wait, f'''⌬  <b><i>Broadcast Edited Stats :</i></b>
@@ -124,7 +124,7 @@ async def broadcast(_, message):
         except InputUserDeactivated:
             await DbManger().rm_pm_user(uid)
             d += 1
-        except:
+        except Exception:
             u += 1
         if bc_msg:
             bc_msgs.append(bc_msg)
@@ -133,7 +133,10 @@ async def broadcast(_, message):
             await editMessage(pls_wait, status.format(**locals()))
             updater = time()
     bc_cache[bc_hash] = bc_msgs
-    await editMessage(pls_wait, status.format(**locals()) + f"\n\n<b>Elapsed Time:</b> <code>{get_readable_time(time() - start_time)}</code>\n<b>Broadcast ID:</b> <code>{bc_hash}</code>")
+    await editMessage(
+        pls_wait,
+        f"{status.format(**locals())}\n\n<b>Elapsed Time:</b> <code>{get_readable_time(time() - start_time)}</code>\n<b>Broadcast ID:</b> <code>{bc_hash}</code>",
+    )
         
         
 bot.add_handler(MessageHandler(broadcast, filters=command(BotCommands.BroadcastCommand) & CustomFilters.sudo))

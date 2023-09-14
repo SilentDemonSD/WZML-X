@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import aiohttp
+from aiohttp import ClientSession
 from re import search as re_search
 from shlex import split as ssplit
 from aiofiles import open as aiopen
@@ -27,7 +27,7 @@ async def gen_mediainfo(message, link=None, media=None, mmsg=None):
             filename = re_search(".+/(.+)", link).group(1)
             des_path = ospath.join(path, filename)
             headers = {"user-agent":"Mozilla/5.0 (Linux; Android 12; 2201116PI) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Mobile Safari/537.36"}
-            async with aiohttp.ClientSession() as session:
+            async with ClientSession() as session:
                 async with session.get(link, headers=headers) as response:
                     async with aiopen(des_path, "wb") as f:
                         async for chunk in response.content.iter_chunked(10000000):
@@ -85,11 +85,24 @@ async def mediainfo(_, message):
         link = rply.text if rply else message.command[1]
         return await gen_mediainfo(message, link)
     elif rply:
-        file = next((i for i in [rply.document, rply.video, rply.audio, rply.voice,
-                         rply.animation, rply.video_note] if i is not None), None)
-        if not file:
+        if file := next(
+            (
+                i
+                for i in [
+                    rply.document,
+                    rply.video,
+                    rply.audio,
+                    rply.voice,
+                    rply.animation,
+                    rply.video_note,
+                ]
+                if i is not None
+            ),
+            None,
+        ):
+            return await gen_mediainfo(message, None, file, rply)
+        else:
             return await sendMessage(message, help_msg)
-        return await gen_mediainfo(message, None, file, rply)
     else:
         return await sendMessage(message, help_msg)
 

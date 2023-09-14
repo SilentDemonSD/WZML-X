@@ -5,7 +5,7 @@ from pyrogram.filters import command, regex, create
 from pyrogram.enums import ChatType
 from functools import partial
 from collections import OrderedDict
-from asyncio import create_subprocess_exec, create_subprocess_shell, sleep
+from asyncio import create_subprocess_exec, create_subprocess_shell, sleep, gather
 from aiofiles.os import remove, rename, path as aiopath
 from aiofiles import open as aiopen
 from os import environ, getcwd
@@ -49,7 +49,7 @@ default_values = {'AUTO_DELETE_MESSAGE_DURATION': 30,
                   }
 bool_vars = ['AS_DOCUMENT', 'BOT_PM', 'STOP_DUPLICATE', 'SET_COMMANDS', 'SAVE_MSG', 'SHOW_MEDIAINFO', 'SOURCE_LINK', 'SAFE_MODE', 'SHOW_EXTRA_CMDS',
              'IS_TEAM_DRIVE', 'USE_SERVICE_ACCOUNTS', 'WEB_PINCODE', 'EQUAL_SPLITS', 'DISABLE_DRIVE_LINK', 'DELETE_LINKS', 'CLEAN_LOG_MSG', 'USER_TD_MODE', 
-             'INCOMPLETE_TASK_NOTIFIER']
+             'INCOMPLETE_TASK_NOTIFIER', 'UPGRADE_PACKAGES']
 
 
 async def load_config():
@@ -104,7 +104,11 @@ async def load_config():
     if len(AUTHORIZED_CHATS) != 0:
         aid = AUTHORIZED_CHATS.split()
         for id_ in aid:
-            user_data[int(id_.strip())] = {'is_auth': True}
+            chat_id, *topic_ids = id_.split(':')
+            chat_id = int(chat_id)
+            user_data.setdefault(chat_id, {'is_auth': True})
+            if topic_ids:
+                user_data[chat_id].setdefault('topic_ids', []).extend(map(int, topic_ids))
 
     SUDO_USERS = environ.get('SUDO_USERS', '')
     if len(SUDO_USERS) != 0:
@@ -122,10 +126,9 @@ async def load_config():
     if len(EXTENSION_FILTER) > 0:
         fx = EXTENSION_FILTER.split()
         GLOBAL_EXTENSION_FILTER.clear()
-        GLOBAL_EXTENSION_FILTER.append('aria2')
+        GLOBAL_EXTENSION_FILTER.extend(['aria2', '!qB'])
         for x in fx:
-            if x.strip().startswith('.'):
-                x = x.lstrip('.')
+            x = x.lstrip('.')
             GLOBAL_EXTENSION_FILTER.append(x.strip().lower())
 
     MEGA_EMAIL = environ.get('MEGA_EMAIL', '')
@@ -142,9 +145,13 @@ async def load_config():
     if len(GDTOT_CRYPT) == 0:
         GDTOT_CRYPT = ''
         
-    DEBRID_API_KEY = environ.get('DEBRID_API_KEY', '')
-    if len(DEBRID_API_KEY) == 0:
-        DEBRID_API_KEY = ''
+    REAL_DEBRID_API = environ.get('REAL_DEBRID_API', '')
+    if len(REAL_DEBRID_API) == 0:
+        REAL_DEBRID_API = ''
+        
+    DEBRID_LINK_API = environ.get('DEBRID_LINK_API', '')
+    if len(DEBRID_LINK_API) == 0:
+        DEBRID_LINK_API = ''
 
     INDEX_URL = environ.get('INDEX_URL', '').rstrip("/")
     if len(INDEX_URL) == 0:
@@ -227,8 +234,8 @@ async def load_config():
     STATUS_LIMIT = environ.get('STATUS_LIMIT', '')
     STATUS_LIMIT = 10 if len(STATUS_LIMIT) == 0 else int(STATUS_LIMIT)
 
-    RSS_CHAT_ID = environ.get('RSS_CHAT_ID', '')
-    RSS_CHAT_ID = '' if len(RSS_CHAT_ID) == 0 else int(RSS_CHAT_ID)
+    RSS_CHAT = environ.get('RSS_CHAT', '')
+    RSS_CHAT = '' if len(RSS_CHAT) == 0 else int(RSS_CHAT)
 
     RSS_DELAY = environ.get('RSS_DELAY', '')
     RSS_DELAY = 900 if len(RSS_DELAY) == 0 else int(RSS_DELAY)
@@ -341,6 +348,9 @@ async def load_config():
     UPSTREAM_REPO = environ.get('UPSTREAM_REPO', '')
     if len(UPSTREAM_REPO) == 0:
         UPSTREAM_REPO = ''
+        
+    UPGRADE_PACKAGES = environ.get('UPGRADE_PACKAGES', '')
+    UPGRADE_PACKAGES = UPGRADE_PACKAGES.lower() == 'true'
 
     UPSTREAM_BRANCH = environ.get('UPSTREAM_BRANCH', '')
     if len(UPSTREAM_BRANCH) == 0:
@@ -469,6 +479,10 @@ async def load_config():
     if len(LOGIN_PASS) == 0:
         LOGIN_PASS = None
 
+    FILELION_API = environ.get('FILELION_API', '')
+    if len(FILELION_API) == 0:
+        FILELION_API = ''
+
     DEF_IMDB_TEMP  = environ.get('IMDB_TEMPLATE', '')
     if len(DEF_IMDB_TEMP) == 0:
         DEF_IMDB_TEMP = '''<b>Title: </b> {title} [{year}]
@@ -577,7 +591,9 @@ async def load_config():
                         'CAP_FONT': CAP_FONT,
                         'CMD_SUFFIX': CMD_SUFFIX,
                         'DATABASE_URL': DATABASE_URL,
-                        'DEBRID_API_KEY': DEBRID_API_KEY,
+                        'REAL_DEBRID_API': REAL_DEBRID_API,
+                        'DEBRID_LINK_API': DEBRID_LINK_API,
+                        'FILELION_API': FILELION_API,
                         'DELETE_LINKS': DELETE_LINKS,
                         'DEFAULT_UPLOAD': DEFAULT_UPLOAD,
                         'DOWNLOAD_DIR': DOWNLOAD_DIR,
@@ -643,7 +659,7 @@ async def load_config():
                         'RCLONE_SERVE_USER': RCLONE_SERVE_USER,
                         'RCLONE_SERVE_PASS': RCLONE_SERVE_PASS,
                         'RCLONE_SERVE_PORT': RCLONE_SERVE_PORT,
-                        'RSS_CHAT_ID': RSS_CHAT_ID,
+                        'RSS_CHAT': RSS_CHAT,
                         'RSS_DELAY': RSS_DELAY,
                         'SAVE_MSG': SAVE_MSG,
                         'SAFE_MODE': SAFE_MODE,
@@ -665,6 +681,7 @@ async def load_config():
                         'TORRENT_TIMEOUT': TORRENT_TIMEOUT,
                         'UPSTREAM_REPO': UPSTREAM_REPO,
                         'UPSTREAM_BRANCH': UPSTREAM_BRANCH,
+                        'UPGRADE_PACKAGES': UPGRADE_PACKAGES,
                         'UPTOBOX_TOKEN': UPTOBOX_TOKEN,
                         'USER_SESSION_STRING': USER_SESSION_STRING,
                         'USER_TD_MODE':USER_TD_MODE,
@@ -675,9 +692,7 @@ async def load_config():
 
     if DATABASE_URL:
         await DbManger().update_config(config_dict)
-    await initiate_search_tools()
-    await start_from_queued()
-    await rclone_serve_booter()
+    await gather(initiate_search_tools(), start_from_queued(), rclone_serve_booter())
 
 
 async def get_buttons(key=None, edit_type=None, edit_mode=None, mess=None):
@@ -793,7 +808,7 @@ async def edit_variable(_, message, pre_message, key):
     elif key == 'DOWNLOAD_DIR':
         if not value.endswith('/'):
             value += '/'
-    elif key in ['LINKS_LOG_ID', 'RSS_CHAT_ID']:
+    elif key in ['LINKS_LOG_ID', 'RSS_CHAT']:
         value = int(value)
     elif key == 'STATUS_UPDATE_INTERVAL':
         value = int(value)
@@ -830,7 +845,7 @@ async def edit_variable(_, message, pre_message, key):
     elif key == 'EXTENSION_FILTER':
         fx = value.split()
         GLOBAL_EXTENSION_FILTER.clear()
-        GLOBAL_EXTENSION_FILTER.append('.aria2')
+        GLOBAL_EXTENSION_FILTER.extend(['aria2', '!qB'])
         for x in fx:
             if x.strip().startswith('.'):
                 x = x.lstrip('.')
@@ -1068,7 +1083,7 @@ async def edit_bot_settings(client, query):
                             value, update_all_messages))
         elif data[2] == 'EXTENSION_FILTER':
             GLOBAL_EXTENSION_FILTER.clear()
-            GLOBAL_EXTENSION_FILTER.append('.aria2')
+            GLOBAL_EXTENSION_FILTER.extend(['aria2', '!qB'])
         elif data[2] == 'TORRENT_TIMEOUT':
             downloads = await sync_to_async(aria2.get_downloads)
             for download in downloads:

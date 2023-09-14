@@ -9,6 +9,7 @@ from aiofiles.os import path as aiopath
 from cloudscraper import create_scraper
 
 from bot import bot, DOWNLOAD_DIR, LOGGER, config_dict, bot_name, categories_dict, user_data
+from bot.helper.mirror_utils.download_utils.direct_downloader import add_direct_download
 from bot.helper.ext_utils.bot_utils import is_url, is_magnet, is_mega_link, is_gdrive_link, get_content_type, new_task, sync_to_async, is_rclone_path, is_telegram_link, arg_parser, fetch_user_tds, fetch_user_dumps, get_stats
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from bot.helper.ext_utils.task_manager import task_utils
@@ -36,7 +37,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     input_list = text[0].split(' ')
 
     arg_base = {'link': '', 
-                '-i': 0,
+                '-i': '0',
                 '-m': '', '-sd': '', '-samedir': '',
                 '-d': False, '-seed': False,
                 '-j': False, '-join': False,
@@ -54,15 +55,15 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
                 '-index': '',
                 '-c': '', '-category': '',
                 '-ud': '', '-dump': '',
+                '-h': '', '-headers': '',
+                '-ss': '0', '-screenshots': '',
+                '-t': '', '-thumb': '',
     }
 
     args = arg_parser(input_list[1:], arg_base)
     cmd = input_list[0].split('@')[0]
 
-    try:
-        multi = int(args['-i'])
-    except:
-        multi = 0
+    multi = int(args['-i']) if args['-i'].isdigit() else 0
     
     link          = args['link']
     folder_name   = args['-m'] or args['-sd'] or args['-samedir']
@@ -79,6 +80,11 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     index_link    = args['-index']
     gd_cat        = args['-c'] or args['-category']
     user_dump     = args['-ud'] or args['-dump']
+    headers       = args['-h'] or args['-headers']
+    ussr          = args['-u'] or args['-user']
+    pssw          = args['-p'] or args['-pass']
+    thumb         = args['-t'] or args['-thumb']
+    sshots        = int(ss) if (ss := (args['-ss'] or args['-screenshots'])).isdigit() else 0
     bulk_start    = 0
     bulk_end      = 0
     ratio         = None
@@ -228,17 +234,26 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         LOGGER.info(link)
         org_link = link
 
-    if not is_mega_link(link) and not isQbit and not is_magnet(link) and not is_rclone_path(link) \
-       and not is_gdrive_link(link) and not link.endswith('.torrent') and file_ is None:
+    if (not is_mega_link(link) or (is_mega_link(link) and not config_dict['MEGA_EMAIL'] and config_dict['DEBRID_LINK_API'])) \
+        and (not is_magnet(link) or (config_dict['REAL_DEBRID_API'] and is_magnet(link))) \
+        and (not isQbit or (config_dict['REAL_DEBRID_API'] and is_magnet(link))) \
+        and not is_rclone_path(link) and not is_gdrive_link(link) and not link.endswith('.torrent') and file_ is None:
         content_type = await get_content_type(link)
         if content_type is None or re_match(r'text/html|text/plain', content_type):
             process_msg = await sendMessage(message, f"<i><b>Processing:</b></i> <code>{link}</code>")
             try:
+                if not is_magnet(link) and (ussr or pssw):
+                    link = (link, (ussr, pssw))
                 link = await sync_to_async(direct_link_generator, link)
-                LOGGER.info(f"Generated link: {link}")
-                await editMessage(process_msg, f"<i><b>Generated link:</b></i> <code>{link}</code>")
+                if isinstance(link, tuple):
+                    link, headers = link
+                if isinstance(link, str):
+                    LOGGER.info(f"Generated link: {link}")
+                    await editMessage(process_msg, f"<i><b>Generated link:</b></i> <code>{link}</code>")
             except DirectDownloadLinkException as e:
-                LOGGER.info(str(e))
+                e = str(e)
+                if 'This link requires a password!' not in e:
+                    LOGGER.info(e)
                 if str(e).startswith('ERROR:'):
                     await editMessage(process_msg, str(e))
                     await delete_links(message)
@@ -318,11 +333,14 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             return
 
     listener = MirrorLeechListener(message, compress, extract, isQbit, isLeech, tag, select, seed, 
-                                    sameDir, rcf, up, join, drive_id=drive_id, index_link=index_link, source_url=org_link if org_link else link)
+                                    sameDir, rcf, up, join, drive_id=drive_id, index_link=index_link, 
+                                    source_url=org_link or link, leech_utils={'screenshots': sshots, 'thumb': thumb})
 
     if file_ is not None:
         await delete_links(message)
         await TelegramDownloadHelper(listener).add_download(reply_to, f'{path}/', name, session)
+    elif isinstance(link, dict):
+        await add_direct_download(link, path, listener, name)
     elif is_rclone_path(link):
         if link.startswith('mrcc:'):
             link = link.split('mrcc:', 1)[1]
@@ -340,16 +358,16 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     elif is_mega_link(link):
         await delete_links(message)
         await add_mega_download(link, f'{path}/', listener, name)
-    elif isQbit:
+    elif isQbit and 'real-debrid' not in link:
         await add_qb_torrent(link, path, listener, ratio, seed_time)
-    else:
-        ussr = args['-u'] or args['-user']
-        pssw = args['-p'] or args['-pass']
+    elif not is_telegram_link(link):
         if ussr or pssw:
             auth = f"{ussr}:{pssw}"
-            auth = "Basic " + b64encode(auth.encode()).decode('ascii')
+            auth = f"authorization: Basic {b64encode(auth.encode()).decode('ascii')}"
         else:
             auth = ''
+        if headers:
+            auth += f'{auth} {headers}'
         await add_aria2c_download(link, path, listener, name, auth, ratio, seed_time)
     await delete_links(message)
 
@@ -390,11 +408,13 @@ async def wzmlxcb(_, query):
         async with aiopen('log.txt', 'r') as f:
             logFile = await f.read()
         cget = create_scraper().request
-        resp = cget('POST', 'http://stashbin.xyz/api/document', data={'content': logFile}).json()
-        if resp['ok']:
+        resp = cget('POST', 'https://spaceb.in/api/v1/documents', data={'content': logFile, 'extension': 'None'}).json()
+        if resp['status'] == 201:
             btn = ButtonMaker()
-            btn.ubutton('📨 Web Paste', f"http://stashbin.xyz/{resp['data']['key']}")
+            btn.ubutton('📨 Web Paste (SB)', f"https://spaceb.in/{resp['payload']['id']}")
             await editReplyMarkup(message, btn.build_menu(1))
+        else:
+            LOGGER.error(f"Web Paste Failed : {str(err)}")
     elif data[2] == "botpm":
         await query.answer(url=f"https://t.me/{bot_name}?start=wzmlx")
     elif data[2] == "help":
