@@ -441,13 +441,14 @@ class MirrorLeechListener:
                 if self.isSuperGroup:
                     btn = extra_btns(buttons)[0]
                 message = msg
+                btns = btn.build_menu(2)
                 if self.isSuperGroup and not self.isPM:
                     message += BotTheme('L_LL_MSG')
                 elif self.isSuperGroup and self.isPM:
                     message += BotTheme('L_LL_MSG')
                     message += BotTheme('L_BOT_MSG')
-                    btn.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
-                btns = btn.build_menu(2)
+                    buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
+                
                 buttons = btn
                 fmsg = '\n'
                 for index, (link, name) in enumerate(files.items(), start=1):
