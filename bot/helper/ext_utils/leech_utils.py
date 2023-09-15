@@ -244,7 +244,7 @@ async def format_filename(file_, user_id, dirpath=None, isMirror=False):
 
         for sequential_rename in sequential_renames:
             rename_steps = sequential_rename.split("|")  # Use | to separate individual renames within a sequential rename
-            __newFileName = os.path.splitext(file_)[0]
+            __newFileName = ospath.splitext(file_)[0]
 
             for rename_op in rename_steps:
                 args = rename_op.split(":")
@@ -256,6 +256,7 @@ async def format_filename(file_, user_id, dirpath=None, isMirror=False):
                     __newFileName = re.sub(args[0], '', __newFileName)
 
             file_ = __newFileName + os.path.splitext(file_)[1]
+            LOGGER.info(f"New Remname : {file_}")
 
         LOGGER.info(f"New Remname : {file_}")
 
