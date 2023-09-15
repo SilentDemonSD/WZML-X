@@ -219,15 +219,21 @@ async def log_check():
             try:
                 chat = await bot.get_chat(int(chat_id))
             except Exception:
-                LOGGER.error(f"Not Connected Chat ID : {chat_id}, Make the Bot is Admin to Connect!")
+                LOGGER.error(f"Not Connected Chat ID : {chat_id}, Make sure the Bot is Added!")
                 continue
-            if user and chat.type == ChatType.CHANNEL:
-                if not (await chat.get_member(user.me.id)).privileges.can_post_messages:
-                    LOGGER.error(f"Not Connected Chat ID : {chat_id}, Make the User is Admin to Connect!")
+            if chat.type == ChatType.CHANNEL:
+                if not (await chat.get_member(bot.me.id)).privileges.can_post_messages:
+                    LOGGER.error(f"Not Connected Chat ID : {chat_id}, Make the Bot is Admin in Channel to Connect!")
                     continue
-            elif user and chat.type == ChatType.SUPERGROUP:
-                if not (await chat.get_member(user.me.id)).status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR]:
-                    LOGGER.error(f"Not Connected Chat ID : {chat_id}, Make the User is Admin to Connect!")
+                if user and not (await chat.get_member(user.me.id)).privileges.can_post_messages:
+                    LOGGER.error(f"Not Connected Chat ID : {chat_id}, Make the User is Admin in Channel to Connect!")
+                    continue
+            elif chat.type == ChatType.SUPERGROUP:
+                if not (await chat.get_member(bot.me.id)).status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR]:
+                    LOGGER.error(f"Not Connected Chat ID : {chat_id}, Make the Bot is Admin in Group to Connect!")
+                    continue
+                if user and not (await chat.get_member(user.me.id)).status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR]:
+                    LOGGER.error(f"Not Connected Chat ID : {chat_id}, Make the User is Admin in Group to Connect!")
                     continue
             LOGGER.info(f"Connected Chat ID : {chat_id}")
     
