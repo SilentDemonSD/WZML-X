@@ -78,6 +78,10 @@ class TgUploader:
     async def __copy_file(self):
         try:
             if self.__bot_pm and (self.__leechmsg and not self.__listener.excep_chat or self.__listener.isSuperGroup):
+                LOGGER.info(self.__user_id)
+                LOGGER.info(self.__sent_msg.chat.id)
+                LOGGER.info(self.__sent_msg.id)
+                LOGGER.info(self.__listener.botpmmsg.id)
                 copied = await bot.copy_message(
                     chat_id=self.__user_id,
                     from_chat_id=self.__sent_msg.chat.id,
