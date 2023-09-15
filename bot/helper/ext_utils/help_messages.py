@@ -18,6 +18,7 @@ YT_HELP_MESSAGE = ["""<i>Send links/files along with cmd or reply to cmd to mirr
 11. <b>-index:</b> Index url for gdrive_arg
 12. <b>-c or -category :</b> Gdrive category to Upload, Specific Name (case insensitive)
 13. <b>-ud or -dump :</b> Dump category to Upload, Specific Name (case insensitive) or chat_id or chat_username
+14. <b>-ss or -screenshots :</b> Generate Screenshots for Leeched Files, Specify 1, 3, .. after this.
 """, """
 ➲ <b><i>Send link along with command line</i></b>:
 <code>/cmd</code> link -s -n new name -opt x:y|x1:y1
@@ -28,6 +29,9 @@ YT_HELP_MESSAGE = ["""<i>Send links/files along with cmd or reply to cmd to mirr
 ➲ <b><i>New Name</i></b>: -n or -name
 <code>/cmd</code> link -n new name
 <b>Note:</b> Don't add file extension
+
+➲ <b><i>Screenshot Generation</b>: -ss or -screenshots
+<code>/cmd</code> link -ss number ,Screenshots for each Video File
 
 ➲ <b><i>Quality Buttons</i></b>: -s or -select
 Incase default quality added from yt-dlp options using format option and you need to select quality for specific link or links with multi links feature.
@@ -134,10 +138,10 @@ MIRROR_HELP_MESSAGE = ["""<i>Send links/files along with cmd or reply to cmd to 
 ➲ <b><i>Direct Link Authorization</i></b>: -u -p or -user -pass
 <code>/cmd</code> link -u username -p password
 
-➲ <b>Direct link custom headers</b>: -h or -headers
+➲ <b><i>Direct link custom headers</i></b>: -h or -headers
 <code>/cmd</code> link -h key: value key1: value1
 
-➲ <b>Screenshot Generation</b>: -ss or -screenshots
+➲ <b><i>Screenshot Generation</b>: -ss or -screenshots
 <code>/cmd</code> link -ss number ,Screenshots for each Video File
 
 ➲ <b><i>Extract / Zip</i></b>: -uz -z or -zip -unzip or -e -extract

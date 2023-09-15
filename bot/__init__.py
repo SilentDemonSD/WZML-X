@@ -192,6 +192,21 @@ if len(EXTENSION_FILTER) > 0:
         x = x.lstrip('.')
         GLOBAL_EXTENSION_FILTER.append(x.strip().lower())
 
+LINKS_LOG_ID = environ.get('LINKS_LOG_ID', '')
+LINKS_LOG_ID = '' if len(LINKS_LOG_ID) == 0 else int(LINKS_LOG_ID)
+
+MIRROR_LOG_ID = environ.get('MIRROR_LOG_ID', '')
+if len(MIRROR_LOG_ID) == 0:
+    MIRROR_LOG_ID = ''
+    
+LEECH_LOG_ID = environ.get('LEECH_LOG_ID', '')
+if len(LEECH_LOG_ID) == 0:
+    LEECH_LOG_ID = ''
+    
+EXCEP_CHATS = environ.get('EXCEP_CHATS', '')
+if len(EXCEP_CHATS) == 0:
+    EXCEP_CHATS = ''
+
 IS_PREMIUM_USER = False
 user = ''
 USER_SESSION_STRING = environ.get('USER_SESSION_STRING', '')
@@ -205,6 +220,15 @@ if len(USER_SESSION_STRING) != 0:
         log_error(f"Failed making client from USER_SESSION_STRING : {e}")
         user = ''
 
+if user and LEECH_LOG_ID:
+    for chat_id in LEECH_LOG_ID.split():
+        try:
+            chat_id, *topic_id = chat_id.split(":")
+            member = await user.get_chat_member(int(chat_id), "me")
+            log_info(f"Connected Chat ID : {chat_id}")
+        except Exception:
+            log_error(f"Not Connected Chat ID : {chat_id}, Make the User Admin to Connect!")
+    
 MEGA_EMAIL = environ.get('MEGA_EMAIL', '')
 MEGA_PASSWORD = environ.get('MEGA_PASSWORD', '')
 if len(MEGA_EMAIL) == 0 or len(MEGA_PASSWORD) == 0:
@@ -437,21 +461,6 @@ PLAYLIST_LIMIT = '' if len(PLAYLIST_LIMIT) == 0 else int(PLAYLIST_LIMIT)
 FSUB_IDS = environ.get('FSUB_IDS', '')
 if len(FSUB_IDS) == 0:
     FSUB_IDS = ''
-    
-LINKS_LOG_ID = environ.get('LINKS_LOG_ID', '')
-LINKS_LOG_ID = '' if len(LINKS_LOG_ID) == 0 else int(LINKS_LOG_ID)
-
-MIRROR_LOG_ID = environ.get('MIRROR_LOG_ID', '')
-if len(MIRROR_LOG_ID) == 0:
-    MIRROR_LOG_ID = ''
-    
-LEECH_LOG_ID = environ.get('LEECH_LOG_ID', '')
-if len(LEECH_LOG_ID) == 0:
-    LEECH_LOG_ID = ''
-    
-EXCEP_CHATS = environ.get('EXCEP_CHATS', '')
-if len(EXCEP_CHATS) == 0:
-    EXCEP_CHATS = ''
 
 BOT_PM = environ.get('BOT_PM', '')
 BOT_PM = BOT_PM.lower() == 'true'

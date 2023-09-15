@@ -233,7 +233,7 @@ async def main():
         BotCommands.StatsCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
     LOGGER.info(f"WZML-X Bot [@{bot_name}] Started!")
     if user:
-        LOGGER.info(f"WZ's User [@{user.me.first_name}] Ready!")
+        LOGGER.info(f"WZ's User [@{user.me.username}] Ready!")
     signal(SIGINT, exit_clean_up)
 
 async def stop_signals():
