@@ -249,13 +249,13 @@ async def format_filename(file_, user_id, dirpath=None, isMirror=False):
             for rename_op in rename_steps:
                 args = rename_op.split(":")
                 if len(args) == 3:
-                    __newFileName = re.sub(args[0], args[1], __newFileName, int(args[2]))
+                    __newFileName = re_sub(args[0], args[1], __newFileName, int(args[2]))
                 elif len(args) == 2:
-                    __newFileName = re.sub(args[0], args[1], __newFileName)
+                    __newFileName = re_sub(args[0], args[1], __newFileName)
                 elif len(args) == 1:
-                    __newFileName = re.sub(args[0], '', __newFileName)
+                    __newFileName = re_sub(args[0], '', __newFileName)
 
-            file_ = __newFileName + os.path.splitext(file_)[1]
+            file_ = __newFileName + ospath.splitext(file_)[1]
             LOGGER.info(f"New Remname : {file_}")
 
         LOGGER.info(f"New Remname : {file_}")
