@@ -212,7 +212,7 @@ async def restart_notification():
 
 
 async def log_check():
-    if user and config_dict['LEECH_LOG_ID']:
+    if config_dict['LEECH_LOG_ID']:
         for chat_id in config_dict['LEECH_LOG_ID'].split():
             chat_id, *topic_id = chat_id.split(":")
             try:
@@ -220,10 +220,10 @@ async def log_check():
             except Exception:
                 LOGGER.error(f"Not Connected Chat ID : {chat_id}, Make the Bot is Admin to Connect!")
                 continue
-            if (await chat.get_member(user.me.id)).privileges.can_post_messages:
-                LOGGER.info(f"Connected Chat ID : {chat_id}")
-            else:
+            if user and not (await chat.get_member(user.me.id)).privileges.can_post_messages:
                 LOGGER.error(f"Not Connected Chat ID : {chat_id}, Make the User is Admin to Connect!")
+                continue
+            LOGGER.info(f"Connected Chat ID : {chat_id}")
     
 
 async def main():
