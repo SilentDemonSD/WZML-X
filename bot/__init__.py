@@ -224,7 +224,7 @@ if user and LEECH_LOG_ID:
     for chat_id in LEECH_LOG_ID.split():
         try:
             chat_id, *topic_id = chat_id.split(":")
-            member = await user.get_chat_member(int(chat_id), "me")
+            member = user.get_chat_member(int(chat_id), "me")
             log_info(f"Connected Chat ID : {chat_id}")
         except Exception:
             log_error(f"Not Connected Chat ID : {chat_id}, Make the User Admin to Connect!")
