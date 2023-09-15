@@ -82,7 +82,7 @@ class TgUploader:
                     chat_id=self.__user_id,
                     from_chat_id=self.__sent_msg.chat.id,
                     message_id=self.__sent_msg.id,
-                    reply_to_message_id=self.__listener.botpmmsg.id
+                    reply_to_message_id=self.__listener.botpmmsg.id if self.botpmmsg else None
                 )
                 if copied and self.__has_buttons:
                     btn_markup = InlineKeyboardMarkup(BTN) if (BTN := self.__sent_msg.reply_markup.inline_keyboard[:-1]) else None
