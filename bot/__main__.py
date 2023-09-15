@@ -211,8 +211,23 @@ async def restart_notification():
         await aioremove(".restartmsg")
 
 
+async def log_check():
+    if user and config_dict['LEECH_LOG_ID']:
+        for chat_id in config_dict['LEECH_LOG_ID'].split():
+            chat_id, *topic_id = chat_id.split(":")
+            try:
+                chat = await bot.get_chat(int(chat_id))
+            except Exception:
+                LOGGER.error(f"Not Connected Chat ID : {chat_id}, Make the Bot is Admin to Connect!")
+                continue
+            if (await chat.get_member(user.me.id)).privileges.can_post_messages:
+                LOGGER.info(f"Connected Chat ID : {chat_id}")
+            else:
+                LOGGER.error(f"Not Connected Chat ID : {chat_id}, Make the User is Admin to Connect!")
+    
+
 async def main():
-    await gather(start_cleanup(), torrent_search.initiate_search_tools(), restart_notification(), search_images(), set_commands(bot))
+    await gather(start_cleanup(), torrent_search.initiate_search_tools(), restart_notification(), search_images(), set_commands(bot), log_check)
     await sync_to_async(start_aria2_listener, wait=False)
     
     bot.add_handler(MessageHandler(

@@ -220,14 +220,6 @@ if len(USER_SESSION_STRING) != 0:
         log_error(f"Failed making client from USER_SESSION_STRING : {e}")
         user = ''
 
-if user and LEECH_LOG_ID:
-    for chat_id in LEECH_LOG_ID.split():
-        chat_id, *topic_id = chat_id.split(":")
-        if bot.get_chat(int(chat_id)).get_member(user.me.id).privileges.can_post_messages:
-            log_info(f"Connected Chat ID : {chat_id}")
-        else:
-            log_error(f"Not Connected Chat ID : {chat_id}, Make the User Admin to Connect!")
-    
 MEGA_EMAIL = environ.get('MEGA_EMAIL', '')
 MEGA_PASSWORD = environ.get('MEGA_PASSWORD', '')
 if len(MEGA_EMAIL) == 0 or len(MEGA_PASSWORD) == 0:
