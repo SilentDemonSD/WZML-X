@@ -14,6 +14,7 @@ from signal import signal, SIGINT
 from aiofiles.os import path as aiopath, remove as aioremove
 from aiofiles import open as aiopen
 from pyrogram import idle
+from pyrogram.enums import ChatMemberStatus, ChatType
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.filters import command, private, regex
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
@@ -220,9 +221,14 @@ async def log_check():
             except Exception:
                 LOGGER.error(f"Not Connected Chat ID : {chat_id}, Make the Bot is Admin to Connect!")
                 continue
-            if user and not (await chat.get_member(user.me.id)).privileges.can_post_messages:
-                LOGGER.error(f"Not Connected Chat ID : {chat_id}, Make the User is Admin to Connect!")
-                continue
+            if user and chat.type == ChatType.CHANNEL:
+                if not (await chat.get_member(user.me.id)).privileges.can_post_messages:
+                    LOGGER.error(f"Not Connected Chat ID : {chat_id}, Make the User is Admin to Connect!")
+                    continue
+            elif user and chat.type == ChatType.SUPERGROUP:
+                if not (await chat.get_member(user.me.id)).status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR]:
+                    LOGGER.error(f"Not Connected Chat ID : {chat_id}, Make the User is Admin to Connect!")
+                    continue
             LOGGER.info(f"Connected Chat ID : {chat_id}")
     
 
