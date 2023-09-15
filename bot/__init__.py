@@ -222,11 +222,10 @@ if len(USER_SESSION_STRING) != 0:
 
 if user and LEECH_LOG_ID:
     for chat_id in LEECH_LOG_ID.split():
-        try:
-            chat_id, *topic_id = chat_id.split(":")
-            member = user.get_chat_member(int(chat_id), "me")
+        chat_id, *topic_id = chat_id.split(":")
+        if bot.get_chat(int(chat_id)).get_member(user.me.id).privileges.can_post_messages:
             log_info(f"Connected Chat ID : {chat_id}")
-        except Exception:
+        else:
             log_error(f"Not Connected Chat ID : {chat_id}, Make the User Admin to Connect!")
     
 MEGA_EMAIL = environ.get('MEGA_EMAIL', '')
