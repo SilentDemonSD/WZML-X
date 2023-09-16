@@ -192,6 +192,21 @@ if len(EXTENSION_FILTER) > 0:
         x = x.lstrip('.')
         GLOBAL_EXTENSION_FILTER.append(x.strip().lower())
 
+LINKS_LOG_ID = environ.get('LINKS_LOG_ID', '')
+LINKS_LOG_ID = '' if len(LINKS_LOG_ID) == 0 else int(LINKS_LOG_ID)
+
+MIRROR_LOG_ID = environ.get('MIRROR_LOG_ID', '')
+if len(MIRROR_LOG_ID) == 0:
+    MIRROR_LOG_ID = ''
+    
+LEECH_LOG_ID = environ.get('LEECH_LOG_ID', '')
+if len(LEECH_LOG_ID) == 0:
+    LEECH_LOG_ID = ''
+    
+EXCEP_CHATS = environ.get('EXCEP_CHATS', '')
+if len(EXCEP_CHATS) == 0:
+    EXCEP_CHATS = ''
+
 IS_PREMIUM_USER = False
 user = ''
 USER_SESSION_STRING = environ.get('USER_SESSION_STRING', '')
@@ -354,6 +369,9 @@ USER_TD_SA = USER_TD_SA.lower() if len(USER_TD_SA) != 0 else ''
 SHOW_MEDIAINFO = environ.get('SHOW_MEDIAINFO', '')
 SHOW_MEDIAINFO = SHOW_MEDIAINFO.lower() == 'true'
 
+SCREENSHOTS_MODE = environ.get('SCREENSHOTS_MODE', '')
+SCREENSHOTS_MODE = SCREENSHOTS_MODE.lower() == 'true'
+
 SOURCE_LINK = environ.get('SOURCE_LINK', '')
 SOURCE_LINK = SOURCE_LINK.lower() == 'true'
 
@@ -437,21 +455,6 @@ PLAYLIST_LIMIT = '' if len(PLAYLIST_LIMIT) == 0 else int(PLAYLIST_LIMIT)
 FSUB_IDS = environ.get('FSUB_IDS', '')
 if len(FSUB_IDS) == 0:
     FSUB_IDS = ''
-    
-LINKS_LOG_ID = environ.get('LINKS_LOG_ID', '')
-LINKS_LOG_ID = '' if len(LINKS_LOG_ID) == 0 else int(LINKS_LOG_ID)
-
-MIRROR_LOG_ID = environ.get('MIRROR_LOG_ID', '')
-if len(MIRROR_LOG_ID) == 0:
-    MIRROR_LOG_ID = ''
-    
-LEECH_LOG_ID = environ.get('LEECH_LOG_ID', '')
-if len(LEECH_LOG_ID) == 0:
-    LEECH_LOG_ID = ''
-    
-EXCEP_CHATS = environ.get('EXCEP_CHATS', '')
-if len(EXCEP_CHATS) == 0:
-    EXCEP_CHATS = ''
 
 BOT_PM = environ.get('BOT_PM', '')
 BOT_PM = BOT_PM.lower() == 'true'
@@ -671,6 +674,7 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'SEARCH_PLUGINS': SEARCH_PLUGINS,
                'SET_COMMANDS': SET_COMMANDS,
                'SHOW_MEDIAINFO': SHOW_MEDIAINFO,
+               'SCREENSHOTS_MODE': SCREENSHOTS_MODE,
                'CLEAN_LOG_MSG': CLEAN_LOG_MSG,
                'SHOW_EXTRA_CMDS': SHOW_EXTRA_CMDS,
                'SOURCE_LINK': SOURCE_LINK,

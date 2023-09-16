@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from traceback import format_exc
 from logging import getLogger, ERROR
-from aiofiles.os import remove as aioremove, path as aiopath, rename as aiorename, makedirs, rmdir
+from aiofiles.os import remove as aioremove, path as aiopath, rename as aiorename, makedirs, rmdir, mkdir
 from os import walk, path as ospath
 from time import time
 from PIL import Image
@@ -16,9 +16,9 @@ from aioshutil import copy
 from bot import config_dict, user_data, GLOBAL_EXTENSION_FILTER, bot, user, IS_PREMIUM_USER
 from bot.helper.themes import BotTheme
 from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.telegram_helper.message_utils import sendCustomMsg, editReplyMarkup, sendMultiMessage, chat_info, deleteMessage
+from bot.helper.telegram_helper.message_utils import sendCustomMsg, editReplyMarkup, sendMultiMessage, chat_info, deleteMessage, get_tg_link_content
 from bot.helper.ext_utils.fs_utils import clean_unwanted, is_archive, get_base_name
-from bot.helper.ext_utils.bot_utils import get_readable_file_size, sync_to_async
+from bot.helper.ext_utils.bot_utils import get_readable_file_size, is_telegram_link, is_url, sync_to_async, download_image_url
 from bot.helper.ext_utils.leech_utils import get_audio_thumb, get_media_info, get_document_type, take_ss, get_ss, get_mediainfo_link, format_filename
 
 LOGGER = getLogger(__name__)
@@ -56,11 +56,38 @@ class TgUploader:
         self.__user_id = listener.message.from_user.id
         self.__leechmsg = {}
         self.__leech_utils = self.__listener.leech_utils
+        
+    async def get_custom_thumb(self, thumb):
+        if is_telegram_link(thumb):
+            try:
+                msg, client = await get_tg_link_content(thumb)
+            except Exception as e:
+                LOGGER.error(f"Thumb Access Error: {e}")
+                return None
+            if msg and not msg.photo:
+                LOGGER.error("Thumb TgLink Invalid: Provide Link to Photo Only !")
+                return None
+            _client = bot if client == 'bot' else user
+            photo_dir = await _client.download_media(msg)
+        elif is_url(thumb):
+            photo_dir = await download_image_url(thumb)
+        else:
+            LOGGER.error("Custom Thumb Invalid")
+            return None
+        if await aiopath.exists(photo_dir):
+            path = "Thumbnails"
+            if not await aiopath.isdir(path):
+                await mkdir(path)
+            des_dir = ospath.join(path, f'{time()}.jpg')
+            await sync_to_async(Image.open(photo_dir).convert("RGB").save, des_dir, "JPEG")
+            await aioremove(photo_dir)
+            return des_dir
+        return None
 
     async def __buttons(self, up_path, is_video=False):
         buttons = ButtonMaker()
         try:
-            if is_video and bool(self.__leech_utils['screenshots']):
+            if config_dict['SCREENSHOTS_MODE'] and is_video and bool(self.__leech_utils['screenshots']):
                 buttons.ubutton(BotTheme('SCREENSHOTS'), await get_ss(up_path, self.__leech_utils['screenshots']))
         except Exception as e:
             LOGGER.error(f"ScreenShots Error: {e}")
@@ -82,7 +109,7 @@ class TgUploader:
                     chat_id=self.__user_id,
                     from_chat_id=self.__sent_msg.chat.id,
                     message_id=self.__sent_msg.id,
-                    reply_to_message_id=self.__listener.botpmmsg.id
+                    reply_to_message_id=self.__listener.botpmmsg.id if self.__listener.botpmmsg else None
                 )
                 if copied and self.__has_buttons:
                     btn_markup = InlineKeyboardMarkup(BTN) if (BTN := self.__sent_msg.reply_markup.inline_keyboard[:-1]) else None
@@ -350,6 +377,9 @@ class TgUploader:
         try:
             is_video, is_audio, is_image = await get_document_type(self.__up_path)
 
+            if self.__leech_utils['thumb']:
+                thumb = await self.get_custom_thumb(self.__leech_utils['thumb'])
+            
             if not is_image and thumb is None:
                 file_name = ospath.splitext(file)[0]
                 thumb_path = f"{self.__path}/yt-dlp-thumb/{file_name}.jpg"

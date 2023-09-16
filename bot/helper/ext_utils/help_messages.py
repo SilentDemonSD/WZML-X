@@ -18,6 +18,8 @@ YT_HELP_MESSAGE = ["""<i>Send links/files along with cmd or reply to cmd to mirr
 11. <b>-index:</b> Index url for gdrive_arg
 12. <b>-c or -category :</b> Gdrive category to Upload, Specific Name (case insensitive)
 13. <b>-ud or -dump :</b> Dump category to Upload, Specific Name (case insensitive) or chat_id or chat_username
+14. <b>-ss or -screenshots :</b> Generate Screenshots for Leeched Files
+15. <b>-t or -thumb :</b> Custom Thumb for Specific Leech
 """, """
 ➲ <b><i>Send link along with command line</i></b>:
 <code>/cmd</code> link -s -n new name -opt x:y|x1:y1
@@ -28,6 +30,14 @@ YT_HELP_MESSAGE = ["""<i>Send links/files along with cmd or reply to cmd to mirr
 ➲ <b><i>New Name</i></b>: -n or -name
 <code>/cmd</code> link -n new name
 <b>Note:</b> Don't add file extension
+
+➲ <b><i>Screenshot Generation</b>: -ss or -screenshots
+<code>/cmd</code> link -ss number ,Screenshots for each Video File
+
+➲ <b><i>Custom Thumbnail</b>: -t or -thumb
+<code>/cmd</code> link -t tglink|dl_link
+<b>Direct Link:</b> dl_link specifies download link, where it is Image url
+<b>Tg Link:</b> Give Public/Private/Super Link to download Image from Tg
 
 ➲ <b><i>Quality Buttons</i></b>: -s or -select
 Incase default quality added from yt-dlp options using format option and you need to select quality for specific link or links with multi links feature.
@@ -119,7 +129,8 @@ MIRROR_HELP_MESSAGE = ["""<i>Send links/files along with cmd or reply to cmd to 
 17. <b>-index:</b> Index url for gdrive_arg
 18. <b>-c or -category :</b> Gdrive category to Upload, Specific Name (case insensitive)
 19. <b>-ud or -dump :</b> Dump category to Upload, Specific Name (case insensitive) or chat_id or chat_username
-20. <b>-ss or -screenshots :</b> Generate Screenshots for Leeched Files, Specify 1, 3, .. after this.
+20. <b>-ss or -screenshots :</b> Generate Screenshots for Leeched Files
+21. <b>-t or -thumb :</b> Custom Thumb for Specific Leech
 """, """
 ➲ <b><i>By along the cmd</i></b>:
 <code>/cmd</code> link -n new name
@@ -134,11 +145,16 @@ MIRROR_HELP_MESSAGE = ["""<i>Send links/files along with cmd or reply to cmd to 
 ➲ <b><i>Direct Link Authorization</i></b>: -u -p or -user -pass
 <code>/cmd</code> link -u username -p password
 
-➲ <b>Direct link custom headers</b>: -h or -headers
+➲ <b><i>Direct link custom headers</i></b>: -h or -headers
 <code>/cmd</code> link -h key: value key1: value1
 
-➲ <b>Screenshot Generation</b>: -ss or -screenshots
+➲ <b><i>Screenshot Generation</b>: -ss or -screenshots
 <code>/cmd</code> link -ss number ,Screenshots for each Video File
+
+➲ <b><i>Custom Thumbnail</b>: -t or -thumb
+<code>/cmd</code> link -t tglink|dl_link
+<b>Direct Link:</b> dl_link specifies download link, where it is Image url
+<b>Tg Link:</b> Give Public/Private/Super Link to download Image from Tg
 
 ➲ <b><i>Extract / Zip</i></b>: -uz -z or -zip -unzip or -e -extract
 <code>/cmd</code> link -e password (extract password protected)
@@ -418,6 +434,8 @@ default_desp = {'AS_DOCUMENT': 'Default type of Telegram file upload. Default is
                 'AUTO_DELETE_MESSAGE_DURATION': "Interval of time (in seconds), after which the bot deletes it's message and command message which is expected to be viewed instantly.\n\n <b>NOTE:</b> Set to -1 to disable auto message deletion.",
                 'BASE_URL': 'Valid BASE URL where the bot is deployed to use torrent web files selection. Format of URL should be http://myip, where myip is the IP/Domain(public) of your bot or if you have chosen port other than 80 so write it in this format http://myip:port (http and not https). Str',
                 'BASE_URL_PORT': 'Which is the BASE_URL Port. Default is 80. Int',
+                'BLACKLIST_USERS': 'Restrict User from Using the Bot. It will Display a BlackListed Msg. USER_ID separated by space. Str',
+                'BOT_MAX_TASKS': 'Maximum number of Task Bot will Run parallel. (Queue Tasks Included). Int',
                 'STORAGE_THRESHOLD': 'To leave specific storage free and any download will lead to leave free storage less than this value will be cancelled the default unit is GB. Int',
                 'LEECH_LIMIT':  'To limit the Torrent/Direct/ytdlp leech size. the default unit is GB. Int',
                 'CLONE_LIMIT': 'To limit the size of Google Drive folder/file which you can clone. the default unit is GB. Int',
@@ -430,11 +448,17 @@ default_desp = {'AS_DOCUMENT': 'Default type of Telegram file upload. Default is
                 'IMG_SEARCH': 'Put Keyword to Download Images. Sperarte each name by , like anime, iron man, god of war',
                 'IMG_PAGE': 'Set the page value for downloading a image. Each page have approx 70 images. Deafult is 1. Int',
                 'IMDB_TEMPLATE': 'Set Bot Default IMDB Template. HTML Tags, Emojis supported. str',
-                'AUTHOR_NAME': 'Author name for Telegraph pages',
-                'AUTHOR_URL': 'Author URL for Telegraph page',
+                'AUTHOR_NAME': 'Author name for Telegraph pages, Shown in Telegraph Page as by AUTHOR_NAME',
+                'AUTHOR_URL': 'Author URL for Telegraph page, Put Channel URL to Show Join Channel. Str',
+                'COVER_IMAGE': 'Cover Image for Telegraph Page. Put Telegraph Photo Link',
                 'TITLE_NAME': 'Title name for Telegraph pages (while using /list command)',
                 'GD_INFO': 'Description of file uploaded to gdrive using bot',
-                'BOT_THEME': 'Change the theme of bot. For now theme availabe is minimal. You can make your own theme checkout this link https://t.ly/9rVXq',
+                'DELETE_LINKS': 'Delete TgLink/Magnet/File on Start of Task to Auto Clean Group. Default is False',
+                'EXCEP_CHATS': 'Exception Chats which will not use Logging, chat_id separated by space. Str',
+                'SAFE_MODE': 'Hide Task Name, Source Link and Indexing of Leech Link for Safety Precautions. Default is False',
+                'SOURCE_LINK': 'Add a Extra Button of Source Link whether it is Magnet Link or File Link or DL Link. Default is False',
+                'SHOW_EXTRA_CMDS': 'Add Extra Commands beside Arg Format for -z or -e. \n\n<b>COMMANDS: </b> /unzipxxx or /zipxxx or /uzx or /zx',
+                'BOT_THEME': 'Theme of the Bot to Switch. For now Deafault Theme Availabe is minimal. You can make your own Theme and Add in BSet. \n\n<b>Sample Format</b>: https://t.ly/9rVXq',
                 'USER_MAX_TASKS': 'Limit the Maximum task for users of group at a time. use the Int',
                 'DAILY_TASK_LIMIT': 'Maximum task a user can do in one day. use the Int',
                 'DISABLE_DRIVE_LINK': 'Disable drive link button. Default is False. Bool',
@@ -445,11 +469,12 @@ default_desp = {'AS_DOCUMENT': 'Default type of Telegram file upload. Default is
                 'FSUB_IDS': 'Fill chat_id(-100xxxxxx) of groups/channel you want to force subscribe. Separate them by space. Int\n\nNote: Bot should be added in the filled chat_id as admin',
                 'BOT_PM': 'File/links send to the BOT PM also. Default is False',
                 'BOT_TOKEN': 'The Telegram Bot Token that you got from @BotFather',
-                'CMD_SUFFIX': 'commands index number. This number will added at the end all commands.',
+                'CMD_SUFFIX': 'Telegram Bot Command Index number or Custom Text. This will added at the end all commands except Global Commands. Str',
                 'DATABASE_URL': "Your Mongo Database URL (Connection string). Follow this Generate Database to generate database. Data will be saved in Database: auth and sudo users, users settings including thumbnails for each user, rss data and incomplete tasks.\n\n <b>NOTE:</b> You can always edit all settings that saved in database from the official site -> (Browse collections)",
                 'DEFAULT_UPLOAD': 'Whether rc to upload to RCLONE_PATH or gd to upload to GDRIVE_ID or ddl to upload to DDLserver. Default is gd.',
                 'DOWNLOAD_DIR': 'The path to the local folder where the downloads should be downloaded to. ',
                 'MDL_TEMPLATE': 'Set Bot Custom Default MyDramaList Template. HTML Tags, Emojis Supported',
+                'CLEAN_LOG_MSG': 'Clean Leech Log & Bot PM Task Start Message. Default is False',
                 'LEECH_LOG_ID': "Chat ID to where leeched files would be uploaded. Int. NOTE: Only available for superGroup/channel. Add -100 before channel/superGroup id. In short don't add bot id or your id!",
                 'MIRROR_LOG_ID': "Chat ID to where Mirror files would be Send. Int. NOTE: Only available for superGroup/channel. Add -100 before channel/superGroup id. In short don't add bot id or your id!. For Multiple id Separate them by space.",
                 'EQUAL_SPLITS': 'Split files larger than LEECH_SPLIT_SIZE into equal parts size (Not working with zip cmd). Default is False.',
@@ -459,6 +484,7 @@ default_desp = {'AS_DOCUMENT': 'Default type of Telegram file upload. Default is
                 'INDEX_URL': 'Refer to https://gitlab.com/ParveenBhadooOfficial/Google-Drive-Index.',
                 'IS_TEAM_DRIVE': 'Set True if uploading to TeamDrive using google-api-python-client. Default is False',
                 'SHOW_MEDIAINFO': 'Add Button to Show MediaInfo in Leeched file. Bool',
+                'SCREENSHOTS_MODE': 'Enable or Diable generating Screenshots via -ss arg. Default is False. Bool',
                 'CAP_FONT': 'Add Custom Caption Font to Leeched Files, Available Values : b, i, u, s, code, spoiler. Reset Var to use Regular ( No Format )',
                 'LEECH_FILENAME_PREFIX': 'Add custom word prefix to leeched file name. Str',
                 'LEECH_FILENAME_SUFFIX': 'Add custom word suffix to leeched file name. Str',
@@ -500,6 +526,8 @@ default_desp = {'AS_DOCUMENT': 'Default type of Telegram file upload. Default is
                 'UPGRADE_PACKAGES': 'Install New Requirements File without thinking of Crash. Bool',
                 'SAVE_MSG': 'Add button of save message. Bool',
                 'SET_COMMANDS': 'Set bot command automatically. Bool',
+                'USER_TD_MODE': 'Enable User GDrive TD to Use. Default is False',
+                'USER_TD_SA': 'Add Global SA mail for User to give Permissions to Bot for UserTD Upload. Like wzmlx@googlegroups.com. Str',
                 'UPTOBOX_TOKEN': 'Uptobox token to mirror uptobox links. Get it from <a href="https://uptobox.com/my_account">Uptobox Premium Account</a>.',
                 'USER_SESSION_STRING': "To download/upload from your telegram account and to send rss. To generate session string use this command <code>python3 generate_string_session.py</code> after mounting repo folder for sure.\n\n<b>NOTE:</b> You can't use bot with private message. Use it with superGroup.",
                 'USE_SERVICE_ACCOUNTS': 'Whether to use Service Accounts or not, with google-api-python-client. For this to work see Using Service Accounts section below. Default is False',

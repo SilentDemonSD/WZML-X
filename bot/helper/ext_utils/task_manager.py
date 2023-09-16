@@ -219,7 +219,7 @@ async def task_utils(message):
             if _msg:
                 msg.append(_msg)
         user_dict = user_data.get(user_id, {})
-        if config_dict['BOT_PM'] or user_dict.get('bot_pm'):
+        if config_dict['BOT_PM'] or user_dict.get('bot_pm') or config_dict['SAFE_MODE']:
             _msg, button = await check_botpm(message, button)
             if _msg:
                 msg.append(_msg)

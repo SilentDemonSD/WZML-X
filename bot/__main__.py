@@ -14,6 +14,7 @@ from signal import signal, SIGINT
 from aiofiles.os import path as aiopath, remove as aioremove
 from aiofiles import open as aiopen
 from pyrogram import idle
+from pyrogram.enums import ChatMemberStatus, ChatType
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.filters import command, private, regex
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
@@ -211,8 +212,34 @@ async def restart_notification():
         await aioremove(".restartmsg")
 
 
+async def log_check():
+    if config_dict['LEECH_LOG_ID']:
+        for chat_id in config_dict['LEECH_LOG_ID'].split():
+            chat_id, *topic_id = chat_id.split(":")
+            try:
+                chat = await bot.get_chat(int(chat_id))
+            except Exception:
+                LOGGER.error(f"Not Connected Chat ID : {chat_id}, Make sure the Bot is Added!")
+                continue
+            if chat.type == ChatType.CHANNEL:
+                if not (await chat.get_member(bot.me.id)).privileges.can_post_messages:
+                    LOGGER.error(f"Not Connected Chat ID : {chat_id}, Make the Bot is Admin in Channel to Connect!")
+                    continue
+                if user and not (await chat.get_member(user.me.id)).privileges.can_post_messages:
+                    LOGGER.error(f"Not Connected Chat ID : {chat_id}, Make the User is Admin in Channel to Connect!")
+                    continue
+            elif chat.type == ChatType.SUPERGROUP:
+                if not (await chat.get_member(bot.me.id)).status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR]:
+                    LOGGER.error(f"Not Connected Chat ID : {chat_id}, Make the Bot is Admin in Group to Connect!")
+                    continue
+                if user and not (await chat.get_member(user.me.id)).status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR]:
+                    LOGGER.error(f"Not Connected Chat ID : {chat_id}, Make the User is Admin in Group to Connect!")
+                    continue
+            LOGGER.info(f"Connected Chat ID : {chat_id}")
+    
+
 async def main():
-    await gather(start_cleanup(), torrent_search.initiate_search_tools(), restart_notification(), search_images(), set_commands(bot))
+    await gather(start_cleanup(), torrent_search.initiate_search_tools(), restart_notification(), search_images(), set_commands(bot), log_check())
     await sync_to_async(start_aria2_listener, wait=False)
     
     bot.add_handler(MessageHandler(
@@ -233,7 +260,7 @@ async def main():
         BotCommands.StatsCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
     LOGGER.info(f"WZML-X Bot [@{bot_name}] Started!")
     if user:
-        LOGGER.info(f"WZ's User [@{user.me.first_name}] Ready!")
+        LOGGER.info(f"WZ's User [@{user.me.username}] Ready!")
     signal(SIGINT, exit_clean_up)
 
 async def stop_signals():

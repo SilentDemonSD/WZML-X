@@ -61,13 +61,16 @@ async def get_media_info(path, metadata=False):
     artist = tags.get('artist') or tags.get('ARTIST') or tags.get("Artist")
     title = tags.get('title') or tags.get('TITLE') or tags.get("Title")
     if metadata:
-        lang, qual = "", ""
+        lang, qual, stitles = "", "", ""
         if (streams := ffresult.get('streams')) and streams[0].get('codec_type') == 'video':
-            qual = f"{streams[0].get('height')}p"
+            qual = streams[0].get('height')
+            qual = f"{480 if qual <= 480 else 540 if qual <= 540 else 720 if qual <= 720 else 1080 if qual <= 1080 else 2160 if qual <= 2160 else 4320 if qual <= 4320 else 8640}p"
             for stream in streams:
                 if stream.get('codec_type') == 'audio' and (lc := stream.get('tags', {}).get('language')):
                     lang += Language.get(lc).display_name() + ", "
-        return duration, qual, lang[:-2]
+                if stream.get('codec_type') == 'subtitle' and (st := stream.get('tags', {}).get('language')):
+                    stitles += Language.get(st).display_name() + ", "
+        return duration, qual, lang[:-2], stitles[:-2]
     return duration, artist, title
 
 
@@ -140,6 +143,7 @@ async def take_ss(video_file, duration=None, total=1, gen_ss=False):
         if await task.wait() != 0 or not await aiopath.exists(ospath.join(des_dir, f"wz_thumb_{eq_thumb}.jpg")):
             err = (await task.stderr.read()).decode().strip()
             LOGGER.error(f'Error while extracting thumbnail no. {eq_thumb} from video. Name: {video_file} stderr: {err}')
+            await aiormtree(des_dir)
             return None
     return (des_dir, tstamps) if gen_ss else ospath.join(des_dir, "wz_thumb_1.jpg")
 
@@ -284,13 +288,14 @@ async def format_filename(file_, user_id, dirpath=None, isMirror=False):
         lcaption = lcaption.replace('\|', '%%').replace('\s', ' ')
         slit = lcaption.split("|")
         up_path = ospath.join(dirpath, prefile_)
-        dur, qual, lang = await get_media_info(up_path, True)
+        dur, qual, lang, subs = await get_media_info(up_path, True)
         cap_mono = slit[0].format(
             filename = nfile_,
             size = get_readable_file_size(await aiopath.getsize(up_path)),
             duration = get_readable_time(dur),
             quality = qual,
             languages = lang,
+            subtitles = subs,
             md5_hash = get_md5_hash(up_path)
         )
         if len(slit) > 1:
