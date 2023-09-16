@@ -511,7 +511,7 @@ async def edit_user_settings(client, query):
         handler_dict[user_id] = False
         if data[2] == 'save_mode' and not user_dict.get(data[2], False) and not user_dict.get('ldump'):
             return await query.answer("Set User Dump first to Change Save Msg Mode !", show_alert=True)
-        elif data[2] == 'bot_pm' and config_dict['BOT_PM'] or data[2] == 'mediainfo' and config_dict['SHOW_MEDIAINFO'] or data[2] == 'td_mode' and not config_dict['USER_TD_MODE']:
+        elif data[2] == 'bot_pm' and (config_dict['BOT_PM'] or config_dict['SAFE_MODE']) or data[2] == 'mediainfo' and config_dict['SHOW_MEDIAINFO'] or data[2] == 'td_mode' and not config_dict['USER_TD_MODE']:
             mode_up = "Disabled" if data[2] == 'td_mode' else "Enabled"
             return await query.answer(f"Force {mode_up}! Can't Alter Settings", show_alert=True)
         if data[2] == 'td_mode' and not user_dict.get('user_tds', False):
