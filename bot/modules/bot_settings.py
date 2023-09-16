@@ -49,7 +49,7 @@ default_values = {'AUTO_DELETE_MESSAGE_DURATION': 30,
                   }
 bool_vars = ['AS_DOCUMENT', 'BOT_PM', 'STOP_DUPLICATE', 'SET_COMMANDS', 'SAVE_MSG', 'SHOW_MEDIAINFO', 'SOURCE_LINK', 'SAFE_MODE', 'SHOW_EXTRA_CMDS',
              'IS_TEAM_DRIVE', 'USE_SERVICE_ACCOUNTS', 'WEB_PINCODE', 'EQUAL_SPLITS', 'DISABLE_DRIVE_LINK', 'DELETE_LINKS', 'CLEAN_LOG_MSG', 'USER_TD_MODE', 
-             'INCOMPLETE_TASK_NOTIFIER', 'UPGRADE_PACKAGES']
+             'INCOMPLETE_TASK_NOTIFIER', 'UPGRADE_PACKAGES', 'SCREENSHOTS_MODE']
 
 
 async def load_config():
@@ -304,6 +304,9 @@ async def load_config():
     USER_TD_SA = environ.get('USER_TD_SA', '')
     USER_TD_SA = USER_TD_SA.lower() if len(USER_TD_SA) != 0 else ''
 
+    SHOW_MEDIAINFO = environ.get('SHOW_MEDIAINFO', '')
+    SHOW_MEDIAINFO = SHOW_MEDIAINFO.lower() == 'true'
+    
     SHOW_MEDIAINFO = environ.get('SHOW_MEDIAINFO', '')
     SHOW_MEDIAINFO = SHOW_MEDIAINFO.lower() == 'true'
     
@@ -668,6 +671,7 @@ async def load_config():
                         'SEARCH_PLUGINS': SEARCH_PLUGINS,
                         'SET_COMMANDS': SET_COMMANDS,
                         'SHOW_MEDIAINFO': SHOW_MEDIAINFO,
+                        'SCREENSHOTS_MODE': SCREENSHOTS_MODE,
                         'CLEAN_LOG_MSG': CLEAN_LOG_MSG,
                         'SHOW_EXTRA_CMDS': SHOW_EXTRA_CMDS,
                         'SOURCE_LINK': SOURCE_LINK,

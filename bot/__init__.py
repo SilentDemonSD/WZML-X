@@ -369,6 +369,9 @@ USER_TD_SA = USER_TD_SA.lower() if len(USER_TD_SA) != 0 else ''
 SHOW_MEDIAINFO = environ.get('SHOW_MEDIAINFO', '')
 SHOW_MEDIAINFO = SHOW_MEDIAINFO.lower() == 'true'
 
+SCREENSHOTS_MODE = environ.get('SCREENSHOTS_MODE', '')
+SCREENSHOTS_MODE = SCREENSHOTS_MODE.lower() == 'true'
+
 SOURCE_LINK = environ.get('SOURCE_LINK', '')
 SOURCE_LINK = SOURCE_LINK.lower() == 'true'
 
@@ -671,6 +674,7 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'SEARCH_PLUGINS': SEARCH_PLUGINS,
                'SET_COMMANDS': SET_COMMANDS,
                'SHOW_MEDIAINFO': SHOW_MEDIAINFO,
+               'SCREENSHOTS_MODE': SCREENSHOTS_MODE,
                'CLEAN_LOG_MSG': CLEAN_LOG_MSG,
                'SHOW_EXTRA_CMDS': SHOW_EXTRA_CMDS,
                'SOURCE_LINK': SOURCE_LINK,

@@ -620,6 +620,7 @@ help - All cmds with description
         <summary><b>M/L Buttons</b></summary>
 
     - `SHOW_MEDIAINFO`: Mediainfo button of file. Default is `False`. `Bool`
+    - `SCREENSHOTS_MODE`: Enable or Diable generating Screenshots via -ss arg. Default is `False`. `Bool`
     - `SAVE_MSG`: Save Button in each file and link so that every user direcly save it without forwarding. Default is `False`. `Bool`
     - `SOURCE_LINK`: Source button of files and links. Default is `False`. `Bool`
     </details></li>

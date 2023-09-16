@@ -87,7 +87,7 @@ class TgUploader:
     async def __buttons(self, up_path, is_video=False):
         buttons = ButtonMaker()
         try:
-            if is_video and bool(self.__leech_utils['screenshots']):
+            if config_dict['SCREENSHOTS_MODE'] and is_video and bool(self.__leech_utils['screenshots']):
                 buttons.ubutton(BotTheme('SCREENSHOTS'), await get_ss(up_path, self.__leech_utils['screenshots']))
         except Exception as e:
             LOGGER.error(f"ScreenShots Error: {e}")
