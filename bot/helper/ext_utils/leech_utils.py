@@ -143,6 +143,7 @@ async def take_ss(video_file, duration=None, total=1, gen_ss=False):
         if await task.wait() != 0 or not await aiopath.exists(ospath.join(des_dir, f"wz_thumb_{eq_thumb}.jpg")):
             err = (await task.stderr.read()).decode().strip()
             LOGGER.error(f'Error while extracting thumbnail no. {eq_thumb} from video. Name: {video_file} stderr: {err}')
+            await aiormtree(des_dir)
             return None
     return (des_dir, tstamps) if gen_ss else ospath.join(des_dir, "wz_thumb_1.jpg")
 

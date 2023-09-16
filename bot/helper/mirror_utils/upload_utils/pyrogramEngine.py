@@ -74,13 +74,15 @@ class TgUploader:
         else:
             LOGGER.error("Custom Thumb Invalid")
             return None
-        path = "Thumbnails"
-        if not await aiopath.isdir(path):
-            await mkdir(path)
-        des_dir = ospath.join(path, f'{time()}.jpg')
-        await sync_to_async(Image.open(photo_dir).convert("RGB").save, des_dir, "JPEG")
-        await aioremove(photo_dir)
-        return des_dir
+        if await aiopath.exists(photo_dir):
+            path = "Thumbnails"
+            if not await aiopath.isdir(path):
+                await mkdir(path)
+            des_dir = ospath.join(path, f'{time()}.jpg')
+            await sync_to_async(Image.open(photo_dir).convert("RGB").save, des_dir, "JPEG")
+            await aioremove(photo_dir)
+            return des_dir
+        return None
 
     async def __buttons(self, up_path, is_video=False):
         buttons = ButtonMaker()
@@ -376,7 +378,6 @@ class TgUploader:
             is_video, is_audio, is_image = await get_document_type(self.__up_path)
 
             if self.__leech_utils['thumb']:
-                LOGGER.info(self.__leech_utils['thumb'])
                 thumb = await self.get_custom_thumb(self.__leech_utils['thumb'])
             
             if not is_image and thumb is None:
