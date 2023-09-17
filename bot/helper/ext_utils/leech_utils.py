@@ -320,9 +320,11 @@ async def format_filename(file_, user_id, dirpath=None, isMirror=False):
 async def get_ss(up_path, ss_no):
     thumbs_path, tstamps = await take_ss(up_path, total=ss_no, gen_ss=True)
     th_html = f"📌 <h4>{ospath.basename(up_path)}</h4><br>📇 <b>Total Screenshots:</b> {ss_no}<br><br>"
+    up_sem = Semaphore(25)
     async def telefile(thumb):
-        tele_id = await sync_to_async(upload_file, ospath.join(thumbs_path, thumb))
-        return tele_id[0], tstamps[thumb]
+        async with up_sem:
+            tele_id = await sync_to_async(upload_file, ospath.join(thumbs_path, thumb))
+            return tele_id[0], tstamps[thumb]
     tasks = [telefile(thumb) for thumb in natsorted(await listdir(thumbs_path))]
     results = await gather(*tasks)
     th_html += ''.join(f'<img src="https://graph.org{tele_id}"><br><pre>Screenshot at {stamp}</pre>' for tele_id, stamp in results)
