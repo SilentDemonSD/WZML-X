@@ -8,7 +8,7 @@ from aiofiles.os import remove as aioremove, path as aiopath, mkdir, makedirs, l
 from aioshutil import rmtree as aiormtree
 from time import time
 from re import search as re_search
-from asyncio import create_subprocess_exec, create_task, gather
+from asyncio import create_subprocess_exec, create_task, gather, Semaphore
 from asyncio.subprocess import PIPE
 from telegraph import upload_file
 from langcodes import Language
@@ -131,16 +131,22 @@ async def take_ss(video_file, duration=None, total=1, gen_ss=False):
     duration = duration - (duration * 2 / 100)
     cmd = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", "",
            "-i", video_file, "-vf", "thumbnail", "-frames:v", "1", des_dir]
-    tasks = []
     tstamps = {}
-    for eq_thumb in range(1, total+1):
-        cmd[5] = str((duration // total) * eq_thumb)
-        tstamps[f"wz_thumb_{eq_thumb}.jpg"] = strftime("%H:%M:%S", gmtime(float(cmd[5])))
-        cmd[-1] = ospath.join(des_dir, f"wz_thumb_{eq_thumb}.jpg")
-        tasks.append(create_task(create_subprocess_exec(*cmd, stderr=PIPE)))
+    thumb_sem = Semaphore(5)
+    
+    async def extract_ss(eq_thumb):
+        async with thumb_sem:
+            cmd[5] = str((duration // total) * eq_thumb)
+            tstamps[f"wz_thumb_{eq_thumb}.jpg"] = strftime("%H:%M:%S", gmtime(float(cmd[5])))
+            cmd[-1] = ospath.join(des_dir, f"wz_thumb_{eq_thumb}.jpg")
+            r_type = await (await create_subprocess_exec(*cmd, stderr=PIPE)).wait()
+            return r_type, eq_thumb
+    
+    tasks = [extract_ss(eq_thumb) for eq_thumb in range(1, total+1)]
     status = await gather(*tasks)
-    for task, eq_thumb in zip(status, range(1, total+1)):
-        if await task.wait() != 0 or not await aiopath.exists(ospath.join(des_dir, f"wz_thumb_{eq_thumb}.jpg")):
+    
+    for task in status:
+        if task != 0 or not await aiopath.exists(ospath.join(des_dir, f"wz_thumb_{eq_thumb}.jpg")):
             err = (await task.stderr.read()).decode().strip()
             LOGGER.error(f'Error while extracting thumbnail no. {eq_thumb} from video. Name: {video_file} stderr: {err}')
             await aiormtree(des_dir)
