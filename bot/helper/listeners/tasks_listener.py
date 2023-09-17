@@ -451,7 +451,8 @@ class MirrorLeechListener:
                     message += BotTheme('L_LL_MSG')
                     message += BotTheme('L_BOT_MSG')
                     buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
-                
+                if config_dict['SAFE_MODE'] and self.isSuperGroup:
+                    await sendMessage(self.message, message, buttons.build_menu(2), photo=self.random_pic)
                 fmsg = '\n'
                 for index, (link, name) in enumerate(files.items(), start=1):
                     fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
@@ -460,11 +461,6 @@ class MirrorLeechListener:
                         if config_dict['SAFE_MODE']:
                             if self.isSuperGroup:
                                 await sendMessage(self.botpmmsg, msg + BotTheme('L_LL_MSG') + fmsg, btns, photo=self.random_pic)
-                                if config_dict['SAVE_MSG'] and not saved and self.isSuperGroup:
-                                    saved = True
-                                    buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
-                                if self.isPM:
-                                    await sendMessage(self.message, message, buttons.build_menu(2), photo=self.random_pic)
                             else:
                                 await sendMessage(self.message, message + fmsg, buttons.build_menu(2), photo=self.random_pic)
                         else:
@@ -479,11 +475,6 @@ class MirrorLeechListener:
                     if config_dict['SAFE_MODE']:
                         if self.isSuperGroup:
                             await sendMessage(self.botpmmsg, msg + BotTheme('L_LL_MSG') + fmsg, btns, photo=self.random_pic)
-                            if config_dict['SAVE_MSG'] and not saved and self.isSuperGroup:
-                                saved = True
-                                buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
-                            if self.isPM:
-                                await sendMessage(self.message, message, buttons.build_menu(2), photo=self.random_pic)
                         else:
                             await sendMessage(self.message, message + fmsg, buttons.build_menu(2), photo=self.random_pic)
                     else:
