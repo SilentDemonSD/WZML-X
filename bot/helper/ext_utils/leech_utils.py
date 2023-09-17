@@ -145,7 +145,7 @@ async def take_ss(video_file, duration=None, total=1, gen_ss=False):
     tasks = [extract_ss(eq_thumb) for eq_thumb in range(1, total+1)]
     status = await gather(*tasks)
     
-    for task in status:
+    for task, eq_thumb in status:
         if task != 0 or not await aiopath.exists(ospath.join(des_dir, f"wz_thumb_{eq_thumb}.jpg")):
             err = (await task.stderr.read()).decode().strip()
             LOGGER.error(f'Error while extracting thumbnail no. {eq_thumb} from video. Name: {video_file} stderr: {err}')
