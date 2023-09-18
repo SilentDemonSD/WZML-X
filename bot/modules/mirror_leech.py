@@ -247,7 +247,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
                 link = await sync_to_async(direct_link_generator, link)
                 if isinstance(link, tuple):
                     link, headers = link
-                if isinstance(link, str):
+                elif isinstance(link, str):
                     LOGGER.info(f"Generated link: {link}")
                     await editMessage(process_msg, f"<i><b>Generated link:</b></i> <code>{link}</code>")
             except DirectDownloadLinkException as e:
@@ -363,12 +363,8 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     elif not is_telegram_link(link):
         if ussr or pssw:
             auth = f"{ussr}:{pssw}"
-            auth = f"authorization: Basic {b64encode(auth.encode()).decode('ascii')}"
-        else:
-            auth = ''
-        if headers:
-            auth += f'{auth} {headers}'
-        await add_aria2c_download(link, path, listener, name, auth, ratio, seed_time)
+            headers += f" authorization: Basic {b64encode(auth.encode()).decode('ascii')}"
+        await add_aria2c_download(link, path, listener, name, headers, ratio, seed_time)
     await delete_links(message)
 
 
