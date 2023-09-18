@@ -19,6 +19,7 @@ from bot.helper.ext_utils.bot_utils import cmd_exec, sync_to_async, get_readable
 from bot.helper.ext_utils.fs_utils import ARCH_EXT, get_mime_type
 from bot.helper.ext_utils.telegraph_helper import telegraph
 
+
 async def is_multi_streams(path):
     try:
         result = await cmd_exec(["ffprobe", "-hide_banner", "-loglevel", "error", "-print_format",
@@ -136,7 +137,7 @@ async def take_ss(video_file, duration=None, total=1, gen_ss=False):
     cmd = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", "",
            "-i", video_file, "-vf", "thumbnail", "-frames:v", "1", des_dir]
     tstamps = {}
-    thumb_sem = Semaphore(5)
+    thumb_sem = Semaphore(3)
     
     async def extract_ss(eq_thumb):
         async with thumb_sem:
@@ -322,7 +323,7 @@ async def format_filename(file_, user_id, dirpath=None, isMirror=False):
 
 
 async def get_ss(up_path, ss_no):
-    thumbs_path, tstamps = await take_ss(up_path, total=ss_no, gen_ss=True)
+    thumbs_path, tstamps = await take_ss(up_path, total=min(ss_no, 250), gen_ss=True)
     th_html = f"📌 <h4>{ospath.basename(up_path)}</h4><br>📇 <b>Total Screenshots:</b> {ss_no}<br><br>"
     up_sem = Semaphore(25)
     async def telefile(thumb):

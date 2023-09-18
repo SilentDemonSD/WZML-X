@@ -36,11 +36,12 @@ desp_dict = {'rcc': ['RClone is a command-line program to sync files and directo
             'mremname': ['Mirror Filename Remname is combination of Regex(s) used for removing or manipulating Filename of the Mirrored/Cloned Files', 'Send Mirror Filename Remname. \n<b>Timeout:</b> 60 sec'],
             'thumb': ['Custom Thumbnail to appear on the Leeched files uploaded by the bot', 'Send a photo to save it as custom thumbnail. \n<b>Alternatively: </b><code>/cmd [photo] -s thumb</code> \n<b>Timeout:</b> 60 sec'],
             'yt_opt': ['YT-DLP Options is the Custom Quality for the extraction of videos from the yt-dlp supported sites.', 'Send YT-DLP Options. Timeout: 60 sec\nFormat: key:value|key:value|key:value.\nExample: format:bv*+mergeall[vcodec=none]|nocheckcertificate:True\nCheck all yt-dlp api options from this <a href="https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L184">FILE</a> to convert cli arguments to api options.'],
+            'usess': ['User Session is Telegram Session to Download Private Contents from Private Channels with no compromise in Privacy, Build with Encryption.', 'Send your Session String.\n<b>Timeout:</b> 60 sec'],
             'split_size': ['Leech Splits Size is the size to split the Leeched File before uploading', f'Send Leech split size in any comfortable size, like 2Gb, 500MB or 1.46gB. \n<b>PREMIUM ACTIVE:</b> {IS_PREMIUM_USER}. \n<b>Timeout:</b> 60 sec'],
             'ddl_servers': ['DDL Servers which uploads your File to their Specific Hosting', ''],
             'user_tds': [f'UserTD helps to Upload files via Bot to your Custom Drive Destination via Global SA mail\n\n➲ <b>SA Mail :</b> {"Not Specified" if "USER_TD_SA" not in config_dict else config_dict["USER_TD_SA"]}', 'Send User TD details for Use while Mirror/Clone\n➲ <b>Format:</b>\nname id/link index(optional)\nname2 link2/id2 index(optional)\n\n<b>NOTE:</b>\n<i>1. Drive ID must be valid, then only it will accept\n2. Names can have spaces\n3. All UserTDs are updated on every change\n4. To delete specific UserTD, give Name(s) separated by each line</i>\n\n<b>Timeout:</b> 60 sec'],
             'gofile': ['Gofile is a free file sharing and storage platform. You can store and share your content without any limit.', "Send GoFile's API Key. Get it on https://gofile.io/myProfile, It will not be Accepted if the API Key is Invalid !!\n<b>Timeout:</b> 60 sec"],
-            'streamtape': ['Streamtape', "Send StreamTape's Login and Key\n<b>Format:</b> <code>user_login:pass_key</code>\n<b>Timeout:</b> 60 sec"],
+            'streamtape': ['Streamtape is free Video Streaming & sharing Hoster', "Send StreamTape's Login and Key\n<b>Format:</b> <code>user_login:pass_key</code>\n<b>Timeout:</b> 60 sec"],
             }
 fname_dict = {'rcc': 'RClone',
              'lprefix': 'Prefix',
@@ -53,6 +54,7 @@ fname_dict = {'rcc': 'RClone',
              'lcaption': 'Caption',
              'thumb': 'Thumbnail',
              'yt_opt': 'YT-DLP Options',
+             'usess': 'User Session',
              'split_size': 'Leech Splits',
              'ddl_servers': 'DDL Servers',
              'user_tds': 'User Custom TDs',
@@ -79,8 +81,9 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
         
         button = buttons.build_menu(1)
     elif key == 'universal':
-        buttons.ibutton("YT-DLP Options", f"userset {user_id} yt_opt")
         ytopt = 'Not Exists' if (val:=user_dict.get('yt_opt', config_dict.get('YT_DLP_OPTIONS', ''))) == '' else val
+        buttons.ibutton(f"{'✅️' if ytopt != 'Not Exists' else ''} YT-DLP Options", f"userset {user_id} yt_opt")
+        u_sess = 'Not Exists' if user_dict.get('usess', False) else 'Exists'
         bot_pm = "Enabled" if user_dict.get('bot_pm', config_dict['BOT_PM']) else "Disabled"
         buttons.ibutton('Disable Bot PM' if bot_pm == 'Enabled' else 'Enable Bot PM', f"userset {user_id} bot_pm")
         if config_dict['BOT_PM']:
@@ -91,14 +94,14 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
             mediainfo = "Force Enabled"
         save_mode = "Save As Dump" if user_dict.get('save_mode') else "Save As BotPM"
         buttons.ibutton('Save As BotPM' if save_mode == 'Save As Dump' else 'Save As Dump', f"userset {user_id} save_mode")
-        dailytl = config_dict['DAILY_TASK_LIMIT'] or "♾️"
-        dailytas = user_dict.get('dly_tasks')[1] if user_dict and user_dict.get('dly_tasks') and user_id != OWNER_ID and config_dict['DAILY_TASK_LIMIT'] else config_dict.get('DAILY_TASK_LIMIT', "♾️") if user_id != OWNER_ID else "♾️"
+        dailytl = config_dict['DAILY_TASK_LIMIT'] or "∞"
+        dailytas = user_dict.get('dly_tasks')[1] if user_dict and user_dict.get('dly_tasks') and user_id != OWNER_ID and config_dict['DAILY_TASK_LIMIT'] else config_dict['DAILY_TASK_LIMIT'] or "️∞" if user_id != OWNER_ID else "∞"
         if user_dict.get('dly_tasks', False):
             t = str(datetime.now() - user_dict['dly_tasks'][0]).split(':')
             lastused = f"{t[0]}h {t[1]}m {t[2].split('.')[0]}s ago"
-        else: lastused = "Bot Not Used"
+        else: lastused = "Bot Not Used yet.."
 
-        text = BotTheme('UNIVERSAL', NAME=name, YT=escape(ytopt), DT=f"{dailytas} / {dailytl}", LAST_USED=lastused, BOT_PM=bot_pm, MEDIAINFO=mediainfo, SAVE_MODE=save_mode)
+        text = BotTheme('UNIVERSAL', NAME=name, YT=escape(ytopt), DT=f"{dailytas} / {dailytl}", LAST_USED=lastused, BOT_PM=bot_pm, MEDIAINFO=mediainfo, SAVE_MODE=save_mode, USESS=u_sess)
         buttons.ibutton("Back", f"userset {user_id} back", "footer")
         buttons.ibutton("Close", f"userset {user_id} close", "footer")
         button = buttons.build_menu(2)
@@ -149,7 +152,7 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
         split_size = get_readable_file_size(config_dict['LEECH_SPLIT_SIZE']) + ' (Default)' if user_dict.get('split_size', '') == '' else get_readable_file_size(user_dict['split_size'])
         equal_splits = 'Enabled' if user_dict.get('equal_splits', config_dict.get('EQUAL_SPLITS')) else 'Disabled'
         media_group = 'Enabled' if user_dict.get('media_group', config_dict.get('MEDIA_GROUP')) else 'Disabled'
-        buttons.ibutton(f"{'✅️' if user_dict.get('split_size', False) else ''} Leech Splits", f"userset {user_id} split_size")
+        buttons.ibutton(f"{'✅️' if user_dict.get('split_size') else ''} Leech Splits", f"userset {user_id} split_size")
 
         lcaption = 'Not Exists' if (val:=user_dict.get('lcaption', config_dict.get('LEECH_FILENAME_CAPTION', ''))) == '' else val
         buttons.ibutton(f"{'✅️' if lcaption != 'Not Exists' else ''} Leech Caption", f"userset {user_id} lcaption")
@@ -201,6 +204,9 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
         elif key == 'yt_opt':
             set_exist = 'Not Exists' if (val:=user_dict.get('yt_opt', config_dict.get('YT_DLP_OPTIONS', ''))) == '' else val
             text += f"➲ <b>YT-DLP Options :</b> <code>{escape(set_exist)}</code>\n\n"
+        elif key == 'usess':
+            set_exist = 'Not Exists' if user_dict.get('usess') else 'Exists'
+            text += f"➲ <b>{fname_dict[key]} :</b> <code>{set_exist}</code>\n\n"
         elif key == 'split_size':
             set_exist = get_readable_file_size(config_dict['LEECH_SPLIT_SIZE']) + ' (Default)' if user_dict.get('split_size', '') == '' else get_readable_file_size(user_dict['split_size'])
             text += f"➲ <b>Leech Split Size :</b> <i>{set_exist}</i>\n\n"
@@ -292,17 +298,6 @@ async def user_settings(client, message):
         await sendMessage(message, msg, button, 'IMAGES')
 
 
-async def set_yt_options(client, message, pre_event):
-    user_id = message.from_user.id
-    handler_dict[user_id] = False
-    value = message.text
-    update_user_ldata(user_id, 'yt_opt', value)
-    await deleteMessage(message)
-    await update_user_settings(pre_event, 'yt_opt', 'universal')
-    if DATABASE_URL:
-        await DbManger().update_user_data(user_id)
-
-
 async def set_custom(client, message, pre_event, key, direct=False):
     user_id = message.from_user.id
     handler_dict[user_id] = False
@@ -352,6 +347,8 @@ async def set_custom(client, message, pre_event, key, direct=False):
             if len(dump_info) > 1 and (dump_chat := await chat_info(dump_info[1])):
                 ldumps[dump_info[0]] = dump_chat.id
         value = ldumps
+    elif key in ['yt_opt', 'usess']:
+        return_key = 'universal'
     update_user_ldata(user_id, n_key, value)
     await deleteMessage(message)
     await update_user_settings(pre_event, key, return_key, msg=message, sdirect=direct)
@@ -492,12 +489,12 @@ async def edit_user_settings(client, query):
         pfunc = partial(set_thumb, pre_event=query, key=data[2])
         rfunc = partial(update_user_settings, query, data[2], 'leech')
         await event_handler(client, query, pfunc, rfunc, True)
-    elif data[2] == 'yt_opt':
+    elif data[2] == ['yt_opt', 'usess']:
         await query.answer()
         edit_mode = len(data) == 4
         await update_user_settings(query, data[2], 'universal', edit_mode)
         if not edit_mode: return
-        pfunc = partial(set_yt_options, pre_event=query)
+        pfunc = partial(set_custom, pre_event=query, key=data[2])
         rfunc = partial(update_user_settings, query, data[2], 'universal')
         await event_handler(client, query, pfunc, rfunc)
     elif data[2] == 'dyt_opt':
