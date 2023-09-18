@@ -185,7 +185,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             try:
                 reply_to, session = await get_tg_link_content(link, message.from_user.id)
             except ValueError:
-                decrypter, is_cancelled = await wrap_future(get_decrypt_key(client, message))
+                decrypter, is_cancelled = await wrap_future(get_decrypt_key(message))
                 if is_cancelled:
                     return
                 reply_to, session = await get_tg_link_content(link, message.from_user.id, decrypter)
