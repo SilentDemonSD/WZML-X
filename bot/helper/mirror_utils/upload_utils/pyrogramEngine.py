@@ -60,7 +60,7 @@ class TgUploader:
     async def get_custom_thumb(self, thumb):
         if is_telegram_link(thumb):
             try:
-                msg, client = await get_tg_link_content(thumb)
+                msg, client = await get_tg_link_content(thumb, self.__user_id )
             except Exception as e:
                 LOGGER.error(f"Thumb Access Error: {e}")
                 return None

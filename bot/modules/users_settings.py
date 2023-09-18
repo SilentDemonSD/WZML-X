@@ -12,6 +12,7 @@ from functools import partial
 from html import escape
 from io import BytesIO
 from asyncio import sleep
+from cryptography.fernet import Fernet
 
 from bot import OWNER_ID, LOGGER, bot, user_data, config_dict, categories_dict, DATABASE_URL, IS_PREMIUM_USER, MAX_SPLIT_SIZE
 from bot.helper.telegram_helper.message_utils import sendMessage, sendCustomMsg, editMessage, deleteMessage, sendFile, chat_info, user_info
@@ -206,8 +207,8 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
             set_exist = 'Not Exists' if (val:=user_dict.get('yt_opt', config_dict.get('YT_DLP_OPTIONS', ''))) == '' else val
             text += f"➲ <b>YT-DLP Options :</b> <code>{escape(set_exist)}</code>\n\n"
         elif key == 'usess':
-            set_exist = 'Not Exists' if user_dict.get('usess') else 'Exists'
-            text += f"➲ <b>{fname_dict[key]} :</b> <code>{set_exist}</code>\n\n"
+            set_exist = 'Not Exists' if not user_dict.get('usess') else 'Exists'
+            text += f"➲ <b>{fname_dict[key]} :</b> <code>{set_exist}</code>\n➲ <b>Encryption :</b> {'🔐' if set_exist else '🔓'}\n\n"
         elif key == 'split_size':
             set_exist = get_readable_file_size(config_dict['LEECH_SPLIT_SIZE']) + ' (Default)' if user_dict.get('split_size', '') == '' else get_readable_file_size(user_dict['split_size'])
             text += f"➲ <b>Leech Split Size :</b> <i>{set_exist}</i>\n\n"
@@ -349,6 +350,11 @@ async def set_custom(client, message, pre_event, key, direct=False):
                 ldumps[dump_info[0]] = dump_chat.id
         value = ldumps
     elif key in ['yt_opt', 'usess']:
+        if key == 'usess':
+            password = Fernet.generate_key()
+            await sendCustomMsg(message.from_user.id, f"• <b>Decryption Key:</b> <code>{password.decode()}</code>")
+            encrypt_sess = Fernet(password).encrypt(value.encode())
+            value = encrypt_sess.decode()
         return_key = 'universal'
     update_user_ldata(user_id, n_key, value)
     await deleteMessage(message)
@@ -687,7 +693,7 @@ async def send_users_settings(client, message):
             msg += f'\n\n<code>{user}</code>:'
             if data:
                 for key, value in data.items():
-                    if key in ['token', 'time']:
+                    if key in ['token', 'time', 'ddl_servers', 'usess']:
                         continue
                     msg += f'\n<b>{key}</b>: <code>{escape(str(value))}</code>'
             else:

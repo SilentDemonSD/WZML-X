@@ -6,11 +6,12 @@ from random import choice as rchoice
 from time import time
 from re import match as re_match
 
+from pyrogram import Client
 from pyrogram.enums import ParseMode
 from pyrogram.types import InputMediaPhoto
 from pyrogram.errors import ReplyMarkupInvalid, FloodWait, PeerIdInvalid, ChannelInvalid, RPCError, UserNotParticipant, MessageNotModified, MessageEmpty, PhotoInvalidDimensions, WebpageCurlFailed, MediaEmpty
 
-from bot import config_dict, categories_dict, bot_cache, LOGGER, bot_name, status_reply_dict, status_reply_dict_lock, Interval, bot, user, download_dict_lock
+from bot import config_dict, user_dict, categories_dict, bot_cache, LOGGER, bot_name, status_reply_dict, status_reply_dict_lock, Interval, bot, user, download_dict_lock
 from bot.helper.ext_utils.bot_utils import get_readable_message, setInterval, sync_to_async, download_image_url, fetch_user_tds, fetch_user_dumps
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.exceptions import TgLinkException
@@ -223,16 +224,17 @@ async def delete_all_messages():
                 LOGGER.error(str(e))
 
 
-async def get_tg_link_content(link):
+async def get_tg_link_content(link, user_id):
     message = None
+    user_sess = user_dict.get(user_id, {}).get('usess', '')
     if link.startswith(('https://t.me/', 'https://telegram.me/', 'https://telegram.dog/', 'https://telegram.space/')):
         private = False
         msg = re_match(r"https:\/\/(t\.me|telegram\.me|telegram\.dog|telegram\.space)\/(?:c\/)?([^\/]+)(?:\/[^\/]+)?\/([0-9]+)", link)
     else:
         private = True
         msg = re_match(r"tg:\/\/openmessage\?user_id=([0-9]+)&message_id=([0-9]+)", link)
-        if not user:
-            raise TgLinkException('USER_SESSION_STRING required for this private link!')
+        if not (user or user_sess):
+            raise TgLinkException('USER_SESSION_STRING or Private User Session required for this private link!')
 
     chat = msg.group(2)
     msg_id = int(msg.group(3))
@@ -246,18 +248,26 @@ async def get_tg_link_content(link):
                 private = True
         except Exception as e:
             private = True
-            if not user:
+            if not (user or user_sess):
                 raise e
 
     if private and user:
         try:
             user_message = await user.get_messages(chat_id=chat, message_ids=msg_id)
         except Exception as e:
-            raise TgLinkException(f"You don't have access to this chat!. ERROR: {e}") from e
+            raise TgLinkException(f"Bot User Session  don't have access to this chat!. ERROR: {e}") from e
         if not user_message.empty:
             return user_message, 'user'
         else:
             raise TgLinkException("Private: Please report!")
+    elif private and user_sess:
+        try:
+            async with Client(user_id, session_string="", in_memory=True, takeout=True):
+                user_message = await user.get_messages(chat_id=chat, message_ids=msg_id)
+        except Exception as e:
+            raise TgLinkException(f"User Session don't have access to this chat!. ERROR: {e}") from e
+        if not user_message.empty:
+            return user_message, 'user_sess'
     elif not private:
         return message, 'bot'
     else:

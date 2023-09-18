@@ -21,6 +21,7 @@ class TelegramDownloadHelper:
         self.__processed_bytes = 0
         self.__start_time = time()
         self.__listener = listener
+        self.__client = bot
         self.__id = ""
         self.__is_cancelled = False
 
@@ -71,7 +72,7 @@ class TelegramDownloadHelper:
 
     async def __download(self, message, path):
         try:
-            download = await message.download(file_name=path, progress=self.__onDownloadProgress)
+            download = await self.__client.download_media(message=message, file_name=path, progress=self.__onDownloadProgress)
             if self.__is_cancelled:
                 await self.__onDownloadError('Cancelled by user!')
                 return
@@ -86,10 +87,10 @@ class TelegramDownloadHelper:
 
     async def add_download(self, message, path, filename, session):
         if session == 'user':
+            self.__client = user
             if not self.__listener.isSuperGroup:
                 await sendMessage(message, 'Use SuperGroup to download this Link with User!')
                 return
-            message = await user.get_messages(chat_id=message.chat.id, message_ids=message.id)
 
         media = getattr(message, message.media.value) if message.media else None
         

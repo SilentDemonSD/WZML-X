@@ -180,7 +180,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
 
     if link and is_telegram_link(link):
         try:
-            reply_to, session = await get_tg_link_content(link)
+            reply_to, session = await get_tg_link_content(link, message.from_user.id)
         except Exception as e:
             await sendMessage(message, f'ERROR: {e}')
             await delete_links(message)
@@ -190,7 +190,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             reply_text = reply_to.text.split('\n', 1)[0].strip()
             if reply_text and is_telegram_link(reply_text):
                 try:
-                    reply_to, session = await get_tg_link_content(reply_text)
+                    reply_to, session = await get_tg_link_content(reply_text, message.from_user.id)
                 except Exception as e:
                     await sendMessage(message, f'ERROR: {e}')
                     await delete_links(message)
