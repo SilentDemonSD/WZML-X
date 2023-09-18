@@ -321,7 +321,7 @@ async def sendStatusMessage(msg):
             Interval.append(setInterval(config_dict['STATUS_UPDATE_INTERVAL'], update_all_messages))
 
 @new_thread
-async def get_decrypt_key(client, message):
+async def get_decrypt_key(c, message):
     user_id = message.from_user.id
     msg_id = message.id
     prompt = await sendCustomMsg(user_id, "Enter the Decrypt Key !")
@@ -331,12 +331,12 @@ async def get_decrypt_key(client, message):
         bot_cache[msg_id] = [False, message.text, False]
     
     start_time = time()
-    handler = client.add_handler(MessageHandler(set_details, filters=user(user_id) & text & private), group=-1)
+    handler = c.add_handler(MessageHandler(set_details, filters=user(user_id) & text & private), group=-1)
     while bot_cache[msg_id][0]:
         await sleep(0.5)
         if time() - start_time > 60:
             bot_cache[msg_id][0] = False
-    client.remove_handler(*handler)
+    c.remove_handler(*handler)
     
     _, key, is_cancelled = bot_cache[msg_id]
     if not is_cancelled:

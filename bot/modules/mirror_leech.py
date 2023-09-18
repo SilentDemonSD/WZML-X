@@ -1,6 +1,7 @@
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.filters import command, regex
 from html import escape
+from traceback import format_exc
 from base64 import b64encode
 from re import match as re_match
 from asyncio import sleep, wrap_future
@@ -189,6 +190,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
                     return
                 reply_to, session = await get_tg_link_content(link, message.from_user.id, decrypter)
         except Exception as e:
+            LOGGER.info(format_exc())
             await sendMessage(message, f'ERROR: {e}')
             await delete_links(message)
             return
