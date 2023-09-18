@@ -83,7 +83,8 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
     elif key == 'universal':
         ytopt = 'Not Exists' if (val:=user_dict.get('yt_opt', config_dict.get('YT_DLP_OPTIONS', ''))) == '' else val
         buttons.ibutton(f"{'✅️' if ytopt != 'Not Exists' else ''} YT-DLP Options", f"userset {user_id} yt_opt")
-        u_sess = 'Not Exists' if user_dict.get('usess', False) else 'Exists'
+        u_sess = 'Not Exists' if not user_dict.get('usess', False) else 'Exists'
+        buttons.ibutton(f"{'✅️' if u_sess != 'Not Exists' else ''} User Session", f"userset {user_id} usess")
         bot_pm = "Enabled" if user_dict.get('bot_pm', config_dict['BOT_PM']) else "Disabled"
         buttons.ibutton('Disable Bot PM' if bot_pm == 'Enabled' else 'Enable Bot PM', f"userset {user_id} bot_pm")
         if config_dict['BOT_PM']:
@@ -489,7 +490,7 @@ async def edit_user_settings(client, query):
         pfunc = partial(set_thumb, pre_event=query, key=data[2])
         rfunc = partial(update_user_settings, query, data[2], 'leech')
         await event_handler(client, query, pfunc, rfunc, True)
-    elif data[2] == ['yt_opt', 'usess']:
+    elif data[2] in ['yt_opt', 'usess']:
         await query.answer()
         edit_mode = len(data) == 4
         await update_user_settings(query, data[2], 'universal', edit_mode)

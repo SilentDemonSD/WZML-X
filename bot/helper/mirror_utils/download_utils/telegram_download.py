@@ -53,8 +53,7 @@ class TelegramDownloadHelper:
         if self.__is_cancelled:
             if IS_PREMIUM_USER:
                 user.stop_transmission()
-            else:
-                bot.stop_transmission()
+            bot.stop_transmission()
         self.__processed_bytes = current
 
     async def __onDownloadError(self, error):
@@ -120,8 +119,7 @@ class TelegramDownloadHelper:
                 if added_to_queue:
                     LOGGER.info(f"Added to Queue/Download: {name}")
                     async with download_dict_lock:
-                        download_dict[self.__listener.uid] = QueueStatus(
-                            name, size, gid, self.__listener, 'dl')
+                        download_dict[self.__listener.uid] = QueueStatus(name, size, gid, self.__listener, 'dl')
                     await self.__listener.onDownloadStart()
                     await sendStatusMessage(self.__listener.message)
                     await event.wait()
