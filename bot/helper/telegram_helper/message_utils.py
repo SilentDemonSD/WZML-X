@@ -257,15 +257,12 @@ async def get_tg_link_content(link, user_id, decrypter=None):
     if private and user:
         try:
             user_message = await user.get_messages(chat_id=chat, message_ids=msg_id)
+            if not user_message.empty:
+                return user_message, 'user'
         except Exception as e:
             if not user_sess:
                 raise TgLinkException(f"Bot User Session  don't have access to this chat!. ERROR: {e}") from e
-        if not user_message.empty:
-            return user_message, 'user'
-        else:
-            if not user_sess:
-                raise TgLinkException("Private: Please report!")
-                
+
     if private and user_sess:
         if decrypter is None:
             raise ValueError('Decrypter Missing!!')
