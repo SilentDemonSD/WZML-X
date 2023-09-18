@@ -3,7 +3,7 @@ from pyrogram.filters import command, regex
 from html import escape
 from base64 import b64encode
 from re import match as re_match
-from asyncio import sleep
+from asyncio import sleep, wrap_future
 from aiofiles import open as aiopen
 from aiofiles.os import path as aiopath
 from cloudscraper import create_scraper
@@ -177,10 +177,17 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         tag = f"@{username}"
     else:
         tag = message.from_user.mention
-
+        
+    decrypter = None
     if link and is_telegram_link(link):
         try:
-            reply_to, session = await get_tg_link_content(link, message.from_user.id)
+            try:
+                reply_to, session = await get_tg_link_content(link, message.from_user.id)
+            except ValueError:
+                decrypter, is_cancelled = await wrap_future(get_decrypt_key(message))
+                if is_cancelled:
+                    return
+                reply_to, session = await get_tg_link_content(link, message.from_user.id, decrypter)
         except Exception as e:
             await sendMessage(message, f'ERROR: {e}')
             await delete_links(message)
@@ -338,7 +345,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
 
     if file_ is not None:
         await delete_links(message)
-        await TelegramDownloadHelper(listener).add_download(reply_to, f'{path}/', name, session)
+        await TelegramDownloadHelper(listener).add_download(reply_to, f'{path}/', name, session, decrypter)
     elif isinstance(link, dict):
         await add_direct_download(link, path, listener, name)
     elif is_rclone_path(link):

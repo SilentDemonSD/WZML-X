@@ -22,6 +22,7 @@ class TelegramDownloadHelper:
         self.__start_time = time()
         self.__listener = listener
         self.__client = bot
+        self.__decrypter = None
         self.__id = ""
         self.__is_cancelled = False
 
@@ -52,9 +53,7 @@ class TelegramDownloadHelper:
 
     async def __onDownloadProgress(self, current, total):
         if self.__is_cancelled:
-            if IS_PREMIUM_USER:
-                user.stop_transmission()
-            bot.stop_transmission()
+            self.__client.stop_transmission()
         self.__processed_bytes = current
 
     async def __onDownloadError(self, error):
@@ -72,7 +71,12 @@ class TelegramDownloadHelper:
 
     async def __download(self, message, path):
         try:
-            download = await self.__client.download_media(message=message, file_name=path, progress=self.__onDownloadProgress)
+            if self.__client is None and self.__decrypter is not None:
+                async with Client(str(self.__listener.user_id), session_string=self.__decrypter.decrypt(self.__listener.user_dict.get('usess')), 
+                                in_memory=True, takeout=True) as self.__client:
+                    download = await self.__client.download_media(message=message, file_name=path, progress=self.__onDownloadProgress)
+            else:
+                download = await self.__client.download_media(message=message, file_name=path, progress=self.__onDownloadProgress)
             if self.__is_cancelled:
                 await self.__onDownloadError('Cancelled by user!')
                 return
@@ -85,12 +89,15 @@ class TelegramDownloadHelper:
         elif not self.__is_cancelled:
             await self.__onDownloadError('Internal Error occurred')
 
-    async def add_download(self, message, path, filename, session):
+    async def add_download(self, message, path, filename, session, decrypter):
         if session == 'user':
             self.__client = user
             if not self.__listener.isSuperGroup:
                 await sendMessage(message, 'Use SuperGroup to download this Link with User!')
                 return
+        elif session == 'user_sess':
+            self.__client = None
+            self.__decrypter = decrypter
 
         media = getattr(message, message.media.value) if message.media else None
         

@@ -5,14 +5,17 @@ from aiofiles.os import remove as aioremove
 from random import choice as rchoice
 from time import time
 from re import match as re_match
+from cryptography.fernet import Fernet
 
 from pyrogram import Client
 from pyrogram.enums import ParseMode
 from pyrogram.types import InputMediaPhoto
+from pyrogram.filters import command, user, text, private
+from pyrogram.handlers import MessageHandler
 from pyrogram.errors import ReplyMarkupInvalid, FloodWait, PeerIdInvalid, ChannelInvalid, RPCError, UserNotParticipant, MessageNotModified, MessageEmpty, PhotoInvalidDimensions, WebpageCurlFailed, MediaEmpty
 
 from bot import config_dict, user_data, categories_dict, bot_cache, LOGGER, bot_name, status_reply_dict, status_reply_dict_lock, Interval, bot, user, download_dict_lock
-from bot.helper.ext_utils.bot_utils import get_readable_message, setInterval, sync_to_async, download_image_url, fetch_user_tds, fetch_user_dumps
+from bot.helper.ext_utils.bot_utils import get_readable_message, setInterval, sync_to_async, download_image_url, fetch_user_tds, fetch_user_dumps, new_thread
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.exceptions import TgLinkException
 
@@ -224,7 +227,7 @@ async def delete_all_messages():
                 LOGGER.error(str(e))
 
 
-async def get_tg_link_content(link, user_id):
+async def get_tg_link_content(link, user_id, decrypter=None):
     message = None
     user_sess = user_data.get(user_id, {}).get('usess', '')
     if link.startswith(('https://t.me/', 'https://telegram.me/', 'https://telegram.dog/', 'https://telegram.space/')):
@@ -255,14 +258,19 @@ async def get_tg_link_content(link, user_id):
         try:
             user_message = await user.get_messages(chat_id=chat, message_ids=msg_id)
         except Exception as e:
-            raise TgLinkException(f"Bot User Session  don't have access to this chat!. ERROR: {e}") from e
+            if not user_sess:
+                raise TgLinkException(f"Bot User Session  don't have access to this chat!. ERROR: {e}") from e
         if not user_message.empty:
             return user_message, 'user'
         else:
-            raise TgLinkException("Private: Please report!")
-    elif private and user_sess:
+            if not user_sess:
+                raise TgLinkException("Private: Please report!")
+                
+    if private and user_sess:
+        if decrypter is None:
+            raise ValueError('Decrypter Missing!!')
         try:
-            async with Client(user_id, session_string="", in_memory=True, takeout=True):
+            async with Client(user_id, session_string=decrypter.decrypt(user_sess), in_memory=True, takeout=True):
                 user_message = await user.get_messages(chat_id=chat, message_ids=msg_id)
         except Exception as e:
             raise TgLinkException(f"User Session don't have access to this chat!. ERROR: {e}") from e
@@ -315,6 +323,32 @@ async def sendStatusMessage(msg):
         if not Interval:
             Interval.append(setInterval(config_dict['STATUS_UPDATE_INTERVAL'], update_all_messages))
 
+@new_thread
+async def get_decrypt_key(client, message):
+    user_id = message.from_user.id
+    msg_id = message.id
+    prompt = await sendCustomMsg(user_id, "Enter the Decrypt Key !")
+    
+    bot_cache[msg_id] = [True, '', False]
+    async def set_details(_, message):
+        bot_cache[msg_id] = [False, message.text, False]
+    
+    start_time = time()
+    handler = client.add_handler(MessageHandler(set_details, filters=user(user_id) & text & private), group=-1)
+    while bot_cache[msg_id][0]:
+        await sleep(0.5)
+        if time() - start_time > 60:
+            bot_cache[msg_id][0] = False
+    client.remove_handler(*handler)
+    
+    _, key, is_cancelled = bot_cache[msg_id]
+    if not is_cancelled:
+        await deleteMessage(prompt)
+    else:
+        await editMessage(prompt, "<b>Decrypt Key Invoke Cancelled</b>")
+    del bot_cache[msg_id]
+    return Fernet(key), is_cancelled
+    
 
 async def open_category_btns(message):
     user_id = message.from_user.id

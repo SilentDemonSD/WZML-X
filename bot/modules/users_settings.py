@@ -352,9 +352,12 @@ async def set_custom(client, message, pre_event, key, direct=False):
     elif key in ['yt_opt', 'usess']:
         if key == 'usess':
             password = Fernet.generate_key()
-            await sendCustomMsg(message.from_user.id, f"• <b>Decryption Key:</b> <code>{password.decode()}</code>")
-            encrypt_sess = Fernet(password).encrypt(value.encode())
-            value = encrypt_sess.decode()
+            try:
+                await (await sendCustomMsg(message.from_user.id, f"• <b>Decryption Key:</b> <code>{password.decode()}</code>")).pin(both_sides=True)
+                encrypt_sess = Fernet(password).encrypt(value.encode())
+                value = encrypt_sess.decode()
+            except Exception:
+                value = ""
         return_key = 'universal'
     update_user_ldata(user_id, n_key, value)
     await deleteMessage(message)
