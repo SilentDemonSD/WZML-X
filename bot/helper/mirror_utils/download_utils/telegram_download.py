@@ -72,7 +72,7 @@ class TelegramDownloadHelper:
     async def __download(self, message, path):
         try:
             if self.__client is None and self.__decrypter is not None:
-                async with Client(str(self.__listener.user_id), session_string=self.__decrypter.decrypt(self.__listener.user_dict.get('usess')), 
+                async with Client(str(self.__listener.user_id), session_string=self.__decrypter.decrypt(self.__listener.user_dict.get('usess')).decode(), 
                                 in_memory=True, takeout=True) as self.__client:
                     download = await self.__client.download_media(message=message, file_name=path, progress=self.__onDownloadProgress)
             else:

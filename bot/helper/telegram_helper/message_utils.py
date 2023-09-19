@@ -264,7 +264,7 @@ async def get_tg_link_content(link, user_id, decrypter=None):
         if decrypter is None:
             raise ValueError('Decrypter Missing!!')
         try:
-            async with Client(user_id, session_string=decrypter.decrypt(user_sess), in_memory=True, takeout=True):
+            async with Client(user_id, session_string=decrypter.decrypt(user_sess).decode(), in_memory=True, takeout=True):
                 user_message = await user.get_messages(chat_id=chat, message_ids=msg_id)
         except Exception as e:
             raise TgLinkException(f"User Session don't have access to this chat!. ERROR: {e}") from e
