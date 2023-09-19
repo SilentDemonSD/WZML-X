@@ -3,15 +3,16 @@ from time import time
 from aiofiles.os import remove as aioremove
 from asyncio import sleep, wrap_future, Lock
 from functools import partial
+from cryptography.fernet import Fernet
 
 from pyrogram import Client
 from pyrogram.filters import command, user, text, private
 from pyrogram.handlers import MessageHandler
 from pyrogram.errors import SessionPasswordNeeded, FloodWait, PhoneNumberInvalid, ApiIdInvalid, PhoneCodeInvalid, PhoneCodeExpired, UsernameNotOccupied, ChatAdminRequired, PeerIdInvalid
 
-from bot import bot, LOGGER
+from bot import bot, LOGGER, bot_cache
 from bot.helper.ext_utils.bot_utils import new_thread, new_task
-from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage, sendFile
+from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage, sendFile, sendCustomMsg
 from bot.helper.telegram_helper.filters import CustomFilters
 
 session_dict = {}
@@ -167,6 +168,33 @@ async def invoke(client, message, key):
             isStop = True
             break
     client.remove_handler(*handler)
+
+
+@new_thread
+async def get_decrypt_key(client, message):
+    user_id = message.from_user.id
+    msg_id = message.id
+    prompt = await sendCustomMsg(user_id, "Enter the Decrypt Key !")
+    
+    bot_cache[msg_id] = [True, '', False]
+    async def set_details(_, message):
+        bot_cache[msg_id] = [False, message.text, False]
+    
+    start_time = time()
+    handler = client.add_handler(MessageHandler(set_details, filters=user(user_id) & text & private), group=-1)
+    while bot_cache[msg_id][0]:
+        await sleep(0.5)
+        if time() - start_time > 60:
+            bot_cache[msg_id][0] = False
+    client.remove_handler(*handler)
+    
+    _, key, is_cancelled = bot_cache[msg_id]
+    if not is_cancelled:
+        await deleteMessage(prompt)
+    else:
+        await editMessage(prompt, "<b>Decrypt Key Invoke Cancelled</b>")
+    del bot_cache[msg_id]
+    return Fernet(key), is_cancelled
 
 
 bot.add_handler(MessageHandler(genPyroString, filters=command('exportsession') & private & CustomFilters.sudo))

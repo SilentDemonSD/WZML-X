@@ -5,13 +5,10 @@ from aiofiles.os import remove as aioremove
 from random import choice as rchoice
 from time import time
 from re import match as re_match
-from cryptography.fernet import Fernet
 
 from pyrogram import Client
 from pyrogram.enums import ParseMode
 from pyrogram.types import InputMediaPhoto
-from pyrogram.filters import command, user, text, private
-from pyrogram.handlers import MessageHandler
 from pyrogram.errors import ReplyMarkupInvalid, FloodWait, PeerIdInvalid, ChannelInvalid, RPCError, UserNotParticipant, MessageNotModified, MessageEmpty, PhotoInvalidDimensions, WebpageCurlFailed, MediaEmpty
 
 from bot import config_dict, user_data, categories_dict, bot_cache, LOGGER, bot_name, status_reply_dict, status_reply_dict_lock, Interval, bot, user, download_dict_lock
@@ -319,32 +316,6 @@ async def sendStatusMessage(msg):
         status_reply_dict[chat_id] = [message, time()]
         if not Interval:
             Interval.append(setInterval(config_dict['STATUS_UPDATE_INTERVAL'], update_all_messages))
-
-@new_thread
-async def get_decrypt_key(message):
-    user_id = message.from_user.id
-    msg_id = message.id
-    prompt = await sendCustomMsg(user_id, "Enter the Decrypt Key !")
-    
-    bot_cache[msg_id] = [True, '', False]
-    async def set_details(_, message):
-        bot_cache[msg_id] = [False, message.text, False]
-    
-    start_time = time()
-    handler = bot.add_handler(MessageHandler(set_details, filters=user(user_id) & text & private), group=-1)
-    while bot_cache[msg_id][0]:
-        await sleep(0.5)
-        if time() - start_time > 60:
-            bot_cache[msg_id][0] = False
-    bot.remove_handler(*handler)
-    
-    _, key, is_cancelled = bot_cache[msg_id]
-    if not is_cancelled:
-        await deleteMessage(prompt)
-    else:
-        await editMessage(prompt, "<b>Decrypt Key Invoke Cancelled</b>")
-    del bot_cache[msg_id]
-    return Fernet(key), is_cancelled
     
 
 async def open_category_btns(message):
