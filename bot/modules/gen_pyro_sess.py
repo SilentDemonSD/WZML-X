@@ -12,7 +12,7 @@ from pyrogram.filters import command, user, text, private
 from pyrogram.handlers import MessageHandler
 from pyrogram.errors import SessionPasswordNeeded, FloodWait, PhoneNumberInvalid, ApiIdInvalid, PhoneCodeInvalid, PhoneCodeExpired, UsernameNotOccupied, ChatAdminRequired, PeerIdInvalid
 
-from bot import bot, LOGGER, bot_cache
+from bot import bot, LOGGER, bot_cache, bot_name
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.bot_utils import new_thread, new_task
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage, sendFile, sendCustomMsg
