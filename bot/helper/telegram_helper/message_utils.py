@@ -270,7 +270,7 @@ async def get_tg_link_content(link, user_id, decrypter=None):
             raise TgLinkException(f"User Session don't have access to this chat!. ERROR: {e}") from e
         if not user_message.empty:
             return user_message, 'user_sess'
-        else
+        else:
             raise TgLinkException("Privatly Deleted or Not Accessible!")
     elif not private:
         return message, 'bot'
