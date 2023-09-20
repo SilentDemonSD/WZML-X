@@ -474,7 +474,7 @@ async def edit_user_settings(client, query):
             msg += f"  <b>Drive ID:</b> <code>{drive_dict['drive_id']}</code>\n"
             msg += f"  <b>Index Link:</b> <code>{ind_url if (ind_url := drive_dict['index_link']) else 'Not Provided'}</code>\n\n"
         try:
-            await sendCustomMsg(user_id, msg, debug=True)
+            await sendCustomMsg(user_id, msg)
             await query.answer('User TDs Successfully Send in your PM', show_alert=True)
         except Exception:
             await query.answer('Start the Bot in PM (Private) and Try Again', show_alert=True)
@@ -507,11 +507,11 @@ async def edit_user_settings(client, query):
         pfunc = partial(set_custom, pre_event=query, key=data[2])
         rfunc = partial(update_user_settings, query, data[2], 'universal')
         await event_handler(client, query, pfunc, rfunc)
-    elif data[2] == 'dyt_opt':
+    elif data[2] in ['dyt_opt', 'dusess']:
         handler_dict[user_id] = False
         await query.answer()
-        update_user_ldata(user_id, 'yt_opt', '')
-        await update_user_settings(query, 'yt_opt', 'universal')
+        update_user_ldata(user_id, data[2][1:], '')
+        await update_user_settings(query, data[2][1:], 'universal')
         if DATABASE_URL:
             await DbManger().update_user_data(user_id)
     elif data[2] in ['bot_pm', 'mediainfo', 'save_mode', 'td_mode']:

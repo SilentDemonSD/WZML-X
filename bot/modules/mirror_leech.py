@@ -180,30 +180,22 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         tag = message.from_user.mention
         
     decrypter = None
+    if not link and (reply_to := message.reply_to_message):
+        if reply_to.text:
+            link = reply_to.text.split('\n', 1)[0].strip()
     if link and is_telegram_link(link):
         try:
-            try:
-                reply_to, session = await get_tg_link_content(link, message.from_user.id)
-            except ValueError:
+            reply_to, session = await get_tg_link_content(link, message.from_user.id)
+            if reply_to is None and session == "":
                 decrypter, is_cancelled = await wrap_future(get_decrypt_key(client, message))
                 if is_cancelled:
                     return
                 reply_to, session = await get_tg_link_content(link, message.from_user.id, decrypter)
         except Exception as e:
             LOGGER.info(format_exc())
-            await sendMessage(message, f'ERROR: {e}')
+            await sendMessage(message, f'<b>ERROR:</b> <i>{e}</i>')
             await delete_links(message)
             return
-    elif not link and (reply_to := message.reply_to_message):
-        if reply_to.text:
-            reply_text = reply_to.text.split('\n', 1)[0].strip()
-            if reply_text and is_telegram_link(reply_text):
-                try:
-                    reply_to, session = await get_tg_link_content(reply_text, message.from_user.id)
-                except Exception as e:
-                    await sendMessage(message, f'ERROR: {e}')
-                    await delete_links(message)
-                    return
 
     if reply_to:
         file_ = getattr(reply_to, reply_to.media.value) if reply_to.media else None

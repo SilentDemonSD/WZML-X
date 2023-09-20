@@ -262,7 +262,7 @@ async def get_tg_link_content(link, user_id, decrypter=None):
 
     if private and user_sess:
         if decrypter is None:
-            raise ValueError('Decrypter Missing!!')
+            return None, ""
         try:
             async with Client(user_id, session_string=decrypter.decrypt(user_sess).decode(), in_memory=True, no_updates=True) as usession:
                 user_message = await usession.get_messages(chat_id=chat, message_ids=msg_id)
@@ -270,10 +270,12 @@ async def get_tg_link_content(link, user_id, decrypter=None):
             raise TgLinkException(f"User Session don't have access to this chat!. ERROR: {e}") from e
         if not user_message.empty:
             return user_message, 'user_sess'
+        else
+            raise TgLinkException("Privatly Deleted or Not Accessible!")
     elif not private:
         return message, 'bot'
     else:
-        raise TgLinkException("Bot can't download from GROUPS without joining!")
+        raise TgLinkException("Bot can't download from GROUPS without joining!, Set your Own Session to get access !")
 
 
 async def update_all_messages(force=False):
