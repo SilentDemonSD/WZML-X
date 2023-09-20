@@ -51,16 +51,12 @@ async def get_media_info(path, metadata=False):
             LOGGER.warning(f'Media Info FF: {res}')
     except Exception as e:
         LOGGER.error(f'Media Info: {e}. Mostly File not found!')
-        if metadata:
-            return 0, "", "", ""
-        return 0, None, None
+        return (0, "", "", "") if metadata else (0, None, None)
     ffresult = eval(result[0])
     fields = ffresult.get('format')
     if fields is None:
         LOGGER.error(f"Media Info Sections: {result}")
-        if metadata:
-            return 0, "", "", ""
-        return 0, None, None
+        return (0, "", "", "") if metadata else (0, None, None)
     duration = round(float(fields.get('duration', 0)))
     if metadata:
         lang, qual, stitles = "", "", ""
@@ -69,9 +65,9 @@ async def get_media_info(path, metadata=False):
             qual = f"{480 if qual <= 480 else 540 if qual <= 540 else 720 if qual <= 720 else 1080 if qual <= 1080 else 2160 if qual <= 2160 else 4320 if qual <= 4320 else 8640}p"
             for stream in streams:
                 if stream.get('codec_type') == 'audio' and (lc := stream.get('tags', {}).get('language')):
-                    lang += Language.get(lc).display_name() + ", "
+                    lang += f"{Language.get(lc).display_name()}, "
                 if stream.get('codec_type') == 'subtitle' and (st := stream.get('tags', {}).get('language')):
-                    stitles += Language.get(st).display_name() + ", "
+                    stitles += f"{Language.get(st).display_name()}, "
         return duration, qual, lang[:-2], stitles[:-2]
     tags = fields.get('tags', {})
     artist = tags.get('artist') or tags.get('ARTIST') or tags.get("Artist")
@@ -198,7 +194,7 @@ async def split_file(path, size, file_, dirpath, split_size, listener, start_tim
                 err = (await listener.suproc.stderr.read()).decode().strip()
                 try:
                     await aioremove(out_path)
-                except:
+                except Exception:
                     pass
                 if multi_streams:
                     LOGGER.warning(

@@ -134,7 +134,6 @@ class DbManger:
         if self.__err:
             return
         return [doc['_id'] async for doc in self.__db.pm_users[bot_id].find({})]
-        self.__conn.close
         
     async def update_pm_users(self, user_id):
         if self.__err:
