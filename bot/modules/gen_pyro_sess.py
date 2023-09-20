@@ -178,12 +178,11 @@ async def get_decrypt_key(client, message):
     user_id = message.from_user.id
     msg_id = message.id
     grp_prompt = None
-    if message.chat.type != ChatType.BOT:
+    if message.chat.type != ChatType.PRIVATE:
         btn = ButtonMaker()
         btn.ubutton("🔑 Unlock Session", f"https://t.me/{bot_name}")
         grp_prompt = await sendMessage(message, "<i>User Session Access needed for Message to Access, it can't be Accessed by Bot and Session</i>", btn.build_menu(1))
-    prompt = await sendCustomMsg(user_id, "<b><u>DECRYPTION:</u></b>\n<i>• This Value is not stored anywhere, so you need to provide it everytime...\n\n</i><b><i>Send your Decrypt Key 🔑 ..</i></b>\n\n<b>Timeout:</b> 60s", 
-                        ForceReply(True, "Enter Decrypt Key..."))
+    prompt = await sendCustomMsg(user_id, "<b><u>DECRYPTION:</u></b>\n<i>• This Value is not stored anywhere, so you need to provide it everytime...\n\n</i><b><i>Send your Decrypt Key 🔑 ..</i></b>\n\n<b>Timeout:</b> 60s")
     
     bot_cache[msg_id] = [True, '', False]
     async def set_details(_, message):
