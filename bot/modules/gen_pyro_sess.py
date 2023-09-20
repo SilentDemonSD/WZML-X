@@ -196,7 +196,7 @@ async def get_decrypt_key(client, message):
         await sleep(0.5)
         if time() - start_time > 60:
             bot_cache[msg_id][0] = False
-            await editMessage(prompt, "<b>Decryption Key TimeOut.. Try Again</b>"
+            await editMessage(prompt, "<b>Decryption Key TimeOut.. Try Again</b>")
             bot_cache[msg_id][2] = True
     client.remove_handler(*handler)
     
