@@ -124,8 +124,6 @@ def direct_link_generator(link):
         return filelions(link)
     elif 'mediafire.com' in domain:
         return mediafire(link)
-    elif 'uptobox.com' in domain:
-        return uptobox(link)
     elif 'osdn.net' in domain:
         return osdn(link)
     elif 'github.com' in domain:
@@ -181,7 +179,7 @@ def direct_link_generator(link):
     elif is_share_link(link):
         if 'gdtot' in domain:
             return gdtot(link)
-        elif 'filepress' in domain:
+        elif 'new.filepress' in domain:
             return filepress(link)
         else:
             return sharer_scraper(link)
