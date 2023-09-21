@@ -40,7 +40,7 @@ async def sendMessage(message, text, buttons=None, photo=None, **kwargs):
             disable_web_page_preview=True,
             disable_notification=True,
             reply_markup=buttons,
-            reply_to_message_id=message.reply_to_message.message_id
+            reply_to_message_id=message.reply_to_message_id
             if (rply := message.reply_to_message)
             and not rply.text
             and not rply.caption
