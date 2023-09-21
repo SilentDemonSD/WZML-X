@@ -181,7 +181,7 @@ def direct_link_generator(link):
             return gdtot(link)
         elif 'filepress' in domain:
             return filepress(link)
-        elif 'jiodrive' in domain:
+        elif 'www.jiodrive' in domain:
             return jiodrive(link)
         else:
             return sharer_scraper(link)
