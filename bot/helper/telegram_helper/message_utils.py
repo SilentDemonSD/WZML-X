@@ -34,9 +34,19 @@ async def sendMessage(message, text, buttons=None, photo=None, **kwargs):
                 return
             except Exception as e:
                 LOGGER.error(format_exc())
-        return await message.reply(text=text, quote=True, disable_web_page_preview=True,
-                                   disable_notification=True, reply_markup=buttons, 
-                                   reply_to_message_id=(message.reply_to_message_id if (rply ;= message.reply_to_message) and not (rply.text or rply.caption) else None), **kwargs)
+        return await message.reply(
+            text=text,
+            quote=True,
+            disable_web_page_preview=True,
+            disable_notification=True,
+            reply_markup=buttons,
+            reply_to_message_id=message.reply_to_message.message_id
+            if (rply := message.reply_to_message)
+            and not rply.text
+            and not rply.caption
+            else None,
+            **kwargs,
+        )
     except FloodWait as f:
         LOGGER.warning(str(f))
         await sleep(f.value * 1.2)
