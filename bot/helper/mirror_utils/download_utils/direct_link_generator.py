@@ -844,10 +844,10 @@ def jiodrive(url):
 
         except Exception as e:
             raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}') from e
-        if resp['code'] == '200':
-            LOGGER.info(resp['file'])
-            return resp['file']
-
+        if resp['code'] != '200':
+            raise DirectDownloadLinkException("ERROR: The user's Drive storage quota has been exceeded.")
+        return resp['file']
+        
 def gdtot(url):
     cget = create_scraper().request
     try:
