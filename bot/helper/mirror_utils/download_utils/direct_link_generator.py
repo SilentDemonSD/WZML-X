@@ -179,7 +179,7 @@ def direct_link_generator(link):
     elif is_share_link(link):
         if 'gdtot' in domain:
             return gdtot(link)
-        elif 'new.filepress' in domain:
+        elif 'filepress' in domain:
             return filepress(link)
         else:
             return sharer_scraper(link)

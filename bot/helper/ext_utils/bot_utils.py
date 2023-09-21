@@ -349,7 +349,7 @@ def is_telegram_link(url):
 
 
 def is_share_link(url):
-    return bool(re_match(r'https?:\/\/.+\.gdtot\.\S+|https?:\/\/(new.filepress|filebee|appdrive|gdflix)\.\S+', url))
+    return bool(re_match(r'https?:\/\/.+\.gdtot\.\S+|https?:\/\/(.+\.filepress|filebee|appdrive|gdflix)\.\S+', url))
 
 
 def is_index_link(url): 
