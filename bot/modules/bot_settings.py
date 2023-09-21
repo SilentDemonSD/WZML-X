@@ -433,9 +433,9 @@ async def load_config():
 
     IMG_SEARCH = environ.get('IMG_SEARCH', '')
     IMG_SEARCH = (IMG_SEARCH.replace("'", '').replace('"', '').replace('[', '').replace(']', '').replace(",", "")).split()
-
+    
     IMG_PAGE = environ.get('IMG_PAGE', '')
-    IMG_PAGE = 1 if not IMG_PAGE else int(IMG_PAGE)
+    IMG_PAGE = int(IMG_PAGE) if IMG_PAGE.isdigit() else ''
 
     IMAGES = environ.get('IMAGES', '')
     IMAGES = (IMAGES.replace("'", '').replace('"', '').replace('[', '').replace(']', '').replace(",", "")).split()
@@ -469,6 +469,9 @@ async def load_config():
     SAFE_MODE = environ.get('SAFE_MODE', '')
     SAFE_MODE = SAFE_MODE.lower() == 'true'
     
+    SCREENSHOTS_MODE = environ.get('SCREENSHOTS_MODE', '')
+    SCREENSHOTS_MODE = SCREENSHOTS_MODE.lower() == 'true'
+
     CLEAN_LOG_MSG = environ.get('CLEAN_LOG_MSG', '')
     CLEAN_LOG_MSG = CLEAN_LOG_MSG.lower() == 'true'
     
