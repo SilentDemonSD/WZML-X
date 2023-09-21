@@ -67,7 +67,10 @@ async def get_media_info(path, metadata=False):
                 if stream.get('codec_type') == 'audio' and (lc := stream.get('tags', {}).get('language')):
                     lang += f"{Language.get(lc).display_name()}, "
                 if stream.get('codec_type') == 'subtitle' and (st := stream.get('tags', {}).get('language')):
-                    stitles += f"{Language.get(st).display_name()}, "
+                    try:
+                        stitles += f"{Language.get(st).display_name()}, "
+                    except Exception:
+                        stitles += f"{st}, "
         return duration, qual, lang[:-2], stitles[:-2]
     tags = fields.get('tags', {})
     artist = tags.get('artist') or tags.get('ARTIST') or tags.get("Artist")
