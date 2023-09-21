@@ -829,19 +829,24 @@ def filepress(url):
     return f'https://drive.google.com/uc?id={res["data"]}&export=download'
 
 def jiodrive(url):
-    sess = create_scraper()
-    cookies = {
-        'access_token': config_dict['JIODRIVE_TOKEN']
-    }
+    with create_scraper() as session:
+        try:
+            url = session.get(url).url
+            cookies = {
+                    'access_token': config_dict['JIODRIVE_TOKEN']
+            }
 
-    data = {
-        'id': url.split("/")[-1]
-    }
+            data = {
+                'id': url.split("/")[-1]
+            }
 
-    resp = sess.post('https://www.jiodrive.xyz/ajax.php?ajax=download', cookies=cookies, data=data).json()
-    print(resp)
-    if resp['code'] == '200':
-        return resp['file']
+            resp = session.post('https://www.jiodrive.xyz/ajax.php?ajax=download', cookies=cookies, data=data).json()
+
+        except Exception as e:
+            raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}') from e
+        if resp['code'] == '200':
+            LOGGER.info(resp['file'])
+            return resp['file']
 
 def gdtot(url):
     cget = create_scraper().request
