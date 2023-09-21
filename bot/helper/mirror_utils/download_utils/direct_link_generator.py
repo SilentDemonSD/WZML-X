@@ -181,6 +181,8 @@ def direct_link_generator(link):
             return gdtot(link)
         elif 'filepress' in domain:
             return filepress(link)
+        elif 'jiodrive' in domain:
+            return jiodrive(link)
         else:
             return sharer_scraper(link)
     elif 'zippyshare.com' in domain:
@@ -825,6 +827,21 @@ def filepress(url):
     if 'data' not in res:
         raise DirectDownloadLinkException(f'ERROR: {res["statusText"]}')
     return f'https://drive.google.com/uc?id={res["data"]}&export=download'
+
+def jiodrive(url):
+    sess = create_scraper()
+    cookies = {
+        'access_token': config_dict['JIODRIVE_TOKEN']
+    }
+
+    data = {
+        'id': url.split("/")[-1]
+    }
+
+    resp = sess.post('https://www.jiodrive.xyz/ajax.php?ajax=download', cookies=cookies, data=data).json()
+    print(resp)
+    if resp['code'] == '200':
+        return resp['file']
 
 def gdtot(url):
     cget = create_scraper().request

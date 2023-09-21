@@ -141,6 +141,10 @@ async def load_config():
     if len(GDTOT_CRYPT) == 0:
         GDTOT_CRYPT = ''
         
+    JIODRIVE_TOKEN = environ.get('JIODRIVE_TOKEN', '')
+    if len(JIODRIVE_TOKEN) == 0:
+        JIODRIVE_TOKEN = ''
+
     REAL_DEBRID_API = environ.get('REAL_DEBRID_API', '')
     if len(REAL_DEBRID_API) == 0:
         REAL_DEBRID_API = ''
@@ -628,6 +632,7 @@ async def load_config():
                         'TITLE_NAME': TITLE_NAME,
                         'GD_INFO': GD_INFO,
                         'GDTOT_CRYPT': GDTOT_CRYPT,
+                        'JIODRIVE_TOKEN': JIODRIVE_TOKEN,
                         'EQUAL_SPLITS': EQUAL_SPLITS,
                         'EXTENSION_FILTER': EXTENSION_FILTER,
                         'GDRIVE_ID': GDRIVE_ID,

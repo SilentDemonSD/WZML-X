@@ -231,6 +231,10 @@ GDTOT_CRYPT = environ.get('GDTOT_CRYPT', '')
 if len(GDTOT_CRYPT) == 0:
     GDTOT_CRYPT = ''
 
+JIODRIVE_TOKEN = environ.get('JIODRIVE_TOKEN', '')
+if len(JIODRIVE_TOKEN) == 0:
+    JIODRIVE_TOKEN = ''
+
 REAL_DEBRID_API = environ.get('REAL_DEBRID_API', '')
 if len(REAL_DEBRID_API) == 0:
     REAL_DEBRID_API = ''
@@ -631,6 +635,7 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'TIMEZONE': TIMEZONE,
                'GD_INFO': GD_INFO,
                'GDTOT_CRYPT': GDTOT_CRYPT,
+               'JIODRIVE_TOKEN': JIODRIVE_TOKEN,
                'EQUAL_SPLITS': EQUAL_SPLITS,
                'EXTENSION_FILTER': EXTENSION_FILTER,
                'GDRIVE_ID': GDRIVE_ID,

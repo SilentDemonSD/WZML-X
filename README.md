@@ -478,6 +478,7 @@ help - All cmds with description
     - `DEBRID_LINK_API` : Api of `debrid-link.com`. Support the Premium `Bypass Download limit`.
     - `FILELION_API`: Api of `filelions.com` to download the link from the filelion site
     - `GDTOT_CRYPT`: Use Gdtot crpyt to bypass the GDTOT links.
+    - `JIODRIVE_TOKEN`: Use Jiodrive Token to bypass the jiodrive links.
     </details></li>
 
     <li><details>
