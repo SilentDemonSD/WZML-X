@@ -478,7 +478,6 @@ help - All cmds with description
     - `DEBRID_LINK_API` : Api of `debrid-link.com`. Support the Premium `Bypass Download limit`.
     - `FILELION_API`: Api of `filelions.com` to download the link from the filelion site
     - `GDTOT_CRYPT`: Use Gdtot crpyt to bypass the GDTOT links.
-    - `UPTOBOX_TOKEN`: Uptobox token to mirror uptobox links. Get it from [Uptobox Premium Account](https://uptobox.com/my_account). `str`
     </details></li>
 
     <li><details>

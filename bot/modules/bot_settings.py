@@ -136,11 +136,7 @@ async def load_config():
     if len(MEGA_EMAIL) == 0 or len(MEGA_PASSWORD) == 0:
         MEGA_EMAIL = ''
         MEGA_PASSWORD = ''
-
-    UPTOBOX_TOKEN = environ.get('UPTOBOX_TOKEN', '')
-    if len(UPTOBOX_TOKEN) == 0:
-        UPTOBOX_TOKEN = ''
-        
+      
     GDTOT_CRYPT = environ.get('GDTOT_CRYPT', '')
     if len(GDTOT_CRYPT) == 0:
         GDTOT_CRYPT = ''
@@ -686,7 +682,6 @@ async def load_config():
                         'UPSTREAM_REPO': UPSTREAM_REPO,
                         'UPSTREAM_BRANCH': UPSTREAM_BRANCH,
                         'UPGRADE_PACKAGES': UPGRADE_PACKAGES,
-                        'UPTOBOX_TOKEN': UPTOBOX_TOKEN,
                         'USER_SESSION_STRING': USER_SESSION_STRING,
                         'USER_TD_MODE':USER_TD_MODE,
                         'USER_TD_SA': USER_TD_SA,

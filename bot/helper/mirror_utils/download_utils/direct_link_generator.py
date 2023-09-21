@@ -116,9 +116,9 @@ def direct_link_generator(link):
         raise DirectDownloadLinkException("ERROR: Invalid URL")
     if 'youtube.com' in domain or 'youtu.be' in domain:
         raise DirectDownloadLinkException("ERROR: Use ytdl cmds for Youtube links")
-    elif config_dict['DEBRID_LINK_API'] and not config_dict['UPTOBOX_TOKEN'] and any(x in domain for x in debrid_link_sites):
+    elif config_dict['DEBRID_LINK_API'] and any(x in domain for x in debrid_link_sites):
         return debrid_link(link)
-    elif config_dict['REAL_DEBRID_API'] and not config_dict['UPTOBOX_TOKEN'] and any(x in domain for x in debrid_sites):
+    elif config_dict['REAL_DEBRID_API'] and any(x in domain for x in debrid_sites):
         return real_debrid(link)
     elif any(x in domain for x in ['filelions.com', 'filelions.live', 'filelions.to', 'filelions.online']):
         return filelions(link)
@@ -289,41 +289,6 @@ def get_captcha_token(session, params):
     res = session.post(f'{recaptcha_api}/reload', params=params)
     if token := findall(r'"rresp","(.*?)"', res.text):
         return token[0]
-
-
-def uptobox(url: str) -> str:
-    try:
-        link = findall(r'\bhttps?://.*uptobox\.com\S+', url)[0]
-    except IndexError as e:
-        raise DirectDownloadLinkException("No Uptobox links found") from e
-    if link := findall(r'\bhttps?://.*\.uptobox\.com/dl\S+', url):
-        return link[0]
-    with create_scraper() as session:
-        try:
-            file_id = findall(r'\bhttps?://.*uptobox\.com/(\w+)', url)[0]
-            if UPTOBOX_TOKEN := config_dict['UPTOBOX_TOKEN']:
-                file_link = f'https://uptobox.com/api/link?token={UPTOBOX_TOKEN}&file_code={file_id}'
-            else:
-                file_link = f'https://uptobox.com/api/link?file_code={file_id}'
-            res = session.get(file_link).json()
-        except Exception as e:
-            raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
-        if res['statusCode'] == 0:
-            return res['data']['dlLink']
-        elif res['statusCode'] == 16:
-            sleep(1)
-            waiting_token = res["data"]["waitingToken"]
-            sleep(res["data"]["waiting"])
-        elif res['statusCode'] == 39:
-            raise DirectDownloadLinkException(
-                f"ERROR: Uptobox is being limited please wait {get_readable_time(res['data']['waiting'])}")
-        else:
-            raise DirectDownloadLinkException(f"ERROR: {res['message']}")
-        try:
-            res = session.get(f"{file_link}&waitingToken={waiting_token}").json()
-            return res['data']['dlLink']
-        except Exception as e:
-            raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
 
 
 def mediafire(url, session=None):
