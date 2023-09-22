@@ -64,7 +64,7 @@ async def __size_checked(tor):
     if hasattr(download, 'listener'):
         listener = download.listener()
         size = tor.size
-        if limit_exceeded := await limit_checker(size, listener, True):
+        if limit_exceeded := await limit_checker(size, listener, isTorrent=True):
             await __onDownloadError(limit_exceeded, tor)
 
 @new_task
