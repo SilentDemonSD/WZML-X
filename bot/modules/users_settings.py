@@ -268,13 +268,13 @@ async def update_user_settings(query, key=None, edit_type=None, edit_mode=None, 
 
 
 async def user_settings(client, message):
-    if len(message.command) > 1 and message.command[1] == '-s':
+    if len(message.command) > 1 and (message.command[1] == '-s' or message.command[1] == '-set'):
         set_arg = message.command[2].strip() if len(message.command) > 2 else None
         msg = await sendMessage(message, '<i>Fetching Settings...</i>', photo='IMAGES')
         if set_arg and (reply_to := message.reply_to_message):
             if message.from_user.id != reply_to.from_user.id:
                 return await editMessage(msg, '<i>Reply to Your Own Message for Setting via Args Directly</i>')
-            if set_arg in ['lprefix', 'lsuffix', 'lremname', 'lcaption', 'ldump'] and reply_to.text:
+            if set_arg in ['lprefix', 'lsuffix', 'lremname', 'lcaption', 'ldump', 'yt_opt'] and reply_to.text:
                 return await set_custom(client, reply_to, msg, set_arg, True)
             elif set_arg == 'thumb' and reply_to.media:
                 return await set_thumb(client, reply_to, msg, set_arg, True)
@@ -291,6 +291,8 @@ async def user_settings(client, message):
     /cmd -s lremname
 ➲ <b>Leech Filename Caption :</b>
     /cmd -s lcaption
+➲ <b>YT-DLP Options :</b>
+    /cmd -s yt_opt
 ➲ <b>Leech User Dump :</b>
     /cmd -s ldump''')
     else:
@@ -353,7 +355,7 @@ async def set_custom(client, message, pre_event, key, direct=False):
         if key == 'usess':
             password = Fernet.generate_key()
             try:
-                await deleteMessage(await (await sendCustomMsg(message.from_user.id, f"<u><b>Decryption Key:</b></u> \n\n<code>{password.decode()}</code>\n\n<b>Note:</b> <i>Keep this Key Securely, this is not Stored in Bot and Access Key to use your Session...</i>")).pin(both_sides=True))
+                await deleteMessage(await (await sendCustomMsg(message.from_user.id, f"<u><b>Decryption Key:</b></u> \n┃\n┃ <code>{password.decode()}</code>\n┃\n┖ <b>Note:</b> <i>Keep this Key Securely, this is not Stored in Bot and Access Key to use your Session...</i>")).pin(both_sides=True))
                 encrypt_sess = Fernet(password).encrypt(value.encode())
                 value = encrypt_sess.decode()
             except Exception:
@@ -428,6 +430,7 @@ async def event_handler(client, query, pfunc, rfunc, photo=False, document=False
             mtype = event.text
         user = event.from_user or event.sender_chat
         return bool(user.id == user_id and event.chat.id == query.message.chat.id and mtype)
+        
     handler = client.add_handler(MessageHandler(
         pfunc, filters=create(event_filter)), group=-1)
     while handler_dict[user_id]:
@@ -715,7 +718,7 @@ async def send_users_settings(client, message):
             buttons.ibutton("Close", f"userset {message.from_user.id} close")
             button = buttons.build_menu(1)
             for key, value in data.items():
-                if key in ['token', 'time']:
+                if key in ['token', 'time', 'ddl_servers', 'usess']:
                     continue
                 msg += f'\n<b>{key}</b>: <code>{escape(str(value))}</code>'
         else:

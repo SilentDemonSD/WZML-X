@@ -257,7 +257,10 @@ class WZMLStyle:
 ┎<b> Name :</b> {NAME} ( <code>{ID}</code> )
 ┠<b> Username :</b> {USERNAME}
 ┠<b> Telegram DC :</b> {DC}
-┖<b> Language :</b> {LANG}'''
+┖<b> Language :</b> {LANG}
+
+➲ <u><b>Available Args:</b></u>
+• <b>-s</b> or <b>-set</b>: Set Directly via Arg'''
 
     UNIVERSAL = '''㊂ <b><u>Universal Settings : {NAME}</u></b>
 

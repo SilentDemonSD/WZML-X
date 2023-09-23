@@ -233,7 +233,7 @@ async def get_tg_link_content(link, user_id, decrypter=None):
         msg = re_match(r"https:\/\/(t\.me|telegram\.me|telegram\.dog|telegram\.space)\/(?:c\/)?([^\/]+)(?:\/[^\/]+)?\/([0-9]+)", link)
     else:
         private = True
-        msg = re_match(r"tg:\/\/openmessage\?user_id=([0-9]+)&message_id=([0-9]+)", link)
+        msg = re_match(r"tg:\/\/(openmessage)\?user_id=([0-9]+)&message_id=([0-9]+)", link)
         if not (user or user_sess):
             raise TgLinkException('USER_SESSION_STRING or Private User Session required for this private link!')
 

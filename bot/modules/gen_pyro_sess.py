@@ -181,7 +181,7 @@ async def get_decrypt_key(client, message):
     if message.chat.type != ChatType.PRIVATE:
         btn = ButtonMaker()
         btn.ubutton("🔑 Unlock Session", f"https://t.me/{bot_name}")
-        grp_prompt = await sendMessage(message, "<i>User Session Access needed for Message to Access, it can't be Accessed by Bot and Session</i>", btn.build_menu(1))
+        grp_prompt = await sendMessage(message, "<i>User Session (Pyrogram V2 Session) Access of your Account is needed for Message to Access, it can't be Accessed by Bot and Session</i>", btn.build_menu(1))
     prompt = await sendCustomMsg(user_id, "<b><u>DECRYPTION:</u></b>\n<i>• This Value is not stored anywhere, so you need to provide it everytime...\n\n</i><b><i>Send your Decrypt Key 🔑 ..</i></b>\n\n<b>Timeout:</b> 60s")
     
     bot_cache[msg_id] = [True, '', False]

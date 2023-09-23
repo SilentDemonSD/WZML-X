@@ -1,13 +1,12 @@
 from hashlib import md5
-from time import strftime, gmtime
-from re import sub as re_sub
+from time import strftime, gmtime, time
+from re import sub as re_sub, search as re_search
 from shlex import split as ssplit
 from natsort import natsorted
 from os import path as ospath
 from aiofiles.os import remove as aioremove, path as aiopath, mkdir, makedirs, listdir
 from aioshutil import rmtree as aiormtree
-from time import time
-from re import search as re_search
+from contextlib import suppress
 from asyncio import create_subprocess_exec, create_task, gather, Semaphore
 from asyncio.subprocess import PIPE
 from telegraph import upload_file
@@ -67,9 +66,9 @@ async def get_media_info(path, metadata=False):
                 if stream.get('codec_type') == 'audio' and (lc := stream.get('tags', {}).get('language')):
                     lang += f"{Language.get(lc).display_name()}, "
                 if stream.get('codec_type') == 'subtitle' and (st := stream.get('tags', {}).get('language')):
-                    try:
-                        stitles += f"{Language.get(st).display_name()}, "
-                    except Exception:
+                    with suppress(Exception):
+                        st = Language.get(st).display_name()
+                    if st not in stitles:
                         stitles += f"{st}, "
         return duration, qual, lang[:-2], stitles[:-2]
     tags = fields.get('tags', {})
@@ -295,8 +294,13 @@ async def format_filename(file_, user_id, dirpath=None, isMirror=False):
 
     cap_mono =  f"<{config_dict['CAP_FONT']}>{nfile_}</{config_dict['CAP_FONT']}>" if config_dict['CAP_FONT'] else nfile_
     if lcaption and dirpath and not isMirror:
-        lcaption = lcaption.replace('\|', '%%').replace('\s', ' ')
+        
+        def lowerVars(match):
+            return f"{{{match.group(1).lower()}}}"
+
+        lcaption = lcaption.replace('\|', '%%').replace('\{', '&%&').replace('\}', '$%$').replace('\s', ' ')
         slit = lcaption.split("|")
+        slit[0] = re_sub(r'\{([^}]+)\}', lowerVars, slit[0])
         up_path = ospath.join(dirpath, prefile_)
         dur, qual, lang, subs = await get_media_info(up_path, True)
         cap_mono = slit[0].format(
