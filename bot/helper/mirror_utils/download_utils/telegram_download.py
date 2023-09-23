@@ -3,7 +3,6 @@ from logging import getLogger, ERROR
 from time import time
 from asyncio import Lock
 from pyrogram import Client
-from cryptography.fernet import InvalidToken
 
 from bot import LOGGER, download_dict, download_dict_lock, non_queued_dl, queue_dict_lock, bot, user, IS_PREMIUM_USER
 from bot.helper.mirror_utils.status_utils.telegram_status import TelegramStatus
@@ -78,9 +77,9 @@ class TelegramDownloadHelper:
                     async with Client(str(self.__listener.user_id), session_string=self.__decrypter.decrypt(self.__listener.user_dict.get('usess')).decode(), 
                                     in_memory=True, no_updates=True) as self.__client:
                         download = await self.__client.download_media(message=message, file_name=path, progress=self.__onDownloadProgress)
-                except InvalidToken:
+                except Exception as e:
                     if not self.__is_cancelled:
-                        await self.__onDownloadError('Provided Decryption Key is Invalid, Kindly Recheck and Retry')
+                        await self.__onDownloadError(f'ERROR: {e}')
                         return
             else:
                 download = await self.__client.download_media(message=message, file_name=path, progress=self.__onDownloadProgress)

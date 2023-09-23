@@ -5,6 +5,7 @@ from aiofiles.os import remove as aioremove
 from random import choice as rchoice
 from time import time
 from re import match as re_match
+from cryptography.fernet import InvalidToken
 
 from pyrogram import Client
 from pyrogram.enums import ParseMode
@@ -34,19 +35,9 @@ async def sendMessage(message, text, buttons=None, photo=None, **kwargs):
                 return
             except Exception as e:
                 LOGGER.error(format_exc())
-        return await message.reply(
-            text=text,
-            quote=True,
-            disable_web_page_preview=True,
-            disable_notification=True,
-            reply_markup=buttons,
-            reply_to_message_id=message.reply_to_message_id
-            if (rply := message.reply_to_message)
-            and not rply.text
-            and not rply.caption
-            else None,
-            **kwargs,
-        )
+        return await message.reply(text=text, quote=True, disable_web_page_preview=True, disable_notification=True,
+                                    reply_markup=buttons, reply_to_message_id=rply.id if (rply := message.reply_to_message) and not rply.text and not rply.caption else None,
+                                    **kwargs)
     except FloodWait as f:
         LOGGER.warning(str(f))
         await sleep(f.value * 1.2)
@@ -276,6 +267,8 @@ async def get_tg_link_content(link, user_id, decrypter=None):
         try:
             async with Client(user_id, session_string=decrypter.decrypt(user_sess).decode(), in_memory=True, no_updates=True) as usession:
                 user_message = await usession.get_messages(chat_id=chat, message_ids=msg_id)
+        except InvalidToken:
+            raise TgLinkException("Provided Decryption Key is Invalid, Recheck & Retry")
         except Exception as e:
             raise TgLinkException(f"User Session don't have access to this chat!. ERROR: {e}") from e
         if not user_message.empty:
