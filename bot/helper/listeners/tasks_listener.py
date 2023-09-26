@@ -534,7 +534,7 @@ class MirrorLeechListener:
             
             btns = ButtonMaker()
             # <Section : MIRROR LOGS>
-            if config_dict['MIRROR_LOG_ID']:
+            if config_dict['MIRROR_LOG_ID'] and not self.excep_chat:
                 m_btns = deepcopy(buttons)
                 if self.source_url and config_dict['SOURCE_LINK']:
                     m_btns.ubutton(BotTheme('SOURCE_URL'), self.source_url)

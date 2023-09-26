@@ -128,7 +128,6 @@ async def sendMultiMessage(chat_ids, text, buttons=None, photo=None):
             return await sendMultiMessage(chat_ids, text, buttons, photo)
         except Exception as e:
             LOGGER.error(str(e))
-            return str(e)
     return msg_dict
 
 

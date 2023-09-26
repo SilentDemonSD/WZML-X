@@ -321,7 +321,7 @@ async def format_filename(file_, user_id, dirpath=None, isMirror=False):
                     cap_mono = cap_mono.replace(args[0], args[1])
                 elif len(args) == 1:
                     cap_mono = cap_mono.replace(args[0], '')
-        cap_mono = cap_mono.replace('%%', '|')
+        cap_mono = cap_mono.replace('%%', '|').replace('&%&', '{').replace('$%$', '}')
     return file_, cap_mono
 
 
