@@ -66,7 +66,7 @@ async def get_media_info(path, metadata=False):
                 if stream.get('codec_type') == 'audio' and (lc := stream.get('tags', {}).get('language')):
                     lang += f"{Language.get(lc).display_name()}, "
                 if stream.get('codec_type') == 'subtitle' and (st := stream.get('tags', {}).get('language')):
-                    with suppress(Exception):
+                    with suppress(BaseException):
                         st = Language.get(st).display_name()
                     if st not in stitles:
                         stitles += f"{st}, "
