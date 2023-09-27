@@ -64,12 +64,13 @@ async def get_media_info(path, metadata=False):
             qual = f"{480 if qual <= 480 else 540 if qual <= 540 else 720 if qual <= 720 else 1080 if qual <= 1080 else 2160 if qual <= 2160 else 4320 if qual <= 4320 else 8640}p"
             for stream in streams:
                 if stream.get('codec_type') == 'audio' and (lc := stream.get('tags', {}).get('language')):
-                    lang += f"{Language.get(lc).display_name()}, "
+                    with suppress(Exception):
+                        lc = Language.get(lc).display_name()
+                    if lc not in lang:
+                        lang += f"{lc}, "
                 if stream.get('codec_type') == 'subtitle' and (st := stream.get('tags', {}).get('language')):
-                    try:
+                    with suppress(Exception):
                         st = Language.get(st).display_name()
-                    except:
-                        pass
                     if st not in stitles:
                         stitles += f"{st}, "
         return duration, qual, lang[:-2], stitles[:-2]
