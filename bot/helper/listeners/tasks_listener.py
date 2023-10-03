@@ -70,7 +70,7 @@ class MirrorLeechListener:
         self.sameDir = sameDir
         self.rcFlags = rcFlags
         self.upPath = upPath
-        self.random_pic = 'IMAGES'
+        self.random_pic = 'IMAGES' if config_dict['IMAGES'] else None
         self.join = join
         self.drive_id = drive_id
         self.index_link = index_link

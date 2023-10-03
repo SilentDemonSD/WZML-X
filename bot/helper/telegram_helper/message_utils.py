@@ -101,7 +101,6 @@ async def sendMultiMessage(chat_ids, text, buttons=None, photo=None):
     for channel_id in chat_ids.split():
         channel_id, *topic_id = channel_id.split(':')
         topic_id = int(topic_id[0]) if len(topic_id) else None
-        LOGGER.info("DEBUG CP 1")
         chat = await chat_info(channel_id)
         try:
             if photo:
@@ -120,7 +119,7 @@ async def sendMultiMessage(chat_ids, text, buttons=None, photo=None):
                     break
                 except Exception as e:
                     LOGGER.error(str(e))
-                    continue
+                continue
             LOGGER.info("DEBUG CP 2")
             sent = await bot.send_message(chat_id=chat.id, text=text, disable_web_page_preview=True,
                                                disable_notification=True, reply_to_message_id=topic_id, reply_markup=buttons)
@@ -130,8 +129,7 @@ async def sendMultiMessage(chat_ids, text, buttons=None, photo=None):
             await sleep(f.value * 1.2)
             return await sendMultiMessage(chat_ids, text, buttons, photo)
         except Exception as e:
-            LOGGER.error(e)
-            LOGGER.info('EXCEP DEBUG')
+            LOGGER.error(str(e))
     return msg_dict
 
 
