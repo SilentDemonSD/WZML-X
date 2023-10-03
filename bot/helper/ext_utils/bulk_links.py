@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
+import re
 from aiofiles import open as aiopen
 from aiofiles.os import remove
-
+from bot.helper.ext_utils.bot_utils import URL_REGEX, MAGNET_REGEX
 
 async def get_links_from_message(text, bulk_start, bulk_end):
     links_list = text.split('\n')
@@ -22,8 +23,15 @@ async def get_links_from_file(message, bulk_start, bulk_end):
     text_file_dir = await message.download()
 
     async with aiopen(text_file_dir, 'r+') as f:
-        lines = await f.readlines()
-        links_list.extend(line.strip() for line in lines if len(line) != 0)
+        content = await f.read()
+
+    # Use the imported regex patterns to find URLs and magnet links in the file content
+    urls = re.findall(URL_REGEX, content)
+    magnet_links = re.findall(MAGNET_REGEX, content)
+
+    # Combine the lists if needed
+    links_list = urls + magnet_links
+
 
     if bulk_start != 0 and bulk_end != 0:
         links_list = links_list[bulk_start:bulk_end]
