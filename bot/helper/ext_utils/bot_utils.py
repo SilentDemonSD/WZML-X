@@ -227,7 +227,7 @@ def get_readable_message():
                 try:
                     msg += BotTheme('SEEDERS', Seeders=download.seeders_num())
                     msg += BotTheme('LEECHERS', Leechers=download.leechers_num())
-                except:
+                except Exception:
                     pass
         elif download.status() == MirrorStatus.STATUS_SEEDING:
             msg += BotTheme('STATUS', Status=download.status(), Url=msg_link)
@@ -274,7 +274,10 @@ def get_readable_message():
         speed_in_bytes_per_second = convert_speed_to_bytes_per_second(spd)
         if tstatus == MirrorStatus.STATUS_DOWNLOADING:
             dl_speed += speed_in_bytes_per_second
-        elif tstatus == MirrorStatus.STATUS_UPLOADING or tstatus == MirrorStatus.STATUS_SEEDING:
+        elif tstatus in [
+            MirrorStatus.STATUS_UPLOADING,
+            MirrorStatus.STATUS_SEEDING,
+        ]:
             up_speed += speed_in_bytes_per_second
 
     msg += BotTheme('FOOTER')
@@ -346,7 +349,7 @@ def is_telegram_link(url):
 
 
 def is_share_link(url):
-    return bool(re_match(r'https?:\/\/.+\.gdtot\.\S+|https?:\/\/(filepress|filebee|appdrive|gdflix)\.\S+', url))
+    return bool(re_match(r'https?:\/\/.+\.gdtot\.\S+|https?:\/\/(.+\.filepress|filebee|appdrive|gdflix|www.jiodrive)\.\S+', url))
 
 
 def is_index_link(url): 
@@ -410,12 +413,12 @@ async def get_content_type(url):
         async with aioClientSession(trust_env=True) as session:
             async with session.get(url, verify_ssl=False) as response:
                 return response.headers.get('Content-Type')
-    except:
+    except Exception:
         return None
 
 
 def update_user_ldata(id_, key=None, value=None):
-    exception_keys = ['is_sudo', 'is_auth', 'dly_tasks', 'is_blacklist']
+    exception_keys = ['is_sudo', 'is_auth', 'dly_tasks', 'is_blacklist', 'token', 'time']
     if key is None and value is None:
         if id_ in user_data:
             updated_data = {}
@@ -511,7 +514,8 @@ async def get_stats(event, key="home"):
         swap = swap_memory()
         memory = virtual_memory()
         disk_io = disk_io_counters()
-        msg = BotTheme('BOT_STATS',
+        msg = BotTheme(
+            'BOT_STATS',
             bot_uptime=get_readable_time(time() - botStartTime),
             ram_bar=get_progress_bar_string(memory.percent),
             ram=memory.percent,
@@ -525,8 +529,12 @@ async def get_stats(event, key="home"):
             swap_t=get_readable_file_size(swap.total),
             disk=disk,
             disk_bar=get_progress_bar_string(disk),
-            disk_read=get_readable_file_size(disk_io.read_bytes) + f" ({get_readable_time(disk_io.read_time / 1000)})" if disk_io else "Access Denied",
-            disk_write=get_readable_file_size(disk_io.write_bytes) + f" ({get_readable_time(disk_io.write_time / 1000)})" if disk_io else "Access Denied",
+            disk_read=f"{get_readable_file_size(disk_io.read_bytes)} ({get_readable_time(disk_io.read_time / 1000)})"
+            if disk_io
+            else "Access Denied",
+            disk_write=f"{get_readable_file_size(disk_io.write_bytes)} ({get_readable_time(disk_io.write_time / 1000)})"
+            if disk_io
+            else "Access Denied",
             disk_t=get_readable_file_size(total),
             disk_u=get_readable_file_size(used),
             disk_f=get_readable_file_size(free),
@@ -587,7 +595,7 @@ async def getdailytasks(user_id, increase_task=False, upleech=0, upmirror=0, che
     task, lsize, msize = 0, 0, 0
     if user_id in user_data and user_data[user_id].get('dly_tasks'):
         userdate, task, lsize, msize = user_data[user_id]['dly_tasks']
-        nowdate = datetime.today()
+        nowdate = datetime.now()
         if userdate.year <= nowdate.year and userdate.month <= nowdate.month and userdate.day < nowdate.day:
             task, lsize, msize = 0, 0, 0
             if increase_task:
@@ -596,22 +604,19 @@ async def getdailytasks(user_id, increase_task=False, upleech=0, upmirror=0, che
                 lsize += upleech
             elif upmirror != 0:
                 msize += upmirror
-        else:
-            if increase_task:
-                task += 1
-            elif upleech != 0:
-                lsize += upleech
-            elif upmirror != 0:
-                msize += upmirror
-    else:
-        if increase_task:
+        elif increase_task:
             task += 1
         elif upleech != 0:
             lsize += upleech
         elif upmirror != 0:
             msize += upmirror
-    update_user_ldata(user_id, 'dly_tasks', [
-                      datetime.today(), task, lsize, msize])
+    elif increase_task:
+        task += 1
+    elif upleech != 0:
+        lsize += upleech
+    elif upmirror != 0:
+        msize += upmirror
+    update_user_ldata(user_id, 'dly_tasks', [datetime.now(), task, lsize, msize])
     if DATABASE_URL:
         await DbManger().update_user_data(user_id)
     if check_leech:
@@ -669,47 +674,117 @@ def extra_btns(buttons, already=False):
 
 
 async def set_commands(client):
-    if config_dict['SET_COMMANDS']:
-        try:
-            bot_cmds = [
-            BotCommand(BotCommands.MirrorCommand[0], f'or /{BotCommands.MirrorCommand[1]} Mirror [links/media/rclone_path]'),
-            BotCommand(BotCommands.LeechCommand[0], f'or /{BotCommands.LeechCommand[1]} Leech [links/media/rclone_path]'),
-            BotCommand(BotCommands.QbMirrorCommand[0], f'or /{BotCommands.QbMirrorCommand[1]} Mirror magnet/torrent using qBittorrent'),
-            BotCommand(BotCommands.QbLeechCommand[0], f'or /{BotCommands.QbLeechCommand[1]} Leech magnet/torrent using qBittorrent'),
-            BotCommand(BotCommands.YtdlCommand[0], f'or /{BotCommands.YtdlCommand[1]} Mirror yt-dlp supported links via bot'),
-            BotCommand(BotCommands.YtdlLeechCommand[0], f'or /{BotCommands.YtdlLeechCommand[1]} Leech yt-dlp supported links via bot'),
-            BotCommand(BotCommands.CloneCommand[0], f'or /{BotCommands.CloneCommand[1]} Copy file/folder to Drive (GDrive/RClone)'),
-            BotCommand(BotCommands.CountCommand, '[drive_url]: Count file/folder of Google Drive/RClone Drives'),
-            BotCommand(BotCommands.StatusCommand[0], f'or /{BotCommands.StatusCommand[1]} Get Bot All Status Stats Message'),
-            BotCommand(BotCommands.StatsCommand[0], f'or /{BotCommands.StatsCommand[1]} Check Bot & System stats'),
-            BotCommand(BotCommands.BtSelectCommand, 'Select files to download only torrents/magnet qbit/aria2c'),
-            BotCommand(BotCommands.CategorySelect, 'Select Upload Category with UserTD or Bot Categories to upload only GDrive upload'),
+    if not config_dict['SET_COMMANDS']:
+        return
+    try:
+        bot_cmds = [
+            BotCommand(
+                BotCommands.MirrorCommand[0],
+                f'or /{BotCommands.MirrorCommand[1]} Mirror [links/media/rclone_path]',
+            ),
+            BotCommand(
+                BotCommands.LeechCommand[0],
+                f'or /{BotCommands.LeechCommand[1]} Leech [links/media/rclone_path]',
+            ),
+            BotCommand(
+                BotCommands.QbMirrorCommand[0],
+                f'or /{BotCommands.QbMirrorCommand[1]} Mirror magnet/torrent using qBittorrent',
+            ),
+            BotCommand(
+                BotCommands.QbLeechCommand[0],
+                f'or /{BotCommands.QbLeechCommand[1]} Leech magnet/torrent using qBittorrent',
+            ),
+            BotCommand(
+                BotCommands.YtdlCommand[0],
+                f'or /{BotCommands.YtdlCommand[1]} Mirror yt-dlp supported links via bot',
+            ),
+            BotCommand(
+                BotCommands.YtdlLeechCommand[0],
+                f'or /{BotCommands.YtdlLeechCommand[1]} Leech yt-dlp supported links via bot',
+            ),
+            BotCommand(
+                BotCommands.CloneCommand[0],
+                f'or /{BotCommands.CloneCommand[1]} Copy file/folder to Drive (GDrive/RClone)',
+            ),
+            BotCommand(
+                BotCommands.CountCommand,
+                '[drive_url]: Count file/folder of Google Drive/RClone Drives',
+            ),
+            BotCommand(
+                BotCommands.StatusCommand[0],
+                f'or /{BotCommands.StatusCommand[1]} Get Bot All Status Stats Message',
+            ),
+            BotCommand(
+                BotCommands.StatsCommand[0],
+                f'or /{BotCommands.StatsCommand[1]} Check Bot & System stats',
+            ),
+            BotCommand(
+                BotCommands.BtSelectCommand,
+                'Select files to download only torrents/magnet qbit/aria2c',
+            ),
+            BotCommand(
+                BotCommands.CategorySelect,
+                'Select Upload Category with UserTD or Bot Categories to upload only GDrive upload',
+            ),
             BotCommand(BotCommands.CancelMirror, 'Cancel a Task of yours!'),
-            BotCommand(BotCommands.CancelAllCommand[0], f'Cancel all Tasks in whole Bots.'),
+            BotCommand(
+                BotCommands.CancelAllCommand[0],
+                'Cancel all Tasks in whole Bots.',
+            ),
             BotCommand(BotCommands.ListCommand, 'Search in Drive(s)'),
-            BotCommand(BotCommands.SearchCommand, 'Search in Torrent via qBit clients!'),
-            BotCommand(BotCommands.HelpCommand, 'Get detailed help about the WZML-X Bot'),
-            BotCommand(BotCommands.UserSetCommand[0], f"or /{BotCommands.UserSetCommand[1]} User's Personal Settings (Open in PM)"),
-            BotCommand(BotCommands.IMDBCommand, 'Search Movies/Series on IMDB.com and fetch details'),
-            BotCommand(BotCommands.AniListCommand, 'Search Animes on AniList.com and fetch details'),
-            BotCommand(BotCommands.MyDramaListCommand, 'Search Dramas on MyDramaList.com and fetch details'),
-            BotCommand(BotCommands.SpeedCommand[0], f'or /{BotCommands.SpeedCommand[1]} Check Server Up & Down Speed & Details'),
-            BotCommand(BotCommands.MediaInfoCommand[0], f'or /{BotCommands.MediaInfoCommand[1]} Generate Mediainfo for Replied Media or DL links'),
-            BotCommand(BotCommands.BotSetCommand[0], f"or /{BotCommands.BotSetCommand[1]} Bot's Personal Settings (Owner or Sudo Only)"),
-            BotCommand(BotCommands.RestartCommand[0], f'or /{BotCommands.RestartCommand[1]} Restart & Update the Bot (Owner or Sudo Only)'),
-            ]
-            if config_dict['SHOW_EXTRA_CMDS']:
-                bot_cmds.insert(1, BotCommand(BotCommands.MirrorCommand[2], f'or /{BotCommands.MirrorCommand[3]} Mirror and UnZip [links/media/rclone_path]'))
-                bot_cmds.insert(1, BotCommand(BotCommands.MirrorCommand[4], f'or /{BotCommands.MirrorCommand[5]} Mirror and Zip [links/media/rclone_path]'))
-                bot_cmds.insert(4, BotCommand(BotCommands.LeechCommand[2], f'or /{BotCommands.LeechCommand[3]} Leech and UnZip [links/media/rclone_path]'))
-                bot_cmds.insert(4, BotCommand(BotCommands.LeechCommand[4], f'or /{BotCommands.LeechCommand[5]} Leech and Zip [links/media/rclone_path]'))
-                bot_cmds.insert(7, BotCommand(BotCommands.QbMirrorCommand[2], f'or /{BotCommands.QbMirrorCommand[3]} Mirror magnet/torrent and UnZip using qBit'))
-                bot_cmds.insert(7, BotCommand(BotCommands.QbMirrorCommand[4], f'or /{BotCommands.QbMirrorCommand[5]} Mirror magnet/torrent and Zip using qBit'))
-                bot_cmds.insert(10, BotCommand(BotCommands.QbLeechCommand[2], f'or /{BotCommands.QbLeechCommand[3]} Leech magnet/torrent and UnZip using qBit'))
-                bot_cmds.insert(10, BotCommand(BotCommands.QbLeechCommand[4], f'or /{BotCommands.QbLeechCommand[5]} Leech magnet/torrent and Zip using qBit'))
-                bot_cmds.insert(13, BotCommand(BotCommands.YtdlCommand[2], f'or /{BotCommands.YtdlCommand[3]} Mirror yt-dlp supported links and Zip via bot'))
-                bot_cmds.insert(13, BotCommand(BotCommands.YtdlLeechCommand[2], f'or /{BotCommands.YtdlLeechCommand[3]} Leech yt-dlp supported links and Zip via bot'))
-            await client.set_bot_commands(bot_cmds)
-            LOGGER.info('Bot Commands have been Set & Updated')
-        except Exception as err:
-            LOGGER.error(err)
+            BotCommand(
+                BotCommands.SearchCommand,
+                'Search in Torrent via qBit clients!',
+            ),
+            BotCommand(
+                BotCommands.HelpCommand,
+                'Get detailed help about the WZML-X Bot',
+            ),
+            BotCommand(
+                BotCommands.UserSetCommand[0],
+                f"or /{BotCommands.UserSetCommand[1]} User's Personal Settings (Open in PM)",
+            ),
+            BotCommand(
+                BotCommands.IMDBCommand,
+                'Search Movies/Series on IMDB.com and fetch details',
+            ),
+            BotCommand(
+                BotCommands.AniListCommand,
+                'Search Animes on AniList.com and fetch details',
+            ),
+            BotCommand(
+                BotCommands.MyDramaListCommand,
+                'Search Dramas on MyDramaList.com and fetch details',
+            ),
+            BotCommand(
+                BotCommands.SpeedCommand[0],
+                f'or /{BotCommands.SpeedCommand[1]} Check Server Up & Down Speed & Details',
+            ),
+            BotCommand(
+                BotCommands.MediaInfoCommand[0],
+                f'or /{BotCommands.MediaInfoCommand[1]} Generate Mediainfo for Replied Media or DL links',
+            ),
+            BotCommand(
+                BotCommands.BotSetCommand[0],
+                f"or /{BotCommands.BotSetCommand[1]} Bot's Personal Settings (Owner or Sudo Only)",
+            ),
+            BotCommand(
+                BotCommands.RestartCommand[0],
+                f'or /{BotCommands.RestartCommand[1]} Restart & Update the Bot (Owner or Sudo Only)',
+            ),
+        ]
+        if config_dict['SHOW_EXTRA_CMDS']:
+            bot_cmds.insert(1, BotCommand(BotCommands.MirrorCommand[2], f'or /{BotCommands.MirrorCommand[3]} Mirror and UnZip [links/media/rclone_path]'))
+            bot_cmds.insert(1, BotCommand(BotCommands.MirrorCommand[4], f'or /{BotCommands.MirrorCommand[5]} Mirror and Zip [links/media/rclone_path]'))
+            bot_cmds.insert(4, BotCommand(BotCommands.LeechCommand[2], f'or /{BotCommands.LeechCommand[3]} Leech and UnZip [links/media/rclone_path]'))
+            bot_cmds.insert(4, BotCommand(BotCommands.LeechCommand[4], f'or /{BotCommands.LeechCommand[5]} Leech and Zip [links/media/rclone_path]'))
+            bot_cmds.insert(7, BotCommand(BotCommands.QbMirrorCommand[2], f'or /{BotCommands.QbMirrorCommand[3]} Mirror magnet/torrent and UnZip using qBit'))
+            bot_cmds.insert(7, BotCommand(BotCommands.QbMirrorCommand[4], f'or /{BotCommands.QbMirrorCommand[5]} Mirror magnet/torrent and Zip using qBit'))
+            bot_cmds.insert(10, BotCommand(BotCommands.QbLeechCommand[2], f'or /{BotCommands.QbLeechCommand[3]} Leech magnet/torrent and UnZip using qBit'))
+            bot_cmds.insert(10, BotCommand(BotCommands.QbLeechCommand[4], f'or /{BotCommands.QbLeechCommand[5]} Leech magnet/torrent and Zip using qBit'))
+            bot_cmds.insert(13, BotCommand(BotCommands.YtdlCommand[2], f'or /{BotCommands.YtdlCommand[3]} Mirror yt-dlp supported links and Zip via bot'))
+            bot_cmds.insert(13, BotCommand(BotCommands.YtdlLeechCommand[2], f'or /{BotCommands.YtdlLeechCommand[3]} Leech yt-dlp supported links and Zip via bot'))
+        await client.set_bot_commands(bot_cmds)
+        LOGGER.info('Bot Commands have been Set & Updated')
+    except Exception as err:
+        LOGGER.error(err)

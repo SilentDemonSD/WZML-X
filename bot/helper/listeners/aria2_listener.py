@@ -83,7 +83,7 @@ async def __onDownloadStarted(api, gid):
                 elif listener.extract:
                     try:
                         name = get_base_name(name)
-                    except:
+                    except Exception:
                         name = None
                 if name is not None:
                     telegraph_content, contents_no = await sync_to_async(GoogleDriveHelper().drive_list, name, True)
@@ -101,7 +101,7 @@ async def __onDownloadStarted(api, gid):
 async def __onDownloadComplete(api, gid):
     try:
         download = await sync_to_async(api.get_download, gid)
-    except:
+    except Exception:
         return
     if download.options.follow_torrent == 'false':
         return
@@ -149,7 +149,7 @@ async def __onBtDownloadComplete(api, gid):
                 if not file_o.selected and await aiopath.exists(f_path):
                     try:
                         await aioremove(f_path)
-                    except:
+                    except Exception:
                         pass
             await clean_unwanted(download.dir)
         if listener.seed:
@@ -203,7 +203,7 @@ async def __onDownloadError(api, gid):
             return
         error = download.error_message
         LOGGER.info(f"Download Error: {error}")
-    except:
+    except Exception:
         pass
     if dl := await getDownloadByGid(gid):
         listener = dl.listener()

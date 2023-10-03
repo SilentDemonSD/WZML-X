@@ -25,7 +25,7 @@ async def stop_duplicate_check(name, listener):
     elif listener.extract:
         try:
             name = get_base_name(name)
-        except:
+        except Exception:
             name = None
     if name is not None:
         telegraph_content, contents_no = await sync_to_async(GoogleDriveHelper().drive_list, name, stopDup=True)

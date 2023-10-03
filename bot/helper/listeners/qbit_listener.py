@@ -64,7 +64,7 @@ async def __size_checked(tor):
     if hasattr(download, 'listener'):
         listener = download.listener()
         size = tor.size
-        if limit_exceeded := await limit_checker(size, listener, True):
+        if limit_exceeded := await limit_checker(size, listener, isTorrent=True):
             await __onDownloadError(limit_exceeded, tor)
 
 @new_task
@@ -131,7 +131,7 @@ async def __qb_listener():
                         if config_dict['STOP_DUPLICATE'] and not QbTorrents[tag]['stop_dup_check']:
                             QbTorrents[tag]['stop_dup_check'] = True
                             __stop_duplicate(tor_info)
-                        if any([config_dict['STORAGE_THRESHOLD'], config_dict['TORRENT_LIMIT'], config_dict['LEECH_LIMIT']]) and not QbTorrents[tag]['size_checked']:
+                        if any([config_dict['STORAGE_THRESHOLD'], config_dict['TORRENT_LIMIT'], config_dict['LEECH_LIMIT'], config_dict['DAILY_LEECH_LIMIT'], config_dict['DAILY_MIRROR_LIMIT'], config_dict['DAILY_TASK_LIMIT']]) and not QbTorrents[tag]['size_checked']:
                             QbTorrents[tag]['size_checked'] = True
                             __size_checked(tor_info)
                     elif state == "stalledDL":

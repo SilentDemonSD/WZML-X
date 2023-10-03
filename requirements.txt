@@ -8,6 +8,7 @@ asyncio
 beautifulsoup4
 cinemagoer
 cloudscraper
+cryptography
 dnspython
 feedparser
 flask
@@ -40,4 +41,4 @@ tenacity
 tgcrypto
 uvloop
 xattr
-yt-dlp==2023.7.6
+yt-dlp

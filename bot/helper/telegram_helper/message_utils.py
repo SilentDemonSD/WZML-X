@@ -5,13 +5,15 @@ from aiofiles.os import remove as aioremove
 from random import choice as rchoice
 from time import time
 from re import match as re_match
+from cryptography.fernet import InvalidToken
 
+from pyrogram import Client
 from pyrogram.enums import ParseMode
 from pyrogram.types import InputMediaPhoto
 from pyrogram.errors import ReplyMarkupInvalid, FloodWait, PeerIdInvalid, ChannelInvalid, RPCError, UserNotParticipant, MessageNotModified, MessageEmpty, PhotoInvalidDimensions, WebpageCurlFailed, MediaEmpty
 
-from bot import config_dict, categories_dict, bot_cache, LOGGER, bot_name, status_reply_dict, status_reply_dict_lock, Interval, bot, user, download_dict_lock
-from bot.helper.ext_utils.bot_utils import get_readable_message, setInterval, sync_to_async, download_image_url, fetch_user_tds, fetch_user_dumps
+from bot import config_dict, user_data, categories_dict, bot_cache, LOGGER, bot_name, status_reply_dict, status_reply_dict_lock, Interval, bot, user, download_dict_lock
+from bot.helper.ext_utils.bot_utils import get_readable_message, setInterval, sync_to_async, download_image_url, fetch_user_tds, fetch_user_dumps, new_thread
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.exceptions import TgLinkException
 
@@ -33,8 +35,9 @@ async def sendMessage(message, text, buttons=None, photo=None, **kwargs):
                 return
             except Exception as e:
                 LOGGER.error(format_exc())
-        return await message.reply(text=text, quote=True, disable_web_page_preview=True,
-                                   disable_notification=True, reply_markup=buttons, **kwargs)
+        return await message.reply(text=text, quote=True, disable_web_page_preview=True, disable_notification=True,
+                                    reply_markup=buttons, reply_to_message_id=rply.id if (rply := message.reply_to_message) and not rply.text and not rply.caption else None,
+                                    **kwargs)
     except FloodWait as f:
         LOGGER.warning(str(f))
         await sleep(f.value * 1.2)
@@ -107,16 +110,17 @@ async def sendMultiMessage(chat_ids, text, buttons=None, photo=None):
                     sent = await bot.send_photo(chat_id=chat.id, photo=photo, caption=text,
                                                      reply_markup=buttons, reply_to_message_id=topic_id, disable_notification=True)
                     msg_dict[f"{chat.id}:{topic_id}"] = sent
-                    continue
                 except IndexError:
                     pass
                 except (PhotoInvalidDimensions, WebpageCurlFailed, MediaEmpty):
                     des_dir = await download_image_url(photo)
                     await sendMultiMessage(chat_ids, text, buttons, des_dir)
                     await aioremove(des_dir)
-                    return
+                    break
                 except Exception as e:
                     LOGGER.error(str(e))
+                continue
+            LOGGER.info("DEBUG CP 2")
             sent = await bot.send_message(chat_id=chat.id, text=text, disable_web_page_preview=True,
                                                disable_notification=True, reply_to_message_id=topic_id, reply_markup=buttons)
             msg_dict[f"{chat.id}:{topic_id}"] = sent
@@ -126,7 +130,6 @@ async def sendMultiMessage(chat_ids, text, buttons=None, photo=None):
             return await sendMultiMessage(chat_ids, text, buttons, photo)
         except Exception as e:
             LOGGER.error(str(e))
-            return str(e)
     return msg_dict
 
 
@@ -223,16 +226,17 @@ async def delete_all_messages():
                 LOGGER.error(str(e))
 
 
-async def get_tg_link_content(link):
+async def get_tg_link_content(link, user_id, decrypter=None):
     message = None
+    user_sess = user_data.get(user_id, {}).get('usess', '')
     if link.startswith(('https://t.me/', 'https://telegram.me/', 'https://telegram.dog/', 'https://telegram.space/')):
         private = False
         msg = re_match(r"https:\/\/(t\.me|telegram\.me|telegram\.dog|telegram\.space)\/(?:c\/)?([^\/]+)(?:\/[^\/]+)?\/([0-9]+)", link)
     else:
         private = True
-        msg = re_match(r"tg:\/\/openmessage\?user_id=([0-9]+)&message_id=([0-9]+)", link)
-        if not user:
-            raise TgLinkException('USER_SESSION_STRING required for this private link!')
+        msg = re_match(r"tg:\/\/(openmessage)\?user_id=([0-9]+)&message_id=([0-9]+)", link)
+        if not (user or user_sess):
+            raise TgLinkException('USER_SESSION_STRING or Private User Session required for this private link!')
 
     chat = msg.group(2)
     msg_id = int(msg.group(3))
@@ -246,22 +250,36 @@ async def get_tg_link_content(link):
                 private = True
         except Exception as e:
             private = True
-            if not user:
+            if not (user or user_sess):
                 raise e
 
     if private and user:
         try:
             user_message = await user.get_messages(chat_id=chat, message_ids=msg_id)
+            if not user_message.empty:
+                return user_message, 'user'
         except Exception as e:
-            raise TgLinkException(f"You don't have access to this chat!. ERROR: {e}") from e
+            if not user_sess:
+                raise TgLinkException(f"Bot User Session  don't have access to this chat!. ERROR: {e}") from e
+
+    if private and user_sess:
+        if decrypter is None:
+            return None, ""
+        try:
+            async with Client(user_id, session_string=decrypter.decrypt(user_sess).decode(), in_memory=True, no_updates=True) as usession:
+                user_message = await usession.get_messages(chat_id=chat, message_ids=msg_id)
+        except InvalidToken:
+            raise TgLinkException("Provided Decryption Key is Invalid, Recheck & Retry")
+        except Exception as e:
+            raise TgLinkException(f"User Session don't have access to this chat!. ERROR: {e}") from e
         if not user_message.empty:
-            return user_message, 'user'
+            return user_message, 'user_sess'
         else:
-            raise TgLinkException("Private: Please report!")
+            raise TgLinkException("Privatly Deleted or Not Accessible!")
     elif not private:
         return message, 'bot'
     else:
-        raise TgLinkException("Bot can't download from GROUPS without joining!")
+        raise TgLinkException("Bot can't download from GROUPS without joining!, Set your Own Session to get access !")
 
 
 async def update_all_messages(force=False):
@@ -304,7 +322,7 @@ async def sendStatusMessage(msg):
         status_reply_dict[chat_id] = [message, time()]
         if not Interval:
             Interval.append(setInterval(config_dict['STATUS_UPDATE_INTERVAL'], update_all_messages))
-
+    
 
 async def open_category_btns(message):
     user_id = message.from_user.id

@@ -40,12 +40,12 @@ async def clean_target(path):
         if await aiopath.isdir(path):
             try:
                 await aiormtree(path)
-            except:
+            except Exception:
                 pass
         elif await aiopath.isfile(path):
             try:
                 await aioremove(path)
-            except:
+            except Exception:
                 pass
 
 
@@ -54,7 +54,7 @@ async def clean_download(path):
         LOGGER.info(f"Cleaning Download: {path}")
         try:
             await aiormtree(path)
-        except:
+        except Exception:
             pass
 
 
@@ -62,7 +62,7 @@ async def start_cleanup():
     get_client().torrents_delete(torrent_hashes="all")
     try:
         await aiormtree(DOWNLOAD_DIR)
-    except:
+    except Exception:
         pass
     await makedirs(DOWNLOAD_DIR, exist_ok=True)
 
@@ -72,7 +72,7 @@ def clean_all():
     get_client().torrents_delete(torrent_hashes="all")
     try:
         rmtree(DOWNLOAD_DIR)
-    except:
+    except Exception:
         pass
 
 

@@ -1,9 +1,10 @@
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.filters import command, regex
 from html import escape
+from traceback import format_exc
 from base64 import b64encode
 from re import match as re_match
-from asyncio import sleep
+from asyncio import sleep, wrap_future
 from aiofiles import open as aiopen
 from aiofiles.os import path as aiopath
 from cloudscraper import create_scraper
@@ -29,7 +30,7 @@ from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, e
 from bot.helper.listeners.tasks_listener import MirrorLeechListener
 from bot.helper.ext_utils.help_messages import MIRROR_HELP_MESSAGE, CLONE_HELP_MESSAGE, YT_HELP_MESSAGE, help_string
 from bot.helper.ext_utils.bulk_links import extract_bulk_links
-
+from bot.modules.gen_pyro_sess import get_decrypt_key
 
 @new_task
 async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=None, bulk=[]):
@@ -177,24 +178,24 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         tag = f"@{username}"
     else:
         tag = message.from_user.mention
-
+        
+    decrypter = None
+    if not link and (reply_to := message.reply_to_message):
+        if reply_to.text:
+            link = reply_to.text.split('\n', 1)[0].strip()
     if link and is_telegram_link(link):
         try:
-            reply_to, session = await get_tg_link_content(link)
+            reply_to, session = await get_tg_link_content(link, message.from_user.id)
+            if reply_to is None and session == "":
+                decrypter, is_cancelled = await wrap_future(get_decrypt_key(client, message))
+                if is_cancelled:
+                    return
+                reply_to, session = await get_tg_link_content(link, message.from_user.id, decrypter)
         except Exception as e:
-            await sendMessage(message, f'ERROR: {e}')
+            LOGGER.info(format_exc())
+            await sendMessage(message, f'<b>ERROR:</b> <i>{e}</i>')
             await delete_links(message)
             return
-    elif not link and (reply_to := message.reply_to_message):
-        if reply_to.text:
-            reply_text = reply_to.text.split('\n', 1)[0].strip()
-            if reply_text and is_telegram_link(reply_text):
-                try:
-                    reply_to, session = await get_tg_link_content(reply_text)
-                except Exception as e:
-                    await sendMessage(message, f'ERROR: {e}')
-                    await delete_links(message)
-                    return
 
     if reply_to:
         file_ = getattr(reply_to, reply_to.media.value) if reply_to.media else None
@@ -247,7 +248,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
                 link = await sync_to_async(direct_link_generator, link)
                 if isinstance(link, tuple):
                     link, headers = link
-                if isinstance(link, str):
+                elif isinstance(link, str):
                     LOGGER.info(f"Generated link: {link}")
                     await editMessage(process_msg, f"<i><b>Generated link:</b></i> <code>{link}</code>")
             except DirectDownloadLinkException as e:
@@ -338,7 +339,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
 
     if file_ is not None:
         await delete_links(message)
-        await TelegramDownloadHelper(listener).add_download(reply_to, f'{path}/', name, session)
+        await TelegramDownloadHelper(listener).add_download(reply_to, f'{path}/', name, session, decrypter)
     elif isinstance(link, dict):
         await add_direct_download(link, path, listener, name)
     elif is_rclone_path(link):
@@ -363,12 +364,8 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     elif not is_telegram_link(link):
         if ussr or pssw:
             auth = f"{ussr}:{pssw}"
-            auth = f"authorization: Basic {b64encode(auth.encode()).decode('ascii')}"
-        else:
-            auth = ''
-        if headers:
-            auth += f'{auth} {headers}'
-        await add_aria2c_download(link, path, listener, name, auth, ratio, seed_time)
+            headers += f" authorization: Basic {b64encode(auth.encode()).decode('ascii')}"
+        await add_aria2c_download(link, path, listener, name, headers, ratio, seed_time)
     await delete_links(message)
 
 

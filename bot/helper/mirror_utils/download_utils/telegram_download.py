@@ -2,6 +2,7 @@
 from logging import getLogger, ERROR
 from time import time
 from asyncio import Lock
+from pyrogram import Client
 
 from bot import LOGGER, download_dict, download_dict_lock, non_queued_dl, queue_dict_lock, bot, user, IS_PREMIUM_USER
 from bot.helper.mirror_utils.status_utils.telegram_status import TelegramStatus
@@ -21,6 +22,8 @@ class TelegramDownloadHelper:
         self.__processed_bytes = 0
         self.__start_time = time()
         self.__listener = listener
+        self.__client = bot
+        self.__decrypter = None
         self.__id = ""
         self.__is_cancelled = False
 
@@ -51,17 +54,14 @@ class TelegramDownloadHelper:
 
     async def __onDownloadProgress(self, current, total):
         if self.__is_cancelled:
-            if IS_PREMIUM_USER:
-                user.stop_transmission()
-            else:
-                bot.stop_transmission()
+            self.__client.stop_transmission()
         self.__processed_bytes = current
 
     async def __onDownloadError(self, error):
         async with global_lock:
             try:
                 GLOBAL_GID.remove(self.__id)
-            except:
+            except Exception:
                 pass
         await self.__listener.onDownloadError(error)
 
@@ -72,7 +72,17 @@ class TelegramDownloadHelper:
 
     async def __download(self, message, path):
         try:
-            download = await message.download(file_name=path, progress=self.__onDownloadProgress)
+            if self.__client is None and self.__decrypter is not None:
+                try:
+                    async with Client(str(self.__listener.user_id), session_string=self.__decrypter.decrypt(self.__listener.user_dict.get('usess')).decode(), 
+                                    in_memory=True, no_updates=True) as self.__client:
+                        download = await self.__client.download_media(message=message, file_name=path, progress=self.__onDownloadProgress)
+                except Exception as e:
+                    if not self.__is_cancelled:
+                        await self.__onDownloadError(f'ERROR: {e}')
+                        return
+            else:
+                download = await self.__client.download_media(message=message, file_name=path, progress=self.__onDownloadProgress)
             if self.__is_cancelled:
                 await self.__onDownloadError('Cancelled by user!')
                 return
@@ -85,12 +95,15 @@ class TelegramDownloadHelper:
         elif not self.__is_cancelled:
             await self.__onDownloadError('Internal Error occurred')
 
-    async def add_download(self, message, path, filename, session):
+    async def add_download(self, message, path, filename, session, decrypter):
         if session == 'user':
+            self.__client = user
             if not self.__listener.isSuperGroup:
                 await sendMessage(message, 'Use SuperGroup to download this Link with User!')
                 return
-            message = await user.get_messages(chat_id=message.chat.id, message_ids=message.id)
+        elif session == 'user_sess':
+            self.__client = None
+            self.__decrypter = decrypter
 
         media = getattr(message, message.media.value) if message.media else None
         
@@ -120,8 +133,7 @@ class TelegramDownloadHelper:
                 if added_to_queue:
                     LOGGER.info(f"Added to Queue/Download: {name}")
                     async with download_dict_lock:
-                        download_dict[self.__listener.uid] = QueueStatus(
-                            name, size, gid, self.__listener, 'dl')
+                        download_dict[self.__listener.uid] = QueueStatus(name, size, gid, self.__listener, 'dl')
                     await self.__listener.onDownloadStart()
                     await sendStatusMessage(self.__listener.message)
                     await event.wait()

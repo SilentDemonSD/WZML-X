@@ -3,15 +3,19 @@ from time import time
 from aiofiles.os import remove as aioremove
 from asyncio import sleep, wrap_future, Lock
 from functools import partial
+from cryptography.fernet import Fernet
 
 from pyrogram import Client
+from pyrogram.types import ForceReply
+from pyrogram.enums import ChatType
 from pyrogram.filters import command, user, text, private
 from pyrogram.handlers import MessageHandler
 from pyrogram.errors import SessionPasswordNeeded, FloodWait, PhoneNumberInvalid, ApiIdInvalid, PhoneCodeInvalid, PhoneCodeExpired, UsernameNotOccupied, ChatAdminRequired, PeerIdInvalid
 
-from bot import bot, LOGGER
+from bot import bot, LOGGER, bot_cache, bot_name
+from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.bot_utils import new_thread, new_task
-from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage, sendFile
+from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage, sendFile, sendCustomMsg
 from bot.helper.telegram_helper.filters import CustomFilters
 
 session_dict = {}
@@ -145,12 +149,10 @@ Get from https://my.telegram.org</i>.
 
 async def set_details(_, message, newkey):
     global isStop
-    user_id = message.from_user.id
     value = message.text
     await deleteMessage(message)
     async with session_lock:
         session_dict[newkey] = value
-    session_dict[user_id] = False
     if value.lower() == '/stop':
         isStop = True
         return await editMessage(session_dict['message'], '⌬ <b>Process Stopped</b>')
@@ -160,16 +162,54 @@ async def set_details(_, message, newkey):
 async def invoke(client, message, key):
     global isStop
     user_id = message.from_user.id
-    session_dict[user_id] = True
     start_time = time()
     handler = client.add_handler(MessageHandler(partial(set_details, newkey=key), filters=user(user_id) & text & private), group=-1)
-    while session_dict[user_id]:
+    while not bool(session_dict.get(key)):
         await sleep(0.5)
         if time() - start_time > 120:
-            session_dict[user_id] = False
             await editMessage(message, "⌬ <b>Process Stopped</b>")
             isStop = True
+            break
     client.remove_handler(*handler)
+
+
+@new_thread
+async def get_decrypt_key(client, message):
+    user_id = message.from_user.id
+    msg_id = message.id
+    grp_prompt = None
+    if message.chat.type != ChatType.PRIVATE:
+        btn = ButtonMaker()
+        btn.ubutton("🔑 Unlock Session", f"https://t.me/{bot_name}")
+        grp_prompt = await sendMessage(message, "<i>User Session (Pyrogram V2 Session) Access of your Account is needed for Message to Access, it can't be Accessed by Bot and Session</i>", btn.build_menu(1))
+    prompt = await sendCustomMsg(user_id, "<b><u>DECRYPTION:</u></b>\n<i>• This Value is not stored anywhere, so you need to provide it everytime...\n\n</i><b><i>Send your Decrypt Key 🔑 ..</i></b>\n\n<b>Timeout:</b> 60s")
+    
+    bot_cache[msg_id] = [True, '', False]
+    async def set_details(_, message):
+        await deleteMessage(message)
+        bot_cache[msg_id] = [False, message.text, False]
+    
+    start_time = time()
+    handler = client.add_handler(MessageHandler(set_details, filters=user(user_id) & text & private), group=-1)
+    while bot_cache[msg_id][0]:
+        await sleep(0.5)
+        if time() - start_time > 60:
+            bot_cache[msg_id][0] = False
+            await editMessage(prompt, "<b>Decryption Key TimeOut.. Try Again</b>")
+            bot_cache[msg_id][2] = True
+    client.remove_handler(*handler)
+    
+    _, key, is_cancelled = bot_cache[msg_id]
+    if is_cancelled:
+        await editMessage(prompt, "<b>Decrypt Key Invoke Cancelled</b>")
+        if grp_prompt:
+            await editMessage(grp_prompt, "<b>Task Cancelled!</b>")
+    elif key:
+        await editMessage(prompt, "<b>✅️ Decrypt Key Accepted!</b>")
+        if grp_prompt:
+            await deleteMessage(grp_prompt)
+    del bot_cache[msg_id]
+    return Fernet(key), is_cancelled
 
 
 bot.add_handler(MessageHandler(genPyroString, filters=command('exportsession') & private & CustomFilters.sudo))

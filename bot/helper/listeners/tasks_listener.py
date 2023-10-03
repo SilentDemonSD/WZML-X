@@ -70,7 +70,7 @@ class MirrorLeechListener:
         self.sameDir = sameDir
         self.rcFlags = rcFlags
         self.upPath = upPath
-        self.random_pic = 'IMAGES'
+        self.random_pic = 'IMAGES' if config_dict['IMAGES'] else None
         self.join = join
         self.drive_id = drive_id
         self.index_link = index_link
@@ -79,7 +79,13 @@ class MirrorLeechListener:
         self.botpmmsg = None
         self.upload_details = {}
         self.leech_utils = leech_utils
-        self.source_url = source_url if source_url and source_url.startswith('http') else ("https://t.me/share/url?url=" + source_url) if source_url else message.link
+        self.source_url = (
+            source_url
+            if source_url and source_url.startswith('http')
+            else f"https://t.me/share/url?url={source_url}"
+            if source_url
+            else message.link
+        )
         self.source_msg = ''
         self.__setModeEng()
         self.__parseSource()
@@ -109,11 +115,7 @@ class MirrorLeechListener:
             if file is not None and file.media is not None:
                 mtype = file.media.value
                 media = getattr(file, mtype)
-                self.source_msg = f'┎ <b>Name:</b> <i>{media.file_name if hasattr(media, "file_name") else mtype+"_"+media.file_unique_id}</i>\n' \
-                                  f'┠ <b>Type:</b> {media.mime_type if hasattr(media, "mime_type") else "image/jpeg" if mtype == "photo" else "text/plain"}\n' \
-                                  f'┠ <b>Size:</b> {get_readable_file_size(media.file_size)}\n' \
-                                  f'┠ <b>Created Date:</b> {media.date}\n' \
-                                  f'┖ <b>Media Type:</b> {mtype.capitalize()}'
+                self.source_msg = f'┎ <b>Name:</b> <i>{media.file_name if hasattr(media, "file_name") else f"{mtype}_{media.file_unique_id}"}</i>\n┠ <b>Type:</b> {media.mime_type if hasattr(media, "mime_type") else "image/jpeg" if mtype == "photo" else "text/plain"}\n┠ <b>Size:</b> {get_readable_file_size(media.file_size)}\n┠ <b>Created Date:</b> {media.date}\n┖ <b>Media Type:</b> {mtype.capitalize()}'
             else:
                 self.source_msg = f"<code>{self.message.reply_to_message.text}</code>"
         elif self.source_url.startswith('https://t.me/share/url?url='):
@@ -142,7 +144,7 @@ class MirrorLeechListener:
         if self.isPM and self.isSuperGroup:
             self.botpmmsg = await sendCustomMsg(self.message.from_user.id, BotTheme('PM_START', msg_link=self.source_url))
         if self.isSuperGroup and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL:
-            await DbManger().add_incomplete_task(self.message.chat.id, self.message.link, self.tag, self.source_url)
+            await DbManger().add_incomplete_task(self.message.chat.id, self.message.link, self.tag, self.source_url, self.message.text)
 
     async def onDownloadComplete(self):
         multi_links = False
@@ -451,7 +453,8 @@ class MirrorLeechListener:
                     message += BotTheme('L_LL_MSG')
                     message += BotTheme('L_BOT_MSG')
                     buttons.ibutton(BotTheme('CHECK_PM'), f"wzmlx {user_id} botpm", 'header')
-                
+                if config_dict['SAFE_MODE'] and self.isSuperGroup:
+                    await sendMessage(self.message, message, buttons.build_menu(2), photo=self.random_pic)
                 fmsg = '\n'
                 for index, (link, name) in enumerate(files.items(), start=1):
                     fmsg += f"{index}. <a href='{link}'>{name}</a>\n"
@@ -460,10 +463,6 @@ class MirrorLeechListener:
                         if config_dict['SAFE_MODE']:
                             if self.isSuperGroup:
                                 await sendMessage(self.botpmmsg, msg + BotTheme('L_LL_MSG') + fmsg, btns, photo=self.random_pic)
-                                if config_dict['SAVE_MSG'] and not saved and self.isSuperGroup:
-                                    saved = True
-                                    buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
-                                await sendMessage(self.message, message, buttons.build_menu(2), photo=self.random_pic)
                             else:
                                 await sendMessage(self.message, message + fmsg, buttons.build_menu(2), photo=self.random_pic)
                         else:
@@ -478,10 +477,6 @@ class MirrorLeechListener:
                     if config_dict['SAFE_MODE']:
                         if self.isSuperGroup:
                             await sendMessage(self.botpmmsg, msg + BotTheme('L_LL_MSG') + fmsg, btns, photo=self.random_pic)
-                            if config_dict['SAVE_MSG'] and not saved and self.isSuperGroup:
-                                saved = True
-                                buttons.ibutton(BotTheme('SAVE_MSG'), 'save', 'footer')
-                            await sendMessage(self.message, message, buttons.build_menu(2), photo=self.random_pic)
                         else:
                             await sendMessage(self.message, message + fmsg, buttons.build_menu(2), photo=self.random_pic)
                     else:
@@ -539,7 +534,7 @@ class MirrorLeechListener:
             
             btns = ButtonMaker()
             # <Section : MIRROR LOGS>
-            if config_dict['MIRROR_LOG_ID']:
+            if config_dict['MIRROR_LOG_ID'] and not self.excep_chat:
                 m_btns = deepcopy(buttons)
                 if self.source_url and config_dict['SOURCE_LINK']:
                     m_btns.ubutton(BotTheme('SOURCE_URL'), self.source_url)

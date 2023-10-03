@@ -1,14 +1,13 @@
 from hashlib import md5
-from time import strftime, gmtime
-from re import sub as re_sub
+from time import strftime, gmtime, time
+from re import sub as re_sub, search as re_search
 from shlex import split as ssplit
 from natsort import natsorted
 from os import path as ospath
 from aiofiles.os import remove as aioremove, path as aiopath, mkdir, makedirs, listdir
 from aioshutil import rmtree as aiormtree
-from time import time
-from re import search as re_search
-from asyncio import create_subprocess_exec, create_task, gather
+from contextlib import suppress
+from asyncio import create_subprocess_exec, create_task, gather, Semaphore
 from asyncio.subprocess import PIPE
 from telegraph import upload_file
 from langcodes import Language
@@ -18,6 +17,7 @@ from bot.modules.mediainfo import parseinfo
 from bot.helper.ext_utils.bot_utils import cmd_exec, sync_to_async, get_readable_file_size, get_readable_time
 from bot.helper.ext_utils.fs_utils import ARCH_EXT, get_mime_type
 from bot.helper.ext_utils.telegraph_helper import telegraph
+
 
 async def is_multi_streams(path):
     try:
@@ -47,30 +47,36 @@ async def get_media_info(path, metadata=False):
         result = await cmd_exec(["ffprobe", "-hide_banner", "-loglevel", "error", "-print_format",
                                  "json", "-show_format", "-show_streams", path])
         if res := result[1]:
-            LOGGER.warning(f'Get Media Info: {res}')
+            LOGGER.warning(f'Media Info FF: {res}')
     except Exception as e:
-        LOGGER.error(f'Get Media Info: {e}. Mostly File not found!')
-        return 0, None, None
+        LOGGER.error(f'Media Info: {e}. Mostly File not found!')
+        return (0, "", "", "") if metadata else (0, None, None)
     ffresult = eval(result[0])
     fields = ffresult.get('format')
     if fields is None:
-        LOGGER.error(f"Get Media Info: {result}")
-        return 0, None, None
+        LOGGER.error(f"Media Info Sections: {result}")
+        return (0, "", "", "") if metadata else (0, None, None)
     duration = round(float(fields.get('duration', 0)))
-    tags = fields.get('tags', {})
-    artist = tags.get('artist') or tags.get('ARTIST') or tags.get("Artist")
-    title = tags.get('title') or tags.get('TITLE') or tags.get("Title")
     if metadata:
         lang, qual, stitles = "", "", ""
         if (streams := ffresult.get('streams')) and streams[0].get('codec_type') == 'video':
-            qual = streams[0].get('height')
+            qual = int(streams[0].get('height'))
             qual = f"{480 if qual <= 480 else 540 if qual <= 540 else 720 if qual <= 720 else 1080 if qual <= 1080 else 2160 if qual <= 2160 else 4320 if qual <= 4320 else 8640}p"
             for stream in streams:
                 if stream.get('codec_type') == 'audio' and (lc := stream.get('tags', {}).get('language')):
-                    lang += Language.get(lc).display_name() + ", "
+                    with suppress(Exception):
+                        lc = Language.get(lc).display_name()
+                    if lc not in lang:
+                        lang += f"{lc}, "
                 if stream.get('codec_type') == 'subtitle' and (st := stream.get('tags', {}).get('language')):
-                    stitles += Language.get(st).display_name() + ", "
+                    with suppress(Exception):
+                        st = Language.get(st).display_name()
+                    if st not in stitles:
+                        stitles += f"{st}, "
         return duration, qual, lang[:-2], stitles[:-2]
+    tags = fields.get('tags', {})
+    artist = tags.get('artist') or tags.get('ARTIST') or tags.get("Artist")
+    title = tags.get('title') or tags.get('TITLE') or tags.get("Title")
     return duration, artist, title
 
 
@@ -131,16 +137,22 @@ async def take_ss(video_file, duration=None, total=1, gen_ss=False):
     duration = duration - (duration * 2 / 100)
     cmd = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", "",
            "-i", video_file, "-vf", "thumbnail", "-frames:v", "1", des_dir]
-    tasks = []
     tstamps = {}
-    for eq_thumb in range(1, total+1):
-        cmd[5] = str((duration // total) * eq_thumb)
-        tstamps[f"wz_thumb_{eq_thumb}.jpg"] = strftime("%H:%M:%S", gmtime(float(cmd[5])))
-        cmd[-1] = ospath.join(des_dir, f"wz_thumb_{eq_thumb}.jpg")
-        tasks.append(create_task(create_subprocess_exec(*cmd, stderr=PIPE)))
+    thumb_sem = Semaphore(3)
+    
+    async def extract_ss(eq_thumb):
+        async with thumb_sem:
+            cmd[5] = str((duration // total) * eq_thumb)
+            tstamps[f"wz_thumb_{eq_thumb}.jpg"] = strftime("%H:%M:%S", gmtime(float(cmd[5])))
+            cmd[-1] = ospath.join(des_dir, f"wz_thumb_{eq_thumb}.jpg")
+            task = await create_subprocess_exec(*cmd, stderr=PIPE)
+            return (task, await task.wait(), eq_thumb)
+    
+    tasks = [extract_ss(eq_thumb) for eq_thumb in range(1, total+1)]
     status = await gather(*tasks)
-    for task, eq_thumb in zip(status, range(1, total+1)):
-        if await task.wait() != 0 or not await aiopath.exists(ospath.join(des_dir, f"wz_thumb_{eq_thumb}.jpg")):
+    
+    for task, rtype, eq_thumb in status:
+        if rtype != 0 or not await aiopath.exists(ospath.join(des_dir, f"wz_thumb_{eq_thumb}.jpg")):
             err = (await task.stderr.read()).decode().strip()
             LOGGER.error(f'Error while extracting thumbnail no. {eq_thumb} from video. Name: {video_file} stderr: {err}')
             await aiormtree(des_dir)
@@ -187,7 +199,7 @@ async def split_file(path, size, file_, dirpath, split_size, listener, start_tim
                 err = (await listener.suproc.stderr.read()).decode().strip()
                 try:
                     await aioremove(out_path)
-                except:
+                except Exception:
                     pass
                 if multi_streams:
                     LOGGER.warning(
@@ -285,8 +297,13 @@ async def format_filename(file_, user_id, dirpath=None, isMirror=False):
 
     cap_mono =  f"<{config_dict['CAP_FONT']}>{nfile_}</{config_dict['CAP_FONT']}>" if config_dict['CAP_FONT'] else nfile_
     if lcaption and dirpath and not isMirror:
-        lcaption = lcaption.replace('\|', '%%').replace('\s', ' ')
+        
+        def lowerVars(match):
+            return f"{{{match.group(1).lower()}}}"
+
+        lcaption = lcaption.replace('\|', '%%').replace('\{', '&%&').replace('\}', '$%$').replace('\s', ' ')
         slit = lcaption.split("|")
+        slit[0] = re_sub(r'\{([^}]+)\}', lowerVars, slit[0])
         up_path = ospath.join(dirpath, prefile_)
         dur, qual, lang, subs = await get_media_info(up_path, True)
         cap_mono = slit[0].format(
@@ -307,14 +324,21 @@ async def format_filename(file_, user_id, dirpath=None, isMirror=False):
                     cap_mono = cap_mono.replace(args[0], args[1])
                 elif len(args) == 1:
                     cap_mono = cap_mono.replace(args[0], '')
-        cap_mono = cap_mono.replace('%%', '|')
+        cap_mono = cap_mono.replace('%%', '|').replace('&%&', '{').replace('$%$', '}')
     return file_, cap_mono
 
 
 async def get_ss(up_path, ss_no):
-    thumbs_path, tstamps = await take_ss(up_path, total=ss_no, gen_ss=True)
+    thumbs_path, tstamps = await take_ss(up_path, total=min(ss_no, 250), gen_ss=True)
     th_html = f"📌 <h4>{ospath.basename(up_path)}</h4><br>📇 <b>Total Screenshots:</b> {ss_no}<br><br>"
-    th_html += ''.join(f'<img src="https://graph.org{upload_file(ospath.join(thumbs_path, thumb))[0]}"><br><pre>Screenshot at {tstamps[thumb]}</pre>' for thumb in natsorted(await listdir(thumbs_path)))
+    up_sem = Semaphore(25)
+    async def telefile(thumb):
+        async with up_sem:
+            tele_id = await sync_to_async(upload_file, ospath.join(thumbs_path, thumb))
+            return tele_id[0], tstamps[thumb]
+    tasks = [telefile(thumb) for thumb in natsorted(await listdir(thumbs_path))]
+    results = await gather(*tasks)
+    th_html += ''.join(f'<img src="https://graph.org{tele_id}"><br><pre>Screenshot at {stamp}</pre>' for tele_id, stamp in results)
     await aiormtree(thumbs_path)
     link_id = (await telegraph.create_page(title="ScreenShots X", content=th_html))["path"]
     return f"https://graph.org/{link_id}"
