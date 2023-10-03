@@ -144,7 +144,7 @@ class MirrorLeechListener:
         if self.isPM and self.isSuperGroup:
             self.botpmmsg = await sendCustomMsg(self.message.from_user.id, BotTheme('PM_START', msg_link=self.source_url))
         if self.isSuperGroup and config_dict['INCOMPLETE_TASK_NOTIFIER'] and DATABASE_URL:
-            await DbManger().add_incomplete_task(self.message.chat.id, self.message.link, self.tag, self.source_url)
+            await DbManger().add_incomplete_task(self.message.chat.id, self.message.link, self.tag, self.source_url, self.message.text)
 
     async def onDownloadComplete(self):
         multi_links = False

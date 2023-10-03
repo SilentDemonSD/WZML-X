@@ -168,10 +168,10 @@ class DbManger:
         await self.__db.rss[bot_id].delete_one({'_id': user_id})
         self.__conn.close
 
-    async def add_incomplete_task(self, cid, link, tag, msg_link):
+    async def add_incomplete_task(self, cid, link, tag, msg_link, msg):
         if self.__err:
             return
-        await self.__db.tasks[bot_id].insert_one({'_id': link, 'cid': cid, 'tag': tag, 'source': msg_link})
+        await self.__db.tasks[bot_id].insert_one({'_id': link, 'cid': cid, 'tag': tag, 'source': msg_link, 'org_msg': msg})
         self.__conn.close
 
     async def rm_complete_task(self, link):
