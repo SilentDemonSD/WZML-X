@@ -24,7 +24,7 @@ async def get_links_tg(tg_link, bulk_end):
     start_id = int(start_id)
     end_id = start_id + bulk_end
     
-    while start_id <= end_id:
+    while start_id < end_id:
         links_list.append(f"{base_link}/{start_id}")
         start_id += 1
         
