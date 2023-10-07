@@ -122,7 +122,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
 
     if isBulk:
         try:
-            bulk = await extract_bulk_links(message, bulk_start, bulk_end)
+            bulk = await extract_bulk_links(message, bulk_start, bulk_end, link)
             if len(bulk) == 0:
                 raise ValueError('Bulk Empty!')
         except:
