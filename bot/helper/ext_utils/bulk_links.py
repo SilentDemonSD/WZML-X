@@ -18,7 +18,7 @@ async def get_links_from_message(text, bulk_start, bulk_end):
     return links_list
     
     
-async def get_links_tg(link, bulk_end):
+async def get_links_tg(tg_link, bulk_end):
     links_list = []
     base_link, start_id = tg_link.rsplit('/', 1)
     start_id = int(start_id)
@@ -56,7 +56,7 @@ async def extract_bulk_links(message, bulk_start, bulk_end, link):
     bulk_end = int(bulk_end)
     if (reply_to := message.reply_to_message) and (file_ := reply_to.document) and (file_.mime_type == 'text/plain'):
         return await get_links_from_file(message.reply_to_message, bulk_start, bulk_end)
-    elif text := message.reply_to_message.text:
+    elif reply_to and text := reply_to.text:
         return await get_links_from_message(text, bulk_start, bulk_end)
     elif link and is_telegram_link(link):
         return await get_links_tg(link, bulk_end)
