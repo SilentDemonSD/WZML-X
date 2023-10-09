@@ -142,7 +142,7 @@ async def take_ss(video_file, duration=None, total=1, gen_ss=False):
     
     async def extract_ss(eq_thumb):
         async with thumb_sem:
-            cmd[5] = str((duration // total) * eq_thumb)
+            cmd[5] = str((duration // (2 if total == 1 else total)) * eq_thumb)
             tstamps[f"wz_thumb_{eq_thumb}.jpg"] = strftime("%H:%M:%S", gmtime(float(cmd[5])))
             cmd[-1] = ospath.join(des_dir, f"wz_thumb_{eq_thumb}.jpg")
             task = await create_subprocess_exec(*cmd, stderr=PIPE)
