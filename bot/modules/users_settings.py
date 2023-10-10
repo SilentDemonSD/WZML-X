@@ -89,7 +89,7 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
         u_sess = 'Exists' if user_dict.get('usess', False) else 'Not Exists'
         buttons.ibutton(f"{'✅️' if u_sess != 'Not Exists' else ''} User Session", f"userset {user_id} usess")
 
-        duopt = config_dict['DEFAULT_UPLOAD'] if (val:=user_dict.get('du_opt')) == '' else val
+        duopt = config_dict['DEFAULT_UPLOAD'] if (val:=user_dict.get('du_opt')) == 'None' else val
         buttons.ibutton(f"DU Options", f"userset {user_id} du_opt")
 
         bot_pm = "Enabled" if user_dict.get('bot_pm', config_dict['BOT_PM']) else "Disabled"
@@ -215,7 +215,7 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
 
 
         elif key == 'du_opt':
-            set_exist = config_dict['DEFAULT_UPLOAD'] if (val:=user_dict.get('du_opt')) == '' else val
+            set_exist = config_dict['DEFAULT_UPLOAD'] if (val:=user_dict.get('du_opt')) == 'None' else val
             text += f"➲ <b>Default Upload Options :</b> <code>{set_exist}</code>\n\n"
 
 
