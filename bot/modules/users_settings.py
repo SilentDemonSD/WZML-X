@@ -216,7 +216,7 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
 
         elif key == 'du_opt':
             set_exist = config_dict['DEFAULT_UPLOAD'] if (val:=user_dict.get('du_opt')) == '' else val
-            text += f"➲ <b>Default Upload Options :</b> <code>{escape(set_exist)}</code>\n\n"
+            text += f"➲ <b>Default Upload Options :</b> <code>{set_exist}</code>\n\n"
 
 
         elif key == 'usess':
