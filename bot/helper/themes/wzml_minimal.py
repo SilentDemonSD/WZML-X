@@ -265,6 +265,7 @@ class WZMLStyle:
     UNIVERSAL = '''㊂ <b><u>Universal Settings : {NAME}</u></b>
 
 ┎<b> YT-DLP Options :</b> <b><code>{YT}</code></b>
+┠<b> Default Upload :</b> <code>{DU}</code>
 ┠<b> Daily Tasks :</b> <code>{DT}</code> per day
 ┠<b> Last Bot Used :</b> <code>{LAST_USED}</code>
 ┠<b> User Session :</b> <code>{USESS}</code>
