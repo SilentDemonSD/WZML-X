@@ -362,6 +362,7 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
 
     user_dict = user_data.get(user_id, {})
 
+
     opt = opt or user_dict.get('yt_opt') or config_dict['YT_DLP_OPTIONS']
     
     if username := message.from_user.username:
@@ -396,11 +397,15 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
         return
 
     if not isLeech:
-        if config_dict['DEFAULT_UPLOAD'] == 'rc' and not up or up == 'rc':
+        user_id = message.from_user.id
+        user_dict = user_data.get(user_id, {})
+        du = user_dict.get('du_opt') or config_dict['DEFAULT_UPLOAD']
+
+        if du == 'rc' and not up or up == 'rc':
             up = config_dict['RCLONE_PATH']
-        elif config_dict['DEFAULT_UPLOAD'] == 'ddl' and not up or up == 'ddl':
+        elif du == 'ddl' and not up or up == 'ddl':
             up = 'ddl'
-        if not up and config_dict['DEFAULT_UPLOAD'] == 'gd':
+        if not up and du == 'gd':
             up = 'gd'
             user_tds = await fetch_user_tds(message.from_user.id)
             if not drive_id and gd_cat:

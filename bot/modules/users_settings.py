@@ -37,6 +37,7 @@ desp_dict = {'rcc': ['RClone is a command-line program to sync files and directo
             'mremname': ['Mirror Filename Remname is combination of Regex(s) used for removing or manipulating Filename of the Mirrored/Cloned Files', 'Send Mirror Filename Remname. \n<b>Timeout:</b> 60 sec'],
             'thumb': ['Custom Thumbnail to appear on the Leeched files uploaded by the bot', 'Send a photo to save it as custom thumbnail. \n<b>Alternatively: </b><code>/cmd [photo] -s thumb</code> \n<b>Timeout:</b> 60 sec'],
             'yt_opt': ['YT-DLP Options is the Custom Quality for the extraction of videos from the yt-dlp supported sites.', 'Send YT-DLP Options. Timeout: 60 sec\nFormat: key:value|key:value|key:value.\nExample: format:bv*+mergeall[vcodec=none]|nocheckcertificate:True\nCheck all yt-dlp api options from this <a href="https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L184">FILE</a> to convert cli arguments to api options.'],
+            'du_opt': ['later.', 'later.'],
             'usess': [f'User Session is Telegram Session used to Download Private Contents from Private Channels with no compromise in Privacy, Build with Encryption.\n{"<b>Warning:</b> This Bot is not secured. We recommend asking the group owner to set the Upstream repo to the Official repo. If it is not the official repo, then WZML-X is not responsible for any issues that may occur in your account." if config_dict["UPSTREAM_REPO"] != "https://github.com/weebzone/WZML-X" else "Bot is Secure. You can use the session securely."}', 'Send your Session String.\n<b>Timeout:</b> 60 sec'],
             'split_size': ['Leech Splits Size is the size to split the Leeched File before uploading', f'Send Leech split size in any comfortable size, like 2Gb, 500MB or 1.46gB. \n<b>PREMIUM ACTIVE:</b> {IS_PREMIUM_USER}. \n<b>Timeout:</b> 60 sec'],
             'ddl_servers': ['DDL Servers which uploads your File to their Specific Hosting', ''],
@@ -55,6 +56,7 @@ fname_dict = {'rcc': 'RClone',
              'lcaption': 'Caption',
              'thumb': 'Thumbnail',
              'yt_opt': 'YT-DLP Options',
+             'du_opt': 'DU Options',
              'usess': 'User Session',
              'split_size': 'Leech Splits',
              'ddl_servers': 'DDL Servers',
@@ -86,6 +88,10 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
         buttons.ibutton(f"{'✅️' if ytopt != 'Not Exists' else ''} YT-DLP Options", f"userset {user_id} yt_opt")
         u_sess = 'Exists' if user_dict.get('usess', False) else 'Not Exists'
         buttons.ibutton(f"{'✅️' if u_sess != 'Not Exists' else ''} User Session", f"userset {user_id} usess")
+
+        duopt = config_dict.get('DEFAULT_UPLOAD') if (val:=user_dict.get('du_opt')) == '' else val
+        buttons.ibutton(f"DU Options", f"userset {user_id} du_opt")
+
         bot_pm = "Enabled" if user_dict.get('bot_pm', config_dict['BOT_PM']) else "Disabled"
         buttons.ibutton('Disable Bot PM' if bot_pm == 'Enabled' else 'Enable Bot PM', f"userset {user_id} bot_pm")
         if config_dict['BOT_PM']:
@@ -206,6 +212,13 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
         elif key == 'yt_opt':
             set_exist = 'Not Exists' if (val:=user_dict.get('yt_opt', config_dict.get('YT_DLP_OPTIONS', ''))) == '' else val
             text += f"➲ <b>YT-DLP Options :</b> <code>{escape(set_exist)}</code>\n\n"
+
+
+        elif key == 'du_opt':
+            set_exist = config_dict.get('DEFAULT_UPLOAD') if (val:=user_dict.get('du_opt')) == '' else val
+            text += f"➲ <b>Default Upload Options :</b> <code>{escape(set_exist)}</code>\n\n"
+
+
         elif key == 'usess':
             set_exist = 'Exists' if user_dict.get('usess') else 'Not Exists'
             text += f"➲ <b>{fname_dict[key]} :</b> <code>{set_exist}</code>\n➲ <b>Encryption :</b> {'🔐' if set_exist else '🔓'}\n\n"
@@ -274,7 +287,7 @@ async def user_settings(client, message):
         if set_arg and (reply_to := message.reply_to_message):
             if message.from_user.id != reply_to.from_user.id:
                 return await editMessage(msg, '<i>Reply to Your Own Message for Setting via Args Directly</i>')
-            if set_arg in ['lprefix', 'lsuffix', 'lremname', 'lcaption', 'ldump', 'yt_opt'] and reply_to.text:
+            if set_arg in ['lprefix', 'lsuffix', 'lremname', 'lcaption', 'ldump', 'yt_opt', 'du_opt'] and reply_to.text:
                 return await set_custom(client, reply_to, msg, set_arg, True)
             elif set_arg == 'thumb' and reply_to.media:
                 return await set_thumb(client, reply_to, msg, set_arg, True)
@@ -293,6 +306,8 @@ async def user_settings(client, message):
     /cmd -s lcaption
 ➲ <b>YT-DLP Options :</b>
     /cmd -s yt_opt
+➲ <b>YT-DLP Options :</b>
+    /cmd -s du_opt
 ➲ <b>Leech User Dump :</b>
     /cmd -s ldump''')
     else:
@@ -351,7 +366,7 @@ async def set_custom(client, message, pre_event, key, direct=False):
             if len(dump_info) > 1 and (dump_chat := await chat_info(dump_info[1])):
                 ldumps[dump_info[0]] = dump_chat.id
         value = ldumps
-    elif key in ['yt_opt', 'usess']:
+    elif key in ['yt_opt', 'usess', 'du_opt']:
         if key == 'usess':
             password = Fernet.generate_key()
             try:
@@ -502,7 +517,7 @@ async def edit_user_settings(client, query):
         pfunc = partial(set_thumb, pre_event=query, key=data[2])
         rfunc = partial(update_user_settings, query, data[2], 'leech')
         await event_handler(client, query, pfunc, rfunc, True)
-    elif data[2] in ['yt_opt', 'usess']:
+    elif data[2] in ['yt_opt', 'usess', 'du_opt']:
         await query.answer()
         edit_mode = len(data) == 4
         await update_user_settings(query, data[2], 'universal', edit_mode)
