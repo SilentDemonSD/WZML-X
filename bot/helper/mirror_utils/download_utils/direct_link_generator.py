@@ -270,7 +270,7 @@ def all_debrid(url: str, tor=False):
         resp = cget('GET', f"https://api.alldebrid.com/v4/link/unlock?agent=myAppName&apikey={config_dict['ALL_DEBRID_API']}&link={quote(url)}").json()
         if resp['status'] == 'success':
             if tor:
-                return (_res['data']['filename'], _res['data']]['link'])
+                return (_res['data']['filename'], _res['data']['link'])
             else:
                 return resp['data']['link']
         else:
