@@ -144,6 +144,10 @@ async def load_config():
     JIODRIVE_TOKEN = environ.get('JIODRIVE_TOKEN', '')
     if len(JIODRIVE_TOKEN) == 0:
         JIODRIVE_TOKEN = ''
+        
+    ALL_DEBRID_API = environ.get('ALL_DEBRID_API', '')
+    if len(ALL_DEBRID_API) == 0:
+        ALL_DEBRID_API = ''
 
     REAL_DEBRID_API = environ.get('REAL_DEBRID_API', '')
     if len(REAL_DEBRID_API) == 0:
@@ -601,6 +605,7 @@ async def load_config():
                         'CAP_FONT': CAP_FONT,
                         'CMD_SUFFIX': CMD_SUFFIX,
                         'DATABASE_URL': DATABASE_URL,
+                        'ALL_DEBRID_API': ALL_DEBRID_API,
                         'REAL_DEBRID_API': REAL_DEBRID_API,
                         'DEBRID_LINK_API': DEBRID_LINK_API,
                         'FILELION_API': FILELION_API,
