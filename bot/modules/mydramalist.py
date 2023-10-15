@@ -69,7 +69,7 @@ async def extract_MDL(slug):
         'director': list_to_str(mdl['others'].get("director")),
         'screenwriter': list_to_str(mdl['others'].get("screenwriter")),
         'genres': list_to_hash(mdl['others'].get("genres"), emoji=True),
-        'tags': list_to_hash(mdl['others'].get("tags")),
+        'tags': list_to_str(mdl['others'].get("tags")),
         'poster': mdl.get('poster').replace('c.jpg?v=1', 'f.jpg?v=1').strip(),
         'synopsis': plot,
         'rating': str(mdl.get("rating"))+" / 10",
@@ -96,17 +96,17 @@ def list_to_hash(k, flagg=False, emoji=False):
     elif len(k) == 1:
         if not flagg:
             if emoji:
-                return str(IMDB_GENRE_EMOJI.get(k[0], '')+" #"+k[0].replace(" ", "_").replace("-", "_").replace("/", ",#").replace("'", ""))
-            return str("#"+k[0].replace(" ", "_").replace("-", "_").replace("/", ",#").replace("'", ""))
+                return str(IMDB_GENRE_EMOJI.get(k[0], '')+" #"+k[0].replace(" ", "_").replace("-", "_"))
+            return str("#"+k[0].replace(" ", "_").replace("-", "_"))
         try:
             conflag = (conn.get(name=k[0])).flag
-            return str(f"{conflag} #" + k[0].replace(" ", "_").replace("-", "_").replace("/", ",#").replace("'", ""))
+            return str(f"{conflag} #" + k[0].replace(" ", "_").replace("-", "_"))
         except AttributeError:
-            return str("#"+k[0].replace(" ", "_").replace("-", "_").replace("/", ",#").replace("'", ""))
+            return str("#"+k[0].replace(" ", "_").replace("-", "_"))
     elif LIST_ITEMS:
         k = k[:int(LIST_ITEMS)]
         for elem in k:
-            ele = elem.replace(" ", "_").replace("-", "_").replace("/", ",#").replace("'", "")
+            ele = elem.replace(" ", "_").replace("-", "_")
             if flagg:
                 with suppress(AttributeError):
                     conflag = (conn.get(name=elem)).flag
@@ -117,7 +117,7 @@ def list_to_hash(k, flagg=False, emoji=False):
         return f'{listing[:-2]}'
     else:
         for elem in k:
-            ele = elem.replace(" ", "_").replace("-", "_").replace("/", ",#").replace("'", "")
+            ele = elem.replace(" ", "_").replace("-", "_")
             if flagg:
                 conflag = (conn.get(name=elem)).flag
                 listing += f'{conflag} '
