@@ -96,17 +96,17 @@ def list_to_hash(k, flagg=False, emoji=False):
     elif len(k) == 1:
         if not flagg:
             if emoji:
-                return str(IMDB_GENRE_EMOJI.get(k[0], '')+" #"+k[0].replace(" ", "_").replace("-", "_").replace("/", ",#"))
-            return str("#"+k[0].replace(" ", "_").replace("-", "_").replace("/", ",#"))
+                return str(IMDB_GENRE_EMOJI.get(k[0], '')+" #"+k[0].replace(" ", "_").replace("-", "_").replace("/", ",#").replace("'", ""))
+            return str("#"+k[0].replace(" ", "_").replace("-", "_").replace("/", ",#").replace("'", ""))
         try:
             conflag = (conn.get(name=k[0])).flag
-            return str(f"{conflag} #" + k[0].replace(" ", "_").replace("-", "_").replace("/", ",#"))
+            return str(f"{conflag} #" + k[0].replace(" ", "_").replace("-", "_").replace("/", ",#").replace("'", ""))
         except AttributeError:
-            return str("#"+k[0].replace(" ", "_").replace("-", "_").replace("/", ",#"))
+            return str("#"+k[0].replace(" ", "_").replace("-", "_").replace("/", ",#").replace("'", ""))
     elif LIST_ITEMS:
         k = k[:int(LIST_ITEMS)]
         for elem in k:
-            ele = elem.replace(" ", "_").replace("-", "_").replace("/", ",#")
+            ele = elem.replace(" ", "_").replace("-", "_").replace("/", ",#").replace("'", "")
             if flagg:
                 with suppress(AttributeError):
                     conflag = (conn.get(name=elem)).flag
@@ -117,7 +117,7 @@ def list_to_hash(k, flagg=False, emoji=False):
         return f'{listing[:-2]}'
     else:
         for elem in k:
-            ele = elem.replace(" ", "_").replace("-", "_").replace("/", ",#")
+            ele = elem.replace(" ", "_").replace("-", "_").replace("/", ",#").replace("'", "")
             if flagg:
                 conflag = (conn.get(name=elem)).flag
                 listing += f'{conflag} '
