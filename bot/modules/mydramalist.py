@@ -52,7 +52,7 @@ async def extract_MDL(slug):
         'complete_title': mdl.get('complete_title'),
         'native_title': mdl['others'].get("native_title"),
         'score': mdl['details'].get('score'),
-        'aka': list_to_str(mdl['others'].get("also_known_as")),
+        'aka': mdl['others'].get("also_known_as"),
         'episodes': mdl['details'].get("episodes"),
         'type': mdl['details'].get("type"),
         "cast": list_to_str(mdl.get("casts"), cast=True),
