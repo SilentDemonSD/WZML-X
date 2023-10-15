@@ -24,20 +24,6 @@ async def mydramalist_search(_, message):
         temp = await sendMessage(message, '<i>Searching in MyDramaList ...</i>')
         title = message.text.split(' ', 1)[1]
         user_id = message.from_user.id
-        async with ClientSession() as sess:
-            async with sess.get(f'{MDL_API}/search/q/{q(title)}') as resp:
-                if resp.status != 200:
-                    return await editMessage(temp, "<i>No Results Found</i>, Try Again or Use <b>MyDramaList Link</b>")
-                mdl = await resp.json()
-        # Now you can access mdl and assign it to user_data[user_id]
-        user_data[user_id] = {
-            'results': mdl['results']['dramas'],
-            'current_page': 1,
-            'total_pages': len(mdl['results']['dramas']) // LIST_ITEMS + 1,
-            'search_query': title
-        }
-        # Rest of your code...
-
         buttons = ButtonMaker()
         async with ClientSession() as sess:
             async with sess.get(f'{MDL_API}/search/q/{q(title)}') as resp:
@@ -45,42 +31,13 @@ async def mydramalist_search(_, message):
                     return await editMessage(temp, "<i>No Results Found</i>, Try Again or Use <b>MyDramaList Link</b>")
                 mdl = await resp.json()
         for drama in mdl['results']['dramas']:
-            buttons.ibutton(f"🎬 {drama.get('title')} ({drama.get('year')})", f"mdl {user_id} drama {drama.get('slug')}")
+            # Check if the drama type is 'Korean Drama' before adding it to the buttons
+            if drama.get('type') == 'Korean Drama':
+                buttons.ibutton(f"🎬 {drama.get('title')} ({drama.get('year')})", f"mdl {user_id} drama {drama.get('slug')}")
         buttons.ibutton("🚫 Close 🚫", f"mdl {user_id} close")
-        await editMessage(temp, '<b><i>Dramas found on MyDramaList :</i></b>', buttons.build_menu(1))
+        await editMessage(temp, '<b><i>Korean Dramas found on MyDramaList :</i></b>', buttons.build_menu(1))
     else:
         await sendMessage(message, f'<i>Send Movie / TV Series Name along with /{BotCommands.MyDramaListCommand} Command</i>')
-
-async def handle_pagination(_, query):
-    message = query.message
-    user_id = query.from_user.id
-    data = query.data.split()
-
-    if data[1] == "next":
-        user_data[user_id]['current_page'] += 1
-    elif data[1] == "prev" and user_data[user_id]['current_page'] > 1:
-        user_data[user_id]['current_page'] -= 1
-
-    current_page = user_data[user_id]['current_page']
-    total_pages = user_data[user_id]['total_pages']
-    search_query = user_data[user_id]['search_query']
-    results = user_data[user_id]['results']
-
-    start_index = (current_page - 1) * LIST_ITEMS
-    end_index = current_page * LIST_ITEMS
-
-    buttons = ButtonMaker()
-    for drama in results[start_index:end_index]:
-        buttons.ibutton(f"🎬 {drama.get('title')} ({drama.get('year')})", f"mdl {user_id} drama {drama.get('slug')}")
-
-    if current_page < total_pages:
-        buttons.ibutton("➡️ Next", f"mdl {user_id} next")
-    if current_page > 1:
-        buttons.ibutton("⬅️ Previous", f"mdl {user_id} prev")
-    buttons.ibutton("🚫 Close 🚫", f"mdl {user_id} close")
-
-    await editMessage(message, f'<b><i>Search results for "{search_query}" (Page {current_page} of {total_pages}):</i></b>', buttons.build_menu(1))
-    await query.answer()
 
 
 async def extract_MDL(slug):
@@ -92,8 +49,10 @@ async def extract_MDL(slug):
         plot = f"{plot[:300]}..."
     return {
         'title': mdl.get('title'),
+        'complete_title': mdl.get('complete_title'),
+        'native_title': mdl['others'].get("native_title"),
         'score': mdl['details'].get('score'),
-        "aka": list_to_str(mdl.get("also_known_as")),
+        'aka': list_to_str(mdl['others'].get("also_known_as")),
         'episodes': mdl['details'].get("episodes"),
         'type': mdl['details'].get("type"),
         "cast": list_to_str(mdl.get("casts"), cast=True),
@@ -198,4 +157,3 @@ async def mdl_callback(_, query):
 
 bot.add_handler(MessageHandler(mydramalist_search, filters=command(BotCommands.MyDramaListCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
 bot.add_handler(CallbackQueryHandler(mdl_callback, filters=regex(r'^mdl')))
-bot.add_handler(CallbackQueryHandler(handle_pagination, filters=regex(r'^mdl \d{6} (next|prev)$')))
