@@ -97,7 +97,7 @@ def list_to_hash(k, flagg=False, emoji=False):
         if not flagg:
             if emoji:
                 return str(IMDB_GENRE_EMOJI.get(k[0], '')+" #"+k[0].replace(" ", "_").replace("-", "_").replace("/", ",#"))
-            return str("#"+k[0].replace(" ", "_").replace("-", "_").replace("/", ","))
+            return str("#"+k[0].replace(" ", "_").replace("-", "_").replace("/", ",#"))
         try:
             conflag = (conn.get(name=k[0])).flag
             return str(f"{conflag} #" + k[0].replace(" ", "_").replace("-", "_").replace("/", ",#"))
