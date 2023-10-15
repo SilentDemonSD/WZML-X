@@ -31,9 +31,10 @@ async def mydramalist_search(_, message):
                     return await editMessage(temp, "<i>No Results Found</i>, Try Again or Use <b>MyDramaList Link</b>")
                 mdl = await resp.json()
         for drama in mdl['results']['dramas']:
+            shortened_title = f"{drama.get('title')[:27]}..." if len(drama.get('title')) > 27 else drama.get('title')
             # Check if the drama type is 'Korean Drama' before adding it to the buttons
             if drama.get('type') == 'Korean Drama':
-                buttons.ibutton(f"🎬 {drama.get('title')} ({drama.get('year')})", f"mdl {user_id} drama {drama.get('slug')}")
+                buttons.ibutton(f"🎬 {shortened_title} ({drama.get('year')})", f"mdl {user_id} drama {drama.get('slug')}")
         buttons.ibutton("🚫 Close 🚫", f"mdl {user_id} close")
         await editMessage(temp, '<b><i>Korean Dramas found on MyDramaList :</i></b>', buttons.build_menu(1))
     else:
