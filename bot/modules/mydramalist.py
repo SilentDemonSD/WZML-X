@@ -69,7 +69,7 @@ async def extract_MDL(slug):
         'director': list_to_str(mdl['others'].get("director")),
         'screenwriter': list_to_str(mdl['others'].get("screenwriter")),
         'genres': list_to_hash(mdl['others'].get("genres"), emoji=True),
-        'tags': list_to_str(mdl['others'].get("tags")),
+        'tags': list_to_hash(mdl['others'].get("tags")),
         'poster': mdl.get('poster').replace('c.jpg?v=1', 'f.jpg?v=1').strip(),
         'synopsis': plot,
         'rating': str(mdl.get("rating"))+" / 10",
