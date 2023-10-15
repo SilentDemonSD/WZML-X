@@ -96,13 +96,13 @@ def list_to_hash(k, flagg=False, emoji=False):
     elif len(k) == 1:
         if not flagg:
             if emoji:
-                return str(IMDB_GENRE_EMOJI.get(k[0], '')+" #"+k[0].replace(" ", "_").replace("-", "_"))
-            return str("#"+k[0].replace(" ", "_").replace("-", "_"))
+                return str(IMDB_GENRE_EMOJI.get(k[0], '')+" #"+k[0].replace(" ", "_").replace("-", "_").replace("/", ","))
+            return str("#"+k[0].replace(" ", "_").replace("-", "_").replace("/", ","))
         try:
             conflag = (conn.get(name=k[0])).flag
-            return str(f"{conflag} #" + k[0].replace(" ", "_").replace("-", "_"))
+            return str(f"{conflag} #" + k[0].replace(" ", "_").replace("-", "_").replace("/", ","))
         except AttributeError:
-            return str("#"+k[0].replace(" ", "_").replace("-", "_"))
+            return str("#"+k[0].replace(" ", "_").replace("-", "_").replace("/", ","))
     elif LIST_ITEMS:
         k = k[:int(LIST_ITEMS)]
         for elem in k:
