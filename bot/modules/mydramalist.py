@@ -24,12 +24,20 @@ async def mydramalist_search(_, message):
         temp = await sendMessage(message, '<i>Searching in MyDramaList ...</i>')
         title = message.text.split(' ', 1)[1]
         user_id = message.from_user.id
+        async with ClientSession() as sess:
+            async with sess.get(f'{MDL_API}/search/q/{q(title)}') as resp:
+                if resp.status != 200:
+                    return await editMessage(temp, "<i>No Results Found</i>, Try Again or Use <b>MyDramaList Link</b>")
+                mdl = await resp.json()
+        # Now you can access mdl and assign it to user_data[user_id]
         user_data[user_id] = {
-        'results': mdl['results']['dramas'],
-        'current_page': 1,
-        'total_pages': len(mdl['results']['dramas']) // LIST_ITEMS + 1,
-        'search_query': title
+            'results': mdl['results']['dramas'],
+            'current_page': 1,
+            'total_pages': len(mdl['results']['dramas']) // LIST_ITEMS + 1,
+            'search_query': title
         }
+        # Rest of your code...
+
         buttons = ButtonMaker()
         async with ClientSession() as sess:
             async with sess.get(f'{MDL_API}/search/q/{q(title)}') as resp:
