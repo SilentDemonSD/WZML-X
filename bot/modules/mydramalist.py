@@ -106,7 +106,7 @@ def list_to_hash(k, flagg=False, emoji=False):
     elif LIST_ITEMS:
         k = k[:int(LIST_ITEMS)]
         for elem in k:
-            ele = elem.replace(" ", "_").replace("-", "_")
+            ele = elem.replace(" ", "_").replace("-", "_").replace("/", ",")
             if flagg:
                 with suppress(AttributeError):
                     conflag = (conn.get(name=elem)).flag
@@ -117,7 +117,7 @@ def list_to_hash(k, flagg=False, emoji=False):
         return f'{listing[:-2]}'
     else:
         for elem in k:
-            ele = elem.replace(" ", "_").replace("-", "_")
+            ele = elem.replace(" ", "_").replace("-", "_").replace("/", ",")
             if flagg:
                 conflag = (conn.get(name=elem)).flag
                 listing += f'{conflag} '
