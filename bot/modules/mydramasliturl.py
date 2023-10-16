@@ -25,15 +25,63 @@ async def mydramalist_search_url(_, message):
         title = message.text
         url_components = urlsplit(title)
         path_components = url_components.path.split('/')
-        desired_part = path_components[-1]
+        slug = path_components[-1]
         #title = message.text.split(' ', 1)[1]
         user_id = message.from_user.id
-        buttons = ButtonMaker()
         async with ClientSession() as sess:
-            async with sess.get(f'{MDL_API}/id/{q(desired_part)}') as resp:
-                if resp.status != 200:
-                    return await editMessage(temp, "<i>No Results Found</i>, Try Again or Use <b>MyDramaList Link</b>")
-                mdlurl = await resp.json()
+            async with sess.get(f'{MDL_API}/id/{q(slug)}') as resp:
+                mdlurl = (await resp.json())["data"]
+            plot = mdlurl.get('synopsis')
+        if plot and len(plot) > 300:
+            plot = f"{plot[:300]}..."
+        return {
+            'title': mdlurl.get('title'),
+            'complete_title': mdlurl.get('complete_title'),
+            'native_title': mdlurl['others'].get("native_title"),
+            'score': mdlurl['details'].get('score'),
+            'aka': mdlurl['others'].get("also_known_as"),
+            'episodes': mdlurl['details'].get("episodes"),
+            'type': mdlurl['details'].get("type"),
+            "cast": list_to_str(mdlurl.get("casts"), cast=True),
+            "country": list_to_hash([mdlurl['details'].get("country")], True),
+            'aired_date': mdlurl['details'].get("aired", 'N/A'),
+            'aired_on': mdlurl['details'].get("aired_on"),
+            'org_network': mdlurl['details'].get("original_network"),
+            'duration': mdlurl['details'].get("duration"),
+            'watchers': mdlurl['details'].get("watchers"),
+            'ranked': mdlurl['details'].get("ranked"),
+            'popularity': mdlurl['details'].get("popularity"),
+            'related_content': list_to_str(mdlurl['others'].get("related_content")),
+            'native_title': list_to_str(mdlurl['others'].get("native_title")),
+            'director': list_to_str(mdlurl['others'].get("director")),
+            'screenwriter': list_to_str(mdlurl['others'].get("screenwriter")),
+            'genres': list_to_hash(mdlurl['others'].get("genres"), emoji=True),
+            'tags': list_to_str(mdlurl['others'].get("tags")),
+            'poster': mdlurl.get('poster').replace('c.jpg?v=1', 'f.jpg?v=1').strip(),
+            'synopsis': plot,
+            'rating': str(mdlurl.get("rating"))+" / 10",
+            'content_rating': mdlurl['details'].get("content_rating"),
+            'url': mdlurl.get('link'),
+        }
+        template = config_dict['MDL_TEMPLATE']
+        if mdlurl and template != "":
+            cap = template.format(**mdlurl)
+        else:
+            cap = "<i>No Data Received</i>"
+        if mdlurl.get('poster'):
+            try: #Invoke Raw Functions
+                await message.reply_to_message.reply_photo(mdlurl["poster"], caption=cap)
+            except (MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty):
+                poster = mdlurl["poster"].replace('f.jpg?v=1', 'c.jpg?v=1')
+                await sendMessage(message.reply_to_message, cap,  poster)
+        else:
+            await sendMessage(message.reply_to_message, cap)
+        await message.delete()
+    else:
+        #await query.answer()
+        await message.delete()
+        await message.reply_to_message.delete()
+
               """
         for drama in mdl['results']['dramas']:
             #shortened_title = f[:15]}..." if len(drama.get('title')) > 15 else drama.get('title')
@@ -45,7 +93,7 @@ async def mydramalist_search_url(_, message):
     else:
         await sendMessage(message, f'<i>Send Movie / TV Series Name along with /{BotCommands.MyDramaListCommand} Command</i>')
 """
-
+"""
 async def extract_MDL(slug):
     async with ClientSession() as sess:
         async with sess.get(f'{MDL_API}/id/{slug}') as resp:
@@ -83,7 +131,7 @@ async def extract_MDL(slug):
         'url': mdl.get('link'),
     }
 
-
+"""
 def list_to_str(k, cast=False):
     if not k:
         return ""
@@ -130,7 +178,7 @@ def list_to_hash(k, flagg=False, emoji=False):
             listing += f'#{ele}, '
         return listing[:-2]
 
-
+"""
 async def mdlurl_callback(_, query):
     message = query.message
     user_id = query.from_user.id
@@ -142,6 +190,7 @@ async def mdlurl_callback(_, query):
         mdl = await extract_MDL(data[3])
         buttons = ButtonMaker()
         buttons.ibutton("🚫 Close 🚫", f"mdlurl {user_id} close")
+        
         template = config_dict['MDL_TEMPLATE']
         if mdlurl and template != "":
             cap = template.format(**mdlurl)
@@ -149,7 +198,7 @@ async def mdlurl_callback(_, query):
             cap = "<i>No Data Received</i>"
         if mdlurl.get('poster'):
             try: #Invoke Raw Functions
-                await message.reply_to_message.reply_photo(mdlurl["poster"], caption=cap, reply_markup=buttons.build_menu(1))
+                await message.reply_to_message.reply_photo(mdlurl["poster"], caption=cap)
             except (MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty):
                 poster = mdlurl["poster"].replace('f.jpg?v=1', 'c.jpg?v=1')
                 await sendMessage(message.reply_to_message, cap, buttons.build_menu(1), poster)
@@ -160,6 +209,6 @@ async def mdlurl_callback(_, query):
         await query.answer()
         await message.delete()
         await message.reply_to_message.delete()
-
+"""
 bot.add_handler(MessageHandler(mydramalist_search_url, filters=command(BotCommands.MyDramaListURLCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
-bot.add_handler(CallbackQueryHandler(mdlurl_callback, filters=regex(r'^mdlurl')))
+#bot.add_handler(CallbackQueryHandler(mdlurl_callback, filters=regex(r'^mdlurl')))
