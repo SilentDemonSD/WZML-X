@@ -55,7 +55,7 @@ class _BotCommands:
         self.AnimeHelpCommand = f'animehelp{CMD_SUFFIX}'
         self.MediaInfoCommand = [f'mediainfo{CMD_SUFFIX}', f'mi{CMD_SUFFIX}']
         self.MyDramaListCommand = f'mdl{CMD_SUFFIX}'
-        self.MyDramaListCommandURL = f'mdlurl{CMD_SUFFIX}'
+        self.MyDramaListURLCommand = f'mdlurl{CMD_SUFFIX}'
         self.GDCleanCommand = [f'gdclean{CMD_SUFFIX}', f'gc{CMD_SUFFIX}']
         self.BroadcastCommand = [f'broadcast{CMD_SUFFIX}', f'bc{CMD_SUFFIX}']
 
