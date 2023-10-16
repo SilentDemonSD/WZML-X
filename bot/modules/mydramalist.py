@@ -46,7 +46,7 @@ async def extract_MDL(slug):
         async with sess.get(f'{MDL_API}/id/{slug}') as resp:
             mdl = (await resp.json())["data"]
     plot = mdl.get('synopsis')
-    if plot and len(plot) > 10000:
+    if plot and len(plot) > 100:
         plot = f"{plot[:100]}..."
     return {
         'title': mdl.get('title'),
