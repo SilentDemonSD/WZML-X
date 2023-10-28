@@ -68,9 +68,9 @@ async def select_type(_, query):
 @new_task
 async def choose_list(_, query):
     user_id = query.from_user.id
-    msg_id = int(data[2])
     message = query.message
     data = query.data.split()
+    msg_id = int(data[2])
     formList = gd_search_dict.get(msg_id)
     if formList is None:
         await deleteMessage(query.message)
@@ -91,10 +91,10 @@ async def choose_list(_, query):
             buttons.ibutton(f"Pᴀɢᴇs\n{no} / {len(udata)}", f"clist {user_id} {msg_id} pagnav {ind}") 
         buttons.ibutton("Close", f"clist {user_id} {msg_id} close", 'footer') 
         exdata = formList[0] 
-        extras = f'''┎ <b>Query :</b> <i>{exdata[0]}</i> 
- ┠ <b>Total Results :</b> <i>{exdata[1]}</i> 
- ┠ <b>Type :</b> <i>{exdata[2].capitalize()}</i> 
- ┖ <b>#cc :</b> {(await bot.get_users(user_id)).mention}\n''' 
+        extras = f'''┎ <b>Query :</b> <i>{exdata[0]}</i>
+┠ <b>Total Results :</b> <i>{exdata[1]}</i> 
+┠ <b>Type :</b> <i>{(exdata[2] or "Folders & Files").capitalize()}</i> 
+┖ <b>#cc :</b> {(await bot.get_users(user_id)).mention}\n''' 
         await editMessage(message, extras+udata[ind], buttons.build_menu(3)) 
     elif data[3] == "pagnav": 
         await query.answer() 

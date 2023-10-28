@@ -609,7 +609,7 @@ class GoogleDriveHelper:
                 Title = True
             if drive_name:
                 if tglist:
-                    msg += f"\n╾────────────────────╼\n<b>#{no} {drive_name} Drive</b>\n╾────────────────────╼\n"
+                    msg += f"\n╾──────────────────╼\n        <b>#{no} {drive_name} Drive</b>\n╾──────────────────╼\n"
                 else:
                     msg += f"<aside>╾──────────────────────╼</aside><br><aside><b>#{no} {drive_name} Drive</b></aside><br><aside>╾──────────────────────╼</aside><br>"
             if not tglist:
@@ -658,7 +658,7 @@ class GoogleDriveHelper:
                             urlv = f'{index_url}/{url_path}?a=view'
                             msg += f' <b>| 🔍 <a href="{urlv}">View Link</a></b>'
                 if tglist:
-                    msg = msg.replace('<br>', '\n') + '\n\n'
+                    msg = msg.replace('<br>', '\n') + '\n'
                 else:
                     msg += '</li><br><br>'
                 contents_no += 1

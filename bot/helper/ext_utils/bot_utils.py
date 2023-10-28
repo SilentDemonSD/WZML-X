@@ -139,9 +139,9 @@ async def get_tg_list(tg_content, contents_no, tglist):
         buttons.ibutton('⌦', f"clist {user_id} {msg_id} changepg 1") 
     buttons.ibutton('Close', f"clist {user_id} {msg_id} close", 'footer') 
     top_msg = f'''┎ <b>Query :</b> <i>{tglist[2]}</i> 
- ┠ <b>Total Results :</b> <i>{contents_no}</i> 
- ┠ <b>Type :</b> <i>{(tglist[3] or "Folders & Files").capitalize()}</i> 
- ┖ <b>#cc :</b> {(await bot.get_users(user_id)).mention}'''
+┠ <b>Total Results :</b> <i>{contents_no}</i> 
+┠ <b>Type :</b> <i>{(tglist[3] or "Folders & Files").capitalize()}</i> 
+┖ <b>#cc :</b> {(await bot.get_users(user_id)).mention}'''
     return top_msg + tg_content[0], buttons.build_menu(3)
 
 
