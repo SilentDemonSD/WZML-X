@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from math import ceil
 from random import choice
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.filters import command, regex
@@ -94,15 +95,15 @@ async def choose_list(_, query):
         extras = f'''┎ <b>Query :</b> <i>{exdata[0]}</i>
 ┠ <b>Total Results :</b> <i>{exdata[1]}</i> 
 ┠ <b>Type :</b> <i>{(exdata[2] or "Folders & Files").capitalize()}</i> 
-┖ <b>#cc :</b> {(await bot.get_users(user_id)).mention}\n''' 
+┖ <b>#cc :</b> {(await bot.get_users(user_id)).mention}\n\n''' 
         await editMessage(message, extras+udata[ind], buttons.build_menu(3)) 
     elif data[3] == "pagnav": 
         await query.answer() 
         for no, _ in enumerate(formList[1]): 
-            buttons.ibutton(str(no+1), f'cari {user_id} {msg_id} changepg {no}') 
+            buttons.ibutton(str(no+1), f'clist {user_id} {msg_id} changepg {no}') 
         buttons.ibutton("Back", f"clist {user_id} {msg_id} changepg {data[4]}", "footer") 
         buttons.ibutton("Close", f"clist {user_id} {msg_id} close", "footer")
-        await editMessage(query.message, "Choose the Page Number from below :", buttons.build_menu(7)) 
+        await editMessage(query.message, "Choose the Page Number from below :", buttons.build_menu(min(ceil(len(formList[1])/2), 7))) 
     else: 
         try: 
             del gd_search_dict[msg_id] 

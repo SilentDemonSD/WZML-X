@@ -662,7 +662,7 @@ class GoogleDriveHelper:
                 else:
                     msg += '</li><br><br>'
                 contents_no += 1
-                if (tglist and len(msg.encode('utf-8')) > 3500) or (not tglist and len(msg.encode('utf-8')) > 39000):
+                if (tglist and len(msg.encode('utf-8')) > 4000) or (not tglist and len(msg.encode('utf-8')) > 39000):
                     telegraph_content.append(msg)
                     msg = ''
             if not tglist:
