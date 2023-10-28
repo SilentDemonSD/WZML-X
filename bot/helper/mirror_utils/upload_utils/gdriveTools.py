@@ -575,6 +575,7 @@ class GoogleDriveHelper:
             return {'files': []}
 
     def drive_list(self, fileName, stopDup=False, noMulti=False, isRecursive=True, itemType="", userId=None, msgId=""):
+        tglist = bool(userId and user_data.get(userId, {}).get('list_mode'))
         if tglist:
             msg = ""
         else:
@@ -591,7 +592,6 @@ class GoogleDriveHelper:
             token_service = self.__alt_authorize()
             if token_service is not None:
                 self.__service = token_service
-        tglist = bool(userId and user_data.get(userId, {}).get('list_mode'))
         for no, (drive_name, drives_dict) in enumerate(merged_dict.items(), start=1):
             dir_id = drives_dict['drive_id']
             index_url = drives_dict['index_link']
