@@ -42,6 +42,7 @@ extra_buttons = {}
 list_drives_dict = {}
 shorteners_list = []
 categories_dict = {}
+gd_search_dict = {}
 aria2_options = {}
 qbit_options = {}
 queued_dl = {}

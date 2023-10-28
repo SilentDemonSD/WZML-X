@@ -574,8 +574,12 @@ class GoogleDriveHelper:
             LOGGER.error(err)
             return {'files': []}
 
-    def drive_list(self, fileName, stopDup=False, noMulti=False, isRecursive=True, itemType="", userId=None):
-        msg = f"""<figure><img src='{config_dict["COVER_IMAGE"]}'></figure>"""
+    def drive_list(self, fileName, stopDup=False, noMulti=False, isRecursive=True, itemType="", userId=None, msgId=""):
+        if tglist:
+            msg = ""
+        else:
+            msg = f"""<figure><img src='{config_dict["COVER_IMAGE"]}'></figure>"""
+        msgId = msgId or self.__listener.uid
         fileName = self.__escapes(str(fileName))
         contents_no = 0
         telegraph_content = []
@@ -587,6 +591,7 @@ class GoogleDriveHelper:
             token_service = self.__alt_authorize()
             if token_service is not None:
                 self.__service = token_service
+        tglist = bool(userId and user_data.get(userId, {}).get('list_mode'))
         for no, (drive_name, drives_dict) in enumerate(merged_dict.items(), start=1):
             dir_id = drives_dict['drive_id']
             index_url = drives_dict['index_link']
@@ -599,14 +604,20 @@ class GoogleDriveHelper:
                 else:
                     continue
             if not Title:
-                msg += f'<h4>📌 Drive Query : {fileName}</h4>'
+                if not tglist:
+                    msg += f'<h4>📌 Drive Query : {fileName}</h4>'
                 Title = True
             if drive_name:
-                msg += f"<aside>╾──────────────────────╼</aside><br><aside><b>#{no} {drive_name} Drive</b></aside><br><aside>╾──────────────────────╼</aside><br>"
-            msg += "<ol>"
+                if tglist:
+                    msg += f"\n╾────────────────────╼\n<b>#{no} {drive_name} Drive</b>\n╾────────────────────╼\n"
+                else:
+                    msg += f"<aside>╾──────────────────────╼</aside><br><aside><b>#{no} {drive_name} Drive</b></aside><br><aside>╾──────────────────────╼</aside><br>"
+            if not tglist:
+                msg += "<ol>"
             for file in response.get('files', []):
                 mime_type = file.get('mimeType')
-                msg += "<li>"
+                if not tglist:
+                    msg += "<li>"
                 if mime_type == "application/vnd.google-apps.folder":
                     furl = f"https://drive.google.com/drive/folders/{file.get('id')}"
                     msg += f"📁 <code>{file.get('name')}<br>(folder)</code><br>"
@@ -626,8 +637,7 @@ class GoogleDriveHelper:
                         msg += f' <b>⚡️ <a href="{url}">Index Link</a></b>'
                 elif mime_type == 'application/vnd.google-apps.shortcut':
                     furl = f"https://drive.google.com/drive/folders/{file.get('id')}"
-                    msg += f"⁍<a href='https://drive.google.com/drive/folders/{file.get('id')}'>{file.get('name')}" \
-                        f"</a> (shortcut)"
+                    msg += f"""⁍<a href="https://drive.google.com/drive/folders/{file.get('id')}">{file.get('name')}</a> (shortcut)"""
                 else:
                     furl = f"https://drive.google.com/uc?id={file.get('id')}&export=download"
                     msg += f"📄 <code>{file.get('name')}<br>({get_readable_file_size(int(file.get('size', 0)))})</code><br>"
@@ -647,19 +657,23 @@ class GoogleDriveHelper:
                         if mime_type.startswith(('image', 'video', 'audio')):
                             urlv = f'{index_url}/{url_path}?a=view'
                             msg += f' <b>| 🔍 <a href="{urlv}">View Link</a></b>'
-                msg += '</li><br><br>'
+                if tglist:
+                    msg = msg.replace('<br>', '\n') + '\n\n'
+                else:
+                    msg += '</li><br><br>'
                 contents_no += 1
-                if len(msg.encode('utf-8')) > 39000:
+                if (tglist and len(msg.encode('utf-8')) > 3500) or (not tglist and len(msg.encode('utf-8')) > 39000):
                     telegraph_content.append(msg)
                     msg = ''
-            msg += "</ol>"
+            if not tglist:
+                msg += "</ol>"
             if noMulti:
                 break
 
-        if msg != f"""<figure><img src='{config_dict["COVER_IMAGE"]}'></figure>""":
+        if (not tglist and msg != f"""<figure><img src='{config_dict["COVER_IMAGE"]}'></figure>""") or (tglist and msg != ""):
             telegraph_content.append(msg)
 
-        return telegraph_content, contents_no
+        return telegraph_content, contents_no, (tglist, userId, fileName, itemType, msgId)
 
     def count(self, link):
         try:

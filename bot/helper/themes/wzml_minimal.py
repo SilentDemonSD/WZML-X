@@ -266,6 +266,7 @@ class WZMLStyle:
 
 ┎<b> YT-DLP Options :</b> <b><code>{YT}</code></b>
 ┠<b> Default Upload :</b> <code>{DU}</code>
+┠<b> List Mode :</b> <code>{LIST_MODE}</code>
 ┠<b> Daily Tasks :</b> <code>{DT}</code> per day
 ┠<b> Last Bot Used :</b> <code>{LAST_USED}</code>
 ┠<b> User Session :</b> <code>{USESS}</code>

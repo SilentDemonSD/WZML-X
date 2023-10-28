@@ -56,7 +56,7 @@ fname_dict = {'rcc': 'RClone',
              'lcaption': 'Caption',
              'thumb': 'Thumbnail',
              'yt_opt': 'YT-DLP Options',
-             'du_opt': 'DU Options',
+             'du_opt': 'Default Upload',
              'usess': 'User Session',
              'split_size': 'Leech Splits',
              'ddl_servers': 'DDL Servers',
@@ -100,8 +100,13 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
         buttons.ibutton('Disable MediaInfo' if mediainfo == 'Enabled' else 'Enable MediaInfo', f"userset {user_id} mediainfo")
         if config_dict['SHOW_MEDIAINFO']:
             mediainfo = "Force Enabled"
+            
         save_mode = "Save As Dump" if user_dict.get('save_mode') else "Save As BotPM"
         buttons.ibutton('Save As BotPM' if save_mode == 'Save As Dump' else 'Save As Dump', f"userset {user_id} save_mode")
+        
+        list_mode = "Telegraph" if not user_dict.get('list_mode') else "Telegram Direct"
+        buttons.ibutton('List as Tdirect' if list_mode == 'Telegraph' else 'List as Tgraph', f"userset {user_id} list_mode")
+        
         dailytl = config_dict['DAILY_TASK_LIMIT'] or "∞"
         dailytas = user_dict.get('dly_tasks')[1] if user_dict and user_dict.get('dly_tasks') and user_id != OWNER_ID and config_dict['DAILY_TASK_LIMIT'] else config_dict['DAILY_TASK_LIMIT'] or "️∞" if user_id != OWNER_ID else "∞"
         if user_dict.get('dly_tasks', False):
@@ -109,7 +114,7 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
             lastused = f"{t[0]}h {t[1]}m {t[2].split('.')[0]}s ago"
         else: lastused = "Bot Not Used yet.."
 
-        text = BotTheme('UNIVERSAL', NAME=name, YT=escape(ytopt), DT=f"{dailytas} / {dailytl}", LAST_USED=lastused, BOT_PM=bot_pm, MEDIAINFO=mediainfo, SAVE_MODE=save_mode, USESS=u_sess, DU=duopt)
+        text = BotTheme('UNIVERSAL', NAME=name, YT=escape(ytopt), DT=f"{dailytas} / {dailytl}", LAST_USED=lastused, BOT_PM=bot_pm, MEDIAINFO=mediainfo, SAVE_MODE=save_mode, LIST_MODE=list_mode, USESS=u_sess, DU=duopt)
         buttons.ibutton("Back", f"userset {user_id} back", "footer")
         buttons.ibutton("Close", f"userset {user_id} close", "footer")
         button = buttons.build_menu(2)
@@ -532,7 +537,7 @@ async def edit_user_settings(client, query):
         await update_user_settings(query, data[2][1:], 'universal')
         if DATABASE_URL:
             await DbManger().update_user_data(user_id)
-    elif data[2] in ['bot_pm', 'mediainfo', 'save_mode', 'td_mode']:
+    elif data[2] in ['bot_pm', 'mediainfo', 'save_mode', 'list_mode', 'td_mode']:
         handler_dict[user_id] = False
         if data[2] == 'save_mode' and not user_dict.get(data[2], False) and not user_dict.get('ldump'):
             return await query.answer("Set User Dump first to Change Save Msg Mode !", show_alert=True)

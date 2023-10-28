@@ -8,7 +8,7 @@ from bot.helper.ext_utils.task_manager import limit_checker
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.mirror_utils.status_utils.aria2_status import Aria2Status
 from bot.helper.ext_utils.fs_utils import get_base_name, clean_unwanted
-from bot.helper.ext_utils.bot_utils import getDownloadByGid, new_thread, bt_selection_buttons, sync_to_async, get_telegraph_list
+from bot.helper.ext_utils.bot_utils import getDownloadByGid, new_thread, bt_selection_buttons, sync_to_async, get_telegraph_list, get_tg_list
 from bot.helper.telegram_helper.message_utils import sendMessage, deleteMessage, update_all_messages
 from bot.helper.themes import BotTheme
 
@@ -86,10 +86,13 @@ async def __onDownloadStarted(api, gid):
                     except Exception:
                         name = None
                 if name is not None:
-                    telegraph_content, contents_no = await sync_to_async(GoogleDriveHelper().drive_list, name, True)
+                    telegraph_content, contents_no, tglist = await sync_to_async(GoogleDriveHelper().drive_list, name, True)
                     if telegraph_content:
-                        msg = BotTheme('STOP_DUPLICATE', content=contents_no)
-                        button = await get_telegraph_list(telegraph_content)
+                        if tglist[0]:
+                            msg, button = await get_tg_list(telegraph_content, contents_no, tglist)
+                        else:
+                            msg = BotTheme('STOP_DUPLICATE', content=contents_no)
+                            button = await get_telegraph_list(telegraph_content)
                         await listener.onDownloadError(msg, button)
                         await sync_to_async(api.remove, [download], force=True, files=True)
                         return

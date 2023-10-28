@@ -238,7 +238,7 @@ async def log_check():
                         continue
                 LOGGER.info(f"Connected Chat ID : {chat_id}")
             except Exception as e:
-                LOGGER.error(f"Not Connected Chat ID : {chat_id}, ERROR: {e}")
+                LOGGER.error(f"Non-Connectable Chat ID : {chat_id}, ERROR: {e}")
     
 
 async def main():

@@ -5,7 +5,7 @@ from asyncio import Event
 from bot import bot_cache, config_dict, queued_dl, queued_up, non_queued_up, non_queued_dl, queue_dict_lock, LOGGER, user_data, download_dict
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.ext_utils.fs_utils import get_base_name, check_storage_threshold
-from bot.helper.ext_utils.bot_utils import get_user_tasks, getdailytasks, sync_to_async, get_telegraph_list, get_readable_file_size, checking_access, get_readable_time
+from bot.helper.ext_utils.bot_utils import get_user_tasks, getdailytasks, sync_to_async, get_telegraph_list, get_tg_list, get_readable_file_size, checking_access, get_readable_time
 from bot.helper.telegram_helper.message_utils import forcesub, check_botpm
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.themes import BotTheme
@@ -28,10 +28,13 @@ async def stop_duplicate_check(name, listener):
         except Exception:
             name = None
     if name is not None:
-        telegraph_content, contents_no = await sync_to_async(GoogleDriveHelper().drive_list, name, stopDup=True)
+        telegraph_content, contents_no, tglist = await sync_to_async(GoogleDriveHelper().drive_list, name, stopDup=True)
         if telegraph_content:
-            msg = BotTheme('STOP_DUPLICATE', content=contents_no)
-            button = await get_telegraph_list(telegraph_content)
+            if tglist[0]:
+                msg, button = await get_tg_list(telegraph_content, contents_no, tglist)
+            else:
+                msg = BotTheme('STOP_DUPLICATE', content=contents_no)
+                button = await get_telegraph_list(telegraph_content)
             return msg, button
     return False, None
     

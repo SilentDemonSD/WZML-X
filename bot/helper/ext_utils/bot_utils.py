@@ -28,7 +28,7 @@ from pyrogram.errors import PeerIdInvalid
 from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.themes import BotTheme
 from bot.version import get_version
-from bot import OWNER_ID, bot_name, bot_cache, DATABASE_URL, LOGGER, get_client, aria2, download_dict, download_dict_lock, botStartTime, user_data, config_dict, bot_loop, extra_buttons, user
+from bot import OWNER_ID, bot_name, bot_cache, gd_search_dict, DATABASE_URL, LOGGER, get_client, aria2, download_dict, download_dict_lock, botStartTime, user_data, config_dict, bot_loop, extra_buttons, user
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.telegraph_helper import telegraph
@@ -127,6 +127,24 @@ async def get_telegraph_list(telegraph_content):
     buttons.ubutton("🔎 VIEW", f"https://te.legra.ph/{path[0]}")
     buttons, _ = extra_btns(buttons)
     return buttons.build_menu(1)
+    
+    
+async def get_tg_list(tg_content, contents_no, tglist):
+    msg_id = tglist[4]
+    gd_search_dict[msg_id] = ((tglist[2], contents_no, tglist[3]), tg_content)
+    user_id = tglist[1]
+    buttons = ButtonMaker()
+    if len(telemsg) > 1: 
+        buttons.ibutton('⌫', f"clist {user_id} {msg_id} changepg -1") 
+        buttons.ibutton(f'Pᴀɢᴇs\n1 / {len(tg_content)}', f"clist {user_id} {msg_id} pagnav 0") 
+        buttons.ibutton('⌦', f"clist {user_id} {msg_id} changepg 1") 
+    buttons.ibutton('Close', f"clist {user_id} {msg_id} close", 'footer') 
+    top_msg = f'''┎ <b>Query :</b> <i>{tglist[2]}</i> 
+ ┠ <b>Total Results :</b> <i>{contents_no}</i> 
+ ┠ <b>Type :</b> <i>{(tglist[3] or "Folders & Files").capitalize()}</i> 
+ ┖ <b>#cc :</b> {(await bot.get_users(user_id)).mention}'''
+    return top_msg + tg_content[0], buttons.build_menu(3)
+
 
 def handleIndex(index, dic):
     while True:

@@ -15,7 +15,7 @@ from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.mirror_utils.status_utils.gdrive_status import GdriveStatus
-from bot.helper.ext_utils.bot_utils import is_gdrive_link, new_task, get_readable_file_size, sync_to_async, fetch_user_tds, is_share_link, new_task, is_rclone_path, cmd_exec, get_telegraph_list, arg_parser
+from bot.helper.ext_utils.bot_utils import is_gdrive_link, new_task, get_readable_file_size, sync_to_async, fetch_user_tds, is_share_link, new_task, is_rclone_path, cmd_exec, get_telegraph_list, get_tg_list, arg_parser
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
 from bot.helper.mirror_utils.download_utils.direct_link_generator import direct_link_generator
 from bot.helper.mirror_utils.rclone_utils.list import RcloneList
@@ -143,10 +143,13 @@ async def gdcloneNode(message, link, listen_up):
             return
         if config_dict['STOP_DUPLICATE']:
             LOGGER.info('Checking File/Folder if already in Drive...')
-            telegraph_content, contents_no = await sync_to_async(gd.drive_list, name, True, True)
+            telegraph_content, contents_no, tglist = await sync_to_async(gd.drive_list, name, True, True)
             if telegraph_content:
-                msg = BotTheme('STOP_DUPLICATE', content=contents_no)
-                button = await get_telegraph_list(telegraph_content)
+                if tglist[0]:
+                    msg, button = await get_tg_list(telegraph_content, contents_no, tglist)
+                else:
+                    msg = BotTheme('STOP_DUPLICATE', content=contents_no)
+                    button = await get_telegraph_list(telegraph_content)
                 await sendMessage(message, msg, button)
                 return
         listener = MirrorLeechListener(message, tag=listen_up[0], isClone=True, drive_id=listen_up[1], index_link=listen_up[2], source_url=org_link or link)
