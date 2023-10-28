@@ -134,7 +134,7 @@ async def get_tg_list(tg_content, contents_no, tglist):
     gd_search_dict[msg_id] = ((tglist[2], contents_no, tglist[3]), tg_content)
     user_id = tglist[1]
     buttons = ButtonMaker()
-    if len(telemsg) > 1: 
+    if len(tg_content) > 1: 
         buttons.ibutton('⌫', f"clist {user_id} {msg_id} changepg -1") 
         buttons.ibutton(f'Pᴀɢᴇs\n1 / {len(tg_content)}', f"clist {user_id} {msg_id} pagnav 0") 
         buttons.ibutton('⌦', f"clist {user_id} {msg_id} changepg 1") 
