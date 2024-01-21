@@ -12,7 +12,7 @@ from pyrogram.filters import command, user, text, private
 from pyrogram.handlers import MessageHandler
 from pyrogram.errors import SessionPasswordNeeded, FloodWait, PhoneNumberInvalid, ApiIdInvalid, PhoneCodeInvalid, PhoneCodeExpired, UsernameNotOccupied, ChatAdminRequired, PeerIdInvalid
 
-from bot import bot, LOGGER, bot_cache, bot_name
+from bot import bot, LOGGER, bot_cache, bot_name, user_data
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.bot_utils import new_thread, new_task
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage, sendFile, sendCustomMsg
@@ -177,6 +177,11 @@ async def invoke(client, message, key):
 async def get_decrypt_key(client, message):
     user_id = message.from_user.id
     msg_id = message.id
+    user_dict = user_data.get(user_id, {})
+    stored_key = user_dict.get('usess_key')
+    
+    if stored_key is not None and stored_key != '':
+        return Fernet(stored_key), False
     grp_prompt = None
     if message.chat.type != ChatType.PRIVATE:
         btn = ButtonMaker()
