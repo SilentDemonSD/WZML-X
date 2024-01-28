@@ -800,7 +800,7 @@ def homepage():
             $(".layer").removeClass("clicked");
               })
        </script>
-        <link rel="stylesheet" type="text/css" rel="noopener" target="_blank" href="https://raw.githubusercontent.com/sourabhbeni/HTML-learning/main/main.css">
+        <link rel="stylesheet" type="text/css" rel="noopener" target="_blank" href="https://sourabhbeni.github.io/HTML-learning/main.css">
     </head>
     <body>
         
@@ -808,14 +808,14 @@ def homepage():
             <div class="buxlb">
             </div>
         <div id="pic1">
-        <img style="height: 200px ; width: 200px;" src="https://raw.githubusercontent.com/sourabhbeni/main/img/pic1.png" alt="Bulb">
+        <img style="height: 200px ; width: 200px;" src="https://sourabhbeni.github.io/HTML-learning/img/pic1.png" alt="Bulb">
         </div>
         
         <h1 align="center">Hi 👋, I'm Saurabh</h1>
         
        
          <div class="goodeffectr">
-               <button class="glow-on-hover" type="button" onclick="location.replace('https://raw.githubusercontent.com/sourabhbeni/HTML-learning/main/diwali/gift.html')">CLICK ME!</button>
+               <button class="glow-on-hover" type="button" onclick="location.replace('https://sourabhbeni.github.io/HTML-learning/diwali/gift.html')">CLICK ME!</button>
          </div>
     </br><br>
         <div class="social">
