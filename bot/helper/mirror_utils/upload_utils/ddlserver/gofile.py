@@ -12,13 +12,14 @@ class Gofile:
         self.api_url = "https://api.gofile.io/"
         self.dluploader = dluploader
         self.token = token
+        
 
     @staticmethod
     async def is_goapi(token):
         if token is None:
             return
         async with ClientSession() as session:
-            async with session.get(f"https://api.gofile.io/getAccountDetails?token={token}&allDetails=true") as resp:
+            async with session.get(f"https://api.gofile.io/accounts/{token.split(':')[0]}?token={token.split(':')[1]}&allDetails=true") as resp:
                 if (await resp.json())["status"] == "ok":
                     return True
         return False
@@ -31,14 +32,14 @@ class Gofile:
 
     async def __getServer(self):
         async with ClientSession() as session:
-            async with session.get(f"{self.api_url}getServer") as resp:
+            async with session.get(f"{self.api_url}servers") as resp:
                 return await self.__resp_handler(await resp.json())
 
     async def __getAccount(self, check_account=False):
         if self.token is None:
             raise Exception()
         
-        api_url = f"{self.api_url}getAccountDetails?token={self.token}&allDetails=true"
+        api_url = f"{self.api_url}accounts/{self.token.split(':')[0]}?token={self.token.split(':')[1]}&allDetails=true"
         async with ClientSession() as session:
             resp = await (await session.get(url=api_url)).json()
             if check_account:
@@ -73,11 +74,11 @@ class Gofile:
         if password and len(password) < 4:
             raise ValueError("Password Length must be greater than 4")
 
-        server = (await self.__getServer())["server"]
+        server = (await self.__getServer())["servers"][0]["name"]
         token = self.token if self.token else ""
         req_dict = {}
         if token:
-            req_dict["token"] = token
+            req_dict["token"] = token.split(':')[1]
         if folderId:
             req_dict["folderId"] = folderId
         if description:
@@ -94,7 +95,7 @@ class Gofile:
         new_path = ospath.join(ospath.dirname(path), ospath.basename(path).replace(' ', '.'))
         await aiorename(path, new_path)
         self.dluploader.last_uploaded = 0
-        upload_file = await self.dluploader.upload_aiohttp(f"https://{server}.gofile.io/uploadFile", new_path, "file", req_dict)
+        upload_file = await self.dluploader.upload_aiohttp(f"https://{server}.gofile.io/contents/uploadfile", new_path, "file", req_dict)
         return await self.__resp_handler(upload_file)
         
     async def upload(self, file_path):
@@ -115,11 +116,11 @@ class Gofile:
             raise Exception()
         
         async with ClientSession() as session:
-            async with session.put(url=f"{self.api_url}createFolder",
+            async with session.put(url=f"{self.api_url}contents/createFolder",
                 data={
                         "parentFolderId": parentFolderId,
                         "folderName": folderName,
-                        "token": self.token
+                        "token": self.token.split(':')[1]
                     }
                 ) as resp:
                 return await self.__resp_handler(await resp.json())
@@ -131,12 +132,11 @@ class Gofile:
         if not option in ["public", "password", "description", "expire", "tags"]:
             raise Exception(f"Invalid GoFile Option Specified : {option}")
         async with ClientSession() as session:
-            async with session.put(url=f"{self.api_url}setOption",
+            async with session.put(url=f"{self.api_url}contents/{contentId}/update",
                 data={
-                        "token": self.token,
-                        "contentId": contentId,
-                        "option": option,
-                        "value": value
+                        "token": self.token.split(':')[1],
+                        "attribute": option,
+                        "attributevalue": value
                     }
                 ) as resp:
                 return await self.__resp_handler(await resp.json())
@@ -146,18 +146,18 @@ class Gofile:
             raise Exception()
         
         async with ClientSession() as session:
-            async with session.get(url=f"{self.api_url}getContent?contentId={contentId}&token={self.token}") as resp:
+            async with session.get(url=f"{self.api_url}contents/{contentId}&token={self.token}") as resp:
                 return await self.__resp_handler(await resp.json())
 
     async def copy_content(self, contentsId, folderIdDest):
         if self.token is None:
             raise Exception()
         async with ClientSession() as session:
-            async with session.put(url=f"{self.api_url}copyContent",
+            async with session.put(url=f"{self.api_url}contents/copy",
                     data={
-                        "token": self.token,
+                        "token": self.token.split(':')[1],
                         "contentsId": contentsId,
-                        "folderIdDest": folderIdDest
+                        "folderId": folderIdDest
                     }
                 ) as resp:
                 return await self.__resp_handler(await resp.json())
@@ -166,10 +166,9 @@ class Gofile:
         if self.token is None:
             raise Exception()
         async with ClientSession() as session:
-            async with session.delete(url=f"{self.api_url}deleteContent",
+            async with session.delete(url=f"{self.api_url}contents/{contentId}",
                     data={
-                        "contentId": contentId,
-                        "token": self.token
+                        "token": self.token.split(':')[1]
                     }
                 ) as resp:
                 return await self.__resp_handler(await resp.json())
