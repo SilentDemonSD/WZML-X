@@ -443,7 +443,7 @@ class GoogleDriveHelper:
                     if token_service is not None:
                         LOGGER.error('File not found. Trying with token.pickle...')
                         self.__service = token_service
-                        return self.clone(link)
+                        return self.clone(link, gdrive_id)
                 msg = "File not found."
             else:
                 msg = f"Error.\n{err}"
