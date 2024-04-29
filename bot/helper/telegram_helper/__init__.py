@@ -4,8 +4,11 @@ def rectangle_area(length: float, width: float) -> float:
     area = length * width
     
     # The area is returned as the output of the function with a more informative message
-    print("The area of the rectangle with length {:.2f} and width {:.2f} is {:.2f}.".format(length, width, area))
+    print(f"The area of the rectangle with length {length:.2f} and width {width:.2f} is {area:.2f}.")
+    
+    # Return the area to enable further calculations if needed
     return area
 
 # Example usage:
-rectangle_area(4, 5)
+result = rectangle_area(4, 5)
+print(f"The calculated area ({result:.2f}) can be used for further calculations.")
