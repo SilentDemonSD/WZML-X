@@ -7,7 +7,7 @@ import re
 import aiofiles.os as aiopath
 import time
 import aiohttp
-from typing import Dict, Any, Union, Optional, Callable
+from typing import Dict, Any, Union, Optional, Callable, List, Tuple
 from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
 
 class ProgressFileReader(io.BufferedReader):
@@ -33,7 +33,7 @@ class DDLUploader:
     """
     A class for uploading files to various DDL servers.
     """
-    def __init__(self, listener, name, path):
+    def __init__(self, listener, name, path, speed_limit: int = 0):
         """
         Initializes a new instance of the DDLUploader class.
         """
@@ -51,6 +51,7 @@ class DDLUploader:
         self.__engine = 'DDL v1'
         self.__asyncSession = None
         self.__user_id = self.__listener.message.from_user.id
+        self.speed_limit = speed_limit
         super().__init__()
 
     def __del__(self):
@@ -71,6 +72,10 @@ class DDLUploader:
         chunk_size = current - self.last_uploaded
         self.last_uploaded = current
         self.__processed_bytes += chunk_size
+        if self.speed_limit > 0:
+            await asyncio.sleep(chunk_size / self.speed_limit)
+        if self.__listener.onUploadProgress:
+            self.__listener.onUploadProgress(self.__processed_bytes)
         return chunk_size
 
     @retry(wait=wait_exponential(multiplier=2, min=4, max=8), stop=stop_after_attempt(3),
@@ -135,7 +140,7 @@ class DDLUploader:
             raise Exception("No DDL Enabled to Upload.")
         return all_links
 
-    async def upload(self, file_name, size):
+    async def upload(self, file_name: str, size: int, speed_limit: int = 0) -> Tuple[Dict[str, Any], int]:
         """
         Uploads a file.
         """
@@ -146,19 +151,20 @@ class DDLUploader:
             link = await self.__upload_to_ddl(item_path)
             if link is not None:
                 print(f"Uploaded To DDL: {item_path}")
-                return link
+                self.__listener.onUploadComplete(link, size, self.total_files, self.total_folders, 'application/octet-stream', file_name)
+                return link, size
         except Exception as err:
             print("DDL Upload has been Cancelled")
             if self.__asyncSession:
                 await self.__asyncSession.close()
             err = str(err).replace('>', '').replace('<', '')
             print(traceback.format_exc())
-            await self.__listener.onUploadError(err)
+            self.__listener.onUploadError(err)
             self.__is_errored = True
         finally:
             if self.is_cancelled or self.__is_errored:
                 return
-            await self.__listener.onUploadComplete(link, size, self.total_files, self.total_folders, 'application/octet-stream', file_name)
+            self.__listener.onUploadSpeed(self.speed)
             return
 
     @property
@@ -193,7 +199,7 @@ class DDLUploader:
         print(f"Cancelling Upload: {self.name}")
         if self.__asyncSession:
             await self.__asyncSession.close()
-        await self.__listener.onUploadError('Your upload has been stopped!')
+        self.__listener.onUploadError('Your upload has been stopped!')
         return
 
 import user_data
