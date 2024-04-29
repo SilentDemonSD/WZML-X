@@ -2,7 +2,7 @@ import asyncio
 import logging
 import random
 import string
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import aiohttp
 from telegraph import Telegraph, exceptions as tg_exceptions
@@ -14,7 +14,11 @@ class TelegraphHelper:
     Helper class for interacting with Telegraph API.
     """
 
-    def __init__(self, author_name: str = None, author_url: str = None):
+    def __init__(
+        self,
+        author_name: str = None,
+        author_url: str = None,
+    ):
         self.telegraph = Telegraph(domain="graph.org")
         self.short_name = "".join(random.choices(string.ascii_letters, k=8))
         self.access_token = None
@@ -89,6 +93,15 @@ class TelegraphHelper:
         Returns:
             Optional[Dict[str, Any]]: The response from the Telegraph API, or None if an error occurred.
         """
+        try:
+            page = await self.get_page(path)
+            if not page:
+                logger.error(f"Page with path {path} not found.")
+                return None
+        except tg_exceptions.TelegraphError as e:
+            logger.error(f"Error getting page with path {path}: {e}")
+            return None
+
         return await self._request_telegraph(
             self.telegraph.edit_page,
             path=path,
@@ -98,16 +111,68 @@ class TelegraphHelper:
             **self._get_telegraph_kwargs(self.telegraph.edit_page),
         )
 
+    async def delete_page(self, path: str) -> Optional[Dict[str, Any]]:
+        """
+        Delete a Telegraph page.
+
+        Args:
+            path (str): The path of the page.
+
+        Returns:
+            Optional[Dict[str, Any]]: The response from the Telegraph API, or None if an error occurred.
+        """
+        try:
+            page = await self.get_page(path)
+            if not page:
+                logger.error(f"Page with path {path} not found.")
+                return None
+        except tg_exceptions.TelegraphError as e:
+            logger.error(f"Error getting page with path {path}: {e}")
+            return None
+
+        return await self._request_telegraph(
+            self.telegraph.delete_page,
+            path=path,
+            **self._get_telegraph_kwargs(self.telegraph.delete_page),
+        )
+
+    async def get_page(self, path: str) -> Optional[Dict[str, Any]]:
+        """
+        Get a Telegraph page.
+
+        Args:
+            path (str): The path of the page.
+
+        Returns:
+            Optional[Dict[str, Any]]: The response from the Telegraph API, or None if an error occurred.
+        """
+        try:
+            response = await self.telegraph.get_page(path, **self._get_telegraph_kwargs(self.telegraph.get_page))
+            return response
+        except tg_exceptions.TelegraphError as e:
+            logger.error(f"Error getting page with path {path}: {e}")
+            return None
+
     async def _request_telegraph(
         self,
         request_func,
         *args,
         retry_on_flood_control: bool = True,
         **kwargs,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Union[Dict[str, Any], None]:
         try:
-            response = await request_func(*args, **kwargs)
-            return response
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
+                response = await request_func(session, *args, **kwargs)
+                return response
         except tg_exceptions.RetryAfterError as e:
             if retry_on_flood_control:
                 logger.warning(
+                    f"Telegraph Flood control exceeded. Retrying in {e.retry_after} seconds..."
+                )
+                await asyncio.sleep(e.retry_after)
+                return await self._request_telegraph(
+                    request_func, *args, retry_on_flood_control=retry_on_flood_control, **kwargs
+                )
+        except tg_exceptions.TelegraphError as e:
+            logger.error(f"Error in Telegraph request: {e}")
+            return None
