@@ -1,7 +1,7 @@
 import os
 import re
 from anytree import NodeMixin, RenderTree
-from typing import List, Any, Tuple, Dict
+from typing import List, Any, Tuple, Dict, Union
 
 DOWNLOAD_DIR = os.environ.get('DOWNLOAD_DIR', '/usr/src/app/downloads/')
 if DOWNLOAD_DIR[-1] != '/':
@@ -60,8 +60,23 @@ def make_tree(res: List[Any], aria2: bool = False) -> TorNode:
                 child_node = TorNode(folder, parent=current_node, is_folder=True)
             current_node = child_node
 
-        TorNode(folders[-1], is_file=True, parent=current_node, size=get_size(i), priority=priority,
-                file_id=get_file_id(i), progress=get_progress(i))
+        try:
+            size = get_size(i)
+        except Exception:
+            size = 0
+
+        try:
+            file_id = get_file_id(i)
+        except Exception:
+            file_id = 0
+
+        try:
+            progress = get_progress(i)
+        except Exception:
+            progress = 0
+
+        TorNode(folders[-1], is_file=True, parent=current_node, size=size, priority=priority,
+                file_id=file_id, progress=progress)
     return parent
 
 
@@ -71,7 +86,7 @@ def get_size(i) -> int:
     elif hasattr(i, 'size'):
         return i.size
     else:
-        return 0
+        raise Exception("Unable to get size")
 
 
 def get_file_id(i) -> int:
@@ -80,7 +95,7 @@ def get_file_id(i) -> int:
     elif hasattr(i, 'file_id'):
         return i.file_id
     else:
-        return 0
+        raise Exception("Unable to get file ID")
 
 
 def get_progress(i) -> float:
@@ -91,7 +106,7 @@ def get_progress(i) -> float:
     elif hasattr(i, 'progress'):
         return i.progress
     else:
-        return 0
+        raise Exception("Unable to get progress")
 
 
 def create_list(par: TorNode, msg: Tuple[str, int]) -> Tuple[str, int]:
@@ -116,9 +131,12 @@ def add_file_node(i: TorNode, msg: Tuple[str, int]) -> Tuple[str, int]:
     """
     checked = "checked" if i.priority == 1 else ""
     size = f" data-size='{i.size}'" if i.size else ""
-    msg = (msg[0] + f'<li><input type="checkbox" name="filenode_{i.file_id}"{size} {checked}> '
-           f'<label{size} for="filenode_{i.file_id}">{i.name}</label> / {i.progress}%'
-           f'<input type="hidden" value="off" name="filenode_{i.file_id}"></li>', msg[1])
+    msg = (
+        msg[0] + f'<li><input type="checkbox" name="filenode_{i.file_id}"{size} {checked}> '
+        f'<label{size} for="filenode_{i.file_id}">{i.name}</label> / {i.progress}%'
+        f'<input type="hidden" value="off" name="filenode_{i.file_id}"></li>',
+        msg[1]
+    )
     return msg
 
 
