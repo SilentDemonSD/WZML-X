@@ -211,4 +211,23 @@ class RcloneList:
         await self.get_path_buttons()
 
     async def list_remotes(self) -> None:
-
+        cmd = ["rclone", "listremotes", "--config", self.config_path]
+        if self.is_cancelled:
+            return
+        res, err, code = await cmd_exec(cmd)
+        if code not in [0, -9]:
+            LOGGER.error(f'While rclone listing remotes. Stderr: {err}')
+            self.remote = err[:4000]
+            self.event.set()
+            return
+        try:
+            result = json.loads(res)
+        except json.JSONDecodeError as e:
+            LOGGER.error(f'Error decoding JSON: {e}')
+            self.remote = "Error decoding JSON"
+            self.event.set()
+            return
+        self.remote = result[0]["remote"]
+        self.path = ""
+        self.path_list = result
+        await self.get_path_buttons()
