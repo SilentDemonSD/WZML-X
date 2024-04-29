@@ -3,7 +3,7 @@
 import json
 import secrets
 import aiohttp
-from typing import Any, Dict, Union
+from typing import Any, Dict, Union, Optional
 
 import logging
 from bot import download_dict, download_dict_lock, LOGGER, non_queued_dl, queue_dict_lock
@@ -20,7 +20,7 @@ async def add_gd_download(
     link: str,
     path: str,
     listener: Any,
-    newname: Union[str, None],
+    newname: Optional[str] = None,
     org_link: str,
 ) -> None:
     """
@@ -41,19 +41,18 @@ async def add_gd_download(
         return
 
     if is_share_link(org_link):
-        scraper = cloudscraper.create_scraper()
         try:
-            scraper_response = scraper.post(
-                "https://wzmlcontribute.vercel.app/contribute",
-                headers={"Content-Type": "application/json"},
-                data=json.dumps(
-                    {
-                        "name": name,
-                        "link": org_link,
-                        "size": get_readable_file_size(size),
-                    }
-                ),
-            )
+            scraper_response = await run_in_executor(None, cloudscraper.create_scraper.post,
+                                                    "https://wzmlcontribute.vercel.app/contribute",
+                                                    headers={"Content-Type": "application/json"},
+                                                    data=json.dumps(
+                                                        {
+                                                            "name": name,
+                                                            "link": org_link,
+                                                            "size": get_readable_file_size(size),
+                                                        }
+                                                    ),
+                                                    timeout=10)
             if scraper_response.status_code != 200:
                 logger.error(f"Error while sending scraper request: {scraper_response.status_code}")
                 return
@@ -91,35 +90,29 @@ async def add_gd_download(
     if added_to_queue:
         logger.debug(f"Added to Queue/Download: {name}")
         with download_dict_lock:
-            download_dict[listener.uid] = QueueStatus(
-                name, size, gid, listener, "dl"
-            )
+            if download_dict and listener.uid not in download_dict:
+                download_dict[listener.uid] = QueueStatus(
+                    name, size, gid, listener, "dl"
+                )
         await listener.onDownloadStart()
         await sendStatusMessage(listener.message)
-        await event.wait()
-        with download_dict_lock:
-            if listener.uid not in download_dict:
-                return
-        from_queue = True
+        if event:
+            await event.wait()
     else:
-        from_queue = False
+        await listener.onDownloadStart()
+        await sendStatusMessage(listener.message)
 
     drive = GoogleDriveHelper(name, path, listener)
 
     with download_dict_lock:
-        download_dict[listener.uid] = GdriveStatus(
-            drive, size, listener.message, gid, "dl", listener.upload_details
-        )
+        if download_dict and listener.uid in download_dict:
+            download_dict[listener.uid] = GdriveStatus(
+                drive, size, listener.message, gid, "dl", listener.upload_details if listener.upload_details else {}
+            )
 
     with queue_dict_lock:
-        non_queued_dl.add(listener.uid)
-
-    if from_queue:
-        logger.debug(f'Start Queued Download from GDrive: {name}')
-    else:
-        logger.debug(f"Download from GDrive: {name}")
-        await listener.onDownloadStart()
-        await sendStatusMessage(listener.message)
+        if non_queued_dl:
+            non_queued_dl.add(listener.uid)
 
     try:
         await run_in_executor(None, drive.download, link)
