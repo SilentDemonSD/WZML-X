@@ -1,29 +1,49 @@
-import errno  # Import the errno module for handling error numbers
-import os  # Import the os module for interacting with the operating system
-import pickle  # Import the pickle module for serializing and deserializing Python object structures
-import sys  # Import the sys module for interacting with the Python runtime environment
-import time  # Import the time module for measuring elapsed time
+#!/usr/bin/env python3
 
-from argparse import ArgumentParser  # Import the ArgumentParser class for parsing command-line options
-from base64 import b64decode  # Import the b64decode function for decoding base64-encoded strings
-from contextlib import contextmanager  # Import the contextmanager decorator for creating context managers
-from glob import glob  # Import the glob function for searching for files that match a specified pattern
-from google.auth.exceptions import TransportError  # Import the TransportError exception for handling transport-related errors
-from google.auth.transport.requests import Request  # Import the Request class for making HTTP requests
-from google_auth_oauthlib.flow import InstalledAppFlow  # Import the InstalledAppFlow class for handling OAuth 2.0 flows for installed applications
-from googleapiclient.discovery import build  # Import the build function for building API clients
-from googleapiclient.errors import HttpError, ResourceNotFoundError, TooManyRequests  # Import various API client errors
-from googleapiclient.http import HttpRequest  # Import the HttpRequest class for making HTTP requests
-from psutil import cpu_count  # Import the cpu_count function for getting the number of processors in the system
-from tqdm import tqdm  # Import the tqdm function for creating progress bars
+import errno
+import os
+import sys
+import time
+import json
+import pickle
+import argparse
+import base64
+import psutil
+import google.auth.exceptions
+import google.auth.transport.requests
+import google.auth.transport.requests.Request
+import google_auth_oauthlib.flow
+import googleapiclient.discovery
+import googleapiclient.errors
+import googleapiclient.http
+import tqdm
 
-# Define the scopes for the Google API credentials
-SCOPES = [
-    'https://www.googleapis.com/auth/drive',  # Drive API scope
-    'https://www.googleapis.com/auth/cloud-platform',  # Google Cloud Platform scope
-    'https://www.googleapis.com/auth/iam'  # Identity and Access Management scope
-]
+try:
+    from json import loads  # noqa
+except ImportError:
+    from json import JSONDecoder().decode  # noqa
 
+try:
+    from psutil import cpu_count  # noqa
+except ImportError:
+    cpu_count = lambda: 1
+
+try:
+    from tqdm import tqdm  # noqa
+except ImportError:
+    def tqdm(iterable, **kwargs):
+        return iterable
+
+try:
+    import google.auth  # noqa
+    import google.auth.transport.requests  # noqa
+    import google_auth_oauthlib.flow  # noqa
+    import googleapiclient.discovery  # noqa
+    import googleapiclient.errors  # noqa
+    import googleapiclient.http  # noqa
+except ImportError:
+    print("google-auth, google-auth-oauthlib, and google-api-python-client modules not found.")
+    sys.exit(1)
 
 def load_credentials(path: str) -> dict:
     """Load credentials from a JSON file.
@@ -42,7 +62,6 @@ def load_credentials(path: str) -> dict:
     with open(path, 'r') as f:
         return loads(f.read())  # Deserialize the JSON object using the loads function from the json module
 
-
 def print_spinner(msg: str, interval: float = 0.1) -> None:
     """Print a message with a spinner animation while a task is being performed.
 
@@ -59,3 +78,8 @@ def print_spinner(msg: str, interval: float = 0.1) -> None:
         i = (i + 1) % len(spinner)  # Update the spinner frame index
         if not sys.stdout.isatty():  # If the output is not a TTY, break the loop
             break
+
+if __name__ == "__main__":
+    # Example usage of the load_credentials and print_spinner functions
+    credentials = load_credentials("credentials.json")
+    print_spinner("Loading credentials...")
