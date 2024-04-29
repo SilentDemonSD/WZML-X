@@ -4,7 +4,6 @@ from time import time
 from typing import Any, Dict, Union
 
 import aiohttp
-from bot import download_dict, download_dict_lock, get_client, QbInterval, config_dict, QbTorrents, qb_listener_lock, LOGGER, bot_loop
 from bot.helper.mirror_utils.status_utils.qbit_status import QbittorrentStatus
 from bot.helper.telegram_helper.message_utils import update_all_messages
 from bot.helper.ext_utils.bot_utils import get_readable_time, getDownloadByGid, new_task, sync_to_async
@@ -109,9 +108,9 @@ async def qb_listener():
     """qBittorrent listener for various torrent states."""
     async with aiohttp.ClientSession() as session:
         client = await get_client(session)
-        while True:
-            async with qb_listener_lock:
-                try:
+        try:
+            while True:
+                async with qb_listener_lock:
                     if not QbTorrents:
                         break
                     torrents_info = await sync_to_async(client.torrents_info)
@@ -167,24 +166,11 @@ async def qb_listener():
                         elif state in ['pausedUP', 'pausedDL'] and QbTorrents[tag].get('seeding'):
                             QbTorrents[tag]['seeding'] = False
                             await on_seed_finish(tor_info)
-                except Exception as e:
-                    LOGGER.error(str(e))
-                    client = await sync_to_async(get_client, session)
+        except Exception as e:
+            LOGGER.error(str(e))
+            client = await sync_to_async(get_client, session)
     QbInterval.clear()
 
 
-async def on_download_start(tag: str) -> None:
-    """Start listening for a specific tag."""
-    async with qb_listener_lock:
-        if tag not in QbTorrents:
-            QbTorrents[tag] = {
-                'stalled_time': time(),
-                'stop_dup_check': False,
-                'rechecked': False,
-                'uploaded': False,
-                'seeding': False,
-                'size_checked': False
-            }
-        if not QbInterval:
-            periodic = bot_loop.create_task(qb_listener())
-            QbInterval.append(periodic)
+if __name__ == "__main__":
+    bot_loop.run_until_complete(qb_listener())
