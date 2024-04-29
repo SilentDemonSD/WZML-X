@@ -144,14 +144,4 @@ class TelegraphHelper:
                     logger.warning(f"Telegraph Flood control exceeded. Retrying in {e.retry_after} seconds...")
                     await asyncio.sleep(e.retry_after)
 
-if __name__ == "__main__":
-    # Ensure that the config_dict variable is defined
-    import sys
 
-    if "config_dict" in globals():
-        telegraph = TelegraphHelper(config_dict["AUTHOR_NAME"], config_dict["AUTHOR_URL"])
-        bot_loop = asyncio.get_event_loop()
-        bot_loop.run_until_complete(telegraph.create_account())
-    else:
-        logger.error("config_dict variable is not defined.")
-        sys.exit(1)
