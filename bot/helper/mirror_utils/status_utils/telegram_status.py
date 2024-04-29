@@ -25,7 +25,7 @@ class TelegramStatus:
         self._status = status
         self.upload_details = upload_details
         self.message = message
-        self.engine_status = EngineStatus().STATUS_TG
+        self._engine_status = EngineStatus().STATUS_TG if status == 'tg' else EngineStatus().STATUS_MD
 
     @property
     def processed_bytes(self) -> str:
@@ -122,6 +122,8 @@ class TelegramStatus:
 
         :return: The file object for downloading
         """
+        if not self._obj:
+            raise AttributeError("File object not initialized.")
         return self._obj
 
     @engine_status.setter
@@ -131,4 +133,18 @@ class TelegramStatus:
 
         :param status: The engine status
         """
-        self._engine_status = EngineStatus().STATUS_TG if status == 'tg' else EngineStatus().STATUS_MD
+        if status == 'tg':
+            self._engine_status = EngineStatus().STATUS_TG
+        elif status == 'md':
+            self._engine_status = EngineStatus().STATUS_MD
+        else:
+            raise ValueError("Invalid engine status.")
+
+    @property
+    def engine_status(self) -> str:
+        """
+        Returns the engine status for Telegram.
+
+        :return: The engine status for Telegram
+        """
+        return self._engine_status
