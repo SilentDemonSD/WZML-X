@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-from asyncio import gather
-from json import loads
-from secrets import token_hex
+import asyncio
+import json
+from typing import List, Tuple, Dict, Any, Union
 
 from bot import download_dict, download_dict_lock, queue_dict_lock, non_queued_dl, LOGGER
 from bot.helper.ext_utils.bot_utils import cmd_exec
@@ -11,16 +11,31 @@ from bot.helper.mirror_utils.status_utils.rclone_status import RcloneStatus
 from bot.helper.mirror_utils.status_utils.queue_status import QueueStatus
 from bot.helper.mirror_utils.rclone_utils.transfer import RcloneTransferHelper
 
+async def add_rclone_download(
+    rc_path: str, config_path: str, path: str, name: str, listener
+) -> Union[None, Tuple[str, List[str]]]:
+    """
+    Adds a new rclone download to the queue or starts it directly if not queued.
 
-async def add_rclone_download(rc_path, config_path, path, name, listener):
+    :param rc_path: The rclone path in the format remote:path
+    :param config_path: The path to the rclone config file
+    :param path: The local download path
+    :param name: The name of the download
+    :param listener: The listener object
+    :return: None or a tuple containing a message and a list of buttons
+    """
     remote, rc_path = rc_path.split(':', 1)
     rc_path = rc_path.strip('/')
 
-    cmd1 = ['rclone', 'lsjson', '--fast-list', '--stat', '--no-mimetype',
-            '--no-modtime', '--config', config_path, f'{remote}:{rc_path}']
-    cmd2 = ['rclone', 'size', '--fast-list', '--json',
-            '--config', config_path, f'{remote}:{rc_path}']
-    res1, res2 = await gather(cmd_exec(cmd1), cmd_exec(cmd2))
+    cmd1 = [
+        'rclone', 'lsjson', '--fast-list', '--stat', '--no-mimetype',
+        '--no-modtime', '--config', config_path, f'{remote}:{rc_path}'
+    ]
+    cmd2 = [
+        'rclone', 'size', '--fast-list', '--json',
+        '--config', config_path, f'{remote}:{rc_path}'
+    ]
+    res1, res2 = await asyncio.gather(cmd_exec(cmd1), cmd_exec(cmd2))
     if res1[2] != res2[2] != 0:
         if res1[2] != -9:
             err = res1[1] or res2[1]
@@ -28,8 +43,8 @@ async def add_rclone_download(rc_path, config_path, path, name, listener):
             await sendMessage(listener.message, msg)
         return
     try:
-        rstat = loads(res1[0])
-        rsize = loads(res2[0])
+        rstat = json.loads(res1[0])
+        rsize = json.loads(res2[0])
     except Exception as err:
         await sendMessage(listener.message, f'RcloneDownload JsonLoad: {err}')
         return

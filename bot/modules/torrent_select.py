@@ -1,27 +1,73 @@
-#!/usr/bin/env python3
+import asyncio
+import logging
+import pathlib
+import sys
+import typing
 from contextlib import suppress
-from pyrogram.handlers import MessageHandler, CallbackQueryHandler
-from pyrogram.filters import regex
-from aiofiles.os import remove as aioremove, path as aiopath
+from functools import partial
+from pathlib import Path
+from typing import Any
+from typing import Callable
+from typing import Coroutine
+from typing import List
+from typing import Optional
 
-from bot import bot, bot_name, aria2, download_dict, download_dict_lock, OWNER_ID, user_data, LOGGER
+import anyio
+import pyrogram
+from pyrogram.errors import FloodWait
+from pyrogram.filters import regex
+from pyrogram.handlers import MessageHandler
+from pyrogram.handlers import CallbackQueryHandler
+from pyrogram.types import InlineKeyboardButton
+from pyrogram.types import InlineKeyboardMarkup
+from pyrogram.types import Message
+from pyrogram.types import CallbackQuery
+from aiofiles.os import remove as aioremove
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import sendMessage, sendStatusMessage, deleteMessage
-from bot.helper.ext_utils.bot_utils import getDownloadByGid, MirrorStatus, bt_selection_buttons, sync_to_async
+from bot.helper.telegram_helper.message_utils import sendMessage
+from bot.helper.telegram_helper.message_utils import sendStatusMessage
+from bot.helper.telegram_helper.message_utils import deleteMessage
+from bot.helper.ext_utils.bot_utils import getDownloadByGid
+from bot.helper.ext_utils.bot_utils import MirrorStatus
+from bot.helper.ext_utils.exceptions import Abort
+from bot.helper.ext_utils.exceptions import DirectDownloadError
+from bot.helper.ext_utils.exceptions import FileRemoveError
+from bot.helper.ext_utils.exceptions import NoActiveTask
+from bot.helper.ext_utils.exceptions import NotBTTask
+from bot.helper.ext_utils.exceptions import PausedTask
+from bot.helper.ext_utils.exceptions import WrongTask
+from bot.helper.ext_utils.task_manager import download_dict
+from bot.helper.ext_utils.task_manager import download_dict_lock
+from bot.helper.ext_utils.utils import human_format
+from bot.helper.ext_utils.utils import is_magnet
+from bot.helper.ext_utils.utils import is_torrent_file
+from bot.helper.ext_utils.utils import is_valid_identifier
+from bot.helper.ext_utils.utils import is_valid_path
+from bot.helper.ext_utils.utils import is_valid_user
+from bot.helper.ext_utils.utils import run_sync
+from bot.helper.ext_utils.utils import select_files
+from bot.helper.ext_utils.utils import torrent_file_to_magnet
+from bot.helper.ext_utils.utils import validate_path
+from bot.helper.ext_utils.utils import validate_user
+from bot.helper.ext_utils.bot_utils import MirrorStatus as Status
 
+bot = pyrogram.Client(":memory:", bot_name)
+bot_name = bot.bot_info.username
+LOGGER = logging.getLogger(__name__)
 
-async def select(client, message):
+async def select(client: pyrogram.Client, message: Message) -> None:
+    """Select files for a bittorrent download."""
     user_id = message.from_user.id
-    msg = message.text.split('_', maxsplit=1)
+    msg = message.text.split("_", maxsplit=1)
     if len(msg) > 1:
-        cmd_data = msg[1].split('@', maxsplit=1)
+        cmd_data = msg[1].split("@", maxsplit=1)
         if len(cmd_data) > 1 and cmd_data[1].strip() != bot_name:
             return
         gid = cmd_data[0]
         dl = await getDownloadByGid(gid)
         if dl is None:
-            await sendMessage(message, f"GID: <code>{gid}</code> Not Found.")
+            await sendMessage(message, f"GID: `{gid}` Not Found.")
             return
     elif reply_to_id := message.reply_to_message_id:
         async with download_dict_lock:
@@ -30,21 +76,30 @@ async def select(client, message):
             await sendMessage(message, "This is not an active task!")
             return
     elif len(msg) == 1:
-        msg = ("Reply to an active /cmd which was used to start the qb-download or add gid along with cmd\n\n"
-               + "This command mainly for selection incase you decided to select files from already added torrent. "
-               + "But you can always use /cmd with arg `s` to select files before download start.")
+        msg = (
+            "Reply to an active /cmd which was used to start the qb-download or add gid along with cmd\n\n"
+            + "This command mainly for selection incase you decided to select files from already added torrent. "
+            + "But you can always use /cmd with arg `s` to select files before download start."
+        )
         await sendMessage(message, msg)
         return
 
-    if OWNER_ID != user_id and dl.message.from_user.id != user_id and \
-       (user_id not in user_data or not user_data[user_id].get('is_sudo')):
+    if (
+        OWNER_ID != user_id
+        and dl.message.from_user.id != user_id
+        and (user_id not in user_data or not user_data[user_id].get("is_sudo"))
+    ):
         await sendMessage(message, "This task is not for you!")
         return
-    if dl.status() not in [MirrorStatus.STATUS_DOWNLOADING, MirrorStatus.STATUS_PAUSED, MirrorStatus.STATUS_QUEUEDL]:
-        await sendMessage(message, 'Task should be in download or pause (incase message deleted by wrong) or queued (status incase you used torrent file)!')
+    if dl.status() not in [
+        Status.STATUS_DOWNLOADING,
+        Status.STATUS_PAUSED,
+        Status.STATUS_QUEUED,
+    ]:
+        await sendMessage(message, "Task should be in download or pause (incase message deleted by wrong) or queued (status incase you used torrent file)!")
         return
-    if dl.name().startswith('[METADATA]'):
-        await sendMessage(message, 'Try after downloading metadata finished!')
+    if dl.name().startswith("[METADATA]"):
+        await sendMessage(message, "Try after downloading metadata finished!")
         return
 
     try:
@@ -60,10 +115,9 @@ async def select(client, message):
                 try:
                     await sync_to_async(aria2.client.force_pause, id_)
                 except Exception as e:
-                    LOGGER.error(
-                        f"{e} Error in pause, this mostly happens after abuse aria2")
+                    LOGGER.error(f"{e} Error in pause, this mostly happens after abuse aria2")
         listener.select = True
-    except Exception:
+    except Exception as e:
         await sendMessage(message, "This is not a bittorrent task!")
         return
 
@@ -72,7 +126,8 @@ async def select(client, message):
     await sendMessage(message, msg, SBUTTONS)
 
 
-async def get_confirm(client, query):
+async def get_confirm(client: pyrogram.Client, query: CallbackQuery) -> None:
+    """Handle the confirmation of file selection."""
     user_id = query.from_user.id
     data = query.data.split()
     message = query.message
@@ -81,7 +136,7 @@ async def get_confirm(client, query):
         await query.answer("This task has been cancelled!", show_alert=True)
         await deleteMessage(message)
         return
-    if hasattr(dl, 'listener'):
+    if hasattr(dl, "listener"):
         listener = dl.listener()
     else:
         await query.answer("Not in download state anymore! Keep this message to resume the seed if seed enabled!", show_alert=True)
@@ -96,7 +151,7 @@ async def get_confirm(client, query):
         if len(id_) > 20:
             client = dl.client()
             tor_info = (await sync_to_async(client.torrents_info, torrent_hash=id_))[0]
-            path = tor_info.content_path.rsplit('/', 1)[0]
+            path = tor_info.content_path.rsplit("/", 1)[0]
             res = await sync_to_async(client.torrents_files, torrent_hash=id_)
             for f in res:
                 if f.priority == 0:
@@ -110,9 +165,9 @@ async def get_confirm(client, query):
         else:
             res = await sync_to_async(aria2.client.get_files, id_)
             for f in res:
-                if f['selected'] == 'false' and await aiopath.exists(f['path']):
+                if f["selected"] == "false" and await aiopath.exists(f["path"]):
                     with suppress(Exception):
-                        await aioremove(f['path'])
+                        await aioremove(f["path"])
             if not dl.queued:
                 try:
                     await sync_to_async(aria2.client.unpause, id_)
@@ -126,6 +181,16 @@ async def get_confirm(client, query):
         await deleteMessage(message)
 
 
-bot.add_handler(MessageHandler(select, filters=regex(
-    f"^/{BotCommands.BtSelectCommand}(_\w+)?") & CustomFilters.authorized & ~CustomFilters.blacklisted))
-bot.add_handler(CallbackQueryHandler(get_confirm, filters=regex("^btsel")))
+bot.add_handler(
+    MessageHandler(
+        select,
+        filters=regex(f"^/{BotCommands.BtSelectCommand}(_\w+)?")
+        & CustomFilters.authorized
+        & ~CustomFilters.blacklisted,
+    )
+)
+bot.add_handler(
+    CallbackQueryHandler(
+        get_confirm, filters=regex("^btsel")
+    )
+)

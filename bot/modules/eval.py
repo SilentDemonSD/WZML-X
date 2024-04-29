@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
+import asyncio
+import os
+import sys
+import textwrap
+from io import StringIO
+from re import match
+from traceback import format_exc
+from aiofiles import open as aioopen
 from pyrogram.handlers import MessageHandler
 from pyrogram.filters import command
-from os import path as ospath, getcwd, chdir
-from aiofiles import open as aiopen
-from traceback import format_exc
-from textwrap import indent
-from io import StringIO, BytesIO
-from re import match
+from pyrogram.errors import FloodWait
 from contextlib import redirect_stdout, suppress
-
-from bot import LOGGER, bot, user
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.message_utils import sendFile, sendMessage
@@ -28,7 +29,7 @@ def namespace_of(message):
     return namespaces[message.chat.id]
 
 
-def log_input(message):
+async def log_input(message):
     LOGGER.info(f"INPUT: {message.text} (User ID ={message.from_user.id} | Chat ID ={message.chat.id})")
 
 
@@ -48,65 +49,63 @@ async def send(msg, message):
 
 @new_task
 async def evaluate(client, message):
-    await send(await do(eval, message), message)
+    await log_input(message)
+    content = message.text.split(maxsplit=1)[-1]
+    body = content.strip('` \n')
+    env = namespace_of(message)
+
+    try:
+        with redirect_stdout(StringIO()) as stdout:
+            exec(compile(f'async def func():\n{textwrap.indent(body, "  ")}', '<string>', 'exec'), env)
+            func = env['func']
+            func_return = await func()
+    except Exception as e:
+        return await send(f'{e.__class__.__name__}: {e}', message)
+
+    result = None
+    if func_return is None:
+        try:
+            result = str(eval(body, env))
+        except Exception as e:
+            result = f'{format_exc()}'
+    else:
+        result = str(func_return)
+
+    if result:
+        await send(result, message)
 
 
 @new_task
 async def execute(client, message):
-    await send(await do(exec, message), message)
-
-
-def cleanup_code(code):
-    if code.startswith('```') and code.endswith('```'):
-        return '\n'.join(code.split('\n')[1:-1])
-    return code.strip('` \n')
-
-
-async def do(func, message):
-    log_input(message)
+    await log_input(message)
     content = message.text.split(maxsplit=1)[-1]
-    body = cleanup_code(content)
+    body = content.strip('` \n')
     env = namespace_of(message)
 
-    chdir(getcwd())
-    async with aiopen(ospath.join(getcwd(), 'bot/modules/temp.txt'), 'w') as temp:
-        await temp.write(body)
-
-    stdout = StringIO()
-
-    to_compile = f'async def func():\n{indent(body, "  ")}'
-
     try:
-        exec(to_compile, env)
+        with redirect_stdout(StringIO()) as stdout:
+            exec(compile(f'def func():\n{textwrap.indent(body, "  ")}', '<string>', 'exec'), env)
+            func = env['func']
+            func_return = func()
     except Exception as e:
-        return f'{e.__class__.__name__}: {e}'
+        return await send(f'{e.__class__.__name__}: {e}', message)
 
-    func = env['func']
-
-    try:
-        with redirect_stdout(stdout):
-            func_return = await func()
-    except Exception as e:
-        value = stdout.getvalue()
-        return f'{value}{format_exc()}'
+    result = None
+    if func_return is None:
+        try:
+            result = str(eval(body, env))
+        except Exception as e:
+            result = f'{format_exc()}'
     else:
-        value = stdout.getvalue()
-        result = None
-        if func_return is None:
-            if value:
-                result = f'{value}'
-            else:
-                with suppress(Exception):
-                    result = f'{repr(eval(body, env))}'
-        else:
-            result = f'{value}{func_return}'
-        if result:
-            return result
+        result = str(func_return)
+
+    if result:
+        await send(result, message)
 
 
+@new_task
 async def clear(client, message):
-    log_input(message)
-    global namespaces
+    await log_input(message)
     if message.chat.id in namespaces:
         del namespaces[message.chat.id]
         await send("<b>Cached Locals Cleared !</b>", message)
@@ -120,3 +119,4 @@ bot.add_handler(MessageHandler(execute, filters=command(
     BotCommands.ExecCommand) & CustomFilters.sudo))
 bot.add_handler(MessageHandler(clear, filters=command(
     BotCommands.ClearLocalsCommand) & CustomFilters.sudo))
+

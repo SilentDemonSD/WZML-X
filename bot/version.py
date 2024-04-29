@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
-def get_version() -> str:
-    '''
-    Returns the version details. Do not Interfere with this !
 
-    :return: The version details in the format 'vMAJOR.MINOR.PATCH-STATE'
+def get_version() -> str:
+    """
+    Returns the version details in the format 'vMAJOR.MINOR.PATCH-STATE'.
+
+    :return: The version details as a string.
     :rtype: str
-    '''
-    MAJOR = '1'
-    MINOR = '3'
-    PATCH = '4'
-    STATE = 'a0'
-    return f"v{MAJOR}.{MINOR}.{PATCH}-{STATE}"
+    """
+    major: str = '1'
+    minor: str = '3'
+    patch: str = '4'
+    state: str = 'a0'
+
+    return f"v{major}.{minor}.{patch}-{state}"
 
 if __name__ == '__main__':
     print(get_version())
