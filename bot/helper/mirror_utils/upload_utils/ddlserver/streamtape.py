@@ -2,13 +2,11 @@
 import asyncio
 import os
 from pathlib import Path
-from typing import AsyncContextManager, Any, Dict, List, Optional
+from typing import Optional
 
 import aiofiles
 import aiohttp
 from aiohttp import ClientSession
-
-from bot import config_dict, LOGGER
 from bot.helper.ext_utils.telegraph_helper import telegraph
 
 ALLOWED_EXTS = [
@@ -48,10 +46,13 @@ class Streamtape:
         if self.session:
             await self.session.close()
 
-    async def __get_acc_info(self) -> Optional[Dict[str, Any]]:
+    async def __get_acc_info(self) -> Optional[dict]:
         url = f"{self.base_url}/account/info?login={self.__userLogin}&key={self.__passKey}"
         async with self.session.get(url) as response:
-            response.raise_for_status()
+            try:
+                response.raise_for_status()
+            except aiohttp.ClientResponseError:
+                return None
             data = await response.json()
             if data.get("status") == 200:
                 return data.get("result")
@@ -59,7 +60,7 @@ class Streamtape:
 
     async def __get_upload_url(
         self, folder: Optional[str] = None, sha256: Optional[str] = None, httponly: bool = False
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Optional[dict]:
         _url = f"{self.base_url}/file/ul?login={self.__userLogin}&key={self.__passKey}"
         if folder is not None:
             _url += f"&folder={folder}"
@@ -69,7 +70,10 @@ class Streamtape:
             _url += "&httponly=true"
 
         async with self.session.get(_url) as response:
-            response.raise_for_status()
+            try:
+                response.raise_for_status()
+            except aiohttp.ClientResponseError:
+                return None
             data = await response.json()
             if data.get("status") == 200:
                 return data.get("result")
@@ -92,7 +96,7 @@ class Streamtape:
         if upload_info is None:
             return None
 
-        if self.dluploader.is_cancelled:
+        if hasattr(self.dluploader, "is_cancelled") and self.dluploader.is_cancelled:
             return
 
         self.dluploader.last_uploaded = 0
@@ -100,13 +104,16 @@ class Streamtape:
             async with self.session.post(
                 upload_info["url"], data=f, headers={"Content-Type": "application/octet-stream"}
             ) as response:
-                response.raise_for_status()
+                try:
+                    response.raise_for_status()
+                except aiohttp.ClientResponseError:
+                    return None
                 file_id = (await response.json()).get("result")
                 await self.rename(file_id, file_name)
                 return f"https://streamtape.to/v/{file_id}"
         return None
 
-    async def create_folder(self, name: str, parent: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    async def create_folder(self, name: str, parent: Optional[str] = None) -> Optional[dict]:
         exfolders = [
             folder["name"] for folder in (await self.list_folder(folder=parent) or {"folders": []})["folders"]
         ]
@@ -121,17 +128,23 @@ class Streamtape:
             url += f"&pid={parent}"
 
         async with self.session.post(url) as response:
-            response.raise_for_status()
+            try:
+                response.raise_for_status()
+            except aiohttp.ClientResponseError:
+                return None
             data = await response.json()
             if data.get("status") == 200:
                 return data.get("result")
         return None
 
-    async def rename(self, file_id: str, name: str) -> Optional[Dict[str, Any]]:
+    async def rename(self, file_id: str, name: str) -> Optional[dict]:
         url = f"{self.base_url}/file/rename?login={self.__userLogin}&key={self.__passKey}&file={file_id}&name={name}"
 
         async with self.session.post(url) as response:
-            response.raise_for_status()
+            try:
+                response.raise_for_status()
+            except aiohttp.ClientResponseError:
+                return None
             data = await response.json()
             if data.get("status") == 200:
                 return data.get("result")
@@ -161,16 +174,19 @@ class Streamtape:
             page = await telegraph.create_page(title=f"StreamTape X", content=tg_html)
             return f"https://te.legra.ph/{page['path']}"
         except Exception as e:
-            LOGGER.error(f"Failed to create telegraph page: {e}")
+            print(f"Failed to create telegraph page: {e}")
             return None
 
-    async def list_folder(self, folder: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    async def list_folder(self, folder: Optional[str] = None) -> Optional[dict]:
         url = f"{self.base_url}/file/listfolder?login={self.__userLogin}&key={self.__passKey}"
         if folder is not None:
             url += f"&folder={folder}"
 
         async with self.session.get(url) as response:
-            response.raise_for_status()
+            try:
+                response.raise_for_status()
+            except aiohttp.ClientResponseError:
+                return None
             data = await response.json()
             if data.get("status") == 200:
                 return data.get("result")
