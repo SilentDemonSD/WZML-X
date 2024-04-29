@@ -6,5 +6,4 @@ import sys
 
 import pyrogram
 from pyrogram.errors import RpcError
-from pyrogram.handlers import MessageHandler, EditedMessageHandler
 
