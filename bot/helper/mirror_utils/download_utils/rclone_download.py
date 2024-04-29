@@ -46,8 +46,16 @@ async def add_rclone_download(
             return
         rstat = json.loads(res1[0])
         rsize = json.loads(res2[0])
-    except Exception as err:
-        await sendMessage(listener.message, f'RcloneDownload Error: {err}')
+    except (IndexError, json.JSONDecodeError) as e:
+        await sendMessage(listener.message, f'Error decoding JSON or splitting remote: {e}')
+        return
+    except FileNotFoundError as e:
+        await sendMessage(listener.message, f'Config file not found: {e}')
+        return
+    except asyncio.CancelledError:
+        raise
+    except Exception as e:
+        await sendMessage(listener.message, f'Unexpected error: {e}')
         return
 
     if rstat['IsDir']:
@@ -81,8 +89,8 @@ async def add_rclone_download(
 
     try:
         RCTransfer = RcloneTransferHelper(listener, name, rc_path)
-    except Exception as err:
-        await sendMessage(listener.message, f'RcloneTransferHelper Error: {err}')
+    except Exception as e:
+        await sendMessage(listener.message, f'RcloneTransferHelper Error: {e}')
         return
 
     async with download_dict_lock:
@@ -100,5 +108,5 @@ async def add_rclone_download(
 
     try:
         await RCTransfer.download(remote, rc_path, config_path, path)
-    except Exception as err:
-        await sendMessage(listener.message, f'RcloneDownload Error: {err}')
+    except Exception as e:
+        await sendMessage(listener.message, f'RcloneDownload Error: {e}')
