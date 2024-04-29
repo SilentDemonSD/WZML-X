@@ -3,6 +3,7 @@ import asyncio
 import aiohttp
 import html
 import urllib.parse
+import ast
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.filters import command, regex
 from pyrogram.context import AsyncContextManager
@@ -32,7 +33,7 @@ async def initiate_search_tools() -> None:
 
         if SEARCH_PLUGINS := config_dict.get('SEARCH_PLUGINS'):
             PLUGINS = []
-            src_plugins = eval(SEARCH_PLUGINS)
+            src_plugins = ast.literal_eval(SEARCH_PLUGINS)
             if qb_plugins:
                 names = [plugin['name'] for plugin in qb_plugins]
                 await sync_to_async(qbclient.search_uninstall_plugin, names=names)
@@ -48,12 +49,4 @@ async def initiate_search_tools() -> None:
                 async with AsyncContextManager(aiohttp.ClientSession(trust_env=True)) as c:
                     async with c.get(f'{SEARCH_API_LINK}/api/v1/sites') as res:
                         data = await res.json()
-                SITES = {str(site): str(site).capitalize() for site in data['supported_sites']}
-                SITES['all'] = 'All'
-            except Exception as e:
-                print(f"Error fetching sites from SEARCH_API_LINK: {e}")
-                SITES = None
-
-
-async def __search(key: str, site: str, message, method: str) -> None:
-    ...
+              
