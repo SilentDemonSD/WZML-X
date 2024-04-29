@@ -134,3 +134,19 @@ async def _send_help_message(message):
 2. Forwarded msgs can't be Edited''')
 
 bot.add_handler(MessageHandler(broadcast, filters=command(BotCommands.BroadcastCommand) & CustomFilters.sudo))
+
+def get_readable_time(seconds: float) -> str:
+    result = ''
+    (days, remainder) = divmod(int(seconds), 86400)
+    if days > 0:
+        result += f"{days}d "
+    (hours, remainder) = divmod(remainder, 3600)
+    if hours > 0:
+        result += f"{hours}h "
+    (minutes, seconds) = divmod(remainder, 60)
+    if minutes > 0:
+        result += f"{minutes}m "
+    if seconds > 0:
+        result += f"{seconds}s"
+    return result or "0s"
+
