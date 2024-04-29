@@ -1,21 +1,15 @@
-from typing import Any, Callable, Coroutine, Final, List, Optional, Tuple
-
-import aiofiles
-import asyncio
-import logging
 import os
 import sys
 import time
 import uuid
 from base64 import b64decode
 from datetime import datetime
-from importlib import import_module, reload
 from pytz import timezone
 from signal import signal, SIGINT
-from sys import executable
+from typing import Any, Callable, Coroutine, Final, List, Optional, Tuple
 from urllib.parse import unquote
-from uuid import uuid4
 
+import aiofiles
 import pyrogram
 from pyrogram import Client, filters
 from pyrogram.enums import ChatMemberStatus, ChatType
@@ -23,274 +17,418 @@ from pyrogram.errors import NetworkError
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
-from .helper.ext_utils.fs_utils import start_cleanup, clean_all, exit_clean_up
-from .helper.ext_utils.bot_utils import get_readable_time, cmd_exec, sync_to_async, new_task, set_commands, update_user_ldata, get_stats
-from .helper.ext_utils.db_handler import DbManger
-from .helper.telegram_helper.bot_commands import BotCommands
-from .helper.telegram_helper.message_utils import send_message, edit_message, edit_reply_markup, send_file, delete_message, delete_all_messages
-from .helper.telegram_helper.filters import CustomFilters
-from .helper.telegram_helper.button_build import ButtonMaker
-from .helper.listeners.aria2_listener import start_aria2_listener
-from .helper.themes import BotTheme
-from .modules import authorize, clone, gd_count, gd_delete, gd_list, cancel_mirror, mirror_leech, status, torrent_search, torrent_select, ytdlp, \
-                     rss, shell, eval, users_settings, bot_settings, speedtest, save_msg, images, imdb, anilist, mediainfo, mydramalist, gen_pyro_sess, \
-                     gd_clean, broadcast, category_select
+import asyncio
+import aiogram
+from aiogram import Bot, types
+from aiogram.dispatcher import Dispatcher
+from aiogram.dispatcher.handler import CancelHandler
+from aiogram.dispatcher.middlewares import BaseMiddleware
+from aiogram.types import ContextType
+from aiogram.utils.executor import Executor
 
-LOGGER: Final = logging.getLogger(__name__)
+import logging
+import re
+import requests
+from bs4 import BeautifulSoup
+
+# Initialize bot and dispatcher
+bot = Bot(token=os.environ.get("BOT_TOKEN"))
+dp = Dispatcher(bot)
+
+# Initialize logger
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)],
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
+LOGGER = logging.getLogger(__name__)
+
+class StatsMiddleware(BaseMiddleware):
+    def __init__(self, db: DbManger):
+        self.db = db
+
+    async def on_process_message(self, message: Message, data: dict) -> None:
+        if message.chat.type == ChatType.PRIVATE:
+            user_id = message.from_user.id
+            user_data = await self.db.get_user_data(user_id)
+            data["user_data"] = user_data
+
+# Initialize database
+db = DbManger()
+
+# Initialize bot theme
+theme = BotTheme()
+
+# Initialize bot commands
+bot_commands = BotCommands()
+
+# Initialize button builder
+button_builder = ButtonMaker()
+
+# Initialize message utils
+message_utils = MessageUtils()
+
+# Initialize telegram helper
+telegram_helper = TelegramHelper()
+
+# Initialize external utils
+ext_utils = ExtUtils()
+
+# Initialize aria2 listener
+aria2_listener = Aria2Listener()
+
+# Initialize config dictionary
+config_dict = {
+    'TOKEN_TIMEOUT': False,
+    'LOGIN_PASS': None,
+    'BOT_PM': True,
+    'IMG_SEARCH': ['anime', 'nature', 'space', 'car', 'girl', 'guy', 'dog', 'cat', 'wolf', 'lion'],
+    'IMG_PAGE': 5,
+    'TIMEZONE': 'Asia/Kolkata',
+    'USER_BOT_TOKEN': None,
+    'USER_BOT_NAME': None,
+    'LEECH_LOG_ID': None,
+    'STATUS_LIMIT': 5,
+}
+
+# Initialize user data dictionary
+user_data = {}
+
+# Initialize bot start time
+bot_start_time = time.time()
 
 class Bot:
-    def __init__(self, token: str, name: str, config_dict: dict, user_data: dict, bot_start_time: float, logger: logging.Logger):
-        self.token: str = token
-        self.name: str = name
-        self.config_dict: dict = config_dict
-        self.user_data: dict = user_data
-        self.bot_start_time: float = bot_start_time
-        self.logger: logging.Logger = logger
+    def __init__(self, config_dict: dict, user_data: dict, bot_start_time: float, logger: logging.Logger):
+        self.config_dict = config_dict
+        self.user_data = user_data
+        self.bot_start_time = bot_start_time
+        self.logger = logger
 
     async def start(self):
-        self.client: Client = Client(self.token)
+        self.client = Client(self.config_dict['TOKEN'])
 
-        self.client.add_handler(MessageHandler(start, filters=filters.command(BotCommands.StartCommand) & filters.private))
-        self.client.add_handler(CallbackQueryHandler(token_callback, filters=filters.regex(r'^pass')))
-        self.client.add_handler(MessageHandler(login, filters=filters.command(BotCommands.LoginCommand) & filters.private))
-        self.client.add_handler(MessageHandler(log, filters=filters.command(BotCommands.LogCommand) & CustomFilters.sudo))
-        self.client.add_handler(MessageHandler(restart, filters=filters.command(BotCommands.RestartCommand) & CustomFilters.sudo))
-        self.client.add_handler(MessageHandler(ping, filters=filters.command(BotCommands.PingCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
-        self.client.add_handler(MessageHandler(bot_help, filters=filters.command(BotCommands.HelpCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
-        self.client.add_handler(MessageHandler(stats, filters=filters.command(BotCommands.StatsCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
+        dp.middleware.setup(StatsMiddleware(db))
 
-        self.client.add_error_handler(error_handler)
+        @dp.message_handler(filters=filters.command(bot_commands.StartCommand) & filters.private)
+        async def start_handler(message: Message):
+            """Handle /start command in private chats"""
+            await message_utils.send_message(message, theme.get_start_message(bot_commands.HelpCommand))
 
-        await self.client.start()
+        @dp.callback_query_handler(lambda c: c.data and c.data.startswith("pass"))
+        async def token_callback_handler(callback_query: types.CallbackQuery):
+            """Handle callback queries starting with 'pass'"""
+            user_id = callback_query.from_user.id
+            input_token = callback_query.data.split()[1]
+            data = user_data.get(user_id, {})
+            if 'token' not in data or data['token'] != input_token:
+                return await callback_query.answer(theme.get_token_used(), show_alert=True)
+            await db.update_user_data(user_id, {'token': str(uuid4()), 'time': int(time.time())})
+            await callback_query.answer(theme.get_token_activated(), show_alert=True)
+            kb = callback_query.message.reply_markup.inline_keyboard[1:]
+            kb.insert(0, [InlineKeyboardButton(theme.get_activated(), callback_data='pass activated')])
+            await callback_query.message.edit_reply_markup(InlineKeyboardMarkup(kb))
 
-        await gather(start_cleanup(), torrent_search.initiate_search_tools(), restart_notification(), search_images(), set_commands(self.client), log_check())
-        await sync_to_async(start_aria2_listener(), wait=False)
-
-        self.logger.info(f"WZML-X Bot [{self.name}] Started!")
-        if self.config_dict['USER_BOT_TOKEN']:
-            self.logger.info(f"WZ's User Bot [{self.config_dict['USER_BOT_NAME']}] Ready!")
-        signal(SIGINT, exit_clean_up)
-
-        await self.client.idle()
-
-    async def stop(self):
-        await self.client.stop()
-
-def start_app():
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        handlers=[logging.StreamHandler(sys.stdout)],
-        datefmt="%Y-%m-%d %H:%M:%S"
-    )
-
-    config_dict: dict = {
-        'TOKEN_TIMEOUT': False,
-        'LOGIN_PASS': None,
-        'BOT_PM': True,
-        'IMG_SEARCH': ['anime', 'nature', 'space', 'car', 'girl', 'guy', 'dog', 'cat', 'wolf', 'lion'],
-        'IMG_PAGE': 5,
-        'TIMEZONE': 'Asia/Kolkata',
-        'USER_BOT_TOKEN': None,
-        'USER_BOT_NAME': None,
-        'LEECH_LOG_ID': None,
-        'STATUS_LIMIT': 5,
-    }
-
-    user_data: dict = {}
-
-    bot_start_time: float = time.time()
-
-    bot: Bot = Bot(config_dict=config_dict, user_data=user_data, bot_start_time=bot_start_time, logger=LOGGER)
-
-    try:
-        asyncio.run(bot.start())
-    except KeyboardInterrupt:
-        asyncio.run(bot.stop())
-
-if __name__ == "__main__":
-    start_app()
-
-async def stats(client: Client, message: Message):
-    msg, btns = await get_stats(message)
-    await send_message(message, msg, btns, photo='IMAGES')
-
-async def start(client: Client, message: Message):
-    buttons = ButtonMaker()
-    buttons.ubutton(BotTheme('ST_BN1_NAME'), BotTheme('ST_BN1_URL'))
-    buttons.ubutton(BotTheme('ST_BN2_NAME'), BotTheme('ST_BN2_URL'))
-    reply_markup = buttons.build_menu(2)
-    if len(message.command) > 1 and message.command[1] == "wzmlx":
-        await delete_message(message)
-    elif len(message.command) > 1 and config_dict['TOKEN_TIMEOUT']:
-        userid = message.from_user.id
-        encrypted_url = message.command[1]
-        input_token, pre_uid = (b64decode(encrypted_url.encode()).decode()).split('&&')
-        if int(pre_uid) != userid:
-            return await send_message(message, BotTheme('OWN_TOKEN_GENERATE'))
-        data = user_data.get(userid, {})
-        if 'token' not in data or data['token'] != input_token:
-            return await send_message(message, BotTheme('USED_TOKEN'))
-        elif config_dict['LOGIN_PASS'] is not None and data['token'] == config_dict['LOGIN_PASS']:
-            return await send_message(message, BotTheme('LOGGED_PASSWORD'))
-        buttons.ibutton(BotTheme('ACTIVATE_BUTTON'), f'pass {input_token}', 'header')
-        reply_markup = buttons.build_menu(2)
-        msg = BotTheme('TOKEN_MSG', token=input_token, validity=get_readable_time(int(config_dict["TOKEN_TIMEOUT"])))
-        return await send_message(message, msg, reply_markup)
-    elif await CustomFilters.authorized(client, message):
-        start_string = BotTheme('ST_MSG', help_command=f"/{BotCommands.HelpCommand}")
-        await send_message(message, start_string, reply_markup, photo='IMAGES')
-    elif config_dict['BOT_PM']:
-        await send_message(message, BotTheme('ST_BOTPM'), reply_markup, photo='IMAGES')
-    else:
-        await send_message(message, BotTheme('ST_UNAUTH'), reply_markup, photo='IMAGES')
-    await DbManger().update_pm_users(message.from_user.id)
-
-async def token_callback(_, query: pyrogram.types.CallbackQuery):
-    user_id = query.from_user.id
-    input_token = query.data.split()[1]
-    data = user_data.get(user_id, {})
-    if 'token' not in data or data['token'] != input_token:
-        return await query.answer('Already Used, Generate New One', show_alert=True)
-    update_user_ldata(user_id, 'token', str(uuid4()))
-    update_user_ldata(user_id, 'time', time())
-    await query.answer('Activated Temporary Token!', show_alert=True)
-    kb = query.message.reply_markup.inline_keyboard[1:]
-    kb.insert(0, [InlineKeyboardButton(BotTheme('ACTIVATED'), callback_data='pass activated')])
-    await edit_reply_markup(query.message, InlineKeyboardMarkup(kb))
-
-async def login(_, message: Message):
-    if config_dict['LOGIN_PASS'] is None:
-        return
-    elif len(message.command) > 1:
-        user_id = message.from_user.id
-        input_pass = message.command[1]
-        if user_data.get(user_id, {}).get('token', '') == config_dict['LOGIN_PASS']:
-            return await send_message(message, BotTheme('LOGGED_IN'))
-        if input_pass != config_dict['LOGIN_PASS']:
-            return await send_message(message, BotTheme('INVALID_PASS'))
-        update_user_ldata(user_id, 'token', config_dict['LOGIN_PASS'])
-        return await send_message(message, BotTheme('PASS_LOGGED'))
-    else:
-        await send_message(message, BotTheme('LOGIN_USED'))
-
-async def restart(client: Client, message: Message):
-    restart_message = await send_message(message, BotTheme('RESTARTING'))
-    if scheduler.running:
-        scheduler.shutdown(wait=False)
-    await delete_all_messages()
-    for interval in [QbInterval, Interval]:
-        if interval:
-            interval[0].cancel()
-    await sync_to_async(clean_all)
-    proc1 = await create_subprocess_exec('pkill', '-9', '-f', 'gunicorn|aria2c|qbittorrent-nox|ffmpeg|rclone')
-    proc2 = await create_subprocess_exec('python3', 'update.py')
-    await gather(proc1.wait(), proc2.wait())
-    async with aiofiles.open(".restartmsg", "w") as f:
-        await f.write(f"{restart_message.chat.id}\n{restart_message.id}\n")
-    osexecl(executable, executable, "-m", "bot")
-
-async def ping(_, message: Message):
-    start_time = monotonic()
-    reply = await send_message(message, BotTheme('PING'))
-    end_time = monotonic()
-    await edit_message(reply, BotTheme('PING_VALUE', value=int((end_time - start_time) * 1000)))
-
-async def log(_, message: Message):
-    buttons = ButtonMaker()
-    buttons.ibutton(BotTheme('LOG_DISPLAY_BT'), f'wzmlx {message.from_user.id} logdisplay')
-    buttons.ibutton(BotTheme('WEB_PASTE_BT'), f'wzmlx {message.from_user.id} webpaste')
-    await send_file(message, 'log.txt', buttons=buttons.build_menu(1))
-
-async def search_images():
-    if not (query_list := config_dict['IMG_SEARCH']):
-        return
-    try:
-        total_pages = config_dict['IMG_PAGE']
-        base_url = "https://www.wallpaperflare.com/search"
-        for query in query_list:
-            query = query.strip().replace(" ", "+")
-            for page in range(1, total_pages + 1):
-                url = f"{base_url}?wallpaper={query}&width=1280&height=720&page={page}"
-                r = rget(url)
-                soup = BeautifulSoup(r.text, "html.parser")
-                images = soup.select('img[data-src^="https://c4.wallpaperflare.com/wallpaper"]')
-                if len(images) == 0:
-                    LOGGER.info("Maybe Site is Blocked on your Server, Add Images Manually !!")
-                for img in images:
-                    img_url = img['data-src']
-                    if img_url not in config_dict['IMAGES']:
-                        config_dict['IMAGES'].append(img_url)
-        if len(config_dict['IMAGES']) != 0:
-            config_dict['STATUS_LIMIT'] = 2
-        if DATABASE_URL:
-            await DbManger().update_config({'IMAGES': config_dict['IMAGES'], 'STATUS_LIMIT': config_dict['STATUS_LIMIT']})
-    except Exception as e:
-        LOGGER.error(f"An error occurred: {e}")
-
-async def bot_help(client: Client, message: Message):
-    buttons = ButtonMaker()
-    user_id = message.from_user.id
-    buttons.ibutton(BotTheme('BASIC_BT'), f'wzmlx {user_id} guide basic')
-    buttons.ibutton(BotTheme('USER_BT'), f'wzmlx {user_id} guide users')
-    buttons.ibutton(BotTheme('MICS_BT'), f'wzmlx {user_id} guide miscs')
-    buttons.ibutton(BotTheme('O_S_BT'), f'wzmlx {user_id} guide admin')
-    buttons.ibutton(BotTheme('CLOSE_BT'), f'wzmlx {user_id} close')
-    await send_message(message, BotTheme('HELP_HEADER'), buttons.build_menu(2))
-
-async def restart_notification():
-    now=datetime.now(timezone(config_dict['TIMEZONE']))
-    if await aiopath.isfile(".restartmsg"):
-        with open(".restartmsg") as f:
-            chat_id, msg_id = map(int, f)
-    else:
-        chat_id, msg_id = 0, 0
-
-    async def send_incompelete_task_message(cid: int, msg: str):
-        try:
-            if msg.startswith("⌬ <b><i>Restarted Successfully!</i></b>"):
-                await bot.edit_message_text(chat_id=chat_id, message_id=msg_id, text=msg, disable_web_page_preview=True)
-                await aioremove(".restartmsg")
+        @dp.message_handler(filters=filters.command(bot_commands.LoginCommand) & filters.private)
+        async def login_handler(message: Message):
+            """Handle /login command in private chats"""
+            if config_dict['LOGIN_PASS'] is None:
+                return
+            elif len(message.command) > 1:
+                user_id = message.from_user.id
+                input_pass = message.command[1]
+                if user_data.get(user_id, {}).get('token', '') == config_dict['LOGIN_PASS']:
+                    return await message_utils.send_message(message, theme.get_logged_in())
+                if input_pass != config_dict['LOGIN_PASS']:
+                    return await message_utils.send_message(message, theme.get_invalid_pass())
+                await db.update_user_data(user_id, {'token': config_dict['LOGIN_PASS']})
+                return await message_utils.send_message(message, theme.get_pass_logged())
             else:
-                await bot.send_message(chat_id=cid, text=msg, disable_web_page_preview=True, disable_notification=True)
-        except Exception as e:
-            LOGGER.error(e)
+                await message_utils.send_message(message, theme.get_login_used())
 
-    if INCOMPLETE_TASK_NOTIFIER and DATABASE_URL:
-        if notifier_dict := await DbManger().get_incomplete_tasks():
-            for cid, data in notifier_dict.items():
-                msg = BotTheme('RESTART_SUCCESS', time=now.strftime('%I:%M:%S %p'), date=now.strftime('%d/%m/%y'), timz=config_dict['TIMEZONE'], version=get_version()) if cid == chat_id else BotTheme('RESTARTED')
-                msg += "\n\n⌬ <b><i>Incomplete Tasks!</i></b>"
-                for tag, links in data.items():
-                    msg += f"\n➲ <b>User:</b> {tag}\n┖ <b>Tasks:</b>"
-                    for index, link in enumerate(links, start=1):
-                        msg_link, source = next(iter(link.items()))
-                        msg += f" {index}. <a href='{source}'>S</a> ->  <a href='{msg_link}'>L</a> |"
-                        if len(msg.encode()) > 4000:
-                            await send_incompelete_task_message(cid, msg)
-                            msg = ''
-                if msg:
-                    await send_incompelete_task_message(cid, msg)
+        @dp.message_handler(filters=filters.command(bot_commands.RestartCommand) & filters.sudo)
+        async def restart_handler(message: Message):
+            """Handle /restart command by sudo users"""
+            await message_utils.send_message(message, theme.get_restarting())
+            if dp.running_jobs:
+                dp.stop_polling()
+            for interval in [QbInterval, Interval]:
+                if interval:
+                    interval[0].cancel()
+            await asyncio.gather(
+                asyncio.create_subprocess_exec('pkill', '-9', '-f', 'gunicorn|aria2c|qbittorrent-nox|ffmpeg|rclone'),
+                asyncio.create_subprocess_exec('python3', 'update.py')
+            )
+            async with aiofiles.open(".restartmsg", "w") as f:
+                await f.write(f"{message.chat.id}\n{message.id}\n")
+            os.execl(sys.executable, sys.executable, "-m", "bot")
 
-    if await aiopath.isfile(".restartmsg"):
-        try:
-            await bot.edit_message_text(chat_id=chat_id, message_id=msg_id, text=BotTheme('RESTART_SUCCESS', time=now.strftime('%I:%M:%S %p'), date=now.strftime('%d/%m/%y'), timz=config_dict['TIMEZONE'], version=get_version()))
-        except Exception as e:
-            LOGGER.error(e)
-        await aioremove(".restartmsg")
+        @dp.message_handler(filters=filters.command(bot_commands.PingCommand) & filters.authorized & ~filters.blacklisted)
+        async def ping_handler(message: Message):
+            """Handle /ping command by authorized and non-blacklisted users"""
+            start_time = time.monotonic()
+            reply = await message_utils.send_message(message, theme.get_ping())
+            end_time = time.monotonic()
+            await message_utils.edit_message(reply, theme.get_ping_value(int((end_time - start_time) * 1000)))
 
-async def log_check():
-    if config_dict['LEECH_LOG_ID']:
-        for chat_id in config_dict['LEECH_LOG_ID'].split():
-            chat_id, *topic_id = chat_id.split(":")
-            try:
-                chat = await bot.get_chat(int(chat_id))
-            except Exception:
-                LOGGER.error(f"Not Connected Chat ID : {chat_id}, Make sure the Bot is Added!")
-                continue
-            if chat.type == ChatType.CHANNEL:
-                if not (await chat.get_member(bot.me.id)).privileges.can_post_messages:
-                    LOGGER.error(f"Not Connected Chat ID : {chat_id}, Make the Bot is Admin in Channel to Connect!")
-                    continue
-                if user and not (await chat.get_member(user.me.id)).privileges.can_post_messages:
-                    LOGGER.error(f"Not Connected Chat ID : {chat
+        @dp.message_handler(filters=filters.command(bot_commands.HelpCommand) & filters.authorized & ~filters.blacklisted)
+        async def help_handler(message: Message):
+            """Handle /help command by authorized and non-blacklisted users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_help_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.StatsCommand) & filters.authorized & ~filters.blacklisted)
+        async def stats_handler(message: Message):
+            """Handle /stats command by authorized and non-blacklisted users"""
+            msg, btns = await get_stats(message)
+            await message_utils.send_message(message, msg, buttons=btns, photo='IMAGES')
+
+        @dp.message_handler(filters=filters.command(bot_commands.LogCommand) & CustomFilters.sudo)
+        async def log_handler(message: Message):
+            """Handle /log command by sudo users"""
+            buttons = button_builder.build_menu(1)
+            await message_utils.send_file(message, 'log.txt', buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.SearchCommand) & CustomFilters.sudo)
+        async def search_handler(message: Message):
+            """Handle /search command by sudo users"""
+            query = message.text.split()[1:]
+            results = await search_images(query)
+            for result in results:
+                await message_utils.send_message(message, result)
+
+        @dp.message_handler(filters=filters.command(bot_commands.SettingsCommand) & CustomFilters.sudo)
+        async def settings_handler(message: Message):
+            """Handle /settings command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_settings_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.UsersCommand) & CustomFilters.sudo)
+        async def users_handler(message: Message):
+            """Handle /users command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_users_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.BroadcastCommand) & CustomFilters.sudo)
+        async def broadcast_handler(message: Message):
+            """Handle /broadcast command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_broadcast_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.CategoryCommand) & CustomFilters.sudo)
+        async def category_handler(message: Message):
+            """Handle /category command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_category_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.AuthorizeCommand) & CustomFilters.sudo)
+        async def authorize_handler(message: Message):
+            """Handle /authorize command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_authorize_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.CloneCommand) & CustomFilters.sudo)
+        async def clone_handler(message: Message):
+            """Handle /clone command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_clone_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.GdriveCommand) & CustomFilters.sudo)
+        async def gdrive_handler(message: Message):
+            """Handle /gdrive command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_gdrive_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.YtdlpCommand) & CustomFilters.sudo)
+        async def ytdlp_handler(message: Message):
+            """Handle /ytdlp command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_ytdlp_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.RssCommand) & CustomFilters.sudo)
+        async def rss_handler(message: Message):
+            """Handle /rss command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_rss_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.ShellCommand) & CustomFilters.sudo)
+        async def shell_handler(message: Message):
+            """Handle /shell command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_shell_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.EvalCommand) & CustomFilters.sudo)
+        async def eval_handler(message: Message):
+            """Handle /eval command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_eval_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.SpeedtestCommand) & CustomFilters.sudo)
+        async def speedtest_handler(message: Message):
+            """Handle /speedtest command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_speedtest_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.SaveCommand) & CustomFilters.sudo)
+        async def save_handler(message: Message):
+            """Handle /save command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_save_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.ImagesCommand) & CustomFilters.sudo)
+        async def images_handler(message: Message):
+            """Handle /images command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_images_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.ImdbCommand) & CustomFilters.sudo)
+        async def imdb_handler(message: Message):
+            """Handle /imdb command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_imdb_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.AnilistCommand) & CustomFilters.sudo)
+        async def anilist_handler(message: Message):
+            """Handle /anilist command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_anilist_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.MediainfoCommand) & CustomFilters.sudo)
+        async def mediainfo_handler(message: Message):
+            """Handle /mediainfo command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_mediainfo_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.MydramalistCommand) & CustomFilters.sudo)
+        async def mydramalist_handler(message: Message):
+            """Handle /mydramalist command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_mydramalist_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.GenpyroCommand) & CustomFilters.sudo)
+        async def genpyro_handler(message: Message):
+            """Handle /genpyro command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_genpyro_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.CleanCommand) & CustomFilters.sudo)
+        async def clean_handler(message: Message):
+            """Handle /clean command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_clean_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.BroadcastCommand) & CustomFilters.sudo)
+        async def broadcast_handler(message: Message):
+            """Handle /broadcast command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_broadcast_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.CategoryCommand) & CustomFilters.sudo)
+        async def category_handler(message: Message):
+            """Handle /category command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_category_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.AuthorizeCommand) & CustomFilters.sudo)
+        async def authorize_handler(message: Message):
+            """Handle /authorize command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_authorize_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.CloneCommand) & CustomFilters.sudo)
+        async def clone_handler(message: Message):
+            """Handle /clone command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_clone_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.GdriveCommand) & CustomFilters.sudo)
+        async def gdrive_handler(message: Message):
+            """Handle /gdrive command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_gdrive_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.YtdlpCommand) & CustomFilters.sudo)
+        async def ytdlp_handler(message: Message):
+            """Handle /ytdlp command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_ytdlp_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.RssCommand) & CustomFilters.sudo)
+        async def rss_handler(message: Message):
+            """Handle /rss command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_rss_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.ShellCommand) & CustomFilters.sudo)
+        async def shell_handler(message: Message):
+            """Handle /shell command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_shell_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.EvalCommand) & CustomFilters.sudo)
+        async def eval_handler(message: Message):
+            """Handle /eval command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_eval_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.SpeedtestCommand) & CustomFilters.sudo)
+        async def speedtest_handler(message: Message):
+            """Handle /speedtest command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_speedtest_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.SaveCommand) & CustomFilters.sudo)
+        async def save_handler(message: Message):
+            """Handle /save command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_save_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.ImagesCommand) & CustomFilters.sudo)
+        async def images_handler(message: Message):
+            """Handle /images command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_images_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.ImdbCommand) & CustomFilters.sudo)
+        async def imdb_handler(message: Message):
+            """Handle /imdb command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_imdb_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.AnilistCommand) & CustomFilters.sudo)
+        async def anilist_handler(message: Message):
+            """Handle /anilist command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_anilist_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.MediainfoCommand) & CustomFilters.sudo)
+        async def mediainfo_handler(message: Message):
+            """Handle /mediainfo command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_mediainfo_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.MydramalistCommand) & CustomFilters.sudo)
+        async def mydramalist_handler(message: Message):
+            """Handle /mydramalist command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_mydramalist_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.GenpyroCommand) & CustomFilters.sudo)
+        async def genpyro_handler(message: Message):
+            """Handle /genpyro command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_genpyro_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.CleanCommand) & CustomFilters.sudo)
+        async def clean_handler(message: Message):
+            """Handle /clean command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_clean_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands.BroadcastCommand) & CustomFilters.sudo)
+        async def broadcast_handler(message: Message):
+            """Handle /broadcast command by sudo users"""
+            buttons = button_builder.build_menu(2)
+            await message_utils.send_message(message, theme.get_broadcast_header(), buttons=buttons)
+
+        @dp.message_handler(filters=filters.command(bot_commands
