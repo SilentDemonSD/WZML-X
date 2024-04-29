@@ -73,7 +73,11 @@ class DDLStatus:
 
         :return: The current upload speed in a human-readable format.
         """
-        return get_readable_file_size(self.__obj.speed) + "/s"
+        speed = self.__obj.speed
+        if speed == 0:
+            return "0 B/s"
+        else:
+            return get_readable_file_size(speed) + "/s"
 
     @property
     def eta(self) -> str:
@@ -84,7 +88,10 @@ class DDLStatus:
         """
         try:
             seconds = (self.__size - self.__obj.processed_bytes) / self.__obj.speed if self.__obj.speed != 0 else 0
-            return get_readable_time(seconds)
+            if seconds < 0:
+                return "-"
+            else:
+                return get_readable_time(seconds)
         except:
             return '-'
 
@@ -97,7 +104,8 @@ class DDLStatus:
         """
         return self.__gid
 
-    def download(self):
+    @property
+    def download(self) -> object:
         """
         Return the object that contains information about the file being uploaded.
 
@@ -106,10 +114,11 @@ class DDLStatus:
         return self.__obj
 
     @property
-    def eng(self):
+    def eng(self) -> object:
         """
         Return the engine associated with the upload.
 
         :return: The engine associated with the upload.
         """
         return self.__obj.engine
+
