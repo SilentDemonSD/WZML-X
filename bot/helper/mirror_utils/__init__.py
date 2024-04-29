@@ -1,4 +1,4 @@
-def is_prime(n):
+def is_prime(n: int) -> bool:
     """Returns True if n is a prime number, and False otherwise."""
     if n < 2:
         return False
@@ -7,10 +7,10 @@ def is_prime(n):
             return False
     return True
 
-def largest_prime(numbers):
+def largest_prime(numbers: list[int]) -> int | None:
     """Returns the largest prime number in the input list."""
-    primes = [num for num in numbers if is_prime(num)]
-    if primes:
-        return max(primes)
-    else:
-        return None
+    largest_prime = None
+    for num in numbers:
+        if is_prime(num) and (largest_prime is None or num > largest_prime):
+            largest_prime = num
+    return largest_prime
