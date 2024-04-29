@@ -17,10 +17,11 @@ from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.message_utils import sendMessage, deleteMessage, editMessage
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, new_task
 
-async def speedtest(_, message: Any) -> Optional[Coroutine[Any, Any, Any]]:
+async def speedtest(update: Any, context: MessageHandler) -> Optional[Coroutine[Any, Any, Any]]:
     """
     Initiates a speedtest and sends the results to the user.
     """
+    message = update.message
     speed = await sendMessage(message, "<i>Initiating Speedtest...</i>")
     try:
         test = Speedtest()
