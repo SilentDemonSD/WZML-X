@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import AsyncContextManager, Any, Dict, List, Optional
 
-import aiofiles.os
+import aiofiles
 import aiohttp
 from aiohttp import ClientSession
 
@@ -38,14 +38,14 @@ class Streamtape:
         self.base_url = "https://api.streamtape.com"
 
     async def __get_acc_info(self) -> Optional[Dict[str, Any]]:
-        async with ClientSession() as session:
+        async with self.__get_session() as session:
             async with session.get(
                 f"{self.base_url}/account/info?login={self.__userLogin}&key={self.__passKey}"
             ) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    if data.get("status") == 200:
-                        return data.get("result")
+                response.raise_for_status()
+                data = await response.json()
+                if data.get("status") == 200:
+                    return data.get("result")
         return None
 
     async def __get_upload_url(
@@ -59,13 +59,16 @@ class Streamtape:
         if httponly:
             _url += "&httponly=true"
 
-        async with ClientSession() as session:
+        async with self.__get_session() as session:
             async with session.get(_url) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    if data.get("status") == 200:
-                        return data.get("result")
+                response.raise_for_status()
+                data = await response.json()
+                if data.get("status") == 200:
+                    return data.get("result")
         return None
+
+    async def __get_session(self) -> AsyncContextManager[ClientSession]:
+        return aiohttp.ClientSession()
 
     async def upload_file(
         self, file_path: Path, folder_id: Optional[str] = None, sha256: Optional[str] = None, httponly: bool = False
@@ -88,7 +91,8 @@ class Streamtape:
             return
 
         self.dluploader.last_uploaded = 0
-        uploaded = await self.dluploader.upload_aiohttp(upload_info["url"], str(file_path), file_name, {})
+        async with aiofiles.open(file_path, mode="rb") as f:
+            uploaded = await self.dluploader.upload_aiohttp(upload_info["url"], f, file_name, {})
         if uploaded:
             file_id = (await self.list_folder(folder=folder_id))["files"][0]["linkid"]
             await self.rename(file_id, file_name)
@@ -109,23 +113,23 @@ class Streamtape:
         if parent is not None:
             url += f"&pid={parent}"
 
-        async with ClientSession() as session:
+        async with self.__get_session() as session:
             async with session.get(url) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    if data.get("status") == 200:
-                        return data.get("result")
+                response.raise_for_status()
+                data = await response.json()
+                if data.get("status") == 200:
+                    return data.get("result")
         return None
 
     async def rename(self, file_id: str, name: str) -> Optional[Dict[str, Any]]:
         url = f"{self.base_url}/file/rename?login={self.__userLogin}&key={self.__passKey}&file={file_id}&name={name}"
 
-        async with ClientSession() as session:
+        async with self.__get_session() as session:
             async with session.get(url) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    if data.get("status") == 200:
-                        return data.get("result")
+                response.raise_for_status()
+                data = await response.json()
+                if data.get("status") == 200:
+                    return data.get("result")
         return None
 
     async def list_telegraph(
@@ -159,12 +163,12 @@ class Streamtape:
         if folder is not None:
             url += f"&folder={folder}"
 
-        async with ClientSession() as session:
+        async with self.__get_session() as session:
             async with session.get(url) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    if data.get("status") == 200:
-                        return data.get("result")
+                response.raise_for_status()
+                data = await response.json()
+                if data.get("status") == 200:
+                    return data.get("result")
         return None
 
     async def upload_folder(
@@ -174,7 +178,7 @@ class Streamtape:
         genfolder = await self.create_folder(name=folder_name, parent=parent_folder_id)
 
         if genfolder and (newfid := genfolder.get("folderid")):
-            for entry in await aiofiles.os.scandir(folder_path):
+            for entry in folder_path.iterdir():
                 if entry.is_file():
                     await self.upload_file(entry.path, newfid)
                     self.dluploader.total_files += 1
