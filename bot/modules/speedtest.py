@@ -34,7 +34,7 @@ async def speedtest(_, message: Any) -> Optional[Coroutine[Any, Any, Any]]:
     result = test.results.dict()
     path = Path(result['share'])
 
-    string_speed = f'''
+    string_speed = f"""
 ➲ <b><i>SPEEDTEST INFO</i></b>
 ┠ <b>Upload:</b> <code>{get_readable_file_size(result['upload'] / 8)}/s</code>
 ┠ <b>Download:</b>  <code>{get_readable_file_size(result['download'] / 8)}/s</code>
@@ -58,7 +58,7 @@ async def speedtest(_, message: Any) -> Optional[Coroutine[Any, Any, Any]]:
 ┠ <b>Country:</b> <code>{result['client']['country']}</code>
 ┠ <b>ISP:</b> <code>{result['client']['isp']}</code>
 ┖ <b>ISP Rating:</b> <code>{result['client']['isprating']}</code>
-'''
+"""
     try:
         await sendMessage(message, string_speed, photo=path)
         await deleteMessage(speed)
