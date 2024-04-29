@@ -1,21 +1,18 @@
-# This is a .gitignore file, used to specify intentionally untracked files that Git should ignore when checking for changes in a project.
-
 # Python bytecode files
 *.pyc
 *.pyo
 
 # IDE-specific files and directories
-# For Visual Studio Code, IntelliJ IDEA, and PyCharm
 .vscode/
 .idea/
 
-# For Eclipse
+# Eclipse
 .metadata/
 
-# For Emacs
+# Emacs
 *.elc
 
-# For Vim
+# Vim
 *.swp
 *.aux
 *.log
@@ -149,13 +146,21 @@ Thumbs.db
 *.rpm
 *.apk
 *.ipk
+
+# Compiled JavaScript files
 *.js
 *.mjs
 *.cjs
+
+# TypeScript files
 *.ts
+*.tsx
+
+# JSX files
 *.jsx
 *.tsx
-*.css
+
+# CSS preprocessors
 *.scss
 *.sass
 *.less
@@ -187,14 +192,8 @@ Thumbs.db
 *.liquid
 *.haml
 *.slim
-*.scss
-*.sass
-*.less
-*.styl
 *.coffee
 *.litcoffee
-*.jsx
-*.tsx
 *.vue
 *.php
 *.module
@@ -849,4 +848,22 @@ Thumbs.db
 *.cpp
 *.hxx
 *.m
-
+*.mm
+*.objc
+*.h
+*.hpp
+*.c
+*.cc
+*.cxx
+*.cpp
+*.hxx
+*.m
+*.mm
+*.objc
+*.h
+*.hpp
+*.c
+*.cc
+*.cxx
+*.cpp
+*.hxx
