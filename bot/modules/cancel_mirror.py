@@ -94,4 +94,3 @@ bot.add_handler(MessageHandler(cancel_mirror, filters=Filters.regex(
 bot.add_handler(MessageHandler(cancel_all_buttons, filters=Filters.command(
     BotCommands.CancelAllCommand) & CustomFilters.sudo))
 bot.add_handler(CallbackQueryHandler(cancel_all_update, filters=Filters.regex(r"^canall")))
-
