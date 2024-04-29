@@ -1,39 +1,36 @@
 #!/usr/bin/env python3
 from bot.helper.ext_utils.bot_utils import EngineStatus, MirrorStatus, get_readable_file_size, get_readable_time
 
-
-class GdriveStatus:
+class GDriveStatus:
     def __init__(self, obj, size, message, gid, status, upload_details):
-        self.__obj = obj
-        self.__size = size
-        self.__gid = gid
-        self.__status = status
-        self.upload_details = upload_details
+        self.obj = obj
+        self.size = size
         self.message = message
+        self.gid = gid
+        self.status = status
+        self.upload_details = upload_details
 
     def processed_bytes(self):
-        return get_readable_file_size(self.__obj.processed_bytes)
-
-    def size(self):
-        return get_readable_file_size(self.__size)
+        return get_readable_file_size(self.obj.processed_bytes)
 
     def status(self):
-        if self.__status == 'up':
-            return MirrorStatus.STATUS_UPLOADING
-        elif self.__status == 'dl':
-            return MirrorStatus.STATUS_DOWNLOADING
-        else:
-            return MirrorStatus.STATUS_CLONING
+        match self.status:
+            case 'up':
+                return MirrorStatus.STATUS_UPLOADING
+            case 'dl':
+                return MirrorStatus.STATUS_DOWNLOADING
+            case _:
+                return MirrorStatus.STATUS_CLONING
 
     def name(self):
-        return self.__obj.name
+        return self.obj.name
 
     def gid(self) -> str:
-        return self.__gid
+        return self.gid
 
     def progress_raw(self):
         try:
-            return self.__obj.processed_bytes / self.__size * 100
+            return self.obj.processed_bytes / self.size * 100
         except:
             return 0
 
@@ -41,18 +38,17 @@ class GdriveStatus:
         return f'{round(self.progress_raw(), 2)}%'
 
     def speed(self):
-        return f'{get_readable_file_size(self.__obj.speed)}/s'
+        return f'{get_readable_file_size(self.obj.speed)}/s'
 
     def eta(self):
         try:
-            seconds = (self.__size - self.__obj.processed_bytes) / \
-                self.__obj.speed
+            seconds = (self.size - self.obj.processed_bytes) / self.obj.speed
             return get_readable_time(seconds)
         except:
             return '-'
 
     def download(self):
-        return self.__obj
+        return self.obj
 
-    def eng(self):
+    def engine(self):
         return EngineStatus().STATUS_GD
