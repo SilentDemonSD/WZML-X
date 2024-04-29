@@ -11,4 +11,8 @@ class DirectDownloadLinkException(DownloadLinkException):
     pass
 
 class NotSupportedExtractionArchive(DownloadLinkException):
+    """Raised when the archive format is not supported.
 
+    This exception is used to indicate that the archive format is not supported by the application.
+    """
+    pass
