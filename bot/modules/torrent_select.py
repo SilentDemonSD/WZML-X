@@ -1,19 +1,38 @@
 #!/usr/bin/env python3
 import asyncio
 import os
-from typing import List, Tuple, Literal
+from typing import List, Tuple, Literal, Dict, Any, Optional
 
 import aiofiles
 import aiosessions
-from pyrogram import Client, filters
+from pyrogram import generate_filter, Client, filters, raw
 from pyrogram.errors import FloodWait
-from pyrogram.raw import functions, inputs
 from pyrogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 
+app = Client(":memory:", workers=1)
+
+# Add handlers here
+app.add_handler(filters.command(["start"]), start_command)
+app.add_handler(filters.command(["help"]), help_command)
+app.add_handler(filters.command(["start"]), start_command)
+app.add_handler(filters.command(["speedtest"]), speedtest_command)
+app.add_handler(filters.command(["uptime"]), uptime_command)
+app.add_handler(filters.command(["restart"]), restart_command)
+app.add_handler(filters.command(["shutdown"]), shutdown_command)
+app.add_handler(filters.command(["stats"]), stats_command)
+app.add_handler(filters.command(["sysinfo"]), sysinfo_command)
+app.add_handler(filters.command(["ping"]), ping_command)
+app.add_handler(filters.command(["btselect"]), select)  # Changed command name from "broadcast" to "btselect"
+app.add_handler(CallbackQueryHandler(get_confirm, filters=filters.regex("^btsel")))
+
 async def select(client: Client, message: Message):
+    """
+    Handles the /btselect command.
+    """
     user_id = message.from_user.id
     cmd_data = message.text.split('_', maxsplit=1)
     gid = None
+
     if len(cmd_data) > 1:
         gid = cmd_data[1].split('@', maxsplit=1)[0].strip()
     elif message.reply_to_message:
@@ -30,7 +49,12 @@ async def select(client: Client, message: Message):
         await client.send_message(message.chat.id, "Task not found.")
         return
 
-    dl = await get_download_by_gid(gid)
+    try:
+        dl = await get_download_by_gid(gid)
+    except Exception as e:
+        await client.send_message(message.chat.id, f"Error: {e}")
+        return
+
     if not dl:
         await client.send_message(message.chat.id, "Task not found.")
         return
@@ -40,7 +64,7 @@ async def select(client: Client, message: Message):
         return
 
     if dl.status not in (MirrorStatus.STATUS_DOWNLOADING, MirrorStatus.STATUS_PAUSED, MirrorStatus.STATUS_QUEUED):
-        await client.send_message(message.chat.id, 'Task should be in download or pause (incase message deleted by wrong) or queued (status incase you used torrent file)!')
+        await client.send_message(message.chat.id, 'Task should be in download state or pause (incase message deleted by wrong) or queued (status incase you used torrent file)!')
         return
 
     if dl.name.startswith('[METADATA]'):
@@ -68,6 +92,9 @@ async def select(client: Client, message: Message):
 
 
 async def get_confirm(client: Client, query: CallbackQuery):
+    """
+    Handles the callback query for the /btselect command.
+    """
     user_id = query.from_user.id
     data = query.data.split()
     message = query.message
@@ -135,21 +162,5 @@ async def get_confirm(client: Client, query: CallbackQuery):
         await client.edit_message_text("", message.chat.id, message.message_id)
 
 
-app = Client(":memory:", workers=1)
-
-# Add handlers here
-app.add_handler(filters.command(["start"]), start_command)
-app.add_handler(filters.command(["help"]), help_command)
-app.add_handler(filters.command(["speedtest"]), speedtest_command)
-app.add_handler(filters.command(["uptime"]), uptime_command)
-app.add_handler(filters.command(["restart"]), restart_command)
-app.add_handler(filters.command(["shutdown"]), shutdown_command)
-app.add_handler(filters.command(["stats"]), stats_command)
-app.add_handler(filters.command(["sysinfo"]), sysinfo_command)
-app.add_handler(filters.command(["ping"]), ping_command)
-app.add_handler(filters.command(["btselect"]), select) # Changed command name from "broadcast" to "btselect"
-app.add_handler(CallbackQueryHandler(get_confirm, filters=filters.regex("^btsel")))
-
 if __name__ == "__main__":
     app.run()
-
