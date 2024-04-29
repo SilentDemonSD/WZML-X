@@ -15,9 +15,13 @@ from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.ext_utils.bot_utils import is_gdrive_link, get_readable_file_size, new_task
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Optional
+from telethon import TelegramClient
+from pyrogram import Client as PyrogramClient
 
-async def driveclean(bot, client, message: telethon.types.Message) -> None:
+OWNER_ID = 0  # Make sure to define this variable
+
+async def driveclean(bot: Union[TelegramClient, PyrogramClient], client, message: telethon.types.Message) -> None:
     args = message.text.split()
     link = get_gdrive_link(args, message)
     if not link:
@@ -51,7 +55,7 @@ async def driveclean(bot, client, message: telethon.types.Message) -> None:
     )
 
 @new_task
-async def drivecleancb(bot, client, query: telegram.CallbackQuery) -> None:
+async def drivecleancb(bot: Union[TelegramClient, PyrogramClient], client, query: telegram.CallbackQuery) -> None:
     message = query.message
     user_id = query.from_user.id
     data = query.data.split()
@@ -78,7 +82,7 @@ def get_gdrive_link(args, message) -> Union[str, None]:
         link = f"https://drive.google.com/drive/folders/{config_dict['GDRIVE_ID']}"
     return link if is_gdrive_link(link) else None
 
-async def get_id_from_url(link: str) -> Union[str, None]:
+async def get_id_from_url(link: str) -> Optional[str]:
     try:
         return GoogleDriveHelper.getIdFromUrl(link)
     except (KeyError, IndexError):
