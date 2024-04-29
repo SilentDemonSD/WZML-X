@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from typing import Any, Callable, Coroutine, Dict, Optional, Set, Union
+from typing import Any, Callable, Coroutine, Dict, Lock, Optional, Set, Union
 
 import asyncio
 import logging
@@ -18,6 +18,10 @@ logging.getLogger("pyrogram").setLevel(logging.ERROR)
 
 
 class TelegramDownloadHelper:
+    """
+    A helper class to handle downloads from Telegram.
+    """
+
     __slots__ = (
         'name',
         '__processed_bytes',
@@ -30,7 +34,11 @@ class TelegramDownloadHelper:
     )
 
     def __init__(self, listener: 'Listener'):
-        # Initializing the TelegramDownloadHelper class with a 'listener' object
+        """
+        Initializes the TelegramDownloadHelper class with a 'listener' object.
+
+        :param listener: The listener object that will receive download events.
+        """
         self.name: str = ''
         self.__processed_bytes: int = 0
         self.__start_time: float = time.time()
@@ -42,94 +50,157 @@ class TelegramDownloadHelper:
 
     @property
     def speed(self) -> float:
-        # A property decorator to calculate the download speed in bytes/second
+        """
+        A property decorator to calculate the download speed in bytes/second.
+
+        :return: The download speed in bytes/second.
+        """
         return self.__processed_bytes / (time.time() - self.__start_time)
 
     @property
     def processed_bytes(self) -> int:
-        # A property decorator to get the total number of processed bytes
+        """
+        A property decorator to get the total number of processed bytes.
+
+        :return: The total number of processed bytes.
+        """
         return self.__processed_bytes
 
     async def __onDownloadStart(self, name: str, size: int, file_id: str, from_queue: bool):
-        # A private method to handle the start of a download
+        """
+        A private method to handle the start of a download.
+
+        :param name: The name of the file being downloaded.
+        :param size: The size of the file being downloaded.
+        :param file_id: The unique ID of the file being downloaded.
+        :param from_queue: Whether the download is from the queue or not.
+        """
         async with global_lock:
-            # Acquiring the global lock to prevent concurrent access to shared resources
-            GLOBAL_GID.add(file_id)
+            try:
+                if file_id in GLOBAL_GID:
+                    return
+                GLOBAL_GID.add(file_id)
+            except Exception:
+                pass
+
         self.name = name
         self.__id = file_id
+
         async with download_dict_lock:
-            # Acquiring the download_dict lock to prevent concurrent access to the download_dict dictionary
-            download_dict[self.__listener.uid] = TelegramStatus(
-                self, size, self.__listener.message, file_id[:12], 'dl', self.__listener.upload_details)
+            try:
+                if self.__listener.uid in download_dict:
+                    return
+                download_dict[self.__listener.uid] = TelegramStatus(
+                    self, size, self.__listener.message, file_id[:12], 'dl', self.__listener.upload_details)
+            except Exception:
+                pass
+
         async with queue_dict_lock:
-            # Acquiring the queue_dict lock to prevent concurrent access to the queue_dict dictionary
-            non_queued_dl.add(self.__listener.uid)
+            try:
+                if self.__listener.uid in non_queued_dl:
+                    return
+                non_queued_dl.add(self.__listener.uid)
+            except Exception:
+                pass
+
         if not from_queue:
-            # If the download is not from the queue, calling the 'onDownloadStart' method of the listener object
-            await self.__listener.onDownloadStart()
-            # Sending a status message to the user
-            await sendStatusMessage(self.__listener.message)
-            logging.info(f'Download from Telegram: {name}')
+            try:
+                await self.__listener.onDownloadStart()
+                await sendStatusMessage(self.__listener.message)
+                logging.info(f'Download from Telegram: {name}')
+            except Exception:
+                pass
         else:
             logging.info(f'Start Queued Download from Telegram: {name}')
 
     async def __onDownloadProgress(self, current: int, total: int):
-        # A private method to handle the progress of a download
+        """
+        A private method to handle the progress of a download.
+
+        :param current: The current number of processed bytes.
+        :param total: The total number of bytes to be processed.
+        """
         if self.__is_cancelled:
-            # If the download is cancelled, stopping the transmission
             if self.__client:
-                self.__client.stop_transmission()
+                try:
+                    self.__client.stop_transmission()
+                except Exception:
+                    pass
+            return
+
         self.__processed_bytes = current
 
     async def __onDownloadError(self, error: str):
-        # A private method to handle the errors during a download
+        """
+        A private method to handle the errors during a download.
+
+        :param error: The error message.
+        """
         async with global_lock:
             try:
                 GLOBAL_GID.remove(self.__id)
             except Exception:
                 pass
-        # Calling the 'onDownloadError' method of the listener object with the error message
-        if self.__listener:
+
+        try:
             await self.__listener.onDownloadError(error)
+        except Exception:
+            pass
 
     async def __onDownloadComplete(self):
-        # A private method to handle the completion of a download
-        if self.__listener:
+        """
+        A private method to handle the completion of a download.
+        """
+        try:
             await self.__listener.onDownloadComplete()
+        except Exception:
+            pass
+
         async with global_lock:
-            GLOBAL_GID.remove(self.__id)
+            try:
+                GLOBAL_GID.remove(self.__id)
+            except Exception:
+                pass
 
     async def __download(self, message, path):
-        # A private method to download the media from the message
+        """
+        A private method to download the media from the message.
+
+        :param message: The message object containing the media to be downloaded.
+        :param path: The path to download the media to.
+        """
         try:
             if self.__client is None and self.__decrypter is not None:
-                # If the client is None and decrypter is not None, creating a new client with the decrypted session string
                 try:
                     async with Client(str(self.__listener.user_id), session_string=self.__decrypter.decrypt(self.__listener.user_dict.get('usess')).decode(), 
                                       in_memory=True, no_updates=True) as self.__client:
+                        if self.__client is None:
+                            return
+
                         download = await self.__client.download_media(message=message, file_name=path, progress=self.__onDownloadProgress)
                 except Exception as e:
                     if not self.__is_cancelled:
-                        # If the download is not cancelled, calling the 'onDownloadError' method with the error message
                         await self.__onDownloadError(f'ERROR: {e}')
                         return
             else:
-                # If the client is not None, downloading the media using the client
+                if self.__client is None:
+                    return
+
                 download = await self.__client.download_media(message=message, file_name=path, progress=self.__onDownloadProgress)
+
             if self.__is_cancelled:
-                # If the download is cancelled, calling the 'onDownloadError' method with the error message
+                try:
+                    self.__client.stop_transmission()
+                except Exception:
+                    pass
                 await self.__onDownloadError('Cancelled by user!')
                 return
         except Exception as e:
             logging.error(str(e))
-            # If an error occurs during the download, calling the 'onDownloadError' method with the error message
             await self.__onDownloadError(str(e))
             return
+
         if download is not None:
-            # If the download is successful, calling the 'onDownloadComplete' method
             await self.__onDownloadComplete()
         elif not self.__is_cancelled:
-            # If the download is not cancelled, calling the 'onDownloadError' method with the error message
             await self.__onDownloadError('Internal Error occurred')
-
-
