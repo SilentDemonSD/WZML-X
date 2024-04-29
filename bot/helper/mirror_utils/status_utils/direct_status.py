@@ -27,7 +27,7 @@ class DirectStatus:
         self.listener = listener
         self.obj = obj
         self.upload_details = upload_details
-        self.message = self.listener.message
+        self.message = listener.message
 
     def gid(self) -> str:
         """
