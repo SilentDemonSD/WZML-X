@@ -1,14 +1,21 @@
 #!/usr/bin/env python3
-from bot.helper.ext_utils.bot_utils import EngineStatus
-from bot.helper.ext_utils.fs_utils import get_path_size
-from bot.helper.ext_utils.time_utils import get_readable_time
-from typing import Optional
+
+from bot.helper.ext_utils.bot_utils import EngineStatus  # Importing EngineStatus from bot_utils
+from bot.helper.ext_utils.fs_utils import get_path_size  # Importing get_path_size from fs_utils
+from bot.helper.ext_utils.time_utils import get_readable_time  # Importing get_readable_time from time_utils
+from typing import Optional  # Importing Optional from typing
 
 class YtDlpDownloadStatus:
     """
     A class representing the status of a youtube-dlp download.
     """
     def __init__(self, obj: Optional[YoutubeDlpObject], listener: Optional[Listener]):
+        """
+        Initialize the YtDlpDownloadStatus class with an optional youtube-dlp object and listener.
+
+        :param obj: An optional youtube-dlp object
+        :param listener: An optional Listener object
+        """
         self.obj = obj
         self.listener = listener
         self.upload_details = getattr(listener, 'upload_details', None)
@@ -17,11 +24,14 @@ class YtDlpDownloadStatus:
     def status(self) -> str:
         """
         Return the status of the download as a string.
+
+        :return: The status of the download
         """
         if not self.obj:
             return "Unknown status"
 
         status = self.obj.get_status()
+        # Check the status of the download and return the corresponding string
         if status == EngineStatus.STATUS_QUEUED:
             download_folder = self.obj.get_download_folder()
             if not download_folder:
@@ -57,6 +67,9 @@ class YtDlpDownloadStatus:
     def _get_readable_size(size: Union[int, float]) -> str:
         """
         Return a human-readable string representing the size.
+
+        :param size: The size to convert to a human-readable string
+        :return: A human-readable string representing the size
         """
         if size is None:
             return "Unknown size"
@@ -71,6 +84,6 @@ if __name__ == "__main__":
     # Example usage
     from youtube_dlp import YoutubeDlpObject
 
-    obj = YoutubeDlpObject()
-    status = YtDlpDownloadStatus(obj, None)
-    print(status.status)
+    obj = YoutubeDlpObject()  # Create a youtube_dlp object
+    status = YtDlpDownloadStatus(obj, None)  # Initialize the YtDlpDownloadStatus class
+    print(status.status)  # Print the status of the download
