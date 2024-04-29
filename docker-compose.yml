@@ -16,16 +16,21 @@ services:  # Defines the services (containers) that make up the application.
     devices:
       - /dev/net/tun:/dev/net/tun
     environment:
-      - VPN_SERVICE_PROVIDER=
-      - VPN_TYPE=
-      - OPENVPN_USER=
-      - OPENVPN_PASSWORD=
-      - WIREGUARD_PRIVATE_KEY=
-      - WIREGUARD_ADDRESS=
-      - WIREGUARD_PUBLIC_KEY=
+      - VPN_SERVICE_PROVIDER= # TODO: set a value
+      - VPN_TYPE= # TODO: set a value
+      - OPENVPN_USER= # TODO: set a value
+      - OPENVPN_PASSWORD= # TODO: set a value
+      - WIREGUARD_PRIVATE_KEY= # TODO: set a value
+      - WIREGUARD_ADDRESS= # TODO: set a value
+      - WIREGUARD_PUBLIC_KEY= # TODO: set a value
       - TZ=Asia/Kolkata
       - UPDATER_PERIOD=24h
     ports:
       - "80:80"
       - "8080:8080"
     restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
