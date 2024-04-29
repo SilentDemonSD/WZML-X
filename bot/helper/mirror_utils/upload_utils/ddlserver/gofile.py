@@ -1,7 +1,6 @@
-#!/usr/bin/env python3
 import asyncio
 import os
-from typing import Dict, Any
+from typing import Dict, Any, Literal, List
 
 import aiofiles.os as aio_os
 import aiohttp
@@ -11,7 +10,7 @@ from bot import LOGGER
 from bot.helper.ext_utils.bot_utils import sync_to_async
 
 class GoFile:
-    def __init__(self, dl_uploader=None, token=None):
+    def __init__(self, dl_uploader: Any = None, token: str = None):
         self.api_url = "https://api.gofile.io/"
         self.dl_uploader = dl_uploader
         self.token = token
@@ -22,10 +21,8 @@ class GoFile:
             return False
 
         async with ClientSession() as session:
-            async with session.get(f"https://api.gofile.io/accounts/{token.split(':')[0]}?token={token.split(':')[1]}&allDetails=true") as resp:
-                if (await resp.json())["status"] == "ok":
-                    return True
-        return False
+            async with session.get(f"{token.split(':')[0]}?token={token.split(':')[1]}&allDetails=true") as resp:
+                return (await resp.json())["status"] == "ok"
 
     async def __response_handler(self, response: Dict[str, Any]) -> Dict[str, Any]:
         api_resp = response.get("status", "")
@@ -35,7 +32,7 @@ class GoFile:
 
     async def __get_server(self) -> Dict[str, Any]:
         async with ClientSession() as session:
-            async with session.get(f"{self.api_url}servers") as resp:
+            async with session.request("GET", self.api_url + "servers") as resp:
                 return await self.__response_handler(await resp.json())
 
     async def __get_account(self, check_account: bool = False) -> Dict[str, Any]:
@@ -44,11 +41,12 @@ class GoFile:
 
         api_url = f"{self.api_url}accounts/{self.token.split(':')[0]}?token={self.token.split(':')[1]}&allDetails=true"
         async with ClientSession() as session:
-            resp = await (await session.get(url=api_url)).json()
+            resp = await session.request("GET", url=api_url)
+            response = await resp.json()
             if check_account:
-                return resp["status"] == "ok" if True else await self.__response_handler(resp)
+                return response["status"] == "ok" if True else await self.__response_handler(response)
             else:
-                return await self.__response_handler(resp)
+                return await self.__response_handler(response)
 
     async def upload_folder(self, path: str, folder_id: str = None) -> str:
         if not await aio_os.isdir(path):
@@ -57,8 +55,7 @@ class GoFile:
         folder_data = await self.create_folder((await self.__get_account())["rootFolder"], os.path.basename(path))
         await self.__set_options(content_id=folder_data["id"], option="public", value="true")
 
-        folder_id = folder_id or folder_data["id"]
-        folder_ids = {".": folder_id}
+        folder_ids = {".": folder_data["id"]}
         for root, _, files in await asyncio.to_thread(os.walk, path):
             rel_path = os.path.relpath(root, path)
             parent_folder_id = folder_ids.get(os.path.dirname(rel_path), folder_id)
@@ -128,32 +125,23 @@ class GoFile:
             raise Exception()
 
         async with ClientSession() as session:
-            async with session.put(
-                    url=f"{self.api_url}contents/createFolder",
-                    data={
-                        "parentFolderId": parent_folder_id,
-                        "folderName": folder_name,
-                        "token": self.token.split(':')[1]
-                    }
-            ) as resp:
+            async with session.request("PUT", self.api_url + "contents/createFolder", json={
+                "parentFolderId": parent_folder_id,
+                "folderName": folder_name,
+                "token": self.token.split(':')[1]
+            }) as resp:
                 return await self.__response_handler(await resp.json())
 
-    async def __set_options(self, content_id: str, option: str, value: str) -> Dict[str, Any]:
+    async def __set_options(self, content_id: str, option: Literal["public", "password", "description", "expire", "tags"], value: str) -> Dict[str, Any]:
         if not self.token:
             raise Exception()
 
-        if option not in ["public", "password", "description", "expire", "tags"]:
-            raise Exception(f"Invalid GoFile Option Specified : {option}")
-
         async with ClientSession() as session:
-            async with session.put(
-                    url=f"{self.api_url}contents/{content_id}/update",
-                    data={
-                        "token": self.token.split(':')[1],
-                        "attribute": option,
-                        "attributevalue": value
-                    }
-            ) as resp:
+            async with session.request("PUT", self.api_url + f"contents/{content_id}/update", json={
+                "token": self.token.split(':')[1],
+                "attribute": option,
+                "attributevalue": value
+            }) as resp:
                 return await self.__response_handler(await resp.json())
 
     async def get_content(self, content_id: str) -> Dict[str, Any]:
@@ -161,22 +149,19 @@ class GoFile:
             raise Exception()
 
         async with ClientSession() as session:
-            async with session.get(url=f"{self.api_url}contents/{content_id}&token={self.token}") as resp:
+            async with session.request("GET", self.api_url + f"contents/{content_id}&token={self.token}") as resp:
                 return await self.__response_handler(await resp.json())
 
-    async def copy_content(self, content_ids: str, folder_id_dest: str) -> Dict[str, Any]:
+    async def copy_content(self, content_ids: List[str], folder_id_dest: str) -> Dict[str, Any]:
         if not self.token:
             raise Exception()
 
         async with ClientSession() as session:
-            async with session.put(
-                    url=f"{self.api_url}contents/copy",
-                    data={
-                        "token": self.token.split(':')[1],
-                        "contentsId": content_ids,
-                        "folderId": folder_id_dest
-                    }
-            ) as resp:
+            async with session.request("PUT", self.api_url + "contents/copy", json={
+                "token": self.token.split(':')[1],
+                "contentsId": content_ids,
+                "folderId": folder_id_dest
+            }) as resp:
                 return await self.__response_handler(await resp.json())
 
     async def delete_content(self, content_id: str) -> Dict[str, Any]:
@@ -184,10 +169,7 @@ class GoFile:
             raise Exception()
 
         async with ClientSession() as session:
-            async with session.delete(
-                    url=f"{self.api_url}contents/{content_id}",
-                    data={
-                        "token": self.token.split(':')[1]
-                    }
-            ) as resp:
+            async with session.request("DELETE", self.api_url + f"contents/{content_id}", json={
+                "token": self.token.split(':')[1]
+            }) as resp:
                 return await self.__response_handler(await resp.json())
