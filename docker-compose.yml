@@ -1,9 +1,26 @@
-version: "3.3"
+version: "3.9" # Use the latest stable version of Docker Compose
 
 services:
   app:
-    build: .
-    command: bash start.sh
-    restart: on-failure
+    build:
+      context: .
+      # Use a separate Dockerfile for the app, if needed
+      # dockerfile: path/to/Dockerfile
+    image: my-app:latest # Give the image a name and version tag
+    container_name: my-app # Give the container a name
+    command: bash start.sh # Execute the command when the container starts
+    restart: on-failure # Restart the container if it fails
     ports:
-      - "80:80"
+      - "80:80" # Map the host port 80 to the container port 80
+    environment:
+      # Set environment variables for the container, if needed
+      - NODE_ENV=production
+    volumes:
+      # Mount volumes to the container, if needed
+      - ./app:/app
+    networks:
+      - my-network # Connect the container to a network
+
+networks:
+  my-network:
+    driver: bridge # Use the bridge driver for the network

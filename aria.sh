@@ -1,4 +1,12 @@
-tracker_list=$(curl -Ns https://ngosang.github.io/trackerslist/trackers_all_http.txt | awk '$0' | tr '\n\n' ',')
+#!/bin/bash
+
+# Get the trackers list and remove any empty lines
+tracker_list=$(curl -Ns https://ngosang.github.io/trackerslist/trackers_all_http.txt | awk 'NF' | tr '\n' ',')
+
+# Remove the trailing comma from the tracker list
+tracker_list=${tracker_list%,}
+
+# Start aria2c with the specified options and the tracker list
 aria2c --allow-overwrite=true --auto-file-renaming=true --bt-enable-lpd=true --bt-detach-seed-only=true \
        --bt-remove-unselected-file=true --bt-tracker="[$tracker_list]" --check-certificate=false \
        --check-integrity=true --continue=true --content-disposition-default-utf8=true --daemon=true \
