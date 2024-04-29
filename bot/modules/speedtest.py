@@ -1,16 +1,36 @@
 #!/usr/bin/env python3
-from speedtest import Speedtest, ConfigRetrievalError
-from pyrogram.handlers import MessageHandler
+
+import os
+import asyncio
+import sys
+from typing import Any, Coroutine, Optional
+
+try:
+    import speedtest
+except ModuleNotFoundError:
+    print("Error: the 'speedtest' module is not installed.")
+    sys.exit(1)
+
+try:
+    from pyrogram.handlers import MessageHandler
+except ModuleNotFoundError:
+    print("Error: the 'pyrogram' module is not installed.")
+    sys.exit(1)
+
 from pyrogram.filters import command
 
-from bot import bot, LOGGER
+try:
+    from bot import bot, LOGGER
+except ModuleNotFoundError:
+    print("Error: the 'bot' object is not defined.")
+    sys.exit(1)
+
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.message_utils import sendMessage, deleteMessage, editMessage
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, new_task
 
-@new_task
-async def speedtest(_, message):
+async def speedtest(_, message: Any) -> Optional[Coroutine[Any, Any, Any]]:
     speed = await sendMessage(message, "<i>Initiating Speedtest...</i>")
     try:
         test = Speedtest()
@@ -49,11 +69,24 @@ async def speedtest(_, message):
 ┖ <b>ISP Rating:</b> <code>{result['client']['isprating']}</code>
 '''
     try:
-        pho = await sendMessage(message, string_speed, photo=path)
+        result_message = await sendMessage(message, string_speed, photo=path)
         await deleteMessage(speed)
     except Exception as e:
         LOGGER.error(str(e))
-        await editMessage(speed, string_speed)
+        try:
+            await editMessage(speed, string_speed)
+        except Exception as e:
+            LOGGER.error(str(e))
 
-bot.add_handler(MessageHandler(speedtest, filters=command(
-    BotCommands.SpeedCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
+if __name__ == "__main__":
+    try:
+        bot.add_handler(MessageHandler(speedtest, filters=command(
+            BotCommands.SpeedCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
+    except Exception as e:
+        LOGGER.error(str(e))
+
+    try:
+        asyncio.get_event_loop().run_forever()
+    except KeyboardInterrupt:
+        pass
+
