@@ -16,13 +16,13 @@ services:  # Defines the services (containers) that make up the application.
     devices:
       - /dev/net/tun:/dev/net/tun
     environment:
-      - VPN_SERVICE_PROVIDER= # TODO: set a value
-      - VPN_TYPE= # TODO: set a value
-      - OPENVPN_USER= # TODO: set a value
-      - OPENVPN_PASSWORD= # TODO: set a value
-      - WIREGUARD_PRIVATE_KEY= # TODO: set a value
-      - WIREGUARD_ADDRESS= # TODO: set a value
-      - WIREGUARD_PUBLIC_KEY= # TODO: set a value
+      - VPN_SERVICE_PROVIDER=wireguard
+      - VPN_TYPE=wireguard
+      - OPENVPN_USER=your_openvpn_username
+      - OPENVPN_PASSWORD=your_openvpn_password
+      - WIREGUARD_PRIVATE_KEY=your_wireguard_private_key
+      - WIREGUARD_ADDRESS=your_wireguard_address
+      - WIREGUARD_PUBLIC_KEY=your_wireguard_public_key
       - TZ=Asia/Kolkata
       - UPDATER_PERIOD=24h
     ports:
