@@ -60,20 +60,23 @@ MDL_API: Final = "http://kuryana.vercel.app/"  # Public API ! Do Not Abuse !
 
 async def mydramalist_search(client, message):
     if " " in message.text:
-        temp_message = await send_message(message, "<i>Searching in MyDramaList ...</i>")
-        title = message.text.split(" ", 1)[1]
+        query = message.text.split(" ", 1)[1]
         user_id = message.from_user.id
         buttons = ButtonMaker()
 
         async with aiohttp.ClientSession() as session:
-            async with session.get(
-                f"{MDL_API}/search/q/{q(title)}"
-            ) as resp:
-                if resp.status != 200:
-                    return await edit_message(temp_message, "<i>No Results Found</i>, Try Again or Use <b>MyDramaList Link</b>")
-                mdl = await resp.json()
+            try:
+                async with session.get(
+                    f"{MDL_API}/search/q/{q(query)}"
+                ) as resp:
+                    data = await resp.json()
+                    if resp.status != 200 or not data or not data.get("results", {}).get("dramas"):
+                        return await edit_message(message, "<i>No Results Found</i>, Try Again or Use <b>MyDramaList Link</b>")
+            except Exception as e:
+                LOGGER.error(e)
+                return await edit_message(message, "<i>Error occurred while searching MyDramaList</i>")
 
-        for drama in mdl["results"]["dramas"]:
+        for drama in data["results"]["dramas"]:
             buttons.button(
                 f"🎬 {drama.get('title')} ({drama.get('year')})",
                 f"mdl {user_id} drama {drama.get('slug')}",
@@ -81,7 +84,7 @@ async def mydramalist_search(client, message):
 
         buttons.button("🚫 Close 🚫", f"mdl {user_id} close")
         await edit_message(
-            temp_message,
+            message,
             '<b><i>Dramas found on MyDramaList :</i></b>',
             buttons.build_menu(1),
         )
@@ -91,9 +94,13 @@ async def mydramalist_search(client, message):
 
 async def extract_mdl(slug):
     async with aiohttp.ClientSession() as session:
-        async with session.get(
-            f"{MDL_API}/id/{slug}"
-        ) as resp:
-            if resp.status != 200:
-                return None
-            return await resp.json()
+        try:
+            async with session.get(
+                f"{MDL_API}/id/{slug}"
+            ) as resp:
+                if resp.status != 200:
+                    return None
+                return await resp.json()
+        except Exception as e:
+            LOGGER.error(e)
+            return None
