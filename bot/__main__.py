@@ -2,7 +2,6 @@ import os
 import sys
 import time
 import uuid
-from base64 import b64decode
 from datetime import datetime
 from pytz import timezone
 from signal import signal, SIGINT
@@ -55,31 +54,63 @@ class StatsMiddleware(BaseMiddleware):
             data["user_data"] = user_data
 
 # Initialize database
-db = ...  # Initialize the database here
+try:
+    db = ...  # Initialize the database here
+except Exception as e:
+    LOGGER.error(f"Failed to initialize database: {e}")
+    sys.exit(1)
 
 # Initialize bot theme
-theme = ...  # Initialize the bot theme here
+try:
+    theme = ...  # Initialize the bot theme here
+except Exception as e:
+    LOGGER.error(f"Failed to initialize bot theme: {e}")
+    sys.exit(1)
 
 # Initialize bot commands
-bot_commands = ...  # Initialize the bot commands here
+try:
+    bot_commands = ...  # Initialize the bot commands here
+except Exception as e:
+    LOGGER.error(f"Failed to initialize bot commands: {e}")
+    sys.exit(1)
 
 # Initialize button builder
-button_builder = ...  # Initialize the button builder here
+try:
+    button_builder = ...  # Initialize the button builder here
+except Exception as e:
+    LOGGER.error(f"Failed to initialize button builder: {e}")
+    sys.exit(1)
 
 # Initialize message utils
-message_utils = ...  # Initialize the message utils here
+try:
+    message_utils = ...  # Initialize the message utils here
+except Exception as e:
+    LOGGER.error(f"Failed to initialize message utils: {e}")
+    sys.exit(1)
 
 # Initialize telegram helper
-telegram_helper = ...  # Initialize the telegram helper here
+try:
+    telegram_helper = ...  # Initialize the telegram helper here
+except Exception as e:
+    LOGGER.error(f"Failed to initialize telegram helper: {e}")
+    sys.exit(1)
 
 # Initialize external utils
-ext_utils = ...  # Initialize the external utils here
+try:
+    ext_utils = ...  # Initialize the external utils here
+except Exception as e:
+    LOGGER.error(f"Failed to initialize external utils: {e}")
+    sys.exit(1)
 
 # Initialize aria2 listener
-aria2_listener = ...  # Initialize the aria2 listener here
+try:
+    aria2_listener = ...  # Initialize the aria2 listener here
+except Exception as e:
+    LOGGER.error(f"Failed to initialize aria2 listener: {e}")
+    sys.exit(1)
 
 # Initialize config dictionary
-config_dict = {
+config_dict: dict = {
     'TOKEN_TIMEOUT': False,
     'LOGIN_PASS': None,
     'BOT_PM': True,
@@ -93,7 +124,16 @@ config_dict = {
 }
 
 # Initialize user data dictionary
-user_data = {}
+try:
+    user_data = {
+        user_id: {
+            'token': token,
+            'time': int(time.time())
+        } for user_id, token in db.get_all_user_data().items()
+    }
+except Exception as e:
+    LOGGER.error(f"Failed to initialize user data: {e}")
+    sys.exit(1)
 
 # Initialize bot start time
 bot_start_time = time.time()
@@ -123,7 +163,7 @@ class Bot:
             data = user_data.get(user_id, {})
             if 'token' not in data or data['token'] != input_token:
                 return await callback_query.answer(theme.get_token_used(), show_alert=True)
-            await db.update_user_data(user_id, {'token': str(uuid4()), 'time': int(time.time())})
+            await db.update_user_data(user_id, {'token': str(uuid.uuid4()), 'time': int(time.time())})
             await callback_query.answer(theme.get_token_activated(), show_alert=True)
             kb = callback_query.message.reply_markup.inline_keyboard[1:]
             kb.insert(0, [InlineKeyboardButton(theme.get_activated(), callback_data='pass activated')])
@@ -184,4 +224,14 @@ class Bot:
             await message_utils.send_message(message, msg, buttons=btns, photo='IMAGES')
 
         @dp.message_handler(filters=filters.command(bot_commands.LogCommand) & CustomFilters.sudo)
+        async def log_handler(message: Message):
+            """Handle /log command by sudo users"""
+            pass
 
+        dp.run()
+
+bot = Bot(config_dict, user_data, bot_start_time, LOGGER)
+try:
+    asyncio.run(bot.start())
+except KeyboardInterrupt:
+    LOGGER.info("Shutting down...")
