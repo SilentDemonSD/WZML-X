@@ -45,7 +45,7 @@ logging.basicConfig(
 LOGGER = logging.getLogger(__name__)
 
 class StatsMiddleware(BaseMiddleware):
-    def __init__(self, db: DbManger):
+    def __init__(self, db: Any):
         self.db = db
 
     async def on_process_message(self, message: Message, data: dict) -> None:
@@ -55,28 +55,28 @@ class StatsMiddleware(BaseMiddleware):
             data["user_data"] = user_data
 
 # Initialize database
-db = DbManger()
+db = ...  # Initialize the database here
 
 # Initialize bot theme
-theme = BotTheme()
+theme = ...  # Initialize the bot theme here
 
 # Initialize bot commands
-bot_commands = BotCommands()
+bot_commands = ...  # Initialize the bot commands here
 
 # Initialize button builder
-button_builder = ButtonMaker()
+button_builder = ...  # Initialize the button builder here
 
 # Initialize message utils
-message_utils = MessageUtils()
+message_utils = ...  # Initialize the message utils here
 
 # Initialize telegram helper
-telegram_helper = TelegramHelper()
+telegram_helper = ...  # Initialize the telegram helper here
 
 # Initialize external utils
-ext_utils = ExtUtils()
+ext_utils = ...  # Initialize the external utils here
 
 # Initialize aria2 listener
-aria2_listener = Aria2Listener()
+aria2_listener = ...  # Initialize the aria2 listener here
 
 # Initialize config dictionary
 config_dict = {
@@ -184,251 +184,4 @@ class Bot:
             await message_utils.send_message(message, msg, buttons=btns, photo='IMAGES')
 
         @dp.message_handler(filters=filters.command(bot_commands.LogCommand) & CustomFilters.sudo)
-        async def log_handler(message: Message):
-            """Handle /log command by sudo users"""
-            buttons = button_builder.build_menu(1)
-            await message_utils.send_file(message, 'log.txt', buttons=buttons)
 
-        @dp.message_handler(filters=filters.command(bot_commands.SearchCommand) & CustomFilters.sudo)
-        async def search_handler(message: Message):
-            """Handle /search command by sudo users"""
-            query = message.text.split()[1:]
-            results = await search_images(query)
-            for result in results:
-                await message_utils.send_message(message, result)
-
-        @dp.message_handler(filters=filters.command(bot_commands.SettingsCommand) & CustomFilters.sudo)
-        async def settings_handler(message: Message):
-            """Handle /settings command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_settings_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.UsersCommand) & CustomFilters.sudo)
-        async def users_handler(message: Message):
-            """Handle /users command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_users_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.BroadcastCommand) & CustomFilters.sudo)
-        async def broadcast_handler(message: Message):
-            """Handle /broadcast command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_broadcast_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.CategoryCommand) & CustomFilters.sudo)
-        async def category_handler(message: Message):
-            """Handle /category command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_category_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.AuthorizeCommand) & CustomFilters.sudo)
-        async def authorize_handler(message: Message):
-            """Handle /authorize command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_authorize_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.CloneCommand) & CustomFilters.sudo)
-        async def clone_handler(message: Message):
-            """Handle /clone command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_clone_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.GdriveCommand) & CustomFilters.sudo)
-        async def gdrive_handler(message: Message):
-            """Handle /gdrive command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_gdrive_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.YtdlpCommand) & CustomFilters.sudo)
-        async def ytdlp_handler(message: Message):
-            """Handle /ytdlp command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_ytdlp_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.RssCommand) & CustomFilters.sudo)
-        async def rss_handler(message: Message):
-            """Handle /rss command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_rss_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.ShellCommand) & CustomFilters.sudo)
-        async def shell_handler(message: Message):
-            """Handle /shell command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_shell_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.EvalCommand) & CustomFilters.sudo)
-        async def eval_handler(message: Message):
-            """Handle /eval command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_eval_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.SpeedtestCommand) & CustomFilters.sudo)
-        async def speedtest_handler(message: Message):
-            """Handle /speedtest command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_speedtest_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.SaveCommand) & CustomFilters.sudo)
-        async def save_handler(message: Message):
-            """Handle /save command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_save_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.ImagesCommand) & CustomFilters.sudo)
-        async def images_handler(message: Message):
-            """Handle /images command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_images_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.ImdbCommand) & CustomFilters.sudo)
-        async def imdb_handler(message: Message):
-            """Handle /imdb command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_imdb_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.AnilistCommand) & CustomFilters.sudo)
-        async def anilist_handler(message: Message):
-            """Handle /anilist command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_anilist_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.MediainfoCommand) & CustomFilters.sudo)
-        async def mediainfo_handler(message: Message):
-            """Handle /mediainfo command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_mediainfo_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.MydramalistCommand) & CustomFilters.sudo)
-        async def mydramalist_handler(message: Message):
-            """Handle /mydramalist command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_mydramalist_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.GenpyroCommand) & CustomFilters.sudo)
-        async def genpyro_handler(message: Message):
-            """Handle /genpyro command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_genpyro_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.CleanCommand) & CustomFilters.sudo)
-        async def clean_handler(message: Message):
-            """Handle /clean command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_clean_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.BroadcastCommand) & CustomFilters.sudo)
-        async def broadcast_handler(message: Message):
-            """Handle /broadcast command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_broadcast_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.CategoryCommand) & CustomFilters.sudo)
-        async def category_handler(message: Message):
-            """Handle /category command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_category_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.AuthorizeCommand) & CustomFilters.sudo)
-        async def authorize_handler(message: Message):
-            """Handle /authorize command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_authorize_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.CloneCommand) & CustomFilters.sudo)
-        async def clone_handler(message: Message):
-            """Handle /clone command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_clone_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.GdriveCommand) & CustomFilters.sudo)
-        async def gdrive_handler(message: Message):
-            """Handle /gdrive command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_gdrive_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.YtdlpCommand) & CustomFilters.sudo)
-        async def ytdlp_handler(message: Message):
-            """Handle /ytdlp command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_ytdlp_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.RssCommand) & CustomFilters.sudo)
-        async def rss_handler(message: Message):
-            """Handle /rss command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_rss_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.ShellCommand) & CustomFilters.sudo)
-        async def shell_handler(message: Message):
-            """Handle /shell command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_shell_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.EvalCommand) & CustomFilters.sudo)
-        async def eval_handler(message: Message):
-            """Handle /eval command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_eval_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.SpeedtestCommand) & CustomFilters.sudo)
-        async def speedtest_handler(message: Message):
-            """Handle /speedtest command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_speedtest_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.SaveCommand) & CustomFilters.sudo)
-        async def save_handler(message: Message):
-            """Handle /save command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_save_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.ImagesCommand) & CustomFilters.sudo)
-        async def images_handler(message: Message):
-            """Handle /images command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_images_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.ImdbCommand) & CustomFilters.sudo)
-        async def imdb_handler(message: Message):
-            """Handle /imdb command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_imdb_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.AnilistCommand) & CustomFilters.sudo)
-        async def anilist_handler(message: Message):
-            """Handle /anilist command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_anilist_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.MediainfoCommand) & CustomFilters.sudo)
-        async def mediainfo_handler(message: Message):
-            """Handle /mediainfo command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_mediainfo_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.MydramalistCommand) & CustomFilters.sudo)
-        async def mydramalist_handler(message: Message):
-            """Handle /mydramalist command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_mydramalist_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.GenpyroCommand) & CustomFilters.sudo)
-        async def genpyro_handler(message: Message):
-            """Handle /genpyro command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_genpyro_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.CleanCommand) & CustomFilters.sudo)
-        async def clean_handler(message: Message):
-            """Handle /clean command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_clean_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands.BroadcastCommand) & CustomFilters.sudo)
-        async def broadcast_handler(message: Message):
-            """Handle /broadcast command by sudo users"""
-            buttons = button_builder.build_menu(2)
-            await message_utils.send_message(message, theme.get_broadcast_header(), buttons=buttons)
-
-        @dp.message_handler(filters=filters.command(bot_commands
