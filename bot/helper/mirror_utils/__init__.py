@@ -13,11 +13,15 @@ def is_prime(n: int) -> bool:
     :param n: The integer number to check for primality.
     :return: A boolean value indicating whether n is prime or not.
     """
+    # If n is less than 2, it cannot be a prime number
     if n < 2:
         return False
+    # Iterate from 2 to the square root of n
     for i in range(2, int(n**0.5) + 1):
+        # If n is divisible by i, it is not a prime number
         if n % i == 0:
             return False
+    # If n is not divisible by any number in the range, it is a prime number
     return True
 
 def largest_prime(numbers: List[int]) -> Optional[int]:
@@ -32,9 +36,13 @@ def largest_prime(numbers: List[int]) -> Optional[int]:
     :param numbers: The list of integers to find the largest prime in.
     :return: The largest prime number in the input list, or None if the list is empty.
     """
+    # Initialize the largest prime to None
     largest_prime: Optional[int] = None
+    # Iterate through the input list
     for num in numbers:
-        if is_prime(num):
-            if largest_prime is None or num > largest_prime:
-                largest_prime = num
+        # If the number is prime and is greater than the current largest prime
+        if is_prime(num) and (largest_prime is None or num > largest_prime):
+            # Update the largest prime
+            largest_prime = num
+    # Return the largest prime or None if the list is empty
     return largest_prime
