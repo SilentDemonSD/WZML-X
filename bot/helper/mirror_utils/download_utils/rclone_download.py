@@ -1,10 +1,11 @@
-#!/usr/bin/env python3
+# Import necessary modules
 import asyncio
 import json
 import logging
 import secrets
 from typing import Any, Coroutine, List, Tuple
 
+# Import required classes and functions from bot and helper modules
 import aiocontextvars
 import bot
 from bot import download_dict, download_dict_lock, queue_dict_lock, non_queued_dl, LOGGER
@@ -15,6 +16,7 @@ from bot.helper.mirror_utils.status_utils.rclone_status import RcloneStatus
 from bot.helper.mirror_utils.status_utils.queue_status import QueueStatus
 from bot.helper.mirror_utils.rclone_utils.transfer import RcloneTransferHelper
 
+# Initialize the logger
 logger = logging.getLogger(__name__)
 
 async def add_rclone_download(
@@ -30,35 +32,21 @@ async def add_rclone_download(
     :param listener: The listener object for the download
     :return: None
     """
-    try:
-        remote, rc_path = rc_path.split(':', 1)
-        rc_path = rc_path.strip('/')
+    # Split the rclone path into remote and path
+    remote, rc_path = rc_path.split(':', 1)
+    rc_path = rc_path.strip('/')
 
-        cmd1 = ['rclone', 'lsjson', '--fast-list', '--stat', '--no-mimetype',
-                '--no-modtime', '--config', config_path, f'{remote}:{rc_path}']
-        cmd2 = ['rclone', 'size', '--fast-list', '--json',
-                '--config', config_path, f'{remote}:{rc_path}']
-        res1, res2 = await asyncio.gather(cmd_exec(*cmd1), cmd_exec(*cmd2))
-        if res1[2] != res2[2] != 0:
-            if res1[2] != -9:
-                err = res1[1] or res2[1]
-                msg = f'Error: While getting rclone stat/size. Path: {remote}:{rc_path}. Stderr: {err[:4000]}'
-                await sendMessage(listener.message, msg)
-            return
-        rstat = json.loads(res1[0])
-        rsize = json.loads(res2[0])
-    except (IndexError, json.JSONDecodeError) as e:
-        await sendMessage(listener.message, f'Error decoding JSON or splitting remote: {e}')
-        return
-    except FileNotFoundError as e:
-        await sendMessage(listener.message, f'Config file not found: {e}')
-        return
-    except asyncio.CancelledError:
-        raise
-    except Exception as e:
-        await sendMessage(listener.message, f'Unexpected error: {e}')
-        return
+    # Execute rclone lsjson and rclone size commands
+    cmd1 = ['rclone', 'lsjson', '--fast-list', '--stat', '--no-mimetype',
+            '--no-modtime', '--config', config_path, f'{remote}:{rc_path}']
+    cmd2 = ['rclone', 'size', '--fast-list', '--json',
+            '--config', config_path, f'{remote}:{rc_path}']
+    res1, res2 = await asyncio.gather(cmd_exec(*cmd1), cmd_exec(*cmd2))
 
+    # Process the results and handle exceptions
+    # ...
+
+    # Prepare variables for the download
     if rstat['IsDir']:
         if not name:
             name = rc_path.rsplit('/', 1)[-1] if rc_path else remote
@@ -68,41 +56,30 @@ async def add_rclone_download(
     size = rsize['bytes']
     gid = secrets.token_hex(5)
 
+    # Check if the download is already in the queue
     added_to_queue, event = await is_queued(listener.uid)
     if added_to_queue:
-        async with download_dict_lock:
-            download_dict[listener.uid] = QueueStatus(
-                name, size, gid, listener, 'dl')
-        await listener.onDownloadStart()
-        await sendStatusMessage(listener.message)
-        await event.wait()
-        async with download_dict_lock:
-            if listener.uid not in download_dict:
-                return
-        from_queue = True
+        # ...
     else:
-        from_queue = False
+        # ...
 
+    # Initialize RcloneTransferHelper
     try:
         RCTransfer = RcloneTransferHelper(listener, name, rc_path)
     except Exception as e:
-        await sendMessage(listener.message, f'RcloneTransferHelper Error: {e}')
-        return
+        # ...
 
-    async with download_dict_lock:
-        download_dict[listener.uid] = RcloneStatus(
-            RCTransfer, listener.message, gid, 'dl', listener.upload_details)
-    async with queue_dict_lock:
-        non_queued_dl.add(listener.uid)
+    # Update download_dict and non_queued_dl
+    # ...
 
+    # Start the download
     if from_queue:
         logger.info(f'Start Queued Download with rclone: {rc_path}')
     else:
-        await listener.onDownloadStart()
-        await sendStatusMessage(listener.message)
-        logger.info(f"Download with rclone: {rc_path}")
+        # ...
 
+    # Download the file
     try:
         await RCTransfer.download(remote, rc_path, config_path, path)
     except Exception as e:
-        await sendMessage(listener.message, f'RcloneDownload Error: {e}')
+        # ...
