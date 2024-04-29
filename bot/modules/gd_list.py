@@ -21,7 +21,7 @@ async def list_buttons(user_id: int, is_recursive: bool = True) -> List[List[str
     buttons.ibutton("Only Folders", f"list_types {user_id} folders {is_recursive}")
     buttons.ibutton("Only Files", f"list_types {user_id} files {is_recursive}")
     buttons.ibutton("Both", f"list_types {user_id} both {is_recursive}")
-    buttons.ibutton(f"{'✅️' if is_recursive else ''} Recursive", f"list_types {user_id} rec {is_recursive}")
+    buttons.ibutton(f"{'✅️' if is_recursive else ''} Recursive", f"list_types {user_id} rec {not is_recursive}")
     buttons.ibutton("Cancel", f"list_types {user_id} cancel")
     return buttons.build_menu(2)
 
