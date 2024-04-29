@@ -3,7 +3,7 @@ import os
 import shlex
 from contextlib import suppress
 from pathlib import Path
-from typing import Tuple
+from typing import List, Tuple
 
 import telegraph
 from langcodes import Language
@@ -17,23 +17,35 @@ from bot.helper.ext_utils.telegraph_helper import telegraph
 async def is_multi_streams(path: str) -> bool:
     """Check if the file has multiple audio or video streams."""
     try:
-        result = await cmd_exec(
-            ["ffprobe", "-hide_banner", "-loglevel", "error", "-print_format", "json", "-show_streams", path]
+        # Use asyncio.create_subprocess_exec instead of cmd_exec
+        process = await asyncio.create_subprocess_exec(
+            "ffprobe", "-hide_banner", "-loglevel", "error", "-print_format", "json", "-show_streams", path,
+            stdout="pipe", stderr="pipe"
         )
+        stdout, stderr = await process.communicate()
     except Exception as e:
         bot.LOGGER.error(f"Get Video Streams: {e}. Mostly File not found!")
         return False
-    if res := result[1]:
-        bot.LOGGER.warning(f"Get Video Streams: {res}")
-    fields = eval(result[0]).get("streams")
-    if fields is None:
-        bot.LOGGER.error(f"get_video_streams: {result}")
+
+    if stderr:
+        bot.LOGGER.warning(f"Get Video Streams: {stderr.decode()}")
+
+    try:
+        result = json.loads(stdout.decode())
+    except json.JSONDecodeError:
+        bot.LOGGER.warning(f"Get Video Streams: Invalid JSON data!")
         return False
+
+    if not result.get("streams"):
+        bot.LOGGER.warning(f"get_video_streams: Empty list of streams!")
+        return False
+
     videos = 0
     audios = 0
-    for stream in fields:
+    for stream in result["streams"]:
         if stream.get("codec_type") == "video":
             videos += 1
         elif stream.get("codec_type") == "audio":
             audios += 1
+
     return videos > 1 or audios > 1
