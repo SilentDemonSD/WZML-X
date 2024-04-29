@@ -9,7 +9,7 @@ import aiofiles.os
 import pyrogram.filters
 import pyrogram.handlers
 from pyrogram.errors import FloodWait
-from pyrogram.types import Message
+from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
 
 import bot
 from bot.config import config_dict
@@ -55,14 +55,4 @@ async def rclone_node(
     tag: str,
 ) -> None:
     ...
-
-
-async def gdclone_node(message: Message, link: str, listen_up: typing.List[str]) -> None:
-    ...
-
-
-@new_task
-async def clone(client: TelegramClient, message: Message) -> None:
-    ...
-
 
