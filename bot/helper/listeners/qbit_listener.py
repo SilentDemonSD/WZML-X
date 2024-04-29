@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 import asyncio
 import aiohttp
 import time
@@ -11,6 +12,7 @@ from bot.helper.ext_utils.bot_utils import get_readable_time, getDownloadByGid
 from bot.helper.ext_utils.fs_utils import clean_unwanted
 from bot.helper.ext_utils.task_manager import limit_checker, stop_duplicate_check
 
+# Function to remove a torrent from qBittorrent and update internal data structures
 async def remove_torrent(client: Any, hash_: str, tag: str) -> None:
     """Remove torrent from qBittorrent and update internal data structures."""
     try:
@@ -28,6 +30,7 @@ async def remove_torrent(client: Any, hash_: str, tag: str) -> None:
         LOGGER.error(f"Error deleting tag {tag}: {e}")
 
 
+# Function to handle download errors and perform necessary actions
 async def on_download_error(err: str, tor: Any, button: Optional[Any] = None) -> None:
     """Handle download errors and perform necessary actions."""
     LOGGER.info(f"Cancelling Download: {tor.name}")
@@ -41,6 +44,7 @@ async def on_download_error(err: str, tor: Any, button: Optional[Any] = None) ->
         await remove_torrent(client, ext_hash, tor.tags)
 
 
+# Function to handle seed finish and perform necessary actions
 async def on_seed_finish(tor: Any) -> None:
     """Handle seed finish and perform necessary actions."""
     ext_hash = tor.hash
@@ -52,6 +56,7 @@ async def on_seed_finish(tor: Any) -> None:
         await remove_torrent(download.client(), ext_hash, tor.tags)
 
 
+# Function to stop duplicate torrents and perform necessary actions
 async def stop_duplicate(tor: Any) -> None:
     """Stop duplicate torrents and perform necessary actions."""
     download = await getDownloadByGid(tor.hash[:12])
@@ -63,6 +68,7 @@ async def stop_duplicate(tor: Any) -> None:
             await on_download_error(msg, tor, button)
 
 
+# Function to check if torrent size exceeds limits and perform necessary actions
 async def size_checked(tor: Any) -> None:
     """Check if torrent size exceeds limits and perform necessary actions."""
     download = await getDownloadByGid(tor.hash[:12])
@@ -73,6 +79,7 @@ async def size_checked(tor: Any) -> None:
             await on_download_error(limit_exceeded, tor)
 
 
+# Function to handle download completion and perform necessary actions
 async def on_download_complete(tor: Any) -> None:
     """Handle download completion and perform necessary actions."""
     ext_hash = tor.hash
@@ -110,6 +117,7 @@ async def on_download_complete(tor: Any) -> None:
             await remove_torrent(client, ext_hash, tag)
 
 
+# Main function to handle qBittorrent listener for various torrent states
 async def qb_listener():
     """qBittorrent listener for various torrent states."""
     async with aiohttp.ClientSession() as session:
