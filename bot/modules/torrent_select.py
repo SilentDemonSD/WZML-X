@@ -1,22 +1,16 @@
 #!/usr/bin/env python3
 import asyncio
 import os
-from typing import List, Tuple
+from typing import List, Tuple, Literal
 
 import aiofiles
-import aiohttp
-import pyrogram
+import aiosessions
+from pyrogram import Client, filters
 from pyrogram.errors import FloodWait
-from pyrogram.handlers import MessageHandler, CallbackQueryHandler
-from pyrogram.filters import regex, command, custom
+from pyrogram.raw import functions, inputs
 from pyrogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 
-import bot.helper.telegram_helper.bot_commands as BotCommands
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import sendMessage, sendStatusMessage, deleteMessage
-from bot.helper.ext_utils.bot_utils import get_download_by_gid, MirrorStatus, bt_selection_buttons, sync_to_async
-
-async def select(client: pyrogram.Client, message: Message):
+async def select(client: Client, message: Message):
     user_id = message.from_user.id
     cmd_data = message.text.split('_', maxsplit=1)
     gid = None
@@ -29,28 +23,28 @@ async def select(client: pyrogram.Client, message: Message):
             if download_info:
                 gid = download_info.get('gid')
     else:
-        await sendMessage(message, "Invalid usage. Reply to a task or use /btselect <gid>")
+        await client.send_message(message.chat.id, "Invalid usage. Reply to a task or use /btselect <gid>")
         return
 
     if not gid:
-        await sendMessage(message, "Task not found.")
+        await client.send_message(message.chat.id, "Task not found.")
         return
 
     dl = await get_download_by_gid(gid)
     if not dl:
-        await sendMessage(message, "Task not found.")
+        await client.send_message(message.chat.id, "Task not found.")
         return
 
     if user_id not in (dl.message.from_user.id, OWNER_ID) and (user_id not in user_data or not user_data[user_id].get('is_sudo')):
-        await sendMessage(message, "This task is not for you!")
+        await client.send_message(message.chat.id, "This task is not for you!")
         return
 
     if dl.status not in (MirrorStatus.STATUS_DOWNLOADING, MirrorStatus.STATUS_PAUSED, MirrorStatus.STATUS_QUEUED):
-        await sendMessage(message, 'Task should be in download or pause (incase message deleted by wrong) or queued (status incase you used torrent file)!')
+        await client.send_message(message.chat.id, 'Task should be in download or pause (incase message deleted by wrong) or queued (status incase you used torrent file)!')
         return
 
     if dl.name.startswith('[METADATA]'):
-        await sendMessage(message, 'Try after downloading metadata finished!')
+        await client.send_message(message.chat.id, 'Try after downloading metadata finished!')
         return
 
     try:
@@ -65,15 +59,15 @@ async def select(client: pyrogram.Client, message: Message):
                 await sync_to_async(aria2.client.force_pause, id_)
         dl.listener.select = True
     except Exception as e:
-        await sendMessage(message, "This is not a bittorrent task!")
+        await client.send_message(message.chat.id, "This is not a bittorrent task!")
         return
 
     buttons = bt_selection_buttons(id_)
     msg = "Your download paused. Choose files then press Done Selecting button to resume downloading."
-    await sendMessage(message, msg, buttons)
+    await client.send_message(message.chat.id, msg, reply_markup=InlineKeyboardMarkup(buttons))
 
 
-async def get_confirm(client: pyrogram.Client, query: CallbackQuery):
+async def get_confirm(client: Client, query: CallbackQuery):
     user_id = query.from_user.id
     data = query.data.split()
     message = query.message
@@ -81,7 +75,7 @@ async def get_confirm(client: pyrogram.Client, query: CallbackQuery):
 
     if not dl:
         await query.answer("This task has been cancelled!", show_alert=True)
-        await deleteMessage(message)
+        await client.edit_message_text("", message.chat.id, message.message_id)
         return
 
     if hasattr(dl, 'listener'):
@@ -103,14 +97,16 @@ async def get_confirm(client: pyrogram.Client, query: CallbackQuery):
             client_ = dl.client
             tor_info = (await sync_to_async(client_.torrents_info, torrent_hash=[id_]))[0]
             path = tor_info.content_path.rsplit('/', 1)[0]
+            async with aiofiles.open(f"{path}/.selected_files", "w") as f:
+                f.write("")
             res = await sync_to_async(client_.torrents_files, torrent_hash=[id_])
             for f in res:
                 if f.priority == 0:
                     f_paths = [os.path.join(path, f.name), os.path.join(path, f.name + '.!qB')]
                     for f_path in f_paths:
-                        if await aiofiles.os.path.exists(f_path):
+                        if await aiosessions.aiofiles.os.path.exists(f_path):
                             try:
-                                await aiofiles.os.remove(f_path)
+                                await aiosessions.aiofiles.os.remove(f_path)
                             except Exception:
                                 pass
             if not dl.queued:
@@ -118,9 +114,9 @@ async def get_confirm(client: pyrogram.Client, query: CallbackQuery):
         else:
             res = await sync_to_async(aria2.client.get_files, id_)
             for f in res:
-                if not f['selected'] and await aiofiles.os.path.exists(f['path']):
+                if not f['selected'] and await aiosessions.aiofiles.os.path.exists(f['path']):
                     try:
-                        await aiofiles.os.remove(f['path'])
+                        await aiosessions.aiofiles.os.remove(f['path'])
                     except Exception:
                         pass
             if not dl.queued:
@@ -128,16 +124,34 @@ async def get_confirm(client: pyrogram.Client, query: CallbackQuery):
                     await sync_to_async(aria2.client.unpause, id_)
                 except Exception as e:
                     LOGGER.error(f"{e} Error in resume, this mostly happens after abuse aria2. Try to use select cmd again!")
-        await sendStatusMessage(message)
-        await deleteMessage(message)
+        await client.send_animation(message.chat.id, "mdi://action/content-save-all", caption="Download resumed.", reply_to_message_id=message.message_id)
+        await client.edit_message_text("", message.chat.id, message.message_id)
     elif data[1] == "rm":
         await query.answer()
         try:
             await dl.download().cancel_download()
         except FloodWait as e:
             await asyncio.sleep(e.x)
-        await deleteMessage(message)
+        await client.edit_message_text("", message.chat.id, message.message_id)
 
 
-bot.add_handler(MessageHandler(select, filters=regex(f"^/{BotCommands.BtSelectCommand}(_\w+)?") & custom.authorized & ~custom.blacklisted))
-bot.add_handler(CallbackQueryHandler(get_confirm, filters=regex("^btsel")))
+app = Client(":memory:", workers=1)
+app.add_handler(filters.command(["start"]), start_command)
+app.add_handler(filters.command(["help"]), help_command)
+app.add_handler(filters.command(["speedtest"]), speedtest_command)
+app.add_handler(filters.command(["uptime"]), uptime_command)
+app.add_handler(filters.command(["restart"]), restart_command)
+app.add_handler(filters.command(["shutdown"]), shutdown_command)
+app.add_handler(filters.command(["stats"]), stats_command)
+app.add_handler(filters.command(["sysinfo"]), sysinfo_command)
+app.add_handler(filters.command(["ping"]), ping_command)
+app.add_handler(filters.command(["uptime"]), uptime_command)
+app.add_handler(filters.command(["broadcast"]), broadcast_command)
+app.add_handler(filters.command(["stats"]), stats_command)
+app.add_handler(filters.command(["sysinfo"]), sysinfo_command)
+app.add_handler(filters.command(["ping"]), ping_command)
+app.add_handler(MessageHandler(select, filters=filters.regex(f"^/{BotCommands.BtSelectCommand}(_\w+)?") & filters.user(OWNER_ID) & ~filters.blacklisted))
+app.add_handler(CallbackQueryHandler(get_confirm, filters=filters.regex("^btsel")))
+
+if __name__ == "__main__":
+    app.run()
