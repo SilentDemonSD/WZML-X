@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 from time import time
 from uuid import uuid4
-from asyncio import sleep
+from asyncio import sleep, create_task, wait
+from typing import List, Dict, Any, Optional
+from contextlib import suppress
 from pyrogram.handlers import MessageHandler
 from pyrogram.filters import command
 from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated
@@ -14,10 +16,20 @@ from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.bot_utils import new_task, get_readable_time
 
-bc_cache = {}
+bc_cache: Dict[str, List[Any]] = {}
 
 @new_task
-async def broadcast(_, message):
+async def broadcast(context: Any, message: Any) -> None:
+    """
+    Broadcasts a message to all users in the database.
+
+    Args:
+        context (Any): The context of the current event.
+        message (Any): The received message from Telegram.
+
+    Returns:
+        None
+    """
     bc_id, forwarded, quietly, deleted, edited = '', False, False, False, False
     if not DATABASE_URL:
         return await sendMessage(message, 'DATABASE_URL not provided!')
@@ -64,7 +76,8 @@ async def broadcast(_, message):
                 await sleep(0.5)
                 msgs.pop(msgs.index(msg))
                 s += 1
-            except:
+            except Exception as e:
+                LOGGER.exception(e)
                 u += 1
             t += 1
         return await editMessage(temp_wait, f'''⌬  <b><i>Broadcast Deleted Stats :</i></b>
@@ -95,7 +108,7 @@ async def broadcast(_, message):
 
 <b>Broadcast ID:</b> <code>{bc_id}</code>''')
     start_time = time()
-    status = '''⌬  <b><i>Broadcast Stats :</i></b>
+    status = f'''⌬  <b><i>Broadcast Stats :</i></b>
 ┠ <b>Total Users:</b> <code>{t}</code>
 ┠ <b>Success:</b> <code>{s}</code>
 ┠ <b>Blocked Users:</b> <code>{b}</code>
@@ -124,7 +137,8 @@ async def broadcast(_, message):
         except InputUserDeactivated:
             await DbManger().rm_pm_user(uid)
             d += 1
-        except Exception:
+        except Exception as e:
+            LOGGER.exception(e)
             u += 1
         if bc_msg:
             bc_msgs.append(bc_msg)
@@ -132,11 +146,10 @@ async def broadcast(_, message):
         if (time() - updater) > 10:
             await editMessage(pls_wait, status.format(**locals()))
             updater = time()
-    bc_cache[bc_hash] = bc_msgs
+    bc_cache[bc_id] = bc_msgs
     await editMessage(
         pls_wait,
-        f"{status.format(**locals())}\n\n<b>Elapsed Time:</b> <code>{get_readable_time(time() - start_time)}</code>\n<b>Broadcast ID:</b> <code>{bc_hash}</code>",
+        f"{status}\n\n<b>Elapsed Time:</b> <code>{get_readable_time(time() - start_time)}</code>\n<b>Broadcast ID:</b> <code>{bc_id}</code>",
     )
-        
-        
-bot.add_handler(MessageHandler(broadcast, filters=command(BotCommands.BroadcastCommand) & CustomFilters.sudo))
+
+bot.add_handler(broadcast)
