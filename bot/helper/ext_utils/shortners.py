@@ -1,75 +1,96 @@
-from base64 import b64encode
-from random import choice, random, randrange
-from time import sleep
+import random
+import time
+from typing import Any
+from typing import Dict
+from typing import Optional
+
+import requests
+from requests.exceptions import HTTPError
 from urllib.parse import quote
 
 from cloudscraper import create_scraper
-from urllib3 import disable_warnings
-
 from bot import LOGGER, shorteners_list
 
-def short_url(longurl, attempt=0):
+def short_url(long_url: str, attempt: int = 0) -> Optional[str]:
     """
     Shortens the given long URL using various URL shortening services.
     If all services fail, the original URL is returned.
 
-    :param longurl: The URL to be shortened
+    :param long_url: The URL to be shortened
     :param attempt: The number of attempts made to shorten the URL
     :return: The shortened URL or the original URL if all services fail
     """
     if not shorteners_list:  # If there are no shortening services configured
-        return longurl
+        return long_url
 
     if attempt >= 4:  # If the maximum number of attempts is reached
-        return longurl
+        return long_url
 
-    i = 0 if len(shorteners_list) == 1 else randrange(len(shorteners_list))
-    _shorten_dict = shorteners_list[i]  # Selects a random shortening service
-    _shortener = _shorten_dict['domain']
-    _shortener_api = _shorten_dict['api_key']
+    shortener_config = random.choice(shorteners_list) if len(shorteners_list) > 1 else shorteners_list[0]
+    shortener_domain = shortener_config["domain"]
+    shortener_api_key = shortener_config["api_key"]
 
-    cget = create_scraper().request  # Creates a request function using cloudscraper
-    disable_warnings()  # Disables warnings
+    scraper = create_scraper()  # Creates a request function using cloudscraper
 
     try:
-        if "shorte.st" in _shortener:
-            headers = {'public-api-token': _shortener_api}
-            data = {'urlToShorten': quote(longurl)}
-            return cget('PUT', 'https://api.shorte.st/v1/data/url', headers=headers, data=data).json()['shortenedUrl']
+        if "shorte.st" in shortener_domain:
+            headers = {"public-api-token": shortener_api_key}
+            data = {"urlToShorten": quote(long_url)}
+            response = scraper.request("PUT", "https://api.shorte.st/v1/data/url", headers=headers, data=data)
+            response.raise_for_status()  # Ensure the request was successful
+            return response.json()["shortenedUrl"]
 
-        elif "linkvertise" in _shortener:
-            url = quote(b64encode(longurl.encode("utf-8")))
-            linkvertise = [
-                f"https://link-to.net/{_shortener_api}/{random() * 1000}/dynamic?r={url}",
-                f"https://up-to-down.net/{_shortener_api}/{random() * 1000}/dynamic?r={url}",
-                f"https://direct-link.net/{_shortener_api}/{random() * 1000}/dynamic?r={url}",
-                f"https://file-link.net/{_shortener_api}/{random() * 1000}/dynamic?r={url}"]
-            return choice(linkvertise)
+        elif "linkvertise" in shortener_domain:
+            url = quote(b64encode(long_url.encode("utf-8")))
+            linkvertise_urls = [
+                f"https://link-to.net/{shortener_api_key}/{random() * 1000}/dynamic?r={url}",
+                f"https://up-to-down.net/{shortener_api_key}/{random() * 1000}/dynamic?r={url}",
+                f"https://direct-link.net/{shortener_api_key}/{random() * 1000}/dynamic?r={url}",
+                f"https://file-link.net/{shortener_api_key}/{random() * 1000}/dynamic?r={url}"]
+            return random.choice(linkvertise_urls)
 
-        elif "bitly.com" in _shortener:
-            headers = {"Authorization": f"Bearer {_shortener_api}"}
-            return cget('POST', "https://api-ssl.bit.ly/v4/shorten", json={"long_url": longurl}, headers=headers).json()["link"]
+        elif "bitly.com" in shortener_domain:
+            headers = {"Authorization": f"Bearer {shortener_api_key}"}
+            response = scraper.request("POST", "https://api-ssl.bit.ly/v4/shorten", json={"long_url": long_url}, headers=headers)
+            response.raise_for_status()  # Ensure the request was successful
+            return response.json()["link"]
 
-        elif "ouo.io" in _shortener:
-            return cget('GET', f'http://ouo.io/api?api={_shortener_api}?s={longurl}', verify=False).text
+        elif "ouo.io" in shortener_domain:
+            response = scraper.get(f'http://ouo.io/api?api={shortener_api_key}?s={long_url}', verify=False)
+            response.raise_for_status()  # Ensure the request was successful
+            return response.text
 
-        elif "cutt.ly" in _shortener:
-            return cget('GET', f'http://cutt.ly/api/api.php?key={_shortener_api}&short={longurl}').json()['url']['shortLink']
+        elif "cutt.ly" in shortener_domain:
+            response = scraper.get(f'http://cutt.ly/api/api.php?key={shortener_api_key}&short={long_url}')
+            response.raise_for_status()  # Ensure the request was successful
+            return response.json()['url']['shortLink']
 
         else:
-            res = cget('GET', f'https://{_shortener}/api?api={_shortener_api}&url={quote(longurl)}').json()
-            shorted = res['shortenedUrl']
-            if not shorted:
-                shrtco_res = cget('GET', f'https://api.shrtco.de/v2/shorten?url={quote(longurl)}').json()
-                shrtco_link = shrtco_res['result']['full_short_link']
-                res = cget('GET', f'https://{_shortener}/api?api={_shortener_api}&url={shrtco_link}').json()
-                shorted = res['shortenedUrl']
-            if not shorted:
-                shorted = longurl
-            return shorted
+            response = scraper.get(f'https://{shortener_domain}/api?api={shortener_api_key}&url={quote(long_url)}')
+            response.raise_for_status()  # Ensure the request was successful
+
+            shortened_url = response.json().get("shortenedUrl")
+            if not shortened_url:
+                shrtco_response = requests.get(f'https://api.shrtco.de/v2/shorten?url={quote(long_url)}')
+                shrtco_response.raise_for_status()  # Ensure the request was successful
+                shrtco_link = shrtco_response.json()["result"]["full_short_link"]
+                response = scraper.get(f'https://{shortener_domain}/api?api={shortener_api_key}&url={shrtco_link}')
+                response.raise_for_status()  # Ensure the request was successful
+                shortened_url = response.json().get("shortenedUrl")
+
+            if not shortened_url:
+                shortened_url = long_url
+
+            return shortened_url
+
+    except HTTPError as http_error:
+        LOGGER.error(f"HTTP error occurred: {http_error}")
+        time.sleep(1)
+        attempt += 1
+        return short_url(long_url, attempt)
 
     except Exception as e:
         LOGGER.error(e)  # Logs the error
-        sleep(1)
+        time.sleep(1)
         attempt += 1
-        return short_url(longurl, attempt)
+        return short_url(long_url, attempt)
