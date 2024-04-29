@@ -12,24 +12,26 @@ import pyrogram.scaffold
 import pyrogram.types
 from base64 import b64encode
 from urllib.parse import unquote
-
+from traceback import format_exc
 
 async def some_function():
+    """Function documentation here"""
     # Function implementation here
-    pass
 
 class SomeClass:
+    """Class documentation here"""
+
     def __init__(self):
+        """Initialize class attributes here"""
         # Initialize class attributes here
-        pass
 
     async def some_method(self):
+        """Method documentation here"""
         # Method implementation here
-        pass
 
 async def main():
+    """Main function documentation here"""
     # Main function implementation here
-    pass
 
 if __name__ == "__main__":
     try:
