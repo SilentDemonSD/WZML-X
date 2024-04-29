@@ -1,6 +1,5 @@
 import asyncio
-import os
-from typing import Any
+from typing import Final
 
 import aiofiles
 from aiofiles.os import path as aiopath, makedirs
@@ -10,24 +9,30 @@ from pymongo.errors import PyMongoError
 from dotenv import dotenv_values
 
 import bot
-
+from bot import LOGGER
 
 class DbManager:
+    DATABASE_URL: Final = bot.DATABASE_URL
+
     def __init__(self):
         self.__err = False
         self.__db = None
         self.__connect()
 
+    def __post_init__(self):
+        super().__init__()
+        asyncio.create_task(self.__connect())
+
     async def __connect(self):
         try:
-            self.__conn = await AsyncIOMotorClient(bot.DATABASE_URL).connect()
+            self.__conn = await AsyncIOMotorClient(self.DATABASE_URL).connect()
             self.__db = self.__conn["wzmlx"]
         except PyMongoError as e:
             self.handle_exception(e)
             self.__err = True
 
     def handle_exception(self, e: Exception) -> None:
-        bot.LOGGER.error(f"Error: {e}")
+        LOGGER.error(f"Error: {e}")
 
     async def db_load(self) -> None:
         if self.__err:
@@ -66,7 +71,7 @@ class DbManager:
 
             if row.get("thumb"):
                 if not await aiopath.exists("Thumbnails"):
-                    await makedirs("Thumbnails")
+                    await makedirs("Thumbnails", exist_ok=True)
 
                 async with aiopen(thumb_path, "wb+") as f:
                     await f.write(row["thumb"])
@@ -75,16 +80,17 @@ class DbManager:
 
             if row.get("rclone"):
                 if not await aiopath.exists("rclone"):
-                    await makedirs("rclone")
+                    await makedirs("rclone", exist_ok=True)
 
                 async with aiopen(rclone_path, "wb+") as f:
                     await f.write(row["rclone"])
 
                 row["rclone"] = rclone_path
 
+            LOGGER.debug(f"Loaded user data for user_id={user_id}")
             bot.user_data[user_id] = row
 
-        bot.LOGGER.info("Users data has been imported from Database")
+        LOGGER.success("Users data has been imported from Database")
 
     async def __load_rss(self) -> None:
         rss_collection = self.__db.rss
@@ -94,7 +100,7 @@ class DbManager:
             del row["_id"]
             bot.rss_dict[user_id] = row
 
-        bot.LOGGER.info("Rss data has been imported from Database.")
+        LOGGER.success("Rss data has been imported from Database.")
 
     async def update_deploy_config(self) -> None:
         if self.__err:
@@ -162,7 +168,7 @@ class DbManager:
             return
 
         if path:
-            async with aiopen(path, "rb+") as doc:
+            async with aiopen(path, "rb") as doc:
                 doc_bin = await doc.read()
         else:
             doc_bin = b""
@@ -183,7 +189,7 @@ class DbManager:
 
         if not bool(await self.__db.pm_users[bot.bot_id].find_one({"_id": user_id})):
             await self.__db.pm_users[bot.bot_id].insert_one({"_id": user_id})
-            bot.LOGGER.info(f"New PM User Added : {user_id}")
+            LOGGER.info(f"New PM User Added : {user_id}")
 
     async def rm_pm_user(self, user_id: str) -> None:
         if self.__err:
@@ -265,7 +271,6 @@ class DbManager:
         if self.__conn:
             await self.__conn.close()
 
-
-if bot.DATABASE_URL:
+if DbManager.DATABASE_URL:
     async with DbManager() as db:
         await db.db_load()
