@@ -24,34 +24,42 @@ class QueueStatus:
         self.__status = status
         self.message = listener.message
 
-    def gid(self) -> int:
-        """Return the group id of the queue."""
-        return self.__gid
-
+    @property
     def name(self) -> str:
         """Return the name of the queue."""
         return self.__name
 
-    def size(self) -> str:
-        """Return the size of the queue in a readable format."""
-        return get_readable_file_size(self.__size)
+    @property
+    def size(self) -> int:
+        """Return the size of the queue."""
+        return self.__size
 
+    @property
+    def gid(self) -> int:
+        """Return the group id of the queue."""
+        return self.__gid
+
+    @property
     def status(self) -> str:
         """Return the status of the queue."""
         return self.__status
 
+    @property
     def processed_bytes(self) -> int:
         """Always return 0 for processed bytes."""
         return 0
 
+    @property
     def progress(self) -> str:
         """Always return '0%' for progress."""
         return '0%'
 
+    @property
     def speed(self) -> str:
         """Always return '0B/s' for speed."""
         return '0B/s'
 
+    @property
     def eta(self) -> str:
         """Always return '-' for ETA."""
         return '-'
@@ -62,11 +70,11 @@ class QueueStatus:
 
     async def cancel_download(self):
         """Cancel the download or upload associated with the queue."""
-        LOGGER.info(f'Cancelling Queue{self.__status}: {self.__name}')
-        if self.__status == 'dl':
-            await self.__listener.onDownloadError('task have been removed from queue/download')
+        LOGGER.info(f'Cancelling Queue{self.status}: {self.name}')
+        if self.status == 'dl':
+            raise CancellationError('task have been removed from queue/download')
         else:
-            await self.__listener.onUploadError('task have been removed from queue/upload')
+            raise CancellationError('task have been removed from queue/upload')
 
     def eng(self) -> str:
         """Return the EngineStatus constant for queue."""
@@ -75,8 +83,19 @@ class QueueStatus:
     def __str__(self):
         """Return a human-readable representation of the QueueStatus object."""
         return (
-            f'QueueName: {self.__name}\n'
-            f'QueueSize: {self.__size}\n'
-            f'QueueGroupId: {self.__gid}\n'
-            f'QueueStatus: {self.__status}\n'
+            f'QueueName: {self.name}\n'
+            f'QueueSize: {self.size}\n'
+            f'QueueGroupId: {self.gid}\n'
+            f'QueueStatus: {self.status}\n'
         )
+
+def get_readable_file_size(size: int) -> str:
+    """Return the size in a human-readable format."""
+    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+        if size < 1024:
+            break
+        size /= 1024.0
+    return f'{size:.2f} {unit}'
+
+class CancellationError(Exception):
+    """Custom error for cancellation."""
