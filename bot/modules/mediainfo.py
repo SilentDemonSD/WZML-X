@@ -14,21 +14,33 @@ from bot.helper.ext_utils.bot_utils import cmd_exec
 from bot.helper.ext_utils.telegraph_helper import telegraph
 from bot import LOGGER, bot, config_dict
 
+# Define the path for MediaInfo files
+PATH = "Mediainfo/"
+
+# Define the section dictionary for parsing MediaInfo output
+section_dict = {
+    "General": "🔹",
+    "Video": "🎥",
+    "Audio": "🎶",
+    "Text": "💬",
+    "Image": "📷",
+    "Other": "📦",
+}
+
 # Asynchronous function to generate MediaInfo for a given link or media file
 async def gen_mediainfo(message, link=None, media=None, mmsg=None):
     # Send a message indicating that MediaInfo is being generated
     temp_send = await sendMessage(message, '<i>Generating MediaInfo...</i>')
     try:
         # Create a directory for MediaInfo files if it doesn't exist
-        path = "Mediainfo/"
-        if not await aiopath.isdir(path):
-            await mkdir(path)
+        if not await aiopath.isdir(PATH):
+            await mkdir(PATH)
 
         # If a link is provided, download the file and generate MediaInfo
         if link:
-            filename = re_search(".+/(.+)", link).group(1)
-            des_path = ospath.join(path, filename)
-            headers = {"user-agent":"Mozilla/5.0 (Linux; Android 12; 2201116PI) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Mobile Safari/537.36"}
+            filename = re.search(".+/(.+)", link).group(1)
+            des_path = os.path.join(PATH, filename)
+            headers = {"user-agent": "Mozilla/5.0 (Linux; Android 12; 2201116PI) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Mobile Safari/537.36"}
             async with ClientSession() as session:
                 async with session.get(link, headers=headers) as response:
                     async with aiopen(des_path, "wb") as f:
@@ -37,16 +49,16 @@ async def gen_mediainfo(message, link=None, media=None, mmsg=None):
                             break
         # If a media file is provided, generate MediaInfo for it
         elif media:
-            des_path = ospath.join(path, media.file_name)
+            des_path = os.path.join(PATH, media.file_name)
             if media.file_size <= 50000000:
-                await mmsg.download(ospath.join(getcwd(), des_path))
+                await mmsg.download(os.path.join(os.getcwd(), des_path))
             else:
                 async for chunk in bot.stream_media(media, limit=5):
                     async with aiopen(des_path, "ab") as f:
                         await f.write(chunk)
         # Execute the 'mediainfo' command and parse the output
-        stdout, _, _ = await cmd_exec(ssplit(f'mediainfo "{des_path}"'))
-        tc = f"<h4>📌 {ospath.basename(des_path)}</h4><br><br>"
+        stdout, _, _ = await cmd_exec(shlex.split(f'mediainfo "{des_path}"'))
+        tc = f"<h4>📌 {os.path.basename(des_path)}</h4><br><br>"
         if len(stdout) != 0:
             tc += parseinfo(stdout)
     except Exception as e:
@@ -117,3 +129,4 @@ async def mediainfo(_, message):
 
 # Add the /mediainfo command to the bot
 bot.add_handler(MessageHandler(mediainfo, filters=command(BotCommands.MediaInfoCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
+
