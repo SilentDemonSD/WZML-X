@@ -63,7 +63,6 @@ class RcloneList:
         self.iter_start = 0
         self.page_step = 1
 
-    @new_thread
     async def __event_handler(self) -> None:
         """
         Handle the event when the user interacts with the inline buttons.
@@ -145,18 +144,17 @@ class RcloneList:
         buttons.ibutton("Cancel", "rcq cancel", position="footer")
         button = buttons.build_menu(f_cols=2)
         msg = (
-            "Choose Path:"
-            + ('\nTransfer Type: <i>Download</i>' if self.list_status == "rcd" else '\nTransfer Type: <i>Upload</i>')
+            f"Choose Path:\nTransfer Type: <i>{'Download' if self.list_status == 'rcd' else 'Upload'}</i>"
         )
         if self.list_status == "rcu":
             default_path = config_dict["RCLONE_PATH"]
             msg += f"\nDefault Rclone Path: {default_path}" if default_path else ''
-        msg += f'\n\nItems: {items_no}'
+        msg += f"\nItems: {items_no}"
         if items_no > LIST_LIMIT:
-            msg += f' | Page: {int(page)}/{pages} | Page Step: {self.page_step}'
-        msg += f'\n\nItem Type: {self.item_type}\nConfig Path: {self.config_path}'
-        msg += f'\nCurrent Path: <code>{self.remote}{self.path}</code>'
-        msg += f'\nTimeout: {get_readable_time(self.__timeout-(time()-self.__time))}'
+            msg += f" | Page: {page}/{pages} | Page Step: {self.page_step}"
+        msg += f"\nItem Type: {self.item_type}\nConfig Path: {self.config_path}"
+        msg += f"\nCurrent Path: <code>{self.remote}{self.path}</code>"
+        msg += f"\nTimeout: {get_readable_time(self.__timeout-(time()-self.__time))}"
         await self.__send_list_message(msg, button)
 
     async def get_path(self, itype: Optional[str] = None) -> None:
@@ -227,11 +225,8 @@ class RcloneList:
             await self.get_path()
         else:
             msg = (
-                'Choose Rclone remote:'
-                + ('\nTransfer Type: <i>Download</i>' if self.list_status == "rcd" else '\nTransfer Type: <i>Upload</i>')
+                f"Choose Rclone remote:\nTransfer Type: <i>{'Download' if self.list_status == 'rcd' else 'Upload'}</i>"
             )
-            msg += f'\nConfig Path: {self.config_path}'
-            msg += f'\nTimeout: {get_readable_time(self.__timeout-(time()-self.__time))}'
             buttons = ButtonMaker()
             for remote in self.__sections:
                 buttons.ibutton(remote, f"rcq re {remote}:")
@@ -248,9 +243,9 @@ class RcloneList:
         :return: None
         """
         if self.__rc_user and self.__rc_owner:
-            msg = 'Choose Rclone config:' + (
-                '\nTransfer Type: Download' if self.list_status == "rcd" else '\nTransfer Type: Upload')
-            msg += f'\nTimeout: {get_readable_time(self.__timeout-(time()-self.__time))}'
+            msg = (
+                f"Choose Rclone config:\nTransfer Type: {'Download' if self.list_status == 'rcd' else 'Upload'}"
+            )
             buttons = ButtonMaker()
             buttons.ibutton('Owner Config', 'rcq owner')
             buttons.ibutton('My Config', 'rcq user')
@@ -305,4 +300,3 @@ class RcloneList:
         if self.config_path != 'rclone.conf' and not self.is_cancelled:
             return f'mrcc:{self.remote}{self.path}'
         return f'{self.remote}{self.path}'
-
