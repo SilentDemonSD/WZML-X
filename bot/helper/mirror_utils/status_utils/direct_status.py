@@ -1,19 +1,21 @@
 #!/usr/bin/env python3
 
+import helper.ext_utils.bot_utils  # Import the bot_utils module
+
 from bot.helper.ext_utils.bot_utils import (
-    EngineStatus,
-    MirrorStatus,
-    get_readable_file_size,
-    get_readable_time,
+    EngineStatus,  # Import EngineStatus class
+    MirrorStatus,  # Import MirrorStatus class
+    get_readable_file_size,  # Import function to get human-readable file size
+    get_readable_time,  # Import function to get human-readable time
 )
 
 class DirectStatus:
     def __init__(
         self,
-        file_info: object,
-        file_global_id: str,
-        listener: object,
-        upload_details: object,
+        file_info,  # The object containing the file information
+        file_global_id,  # The global ID of the file
+        listener,  # The listener object
+        upload_details,  # The upload details
     ):
         """
         Initialize the DirectStatus class.
@@ -23,11 +25,11 @@ class DirectStatus:
         :param listener: The listener object
         :param upload_details: The upload details
         """
-        self.file_global_id = file_global_id
-        self.listener = listener
-        self.file_info = file_info
-        self.upload_details = upload_details
-        self.message = listener.message
+        self.file_global_id = file_global_id  # Set the global ID of the file
+        self.listener = listener  # Set the listener object
+        self.file_info = file_info  # Set the file information object
+        self.upload_details = upload_details  # Set the upload details
+        self.message = listener.message  # Set the message object
 
     @property
     def file_global_id(self) -> str:
