@@ -9,9 +9,7 @@ from bot.helper.ext_utils.bot_utils import cmd_exec, new_task
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 
-
-@new_task
-async def shell(_, message):
+async def shell(client, message):
     cmd = message.text.split(maxsplit=1)
     if len(cmd) == 1:
         await sendMessage(message, 'No command to execute was given.')
@@ -25,15 +23,19 @@ async def shell(_, message):
     if len(stderr) != 0:
         reply += f"*Stderr*\n{stderr}"
         LOGGER.error(f"Shell - {cmd} - {stderr}")
-    if len(reply) > 3000:
-        with BytesIO(str.encode(reply)) as out_file:
-            out_file.name = "shell_output.txt"
-            await sendFile(message, out_file)
+
+    if len(reply) > 4096:
+        if len(reply) != 0:
+            with BytesIO(str.encode(reply)) as out_file:
+                out_file.name = "shell_output.txt"
+                if out_file.getbuffer().nbytes != 0:
+                    await sendFile(message, out_file)
+                else:
+                    await sendMessage(message, 'No Reply')
     elif len(reply) != 0:
         await sendMessage(message, reply)
     else:
         await sendMessage(message, 'No Reply')
-
 
 bot.add_handler(MessageHandler(shell, filters=command(
     BotCommands.ShellCommand) & CustomFilters.sudo))
