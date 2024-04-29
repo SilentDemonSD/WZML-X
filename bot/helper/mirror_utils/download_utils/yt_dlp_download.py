@@ -1,11 +1,6 @@
 #!/usr/bin/env python3
 import os
-import re
-import asyncio
 import logging
-from typing import Dict, Any, List, Tuple, Union
-
-import aiohttp
 from yt_dlp import YoutubeDL, DownloadError
 
 class YoutubeDLHelper(YoutubeDL):
@@ -18,13 +13,13 @@ class YoutubeDLHelper(YoutubeDL):
         self.__download_speed: int = 0
         self.__eta: Union[str, float] = '-'
         self.__listener = listener
-        self.__gid = ''
-        self.__is_cancelled = False
-        self.__downloading = False
-        self.__ext = ''
-        self.name = ''
-        self.is_playlist = False
-        self.playlist_count = 0
+        self.__gid: str = ''
+        self.__is_cancelled: bool = False
+        self.__downloading: bool = False
+        self.__ext: str = ''
+        self.name: str = ''
+        self.is_playlist: bool = False
+        self.playlist_count: int = 0
 
     def __post_init__(self):
         self.opts: Dict[str, Any] = {
@@ -159,7 +154,7 @@ class YoutubeDLHelper(YoutubeDL):
     def __del__(self):
         self.close()
 
-    def __repr__(self):
+    def __str__(self):
         return (f'YoutubeDLHelper(name={self.name}, '
                 f'is_playlist={self.is_playlist}, '
                 f'download_status={self.download_status})')
