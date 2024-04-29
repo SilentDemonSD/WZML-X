@@ -21,6 +21,10 @@ class TorNode(NodeMixin):
         self.file_id = file_id
         self.progress = progress
 
+    def __repr__(self):
+        return f'TorNode({self.name}, is_folder={self.is_folder}, is_file={self.is_file}, size={self.size}, ' \
+               f'priority={self.priority}, file_id={self.file_id}, progress={self.progress})'
+
 
 def qb_get_folders(path: str) -> List[str]:
     """
@@ -33,8 +37,11 @@ def get_folders(path: str) -> List[str]:
     """
     Find all folders in the path
     """
-    fs = re.findall(f'{DOWNLOAD_DIR}[0-9]+/(.+)', path)[0]
-    return fs.split('/')
+    fs = re.findall(f'{DOWNLOAD_DIR}[0-9]+/(.+)', path)
+    if fs:
+        return fs[-1].split('/')
+    else:
+        return []
 
 
 def make_tree(res: List[Any], aria2: bool = False) -> TorNode:
@@ -83,7 +90,7 @@ def make_tree(res: List[Any], aria2: bool = False) -> TorNode:
 def get_size(i) -> int:
     if isinstance(i, dict):
         return i.get('length', 0)
-    elif hasattr(i, 'size'):
+    elif isinstance(i, TorNode) and hasattr(i, 'size'):
         return i.size
     else:
         raise Exception("Unable to get size")
@@ -92,7 +99,7 @@ def get_size(i) -> int:
 def get_file_id(i) -> int:
     if isinstance(i, dict):
         return i.get('index', 0)
-    elif hasattr(i, 'file_id'):
+    elif isinstance(i, TorNode) and hasattr(i, 'file_id'):
         return i.file_id
     else:
         raise Exception("Unable to get file ID")
@@ -103,7 +110,7 @@ def get_progress(i) -> float:
         completed_length = i.get('completedLength', 0)
         length = i.get('length', 1)
         return completed_length / length * 100
-    elif hasattr(i, 'progress'):
+    elif isinstance(i, TorNode) and hasattr(i, 'progress'):
         return i.progress
     else:
         raise Exception("Unable to get progress")
