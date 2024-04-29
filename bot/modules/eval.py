@@ -6,7 +6,7 @@ import textwrap
 from io import StringIO
 from re import match
 
-async def run_command(cmd):
+async def run_command(cmd: str) -> str:
     """
     Asynchronously run a shell command.
 
@@ -21,13 +21,13 @@ async def run_command(cmd):
         cmd,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
-        limit=asyncio.get_event_loop().get_timeout(),
+        limit=asyncio.get_event_loop().get_timeout(),  # sets a timeout for the command execution
     )
 
     stdout, stderr = await process.communicate()
 
     if process.returncode != 0:
-        raise asyncio.SubprocessError(
+        raise asyncio.exceptions.ProcessError(
             cmd, process.returncode, stderr.decode().strip()
         )
 
@@ -43,31 +43,28 @@ if __name__ == "__main__":
 
     try:
         output = asyncio.run(run_command(cmd))
-        print(textwrap.dedent(
-            """\
-            Command Output:\n
-            {}""".format(output)
+        print(textwrap.fill(
+            f"Command Output:\n{output}",
+            width=72,
         ))
 
     except asyncio.CancelledError as e:
-        print(textwrap.dedent(
-            """\
-            Command execution timed out."""
+        print(textwrap.fill(
+            "Command execution timed out.",
+            width=72,
         ))
         sys.exit(1)
 
     except ValueError as e:
-        print(textwrap.dedent(
-            """\
-            Error: {}\n
-            Usage: python3 script.py [command]""".format(e)
+        print(textwrap.fill(
+            f"Error: {e}\nUsage: python3 script.py [command]",
+            width=72,
         ))
         sys.exit(1)
 
-    except asyncio.SubprocessError as e:
-        print(textwrap.dedent(
-            """\
-            Error running command "{}":\n
-            {}""".format(e.cmd, e.stderr)
+    except asyncio.exceptions.ProcessError as e:
+        print(textwrap.fill(
+            f"Error running command \"{e.cmd}\":\n{e.stderr}",
+            width=72,
         ))
         sys.exit(e.returncode)
