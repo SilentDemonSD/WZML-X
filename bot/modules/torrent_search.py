@@ -14,13 +14,16 @@ from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, sync_to_async, new_task, checking_access
 from bot.helper.telegram_helper.button_build import ButtonMaker
 
-PLUGINS = []
-SITES = None
-TELEGRAPH_LIMIT = 300
-
+# Initialize global variables
+PLUGINS = []  # List to store the names of installed plugins
+SITES = None  # Variable to store the supported sites for search
+TELEGRAPH_LIMIT = 300  # Limit for the number of characters in a Telegraph post
 
 async def initiate_search_tools() -> None:
-    """Initialize search tools."""
+    """
+    Initialize search tools.
+    This function installs the required plugins for search and fetches the supported sites from the provided API link.
+    """
     async with AsyncContextManager(get_client()) as qbclient:
         try:
             qb_plugins = await sync_to_async(qbclient.search_plugins)
