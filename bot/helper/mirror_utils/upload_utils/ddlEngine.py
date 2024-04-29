@@ -1,4 +1,5 @@
 import asyncio
+import io
 import pathlib
 import traceback
 import json
@@ -10,19 +11,32 @@ from typing import Dict, Any, Union, Optional, Callable
 from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
 
 class ProgressFileReader(io.BufferedReader):
+    """
+    A custom BufferedReader that allows tracking of the number of bytes read.
+    """
     def __init__(self, filename: str, read_callback: Optional[Callable[[int], None]] = None):
         super().__init__(open(filename, "rb"))
         self.__read_callback = read_callback
         self.length = pathlib.Path(filename).stat().st_size
 
     def read(self, size: Optional[int] = None) -> Union[bytes, MemoryView]:
+        """
+        Reads up to `size` bytes of data from the file.
+        If `read_callback` is provided, it will be called with the current file position.
+        """
         size = size or (self.length - self.tell())
         if self.__read_callback:
             self.__read_callback(self.tell())
         return super().read(size)
 
 class DDLUploader:
+    """
+    A class for uploading files to various DDL servers.
+    """
     def __init__(self, listener, name, path):
+        """
+        Initializes a new instance of the DDLUploader class.
+        """
         self.name = name
         self.__processed_bytes = 0
         self.last_uploaded = 0
@@ -37,16 +51,23 @@ class DDLUploader:
         self.__engine = 'DDL v1'
         self.__asyncSession = None
         self.__user_id = self.__listener.message.from_user.id
+        super().__init__()
 
     def __del__(self):
         if self.__asyncSession:
             self.__asyncSession.close()
 
     async def __user_settings(self):
+        """
+        Loads user settings from the `user_data` module.
+        """
         user_dict = user_data.get(self.__user_id, {})
         self.__ddl_servers = user_dict.get('ddl_servers', {})
 
     def __progress_callback(self, current: int):
+        """
+        Callback function that is called when a chunk of data is read from a file.
+        """
         chunk_size = current - self.last_uploaded
         self.last_uploaded = current
         self.__processed_bytes += chunk_size
@@ -55,6 +76,9 @@ class DDLUploader:
     @retry(wait=wait_exponential(multiplier=2, min=4, max=8), stop=stop_after_attempt(3),
         retry=retry_if_exception_type(Exception))
     async def upload_aiohttp(self, url, file_path, req_file, data):
+        """
+        Uploads a file using aiohttp.
+        """
         async with aiohttp.ClientSession() as self.__asyncSession:
             try:
                 with ProgressFileReader(filename=file_path, read_callback=self.__progress_callback) as file:
@@ -71,6 +95,9 @@ class DDLUploader:
                 return None
 
     async def __upload_to_ddl(self, file_path):
+        """
+        Uploads a file to a DDL server.
+        """
         all_links = {}
         for serv, (enabled, api_key) in self.__ddl_servers.items():
             if enabled:
@@ -84,27 +111,21 @@ class DDLUploader:
                         mime_type = 'Folder'
                     try:
                         nlink = await Gofile(self, api_key).upload(file_path)
-                    except Exception as e:
-                        print(e)
+                    except Exception:
                         continue
                     all_links['GoFile'] = nlink
                 if serv == 'streamtape':
                     self.__engine = 'StreamTape API'
-                    try:
-                        if not await aiopath.isfile(file_path):
-                            raise Exception("StreamTape only supports file uploads")
-                        mime_type = get_mime_type(file_path)
-                    except Exception as e:
-                        print(e)
-                        continue
+                    if not await aiopath.isfile(file_path):
+                        raise Exception("StreamTape only supports file uploads")
+                    mime_type = get_mime_type(file_path)
                     try:
                         login, key = api_key.split(':')
                     except ValueError:
                         raise Exception("StreamTape Login & Key not Found, Kindly Recheck !")
                     try:
                         nlink = await Streamtape(self, login, key).upload(file_path)
-                    except Exception as e:
-                        print(e)
+                    except Exception:
                         continue
                     all_links['StreamTape'] = nlink
                 self.__processed_bytes = 0
@@ -115,17 +136,17 @@ class DDLUploader:
         return all_links
 
     async def upload(self, file_name, size):
+        """
+        Uploads a file.
+        """
         item_path = f"{self.__path}/{file_name}"
         print(f"Uploading: {item_path} via DDL")
         await self.__user_settings()
         try:
             link = await self.__upload_to_ddl(item_path)
-            if link is None:
-                raise Exception('Upload has been manually cancelled!')
-            if self.is_cancelled:
-                return
-            print(f"Uploaded To DDL: {item_path}")
-            return link
+            if link is not None:
+                print(f"Uploaded To DDL: {item_path}")
+                return link
         except Exception as err:
             print("DDL Upload has been Cancelled")
             if self.__asyncSession:
@@ -142,6 +163,9 @@ class DDLUploader:
 
     @property
     def speed(self) -> float:
+        """
+        Returns the upload speed in bytes per second.
+        """
         try:
             return self.__processed_bytes / int(time.time() - self.__start_time)
         except ZeroDivisionError:
@@ -149,13 +173,22 @@ class DDLUploader:
 
     @property
     def processed_bytes(self) -> int:
+        """
+        Returns the number of processed bytes.
+        """
         return self.__processed_bytes
 
     @property
     def engine(self) -> str:
+        """
+        Returns the name of the upload engine.
+        """
         return self.__engine
 
     async def cancel_download(self):
+        """
+        Cancels the current upload.
+        """
         self.is_cancelled = True
         print(f"Cancelling Upload: {self.name}")
         if self.__asyncSession:
