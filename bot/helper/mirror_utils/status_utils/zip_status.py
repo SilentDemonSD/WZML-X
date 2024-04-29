@@ -3,7 +3,7 @@ import time
 from typing import Dict, Optional
 
 from bot import LOGGER
-from bot.helper.ext_utils.bot_utils import EngineStatus, get_readable_file_size, MirrorStatus, async_to_sync
+from bot.helper.ext_utils.bot_utils import EngineStatus
 from bot.helper.ext_utils.fs_utils import get_path_size
 
 class ZipCreationStatus:
@@ -12,21 +12,19 @@ class ZipCreationStatus:
     """
 
     __slots__ = (
-        'name', 'size', 'gid', 'listener', 'upload_details', 'uid', 'start_time', 'message', '_processed_raw',
+        'name', 'size', 'listener', 'upload_details', 'uid', 'start_time', 'message', '_processed_raw',
     )
 
-    def __init__(self, name: str, size: int, gid: int, listener):
+    def __init__(self, name: str, size: int, listener):
         """
         Initialize a new ZipCreationStatus object.
 
         :param name: The name of the ZIP archive.
         :param size: The size of the ZIP archive in bytes.
-        :param gid: The group ID associated with the ZIP archive.
         :param listener: The listener object that is responsible for handling the ZIP archive creation.
         """
         self.name = name
         self.size = size
-        self.gid = gid
         self.listener = listener
         self.upload_details = listener.upload_details
         self.uid = listener.uid
@@ -42,9 +40,9 @@ class ZipCreationStatus:
         :return: The amount of data processed in bytes.
         """
         if self.listener.new_dir:
-            return async_to_sync(get_path_size, self.listener.new_dir)
+            return get_path_size(self.listener.new_dir)
         else:
-            return async_to_sync(get_path_size, self.listener.dir) - self.size
+            return get_path_size(self.listener.dir) - self.size
 
     @processed_raw.setter
     def processed_raw(self, value: int):
@@ -117,21 +115,13 @@ class ZipCreationStatus:
             return None
 
     @property
-    def status(self) -> MirrorStatus:
+    def status(self) -> EngineStatus:
         """
         Get the status of the ZIP archive creation.
 
         :return: The status of the ZIP archive creation.
         """
-        return MirrorStatus.STATUS_ARCHIVING
-
-    def download(self) -> None:
-        """
-        Return the ZipCreationStatus object itself.
-
-        :return: None
-        """
-        return None
+        return EngineStatus().STATUS_ZIP
 
     async def cancel_download(self):
         """
@@ -162,7 +152,6 @@ class ZipCreationStatus:
         return (
             f'Name: {self.name}\n'
             f'Size: {self.size}\n'
-            f'GID: {self.gid}\n'
             f'Speed: {self.speed}\n'
             f'Progress: {self.progress}\n'
             f'ETA: {self.eta}\n'
@@ -178,8 +167,69 @@ class ZipCreationStatus:
         :param archive: The path to the existing archive.
         :return: A new ZipCreationStatus object.
         """
-        size = async_to_sync(get_path_size, archive)
-        return cls(archive, size, 0, None)
+        size = get_path_size(archive)
+        return cls(archive, size, None)
+
+    @classmethod
+    def from_values(cls, name: str, size: int, processed_raw: int, start_time: float = None) -> 'ZipCreationStatus':
+        """
+        Create a new ZipCreationStatus instance from basic values.
+
+        :param name: The name of the ZIP archive.
+        :param size: The size of the ZIP archive in bytes.
+        :param processed_raw: The amount of data processed in the ZIP archive creation in bytes.
+        :param start_time: The start time of the ZIP archive creation process.
+        :return: A new ZipCreationStatus instance.
+        """
+        if start_time is None:
+            start_time = time.time()
+        return cls(name, size, None, processed_raw=processed_raw, start_time=start_time)
+
+    def __len__(self):
+        """
+        Get the processed size in bytes.
+
+        :return: The processed size in bytes.
+        """
+        return self.processed_raw
+
+    def __format__(self, format_spec):
+        """
+        Format the ZipCreationStatus object as a string.
+
+        :param format_spec: The format specification for the string.
+        :return: A formatted string.
+        """
+        if format_spec == '':
+            format_spec = 'name, size, speed, progress, eta, status'
+        parts = format_spec.split(',')
+        result = []
+        for part in parts:
+            part = part.strip()
+            if part == 'name':
+                result.append(f'Name: {self.name}')
+            elif part == 'size':
+                result.append(f'Size: {self.size}')
+            elif part == 'speed':
+                result.append(f'Speed: {self.speed}')
+            elif part == 'progress':
+                result.append(f'Progress: {self.progress}')
+            elif part == 'eta':
+                result.append(f'ETA: {self.eta}')
+            elif part == 'status':
+                result.append(f'Status: {self.status}')
+            else:
+                result.append(f'Unknown: {part}')
+        return '\n'.join(result)
+
+    @property
+    def time_elapsed(self):
+        """
+        Get the elapsed time since the creation of the instance.
+
+        :return: The elapsed time in seconds.
+        """
+        return time.time() - self.start_time
 
     def __repr__(self):
         """
@@ -191,12 +241,12 @@ class ZipCreationStatus:
             f'ZipCreationStatus(\n'
             f'    name={self.name},\n'
             f'    size={self.size},\n'
-            f'    gid={self.gid},\n'
             f'    listener={self.listener},\n'
             f'    upload_details={self.upload_details},\n'
             f'    uid={self.uid},\n'
             f'    start_time={self.start_time},\n'
             f'    message={self.message},\n'
             f'    processed_raw={self.processed_raw},\n'
+            f'    time_elapsed={self.time_elapsed},\n'
             f')'
         )
