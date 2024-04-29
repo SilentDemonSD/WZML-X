@@ -10,17 +10,18 @@ from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.filters import command, regex
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from telethon.errors import SessionPasswordNeededError
-from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
-from bot.helper.ext_utils.bot_utils import is_gdrive_link, get_readable_file_size, new_task
-from telethon import TelegramClient, events
-from pyrogram import Client as PyrogramClient
-from typing import List, Tuple, Union, Optional
+from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage  # Import utility functions for Telegram messaging
+from bot.helper.telegram_helper.filters import CustomFilters  # Import custom filters
+from bot.helper.telegram_helper.button_build import ButtonMaker  # Import class for building inline keyboards
+from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper  # Import Google Drive helper functions
+from bot.helper.ext_utils.bot_utils import is_gdrive_link, get_readable_file_size, new_task  # Import utility functions for bot
+from telethon import TelegramClient, events  # Import Telethon client and event classes
+from pyrogram import Client as PyrogramClient  # Import Pyrogram client
+from typing import List, Tuple, Union, Optional  # Import type hints
 
 OWNER_ID = 0  # Make sure to define this variable
 
+# Function to clean Google Drive using the provided link
 async def driveclean(bot: Union[TelegramClient, PyrogramClient], update):
     message = update.effective_message
     args = message.text.split()
@@ -55,6 +56,7 @@ async def driveclean(bot: Union[TelegramClient, PyrogramClient], update):
         reply_markup=buttons.build_menu(2)
     )
 
+# Callback function to handle Google Drive cleaning actions
 @new_task
 async def drivecleancb(bot: Union[TelegramClient, PyrogramClient], query: telegram.CallbackQuery) -> None:
     message = query.message
@@ -74,6 +76,7 @@ async def drivecleancb(bot: Union[TelegramClient, PyrogramClient], query: telegr
         await bot.edit_message_text(message, '⌬ <b>DriveClean Stopped!</b>')
         await bot.delete_message(message)
 
+# Function to extract Google Drive link from arguments or reply message
 def get_gdrive_link(args, message) -> Union[str, None]:
     if len(args) > 1:
         link = args[1].strip()
@@ -83,6 +86,7 @@ def get_gdrive_link(args, message) -> Union[str, None]:
         link = f"https://drive.google.com/drive/folders/{config_dict['GDRIVE_ID']}"
     return link if is_gdrive_link(link) else None
 
+# Function to get Google Drive ID from URL
 async def get_id_from_url(link: str) -> Optional[str]:
     try:
         return GoogleDriveHelper.getIdFromUrl(link)
@@ -91,6 +95,7 @@ async def get_id_from_url(link: str) -> Optional[str]:
     except SessionPasswordNeededError:
         return None
 
+# Add handlers for Google Drive cleaning commands
 if bot.loop.current_instance() is bot.loop.instance(0):
     bot.add_handler(MessageHandler(driveclean, filters=command(BotCommands.GDCleanCommand) & CustomFilters.owner))
     bot.add_handler(CallbackQueryHandler(drivecleancb, filters=regex(r'^gdclean')))
