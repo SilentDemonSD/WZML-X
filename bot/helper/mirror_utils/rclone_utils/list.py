@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 import asyncio
 import configparser
+import json
+import os
+import time
 from functools import partial
 from pathlib import Path
 from typing import Any, Callable, List, Optional
@@ -9,6 +12,7 @@ import aiofiles
 import pyrogram
 from pyrogram.filters import regex, user
 from pyrogram.handlers import CallbackQueryHandler
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from bot import LOGGER, config_dict
 from bot.helper.ext_utils.db_handler import DbManger
@@ -33,7 +37,7 @@ class RcloneList:
     def __init__(
         self,
         client: pyrogram.Client,
-        message: pyrogram.Message,
+        message: Message,
     ) -> None:
         """
         Initialize the RcloneList class.
@@ -133,7 +137,7 @@ class RcloneList:
                 buttons.ibutton("Files", "rcq itype --files-only", position="footer")
             else:
                 buttons.ibutton("Folders", "rcq itype --dirs-only", position="footer")
-        if self.list_status == "rcu" or len(self.path_list) > 0:
+        if self.list_status in ["rcu", "rcd"] or len(self.path_list) > 0:
             buttons.ibutton("Choose Current Path", "rcq cur", position="footer")
         if self.list_status == "rcu":
             buttons.ibutton("Set as Default Path", "rcq def", position="footer")
@@ -190,7 +194,14 @@ class RcloneList:
             self.path = ""
             self.event.set()
             return
-        result = loads(res)
+        try:
+            result = json.loads(res)
+        except json.JSONDecodeError as e:
+            LOGGER.error(f'Error decoding JSON: {e}')
+            self.remote = "Error decoding JSON"
+            self.path = ""
+            self.event.set()
+            return
         if len(result) == 0 and itype != self.item_type and self.list_status == "rcd":
             itype = "--dirs-only" if self.item_type == "--files-only" else "--files-only"
             self.item_type = itype
@@ -200,103 +211,4 @@ class RcloneList:
         await self.get_path_buttons()
 
     async def list_remotes(self) -> None:
-        """
-        List the available remotes in the Rclone config file.
 
-        :return: None
-        """
-        config = configparser.ConfigParser()
-        async with aiofiles.open(self.config_path, "r") as f:
-            try:
-                contents = await f.read()
-                config.read_string(contents)
-            except Exception as e:
-                await delete_message(self.__reply_to)
-                await send_message(
-                    self.__message,
-                    f"Error reading config file: {str(e)}\nPlease check your config file and try again.",
-                )
-                return
-        if config.has_section("combine"):
-            config.remove_section("combine")
-        self.__sections = config.sections()
-        if len(self.__sections) == 1:
-            self.remote = f"{self.__sections[0]}:"
-            await self.get_path()
-        else:
-            msg = (
-                f"Choose Rclone remote:\nTransfer Type: <i>{'Download' if self.list_status == 'rcd' else 'Upload'}</i>"
-            )
-            buttons = ButtonMaker()
-            for remote in self.__sections:
-                buttons.ibutton(remote, f"rcq re {remote}:")
-            if self.__rc_user and self.__rc_owner:
-                buttons.ibutton("Back", "rcq back re", position="footer")
-            buttons.ibutton("Cancel", "rcq cancel", position="footer")
-            button = buttons.build_menu(2)
-            await self.__send_list_message(msg, button)
-
-    async def list_config(self) -> None:
-        """
-        List the available Rclone config files.
-
-        :return: None
-        """
-        if self.__rc_user and self.__rc_owner:
-            msg = (
-                f"Choose Rclone config:\nTransfer Type: {'Download' if self.list_status == 'rcd' else 'Upload'}"
-            )
-            buttons = ButtonMaker()
-            buttons.ibutton('Owner Config', 'rcq owner')
-            buttons.ibutton('My Config', 'rcq user')
-            buttons.ibutton('Cancel', 'rcq cancel')
-            button = buttons.build_menu(2)
-            await self.__send_list_message(msg, button)
-        else:
-            self.config_path = 'rclone.conf' if self.__rc_owner else self.user_rcc_path
-            await self.list_remotes()
-
-    async def back_from_path(self) -> None:
-        """
-        Go back to the previous path.
-
-        :return: None
-        """
-        if self.path:
-            path = self.path.rsplit('/', 1)
-            self.path = path[0] if len(path) > 1 else ''
-            await self.get_path()
-        elif len(self.__sections) > 1:
-            await self.list_remotes()
-        else:
-            await self.list_config()
-
-    async def get_rclone_path(
-        self,
-        status: str,
-        config_path: Optional[str] = None,
-    ) -> Optional[str]:
-        """
-        Get the Rclone path based on the given status and config path.
-
-        :param status: The status of the Rclone operation.
-        :param config_path: The path of the Rclone config file. Defaults to None.
-        :return: The Rclone path or None if the operation is cancelled.
-        """
-        self.list_status = status
-        future = self.__event_handler()
-        if config_path is None:
-            self.__rc_user = Path(self.user_rcc_path).exists()
-            self.__rc_owner = Path('rclone.conf').exists()
-            if not self.__rc_owner and not self.__rc_user:
-                self.event.set()
-                return "Rclone Config not Exists!"
-            await self.list_config()
-        else:
-            self.config_path = config_path
-            await self.list_remotes()
-        await asyncio.wrap_future(future)
-        await delete_message(self.__reply_to)
-        if self.config_path != 'rclone.conf' and not self.is_cancelled:
-            return f'mrcc:{self.remote}{self.path}'
-        return f'{self.remote}{self.path}'
