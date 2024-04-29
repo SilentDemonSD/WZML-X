@@ -1,10 +1,12 @@
 import asyncio
+import json
 import os
 import shlex
 from contextlib import suppress
 from pathlib import Path
 from typing import List, Tuple
 
+import aiofiles
 import telegraph
 from langcodes import Language
 
@@ -19,7 +21,7 @@ async def is_multi_streams(path: str) -> bool:
     try:
         # Use asyncio.create_subprocess_exec instead of cmd_exec
         process = await asyncio.create_subprocess_exec(
-            "ffprobe", "-hide_banner", "-loglevel", "error", "-print_format", "json", "-show_streams", path,
+            "ffprobe", "-hide_banner", "-loglevel", "error", "-print_format", "json", "-show_streams", str(path),
             stdout="pipe", stderr="pipe"
         )
         stdout, stderr = await process.communicate()
