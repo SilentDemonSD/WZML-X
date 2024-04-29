@@ -133,12 +133,9 @@ class TelegramStatus:
 
         :param status: The engine status
         """
-        if status == 'tg':
-            self._engine_status = EngineStatus().STATUS_TG
-        elif status == 'md':
-            self._engine_status = EngineStatus().STATUS_MD
-        else:
+        if status not in ['tg', 'md']:
             raise ValueError("Invalid engine status.")
+        self._engine_status = EngineStatus().STATUS_TG if status == 'tg' else EngineStatus().STATUS_MD
 
     @property
     def engine_status(self) -> str:
