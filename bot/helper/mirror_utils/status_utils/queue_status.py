@@ -70,15 +70,15 @@ class QueueStatus:
 
     async def cancel_download(self):
         """Cancel the download or upload associated with the queue."""
-        LOGGER.info(f'Cancelling Queue{self.status}: {self.name}')
+        LOGGER.info(f'Cancelling Queue {self.status}: {self.name}')
         if self.status == 'dl':
-            raise CancellationError('task have been removed from queue/download')
+            raise CancellationError('The task has been removed from the queue/download')
         else:
-            raise CancellationError('task have been removed from queue/upload')
+            raise CancellationError('The task has been removed from the queue/upload')
 
     def eng(self) -> str:
         """Return the EngineStatus constant for queue."""
-        return EngineStatus().STATUS_QUEUE
+        return 'QUEUE'
 
     def __str__(self):
         """Return a human-readable representation of the QueueStatus object."""
@@ -99,3 +99,6 @@ def get_readable_file_size(size: int) -> str:
 
 class CancellationError(Exception):
     """Custom error for cancellation."""
+
+    def __init__(self, message: str):
+        super().__init__(message)
