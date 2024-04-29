@@ -2,7 +2,7 @@
 
 import os
 import asyncio
-from typing import Dict, Any, Union
+from typing import Dict, Any, Union, Optional
 
 import aiofiles.os
 from aiofiles.os import remove as aioremove, path as aiopath
@@ -10,18 +10,19 @@ from bot.helper.ext_utils.bot_utils import bt_selection_buttons, sync_to_async
 from bot.helper.mirror_utils.status_utils.aria2_status import Aria2Status
 from bot.helper.telegram_helper.message_utils import sendStatusMessage, sendMessage
 from bot.helper.ext_utils.task_manager import is_queued
+from bot.config import TORRENT_TIMEOUT
 
-# Import necessary modules and functions from the bot package
-from bot import aria2, download_dict_lock, download_dict, LOGGER, config_dict, aria2_options, aria2c_global, non_queued_dl, queue_dict_lock
+import aioaria2c
+from aioaria2c.aioaria2c import Aria2c
 
 async def add_aria2c_download(
     link: str,
     path: str,
     listener: Any,
-    filename: str = None,
-    header: Dict[str, str] = None,
-    ratio: float = None,
-    seed_time: int = None,
+    filename: Optional[str] = None,
+    header: Optional[Dict[str, str]] = None,
+    ratio: Optional[float] = None,
+    seed_time: Optional[int] = None,
 ) -> None:
     """
     Add a download to Aria2 using aria2c with the given parameters.
@@ -45,8 +46,8 @@ async def add_aria2c_download(
         a2c_opt["seed-ratio"] = ratio
     if seed_time:
         a2c_opt["seed-time"] = seed_time
-    if (timeout := config_dict.get("TORRENT_TIMEOUT")):
-        a2c_opt["bt-stop-timeout"] = str(timeout)
+    if TORRENT_TIMEOUT:
+        a2c_opt["bt-stop-timeout"] = str(TORRENT_TIMEOUT)
 
     added_to_queue, event = await is_queued(listener.uid)
     if added_to_queue:
@@ -56,11 +57,19 @@ async def add_aria2c_download(
             a2c_opt["pause"] = "true"
 
     try:
-        download = (await sync_to_async(aria2.add, link, a2c_opt))[0]
-    except Exception as e:
+        aria2 = Aria2c()
+        await aria2.start()
+        download = await aria2.add_download(link, **a2c_opt)
+    except aioaria2c.exceptions.Aria2cException as e:
         LOGGER.debug(f"Aria2c Download Error: {e}")
         await sendMessage(listener.message, f"{e}")
         return
+    except Exception as e:
+        LOGGER.debug(f"Aria2c Download Error: {e}")
+        await sendMessage(listener.message, f"Unexpected error: {e}")
+        return
+    finally:
+        await aria2.stop()
 
     if await aiopath.exists(link):
         await aioremove(link)
@@ -111,3 +120,6 @@ async def add_aria2c_download(
 
         async with queue_dict_lock:
             non_queued_dl.add(listener.uid)
+
+
+pip install aioaria2c
