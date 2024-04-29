@@ -17,11 +17,14 @@ async def run_command(cmd: str) -> str:
     if len(cmd) > 256:
         raise ValueError("Command length should not exceed 256 characters")
 
+    if not match(r'^\w+(\s+\w+)*$', cmd):
+        raise ValueError("Command contains invalid characters")
+
     process = await asyncio.create_subprocess_shell(
         cmd,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
-        limit=asyncio.get_event_loop().get_timeout(),  # sets a timeout for the command execution
+        timeout=60,  # sets a timeout for the command execution
     )
 
     stdout, stderr = await process.communicate()
@@ -40,6 +43,13 @@ if __name__ == "__main__":
         sys.exit(1)
 
     cmd = sys.argv[1]
+
+    if not os.path.exists(os.path.expanduser(f"/usr/bin/{cmd}")):
+        print(textwrap.fill(
+            f"Error: Command '{cmd}' not found.",
+            width=72,
+        ))
+        sys.exit(1)
 
     try:
         output = asyncio.run(run_command(cmd))
