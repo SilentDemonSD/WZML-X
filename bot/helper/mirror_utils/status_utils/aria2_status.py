@@ -1,16 +1,39 @@
-import functools
-from typing import Optional
+import asyncio
+import datetime
+from typing import Any
 
-from time import time, sleep
+import aioaria2rpc
+from bot import aria2, logger
+from bot.helper.ext_utils.bot_utils import EngineStatus, MirrorStatus, get_readable_time
 
-from bot import aria2, LOGGER
-from bot.helper.ext_utils.bot_utils import EngineStatus, MirrorStatus, get_readable_time, sync_to_async
+def memoized(maxsize=128):
+    """
+    A decorator for memoizing the results of a function.
+    """
+    cache = {}
 
-def get_download_by_gid(gid: str) -> Optional[object]:
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            key = str(args) + str(kwargs)
+            if key not in cache:
+                cache[key] = func(*args, **kwargs)
+            return cache[key]
+
+        return wrapper
+
+    return decorator
+
+def get_download_by_gid(gid: str) -> aioaria2rpc.Download:
+    """
+    Get the download object by GID.
+
+    :param gid: The GID of the download.
+    :return: The download object.
+    """
     try:
         return aria2.get_download(gid)
-    except Exception as e:
-        LOGGER.error(f'{e}: Aria2c, Error while getting torrent info')
+    except aioaria2rpc.RPCError as e:
+        logger.error(f'{e}: Aria2c, Error while getting torrent info')
         return None
 
 class Aria2Status:
@@ -36,7 +59,7 @@ class Aria2Status:
         self.__listener = listener
         self.upload_details = self.__listener.upload_details if self.__listener else None
         self.queued = queued
-        self.start_time = 0
+        self.start_time = datetime.datetime.now() if self.__download else None
         self.seeding = seeding
         self.message = self.__listener.message if self.__listener else None
 
@@ -46,7 +69,7 @@ class Aria2Status:
         """
         self.__download = get_download_by_gid(self.__gid)
 
-    @functools.lru_cache(maxsize=128)
+    @memoized
     def __download_info(self):
         """
         Get the download object and update the internal state.
@@ -293,60 +316,4 @@ class Aria2Status:
 
         :return: The seeding time of the download as a string.
         """
-        return get_readable_time(time() - self.start_time)
-
-    @staticmethod
-    def get_readable_time(seconds):
-        """
-        Get a human-readable string representation of a number of seconds.
-
-        :param seconds: The number of seconds to convert to a string.
-        :return: A human-readable string representation of the number of seconds.
-        """
-        minutes, seconds = divmod(int(seconds), 60)
-        hours, minutes = divmod(minutes, 60)
-        days, hours = divmod(hours, 24)
-        if days > 0:
-            return f"{days} days, {hours} hours, {minutes} minutes, {seconds} seconds"
-        elif hours > 0:
-            return f"{hours} hours, {minutes} minutes, {seconds} seconds"
-        elif minutes > 0:
-            return f"{minutes} minutes, {seconds} seconds"
-        else:
-            return f"{seconds} seconds"
-
-    @classmethod
-    def engine(cls):
-        """
-        Get the engine status of the download.
-
-        :return: The engine status of the download.
-        """
-        return EngineStatus().STATUS_ARIA
-
-    async def cancel_download(self):
-        """
-        Cancel the download.
-        """
-        download = self.__download_info()
-        if download is None:
-            return
-
-        if download.seeder and self.seeding:
-            LOGGER.info(f"Cancelling Seed: {self.name()}")
-            await self.__listener.onUploadError(f"Seeding stopped with Ratio: {self.ratio()} and Time: {self.seeding_time()}")
-            await sync_to_async(aria2.remove, [download], force=True, files=True)
-        elif downloads := download.followed_by:
-            LOGGER.info(f"Cancelling Download: {self.name()}")
-            await self.__listener.onDownloadError('Download cancelled by user!')
-            downloads.append(download)
-            await sync_to_async(aria2.remove, downloads, force=True, files=True)
-        else:
-            if self.queued:
-                LOGGER.info(f'Cancelling QueueDl: {self.name()}')
-                msg = 'task have been removed from queue/download'
-            else:
-                LOGGER.info(f"Cancelling Download: {self.name()}")
-                msg = 'Download stopped by user!'
-            await self.__listener.onDownloadError(msg)
-            await sync_to_async(aria2.remove, [download], force=True, files=True)
+        return get_readable_time(
