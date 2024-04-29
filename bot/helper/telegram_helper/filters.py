@@ -1,58 +1,73 @@
 #!/usr/bin/env python3
-from pyrogram.filters import create
+from typing import AsyncContextManager, Callable, Optional
+
+import pyrogram.filters
 from pyrogram.enums import ChatType
+from pyrogram.types import Message
 
 from bot import user_data, OWNER_ID
 from bot.helper.telegram_helper.message_utils import chat_info
 
 
 class CustomFilters:
-
-    async def owner_filter(self, _, message):
+    async def owner_filter(self, _: None, message: Message) -> bool:
+        """Return True if the message is sent by the owner, False otherwise."""
         user = message.from_user or message.sender_chat
-        uid = user.id
-        return uid == OWNER_ID
+        return user.id == OWNER_ID
 
-    owner = create(owner_filter)
+    owner = pyrogram.filters.create(owner_filter)
 
-    async def authorized_user(self, _, message):
+    async def authorized_user(self, _: None, message: Message) -> bool:
+        """Return True if the user is authorized, False otherwise."""
         user = message.from_user or message.sender_chat
-        uid = user.id
         chat_id = message.chat.id
-        return bool(uid == OWNER_ID or (uid in user_data and (user_data[uid].get('is_auth', False) or
-                                                              user_data[uid].get('is_sudo', False))) or (chat_id in user_data and user_data[chat_id].get('is_auth', False)))
-    authorized = create(authorized_user)
-    
-    async def authorized_usetting(self, _, message):
-        uid = (message.from_user or message.sender_chat).id
+        is_auth = user_data.get(str(user.id), {}).get('is_auth', False)
+        is_sudo = user_data.get(str(user.id), {}).get('is_sudo', False)
+        chat_is_auth = user_data.get(str(chat_id), {}).get('is_auth', False)
+        return user.id == OWNER_ID or is_auth or is_sudo or chat_is_auth
+
+    authorized = pyrogram.filters.create(authorized_user)
+
+    async def authorized_user_setting(self, _: None, message: Message) -> bool:
+        """Return True if the user is authorized to change settings, False otherwise."""
+        user = message.from_user or message.sender_chat
         chat_id = message.chat.id
-        isExists = False
-        if uid == OWNER_ID or (uid in user_data and (user_data[uid].get('is_auth', False) or user_data[uid].get('is_sudo', False))) or (chat_id in user_data and user_data[chat_id].get('is_auth', False)):
-            isExists = True
-        elif message.chat.type == ChatType.PRIVATE:
-            for channel_id in user_data:
-                if not (user_data[channel_id].get('is_auth') and str(channel_id).startswith('-100')):
-                    continue
-                try:
-                    if await (await chat_info(str(channel_id))).get_member(uid):
-                        isExists = True
-                        break
-                except:
-                    continue
-        return isExists
-        
-    authorized_uset = create(authorized_usetting)
+        is_auth = user_data.get(str(user.id), {}).get('is_auth', False)
+        is_sudo = user_data.get(str(user.id), {}).get('is_sudo', False)
+        chat_is_auth = user_data.get(str(chat_id), {}).get('is_auth', False)
+        if (
+            user.id == OWNER_ID
+            or is_auth
+            or is_sudo
+            or chat_is_auth
+        ):
+            return True
+        if message.chat.type != ChatType.PRIVATE:
+            return False
+        for channel_id in user_data:
+            if not (user_data[channel_id].get('is_auth') and not str(channel_id).startswith('-100')):
+                continue
+            try:
+                if await chat_info(str(channel_id)).get_member(user.id):
+                    return True
+            except:
+                continue
+        return False
 
-    async def sudo_user(self, _, message):
-        user = message.from_user or message.sender_chat
-        uid = user.id
-        return bool(uid == OWNER_ID or uid in user_data and user_data[uid].get('is_sudo'))
+    authorized_user_setting = pyrogram.filters.create(authorized_user_setting)
 
-    sudo = create(sudo_user)
-    
-    async def blacklist_user(self, _, message):
+    async def sudo_user(self, _: None, message: Message) -> bool:
+        """Return True if the user is a sudo user, False otherwise."""
         user = message.from_user or message.sender_chat
-        uid = user.id
-        return bool(uid in user_data and user_data[uid].get('is_blacklist') and uid != OWNER_ID)
-        
-    blacklisted = create(blacklist_user)
+        is_sudo = user_data.get(str(user.id), {}).get('is_sudo', False)
+        return user.id == OWNER_ID or is_sudo
+
+    sudo = pyrogram.filters.create(sudo_user)
+
+    async def blacklist_user(self, _: None, message: Message) -> bool:
+        """Return True if the user is blacklisted, False otherwise."""
+        user = message.from_user or message.sender_chat
+        is_blacklist = user_data.get(str(user.id), {}).get('is_blacklist', False)
+        return user.id != OWNER_ID and is_blacklist
+
+    blacklisted = pyrogram.filters.create(blacklist_user)
