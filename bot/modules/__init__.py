@@ -9,8 +9,9 @@ def is_prime(n: int) -> bool:
 
 def largest_prime(numbers: List[int]) -> Optional[int]:
     """Returns the largest prime number in the input list, or None if no prime numbers are found."""
-    largest_prime = None
+    prime = None
     for num in numbers:
         if is_prime(num):
-            largest_prime = max(largest_prime, num) if largest_prime is not None else num
-    return largest_prime
+            if prime is None or num > prime:
+                prime = num
+    return prime
