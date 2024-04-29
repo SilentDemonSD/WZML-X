@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from typing import Optional
 
-from time import time
+from time import time, sleep
 
 from bot import aria2, LOGGER
 from bot.helper.ext_utils.bot_utils import EngineStatus, MirrorStatus, get_readable_time, sync_to_async
@@ -64,6 +64,97 @@ class Aria2Status:
         """
         self.__update()
         return self.__download
+
+    @property
+    def gid(self):
+        """
+        Get the GID of the download.
+
+        :return: The GID of the download.
+        """
+        return self.__gid
+
+    @property
+    def status_code(self):
+        """
+        Get the status code of the download.
+
+        :return: The status code of the download.
+        """
+        self.__update()
+        return self.__download.status
+
+    @property
+    def is_active(self):
+        """
+        Check if the download is currently active.
+
+        :return: True if the download is active, False otherwise.
+        """
+        return self.status_code in (1, 2, 3, 4)
+
+    @property
+    def is_completed(self):
+        """
+        Check if the download is completed.
+
+        :return: True if the download is completed, False otherwise.
+        """
+        return self.status_code == 5
+
+    @property
+    def is_paused(self):
+        """
+        Check if the download is paused.
+
+        :return: True if the download is paused, False otherwise.
+        """
+        return self.status_code == 6
+
+    @property
+    def is_seeding(self):
+        """
+        Check if the download is in seeding mode.
+
+        :return: True if the download is in seeding mode, False otherwise.
+        """
+        return self.status_code == 7
+
+    @property
+    def is_queued(self):
+        """
+        Check if the download is in the queue.
+
+        :return: True if the download is in the queue, False otherwise.
+        """
+        return self.status_code == 8
+
+    @property
+    def is_removed(self):
+        """
+        Check if the download has been removed from Aria2.
+
+        :return: True if the download has been removed, False otherwise.
+        """
+        return self.__download is None
+
+    def __update(self):
+        """
+        Update the internal state of the object with the latest download info.
+        """
+        if self.__download is None:
+            return
+        self.__download = get_download(self.__gid) if self.__download is None else self.__download.live
+        if self.__download.followed_by_ids:
+            self.__gid = self.__download.followed_by_ids[0]
+            self.__download = get_download(self.__gid)
+
+    def __del__(self):
+        """
+        Gracefully handle the removal of the download from Aria2 when the object is deleted.
+        """
+        if not self.is_removed and self.__download is not None:
+            aria2.remove(self.__download, force=True, files=True)
 
     def progress(self):
         """
@@ -198,7 +289,17 @@ class Aria2Status:
         :param seconds: The number of seconds to convert to a string.
         :return: A human-readable string representation of the number of seconds.
         """
-        pass
+        minutes, seconds = divmod(int(seconds), 60)
+        hours, minutes = divmod(minutes, 60)
+        days, hours = divmod(hours, 24)
+        if days > 0:
+            return f"{days} days, {hours} hours, {minutes} minutes, {seconds} seconds"
+        elif hours > 0:
+            return f"{hours} hours, {minutes} minutes, {seconds} seconds"
+        elif minutes > 0:
+            return f"{minutes} minutes, {seconds} seconds"
+        else:
+            return f"{seconds} seconds"
 
     @classmethod
     def Eng(cls):
