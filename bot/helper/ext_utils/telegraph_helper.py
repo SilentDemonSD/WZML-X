@@ -19,6 +19,13 @@ class TelegraphHelper:
         author_name: str = None,
         author_url: str = None,
     ):
+        """
+        Initialize a TelegraphHelper instance.
+
+        Args:
+            author_name (str, optional): Author name for the Telegraph account. Defaults to None.
+            author_url (str, optional): Author URL for the Telegraph account. Defaults to None.
+        """
         self.telegraph = Telegraph(domain="graph.org")
         self.short_name = "".join(random.choices(string.ascii_letters, k=8))
         self.access_token = None
@@ -32,6 +39,18 @@ class TelegraphHelper:
         retry_on_flood_control: bool = True,
         **kwargs,
     ) -> Dict[str, Any]:
+        """
+        Generate a dictionary of Telegraph API request arguments.
+
+        Args:
+            request_func (function): The Telegraph API request function.
+            *args: Variable length argument list.
+            retry_on_flood_control (bool, optional): Whether to retry on flood control errors. Defaults to True.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            Dict[str, Any]: A dictionary of arguments for the Telegraph API request.
+        """
         kwargs["short_name"] = self.short_name
         kwargs["author_name"] = self.author_name
         kwargs["author_url"] = self.author_url
@@ -40,6 +59,9 @@ class TelegraphHelper:
     async def create_account(self) -> None:
         """
         Create a new Telegraph account.
+
+        Returns:
+            None
         """
         retry_after = 0
         while retry_after < 5:
@@ -65,7 +87,7 @@ class TelegraphHelper:
         Args:
             title (str): The title of the page.
             content (str): The content of the page.
-            retry_on_flood_control (bool): Whether to retry if a RetryAfterError exception is raised.
+            retry_on_flood_control (bool, optional): Whether to retry on flood control errors. Defaults to True.
 
         Returns:
             Optional[Dict[str, Any]]: The response from the Telegraph API, or None if an error occurred.
@@ -88,7 +110,7 @@ class TelegraphHelper:
             path (str): The path of the page.
             title (str): The title of the page.
             content (str): The content of the page.
-            retry_on_flood_control (bool): Whether to retry if a RetryAfterError exception is raised.
+            retry_on_flood_control (bool, optional): Whether to retry on flood control errors. Defaults to True.
 
         Returns:
             Optional[Dict[str, Any]]: The response from the Telegraph API, or None if an error occurred.
@@ -160,6 +182,18 @@ class TelegraphHelper:
         retry_on_flood_control: bool = True,
         **kwargs,
     ) -> Union[Dict[str, Any], None]:
+        """
+        Make a request to the Telegraph API.
+
+        Args:
+            request_func (function): The Telegraph API request function.
+            *args: Variable length argument list.
+            retry_on_flood_control (bool, optional): Whether to retry on flood control errors. Defaults to True.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            Union[Dict[str, Any], None]: The response from the Telegraph API, or None if an error occurred.
+        """
         try:
             async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
                 response = await request_func(session, *args, **kwargs)
