@@ -2,17 +2,78 @@
 
 # Python bytecode files
 *.pyc
+*.pyo
 
-# IDE-specific files
+# IDE-specific files and directories
 # For Visual Studio Code
 .vscode/
 
 # For IntelliJ IDEA
 .idea/
 
+# For PyCharm
+.idea/
+
+# For Eclipse
+.metadata/
+
+# For Emacs
+*.elc
+
+# For Vim
+*.swp
+*.aux
+*.log
+*.bbl
+*.blg
+
 # Other specific files or directories
 logs/
+build/
 temp/
+pip-wheel-metadata/
+htmlcov/
+coverage/
+dist/
+*.egg-info/
+*.egg/
+*.zip
+*.tar.gz
+*.rar
 
 # Configuration files
 config.env
+.env
+.env.example
+.env.local
+.env.production
+.env.test
+.env.development
+.env.staging
+.env.ci
+.flaskenv
+.dockerignore
+docker-compose.yml
+docker-compose.override.yml
+.docker/*
+
+# Database files
+*.sql
+*.sqlite
+*.sqlite3
+*.db
+*.json
+*.pickle
+*.pkl
+*.mdb
+
+# System files
+Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# User-specific files
+.cache/
+.local/
+.config/
