@@ -1,14 +1,15 @@
 import asyncio
 import io
-import pathlib
-import traceback
 import json
+import os
+import pathlib
 import re
-import aiofiles.os as aiopath
 import time
 import aiohttp
-from typing import Dict, Any, Union, Optional, Callable, List, Tuple
-from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
+import tenacity
+from typing import Dict, Any, Union, Optional, Callable, List, Tuple, Type, AsyncContextManager
+from gofile import Gofile
+from streamtape import Streamtape
 
 class ProgressFileReader(io.BufferedReader):
     """
@@ -27,13 +28,15 @@ class ProgressFileReader(io.BufferedReader):
         size = size or (self.length - self.tell())
         if self.__read_callback:
             self.__read_callback(self.tell())
-        return super().read(size)
+        result = super().read(size)
+        asyncio.sleep(0)
+        return result
 
 class DDLUploader:
     """
     A class for uploading files to various DDL servers.
     """
-    def __init__(self, listener, name, path, speed_limit: int = 0):
+    def __init__(self, listener, name: str, path: str, speed_limit: int = 0):
         """
         Initializes a new instance of the DDLUploader class.
         """
@@ -47,12 +50,11 @@ class DDLUploader:
         self.total_folders = 0
         self.is_cancelled = False
         self.__is_errored = False
-        self.__ddl_servers = {}
+        self.__ddl_servers: Dict[str, Tuple[bool, str]] = {}
         self.__engine = 'DDL v1'
-        self.__asyncSession = None
+        self.__asyncSession: Optional[AsyncContextManager[aiohttp.ClientSession]] = None
         self.__user_id = self.__listener.message.from_user.id
         self.speed_limit = speed_limit
-        super().__init__()
 
     def __del__(self):
         if self.__asyncSession:
@@ -78,9 +80,9 @@ class DDLUploader:
             self.__listener.onUploadProgress(self.__processed_bytes)
         return chunk_size
 
-    @retry(wait=wait_exponential(multiplier=2, min=4, max=8), stop=stop_after_attempt(3),
-        retry=retry_if_exception_type(Exception))
-    async def upload_aiohttp(self, url, file_path, req_file, data):
+    @tenacity.retry(wait=tenacity.wait_exponential(multiplier=2, min=4, max=8), stop=tenacity.stop_after_attempt(3),
+        retry=tenacity.retry_if_exception_type(aiohttp.ClientError), reraise=True)
+    async def upload_aiohttp(self, url: str, file_path: str, req_file: str, data: dict) -> Union[Dict[str, Any], str]:
         """
         Uploads a file using aiohttp.
         """
@@ -99,18 +101,17 @@ class DDLUploader:
                 print(e)
                 return None
 
-    async def __upload_to_ddl(self, file_path):
+    async def __upload_to_ddl(self, file_path: str) -> Optional[Dict[str, str]]:
         """
         Uploads a file to a DDL server.
         """
-        all_links = {}
         for serv, (enabled, api_key) in self.__ddl_servers.items():
             if enabled:
                 self.total_files = 0
                 self.total_folders = 0
                 if serv == 'gofile':
                     self.__engine = 'GoFile API'
-                    if await aiopath.isfile(file_path):
+                    if os.path.isfile(file_path):
                         mime_type = get_mime_type(file_path)
                     else:
                         mime_type = 'Folder'
@@ -118,10 +119,10 @@ class DDLUploader:
                         nlink = await Gofile(self, api_key).upload(file_path)
                     except Exception:
                         continue
-                    all_links['GoFile'] = nlink
+                    return {'GoFile': nlink}
                 if serv == 'streamtape':
                     self.__engine = 'StreamTape API'
-                    if not await aiopath.isfile(file_path):
+                    if not os.path.isfile(file_path):
                         raise Exception("StreamTape only supports file uploads")
                     mime_type = get_mime_type(file_path)
                     try:
@@ -132,40 +133,39 @@ class DDLUploader:
                         nlink = await Streamtape(self, login, key).upload(file_path)
                     except Exception:
                         continue
-                    all_links['StreamTape'] = nlink
+                    return {'StreamTape': nlink}
                 self.__processed_bytes = 0
-                if all_links:
-                    break
-        if not all_links:
-            raise Exception("No DDL Enabled to Upload.")
-        return all_links
+        return None
 
-    async def upload(self, file_name: str, size: int, speed_limit: int = 0) -> Tuple[Dict[str, Any], int]:
+    async def upload(self, file_name: str, size: int, speed_limit: int = 0) -> Tuple[Optional[Dict[str, Any]], int]:
         """
         Uploads a file.
         """
         item_path = f"{self.__path}/{file_name}"
         print(f"Uploading: {item_path} via DDL")
         await self.__user_settings()
+        tasks = []
         try:
-            link = await self.__upload_to_ddl(item_path)
-            if link is not None:
+            for _ in range(3):
+                task = asyncio.create_task(self.__upload_to_ddl(item_path))
+                tasks.append(task)
+            results = await asyncio.gather(*tasks)
+            if any(results):
                 print(f"Uploaded To DDL: {item_path}")
-                self.__listener.onUploadComplete(link, size, self.total_files, self.total_folders, 'application/octet-stream', file_name)
-                return link, size
+                self.__listener.onUploadComplete(dict(results[0]), size, self.total_files, self.total_folders, 'application/octet-stream', file_name)
+                return dict(results[0]), size
         except Exception as err:
             print("DDL Upload has been Cancelled")
             if self.__asyncSession:
                 await self.__asyncSession.close()
-            err = str(err).replace('>', '').replace('<', '')
             print(traceback.format_exc())
-            self.__listener.onUploadError(err)
+            self.__listener.onUploadError(str(err))
             self.__is_errored = True
         finally:
             if self.is_cancelled or self.__is_errored:
-                return
+                return {}, 0
             self.__listener.onUploadSpeed(self.speed)
-            return
+            return {}, 0
 
     @property
     def speed(self) -> float:
