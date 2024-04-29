@@ -8,7 +8,6 @@ import time
 import aiohttp
 from typing import Dict, Any, Union, Optional, Callable
 from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
-import io
 
 class ProgressFileReader(io.BufferedReader):
     def __init__(self, filename: str, read_callback: Optional[Callable[[int], None]] = None):
@@ -23,7 +22,7 @@ class ProgressFileReader(io.BufferedReader):
         return super().read(size)
 
 class DDLUploader:
-    def __init__(self, listener: Any, name: str, path: str):
+    def __init__(self, listener, name, path):
         self.name = name
         self.__processed_bytes = 0
         self.last_uploaded = 0
@@ -55,11 +54,11 @@ class DDLUploader:
 
     @retry(wait=wait_exponential(multiplier=2, min=4, max=8), stop=stop_after_attempt(3),
         retry=retry_if_exception_type(Exception))
-    async def upload_aiohttp(self, url: str, file_path: str, req_file: str, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        with ProgressFileReader(filename=file_path, read_callback=self.__progress_callback) as file:
-            data[req_file] = file
-            async with aiohttp.ClientSession() as self.__asyncSession:
-                try:
+    async def upload_aiohttp(self, url, file_path, req_file, data):
+        async with aiohttp.ClientSession() as self.__asyncSession:
+            try:
+                with ProgressFileReader(filename=file_path, read_callback=self.__progress_callback) as file:
+                    data[req_file] = file
                     async with self.__asyncSession.post(url, data=data) as resp:
                         if resp.status == 200:
                             try:
@@ -67,11 +66,11 @@ class DDLUploader:
                             except aiohttp.ContentTypeError:
                                 return "Uploaded"
                         return None
-                except aiohttp.ClientError as e:
-                    print(e)
-                    return None
+            except aiohttp.ClientError as e:
+                print(e)
+                return None
 
-    async def __upload_to_ddl(self, file_path: str) -> Optional[Dict[str, Any]]:
+    async def __upload_to_ddl(self, file_path):
         all_links = {}
         for serv, (enabled, api_key) in self.__ddl_servers.items():
             if enabled:
@@ -115,7 +114,7 @@ class DDLUploader:
             raise Exception("No DDL Enabled to Upload.")
         return all_links
 
-    async def upload(self, file_name: str, size: int):
+    async def upload(self, file_name, size):
         item_path = f"{self.__path}/{file_name}"
         print(f"Uploading: {item_path} via DDL")
         await self.__user_settings()
@@ -163,3 +162,7 @@ class DDLUploader:
             await self.__asyncSession.close()
         await self.__listener.onUploadError('Your upload has been stopped!')
         return
+
+import user_data
+from gofile import Gofile
+from streamtape import Streamtape
