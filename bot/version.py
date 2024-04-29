@@ -10,17 +10,14 @@ class Version:
 
     def __post_init__(self):
         """Validate the attributes after initialization."""
-        # Raise a TypeError if major is not an integer
-        if not isinstance(self.major, int):
-            raise TypeError("major must be an integer")
-        
-        # Raise a TypeError if minor is not an integer
-        if not isinstance(self.minor, int):
-            raise TypeError("minor must be an integer")
-        
-        # Raise a TypeError if patch is not an integer
-        if not isinstance(self.patch, int):
-            raise TypeError("patch must be an integer")
+        self._validate_integer("major", self.major)
+        self._validate_integer("minor", self.minor)
+        self._validate_integer("patch", self.patch)
+
+    def _validate_integer(self, name: str, value: object):
+        """Raise a TypeError if the value is not an integer."""
+        if not isinstance(value, int):
+            raise TypeError(f"{name} must be an integer")
 
     def __repr__(self):
         """Return a string representation of the object that is unambiguous and useful for debugging."""
