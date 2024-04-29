@@ -45,7 +45,7 @@ def add_drive_details() -> str:
 
     if not is_empty(name) and not is_empty(id):
         name = replace_spaces(name)
-        if is_valid_index_url(index, False):
+        if is_valid_index_url(index, bool(index)):
             return f"{name} {id} {index}\n"
         else:
             print("\n\n        ERROR: Invalid URL format.")
@@ -78,3 +78,7 @@ def main() -> None:
         if drive_details:
             msg += drive_details
 
+    write_file('list_drives.txt', msg)
+
+if __name__ == '__main__':
+    main()
