@@ -2,7 +2,7 @@
 import asyncio
 import aiohttp
 import time
-from typing import Any, Dict, Union
+from typing import Any, Dict, Union, Optional
 
 import logging as LOGGER
 from bot.helper.mirror_utils.status_utils.qbit_status import QbittorrentStatus
@@ -13,14 +13,22 @@ from bot.helper.ext_utils.task_manager import limit_checker, stop_duplicate_chec
 
 async def remove_torrent(client: Any, hash_: str, tag: str) -> None:
     """Remove torrent from qBittorrent and update internal data structures."""
-    await client.torrents_delete(hash_, delete_files=True)
+    try:
+        await client.torrents_delete(hash_, delete_files=True)
+    except Exception as e:
+        LOGGER.error(f"Error removing torrent {hash_}: {e}")
+
     async with qb_listener_lock:
         if tag in QbTorrents:
             del QbTorrents[tag]
-    await client.torrents_delete_tags(tags=tag)
+
+    try:
+        await client.torrents_delete_tags(tags=tag)
+    except Exception as e:
+        LOGGER.error(f"Error deleting tag {tag}: {e}")
 
 
-async def on_download_error(err: str, tor: Any, button: Any = None) -> None:
+async def on_download_error(err: str, tor: Any, button: Optional[Any] = None) -> None:
     """Handle download errors and perform necessary actions."""
     LOGGER.info(f"Cancelling Download: {tor.name}")
     ext_hash = tor.hash
@@ -119,7 +127,9 @@ async def qb_listener():
                 on_seed_finish(tor_info.data)
                 if state in ['pausedUP', 'pausedDL'] and QbTorrents[tag].get('seeding') else None,
             ]
-            await asyncio.gather(*tasks)
+            gathered_tasks = [task for task in tasks if task is not None]
+            if gathered_tasks:
+                await asyncio.gather(*gathered_tasks)
         except Exception as e:
             LOGGER.error(str(e))
             client = await get_client(session)
