@@ -16,7 +16,7 @@ def get_readable_file_size(size: int) -> str:
         if size < 1024:
             break
         size = size // 1024
-    return f"{size} {unit}"
+    return f"{size:.2f} {unit}"
 
 def get_readable_time(seconds: int) -> str:
     """
@@ -27,8 +27,8 @@ def get_readable_time(seconds: int) -> str:
     """
     time_parts = []
     time_dict = {
-        'days': (24, 'day'),
-        'hours': (60, 'hour'),
+        'days': (86400, 'day'),
+        'hours': (3600, 'hour'),
         'minutes': (60, 'minute'),
         'seconds': (1, 'second')
     }
