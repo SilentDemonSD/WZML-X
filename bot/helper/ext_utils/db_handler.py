@@ -1,5 +1,5 @@
 import asyncio
-from typing import Final
+from typing import Any, Dict, Final
 
 import aiofiles
 from aiofiles.os import path as aiopath, makedirs
@@ -18,10 +18,6 @@ class DbManager:
         self.__err = False
         self.__db = None
         self.__connect()
-
-    def __post_init__(self):
-        super().__init__()
-        asyncio.create_task(self.__connect())
 
     async def __connect(self):
         try:
@@ -45,18 +41,15 @@ class DbManager:
     async def __load_settings(self) -> None:
         settings_collection = self.__db.settings
 
-        await settings_collection.config.update_one(
-            {"_id": bot.bot_id}, {"$set": bot.config_dict}, upsert=True
-        )
+        settings = {
+            "_id": bot.bot_id,
+            "config_dict": bot.config_dict,
+            "aria2_options": bot.aria2_options,
+            "qbit_options": bot.qbit_options,
+        }
 
-        aria2c_options = {"_id": bot.bot_id, **bot.aria2_options}
-        await settings_collection.aria2c.update_one(
-            {"_id": bot.bot_id}, {"$set": aria2c_options}, upsert=True
-        )
-
-        qbittorrent_options = {"_id": bot.bot_id, **bot.qbit_options}
-        await settings_collection.qbittorrent.update_one(
-            {"_id": bot.bot_id}, {"$set": qbittorrent_options}, upsert=True
+        await settings_collection.update_one(
+            {"_id": bot.bot_id}, {"$set": settings}, upsert=True
         )
 
     async def __load_users(self) -> None:
@@ -230,7 +223,7 @@ class DbManager:
 
         await self.__db.tasks[bot.bot_id].delete_one({"_id": link})
 
-    async def get_incomplete_tasks(self) -> dict[str, dict[str, list[dict[str, str]]]]:
+    async def get_incomplete_tasks(self) -> Dict[str, Dict[str, List[Dict[str, str]]]]:
         notifier_dict = {}
 
         if self.__err:
