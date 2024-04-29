@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
-from speedtest import Speedtest
+import asyncio
+import os
+from urllib.parse import urlparse
+
+import aiohttp
+import requests
+from PIL import Image
 from pyrogram.handlers import MessageHandler
 from pyrogram.filters import command
+from speedtest import Speedtest
 
-from bot import bot, LOGGER
+from bot import bot, LOGGER, SUPPORT_CHAT, WHITELIST_CHATS
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.message_utils import sendMessage, deleteMessage, editMessage
@@ -45,11 +52,39 @@ async def speedtest(_, message):
 ┖ <b>ISP Rating:</b> <code>{result['client']['isprating']}</code>
 '''
     try:
-        pho = await sendMessage(message, string_speed, photo=path)
+        # Download the image using aiohttp
+        async with aiohttp.ClientSession() as session:
+            async with session.get(path) as resp:
+                if resp.status != 200:
+                    LOGGER.error(f"Failed to download image: {resp.status}")
+                    return
+                jpg_data = await resp.read()
+
+        # Save the image temporarily
+        temp_file = "temp_image.jpg"
+        with open(temp_file, "wb") as f:
+            f.write(jpg_data)
+
+        # Convert the image to a Telegram-friendly format
+        image = Image.open(temp_file)
+        img_bytes = await convert_image_to_telegram_format(image)
+
+        # Send the message with the image
+        pho = await sendMessage(message, string_speed, photo=img_bytes)
+        os.remove(temp_file)
         await deleteMessage(speed)
     except Exception as e:
         LOGGER.error(str(e))
         pho = await editMessage(speed, string_speed)
+
+
+async def convert_image_to_telegram_format(image):
+    """Convert the image to a format suitable for sending via Telegram."""
+    img_bytes = await loop.run_in_executor(None, functools.partial(image.tobytes))
+    img_data = io.BytesIO(img_bytes)
+    img_data.seek(0)
+    return img_data
+
 
 bot.add_handler(MessageHandler(speedtest, filters=command(
     BotCommands.SpeedCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
