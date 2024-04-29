@@ -11,12 +11,23 @@ from typing_extensions import overload
 class GoFileHTTP:
     """
     A class for making requests to the GoFile API.
+
+    This class provides a convenient way to interact with the GoFile API by abstracting
+    away the details of making HTTP requests and handling responses. It supports GET,
+    PUT, and DELETE methods and automatically includes the API token in the request
+    headers for authentication.
+
+    Attributes:
+        api_url (str): The base URL for the GoFile API.
+        token (str): The API token to use for authentication.
     """
+
     def __init__(self, token: str = None):
         """
         Initializes a new `GoFileHTTP` instance.
 
-        :param token: The API token to use for authentication.
+        :param token: The API token to use for authentication. If not provided,
+            requests will be made without authentication.
         """
         self.api_url = "https://api.gofile.io/"
         self.token = token
@@ -31,35 +42,4 @@ class GoFileHTTP:
         ...
 
     @overload
-    async def request(
-        self,
-        method: Literal["PUT"],
-        url: str,
-        json_data: Any,
-        **kwargs: Any,
-    ) -> dict[str, Any]:
-        ...
 
-    @overload
-    async def request(
-        self,
-        method: Literal["DELETE"],
-        url: str,
-        json_data: Any,
-        **kwargs: Any,
-    ) -> None:
-        ...
-
-    async def request(self, method: str, url: str, **kwargs) -> Union[dict[str, Any], None]:
-        headers = {"Authorization": f"Bearer {self.token}"} if self.token else {}
-        async with ClientSession() as session:
-            async with session.request(
-                method=method,
-                url=f"{self.api_url}{url}",
-                headers=headers,
-                **kwargs,
-            ) as response:
-                if method in ["PUT", "DELETE"]:
-                    return None
-                response_data = await response.json()
-                return response_data
