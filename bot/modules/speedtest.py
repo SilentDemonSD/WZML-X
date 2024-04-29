@@ -33,6 +33,7 @@ async def speedtest(_, message: Any) -> Optional[Coroutine[Any, Any, Any]]:
     test.results.share()
     result = test.results.dict()
     path = Path(result['share'])
+
     string_speed = f'''
 ➲ <b><i>SPEEDTEST INFO</i></b>
 ┠ <b>Upload:</b> <code>{get_readable_file_size(result['upload'] / 8)}/s</code>
@@ -59,7 +60,7 @@ async def speedtest(_, message: Any) -> Optional[Coroutine[Any, Any, Any]]:
 ┖ <b>ISP Rating:</b> <code>{result['client']['isprating']}</code>
 '''
     try:
-        result_message = await sendMessage(message, string_speed, photo=path)
+        await sendMessage(message, string_speed, photo=path)
         await deleteMessage(speed)
     except Exception as e:
         LOGGER.error(str(e))
