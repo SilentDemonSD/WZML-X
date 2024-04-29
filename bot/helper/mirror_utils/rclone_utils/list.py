@@ -14,6 +14,7 @@ from pyrogram.filters import regex, user
 from pyrogram.handlers import CallbackQueryHandler
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
+# Import helper modules
 from bot import LOGGER, config_dict
 from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.telegram_helper.button_build import ButtonMaker
@@ -30,6 +31,7 @@ from bot.helper.ext_utils.bot_utils import (
     get_readable_time,
 )
 
+# Set the limit for the number of list items
 LIST_LIMIT = 6
 
 
@@ -45,27 +47,27 @@ class RcloneList:
         :param client: Pyrogram client object
         :param message: Pyrogram message object
         """
-        self.__user_id = message.from_user.id
-        self.__rc_user = False
-        self.__rc_owner = False
-        self.__client = client
-        self.__message = message
-        self.__sections = []
-        self.__reply_to = None
-        self.__time = time()
-        self.__timeout = 240
-        self.remote = ""
-        self.is_cancelled = False
-        self.query_proc = False
-        self.item_type = "--dirs-only"
-        self.event = asyncio.Event()
-        self.user_rcc_path = f"rclone/{self.__user_id}.conf"
-        self.config_path = ""
-        self.path = ""
-        self.list_status = ""
-        self.path_list = []
-        self.iter_start = 0
-        self.page_step = 1
+        self.__user_id = message.from_user.id  # User ID
+        self.__rc_user = False  # Flag for RC user
+        self.__rc_owner = False  # Flag for RC owner
+        self.__client = client  # Pyrogram client object
+        self.__message = message  # Pyrogram message object
+        self.__sections = []  # List of sections
+        self.__reply_to = None  # Reply to message
+        self.__time = time()  # Time when the object was created
+        self.__timeout = 240  # Timeout in seconds
+        self.remote = ""  # Remote name
+        self.is_cancelled = False  # Flag for cancellation
+        self.query_proc = False  # Flag for query processing
+        self.item_type = "--dirs-only"  # Item type for listing
+        self.event = asyncio.Event()  # Event for waiting
+        self.user_rcc_path = f"rclone/{self.__user_id}.conf"  # User RC config path
+        self.config_path = ""  # Config path
+        self.path = ""  # Path for listing
+        self.list_status = ""  # Status of the list
+        self.path_list = []  # List of paths
+        self.iter_start = 0  # Iterator start index
+        self.page_step = 1  # Page step
 
     async def __event_handler(self) -> None:
         """
@@ -231,3 +233,4 @@ class RcloneList:
         self.path = ""
         self.path_list = result
         await self.get_path_buttons()
+
