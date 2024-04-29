@@ -16,8 +16,7 @@ from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.ext_utils.bot_utils import is_gdrive_link, get_readable_file_size, new_task
 
-@new_task
-async def driveclean(client, message):
+async def driveclean(bot, client, message: telethon.types.Message) -> None:
     args = message.text.split()
     link = get_gdrive_link(args, message)
     if not link:
@@ -50,9 +49,8 @@ async def driveclean(client, message):
         reply_markup=buttons.build_menu(2)
     )
 
-
 @new_task
-async def drivecleancb(client, query):
+async def drivecleancb(bot, client, query: telegram.CallbackQuery) -> None:
     message = query.message
     user_id = query.from_user.id
     data = query.data.split()
@@ -70,7 +68,6 @@ async def drivecleancb(client, query):
         await bot.edit_message_text(message, '⌬ <b>DriveClean Stopped!</b>')
         await bot.delete_message(message)
 
-
 def get_gdrive_link(args, message):
     if len(args) > 1:
         link = args[1].strip()
@@ -79,7 +76,6 @@ def get_gdrive_link(args, message):
     else:
         link = f"https://drive.google.com/drive/folders/{config_dict['GDRIVE_ID']}"
     return link if is_gdrive_link(link) else None
-
 
 bot.add_handler(MessageHandler(driveclean, filters=command(BotCommands.GDCleanCommand) & CustomFilters.owner))
 bot.add_handler(CallbackQueryHandler(drivecleancb, filters=regex(r'^gdclean')))
