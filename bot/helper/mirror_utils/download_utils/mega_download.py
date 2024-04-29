@@ -1,35 +1,30 @@
 #!/usr/bin/env python3
 
-import asyncio  # For asynchronous operations and managing concurrent tasks
-import os  # For file system operations
-import secrets  # For generating cryptographically strong random numbers
-import logging  # For logging events and errors
-import mega  # The MEGA API library
-from aiofiles.os import makedirs  # For creating directories asynchronously
-from typing import Dict, Union, Optional  # For type hinting
+import asyncio
+import os
+import secrets
+import logging
+import mega
+from aiofiles.os import makedirs
+from typing import Dict, Union, Optional
 
-import bot  # Custom bot module
-import config_dict  # Configuration dictionary module
-import download_dict_lock  # Module for locking download dictionary
-import download_dict  # Download dictionary module
-import non_queued_dl  # Non-queued download module
-import queue_dict_lock  # Module for locking queue dictionary
-import stop_duplicate_check  # Module for stopping duplicate downloads
+import bot
+import config_dict
+import download_dict_lock
+import download_dict
+import non_queued_dl
+import queue_dict_lock
+import stop_duplicate_check
 
 def get_mega_link_type(mega_link: str) -> str:
     # Implement the function to get MEGA link type
     pass
 
-def async_to_sync(func):
-    async def wrapper(*args, **kwargs):
-        # A decorator to convert asynchronous functions to synchronous ones
-        return asyncio.run(func(*args, **kwargs))
-    return wrapper
-
-def sync_to_async(func):
-    async def wrapper(*args, **kwargs):
+def run_sync(func):
+    @asyncio.coroutine
+    def wrapper(*args, **kwargs):
         # A decorator to convert synchronous functions to asynchronous ones
-        return await asyncio.get_event_loop().run_in_executor(None, func, *args, **kwargs)
+        return (yield from func(*args, **kwargs))
     return wrapper
 
 class MegaApi:
@@ -39,9 +34,10 @@ class MegaApi:
         self.email = email  # User's email address
         self.password = password  # User's password
 
-    async def login(self):
-        # Asynchronous method to log in to the MEGA API
-        await self.mega.login(self.email, self.password)
+    @run_sync
+    def login(self):
+        # Synchronous method to log in to the MEGA API
+        return self.mega.login(self.email, self.password)
 
     def get_node_by_link(self, link):
         # Method to get a MEGA node by its link
@@ -70,8 +66,15 @@ class MegaDownloadManager:
         self.download_status[link] = status  # Set the download status as pending
 
         try:
-            await non_queued_dl.download_file(mega_api.mega, node, dest_folder)  # Download the file
+            await non_queued_dl.download_file(self.mega_api.mega, node, dest_folder)  # Download the file
             status.status = MegaDownloadManager.COMPLETED  # Set the download status as completed
         except Exception as e:
             logging.error(f"Failed to download {link}: {e}")  # Log any errors during download
             status.status = MegaDownloadManager.FAILED  # Set the download status as failed
+
+class MegaDownloadStatus:
+    def __init__(self, link, status, node=None, size=None):
+        self.link = link
+        self.status = status
+        self.node = node
+        self.size = size
