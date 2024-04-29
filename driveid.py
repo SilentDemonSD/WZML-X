@@ -4,10 +4,10 @@ import urllib.parse
 
 def read_file(file_path: str) -> str:
     """Read the contents of a file and returns it as a string."""
-    if os.path.exists(file_path):
+    try:
         with open(file_path, 'r') as f:
             return f.read()
-    else:
+    except FileNotFoundError:
         return ""
 
 def write_file(file_path: str, msg: str) -> None:
@@ -49,10 +49,10 @@ def add_drive_details() -> str:
             return f"{name} {id} {index}\n"
         else:
             print("\n\n        ERROR: Invalid URL format.")
-            exit(1)
+            return ""
     else:
         print("\n\n        ERROR: Don't leave the name/id without filling.")
-        exit(1)
+        return ""
 
 def main() -> None:
     print(
@@ -74,10 +74,7 @@ def main() -> None:
 
     for count in range(1, num + 1):
         print(f"\n        > DRIVE - {count}\n")
-        msg += add_drive_details()
+        drive_details = add_drive_details()
+        if drive_details:
+            msg += drive_details
 
-    write_file('list_drives.txt', msg)
-    print("\n\n    Done!")
-
-if __name__ == "__main__":
-    main()
