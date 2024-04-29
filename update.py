@@ -6,7 +6,6 @@ import requests
 from pymongo import MongoClient
 from dotenv import load_dotenv
 
-# Initialize logging
 logging.basicConfig(
     format="[%(asctime)s] [%(levelname)s] - %(message)s",
     datefmt="%d-%b-%y %I:%M:%S %p",
@@ -14,64 +13,56 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
-# Load environment variables from .env file
 load_dotenv('config.env', override=True)
 
-# Check for a specific environment variable and exit if it exists
-if os.getenv('_____REMOVE_THIS_LINE_____', False):
+MISSING_ENV_VAR = '_____REMOVE_THIS_LINE_____'
+if MISSING_ENV_VAR in os.environ:
     logging.error('The README.md file should be read! Exiting now!')
     exit()
 
-# Get the bot token from environment variables
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 if not BOT_TOKEN:
     logging.error("BOT_TOKEN variable is missing! Exiting now")
     exit(1)
 
 bot_id = BOT_TOKEN.split(':', 1)[0]
-
-# Get the database URL from environment variables
 DATABASE_URL = os.getenv('DATABASE_URL')
 
-# Connect to the database if the URL is provided
 if DATABASE_URL:
-    conn = MongoClient(DATABASE_URL)
-    db = conn.wzmlx
+    client = MongoClient(DATABASE_URL)
+    db = client.wzmlx
     old_config = db.settings.deployConfig.find_one({'_id': bot_id})
     config_dict = db.settings.config.find_one({'_id': bot_id})
 
-    # Check if the old configuration exists and matches the current environment variables
-    if old_config:
-        del old_config['_id']
-    if (old_config == dict(dict(os.environ)) if old_config else True) and config_dict:
-        # Set environment variables from the configuration dictionary
-        for k, v in config_dict.items():
-            os.environ[k] = v
-    conn.close()
+    if old_config and old_config != dict(os.environ):
+        for k, v in old_config.items():
+            if k in os.environ:
+                os.environ[k] = v
 
-# Upgrade installed packages
-if os.getenv('UPGRADE_PACKAGES', 'False').lower() == 'true':
+    if config_dict:
+        for k, v in config_dict.items():
+            if k not in os.environ:
+                os.environ[k] = v
+
+    client.close()
+
+UPGRADE_PACKAGES = os.getenv('UPGRADE_PACKAGES', 'False').lower() == 'true'
+if UPGRADE_PACKAGES:
     packages = [dist.project_name for dist in pkg_resources.working_set]
     subprocess.call(["pip", "install"] + packages, shell=True)
 
-# Get the UPSTREAM_REPO and UPSTREAM_BRANCH environment variables
 UPSTREAM_REPO = os.getenv('UPSTREAM_REPO')
 UPSTREAM_BRANCH = os.getenv('UPSTREAM_BRANCH', 'master')
 
-# If UPSTREAM_REPO is provided, perform Git-related tasks
 if UPSTREAM_REPO:
-    if os.path.exists('.git'):
-        subprocess.run(["rm", "-rf", ".git"], check=True)
+    if not os.path.exists('.git'):
+        subprocess.run(["git", "init", "-q"], check=True)
+        subprocess.run(["git", "add", "."], check=True)
+        subprocess.run(["git", "commit", "-sm", "update", "-q"], check=True)
 
-    # Clone the repository, set up the local Git repository, and pull the latest changes
     subprocess.run(
         [
-            "git", "init", "-q",
-            "&&", "git", "config", "--global", "user.email", "doc.adhikari@gmail.com",
-            "&&", "git", "config", "--global", "user.name", "weebzone",
-            "&&", "git", "add", ".",
-            "&&", "git", "commit", "-sm", "update", "-q",
-            "&&", "git", "remote", "add", "origin", UPSTREAM_REPO,
+            "git", "remote", "add", "origin", UPSTREAM_REPO,
             "&&", "git", "fetch", "origin", "-q",
             "&&", "git", "reset", "--hard", f"origin/{UPSTREAM_BRANCH}", "-q"
         ],
