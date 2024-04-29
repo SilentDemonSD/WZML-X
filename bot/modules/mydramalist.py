@@ -66,21 +66,20 @@ async def mydramalist_search(client, message):
         buttons = ButtonMaker()
 
         async with aiohttp.ClientSession() as session:
-            async with session.request(
-                "GET",
-                f"{MDL_API}/search/q/{q(title)}",
+            async with session.get(
+                f"{MDL_API}/search/q/{q(title)}"
             ) as resp:
                 if resp.status != 200:
                     return await edit_message(temp_message, "<i>No Results Found</i>, Try Again or Use <b>MyDramaList Link</b>")
                 mdl = await resp.json()
 
         for drama in mdl["results"]["dramas"]:
-            buttons.ibutton(
+            buttons.button(
                 f"🎬 {drama.get('title')} ({drama.get('year')})",
                 f"mdl {user_id} drama {drama.get('slug')}",
             )
 
-        buttons.ibutton("🚫 Close 🚫", f"mdl {user_id} close")
+        buttons.button("🚫 Close 🚫", f"mdl {user_id} close")
         await edit_message(
             temp_message,
             '<b><i>Dramas found on MyDramaList :</i></b>',
@@ -92,8 +91,9 @@ async def mydramalist_search(client, message):
 
 async def extract_mdl(slug):
     async with aiohttp.ClientSession() as session:
-        async with session.request(
-            "GET",
-            f"{MDL_API}/id/{slug}",
+        async with session.get(
+            f"{MDL_API}/id/{slug}"
         ) as resp:
-            mdl = (await resp.json
+            if resp.status != 200:
+                return None
+            return await resp.json()
