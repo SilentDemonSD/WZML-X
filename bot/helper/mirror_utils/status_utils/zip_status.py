@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import time
-from typing import Dict, Optional  # Importing optional and Dict types from typing module
+from typing import Dict, Optional
 
 from bot import LOGGER  # Importing LOGGER from bot module
 from bot.helper.ext_utils.bot_utils import EngineStatus  # Importing EngineStatus from bot_utils module
@@ -10,7 +10,6 @@ class ZipCreationStatus:
     """
     A class to represent the status of a ZIP archive creation process.
     """
-    # Defining __slots__ to improve memory usage and performance by limiting the attributes that can be added to an instance of the class
     __slots__ = (
         'name', 'size', 'listener', 'upload_details', 'uid', 'start_time', 'message', '_processed_raw',
     )
@@ -39,25 +38,20 @@ class ZipCreationStatus:
 
         :return: The amount of data processed in bytes.
         """
-        if self.listener.new_dir:
-            return get_path_size(self.listener.new_dir)  # If new directory, return its size
-        else:
-            return get_path_size(self.listener.dir) - self.size  # Otherwise, return the difference between the directory size and the ZIP archive size
+        return self._processed_raw
 
-    @processed_raw.setter
-    def processed_raw(self, value: int):
+    def _set_processed_raw(self, value: int):
         """
         Set the amount of data processed in the ZIP archive creation in bytes.
 
         :param value: The amount of data processed in bytes.
         """
-        self._processed_raw = value  # Setting the raw processed size of the ZIP archive in bytes
+        self._processed_raw = value
 
-    # Additional properties with getters to format and calculate various aspects of the ZIP archive creation process
     @property
     def processed(self) -> str:
         """Get the amount of data processed in the ZIP archive creation as a formatted string."""
-        return get_readable_file_size(self.processed_raw)
+        return self._format_size(self.processed_raw)
 
     @property
     def speed_raw(self) -> float:
@@ -67,7 +61,7 @@ class ZipCreationStatus:
     @property
     def speed(self) -> str:
         """Get the speed of the ZIP archive creation as a formatted string."""
-        return get_readable_file_size(self.speed_raw) + '/s'
+        return self._format_size(self.speed_raw) + '/s'
 
     @property
     def progress_raw(self) -> float:
@@ -87,7 +81,7 @@ class ZipCreationStatus:
         """Get the estimated time of arrival of the ZIP archive creation as a formatted string."""
         try:
             seconds_left = (self.size - self.processed_raw) / self.speed_raw  # Calculating the estimated time left
-            return get_readable_time(seconds_left)  # Formatting the estimated time left
+            return self._format_time(seconds_left)  # Formatting the estimated time left
         except ZeroDivisionError:
             return None
 
@@ -148,25 +142,63 @@ class ZipCreationStatus:
         for part in parts:
             part = part.strip()  # Removing any leading or trailing whitespace from the part
             if part == 'name':
-                result.append(f'Name: {self.name}')  # Formatting and appending the name part
+                result.append(self._format_value_part('name', self.name))  # Formatting and appending the name part
             elif part == 'size':
-                result.append(f'Size: {self.size}')  # Formatting and appending the size part
+                result.append(self._format_value_part('size', self.size))  # Formatting and appending the size part
             elif part == 'speed':
-                result.append(f'Speed: {self.speed}')  # Formatting and appending the speed part
+                result.append(self._format_value_part('speed', self.speed))  # Formatting and appending the speed part
             elif part == 'progress':
-                result.append(f'Progress: {self.progress}')  # Formatting and appending the progress part
+                result.append(self._format_value_part('progress', self.progress))  # Formatting and appending the progress part
             elif part == 'eta':
-                result.append(f'ETA: {self.eta}')  # Formatting and appending the ETA part
+                result.append(self._format_value_part('eta', self.eta))  # Formatting and appending the ETA part
             elif part == 'status':
-                result.append(f'Status: {self.status}')  # Formatting and appending the status part
+                result.append(self._format_value_part('status', self.status))  # Formatting and appending the status part
             else:
                 result.append(f'Unknown: {part}')  # Appending an 'Unknown' part if the format specification is not recognized
         return '\n'.join(result)  # Joining the formatted parts with newlines and returning the result
 
-    @property
-    def time_elapsed(self):
-        """Get the elapsed time since the creation of the instance."""
-        return time.time() - self.start_time  # Returning the elapsed time since the instance was created
+    def _format_values(self, values: dict) -> str:
+        """Format a dictionary of values as a string."""
+        result = []  # Initializing an empty list to store the formatted values
+        for key, value in values.items():
+            result.append(self._format_value_part(key, value))
+        return ', '.join(result)  # Joining the formatted values with commas and returning the result
+
+    def _format_value_part(self, key: str, value) -> str:
+        """Format an individual value part."""
+        if key == 'name':
+            return f'Name: {value}'
+        elif key == 'size':
+            return f'Size: {self._format_size(value)}'
+        elif key == 'speed':
+            return f'Speed: {self._format_size(value)}/s'
+        elif key == 'progress':
+            return f'Progress: {value}'
+        elif key == 'eta':
+            return f'ETA: {value}'
+        elif key == 'status':
+            return f'Status: {value}'
+        else:
+            return f'Unknown: {key}: {value}'
+
+    def _format_time(self, seconds: float) -> str:
+        """Format a time value in seconds as a string."""
+        if seconds is None:
+            return 'Unknown'
+        m, s = divmod(seconds, 60)
+        h, m = divmod(m, 60)
+        if h > 0:
+            return f'{h}:{m:02d}:{s:02.2f}'
+        else:
+            return f'{m}:{s:02.2f}'
+
+    def _format_size(self, bytes: int) -> str:
+        """Format a size value in bytes as a string."""
+        for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+            if bytes < 1024:
+                break
+            bytes /= 1024.0
+        return f'{bytes:.2f} {unit}'
 
     def __repr__(self):
         """Get a developer-friendly representation of the ZipCreationStatus object."""
