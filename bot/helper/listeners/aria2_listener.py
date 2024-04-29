@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-from asyncio import sleep
-from time import time
-from aiofiles.os import remove as aioremove, path as aiopath
+import asyncio
+import time
+from typing import Any, Optional
 
+import aiofiles.os  # type: ignore
+import aiopath  # type: ignore
 from bot import aria2, download_dict_lock, download_dict, LOGGER, config_dict
 from bot.helper.ext_utils.task_manager import limit_checker
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
@@ -14,20 +16,21 @@ from bot.helper.themes import BotTheme
 
 
 @new_thread
-async def __onDownloadStarted(api, gid):
+async def on_download_started(api: aria2, gid: str) -> None:
+    """Handle the event when a download is started."""
     download = await sync_to_async(api.get_download, gid)
     if download.options.follow_torrent == 'false':
         return
     if download.is_metadata:
         LOGGER.info(f'onDownloadStarted: {gid} METADATA')
-        await sleep(1)
+        await asyncio.sleep(1)
         if dl := await getDownloadByGid(gid):
             listener = dl.listener()
             if listener.select:
                 metamsg = "Downloading Metadata, wait then you can select files. Use torrent file to avoid this wait."
                 meta = await sendMessage(listener.message, metamsg)
                 while True:
-                    await sleep(0.5)
+                    await asyncio.sleep(0.5)
                     if download.is_removed or download.followed_by_ids:
                         await deleteMessage(meta)
                         break
@@ -43,7 +46,7 @@ async def __onDownloadStarted(api, gid):
             config_dict['DAILY_TASK_LIMIT'],
             config_dict['DAILY_MIRROR_LIMIT'],
             config_dict['DAILY_LEECH_LIMIT']]):
-        await sleep(1)
+        await asyncio.sleep(1)
         if dl is None:
             dl = await getDownloadByGid(gid)
         if dl:
@@ -54,15 +57,15 @@ async def __onDownloadStarted(api, gid):
             listener = dl.listener()
             download = await sync_to_async(api.get_download, gid)
             if not download.is_torrent:
-                await sleep(3)
+                await asyncio.sleep(3)
                 download = download.live
             size = download.total_length
             LOGGER.info(f"listener size : {size}")
             if limit_exceeded := await limit_checker(size, listener):
-                await listener.onDownloadError(limit_exceeded)
+                await listener.on_download_error(limit_exceeded)
                 await sync_to_async(api.remove, [download], force=True, files=True)
     if config_dict['STOP_DUPLICATE']:
-        await sleep(1)
+        await asyncio.sleep(1)
         if dl is None:
             dl = await getDownloadByGid(gid)
         if dl:
@@ -74,7 +77,7 @@ async def __onDownloadStarted(api, gid):
             if not listener.isLeech and not listener.select and listener.upPath == 'gd':
                 download = await sync_to_async(api.get_download, gid)
                 if not download.is_torrent:
-                    await sleep(3)
+                    await asyncio.sleep(3)
                     download = download.live
                 LOGGER.info('Checking File/Folder if already in Drive...')
                 name = download.name
@@ -90,15 +93,14 @@ async def __onDownloadStarted(api, gid):
                     if telegraph_content:
                         msg = BotTheme('STOP_DUPLICATE', content=contents_no)
                         button = await get_telegraph_list(telegraph_content)
-                        await listener.onDownloadError(msg, button)
+                        await listener.on_download_error(msg, button)
                         await sync_to_async(api.remove, [download], force=True, files=True)
                         return
 
 
-
-
 @new_thread
-async def __onDownloadComplete(api, gid):
+async def on_download_complete(api: aria2, gid: str) -> None:
+    """Handle the event when a download is completed."""
     try:
         download = await sync_to_async(api.get_download, gid)
     except Exception:
@@ -122,20 +124,21 @@ async def __onDownloadComplete(api, gid):
                 LOGGER.info(
                     f"Cancelling Seed: {download.name} onDownloadComplete")
                 listener = dl.listener()
-                await listener.onUploadError(f"Seeding stopped with Ratio: {dl.ratio()} and Time: {dl.seeding_time()}")
+                await listener.on_upload_error(f"Seeding stopped with Ratio: {dl.ratio()} and Time: {dl.seeding_time()}")
                 await sync_to_async(api.remove, [download], force=True, files=True)
     else:
         LOGGER.info(f"onDownloadComplete: {download.name} - Gid: {gid}")
         if dl := await getDownloadByGid(gid):
             listener = dl.listener()
-            await listener.onDownloadComplete()
+            await listener.on_download_complete()
             await sync_to_async(api.remove, [download], force=True, files=True)
 
 
 @new_thread
-async def __onBtDownloadComplete(api, gid):
+async def on_bt_download_complete(api: aria2, gid: str) -> None:
+    """Handle the event when a BitTorrent download is completed."""
     seed_start_time = time()
-    await sleep(1)
+    await asyncio.sleep(1)
     download = await sync_to_async(api.get_download, gid)
     if download.options.follow_torrent == 'false':
         return
@@ -148,7 +151,7 @@ async def __onBtDownloadComplete(api, gid):
                 f_path = file_o.path
                 if not file_o.selected and await aiopath.exists(f_path):
                     try:
-                        await aioremove(f_path)
+                        await aiofiles.os.remove(f_path)
                     except Exception:
                         pass
             await clean_unwanted(download.dir)
@@ -163,13 +166,13 @@ async def __onBtDownloadComplete(api, gid):
                 await sync_to_async(api.client.force_pause, gid)
             except Exception as e:
                 LOGGER.error(f"{e} GID: {gid}")
-        await listener.onDownloadComplete()
+        await listener.on_download_complete()
         download = download.live
         if listener.seed:
             if download.is_complete:
                 if dl := await getDownloadByGid(gid):
                     LOGGER.info(f"Cancelling Seed: {download.name}")
-                    await listener.onUploadError(f"Seeding stopped with Ratio: {dl.ratio()} and Time: {dl.seeding_time()}")
+                    await listener.on_upload_error(f"Seeding stopped with Ratio: {dl.ratio()} and Time: {dl.seeding_time()}")
                     await sync_to_async(api.remove, [download], force=True, files=True)
             else:
                 async with download_dict_lock:
@@ -186,15 +189,17 @@ async def __onBtDownloadComplete(api, gid):
 
 
 @new_thread
-async def __onDownloadStopped(api, gid):
-    await sleep(6)
+async def on_download_stopped(api: aria2, gid: str) -> None:
+    """Handle the event when a download is stopped."""
+    await asyncio.sleep(6)
     if dl := await getDownloadByGid(gid):
         listener = dl.listener()
-        await listener.onDownloadError('Dead torrent!')
+        await listener.on_download_error('Dead torrent!')
 
 
 @new_thread
-async def __onDownloadError(api, gid):
+async def on_download_error(api: aria2, gid: str) -> None:
+    """Handle the event when a download encounters an error."""
     LOGGER.info(f"onDownloadError: {gid}")
     error = "None"
     try:
@@ -207,14 +212,15 @@ async def __onDownloadError(api, gid):
         pass
     if dl := await getDownloadByGid(gid):
         listener = dl.listener()
-        await listener.onDownloadError(error)
+        await listener.on_download_error(error)
 
 
-def start_aria2_listener():
+def start_aria2_listener() -> None:
+    """Start the aria2 event listener."""
     aria2.listen_to_notifications(threaded=False,
-                                  on_download_start=__onDownloadStarted,
-                                  on_download_error=__onDownloadError,
-                                  on_download_stop=__onDownloadStopped,
-                                  on_download_complete=__onDownloadComplete,
-                                  on_bt_download_complete=__onBtDownloadComplete,
+                                  on_download_start=on_download_started,
+                                  on_download_error=on_download_error,
+                                  on_download_stop=on_download_stopped,
+                                  on_download_complete=on_download_complete,
+                                  on_bt_download_complete=on_bt_download_complete,
                                   timeout=60)
