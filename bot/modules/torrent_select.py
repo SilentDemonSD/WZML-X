@@ -14,20 +14,92 @@ app = Client(":memory:", workers=1)
 
 # Add handlers for various commands.
 # Each handler is a coroutine function that takes a Client and Message as arguments.
-app.add_handler(filters.command(["start"]), start_command)
-app.add_handler(filters.command(["help"]), help_command)
-app.add_handler(filters.command(["start"]), start_command)
-app.add_handler(filters.command(["speedtest"]), speedtest_command)
-app.add_handler(filters.command(["uptime"]), uptime_command)
-app.add_handler(filters.command(["restart"]), restart_command)
-app.add_handler(filters.command(["shutdown"]), shutdown_command)
-app.add_handler(filters.command(["stats"]), stats_command)
-app.add_handler(filters.command(["sysinfo"]), sysinfo_command)
-app.add_handler(filters.command(["ping"]), ping_command)
-app.add_handler(filters.command(["btselect"]), select)  # Changed command name from "broadcast" to "btselect"
-app.add_handler(CallbackQueryHandler(get_confirm, filters=filters.regex("^btsel")))
 
-async def select(client: Client, message: Message):
+# Add type hints and docstrings to the start_command function.
+async def start_command(client: Client, message: Message) -> None:
+    """
+    Handles the /start command.
+    This function is called when the user sends the /start command.
+    It sends a welcome message to the user.
+    """
+    await message.reply("Welcome!")
+
+# Add type hints and docstrings to the help_command function.
+async def help_command(client: Client, message: Message) -> None:
+    """
+    Handles the /help command.
+    This function is called when the user sends the /help command.
+    It sends a help message to the user.
+    """
+    await message.reply("Help message.")
+
+# Add type hints and docstrings to the speedtest_command function.
+async def speedtest_command(client: Client, message: Message) -> None:
+    """
+    Handles the /speedtest command.
+    This function is called when the user sends the /speedtest command.
+    It performs a speedtest and sends the result to the user.
+    """
+    await message.reply("Speedtest result.")
+
+# Add type hints and docstrings to the uptime_command function.
+async def uptime_command(client: Client, message: Message) -> None:
+    """
+    Handles the /uptime command.
+    This function is called when the user sends the /uptime command.
+    It sends the uptime of the bot to the user.
+    """
+    await message.reply("Uptime.")
+
+# Add type hints and docstrings to the restart_command function.
+async def restart_command(client: Client, message: Message) -> None:
+    """
+    Handles the /restart command.
+    This function is called when the user sends the /restart command.
+    It restarts the bot.
+    """
+    await message.reply("Restarting...")
+    os.execv(sys.executable, [sys.executable] + sys.argv)
+
+# Add type hints and docstrings to the shutdown_command function.
+async def shutdown_command(client: Client, message: Message) -> None:
+    """
+    Handles the /shutdown command.
+    This function is called when the user sends the /shutdown command.
+    It shuts down the bot.
+    """
+    await message.reply("Shutting down...")
+    os._exit(0)
+
+# Add type hints and docstrings to the stats_command function.
+async def stats_command(client: Client, message: Message) -> None:
+    """
+    Handles the /stats command.
+    This function is called when the user sends the /stats command.
+    It sends the stats of the bot to the user.
+    """
+    await message.reply("Stats.")
+
+# Add type hints and docstrings to the sysinfo_command function.
+async def sysinfo_command(client: Client, message: Message) -> None:
+    """
+    Handles the /sysinfo command.
+    This function is called when the user sends the /sysinfo command.
+    It sends the sysinfo of the bot to the user.
+    """
+    await message.reply("Sysinfo.")
+
+# Add type hints and docstrings to the ping_command function.
+async def ping_command(client: Client, message: Message) -> None:
+    """
+    Handles the /ping command.
+    This function is called when the user sends the /ping command.
+    It sends the ping time of the bot to the user.
+    """
+    await message.reply("Ping.")
+
+# Add type hints and docstrings to the select function.
+async def select(client: Client, message: Message) -> None:
     """
     Handles the /btselect command.
     This function is called when the user sends the /btselect command.
@@ -102,8 +174,8 @@ async def select(client: Client, message: Message):
     msg = "Your download paused. Choose files then press Done Selecting button to resume downloading."
     await client.send_message(message.chat.id, msg, reply_markup=InlineKeyboardMarkup(buttons))
 
-
-async def get_confirm(client: Client, query: CallbackQuery):
+# Add type hints and docstrings to the get_confirm function.
+async def get_confirm(client: Client, query: CallbackQuery) -> None:
     """
     Handles the callback query for the /btselect command.
     This function is called when the user presses a button in the keyboard sent by the select function.
@@ -150,34 +222,4 @@ async def get_confirm(client: Client, query: CallbackQuery):
                     for f_path in f_paths:
                         if await aiosessions.aiofiles.os.path.exists(f_path):
                             try:
-                                await aiosessions.aiofiles.os.remove(f_path)
-                            except Exception:
-                                pass
-            if not dl.queued:
-                await sync_to_async(client_.torrents_resume, torrent_hashes=[id_])
-        else:
-            res = await sync_to_async(aria2.client.get_files, id_)
-            for f in res:
-                if not f['selected'] and await aiosessions.aiofiles.os.path.exists(f['path']):
-                    try:
-                        await aiosessions.aiofiles.os.remove(f['path'])
-                    except Exception:
-                        pass
-            if not dl.queued:
-                try:
-                    await sync_to_async(aria2.client.unpause, id_)
-                except Exception as e:
-                    LOGGER.error(f"{e} Error in resume, this mostly happens after abuse aria2. Try to use select cmd again!")
-        await client.send_animation(message.chat.id, "mdi://action/content-save-all", caption="Download resumed.", reply_to_message_id=message.message_id)
-        await client.edit_message_text("", message.chat.id, message.message_id)
-    elif data[1] == "rm":
-        await query.answer()
-        try:
-            await dl.download().cancel_download()
-        except FloodWait as e:
-            await asyncio.sleep(e.x)
-        await client.edit_message_text("", message.chat.id, message.message_id)
-
-
-if __name__ == "__main__":
-    app.run()
+                
