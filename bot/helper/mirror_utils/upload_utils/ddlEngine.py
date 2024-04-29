@@ -8,28 +8,35 @@ import time
 import aiohttp
 import tenacity
 from typing import Dict, Any, Union, Optional, Callable, List, Tuple, Type, AsyncContextManager
-from gofile import Gofile
-from streamtape import Streamtape
+from gofile import Gofile  # A class for interacting with gofile.io API
+from streamtape import Streamtape  # A class for interacting with streamtape.com API
 
 class ProgressFileReader(io.BufferedReader):
     """
     A custom BufferedReader that allows tracking of the number of bytes read.
     """
     def __init__(self, filename: str, read_callback: Optional[Callable[[int], None]] = None):
+        """
+        Initializes a new ProgressFileReader instance.
+        :param filename: The path to the file to read.
+        :param read_callback: An optional callback function to be called when a chunk of data is read.
+        """
         super().__init__(open(filename, "rb"))
         self.__read_callback = read_callback
-        self.length = pathlib.Path(filename).stat().st_size
+        self.length = pathlib.Path(filename).stat().st_size  # The total length of the file
 
     def read(self, size: Optional[int] = None) -> Union[bytes, MemoryView]:
         """
         Reads up to `size` bytes of data from the file.
         If `read_callback` is provided, it will be called with the current file position.
+        :param size: The number of bytes to read. If None, reads the remaining bytes.
+        :return: The read data as bytes or MemoryView.
         """
-        size = size or (self.length - self.tell())
+        size = size or (self.length - self.tell())  # Calculate the remaining bytes if size is None
         if self.__read_callback:
-            self.__read_callback(self.tell())
-        result = super().read(size)
-        asyncio.sleep(0)
+            self.__read_callback(self.tell())  # Call the read_callback with the current file position
+        result = super().read(size)  # Read the data
+        asyncio.sleep(0)  # Yield control to the event loop
         return result
 
 class DDLUploader:
@@ -39,22 +46,26 @@ class DDLUploader:
     def __init__(self, listener, name: str, path: str, speed_limit: int = 0):
         """
         Initializes a new instance of the DDLUploader class.
+        :param listener: The listener object to send upload progress and completion events.
+        :param name: The name of the file or folder being uploaded.
+        :param path: The path to the file or folder being uploaded.
+        :param speed_limit: The maximum upload speed in bytes per second. 0 means no limit.
         """
         self.name = name
-        self.__processed_bytes = 0
-        self.last_uploaded = 0
-        self.__listener = listener
-        self.__path = path
-        self.__start_time = time.time()
-        self.total_files = 0
-        self.total_folders = 0
-        self.is_cancelled = False
-        self.__is_errored = False
-        self.__ddl_servers: Dict[str, Tuple[bool, str]] = {}
-        self.__engine = 'DDL v1'
-        self.__asyncSession: Optional[AsyncContextManager[aiohttp.ClientSession]] = None
-        self.__user_id = self.__listener.message.from_user.id
-        self.speed_limit = speed_limit
+        self.__processed_bytes = 0  # The number of processed bytes
+        self.last_uploaded = 0  # The position of the last uploaded byte
+        self.__listener = listener  # The listener object
+        self.__path = path  # The path to the file or folder being uploaded
+        self.__start_time = time.time()  # The start time of the upload
+        self.total_files = 0  # The total number of files in the folder being uploaded
+        self.total_folders = 0  # The total number of folders in the folder being uploaded
+        self.is_cancelled = False  # A flag indicating if the upload has been cancelled
+        self.__is_errored = False  # A flag indicating if an error occurred during the upload
+        self.__ddl_servers: Dict[str, Tuple[bool, str]] = {}  # A dictionary of enabled DDL servers
+        self.__engine = 'DDL v1'  # The name of the upload engine
+        self.__asyncSession: Optional[AsyncContextManager[aiohttp.ClientSession]] = None  # An aiohttp session
+        self.__user_id = self.__listener.message.from_user.id  # The user ID
+        self.speed_limit = speed_limit  # The maximum upload speed in bytes per second
 
     def __del__(self):
         if self.__asyncSession:
@@ -64,8 +75,8 @@ class DDLUploader:
         """
         Loads user settings from the `user_data` module.
         """
-        user_dict = user_data.get(self.__user_id, {})
-        self.__ddl_servers = user_dict.get('ddl_servers', {})
+        user_dict = user_data.get(self.__user_id, {})  # Get the user data
+        self.__ddl_servers = user_dict.get('ddl_servers', {})  # Get the DDL servers
 
     def __progress_callback(self, current: int):
         """
