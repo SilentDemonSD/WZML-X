@@ -1,21 +1,13 @@
-#!/usr/bin/env python3
-# This is a Python 3 script for a Telegram bot that fetches anime, manga, and character information from AniList.
-
 import asyncio
 import re
 from typing import Dict, List, Optional
 
-import requests
+import aiohttp
 from markdown import markdown
-from pycountry import countries as conn
+from pydantic import BaseModel
 from urllib.parse import quote as q
 
-from bot import bot, LOGGER, config_dict, user_data
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper.message_utils import sendMessage, editMessage
-from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.ext_utils.bot_utils import get_readable_time
+import pyrogram
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.filters import command, regex
 
@@ -40,6 +32,19 @@ GENRES_EMOJI: Dict[str, str] = {
     "Supernatural": "🫧",
     "Thriller": choice(["🥶", "🔪", "🤯"]),
 }
+
+class AnimeData(BaseModel):
+    title: str
+    genres: List[str]
+    # add other fields as needed
+
+class CharacterData(BaseModel):
+    name: str
+    # add other fields as needed
+
+class MangaData(BaseModel):
+    title: str
+    # add other fields as needed
 
 ANIME_GRAPHQL_QUERY = """
 query ($id: Int, $idMal: Int, $search: String) {
@@ -68,30 +73,38 @@ query ($id: Int, $search: String) {
 url = 'https://graphql.anilist.co'
 sptext: str = ""
 
-async def anilist(client, msg, aniid: Optional[int] = None, u_id: Optional[int] = None) -> None:
+async def anilist(client: pyrogram.Client, msg: pyrogram.types.Message, aniid: Optional[int] = None, u_id: Optional[int] = None) -> None:
     # Implementation details
 
-async def character(client, message, aniid: Optional[int] = None, u_id: Optional[int] = None) -> None:
+async def character(client: pyrogram.Client, message: pyrogram.types.Message, aniid: Optional[int] = None, u_id: Optional[int] = None) -> None:
     # Implementation details
 
-async def setCharacButtons(client, query: str) -> None:
+async def set_charac_buttons(client: pyrogram.Client, query: str) -> None:
     # Implementation details
 
-async def manga(client, message) -> None:
+async def manga(client: pyrogram.Client, message: pyrogram.types.Message) -> None:
     # Implementation details
 
-async def anime_help(client, message) -> None:
+async def anime_help(client: pyrogram.Client, message: pyrogram.types.Message) -> None:
     # Implementation details
 
-def setAnimeButtons(update, context) -> None:
+async def handle_anime_callback(client: pyrogram.Client, callback_query: pyrogram.types.CallbackQuery) -> None:
     # Implementation details
 
-def setCharacButtons(update, context) -> None:
+async def handle_charac_callback(client: pyrogram.Client, callback_query: pyrogram.types.CallbackQuery) -> None:
     # Implementation details
 
-bot.add_handler(MessageHandler(anilist, filters=command(BotCommands.AniListCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
-bot.add_handler(MessageHandler(character, filters=command("character") & CustomFilters.authorized & ~CustomFilters.blacklisted))
-bot.add_handler(MessageHandler(manga, filters=command("manga") & CustomFilters.authorized & ~CustomFilters.blacklisted))
-bot.add_handler(MessageHandler(anime_help, filters=command(BotCommands.AnimeHelpCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
-bot.add_handler(CallbackQueryHandler(setAnimeButtons, filters=regex(r'^anime')))
-bot.add_handler(CallbackQueryHandler(setCharacButtons, filters=regex(r'^cha')))
+async def main() -> None:
+    app = pyrogram.Client("my_bot")
+    async with aiohttp.ClientSession() as session:
+        await app.start()
+        bot.add_handler(MessageHandler(anilist, filters=command(BotCommands.AniListCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
+        bot.add_handler(MessageHandler(character, filters=command("character") & CustomFilters.authorized & ~CustomFilters.blacklisted))
+        bot.add_handler(MessageHandler(manga, filters=command("manga") & CustomFilters.authorized & ~CustomFilters.blacklisted))
+        bot.add_handler(MessageHandler(anime_help, filters=command(BotCommands.AnimeHelpCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
+        bot.add_handler(CallbackQueryHandler(handle_anime_callback, filters=regex(r'^anime')))
+        bot.add_handler(CallbackQueryHandler(handle_charac_callback, filters=regex(r'^cha')))
+        await app.run_until_disconnected()
+
+if __name__ == "__main__":
+    asyncio.run(main())
