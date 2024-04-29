@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
-from string import ascii_letters
-from random import SystemRandom
-from asyncio import sleep
-from telegraph.aio import Telegraph
-from telegraph.exceptions import RetryAfterError
-from typing import Any, Dict, List, Optional
+import asyncio
 import logging
-import contextlib
+import random
+import string
+from typing import Any, Dict, List, Optional
 
-from bot import LOGGER, bot_loop, config_dict
+import aiohttp
+from telegraph import Telegraph, exceptions as tg_exceptions
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +17,7 @@ class TelegraphHelper:
 
     def __init__(self, author_name: str = None, author_url: str = None):
         self.telegraph = Telegraph(domain="graph.org")
-        self.short_name = "".join(SystemRandom().choices(ascii_letters, k=8))
+        self.short_name = "".join(random.choices(string.ascii_letters, k=8))
         self.access_token = None
         self.author_name = author_name
         self.author_url = author_url
@@ -28,18 +26,22 @@ class TelegraphHelper:
         """
         Create a new Telegraph account.
         """
-        try:
-            await self.telegraph.create_account(
-                short_name=self.short_name,
-                author_name=self.author_name,
-                author_url=self.author_url,
-            )
-            self.access_token = self.telegraph.get_access_token()
-            logger.info(f"Telegraph Account Generated : {self.short_name}")
-        except RetryAfterError as e:
-            logger.warning(f"Telegraph Flood control exceeded. Retrying in {e.retry_after} seconds...")
-            await sleep(e.retry_after)
-            await self.create_account()
+        retry_after = 0
+        while retry_after < 5:
+            try:
+                await self.telegraph.create_account(
+                    short_name=self.short_name,
+                    author_name=self.author_name,
+                    author_url=self.author_url,
+                )
+                self.access_token = self.telegraph.get_access_token()
+                logger.info(f"Telegraph Account Generated : {self.short_name}")
+                return
+            except tg_exceptions.RetryAfterError as e:
+                logger.warning(f"Telegraph Flood control exceeded. Retrying in {e.retry_after} seconds...")
+                retry_after = retry_after + e.retry_after
+                await asyncio.sleep(e.retry_after)
+        logger.error("Failed to create Telegraph account after 5 retries.")
 
     async def create_page(
         self, title: str, content: str, retry_after_error: bool = True
@@ -62,10 +64,10 @@ class TelegraphHelper:
                 author_url=self.author_url,
                 html_content=content,
             )
-        except RetryAfterError as e:
+        except tg_exceptions.RetryAfterError as e:
             if retry_after_error:
                 logger.warning(f"Telegraph Flood control exceeded. Retrying in {e.retry_after} seconds...")
-                await sleep(e.retry_after)
+                await asyncio.sleep(e.retry_after)
                 return await self.create_page(title, content, retry_after_error=False)
             else:
                 logger.error(f"Telegraph Flood control exceeded and retry is disabled.")
@@ -94,10 +96,10 @@ class TelegraphHelper:
                 author_url=self.author_url,
                 html_content=content,
             )
-        except RetryAfterError as e:
+        except tg_exceptions.RetryAfterError as e:
             if retry_after_error:
                 logger.warning(f"Telegraph Flood control exceeded. Retrying in {e.retry_after} seconds...")
-                await sleep(e.retry_after)
+                await asyncio.sleep(e.retry_after)
                 return await self.edit_page(path, title, content, retry_after_error=False)
             else:
                 logger.error(f"Telegraph Flood control exceeded and retry is disabled.")
@@ -113,7 +115,7 @@ class TelegraphHelper:
             path (List[str]): The paths of the pages.
             telegraph_content (List[str]): The content of the pages.
         """
-        with contextlib.suppress(RetryAfterError):
+        async with aiohttp.ClientSession() as session:
             nxt_page = 1
             prev_page = 0
             num_of_path = len(path)
