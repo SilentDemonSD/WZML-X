@@ -1,18 +1,30 @@
 class DirectDownloadLinkException(Exception):
-    """Not method found for extracting direct download link from the http link"""
-    pass
+    """Raised when a method for extracting a direct download link from an HTTP link cannot be found.
 
+    This exception is used to indicate that there was an issue with extracting a direct download link
+    from an HTTP link, typically because the method for extracting the link was not found.
+    """
+    pass
 
 class NotSupportedExtractionArchive(Exception):
-    """The archive format use is trying to extract is not supported"""
-    pass
+    """Raised when the archive format being extracted is not supported.
 
+    This exception is used to indicate that the archive format being extracted is not supported
+    by the current system or module.
+    """
+    pass
 
 class RssShutdownException(Exception):
-    """This exception should be raised when shutdown is called to stop the montior"""
+    """Raised when shutdown is called to stop the monitor.
+
+    This exception is used to indicate that the shutdown method was called to stop the monitor.
+    """
     pass
 
-
 class TgLinkException(Exception):
-    """No Access granted for this chat"""
+    """Raised when no access is granted for a chat in Telegram.
+
+    This exception is used to indicate that there was an issue with accessing a chat in Telegram,
+    typically because no access was granted for that chat.
+    """
     pass
