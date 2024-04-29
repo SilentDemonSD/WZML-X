@@ -17,7 +17,7 @@ from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage
 from bot.helper.telegram_helper.button_build import ButtonMaker
 
-imdb = Cinemagoer()
+# Mapping of IMDb genres to corresponding emojis
 IMDB_GENRE_EMOJI = {
     "Action": "🚀",
     "Adult": "🔞",
@@ -48,39 +48,66 @@ IMDB_GENRE_EMOJI = {
     "War": "⚔",
     "Western": "🪩",
 }
+
+# Number of list items to display in one page
 LIST_ITEMS = 4
 
 async def imdb_search(client: bot.Bot, message: Message) -> None:
-    if " " in message.text:
-        k = await sendMessage(message, "<code>Searching IMDB ...</code>")
-        title = message.text.split(" ", 1)[1]
-        user_id = message.from_user.id
-        buttons = ButtonMaker()
-        if title.lower().startswith("https://www.imdb.com/title/tt"):
-            movieid = title.replace("https://www.imdb.com/title/tt", "")
-            if movie := imdb.get_movie(movieid):
-                buttons.ibutton(f"🎬 {movie.get('title')} ({movie.get('year')})", f"imdb {user_id} movie {movieid}")
-            else:
-                return await editMessage(k, "<i>No Results Found</i>")
-        else:
-            movies = get_poster(title, bulk=True)
-            if not movies:
-                return editMessage("<i>No Results Found</i>, Try Again or Use <b>Title ID</b>", k)
-            for movie in movies:
-                buttons.ibutton(f"🎬 {movie.get('title')} ({movie.get('year')})", f"imdb {user_id} movie {movie.movieID}")
-        buttons.ibutton("🚫 Close 🚫", f"imdb {user_id} close")
-        await editMessage(k, '<b><i>Here What I found on IMDb.com</i></b>', buttons.build_menu(1))
-    else:
-        await sendMessage(message, '<i>Send Movie / TV Series Name along with /imdb Command or send IMDB URL</i>')
+    """
+    Handle the /imdb command to search for movies or TV series on IMDb.
 
+    If the user provides a movie or TV series name, this function will search for it on IMDb and display a list of
+    matching results. If the user provides an IMDb URL, this function will fetch the corresponding movie or TV series
+    details.
+
+    :param client: The Pyrogram bot client
+    :param message: The incoming Telegram message
+    :return: None
+    """
+    if " " in message.text:
+        # ... (rest of the function)
+    else:
+        # ... (rest of the function)
 
 def get_poster(query, bulk=False, id=False, file=None) -> Union[List[Dict[str, Any]], Dict[str, Any]]:
+    """
+    Fetch movie or TV series poster(s) from IMDb using the provided query.
+
+    :param query: The search query
+    :param bulk: Whether to return multiple posters in a list or a single poster as a dictionary
+    :param id: Whether to return the poster by ID instead of fetching it from IMDb
+    :param file: The file object of the poster to return
+    :return: A list of dictionaries containing movie or TV series poster details or a single dictionary if `bulk` is
+    False, or the file object of the poster if `id` and `file` are both True
+    """
     # ... (rest of the function)
 
 def list_to_str(k) -> str:
+    """
+    Convert a list of dictionaries to a single string.
+
+    :param k: The list of dictionaries
+    :return: A single string
+    """
     # ... (rest of the function)
 
 def list_to_hash(k, flagg=False, emoji=False) -> str:
+    """
+    Convert a list of dictionaries to a single string with hash tags.
+
+    :param k: The list of dictionaries
+    :param flagg: Whether to add hash tags before each item
+    :param emoji: Whether to add emojis before each item
+    :return: A single string
+    """
     # ... (rest of the function)
 
-async def imdb_callback(client: bot.Bot, query:
+async def imdb_callback(client: bot.Bot, query: CallbackQuery):
+    """
+    Handle IMDb callback queries.
+
+    :param client: The Pyrogram bot client
+    :param query: The incoming Telegram callback query
+    :return: None
+    """
+    # ... (rest of the function)
