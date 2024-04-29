@@ -1,17 +1,26 @@
 #!/bin/bash
 
+# Check if python3 and pip are available
+if ! command -v python3 &> /dev/null || ! command -v pip &> /dev/null; then
+    echo "Error: python3 or pip not found"
+    exit 1
+fi
+
 # Create a new virtual environment with a specific name
-python3 -m venv my_project_env
+if ! python3 -m venv my_project_env; then
+    echo "Error: Failed to create a new virtual environment"
+    exit 1
+fi
 
 # Activate the virtual environment
-source my_project_env/bin/activate || \
+if ! source my_project_env/bin/activate; then
     echo "Warning: Failed to activate the virtual environment"
+fi
 
 # Install the required libraries and save them to a separate file
-if pip install -r requirements.txt; then
-    pip freeze > requirements-installed.txt
-else
+if ! pip install -r requirements.txt; then
     echo "Error: Failed to install the required libraries"
+    exit 1
 fi
 
 # Print the list of installed libraries for verification
