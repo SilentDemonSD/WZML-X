@@ -1,40 +1,43 @@
 #!/usr/bin/env python3
+from typing import Optional
+
 from time import time
 
 from bot import aria2, LOGGER
 from bot.helper.ext_utils.bot_utils import EngineStatus, MirrorStatus, get_readable_time, sync_to_async
 
-
-def get_download(gid):
+def get_download(gid) -> Optional[object]:
     try:
         return aria2.get_download(gid)
     except Exception as e:
         LOGGER.error(f'{e}: Aria2c, Error while getting torrent info')
         return None
 
-
 class Aria2Status:
 
-    def __init__(self, gid, listener, seeding=False, queued=False):
+    def __init__(self, gid: str, listener, seeding: bool = False, queued: bool = False):
         self.__gid = gid
         self.__download = get_download(gid)
         self.__listener = listener
-        self.upload_details = self.__listener.upload_details
+        self.upload_details = self.__listener.upload_details if self.__listener else None
         self.queued = queued
         self.start_time = 0
         self.seeding = seeding
-        self.message = self.__listener.message
+        self.message = self.__listener.message if self.__listener else None
 
     def __update(self):
         if self.__download is None:
-            self.__download = get_download(self.__gid)
-        else:
-            self.__download = self.__download.live
+            return
+        self.__download = get_download(self.__gid) if self.__download is None else self.__download.live
         if self.__download.followed_by_ids:
             self.__gid = self.__download.followed_by_ids[0]
             self.__download = get_download(self.__gid)
 
+    def __str__(self):
+        return f"Aria2Status(gid={self.gid()}, status={self.status()}, progress={self.progress()})"
+
     def progress(self):
+        self.__update()
         return self.__download.progress_string()
 
     def processed_bytes(self):
@@ -51,7 +54,7 @@ class Aria2Status:
 
     def eta(self):
         return self.__download.eta_string()
-        
+
     def listener(self):
         return self.__listener
 
@@ -97,7 +100,8 @@ class Aria2Status:
 
     async def cancel_download(self):
         self.__update()
-        await sync_to_async(self.__update)
+        if self.__download is None:
+            return
         if self.__download.seeder and self.seeding:
             LOGGER.info(f"Cancelling Seed: {self.name()}")
             await self.__listener.onUploadError(f"Seeding stopped with Ratio: {self.ratio()} and Time: {self.seeding_time()}")
