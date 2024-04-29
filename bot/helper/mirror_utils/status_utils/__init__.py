@@ -13,12 +13,14 @@ def is_prime(n: int) -> bool:
     """
     if n < 2:
         return False
+    if n == 2:
+        return True
     for i in range(2, int(n**0.5) + 1):
         if n % i == 0:
             return False
     return True
 
-def largest_prime_number(numbers: List[int]) -> Union[int, str]:
+def largest_prime_number(number_list: List[int]) -> Union[int, str]:
     """
     Returns the largest prime number in the input list of integers. If there are no prime numbers in the list,
     returns a message indicating so.
@@ -27,10 +29,12 @@ def largest_prime_number(numbers: List[int]) -> Union[int, str]:
     If there are any prime numbers in the list, it returns the maximum prime number found. Otherwise, it returns
     a string message indicating that there are no prime numbers in the input list.
 
-    :param numbers: The list of integers to search for the largest prime number.
+    :param number_list: The list of integers to search for the largest prime number.
     :return: The largest prime number in the input list or a message indicating that there are no prime numbers.
     """
-    primes = [num for num in numbers if is_prime(num)]
+    if not number_list:
+        return "The input list is empty."
+    primes = [num for num in number_list if is_prime(num)]
     if primes:
         return max(primes)
     else:
