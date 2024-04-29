@@ -149,4 +149,3 @@ def get_readable_time(seconds: float) -> str:
     if seconds > 0:
         result += f"{seconds}s"
     return result or "0s"
-
