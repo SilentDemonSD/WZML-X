@@ -2,7 +2,7 @@ import asyncio
 import os
 from typing import Any, Dict, List, Literal, Union
 
-import aiofiles.os as aio_os
+import aiofiles
 import aiohttp
 from aiohttp import ClientSession
 from contextlib import asynccontextmanager
@@ -27,7 +27,7 @@ class GoFileHTTP:
         method: Literal["GET"],
         url: str,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         ...
 
     @overload
@@ -35,9 +35,9 @@ class GoFileHTTP:
         self,
         method: Literal["PUT"],
         url: str,
-        json: Any,
+        json_data: Any,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         ...
 
     @overload
@@ -45,6 +45,21 @@ class GoFileHTTP:
         self,
         method: Literal["DELETE"],
         url: str,
-        json: Any,
+        json_data: Any,
         **kwargs: Any,
+    ) -> None:
+        ...
 
+    async def request(self, method: str, url: str, **kwargs) -> Union[dict[str, Any], None]:
+        headers = {"Authorization": f"Bearer {self.token}"} if self.token else {}
+        async with ClientSession() as session:
+            async with session.request(
+                method=method,
+                url=f"{self.api_url}{url}",
+                headers=headers,
+                **kwargs,
+            ) as response:
+                if method in ["PUT", "DELETE"]:
+                    return None
+                response_data = await response.json()
+                return response_data
