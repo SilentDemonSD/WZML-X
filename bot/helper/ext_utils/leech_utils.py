@@ -33,4 +33,7 @@ async def is_multi_streams(path: str) -> bool:
     audios = 0
     for stream in fields:
         if stream.get("codec_type") == "video":
-            videos += 
+            videos += 1
+        elif stream.get("codec_type") == "audio":
+            audios += 1
+    return videos > 1 or audios > 1
