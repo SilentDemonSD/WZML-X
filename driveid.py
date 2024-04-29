@@ -65,10 +65,10 @@ def main() -> None:
         "                                  go to the respective drive and copy the url from address bar\n")
 
     msg = read_file('list_drives.txt')
-    print(msg)
+    print(f"Current drives/folders in the list:\n{msg}")
 
-    if input("\n      DO YOU WISH TO KEEP THE ABOVE DETAILS THAT YOU PREVIOUSLY ADDED???? ENTER (y/n)\n      IF NOTHING SHOWS ENTER n: ").lower() not in ['y', 'yes']:
-        msg = ""
+    keep_details = input("\n      DO YOU WISH TO KEEP THE ABOVE DETAILS THAT YOU PREVIOUSLY ADDED???? ENTER (y/n)\n      IF NOTHING SHOWS ENTER n: ").lower() in ['y', 'yes']
+    msg = "" if keep_details else msg
 
     num = int(input("    How Many Drive/Folder You Likes To Add: "))
 
@@ -78,7 +78,3 @@ def main() -> None:
         if drive_details:
             msg += drive_details
 
-    write_file('list_drives.txt', msg)
-
-if __name__ == '__main__':
-    main()
