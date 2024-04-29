@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
-from typing import Union, AsyncContextManager, Callable, Coroutine, Any
+from typing import AsyncContextManager, Callable, Coroutine, Any
 
 import pyrogram.filters
 from pyrogram.enums import ChatType
 from pyrogram.errors import ChatAdminRequired
-
 from bot import user_data, OWNER_ID
 from bot.helper.telegram_helper.message_utils import chat_info
 
-
 class CustomFilters:
 
-    async def owner_filter(self, client: Any, message: pyrogram.types.Message) -> bool:
+    async def owner_filter(self, client: "pyrogram.Client", message: "pyrogram.types.Message") -> bool:
         """
         Check if the message is sent by the owner.
 
@@ -24,7 +22,7 @@ class CustomFilters:
 
     owner = pyrogram.filters.create(owner_filter)
 
-    async def authorized_user(self, client: Any, message: pyrogram.types.Message) -> bool:
+    async def authorized_user(self, client: "pyrogram.Client", message: "pyrogram.types.Message") -> bool:
         """
         Check if the user is authorized to use the command.
 
@@ -35,10 +33,7 @@ class CustomFilters:
         user = message.from_user or message.sender_chat
         user_id = user.id
 
-        if user_id == OWNER_ID or (
-            user_id in user_data
-            and (user_data[user_id].get('is_auth', False) or user_data[user_id].get('is_sudo', False))
-        ):
+        if user_id == OWNER_ID or user_id in user_data and user_data[user_id].get('is_auth', False):
             return True
 
         chat_id = message.chat.id
@@ -62,7 +57,7 @@ class CustomFilters:
 
     authorized = pyrogram.filters.create(authorized_user)
 
-    async def authorized_user_setting(self, client: Any, message: pyrogram.types.Message) -> bool:
+    async def authorized_user_setting(self, client: "pyrogram.Client", message: "pyrogram.types.Message") -> bool:
         """
         Check if the user is authorized to use the setting command.
 
@@ -75,7 +70,7 @@ class CustomFilters:
 
         if (
             user_id == OWNER_ID
-            or (user_id in user_data and (user_data[user_id].get('is_auth', False) or user_data[user_id].get('is_sudo', False)))
+            or (user_id in user_data and user_data[user_id].get('is_auth', False))
             or (chat_id in user_data and user_data[chat_id].get('is_auth', False))
         ):
             return True
@@ -86,7 +81,8 @@ class CustomFilters:
                     continue
 
                 try:
-                    if await chat_info(str(channel_id)).get_member(user_id):
+                    member = await chat_info(str(channel_id)).get_member(user_id)
+                    if member:
                         return True
                 except:
                     continue
@@ -95,7 +91,7 @@ class CustomFilters:
 
     authorized_user_setting = pyrogram.filters.create(authorized_user_setting)
 
-    async def sudo_user(self, client: Any, message: pyrogram.types.Message) -> bool:
+    async def sudo_user(self, client: "pyrogram.Client", message: "pyrogram.types.Message") -> bool:
         """
         Check if the user is a sudo user.
 
@@ -109,7 +105,7 @@ class CustomFilters:
 
     sudo = pyrogram.filters.create(sudo_user)
 
-    async def blacklist_user(self, client: Any, message: pyrogram.types.Message) -> bool:
+    async def blacklist_user(self, client: "pyrogram.Client", message: "pyrogram.types.Message") -> bool:
         """
         Check if the user is blacklisted.
 
