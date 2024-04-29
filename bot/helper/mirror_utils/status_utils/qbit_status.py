@@ -6,6 +6,9 @@ from bot.helper.ext_utils.bot_utils import EngineStatus, MirrorStatus, get_reada
 from bot.qbittorrentclient import QbittorrentClient
 
 class QbittorrentStatus:
+    """
+    A class to represent the status of a torrent in a Qbittorrent client.
+    """
     __slots__ = (
         "__client",
         "__info",
@@ -18,7 +21,7 @@ class QbittorrentStatus:
     def __init__(
         self,
         client: QbittorrentClient,
-        listener: QbittorrentClient,  # Replace typing.Any with the actual type when known
+        listener: QbittorrentClient,  # type: QbittorrentClient
         seeding: bool = False,
         queued: bool = False,
     ) -> None:
@@ -32,10 +35,23 @@ class QbittorrentStatus:
         """
         self.__client = client
         self.__listener = listener
-        self.__info = self.__client.torrents_info(f'{self.__listener.uid}')
         self.queued = queued
         self.seeding = seeding
-        self.message = listener.message
+        self.__post_init__()
+
+    def __post_init__(self) -> None:
+        """
+        Update the __info variable after the object is initialized.
+        """
+        self.__info = self.__client.torrents_info(f'{self.__listener.uid}')
+        self.message = self.__listener.message
+
+    def __del__(self) -> None:
+        """
+        Remove the torrent from the client when the object is garbage collected.
+        """
+        if not self.seeding:
+            asyncio.create_task(self.__client.torrents_delete(torrent_hashes=self.__info.hash, delete_files=True))
 
     @property
     def progress(self) -> str:
