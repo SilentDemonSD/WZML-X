@@ -2,6 +2,7 @@
 import asyncio
 import os
 import re
+import time
 from urllib.parse import urlparse
 
 import aiofiles
@@ -22,6 +23,7 @@ from bot.helper.telegram_helper.button_build import ButtonMaker
 async def picture_add(_, message):
     editable = await sendMessage(message, "Fetching Input...")
     args = message.command[1:]
+    msg_text = ""
     if len(args) > 0:
         msg_text = args[0]
     elif message.reply_to_message:
@@ -46,7 +48,7 @@ async def picture_add(_, message):
         return
 
     try:
-        photo_dir = "photo_{}.jpg".format(int(time.time()))
+        photo_dir = f"photo_{int(time.time())}.jpg"
         await aiofiles.open(photo_dir, 'wb').write(img_data)
         await editMessage(editable, "Uploading image to graph.org...")
         tg_url = await upload_image(photo_dir)
