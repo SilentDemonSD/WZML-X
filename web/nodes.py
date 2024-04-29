@@ -2,6 +2,7 @@ from anytree import NodeMixin
 from re import findall as re_findall
 from os import environ
 
+# Download directory environment variable or default value
 DOWNLOAD_DIR = environ.get('DOWNLOAD_DIR', '')
 if len(DOWNLOAD_DIR) == 0:
     DOWNLOAD_DIR = '/usr/src/app/downloads/'
@@ -12,8 +13,11 @@ elif not DOWNLOAD_DIR.endswith("/"):
 class TorNode(NodeMixin):
     def __init__(self, name, is_folder=False, is_file=False, parent=None, size=None, priority=None, file_id=None, progress=None):
         super().__init__()
+        # Name of the node
         self.name = name
+        # Flag indicating if the node is a folder
         self.is_folder = is_folder
+        # Flag indicating if the node is a file
         self.is_file = is_file
 
         if parent is not None:
@@ -29,9 +33,11 @@ class TorNode(NodeMixin):
 
 
 def qb_get_folders(path):
+    # Split the path into folders
     return path.split("/")
 
 def get_folders(path):
+    # Find all folders in the path
     fs = re_findall(f'{DOWNLOAD_DIR}[0-9]+/(.+)', path)[0]
     return fs.split('/')
 
@@ -43,11 +49,13 @@ def make_tree(res, aria2=False):
             if len(folders) > 1:
                 previous_node = parent
                 for j in range(len(folders)-1):
+                    # Find the current node or create a new one
                     current_node = next((k for k in previous_node.children if k.name == folders[j]), None)
                     if current_node is None:
                         previous_node = TorNode(folders[j], parent=previous_node, is_folder=True)
                     else:
                         previous_node = current_node
+                # Create a new file node
                 TorNode(folders[-1], is_file=True, parent=previous_node, size=i.size, priority=i.priority, \
                         file_id=i.id, progress=round(i.progress*100, 5))
             else:
@@ -62,11 +70,13 @@ def make_tree(res, aria2=False):
             if len(folders) > 1:
                 previous_node = parent
                 for j in range(len(folders)-1):
+                    # Find the current node or create a new one
                     current_node = next((k for k in previous_node.children if k.name == folders[j]), None)
                     if current_node is None:
                         previous_node = TorNode(folders[j], parent=previous_node, is_folder=True)
                     else:
                         previous_node = current_node
+                # Create a new file node
                 TorNode(folders[-1], is_file=True, parent=previous_node, size=i['length'], priority=priority, \
                         file_id=i['index'], progress=round((int(i['completedLength'])/int(i['length']))*100, 5))
             else:
