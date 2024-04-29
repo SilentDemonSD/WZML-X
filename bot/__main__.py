@@ -55,59 +55,75 @@ class StatsMiddleware(BaseMiddleware):
 
 # Initialize database
 try:
-    db = ...  # Initialize the database here
+    import database_module # replace with the actual database initialization module
 except Exception as e:
     LOGGER.error(f"Failed to initialize database: {e}")
     sys.exit(1)
 
+db = database_module.Database() # replace with the actual database instance
+
 # Initialize bot theme
 try:
-    theme = ...  # Initialize the bot theme here
+    from theme_module import Theme # replace with the actual bot theme initialization module
 except Exception as e:
     LOGGER.error(f"Failed to initialize bot theme: {e}")
     sys.exit(1)
 
+theme = Theme()
+
 # Initialize bot commands
 try:
-    bot_commands = ...  # Initialize the bot commands here
+    from command_module import Commands # replace with the actual bot commands initialization module
 except Exception as e:
     LOGGER.error(f"Failed to initialize bot commands: {e}")
     sys.exit(1)
 
+bot_commands = Commands()
+
 # Initialize button builder
 try:
-    button_builder = ...  # Initialize the button builder here
+    from button_builder_module import ButtonBuilder # replace with the actual button builder initialization module
 except Exception as e:
     LOGGER.error(f"Failed to initialize button builder: {e}")
     sys.exit(1)
 
+button_builder = ButtonBuilder()
+
 # Initialize message utils
 try:
-    message_utils = ...  # Initialize the message utils here
+    from message_utils_module import MessageUtils # replace with the actual message utils initialization module
 except Exception as e:
     LOGGER.error(f"Failed to initialize message utils: {e}")
     sys.exit(1)
 
+message_utils = MessageUtils()
+
 # Initialize telegram helper
 try:
-    telegram_helper = ...  # Initialize the telegram helper here
+    from telegram_helper_module import TelegramHelper # replace with the actual telegram helper initialization module
 except Exception as e:
     LOGGER.error(f"Failed to initialize telegram helper: {e}")
     sys.exit(1)
 
+telegram_helper = TelegramHelper()
+
 # Initialize external utils
 try:
-    ext_utils = ...  # Initialize the external utils here
+    from external_utils_module import ExternalUtils # replace with the actual external utils initialization module
 except Exception as e:
     LOGGER.error(f"Failed to initialize external utils: {e}")
     sys.exit(1)
 
+ext_utils = ExternalUtils()
+
 # Initialize aria2 listener
 try:
-    aria2_listener = ...  # Initialize the aria2 listener here
+    from aria2_listener_module import Aria2Listener # replace with the actual aria2 listener initialization module
 except Exception as e:
     LOGGER.error(f"Failed to initialize aria2 listener: {e}")
     sys.exit(1)
+
+aria2_listener = Aria2Listener()
 
 # Initialize config dictionary
 config_dict: dict = {
