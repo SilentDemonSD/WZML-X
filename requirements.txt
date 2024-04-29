@@ -1,44 +1,22 @@
-aiohttp
-aiofiles
-aioshutil
+# Create a new virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Install the required libraries
+pip install aiohttp aiofiles aioshutil anytree==2.8.0 apscheduler aria2p asyncio beautifulsoup4 cinemagoer cloudscraper cryptography dnspython feedparser flask gevent google-api-python-client google-auth-httplib2 google-auth-oauthlib gunicorn git+https://github.com/zevtyardt/lk21.git httpx langcodes[data] lxml motor mutagen markdown natsort pillow psutil pybase64 pycountry pymongo pyrogram python-dotenv python-magic qbittorrent-api requests speedtest-cli telegraph tenacity tgcrypto uvloop xattr yt-dlp
+
+# Generate the list of installed libraries
+pip freeze
+
+
+aiohttp==3.7.4
+aiofiles==22.1.0
+aioshutil==2.1.0
 anytree==2.8.0
-apscheduler
-aria2p
-asyncio
-beautifulsoup4
-cinemagoer
-cloudscraper
-cryptography
-dnspython
-feedparser
-flask
-gevent
-google-api-python-client
-google-auth-httplib2
-google-auth-oauthlib
-gunicorn
-git+https://github.com/zevtyardt/lk21.git
-httpx
-langcodes[data]
-lxml
-motor
-mutagen
-markdown
-natsort
-pillow
-psutil
-pybase64
-pycountry
-pymongo
-pyrogram
-python-dotenv
-python-magic
-qbittorrent-api
-requests
-speedtest-cli
-telegraph
-tenacity
-tgcrypto
-uvloop
-xattr
-yt-dlp
+apscheduler==3.9.1
+aria2p==0.15.1
+async-timeout==4.0.2
+attrs==22.1.0
+beautifulsoup4==4.11.1
+blinker==1.4
+...
