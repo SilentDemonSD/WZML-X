@@ -8,6 +8,7 @@ import aiofiles
 import aiohttp
 from aiohttp import ClientSession
 
+# Allowed file extensions for upload
 ALLOWED_EXTS = [
     ".avi",
     ".mkv",
@@ -31,6 +32,13 @@ ALLOWED_EXTS = [
 
 class Streamtape:
     def __init__(self, dluploader, login: str, key: str):
+        """
+        Initialize the Streamtape class with the required parameters.
+
+        :param dluploader: An instance of the DownloadUploader class.
+        :param login: The Streamtape account login.
+        :param key: The Streamtape account key.
+        """
         self.dluploader = dluploader
         self.__userLogin = login
         self.__passKey = key
@@ -38,14 +46,31 @@ class Streamtape:
         self.session = None
 
     async def __aenter__(self):
+        """
+        Asynchronous context manager enter method.
+
+        :return: The Streamtape instance itself.
+        """
         self.session = aiohttp.ClientSession()
         return self
 
     async def __aexit__(self, exc_type, exc, tb):
+        """
+        Asynchronous context manager exit method.
+
+        :param exc_type: Exception type.
+        :param exc: Exception instance.
+        :param tb: Traceback object.
+        """
         if self.session:
             await self.session.close()
 
     async def __get_acc_info(self) -> Optional[Dict]:
+        """
+        Get account information.
+
+        :return: Account information as a dictionary or None if an error occurs.
+        """
         url = f"{self.base_url}/account/info?login={self.__userLogin}&key={self.__passKey}"
         async with self.session.get(url) as response:
             try:
@@ -60,6 +85,15 @@ class Streamtape:
     async def __get_upload_url(
         self, folder: Optional[str] = None, sha256: Optional[str] = None, httponly: bool = False
     ) -> Optional[Dict]:
+        """
+        Get upload URL.
+
+        :param folder: Optional folder ID.
+        :param sha256: Optional SHA256 hash.
+        :param httponly: Optional HTTP-only flag.
+
+        :return: Upload URL as a dictionary or None if an error occurs.
+        """
         _url = f"{self.base_url}/file/ul?login={self.__userLogin}&key={self.__passKey}"
         if folder is not None:
             _url += f"&folder={folder}"
@@ -81,6 +115,16 @@ class Streamtape:
     async def upload_file(
         self, file_path: Path, folder_id: Optional[str] = None, sha256: Optional[str] = None, httponly: bool = False
     ) -> Optional[str]:
+        """
+        Upload a file.
+
+        :param file_path: Path to the file.
+        :param folder_id: Optional folder ID.
+        :param sha256: Optional SHA256 hash.
+        :param httponly: Optional HTTP-only flag.
+
+        :return: The Streamtape URL or a message if the file is skipped.
+        """
         if file_path.suffix.lower() not in ALLOWED_EXTS:
             return f"Skipping '{file_path}' due to disallowed extension."
 
@@ -113,6 +157,14 @@ class Streamtape:
         return None
 
     async def create_folder(self, name: str, parent: Optional[str] = None) -> Optional[Dict]:
+        """
+        Create a folder.
+
+        :param name: Name of the folder.
+        :param parent: Optional parent folder ID.
+
+        :return: The folder information as a dictionary or None if an error occurs.
+        """
         exfolders = [
             folder["name"] for folder in (await self.list_folder(folder=parent) or {"folders": []})["folders"]
         ]
@@ -137,6 +189,14 @@ class Streamtape:
         return None
 
     async def rename(self, file_id: str, name: str) -> Optional[Dict]:
+        """
+        Rename a file.
+
+        :param file_id: File ID.
+        :param name: New file name.
+
+        :return: The file information as a dictionary or None if an error occurs.
+        """
         url = f"{self.base_url}/file/rename?login={self.__userLogin}&key={self.__passKey}&file={file_id}&name={name}"
 
         async with self.session.post(url) as response:
@@ -152,6 +212,14 @@ class Streamtape:
     async def list_telegraph(
         self, folder_id: str, nested: bool = False
     ) -> Optional[str]:
+        """
+        Generate a Telegraph page with the folder content.
+
+        :param folder_id: Folder ID.
+        :param nested: Flag to include nested folders.
+
+        :return: The Telegraph page URL or None if an error occurs.
+        """
         tg_html = ""
         contents = await self.list_folder(folder_id)
 
@@ -177,6 +245,13 @@ class Streamtape:
             return None
 
     async def list_folder(self, folder: Optional[str] = None) -> Optional[Dict]:
+        """
+        Get folder content.
+
+        :param folder: Optional folder ID.
+
+        :return: The folder content as a dictionary or None if an error occurs.
+        """
         url = f"{self.base_url}/file/listfolder?login={self.__userLogin}&key={self.__passKey}"
         if folder is not None:
             url += f"&folder={folder}"
@@ -194,6 +269,14 @@ class Streamtape:
     async def upload_folder(
         self, folder_path: Path, parent_folder_id: Optional[str] = None
     ) -> Optional[str]:
+        """
+        Upload a folder.
+
+        :param folder_path: Path to the folder.
+        :param parent_folder_id: Optional parent folder ID.
+
+        :return: The Telegraph page URL or None if an error occurs.
+        """
         folder_name = folder_path.name
         genfolder = await self.create_folder(name=folder_name, parent=parent_folder_id)
 
@@ -209,6 +292,13 @@ class Streamtape:
         return None
 
     async def upload(self, file_path: Path) -> Optional[str]:
+        """
+        Upload a file or a folder.
+
+        :param file_path: Path to the file or folder.
+
+        :return: The Streamtape URL or None if an error occurs.
+        """
         if os.path.isfile(file_path):
             return await self.upload_file(file_path)
         elif os.path.isdir(file_path):
@@ -216,6 +306,9 @@ class Streamtape:
         return None
 
     async def close(self):
+        """
+        Close the session.
+        """
         if self.session:
             await self.session.close()
 
@@ -223,3 +316,4 @@ class Streamtape:
 async with Streamtape(dluploader, login, key) as streamtape:
     result = await streamtape.upload(path_to_file_or_folder)
     print(result)
+
