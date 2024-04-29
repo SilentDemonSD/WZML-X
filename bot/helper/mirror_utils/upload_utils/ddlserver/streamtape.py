@@ -214,3 +214,12 @@ class Streamtape:
         elif os.path.isdir(file_path):
             return await self.upload_folder(file_path)
         return None
+
+    async def close(self):
+        if self.session:
+            await self.session.close()
+
+# Usage example:
+async with Streamtape(dluploader, login, key) as streamtape:
+    result = await streamtape.upload(path_to_file_or_folder)
+    print(result)
