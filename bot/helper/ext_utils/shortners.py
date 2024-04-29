@@ -33,25 +33,15 @@ def short_url(long_url: str, attempt: int = 0) -> Optional[str]:
     scraper = create_scraper()  # Creates a request function using cloudscraper
 
     try:
+        url = f"https://api.{shortener_domain}/v1/data/url" if shortener_domain == "shorte.st" else f'https://{shortener_domain}/api'
+        headers = {"public-api-token": shortener_api_key} if shortener_domain == "shorte.st" else {"Authorization": f"Bearer {shortener_api_key}"}
+        data = {"urlToShorten": quote(long_url)} if shortener_domain == "shorte.st" else {"long_url": long_url}
+
+        response = scraper.request("POST", url, headers=headers, data=data)
+        response.raise_for_status()  # Ensure the request was successful
+
         if shortener_domain in ["shorte.st", "linkvertise.com", "bit.ly", "ouo.io", "cutt.ly"]:
-            method = "PUT" if shortener_domain == "shorte.st" else "POST"
-            url = f"https://api.{shortener_domain}/v1/data/url" if shortener_domain == "shorte.st" else f'https://{shortener_domain}/api'
-            headers = {"public-api-token": shortener_api_key} if shortener_domain == "shorte.st" else {"Authorization": f"Bearer {shortener_api_key}"}
-            data = {"urlToShorten": quote(long_url)} if shortener_domain == "shorte.st" else {"long_url": long_url}
-
-            response = scraper.request(method, url, headers=headers, data=data)
-            response.raise_for_status()  # Ensure the request was successful
-
-            if shortener_domain == "shorte.st":
-                return response.json()["shortenedUrl"]
-            elif shortener_domain == "linkvertise.com":
-                return random.choice(response.json()["links"])
-            elif shortener_domain == "bit.ly":
-                return response.json()["link"]
-            elif shortener_domain == "ouo.io":
-                return response.text
-            elif shortener_domain == "cutt.ly":
-                return response.json()['url']['shortLink']
+            return handle_response(response)
 
         else:
             url = f'https://{shortener_domain}/api?api={shortener_api_key}&url={quote(long_url)}'
@@ -83,3 +73,17 @@ def short_url(long_url: str, attempt: int = 0) -> Optional[str]:
         time.sleep(1)
         attempt += 1
         return short_url(long_url, attempt)
+
+def handle_response(response: requests.Response) -> Optional[str]:
+    if shortener_domain == "shorte.st":
+        return response.json()["shortenedUrl"]
+    elif shortener_domain == "linkvertise.com":
+        return random.choice(response.json()["links"])
+    elif shortener_domain == "bit.ly":
+        return response.json()["link"]
+    elif shortener_domain == "ouo.io":
+        return response.text
+    elif shortener_domain == "cutt.ly":
+        return response.json()['url']['shortLink']
+    else:
+        return None
