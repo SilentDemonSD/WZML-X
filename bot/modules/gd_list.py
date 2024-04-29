@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+from typing import List, Tuple, Dict, Union
+
+import asyncio
 from math import ceil
 from random import choice
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
@@ -14,20 +17,24 @@ from bot.helper.ext_utils.bot_utils import sync_to_async, new_task, get_telegrap
 from bot.helper.themes import BotTheme
 
 
-async def list_buttons(user_id, isRecursive=True):
+def get_list_buttons(user_id: int, is_recursive: bool = True) -> List[List[str]]:
     buttons = ButtonMaker()
-    buttons.ibutton("Only Folders", f"list_types {user_id} folders {isRecursive}")
-    buttons.ibutton("Only Files", f"list_types {user_id} files {isRecursive}")
-    buttons.ibutton("Both", f"list_types {user_id} both {isRecursive}")
-    buttons.ibutton(f"{'✅️' if isRecursive else ''} Recursive", f"list_types {user_id} rec {isRecursive}")
+    buttons.ibutton("Only Folders", f"list_types {user_id} folders {is_recursive}")
+    buttons.ibutton("Only Files", f"list_types {user_id} files {is_recursive}")
+    buttons.ibutton("Both", f"list_types {user_id} both {is_recursive}")
+    buttons.ibutton(f"{'✅️' if is_recursive else ''} Recursive", f"list_types {user_id} rec {is_recursive}")
     buttons.ibutton("Cancel", f"list_types {user_id} cancel")
     return buttons.build_menu(2)
 
 
-async def _list_drive(key, message, user_id, item_type, isRecursive):
+async def list_buttons(user_id: int, is_recursive: bool = True) -> List[List[str]]:
+    return get_list_buttons(user_id, is_recursive)
+
+
+async def _list_drive(key: str, message: telegram.Message, user_id: int, item_type: str, is_recursive: bool) -> None:
     LOGGER.info(f"GDrive List: {key}")
     gdrive = GoogleDriveHelper()
-    telegraph_content, contents_no, tglist = await sync_to_async(gdrive.drive_list, key, isRecursive=isRecursive, itemType=item_type, userId=user_id, msgId=message.reply_to_message.id)
+    telegraph_content, contents_no, tglist = await sync_to_async(gdrive.drive_list, key, is_recursive=is_recursive, itemType=item_type, userId=user_id, msgId=message.reply_to_message.id)
     if telegraph_content:
         if tglist[0]:
             msg, button = await get_tg_list(telegraph_content, contents_no, tglist)
@@ -44,7 +51,7 @@ async def _list_drive(key, message, user_id, item_type, isRecursive):
 
 
 @new_task
-async def select_type(_, query):
+async def select_type(_, query: telegram.CallbackQuery) -> None:
     user_id = query.from_user.id
     message = query.message
     key = message.reply_to_message.text.split(maxsplit=1)[1].strip()
@@ -53,21 +60,21 @@ async def select_type(_, query):
         return await query.answer(text="Not Yours!", show_alert=True)
     elif data[2] == 'rec':
         await query.answer()
-        isRecursive = not bool(eval(data[3]))
-        buttons = await list_buttons(user_id, isRecursive)
+        is_recursive = not bool(eval(data[3]))
+        buttons = await list_buttons(user_id, is_recursive)
         return await editMessage(message, '<b>Choose drive list options:</b>', buttons)
     elif data[2] == 'cancel':
         await query.answer()
         return await editMessage(message, "<b>List has been canceled!</b>")
     await query.answer()
     item_type = data[2]
-    isRecursive = eval(data[3])
+    is_recursive = eval(data[3])
     await editMessage(message, BotTheme('LIST_SEARCHING', NAME=key))
-    await _list_drive(key, message, user_id, item_type, isRecursive)
+    await _list_drive(key, message, user_id, item_type, is_recursive)
 
 
 @new_task
-async def choose_list(_, query):
+async def choose_list(_, query: telegram.CallbackQuery) -> None:
     user_id = query.from_user.id
     message = query.message
     data = query.data.split()
@@ -115,7 +122,7 @@ async def choose_list(_, query):
             await deleteMessage(reply_to)
          
 
-async def drive_list(_, message):
+async def drive_list(_, message: telegram.Message) -> None:
     args = message.text.split() if message.text else ['/cmd']
     if len(args) == 1:
         return await sendMessage(message, '<i>Send a search key along with command</i>')
