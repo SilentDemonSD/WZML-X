@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-from typing import List, Tuple, Union
-
 import asyncio
-from random import choice
+import os
+
+import pyrogram
+from pyrogram.errors import UserIsBlocked, MessageNotModified, ChatAdminRequired
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.filters import command, regex
-from pyrogram.types import Message, CallbackQuery
+from pyrogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 
 from bot import LOGGER, bot, config_dict
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
@@ -16,7 +17,7 @@ from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.bot_utils import sync_to_async, new_task, get_telegraph_list, checking_access
 from bot.helper.themes import BotTheme
 
-async def list_buttons(user_id: int, is_recursive: bool = True) -> List[List[str]]:
+async def list_buttons(user_id: int, is_recursive: bool = True) -> InlineKeyboardMarkup:
     buttons = ButtonMaker()
     buttons.ibutton("Only Folders", f"list_types {user_id} folders {is_recursive}")
     buttons.ibutton("Only Files", f"list_types {user_id} files {is_recursive}")
