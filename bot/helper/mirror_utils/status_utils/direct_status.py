@@ -11,7 +11,7 @@ class DirectStatus:
     def __init__(
         self,
         obj,
-        gid: str,
+        gid,
         listener,
         upload_details,
     ):
