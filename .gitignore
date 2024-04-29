@@ -1,21 +1,24 @@
-config.env
-*.pyc
-data*
-.vscode
-.idea
-*.json
-*.pickle
-.netrc
-log.txt
-accounts/*
-Thumbnails/*
-MediaInfo/*
-Images/*
-rclone/*
-list_drives.txt
-cookies.txt
-downloads
-bot.session
-user.session
-terabox.txt
-rclone.conf
+# A list of files and directories to be ignored by version control systems
+.gitignore = [
+    'config.env',
+    '*.pyc',
+    'data*',
+    '.vscode',
+    '.idea',
+    '*.json',
+    '*.pickle',
+    '.netrc',
+    'log.txt',
+    'accounts/*',
+    'Thumbnails/*',
+    'MediaInfo/*',
+    'Images/*',
+    'rclone/*',
+    'list_drives.txt',
+    'cookies.txt',
+    'downloads/',
+    'bot.session',
+    'user.session',
+    'terabox.txt',
+    'rclone.conf'
+]
