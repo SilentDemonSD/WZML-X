@@ -17,7 +17,7 @@ from bot.helper.mirror_utils.rclone_utils.transfer import RcloneTransferHelper
 logger = logging.getLogger(__name__)
 
 async def add_rclone_download(
-    rc_path: str, config_path: str, path: str, name: str, listener
+    rc_path: str, config_path: str, path: str, name: str, listener: Any
 ) -> Coroutine[Any, Any, None]:
     """
     Adds a new rclone download to the download queue.
@@ -29,26 +29,27 @@ async def add_rclone_download(
     :param listener: The listener object for the download
     :return: None
     """
-    remote, rc_path = rc_path.split(':', 1)
-    rc_path = rc_path.strip('/')
-
-    cmd1 = ['rclone', 'lsjson', '--fast-list', '--stat', '--no-mimetype',
-            '--no-modtime', '--config', config_path, f'{remote}:{rc_path}']
-    cmd2 = ['rclone', 'size', '--fast-list', '--json',
-            '--config', config_path, f'{remote}:{rc_path}']
-    res1, res2 = await asyncio.gather(cmd_exec(cmd1), cmd_exec(cmd2))
-    if res1[2] != res2[2] != 0:
-        if res1[2] != -9:
-            err = res1[1] or res2[1]
-            msg = f'Error: While getting rclone stat/size. Path: {remote}:{rc_path}. Stderr: {err[:4000]}'
-            await sendMessage(listener.message, msg)
-        return
     try:
+        remote, rc_path = rc_path.split(':', 1)
+        rc_path = rc_path.strip('/')
+
+        cmd1 = ['rclone', 'lsjson', '--fast-list', '--stat', '--no-mimetype',
+                '--no-modtime', '--config', config_path, f'{remote}:{rc_path}']
+        cmd2 = ['rclone', 'size', '--fast-list', '--json',
+                '--config', config_path, f'{remote}:{rc_path}']
+        res1, res2 = await asyncio.gather(cmd_exec(*cmd1), cmd_exec(*cmd2))
+        if res1[2] != res2[2] != 0:
+            if res1[2] != -9:
+                err = res1[1] or res2[1]
+                msg = f'Error: While getting rclone stat/size. Path: {remote}:{rc_path}. Stderr: {err[:4000]}'
+                await sendMessage(listener.message, msg)
+            return
         rstat = json.loads(res1[0])
         rsize = json.loads(res2[0])
     except Exception as err:
-        await sendMessage(listener.message, f'RcloneDownload JsonLoad: {err}')
+        await sendMessage(listener.message, f'RcloneDownload Error: {err}')
         return
+
     if rstat['IsDir']:
         if not name:
             name = rc_path.rsplit('/', 1)[-1] if rc_path else remote
@@ -78,7 +79,12 @@ async def add_rclone_download(
     else:
         from_queue = False
 
-    RCTransfer = RcloneTransferHelper(listener, name)
+    try:
+        RCTransfer = RcloneTransferHelper(listener, name, rc_path)
+    except Exception as err:
+        await sendMessage(listener.message, f'RcloneTransferHelper Error: {err}')
+        return
+
     async with download_dict_lock:
         download_dict[listener.uid] = RcloneStatus(
             RCTransfer, listener.message, gid, 'dl', listener.upload_details)
@@ -92,4 +98,7 @@ async def add_rclone_download(
         await sendStatusMessage(listener.message)
         logger.info(f"Download with rclone: {rc_path}")
 
-    await RCTransfer.download(remote, rc_path, config_path, path)
+    try:
+        await RCTransfer.download(remote, rc_path, config_path, path)
+    except Exception as err:
+        await sendMessage(listener.message, f'RcloneDownload Error: {err}')
