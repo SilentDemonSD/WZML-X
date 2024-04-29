@@ -3,6 +3,7 @@ import asyncio
 import configparser
 import json
 import os
+import sys
 import time
 from functools import partial
 from pathlib import Path
@@ -15,21 +16,9 @@ from pyrogram.handlers import CallbackQueryHandler
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 # Import helper modules
-from bot import LOGGER, config_dict
-from bot.helper.ext_utils.db_handler import DbManger
-from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.telegram_helper.message_utils import (
-    delete_message,
-    send_message,
-    edit_message,
-)
-from bot.helper.ext_utils.bot_utils import (
-    cmd_exec,
-    new_thread,
-    get_readable_file_size,
-    new_task,
-    get_readable_time,
-)
+import bot.helper.ext_utils.db_handler as DbManger
+import bot.helper.telegram_helper.button_build as ButtonMaker
+import bot.helper.telegram_helper.message_utils as message_utils
 
 # Set the limit for the number of list items
 LIST_LIMIT = 6
@@ -69,6 +58,55 @@ class RcloneList:
         self.iter_start = 0  # Iterator start index
         self.page_step = 1  # Page step
 
+    def __check_rclone(self) -> bool:
+        """
+        Check if rclone is installed.
+
+        :return: True if rclone is installed, False otherwise
+        """
+        try:
+            cmd = ["rclone", "version"]
+            res, err, code = asyncio.get_event_loop().run_in_executor(None, cmd_exec, cmd)
+            if code != 0:
+                message_utils.send_message(
+                    self.__message, "Rclone is not installed. Please install rclone first."
+                )
+                return False
+        except FileNotFoundError:
+            message_utils.send_message(
+                self.__message, "Rclone is not installed. Please install rclone first."
+            )
+            return False
+        return True
+
+    def __check_rclone_config(self) -> bool:
+        """
+        Check if rclone config file exists.
+
+        :return: True if rclone config file exists, False otherwise
+        """
+        if not Path(self.user_rcc_path).exists():
+            message_utils.send_message(
+                self.__message, "Rclone config file not found. Please create a config file first."
+            )
+            return False
+        return True
+
+    def __check_remote(self) -> bool:
+        """
+        Check if remote exists.
+
+        :return: True if remote exists, False otherwise
+        """
+        cmd = ["rclone", "lsjson", "--config", self.config_path, f"{self.remote}"]
+        res, err, code = asyncio.get_event_loop().run_in_executor(None, cmd_exec, cmd)
+        if code != 0:
+            message_utils.send_message(
+                self.__message, f"Remote '{self.remote}' not found. Please create a remote first."
+            )
+            return False
+        return True
+
     async def __event_handler(self) -> None:
         """
         Handle the event when the user interacts with the inline buttons.
@@ -100,9 +138,11 @@ class RcloneList:
         """
         if not self.is_cancelled:
             if self.__reply_to is None:
-                self.__reply_to = await send_message(self.__message, msg, button)
+                self.__reply_to = await message_utils.send_message(
+                    self.__message, msg, button
+                )
             else:
-                await edit_message(self.__reply_to, msg, button)
+                await message_utils.edit_message(self.__reply_to, msg, button)
 
     async def get_path_buttons(self) -> None:
         """
@@ -117,7 +157,7 @@ class RcloneList:
         elif self.iter_start < 0 or self.iter_start > items_no:
             self.iter_start = LIST_LIMIT * (pages - 1)
         page = (self.iter_start / LIST_LIMIT) + 1 if self.iter_start != 0 else 1
-        buttons = ButtonMaker()
+        buttons = ButtonMaker.ButtonMaker()
         for index, idict in enumerate(
             self.path_list[self.iter_start : LIST_LIMIT + self.iter_start]
         ):
@@ -174,6 +214,12 @@ class RcloneList:
             self.item_type = itype
         elif self.list_status == "rcu":
             self.item_type = "--dirs-only"
+        if not self.__check_rclone():
+            return
+        if not self.__check_rclone_config():
+            return
+        if not self.__check_remote():
+            return
         cmd = [
             "rclone",
             "lsjson",
@@ -187,7 +233,7 @@ class RcloneList:
         ]
         if self.is_cancelled:
             return
-        res, err, code = await cmd_exec(cmd)
+        res, err, code = await asyncio.get_event_loop().run_in_executor(None, cmd_exec, cmd)
         if code not in [0, -9]:
             LOGGER.error(
                 f'While rclone listing. Path: {self.remote}{self.path}. Stderr: {err}'
@@ -213,10 +259,14 @@ class RcloneList:
         await self.get_path_buttons()
 
     async def list_remotes(self) -> None:
+        if not self.__check_rclone():
+            return
+        if not self.__check_rclone_config():
+            return
         cmd = ["rclone", "listremotes", "--config", self.config_path]
         if self.is_cancelled:
             return
-        res, err, code = await cmd_exec(cmd)
+        res, err, code = await asyncio.get_event_loop().run_in_executor(None, cmd_exec, cmd)
         if code not in [0, -9]:
             LOGGER.error(f'While rclone listing remotes. Stderr: {err}')
             self.remote = err[:4000]
@@ -233,4 +283,3 @@ class RcloneList:
         self.path = ""
         self.path_list = result
         await self.get_path_buttons()
-
