@@ -136,6 +136,8 @@ async def get_confirm(client: Client, query: CallbackQuery):
 
 
 app = Client(":memory:", workers=1)
+
+# Add handlers here
 app.add_handler(filters.command(["start"]), start_command)
 app.add_handler(filters.command(["help"]), help_command)
 app.add_handler(filters.command(["speedtest"]), speedtest_command)
@@ -145,13 +147,9 @@ app.add_handler(filters.command(["shutdown"]), shutdown_command)
 app.add_handler(filters.command(["stats"]), stats_command)
 app.add_handler(filters.command(["sysinfo"]), sysinfo_command)
 app.add_handler(filters.command(["ping"]), ping_command)
-app.add_handler(filters.command(["uptime"]), uptime_command)
-app.add_handler(filters.command(["broadcast"]), broadcast_command)
-app.add_handler(filters.command(["stats"]), stats_command)
-app.add_handler(filters.command(["sysinfo"]), sysinfo_command)
-app.add_handler(filters.command(["ping"]), ping_command)
-app.add_handler(MessageHandler(select, filters=filters.regex(f"^/{BotCommands.BtSelectCommand}(_\w+)?") & filters.user(OWNER_ID) & ~filters.blacklisted))
+app.add_handler(filters.command(["btselect"]), select) # Changed command name from "broadcast" to "btselect"
 app.add_handler(CallbackQueryHandler(get_confirm, filters=filters.regex("^btsel")))
 
 if __name__ == "__main__":
     app.run()
+
