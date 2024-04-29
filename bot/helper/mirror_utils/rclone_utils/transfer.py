@@ -6,10 +6,9 @@ from typing import List, Tuple, Dict, Union, Any, Callable, Coroutine
 
 # Importing required modules using asyncio
 from asyncio import create_subprocess_exec, gather, PIPE
-from asyncio.subprocess import Process
 
 # Importing required modules using configparser
-from configparser import ConfigParser
+import configparser
 
 # Importing required modules using aiofiles
 from aiofiles import open as aiopen
@@ -33,11 +32,16 @@ async def run_command(command: List[str]) -> Tuple[int, str]:
     :param command: List of command arguments
     :return: Tuple of exit code and output
     """
-    process: Process = await create_subprocess_exec(*command, stdout=PIPE, stderr=PIPE)
+    process = await create_subprocess_exec(*command, stdout=PIPE, stderr=PIPE)
     stdout, stderr = await process.communicate()
     return process.returncode, f"{stdout.decode()}\n{stderr.decode()}"
 
 
 async def read_file(file_path: str) -> str:
     """
-
+    Reads the contents of a file asynchronously.
+    :param file_path: Path of the file
+    :return: Contents of the file
+    """
+    async with aiopen(file_path, mode="r") as file:
+        return await file.read()
