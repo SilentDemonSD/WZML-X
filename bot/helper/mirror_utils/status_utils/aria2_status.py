@@ -23,6 +23,7 @@ def memoized(maxsize=128):
 
     return decorator
 
+@memoized
 def get_download_by_gid(gid: str) -> aioaria2rpc.Download:
     """
     Get the download object by GID.
@@ -45,7 +46,7 @@ class Aria2Status:
         '__gid', '__download', '__listener', 'upload_details', 'queued', 'start_time', 'seeding', 'message'
     )
 
-    def __init__(self, gid: str, listener, seeding: bool = False, queued: bool = False):
+    def __init__(self, gid: str, listener=None, seeding: bool = False, queued: bool = False):
         """
         Initialize a new Aria2Status object.
 
@@ -69,35 +70,6 @@ class Aria2Status:
         """
         self.__download = get_download_by_gid(self.__gid)
 
-    @memoized
-    def __download_info(self):
-        """
-        Get the download object and update the internal state.
-
-        :return: The download object.
-        """
-        self.__update()
-        return self.__download
-
-    def __str__(self):
-        """
-        Return a string representation of the object.
-
-        :return: A string representation of the object.
-        """
-        return f"Aria2Status(gid={self.gid}, status={self.status}, progress={self.progress})"
-
-    def __repr__(self):
-        """
-        Return a more informative string representation of the object.
-
-        :return: A string representation of the object.
-        """
-        return (
-            f"<Aria2Status gid={self.gid} status={self.status} progress={self.progress}"
-            f" queued={self.queued} seeding={self.seeding}>"
-        )
-
     @property
     def download(self):
         """
@@ -105,7 +77,8 @@ class Aria2Status:
 
         :return: The download object.
         """
-        return self.__download_info()
+        self.__update()
+        return self.__download
 
     @property
     def gid(self):
@@ -123,7 +96,7 @@ class Aria2Status:
 
         :return: The status code of the download.
         """
-        download = self.__download_info()
+        download = self.download
         return download.status if download else None
 
     def is_active(self):
@@ -132,7 +105,7 @@ class Aria2Status:
 
         :return: True if the download is active, False otherwise.
         """
-        download = self.__download_info()
+        download = self.download
         return download.status in (1, 2, 3, 4) if download else False
 
     def is_completed(self):
@@ -141,7 +114,7 @@ class Aria2Status:
 
         :return: True if the download is completed, False otherwise.
         """
-        download = self.__download_info()
+        download = self.download
         return download.status == 5 if download else False
 
     def is_paused(self):
@@ -150,7 +123,7 @@ class Aria2Status:
 
         :return: True if the download is paused, False otherwise.
         """
-        download = self.__download_info()
+        download = self.download
         return download.status == 6 if download else False
 
     def is_seeding(self):
@@ -159,7 +132,7 @@ class Aria2Status:
 
         :return: True if the download is in seeding mode, False otherwise.
         """
-        download = self.__download_info()
+        download = self.download
         return download.status == 7 if download else False
 
     def is_queued(self):
@@ -168,7 +141,7 @@ class Aria2Status:
 
         :return: True if the download is in the queue, False otherwise.
         """
-        download = self.__download_info()
+        download = self.download
         return download.status == 8 if download else False
 
     def is_removed(self):
@@ -185,7 +158,7 @@ class Aria2Status:
 
         :return: The progress of the download as a string.
         """
-        download = self.__download_info()
+        download = self.download
         return download.progress_string() if download else ""
 
     def processed_bytes(self):
@@ -194,7 +167,7 @@ class Aria2Status:
 
         :return: The number of bytes processed by the download as a string.
         """
-        download = self.__download_info()
+        download = self.download
         return download.completed_length_string() if download else "0 B"
 
     def speed(self):
@@ -203,7 +176,7 @@ class Aria2Status:
 
         :return: The download speed of the download as a string.
         """
-        download = self.__download_info()
+        download = self.download
         return download.download_speed_string() if download else "0 B/s"
 
     def name(self):
@@ -212,7 +185,7 @@ class Aria2Status:
 
         :return: The name of the download.
         """
-        download = self.__download_info()
+        download = self.download
         return download.name if download else ""
 
     def size(self):
@@ -221,7 +194,7 @@ class Aria2Status:
 
         :return: The size of the download as a string.
         """
-        download = self.__download_info()
+        download = self.download
         return download.total_length_string() if download else "0 B"
 
     def eta(self):
@@ -230,7 +203,7 @@ class Aria2Status:
 
         :return: The estimated time of arrival of the download as a string.
         """
-        download = self.__download_info()
+        download = self.download
         return download.eta_string() if download else ""
 
     def listener(self):
@@ -247,7 +220,7 @@ class Aria2Status:
 
         :return: The status of the download as a string.
         """
-        download = self.__download_info()
+        download = self.download
         if download is None:
             return ""
 
@@ -269,7 +242,7 @@ class Aria2Status:
 
         :return: The number of seeders of the download.
         """
-        download = self.__download_info()
+        download = self.download
         return download.num_seeders if download else 0
 
     def leechers_num(self):
@@ -278,7 +251,7 @@ class Aria2Status:
 
         :return: The number of leechers of the download.
         """
-        download = self.__download_info()
+        download = self.download
         return download.connections if download else 0
 
     def uploaded_bytes(self):
@@ -287,7 +260,7 @@ class Aria2Status:
 
         :return: The number of bytes uploaded by the download as a string.
         """
-        download = self.__download_info()
+        download = self.download
         return download.upload_length_string() if download else "0 B"
 
     def upload_speed(self):
@@ -296,7 +269,7 @@ class Aria2Status:
 
         :return: The upload speed of the download as a string.
         """
-        download = self.__download_info()
+        download = self.download
         return download.upload_speed_string() if download else "0 B/s"
 
     def ratio(self):
@@ -305,15 +278,9 @@ class Aria2Status:
 
         :return: The upload/download ratio of the download as a string.
         """
-        download = self.__download_info()
+        download = self.download
         if not download:
             return "0.00"
-        return f"{round(download.upload_length / download.completed_length, 3)}"
+        return f"{download.upload_length / download.completed_length:.2f}"
 
-    def seeding_time(self):
-        """
-        Get the seeding time of the download as a string.
 
-        :return: The seeding time of the download as a string.
-        """
-        return get_readable_time(
