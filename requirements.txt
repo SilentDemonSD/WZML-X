@@ -1,29 +1,41 @@
 #!/bin/bash
 
 # Check if python3 and pip are available
+# This section checks if the necessary executables for Python 3 and pip are available.
+# If either of them is missing, the script will print an error message and exit with a status code of 1.
 if ! command -v python3 &> /dev/null || ! command -v pip &> /dev/null; then
     echo "Error: python3 or pip not found"
     exit 1
 fi
 
 # Create a new virtual environment with a specific name
+# This section creates a new virtual environment using the 'python3 -m venv' command.
+# The name of the virtual environment is 'my_project_env'. If the creation fails, the script will print an error message and exit with a status code of 1.
 if ! python3 -m venv my_project_env; then
     echo "Error: Failed to create a new virtual environment"
     exit 1
 fi
 
 # Activate the virtual environment
+# This section activates the created virtual environment using the source command.
+# If the activation fails, the script will print a warning message but continue executing.
 if ! source my_project_env/bin/activate; then
     echo "Warning: Failed to activate the virtual environment"
 fi
 
 # Install the required libraries and save them to a separate file
+# This section installs the required libraries specified in the 'requirements.txt' file using pip.
+# The installed libraries are also saved to a separate file named 'requirements-installed.txt' for verification purposes.
+# If the installation fails, the script will print an error message and exit with a status code of 1.
 if ! pip install -r requirements.txt; then
     echo "Error: Failed to install the required libraries"
     exit 1
 fi
 
 # Print the list of installed libraries for verification
+# This section checks if the 'requirements-installed.txt' file exists.
+# If it does, the script will print the list of installed libraries for verification purposes.
+# If the file is missing, the script will print a warning message but continue executing.
 if [ -f requirements-installed.txt ]; then
     echo "Installed libraries:"
     cat requirements-installed.txt
