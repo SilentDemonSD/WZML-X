@@ -1,28 +1,81 @@
 import asyncio
 import os
-from typing import Dict, Any, Literal, List
+from typing import Any, Dict, List, Literal, Union
 
 import aiofiles.os as aio_os
 import aiohttp
 from aiohttp import ClientSession
+from contextlib import asynccontextmanager
+from typing_extensions import overload
 
-from bot import LOGGER
-from bot.helper.ext_utils.bot_utils import sync_to_async
-
-class GoFile:
-    def __init__(self, dl_uploader: Any = None, token: str = None):
+class GoFileHTTP:
+    def __init__(self, token: str = None):
         self.api_url = "https://api.gofile.io/"
-        self.dl_uploader = dl_uploader
         self.token = token
+
+    @overload
+    async def request(
+        self,
+        method: Literal["GET"],
+        url: str,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        ...
+
+    @overload
+    async def request(
+        self,
+        method: Literal["PUT"],
+        url: str,
+        json: Any,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        ...
+
+    @overload
+    async def request(
+        self,
+        method: Literal["DELETE"],
+        url: str,
+        json: Any,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        ...
+
+    async def request(
+        self,
+        method: str,
+        url: str,
+        json: Union[None, dict] = None,
+        **kwargs: Any,
+    ) -> Union[Dict[str, Any], None]:
+        async with ClientSession() as session:
+            async with session.request(
+                method,
+                url,
+                json=json,
+                **kwargs,
+            ) as resp:
+                if resp.status == 200:
+                    return await resp.json()
+                return None
+
+class GoFileAPI:
+    def __init__(self, dl_uploader: Any = None, token: str = None):
+        self.http = GoFileHTTP(token=token)
+        self.dl_uploader = dl_uploader
 
     @staticmethod
     async def is_goapi_valid(token: str) -> bool:
         if not token:
             return False
 
-        async with ClientSession() as session:
-            async with session.get(f"{token.split(':')[0]}?token={token.split(':')[1]}&allDetails=true") as resp:
-                return (await resp.json())["status"] == "ok"
+        response = await http.request(
+            "GET",
+            f"{token.split(':')[0]}?token={token.split(':')[1]}&allDetails=true",
+        )
+        data = await response.json()
+        return data["status"] == "ok"
 
     async def __response_handler(self, response: Dict[str, Any]) -> Dict[str, Any]:
         api_resp = response.get("status", "")
@@ -30,23 +83,27 @@ class GoFile:
             return response["data"]
         raise Exception(api_resp.split("-")[1] if "error-" in api_resp else "Response Status is not ok and Reason is Unknown")
 
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        pass
+
     async def __get_server(self) -> Dict[str, Any]:
-        async with ClientSession() as session:
-            async with session.request("GET", self.api_url + "servers") as resp:
-                return await self.__response_handler(await resp.json())
+        response = await self.http.request("GET", self.http.api_url + "servers")
+        return await self.__response_handler(response)
 
     async def __get_account(self, check_account: bool = False) -> Dict[str, Any]:
         if not self.token:
             raise Exception()
 
-        api_url = f"{self.api_url}accounts/{self.token.split(':')[0]}?token={self.token.split(':')[1]}&allDetails=true"
-        async with ClientSession() as session:
-            resp = await session.request("GET", url=api_url)
-            response = await resp.json()
-            if check_account:
-                return response["status"] == "ok" if True else await self.__response_handler(response)
-            else:
-                return await self.__response_handler(response)
+        api_url = f"{self.http.api_url}accounts/{self.token.split(':')[0]}?token={self.token.split(':')[1]}&allDetails=true"
+        response = await self.http.request("GET", api_url)
+        data = await response.json()
+        if check_account:
+            return data["status"] == "ok" if True else await self.__response_handler(data)
+        else:
+            return await self.__response_handler(data)
 
     async def upload_folder(self, path: str, folder_id: str = None) -> str:
         if not await aio_os.isdir(path):
@@ -124,52 +181,59 @@ class GoFile:
         if not self.token:
             raise Exception()
 
-        async with ClientSession() as session:
-            async with session.request("PUT", self.api_url + "contents/createFolder", json={
+        response = await self.http.request(
+            "PUT",
+            self.http.api_url + "contents/createFolder",
+            json={
                 "parentFolderId": parent_folder_id,
                 "folderName": folder_name,
                 "token": self.token.split(':')[1]
-            }) as resp:
-                return await self.__response_handler(await resp.json())
+            },
+        )
+        return await self.__response_handler(response)
 
     async def __set_options(self, content_id: str, option: Literal["public", "password", "description", "expire", "tags"], value: str) -> Dict[str, Any]:
         if not self.token:
             raise Exception()
 
-        async with ClientSession() as session:
-            async with session.request("PUT", self.api_url + f"contents/{content_id}/update", json={
+        response = await self.http.request(
+            "PUT",
+            self.http.api_url + f"contents/{content_id}/update",
+            json={
                 "token": self.token.split(':')[1],
                 "attribute": option,
                 "attributevalue": value
-            }) as resp:
-                return await self.__response_handler(await resp.json())
+            },
+        )
+        return await self.__response_handler(response)
 
     async def get_content(self, content_id: str) -> Dict[str, Any]:
         if not self.token:
             raise Exception()
 
-        async with ClientSession() as session:
-            async with session.request("GET", self.api_url + f"contents/{content_id}&token={self.token}") as resp:
-                return await self.__response_handler(await resp.json())
+        response = await self.http.request("GET", self.http.api_url + f"contents/{content_id}&token={self.token}")
+        return await self.__response_handler(response)
 
     async def copy_content(self, content_ids: List[str], folder_id_dest: str) -> Dict[str, Any]:
         if not self.token:
             raise Exception()
 
-        async with ClientSession() as session:
-            async with session.request("PUT", self.api_url + "contents/copy", json={
+        response = await self.http.request(
+            "PUT",
+            self.http.api_url + "contents/copy",
+            json={
                 "token": self.token.split(':')[1],
                 "contentsId": content_ids,
                 "folderId": folder_id_dest
-            }) as resp:
-                return await self.__response_handler(await resp.json())
+            },
+        )
+        return await self.__response_handler(response)
 
     async def delete_content(self, content_id: str) -> Dict[str, Any]:
         if not self.token:
             raise Exception()
 
-        async with ClientSession() as session:
-            async with session.request("DELETE", self.api_url + f"contents/{content_id}", json={
-                "token": self.token.split(':')[1]
-            }) as resp:
-                return await self.__response_handler(await resp.json())
+        response = await self.http.request("DELETE", self.http.api_url + f"contents/{content_id}", json={
+            "token": self.token.split(':')[1]
+        })
+        return await self.__response_handler(response)
