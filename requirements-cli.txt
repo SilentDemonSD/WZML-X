@@ -1,7 +1,54 @@
-oauth2client
-google-api-python-client
-progress
-progressbar2
-httplib2shim
-google_auth_oauthlib
-pyrogram>=2
+pip install oauth2client google-api-python-client progress progressbar2 httplib2shim google-auth-oauthlib pyrogram
+
+
+import os
+import io
+import progressbar
+import httplib2shim
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+from google_auth_oauthlib.flow import InstalledAppFlow
+from oauth2client.service_account import ServiceAccountCredentials
+
+# If modifying these SCOPES, delete the file token.pickle.
+SCOPES = ['https://www.googleapis.com/auth/drive.readonly.metadata']
+
+def get_service():
+    creds = None
+    # The file token.pickle stores the user's access and refresh tokens, and is
+    # created automatically when the authorization flow completes for the first
+    # time.
+    if os.path.exists('token.pickle'):
+        with open('token.pickle', 'rb') as token:
+            creds = pickle.load(token)
+    # If there are no (valid) credentials available, let the user log in.
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file(
+                'credentials.json', SCOPES)
+            creds = flow.run_local_server(port=0)
+        # Save the credentials for the next run
+        with open('token.pickle', 'wb') as token:
+            pickle.dump(creds, token)
+
+    service = build('drive', 'v3', credentials=creds)
+    return service
+
+def download_file(service, file_id, destination):
+    request = service.files().get_media(fileId=file_id)
+    fh = io.FileIO(destination, 'wb')
+    downloader = progressbar.ProgressBar(max_value=request.size).track_total_bytes(request)
+    
+    done = False
+    while done is False:
+        status, done = request.next_chunk()
+        downloader.update(request.remaining)
+        fh.write(status)
+
+if __name__ == '__main__':
+    service = get_service()
+    file_id = 'FILE_ID' # replace with your file id
+    destination = 'downloaded_file' # replace with your desired destination
+    download_file(service, file_id, destination)
