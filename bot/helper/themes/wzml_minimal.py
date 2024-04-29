@@ -111,9 +111,7 @@ SOURCE_URL: str = '🔐 Source Link'  # Button text for source link
 INDEX_LINK_F: str = '🗂 Index Link'  # Button text for index link (folder)
 
 
-import constants
-
-class WZMLStyle:
+class WZMLStyle(object):
     """Class for defining various bot messages and buttons."""
 
     def __init_subclass__(cls):
@@ -121,14 +119,3 @@ class WZMLStyle:
         for name, value in cls.__dict__.items():
             if name.startswith("st_"):
                 globals()[name] = value
-
-    # Constants for the 'start' command
-    st_bn1_name = constants.START_BN1_NAME
-    st_bn1_url = constants.START_BN1_URL
-    st_bn2_name = constants.START_BN2_NAME
-    st_bn2_url = constants.START_BN2_URL
-    st_msg = constants.START_MSG
-    st_botpm = constants.START_BOTPM
-    st_unauth = constants.START_UNAUTH
-
-    # ... (other constants follow the same pattern)
