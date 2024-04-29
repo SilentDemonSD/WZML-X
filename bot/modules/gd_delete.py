@@ -1,10 +1,13 @@
 import asyncio
+import logging
+import sys
 from typing import Union
 
 import pyrogram
 from pyrogram.errors import exceptions
 from pyrogram.handlers import MessageHandler
 from pyrogram.filters import command
+from pyrogram.raw import functions, inputs
 
 from bot import LOGGER
 from bot.helper.telegram_helper.bot_utils import is_gdrive_link, sync_to_async
@@ -37,16 +40,18 @@ async def deletefile(client: pyrogram.Client, context: pyrogram.Context) -> None
     # Check if the link is a Google Drive link
     if is_gdrive_link(link):
         LOGGER.info(link)
-        # Initialize the Google Drive Helper class
-        drive = GoogleDriveHelper()
         try:
-            # Call the deletefile method of the class with the link
-            msg = await sync_to_async(drive.deletefile, link)
-            if msg:
-                await sendMessage(context.message, 'File deleted successfully.')
-            else:
-                await sendMessage(context.message, 'File not found or already deleted.')
+            # Initialize the Google Drive Helper class
+            async with GoogleDriveHelper() as drive:
+                # Call the deletefile method of the class with the link
+                result = await sync_to_async(drive.deletefile, link)
+                if result:
+                    await sendMessage(context.message, 'File deleted successfully.')
+                else:
+                    await sendMessage(context.message, 'File not found or already deleted.')
         except exceptions.exceptions.bad_request_400.MessageNotModified:
+            return
+        except exceptions.exceptions.forbidden_403.PeerIdInvalid:
             return
         except Exception as e:
             LOGGER.error(f'Error in deletefile method: {e}')
@@ -58,8 +63,9 @@ async def deletefile(client: pyrogram.Client, context: pyrogram.Context) -> None
 
     # Auto-delete the original message
     try:
+        await asyncio.sleep(1)
         await context.bot.delete_message(context.message.chat.id, context.message.id)
-    except exceptions.exceptions.bad_request_400.MessageNotModified:
+    except exceptions.exceptions.forbidden_403.PeerIdInvalid:
         pass
 
 
@@ -68,7 +74,7 @@ if __name__ == '__main__':
         client, start_time = initialize_bot()
     except Exception as e:
         LOGGER.error(f'Client initialization failed: {e}')
-        exit(1)
+        sys.exit(1)
 
     # Add the deletefile function as a message handler for the DeleteCommand
     bot.add_handler(MessageHandler(deletefile, filters=command(
