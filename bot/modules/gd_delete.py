@@ -9,12 +9,22 @@ from pyrogram.filters import command
 from bot import LOGGER
 from bot.helper.telegram_helper.bot_utils import is_gdrive_link, sync_to_async
 from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper.bot_init import bot
+from bot.helper.telegram_helper.bot_init import initialize_bot
 from bot.helper.telegram_helper.message_utils import sendMessage
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 
 async def deletefile(client: pyrogram.Client, context: pyrogram.Context) -> None:
+    """
+    Delete a file from Google Drive.
+
+    Args:
+        client (pyrogram.Client): The Pyrogram client object.
+        context (pyrogram.Context): The Pyrogram context object.
+
+    Returns:
+        None
+    """
     # Extract the link from the command arguments or the replied message
     args = context.args
     if len(args) > 0:
@@ -32,25 +42,36 @@ async def deletefile(client: pyrogram.Client, context: pyrogram.Context) -> None
         try:
             # Call the deletefile method of the class with the link
             msg = await sync_to_async(drive.deletefile, link)
+            if msg:
+                await sendMessage(context.message, 'File deleted successfully.')
+            else:
+                await sendMessage(context.message, 'File not found or already deleted.')
         except exceptions.exceptions.bad_request_400.MessageNotModified:
             return
         except Exception as e:
             LOGGER.error(f'Error in deletefile method: {e}')
-            msg = 'An error occurred while deleting the file. Please try again later.'
+            await sendMessage(context.message, 'An error occurred while deleting the file. Please try again later.')
     else:
         # Return an error message if the link is not a Google Drive link
-        msg = 'Send Gdrive link along with command or by replying to the link by command'
+        await sendMessage(context.message, 'Send Gdrive link along with command or by replying to the link by command')
         LOGGER.warning(f'Link is not a Google Drive link: {link}')
 
-    # Send the message and auto-delete the original message
-    reply_message = await sendMessage(context.message, msg)
+    # Auto-delete the original message
     try:
         await context.bot.delete_message(context.message.chat.id, context.message.id)
     except exceptions.exceptions.bad_request_400.MessageNotModified:
         pass
 
 
-# Add the deletefile function as a message handler for the DeleteCommand
-bot.add_handler(MessageHandler(deletefile, filters=command(
-    BotCommands.DeleteCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
+if __name__ == '__main__':
+    try:
+        client, start_time = initialize_bot()
+    except Exception as e:
+        LOGGER.error(f'Client initialization failed: {e}')
+        exit(1)
 
+    # Add the deletefile function as a message handler for the DeleteCommand
+    bot.add_handler(MessageHandler(deletefile, filters=command(
+        BotCommands.DeleteCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
+
+    app.run()
