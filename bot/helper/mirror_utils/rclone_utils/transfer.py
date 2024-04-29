@@ -7,13 +7,6 @@ from typing import List, Tuple, Dict, Union, Any, Callable, Coroutine
 # Importing required modules using asyncio
 from asyncio import create_subprocess_exec, gather, PIPE
 
-# Importing required modules using configparser
-import configparser
-
-# Importing required modules using aiofiles
-from aiofiles import open as aiopen
-from aiofiles.os import path as aiopath, mkdir, listdir
-
 # Importing required modules from bot
 from bot import config_dict
 from bot.helper.ext_utils.bot_utils import cmd_exec, async_to_sync
@@ -25,6 +18,11 @@ import logging
 # Creating logger object
 LOGGER = logging.getLogger(__name__)
 
+# Importing required modules using aiofiles
+import aiofiles
+from aiofiles import open as aiopen
+from aiofiles.os import path as aiopath, mkdir, listdir
+
 
 async def run_command(command: List[str]) -> Tuple[int, str]:
     """
@@ -32,7 +30,8 @@ async def run_command(command: List[str]) -> Tuple[int, str]:
     :param command: List of command arguments
     :return: Tuple of exit code and output
     """
-    process = await create_subprocess_exec(*command, stdout=PIPE, stderr=PIPE)
+    process = await asyncio.create_subprocess_exec(
+        *command, stdout=PIPE, stderr=PIPE)
     stdout, stderr = await process.communicate()
     return process.returncode, f"{stdout.decode()}\n{stderr.decode()}"
 
@@ -43,5 +42,5 @@ async def read_file(file_path: str) -> str:
     :param file_path: Path of the file
     :return: Contents of the file
     """
-    async with aiopen(file_path, mode="r") as file:
+    async with aiofiles.open(file_path, mode="r") as file:
         return await file.read()
