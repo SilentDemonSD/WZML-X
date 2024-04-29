@@ -21,22 +21,22 @@ async def broadcast(_, message):
     bc_id, forwarded, quietly, deleted, edited = '', False, False, False, False
     if not DATABASE_URL:
         return await sendMessage(message, 'DATABASE_URL not provided!')
-    rply = message.reply_to_message
-    if len(message.command) > 1:
-        if not message.command[1].startswith('-'):
-            bc_id = message.command[1] if bc_cache.get(message.command[1], False) else ''
+    args = message.command[1:]
+    if len(args) > 0:
+        if not args[0].startswith('-'):
+            bc_id = args[0] if bc_cache.get(args[0], False) else ''
             if not bc_id:
                 return await sendMessage(message, "<i>Broadcast ID not found! After Restart, you can't edit or delete broadcasted messages...</i>")
-        for arg in message.command:
-            if arg in ['-f', '-forward'] and rply:
+        for arg in args:
+            if arg in ['-f', '-forward'] and message.reply_to_message:
                 forwarded = True
-            if arg in ['-q', '-quiet'] and rply:
+            if arg in ['-q', '-quiet'] and message.reply_to_message:
                 quietly = True
             elif arg in ['-d', '-delete'] and bc_id:
                 deleted = True
-            elif arg in ['-e', '-edit'] and bc_id and rply:
+            elif arg in ['-e', '-edit'] and bc_id and message.reply_to_message:
                 edited = True
-    if not bc_id and not rply:
+    if not bc_id and not message.reply_to_message:
         return await sendMessage(message, '''<b>By replying to msg to Broadcast:</b>
 /broadcast bc_id -d -e -f -q
 
@@ -58,11 +58,10 @@ async def broadcast(_, message):
     t, s, b, d, u = 0, 0, 0, 0, 0
     if deleted:
         temp_wait = await sendMessage(message, '<i>Deleting the Broadcasted Message! Please Wait ...</i>')
-        for msg in (msgs:=bc_cache[bc_id]):
+        for msg in (msgs:=bc_cache.get(bc_id, ())):
             try:
                 await msg.delete()
                 await sleep(0.5)
-                msgs.pop(msgs.index(msg))
                 s += 1
             except:
                 u += 1
@@ -75,16 +74,16 @@ async def broadcast(_, message):
 <b>Broadcast ID:</b> <code>{bc_id}</code>''')
     elif edited:
         temp_wait = await sendMessage(message, '<i>Editing the Broadcasted Message! Please Wait ...</i>')
-        for msg in bc_cache[bc_id]:
+        for msg in bc_cache.get(bc_id, ()):
             if hasattr(msg, "forward_from"):
                 return await editMessage(temp_wait, "<i>Forwarded Messages can't be Edited, Only can be Deleted !</i>")
             try:
-                await msg.edit(text=rply.text, entities=rply.entities, reply_markup=rply.reply_markup)
+                await msg.edit(text=message.reply_to_message.text, entities=message.reply_to_message.entities, reply_markup=message.reply_to_message.reply_markup)
                 await sleep(0.5)
                 s += 1
             except FloodWait as e:
                 await sleep(e.value)
-                await msg.edit(text=rply.text, entities=rply.entities, reply_markup=rply.reply_markup)
+                await msg.edit(text=message.reply_to_message.text, entities=message.reply_to_message.entities, reply_markup=message.reply_to_message.reply_markup)
             except:
                 u += 1
             t += 1
@@ -107,16 +106,16 @@ async def broadcast(_, message):
     for uid in (await DbManger().get_pm_uids()):
         try:
             if forwarded:
-                bc_msg = await rply.forward(uid, disable_notification=quietly)
+                bc_msg = await message.reply_to_message.forward(uid, disable_notification=quietly)
             else:
-                bc_msg = await rply.copy(uid, disable_notification=quietly)
+                bc_msg = await message.reply_to_message.copy(uid, disable_notification=quietly)
             s += 1
         except FloodWait as e:
             await sleep(e.value)
             if forwarded:
-                bc_msg = await rply.forward(uid, disable_notification=quietly)
+                bc_msg = await message.reply_to_message.forward(uid, disable_notification=quietly)
             else:
-                bc_msg = await rply.copy(uid, disable_notification=quietly)
+                bc_msg = await message.reply_to_message.copy(uid, disable_notification=quietly)
             s += 1
         except UserIsBlocked:
             await DbManger().rm_pm_user(uid)
