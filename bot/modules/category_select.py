@@ -3,14 +3,12 @@
 import asyncio
 import time
 from functools import partial
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 import pyrogram
 from pyrogram.filters import command, regex
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
-from pyrogram.types import Message, CallbackQuery
-
-# Import helper modules
+from pyrogram.types import Message, CallbackQuery, InputMediaPhoto
 from bot import bot, bot_cache, categories_dict, download_dict, download_dict_lock
 from bot.helper.ext_utils.bot_utils import MirrorStatus, arg_parser, fetch_user_tds, fetch_user_dumps, getDownloadByGid, is_gdrive_link, new_task, sync_to_async, get_readable_time
 from bot.helper.ext_utils.help_messages import CATEGORY_HELP_MESSAGE
@@ -20,7 +18,7 @@ from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import editMessage, sendMessage, open_category_btns
 
-async def change_category(client: pyrogram.Client, message: Message):
+async def change_category(client: pyrogram.Client, message: Message) -> None:
     """
     Change the category of a download task.
 
@@ -43,7 +41,7 @@ async def change_category(client: pyrogram.Client, message: Message):
     if drive_id and is_gdrive_link(drive_id):
         drive_id = GoogleDriveHelper.getIdFromUrl(drive_id)
 
-    dl = None
+    dl: Optional[Dict[str, Any]] = None
     if gid := args['link']:
         dl = await getDownloadByGid(gid)
         if not dl:
@@ -51,12 +49,23 @@ async def change_category(client: pyrogram.Client, message: Message):
             return
     if reply_to := message.reply_to_message:
         async with download_dict_lock:
-            dl = download_dict.get(reply_to.id, None)
+            dl = download_dict.get(reply_to.message_id, None)
         if not dl:
             await sendMessage(message, "This is not an active task!")
             return
     if not dl:
         await sendMessage(message, CATEGORY_HELP_MESSAGE)
         return
-    if not await CustomFilters.sudo(client, message) and dl.message.from_user.id != user_id:
-        await sendMessage
+    if not await CustomFilters.sudo(client, message) and dl.get('user_id') != user_id:
+        await sendMessage(message, "You do not have permission to change the category of this task!")
+        return
+    if not index_link:
+        await sendMessage(message, "Please provide a valid index link!")
+        return
+    category = categories_dict.get(index_link)
+    if not category:
+        await sendMessage(message, "Invalid category!")
+        return
+    async with download_dict_lock:
+        dl['category'] = category
+    await sendMessage(message, f"Category changed to {category}!")
