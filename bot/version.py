@@ -1,18 +1,17 @@
 from dataclasses import dataclass
+from typing import Final
 
 @dataclass
 class Version:
-    major: int
-    minor: int = 0
-    patch: int = 0
-    # You can add more attributes if needed
+    major: Final[int]
+    minor: Final[int] = 0
+    patch: Final[int] = 0
 
     def __post_init__(self):
         # Validate the attributes
-        if not isinstance(self.major, int):
-            raise TypeError("major must be an integer")
-        if not isinstance(self.minor, int):
-            raise TypeError("minor must be an integer")
-        if not isinstance(self.patch, int):
-            raise TypeError("patch must be an integer")
+        assert isinstance(self.major, int), "major must be an integer"
+        assert isinstance(self.minor, int), "minor must be an integer"
+        assert isinstance(self.patch, int), "patch must be an integer"
 
+    def __repr__(self):
+        return f"Version(major={self.major}, minor={self.minor}, patch={self.patch})"
