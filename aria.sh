@@ -1,9 +1,36 @@
-tracker_list=$(curl -Ns https://ngosang.github.io/trackerslist/trackers_all_http.txt | awk '$0' | tr '\n\n' ',')
-aria2c --allow-overwrite=true --auto-file-renaming=true --bt-enable-lpd=true --bt-detach-seed-only=true \
-       --bt-remove-unselected-file=true --bt-tracker="[$tracker_list]" --bt-max-peers=0 --enable-rpc=true \
-       --rpc-max-request-size=1024M --max-connection-per-server=10 --max-concurrent-downloads=10 --split=10 \
-       --seed-ratio=0 --check-integrity=true --continue=true --daemon=true --disk-cache=40M --force-save=true \
-       --min-split-size=10M --follow-torrent=mem --check-certificate=false --optimize-concurrent-downloads=true \
-       --http-accept-gzip=true --max-file-not-found=0 --max-tries=20  --peer-id-prefix=-qB4520- --reuse-uri=true \
-       --content-disposition-default-utf8=true --user-agent=Wget/1.12 --peer-agent=qBittorrent/4.5.2 --quiet=true \
-       --summary-interval=0 --max-upload-limit=1K
+#!/bin/bash
+
+# Function to download a file
+# This function accepts three arguments:
+# $1: The URL of the file to download
+# $2: The output file path
+# $3: The optional expected file size, used to check if the download was successful
+# It downloads the file using curl and saves it to the specified output file.
+# If the download is not successful or the file size does not match the expected size,
+# the function returns 1.
+download_file() {
+  local url="$1"
+  local output_file="$2"
+  local expected_size="$3"
+
+  if ! curl -Ns "$url" -o "$output_file"; then
+    echo "Error: Failed to download $url"
+    return 1
+  fi
+
+  if [ -n "$expected_size" ] && [ "$(stat -c%s "$output_file")" -ne "$expected_size" ]; then
+    echo "Error: Downloaded file size does not match expected size"
+    return 1
+  fi
+
+  echo "Download successful"
+}
+
+# Download the tracker list from the given URL and save it to /tmp/trackers.txt
+TRACKERS_URL="https://ngosang.github.io/trackerslist/trackers_all_http.txt"
+TRACKERS_FILE="/tmp/trackers.txt"
+if ! download_file "$TRACKERS_URL" "$TRACKERS_FILE" ""; then
+  echo "Error: Failed to download tracker list"
+  exit 1
+fi
+

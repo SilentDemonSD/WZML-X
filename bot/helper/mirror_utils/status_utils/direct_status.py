@@ -1,57 +1,169 @@
 #!/usr/bin/env python3
 
-from bot.helper.ext_utils.bot_utils import (EngineStatus, MirrorStatus,
-                                            get_readable_file_size,
-                                            get_readable_time)
+import helper.ext_utils.bot_utils  # Import the bot_utils module
 
-
+from bot.helper.ext_utils.bot_utils import (
+    EngineStatus,  # Import EngineStatus class
+    MirrorStatus,  # Import MirrorStatus class
+    get_readable_file_size,  # Import function to get human-readable file size
+    get_readable_time,  # Import function to get human-readable time
+)
 
 class DirectStatus:
-    def __init__(self, obj, gid, listener, upload_details):
-        self.__gid = gid
-        self.__listener = listener
-        self.__obj = obj
-        self.upload_details = upload_details
-        self.message = self.__listener.message
+    def __init__(
+        self,
+        file_info,  # The object containing the file information
+        file_global_id,  # The global ID of the file
+        listener,  # The listener object
+        upload_details,  # The upload details
+    ):
+        """
+        Initialize the DirectStatus class.
 
-    def gid(self):
-        return self.__gid
+        :param file_info: The object containing the file information
+        :param file_global_id: The global ID of the file
+        :param listener: The listener object
+        :param upload_details: The upload details
+        """
+        self.file_global_id = file_global_id  # Set the global ID of the file
+        self.listener = listener  # Set the listener object
+        self.file_info = file_info  # Set the file information object
+        self.upload_details = upload_details  # Set the upload details
+        self.message = listener.message  # Set the message object
 
-    def progress_raw(self):
+    @property
+    def file_global_id(self) -> str:
+        """
+        Get the global ID of the file.
+
+        :return: The global ID of the file
+        """
+        return self.__file_global_id
+
+    @file_global_id.setter
+    def file_global_id(self, value: str):
+        self.__file_global_id = value
+
+    @property
+    def progress(self) -> float:
+        """
+        Get the progress of the file in percentage.
+
+        :return: The progress of the file in percentage
+        """
         try:
-            return self.__obj.processed_bytes / self.__obj.total_size * 100
+            return self.file_info.processed_bytes / self.file_info.total_size * 100
         except:
             return 0
 
-    def progress(self):
-        return f'{round(self.progress_raw(), 2)}%'
+    @property
+    def progress_str(self) -> str:
+        """
+        Get the progress of the file in percentage as a formatted string.
 
-    def speed(self):
-        return f'{get_readable_file_size(self.__obj.speed)}/s'
+        :return: The progress of the file in percentage as a formatted string
+        """
+        return f"{self.progress:.2f}%"
 
-    def name(self):
-        return self.__obj.name
+    @property
+    def speed(self) -> str:
+        """
+        Get the speed of the file transfer.
 
-    def size(self):
-        return get_readable_file_size(self.__obj.total_size)
+        :return: The speed of the file transfer
+        """
+        return f"{get_readable_file_size(self.file_info.speed)}/s"
 
-    def eta(self):
+    @property
+    def name(self) -> str:
+        """
+        Get the name of the file.
+
+        :return: The name of the file
+        """
+        return self.file_info.name
+
+    @property
+    def size(self) -> str:
+        """
+        Get the size of the file.
+
+        :return: The size of the file
+        """
+        return get_readable_file_size(self.file_info.total_size)
+
+    @property
+    def eta(self) -> str:
+        """
+        Get the estimated time of arrival.
+
+        :return: The estimated time of arrival
+        """
         try:
-            seconds = (self.__obj.total_size - self.__obj.processed_bytes) / self.__obj.speed
-            return get_readable_time(seconds)
+            time_left = (self.file_info.total_size - self.file_info.processed_bytes) / self.file_info.speed
+            return get_readable_time(time_left)
         except:
-            return '-'
+            return "-"
 
-    def status(self):
-        if self.__obj.task and self.__obj.task.is_waiting:
-            return MirrorStatus.STATUS_QUEUEDL
+    @property
+    def status(self) -> MirrorStatus:
+        """
+        Get the status of the file transfer.
+
+        :return: The status of the file transfer
+        """
+        if self.file_info.task and self.file_info.task.is_waiting:
+            return MirrorStatus.STATUS_QUEUED
         return MirrorStatus.STATUS_DOWNLOADING
 
-    def processed_bytes(self):
-        return get_readable_file_size(self.__obj.processed_bytes)
+    @property
+    def processed_bytes(self) -> str:
+        """
+        Get the number of processed bytes.
 
-    def download(self):
-        return self.__obj
+        :return: The number of processed bytes
+        """
+        return get_readable_file_size(self.file_info.processed_bytes)
 
-    def eng(self):
+    @property
+    def file_obj(self) -> object:
+        """
+        Get the file object.
+
+        :return: The file object
+        """
+        return self.file_info
+
+    @property
+    def engine_status(self) -> EngineStatus:
+        """
+        Get the engine status.
+
+        :return: The engine status
+        """
         return EngineStatus().STATUS_ARIA
+
+    def __str__(self):
+        """
+        Get a string representation of the object.
+
+        :return: A string representation of the object
+        """
+        return (
+            f"DirectStatus(\n"
+            f"    file_global_id={self.file_global_id},\n"
+            f"    listener={self.listener},\n"
+            f"    file_info={self.file_info},\n"
+            f"    upload_details={self.upload_details},\n"
+            f"    message={self.message},\n"
+            f"    progress={self.progress_str},\n"
+            f"    speed={self.speed},\n"
+            f"    name={self.name},\n"
+            f"    size={self.size},\n"
+            f"    eta={self.eta},\n"
+            f"    status={self.status},\n"
+            f"    processed_bytes={self.processed_bytes},\n"
+            f"    file_obj={self.file_obj},\n"
+            f"    engine_status={self.engine_status}\n"
+            f")"
+        )

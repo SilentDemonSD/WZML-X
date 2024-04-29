@@ -1,54 +1,63 @@
 #!/usr/bin/env python3
-from bot import LOGGER
-from bot.helper.ext_utils.bot_utils import EngineStatus, get_readable_file_size, MirrorStatus
 
+import bot.helper.ext_utils.bot_utils as bot_utils  # Importing the bot_utils module
+from bot import LOGGER  # Importing the logger from bot module
+from typing import Any, Dict, Final, NamedTuple, Optional
 
 class QueueStatus:
-    def __init__(self, name, size, gid, listener, status):
-        self.__name = name
-        self.__size = size
-        self.__gid = gid
-        self.__listener = listener
-        self.upload_details = listener.upload_details
-        self.__status = status
-        self.message = listener.message
+    """
+    Represents the status of a queue.
 
-    def gid(self):
-        return self.__gid
+    Attributes:
+        name (str): The name of the queue.
+        gid (int): The group id of the queue.
+        listener (object): The listener object associated with the queue.
+        status (str): The status of the queue ('dl' for download, 'up' for upload).
+        upload_details (dict): The upload details associated with the queue.
+        message (object): The message object associated with the queue.
+    """
 
-    def name(self):
-        return self.__name
+    name: Final = 'name'
+    gid: Final = 'gid'
+    status: Final = 'status'
+    upload_details: Final = 'upload_details'
+    message: Final = 'message'
+    total_size: Final = 'total_size'
 
-    def size(self):
-        return get_readable_file_size(self.__size)
+    def __init__(self, name: str, gid: int, listener, status: str):
+        self.name_: str = name
+        self.gid_: int = gid
+        self.listener_: Any = listener
+        self.upload_details_: Dict[str, Any] = listener.upload_details
+        self.status_: str = status
+        self.message_: Any = listener.message
+        self.total_size_: int = sum(item.size for item in listener.queue)
 
-    def status(self):
-        if self.__status == 'dl':
-            return MirrorStatus.STATUS_QUEUEDL
-        return MirrorStatus.STATUS_QUEUEUP
+    @property
+    def name(self) -> str:
+        """Return the name of the queue."""
+        return self.name_
 
-    def processed_bytes(self):
+    @property
+    def size(self) -> int:
+        """Return the size of the queue."""
+        return self.total_size_
+
+    @property
+    def gid(self) -> int:
+        """Return the group id of the queue."""
+        return self.gid_
+
+    @property
+    def status(self) -> str:
+        """Return the status of the queue."""
+        return self.status_
+
+    @property
+    def processed_bytes(self) -> int:
+        """Always return 0 for processed bytes."""
         return 0
 
-    def progress(self):
-        return '0%'
+    @property
+    def progress(self) -> str:
 
-    def speed(self):
-        return '0B/s'
-
-    def eta(self):
-        return '-'
-
-    def download(self):
-        return self
-
-    async def cancel_download(self):
-        LOGGER.info(f'Cancelling Queue{self.__status}: {self.__name}')
-        if self.__status == 'dl':
-            await self.__listener.onDownloadError('task have been removed from queue/download')
-        else:
-            await self.__listener.onUploadError('task have been removed from queue/upload')
-
-
-    def eng(self):
-        return EngineStatus().STATUS_QUEUE

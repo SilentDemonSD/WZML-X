@@ -1,122 +1,90 @@
 #!/usr/bin/env python3
-from pyrogram.handlers import MessageHandler
-from pyrogram.filters import command
-from os import path as ospath, getcwd, chdir
-from aiofiles import open as aiopen
-from traceback import format_exc
-from textwrap import indent
-from io import StringIO, BytesIO
+import asyncio
+import os
+import sys
+import textwrap
+from io import StringIO
 from re import match
-from contextlib import redirect_stdout, suppress
 
-from bot import LOGGER, bot, user
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper.message_utils import sendFile, sendMessage
-from bot.helper.ext_utils.bot_utils import new_task
+async def run_command(cmd: str) -> str:
+    """
+    Asynchronously run a shell command.
 
-namespaces = {}
+    This function takes a command as a string argument and returns the output of
+    the command as a string. It uses asyncio to run the command asynchronously,
+    which allows the function to run other tasks while waiting for the command
+    to finish executing.
 
-def namespace_of(message):
-    if message.chat.id not in namespaces:
-        namespaces[message.chat.id] = {
-            '__builtins__': globals()['__builtins__'],
-            'bot': bot,
-            'message': message,
-            'user': user,
-        }
-    return namespaces[message.chat.id]
+    :param cmd: The command to run.
+    :type cmd: str
+    :return: The output of the command.
+    """
+    if len(cmd) > 256:
+        raise ValueError("Command length should not exceed 256 characters")
 
+    # Check if the command contains invalid characters
+    if not match(r'^\w+(\s+\w+)*$', cmd):
+        raise ValueError("Command contains invalid characters")
 
-def log_input(message):
-    LOGGER.info(f"INPUT: {message.text} (User ID ={message.from_user.id} | Chat ID ={message.chat.id})")
+    process = await asyncio.create_subprocess_shell(
+        cmd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        timeout=60,  # sets a timeout for the command execution
+    )
 
+    stdout, stderr = await process.communicate()
 
-async def send(msg, message):
-    if len(str(msg)) > 2000:
-        with BytesIO(str.encode(msg)) as out_file:
-            out_file.name = "output.txt"
-            await sendFile(message, out_file)
-    else:
-        LOGGER.info(f"OUTPUT: '{msg}'")
-        if not msg or msg == '\n':
-            msg = "MessageEmpty"
-        elif not bool(match(r'<(spoiler|b|i|code|s|u|/a)>', msg)):
-            msg = f"<code>{msg}</code>"
-        await sendMessage(message, msg)
+    if process.returncode != 0:
+        raise asyncio.exceptions.ProcessError(
+            cmd, process.returncode, stderr.decode().strip()
+        )
 
+    output = stdout.decode().strip()
+    return output
 
-@new_task
-async def evaluate(client, message):
-    await send(await do(eval, message), message)
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: python3 script.py [command]")
+        sys.exit(1)
 
+    cmd = sys.argv[1]
 
-@new_task
-async def execute(client, message):
-    await send(await do(exec, message), message)
-
-
-def cleanup_code(code):
-    if code.startswith('```') and code.endswith('```'):
-        return '\n'.join(code.split('\n')[1:-1])
-    return code.strip('` \n')
-
-
-async def do(func, message):
-    log_input(message)
-    content = message.text.split(maxsplit=1)[-1]
-    body = cleanup_code(content)
-    env = namespace_of(message)
-
-    chdir(getcwd())
-    async with aiopen(ospath.join(getcwd(), 'bot/modules/temp.txt'), 'w') as temp:
-        await temp.write(body)
-
-    stdout = StringIO()
-
-    to_compile = f'async def func():\n{indent(body, "  ")}'
+    # Check if the command exists in the system
+    if not os.path.exists(os.path.expanduser(f"/usr/bin/{cmd}")):
+        print(textwrap.fill(
+            f"Error: Command '{cmd}' not found.",
+            width=72,
+        ))
+        sys.exit(1)
 
     try:
-        exec(to_compile, env)
-    except Exception as e:
-        return f'{e.__class__.__name__}: {e}'
+        output = asyncio.run(run_command(cmd))
+        print(textwrap.fill(
+            f"Command Output:\n{output}",
+            width=72,
+        ))
 
-    func = env['func']
+    # Handle timeout error
+    except asyncio.CancelledError as e:
+        print(textwrap.fill(
+            "Command execution timed out.",
+            width=72,
+        ))
+        sys.exit(1)
 
-    try:
-        with redirect_stdout(stdout):
-            func_return = await func()
-    except Exception as e:
-        value = stdout.getvalue()
-        return f'{value}{format_exc()}'
-    else:
-        value = stdout.getvalue()
-        result = None
-        if func_return is None:
-            if value:
-                result = f'{value}'
-            else:
-                with suppress(Exception):
-                    result = f'{repr(eval(body, env))}'
-        else:
-            result = f'{value}{func_return}'
-        if result:
-            return result
+    # Handle ValueError exceptions
+    except ValueError as e:
+        print(textwrap.fill(
+            f"Error: {e}\nUsage: python3 script.py [command]",
+            width=72,
+        ))
+        sys.exit(1)
 
-
-async def clear(client, message):
-    log_input(message)
-    global namespaces
-    if message.chat.id in namespaces:
-        del namespaces[message.chat.id]
-        await send("<b>Cached Locals Cleared !</b>", message)
-    else:
-        await send("<b>No Cache Locals Found !</b>", message)
-
-
-bot.add_handler(MessageHandler(evaluate, filters=command(
-    BotCommands.EvalCommand) & CustomFilters.sudo))
-bot.add_handler(MessageHandler(execute, filters=command(
-    BotCommands.ExecCommand) & CustomFilters.sudo))
-bot.add_handler(MessageHandler(clear, filters=command(
-    BotCommands.ClearLocalsCommand) & CustomFilters.sudo))
+    # Handle asyncio.exceptions.ProcessError exceptions
+    except asyncio.exceptions.ProcessError as e:
+        print(textwrap.fill(
+            f"Error running command \"{e.cmd}\":\n{e.stderr}",
+            width=72,
+        ))
+        sys.exit(e.returncode)

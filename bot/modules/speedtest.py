@@ -1,7 +1,15 @@
 #!/usr/bin/env python3
-from speedtest import Speedtest, ConfigRetrievalError
+
+import os
+import asyncio
+import sys
+from typing import Any, Coroutine, Optional
+from pathlib import Path
+
+import speedtest
 from pyrogram.handlers import MessageHandler
 from pyrogram.filters import command
+from pyrogram.errors import ConfigRetrievalError
 
 from bot import bot, LOGGER
 from bot.helper.telegram_helper.filters import CustomFilters
@@ -9,8 +17,11 @@ from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.message_utils import sendMessage, deleteMessage, editMessage
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, new_task
 
-@new_task
-async def speedtest(_, message):
+async def speedtest(update: Any, context: MessageHandler) -> Optional[Coroutine[Any, Any, Any]]:
+    """
+    Initiates a speedtest and sends the results to the user.
+    """
+    message = update.message
     speed = await sendMessage(message, "<i>Initiating Speedtest...</i>")
     try:
         test = Speedtest()
@@ -22,8 +33,9 @@ async def speedtest(_, message):
     test.upload()
     test.results.share()
     result = test.results.dict()
-    path = result['share']
-    string_speed = f'''
+    path = Path(result['share'])
+
+    string_speed = f"""
 ➲ <b><i>SPEEDTEST INFO</i></b>
 ┠ <b>Upload:</b> <code>{get_readable_file_size(result['upload'] / 8)}/s</code>
 ┠ <b>Download:</b>  <code>{get_readable_file_size(result['download'] / 8)}/s</code>
@@ -47,13 +59,29 @@ async def speedtest(_, message):
 ┠ <b>Country:</b> <code>{result['client']['country']}</code>
 ┠ <b>ISP:</b> <code>{result['client']['isp']}</code>
 ┖ <b>ISP Rating:</b> <code>{result['client']['isprating']}</code>
-'''
+"""
     try:
-        pho = await sendMessage(message, string_speed, photo=path)
+        await sendMessage(message, string_speed, photo=path)
         await deleteMessage(speed)
     except Exception as e:
         LOGGER.error(str(e))
-        await editMessage(speed, string_speed)
+        try:
+            await editMessage(speed, string_speed)
+        except Exception as e:
+            LOGGER.error(str(e))
 
-bot.add_handler(MessageHandler(speedtest, filters=command(
-    BotCommands.SpeedCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
+async def main():
+    try:
+        bot.add_handler(MessageHandler(speedtest, filters=command(
+            BotCommands.SpeedCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
+    except Exception as e:
+        LOGGER.error(str(e))
+
+    try:
+        await new_task(bot.start())
+        await bot.idle()
+    except KeyboardInterrupt:
+        await bot.stop()
+
+if __name__ == "__main__":
+    sys.exit(asyncio.run(main()))

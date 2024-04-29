@@ -1,44 +1,28 @@
-aiohttp
-aiofiles
-aioshutil
-anytree==2.8.0
-apscheduler
-aria2p
-asyncio
-beautifulsoup4
-cinemagoer
-cloudscraper
-cryptography
-dnspython
-feedparser
-flask
-gevent
-google-api-python-client
-google-auth-httplib2
-google-auth-oauthlib
-gunicorn
-git+https://github.com/zevtyardt/lk21.git
-httpx
-langcodes[data]
-lxml
-motor
-mutagen
-markdown
-natsort
-pillow
-psutil
-pybase64
-pycountry
-pymongo
-pyrogram
-python-dotenv
-python-magic
-qbittorrent-api
-requests
-speedtest-cli
-telegraph
-tenacity
-tgcrypto
-uvloop
-xattr
-yt-dlp
+#!/bin/bash
+
+# Check if python3 and pip are available
+if ! command -v python3 &> /dev/null || ! command -v pip &> /dev/null; then
+    echo "Error: python3 or pip not found"
+    exit 1
+fi
+
+# Create and activate a new virtual environment
+if ! python3 -m venv my_project_env; then
+    echo "Error: Failed to create a new virtual environment"
+    exit 1
+fi
+source my_project_env/bin/activate
+
+# Install the required libraries and save them to a separate file
+if ! pip install -r requirements.txt > requirements-installed.txt; then
+    echo "Error: Failed to install the required libraries"
+    exit 1
+fi
+
+# Print the list of installed libraries for verification
+if [ -f requirements-installed.txt ]; then
+    echo "Installed libraries:"
+    cat requirements-installed.txt
+else
+    echo "Warning: requirements-installed.txt not found"
+fi

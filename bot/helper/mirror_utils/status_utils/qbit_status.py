@@ -1,57 +1,122 @@
-#!/usr/bin/env python3
-from asyncio import sleep
+import asyncio
+from typing import Optional, Type, Union
 
-from bot import LOGGER, get_client, QbTorrents, qb_listener_lock
-from bot.helper.ext_utils.bot_utils import EngineStatus, MirrorStatus, get_readable_file_size, get_readable_time, sync_to_async
-
-
-def get_download(client, tag):
-    try:
-        return client.torrents_info(tag=tag)[0]
-    except Exception as e:
-        LOGGER.error(
-            f'{e}: Qbittorrent, while getting torrent info. Tag: {tag}')
-        return None
-
+from bot import LOGGER, get_client, QbTorrents
+from bot.helper.ext_utils.bot_utils import EngineStatus, MirrorStatus, get_readable_file_size, get_readable_time
+from bot.qbittorrentclient import QbittorrentClient
 
 class QbittorrentStatus:
+    """
+    A class to represent the status of a torrent in a Qbittorrent client.
+    """
+    __slots__ = (
+        "__client",
+        "__info",
+        "__listener",
+        "queued",
+        "seeding",
+        "message",
+    )
 
-    def __init__(self, listener, seeding=False, queued=False):
-        self.__client = get_client()
+    def __init__(
+        self,
+        client: QbittorrentClient,
+        listener: QbittorrentClient,  # type: QbittorrentClient
+        seeding: bool = False,
+        queued: bool = False,
+    ) -> None:
+        """
+        Initialize the QbittorrentStatus object.
+
+        :param client: The QbittorrentClient object.
+        :param listener: The listener QbittorrentClient object.
+        :param seeding: Whether the torrent is in seeding state.
+        :param queued: Whether the torrent is in queued state.
+        """
+        self.__client = client
         self.__listener = listener
-        self.upload_details = listener.upload_details
-        self.__info = get_download(self.__client, f'{self.__listener.uid}')
         self.queued = queued
         self.seeding = seeding
-        self.message = listener.message
+        self.__post_init__()
 
-    def __update(self):
-        new_info = get_download(self.__client, f'{self.__listener.uid}')
-        if new_info is not None:
-            self.__info = new_info
+    def __post_init__(self) -> None:
+        """
+        Update the __info variable after the object is initialized.
+        """
+        self.__info = self.__client.torrents_info(f'{self.__listener.uid}')
+        self.message = self.__listener.message
 
-    def progress(self):
+    async def __del__(self) -> None:
+        """
+        Remove the torrent from the client when the object is garbage collected.
+        """
+        if not self.seeding:
+            await asyncio.create_task(self.__client.torrents_delete(torrent_hashes=self.__info.hash, delete_files=True))
+
+    @property
+    def progress(self) -> str:
+        """
+        Get the progress of the torrent as a string.
+
+        :return: The progress of the torrent.
+        """
         return f'{round(self.__info.progress*100, 2)}%'
 
-    def processed_bytes(self):
+    @property
+    def processed_bytes(self) -> str:
+        """
+        Get the processed bytes of the torrent as a string.
+
+        :return: The processed bytes of the torrent.
+        """
         return get_readable_file_size(self.__info.downloaded)
 
-    def speed(self):
+    @property
+    def speed(self) -> str:
+        """
+        Get the speed of the torrent as a string.
+
+        :return: The speed of the torrent.
+        """
         return f"{get_readable_file_size(self.__info.dlspeed)}/s"
 
-    def name(self):
+    @property
+    def name(self) -> str:
+        """
+        Get the name of the torrent.
+
+        :return: The name of the torrent.
+        """
         if self.__info.state in ["metaDL", "checkingResumeData"]:
             return f"[METADATA]{self.__info.name}"
         else:
             return self.__info.name
 
-    def size(self):
+    @property
+    def size(self) -> str:
+        """
+        Get the size of the torrent as a string.
+
+        :return: The size of the torrent.
+        """
         return get_readable_file_size(self.__info.size)
 
-    def eta(self):
+    @property
+    def eta(self) -> str:
+        """
+        Get the ETA of the torrent as a string.
+
+        :return: The ETA of the torrent.
+        """
         return get_readable_time(self.__info.eta)
 
-    def status(self):
+    @property
+    def status(self) -> str:
+        """
+        Get the status of the torrent.
+
+        :return: The status of the torrent.
+        """
         self.__update()
         state = self.__info.state
         if state == "queuedDL" or self.queued:
@@ -67,57 +132,161 @@ class QbittorrentStatus:
         else:
             return MirrorStatus.STATUS_DOWNLOADING
 
-    def seeders_num(self):
+    @property
+    def seeders_num(self) -> int:
+        """
+        Get the number of seeders of the torrent.
+
+        :return: The number of seeders of the torrent.
+        """
         return self.__info.num_seeds
 
-    def leechers_num(self):
+    @property
+    def leechers_num(self) -> int:
+        """
+        Get the number of leechers of the torrent.
+
+        :return: The number of leechers of the torrent.
+        """
         return self.__info.num_leechs
 
-    def uploaded_bytes(self):
+    @property
+    def uploaded_bytes(self) -> str:
+        """
+        Get the uploaded bytes of the torrent as a string.
+
+        :return: The uploaded bytes of the torrent.
+        """
         return get_readable_file_size(self.__info.uploaded)
 
-    def upload_speed(self):
+    @property
+    def upload_speed(self) -> str:
+        """
+        Get the upload speed of the torrent as a string.
+
+        :return: The upload speed of the torrent.
+        """
         return f"{get_readable_file_size(self.__info.upspeed)}/s"
 
-    def ratio(self):
+    @property
+    def ratio(self) -> str:
+        """
+        Get the ratio of the torrent.
+
+        :return: The ratio of the torrent.
+        """
         return f"{round(self.__info.ratio, 3)}"
 
-    def seeding_time(self):
+    @property
+    def seeding_time(self) -> str:
+        """
+        Get the seeding time of the torrent as a string.
+
+        :return: The seeding time of the torrent.
+        """
         return get_readable_time(self.__info.seeding_time)
 
-    def download(self):
+    async def __aenter__(self) -> "QbittorrentStatus":
+        """
+        Enter the context manager.
+
+        :return: The QbittorrentStatus object.
+        """
         return self
 
-    def gid(self):
-        return self.hash()[:12]
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc: Optional[BaseException],
+        tb: Optional[traceback.TracebackType],
+    ) -> None:
+        """
+        Exit the context manager.
 
-    def hash(self):
+        :param exc_type: The exception type.
+        :param exc: The exception object.
+        :param tb: The traceback object.
+        """
+        pass
+
+    async def cancel_download(self) -> Union[Coroutine, None]:
+        """
+        Cancel the download of the torrent.
+
+        :return: A coroutine object or None.
+        """
+        self.__update()
+        if self.__info is not None and self.__info.state not in ["downloading", "stalledDL"]:
+            await self.__client.torrents_pause(torrent_hashes=self.__info.hash)
+            if not self.seeding:
+                if self.queued:
+                    LOGGER.info(f'Cancelling QueueDL: {self.name()}')
+                    msg = 'task have been removed from queue/download'
+                else:
+                    LOGGER.info(f"Cancelling Download: {self.__info.name}")
+                    msg = 'Download stopped by user!'
+                await asyncio.sleep(0.5)
+                await self.__listener.onDownloadError(msg)
+                await self.__client.torrents_delete(torrent_hashes=self.__info.hash, delete_files=True)
+                await self.__client.torrents_delete_tags(tags=self.__info.tags)
+                async with qb_listener_lock:
+                    if self.__info.tags in QbTorrents:
+                        del QbTorrents[self.__info.tags]
+
+    def __update(self) -> None:
+        """
+        Update the info object.
+        """
+        new_info = self.__client.torrents_info(f'{self.__listener.uid}')
+        if new_info is not None:
+            self.__info = new_info
+
+    @final
+    def download(self) -> "QbittorrentStatus":
+        """
+        Download the torrent.
+
+        :return: The QbittorrentStatus object.
+        """
+        return self
+
+    @final
+    def gid(self) -> str:
+        """
+        Get the GID of the torrent.
+
+        :return: The GID of the torrent.
+        """
+        self.__update()
+        return self.__info.hash[:12]
+
+    @final
+    def hash(self) -> str:
+        """
+        Get the hash of the torrent.
+
+        :return: The hash of the torrent.
+        """
         self.__update()
         return self.__info.hash
 
-    def client(self):
-        return self.__client
+    @final
+    async def client(self) -> asyncio.AbstractContextManager:
+        """
+        Get the client object.
 
-    def listener(self):
-        return self.__listener
+        :return: The client object.
+        """
+        if self.__client is not None:
+            async with self.__client as client:
+                yield client
+        else:
+            raise RuntimeError("Client object is not initialized.")
 
-    async def cancel_download(self):
-        self.__update()
-        await sync_to_async(self.__client.torrents_pause, torrent_hashes=self.__info.hash)
-        if not self.seeding:
-            if self.queued:
-                LOGGER.info(f'Cancelling QueueDL: {self.name()}')
-                msg = 'task have been removed from queue/download'
-            else:
-                LOGGER.info(f"Cancelling Download: {self.__info.name}")
-                msg = 'Download stopped by user!'
-            await sleep(0.3)
-            await self.__listener.onDownloadError(msg)
-            await sync_to_async(self.__client.torrents_delete, torrent_hashes=self.__info.hash, delete_files=True)
-            await sync_to_async(self.__client.torrents_delete_tags, tags=self.__info.tags)
-            async with qb_listener_lock:
-                if self.__info.tags in QbTorrents:
-                    del QbTorrents[self.__info.tags]
+    def __repr__(self) -> str:
+        """
+        Get the string representation of the object.
 
-    def eng(self):
-        return EngineStatus().STATUS_QB
+        :return: The string representation of the object.
+        """
+        return f"<QbittorrentStatus(name='{self.name}', progress='{self.progress}', status='{self.status}')>"

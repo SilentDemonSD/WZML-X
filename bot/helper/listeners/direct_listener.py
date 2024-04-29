@@ -1,76 +1,33 @@
-from time import sleep
+import aiohttp
+import asyncio
+from functools import wraps
 
-from bot import LOGGER, aria2
-from bot.helper.ext_utils.bot_utils import async_to_sync, sync_to_async
+import logging
 
+logger = logging.getLogger(__name__)
 
-class DirectListener:
-    def __init__(self, foldername, total_size, path, listener, a2c_opt):
-        self.__path = path
-        self.__listener = listener
-        self.__is_cancelled = False
-        self.__a2c_opt = a2c_opt
-        self.__proc_bytes = 0
-        self.__failed = 0
-        self.task = None
-        self.name = foldername
-        self.total_size = total_size
+async def aiohttp_get(*args, **kwargs):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(*args, **kwargs) as response:
+            return await response.text()
 
-    @property
-    def processed_bytes(self):
-        if self.task:
-            return self.__proc_bytes + self.task.completed_length
-        return self.__proc_bytes
+def aio_to_sync(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return asyncio.run(func(*args, **kwargs))
+    return wrapper
 
-    @property
-    def speed(self):
-        return self.task.download_speed if self.task else 0
+@aio_to_sync
+async def download_file(url, output_file):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            content_length = int(response.headers['Content-Length'])
+            with open(output_file, 'wb') as f:
+                while True:
+                    chunk = await response.content.read(4096)
+                    if not chunk:
+                        break
+                    f.write(chunk)
+                    percentage = (f.tell() / content_length) * 100
+                    logger.info(f"Downloaded {percentage:.2f}%")
 
-    def download(self, contents):
-        self.is_downloading = True
-        for content in contents:
-            if self.__is_cancelled:
-                break
-            if content['path']:
-                self.__a2c_opt['dir'] = f"{self.__path}/{content['path']}"
-            else:
-                self.__a2c_opt['dir'] = self.__path
-            filename = content['filename']
-            self.__a2c_opt['out'] = filename
-            try:
-                self.task = aria2.add_uris([content['url']], self.__a2c_opt, position=0)
-            except Exception as e:
-                self.__failed += 1
-                LOGGER.error(f'Unable to download {filename} due to: {e}')
-                continue
-            self.task = self.task.live
-            while True:
-                if self.__is_cancelled:
-                    if self.task:
-                        self.task.remove(True, True)
-                    break
-                self.task = self.task.live
-                if error_message:= self.task.error_message:
-                    self.__failed += 1
-                    LOGGER.error(f'Unable to download {self.task.name} due to: {error_message}')
-                    self.task.remove(True, True)
-                    break
-                elif self.task.is_complete:
-                    self.__proc_bytes += self.task.total_length
-                    self.task.remove(True)
-                    break
-                sleep(1)
-            self.task = None
-        if self.__is_cancelled:
-            return
-        if self.__failed == len(contents):
-            async_to_sync(self.__listener.onDownloadError, 'All files are failed to download!')
-            return
-        async_to_sync(self.__listener.onDownloadComplete)
-
-    async def cancel_download(self):
-        self.__is_cancelled = True
-        LOGGER.info(f"Cancelling Download: {self.name}")
-        await self.__listener.onDownloadError("Download Cancelled by User!")
-        if self.task:
-            await sync_to_async(self.task.remove, force=True, files=True)

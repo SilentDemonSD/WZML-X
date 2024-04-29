@@ -1,174 +1,137 @@
-#!/usr/bin/env python3
-from os import path as ospath, walk
-from aiofiles.os import path as aiopath, rename as aiorename
-from asyncio import sleep
+import asyncio
+import os
+from typing import Any, Dict, List, Literal, Union
+
+import aiofiles
+import aiohttp
 from aiohttp import ClientSession
+from contextlib import asynccontextmanager
+from typing_extensions import overload
 
-from bot import LOGGER
-from bot.helper.ext_utils.bot_utils import sync_to_async
+class GoFileHTTP:
+    """
+    A class for making requests to the GoFile API.
 
-class Gofile:
-    def __init__(self, dluploader=None, token=None):
+    This class provides a convenient way to interact with the GoFile API by abstracting
+    away the details of making HTTP requests and handling responses. It supports GET,
+    PUT, and DELETE methods and automatically includes the API token in the request
+    headers for authentication.
+
+    Attributes:
+        api_url (str): The base URL for the GoFile API.
+        token (str): The API token to use for authentication.
+    """
+
+    def __init__(self, token: str = None):
+        """
+        Initializes a new `GoFileHTTP` instance.
+
+        :param token: The API token to use for authentication. If not provided,
+            requests will be made without authentication.
+        """
         self.api_url = "https://api.gofile.io/"
-        self.dluploader = dluploader
         self.token = token
-        
 
-    @staticmethod
-    async def is_goapi(token):
-        if token is None:
-            return
+    @overload
+    async def request(
+        self,
+        method: Literal["GET"],
+        url: str,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        ...
+
+    @overload
+    async def request(
+        self,
+        method: Literal["PUT"],
+        url: str,
+        data: Union[bytes, str],
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        ...
+
+    @overload
+    async def request(
+        self,
+        method: Literal["DELETE"],
+        url: str,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        ...
+
+    async def request(
+        self,
+        method: str,
+        url: str,
+        data: Any = None,
+        headers: dict[str, str] = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """
+        Sends an HTTP request to the GoFile API.
+
+        :param method: The HTTP method to use for the request.
+        :param url: The URL to send the request to.
+        :param data: The data to send with the request. Only used for PUT requests.
+        :param headers: The headers to include in the request. If not provided,
+            default headers will be used.
+        :param \**kwargs: Additional keyword arguments to pass to the `aiohttp.ClientSession.request` method.
+
+        :return: A dictionary containing the response data and status code.
+        """
+        if headers is None:
+            headers = {}
+
+        if self.token:
+            headers["Authorization"] = f"Bearer {self.token}"
+
         async with ClientSession() as session:
-            async with session.get(f"https://api.gofile.io/accounts/{token.split(':')[0]}?token={token.split(':')[1]}&allDetails=true") as resp:
-                if (await resp.json())["status"] == "ok":
-                    return True
-        return False
+            async with session.request(
+                method=method,
+                url=url,
+                data=data,
+                headers=headers,
+                **kwargs,
+            ) as response:
+                response_data = await response.json()
+                return {
+                    "status_code": response.status,
+                    "data": response_data,
+                }
 
-    async def __resp_handler(self, response):
-        api_resp = response.get("status", "")
-        if api_resp == "ok":
-            return response["data"]
-        raise Exception(api_resp.split("-")[1] if "error-" in api_resp else "Response Status is not ok and Reason is Unknown")
+    async def get_file_info(self, file_id: str) -> dict[str, Any]:
+        """
+        Gets information about a file by its ID.
 
-    async def __getServer(self):
-        async with ClientSession() as session:
-            async with session.get(f"{self.api_url}servers") as resp:
-                return await self.__resp_handler(await resp.json())
+        :param file_id: The ID of the file to get information about.
 
-    async def __getAccount(self, check_account=False):
-        if self.token is None:
-            raise Exception()
-        
-        api_url = f"{self.api_url}accounts/{self.token.split(':')[0]}?token={self.token.split(':')[1]}&allDetails=true"
-        async with ClientSession() as session:
-            resp = await (await session.get(url=api_url)).json()
-            if check_account:
-                return resp["status"] == "ok" if True else await self.__resp_handler(resp)
-            else:
-                return await self.__resp_handler(resp)
-        
-    async def upload_folder(self, path, folderId=None):
-        if not await aiopath.isdir(path):
-            raise Exception(f"Path: {path} is not a valid directory")
-            
-        folder_data = await self.create_folder((await self.__getAccount())["rootFolder"], ospath.basename(path))
-        await self.__setOptions(contentId=folder_data["id"], option="public", value="true")
-    
-        folderId = folderId or folder_data["id"]
-        folder_ids = {".": folderId}
-        for root, _, files in await sync_to_async(walk, path):
-            rel_path = ospath.relpath(root, path)
-            parentFolderId = folder_ids.get(ospath.dirname(rel_path), folderId)
-            folder_name = ospath.basename(rel_path)
-            currFolderId = (await self.create_folder(parentFolderId, folder_name))["id"]
-            await self.__setOptions(contentId=currFolderId, option="public", value="true")
-            folder_ids[rel_path] = currFolderId
+        :return: A dictionary containing the file information.
+        """
+        url = f"{self.api_url}file/info/{file_id}"
+        return await self.request("GET", url)
 
-            for file in files:
-                file_path = ospath.join(root, file)
-                up = await self.upload_file(file_path, currFolderId)
-                
-        return folder_data["code"]
+    async def upload_file(self, file_path: str) -> dict[str, Any]:
+        """
+        Uploads a file to the GoFile API.
 
-    async def upload_file(self, path: str, folderId: str = "", description: str = "", password: str = "", tags: str = "", expire: str = ""):
-        if password and len(password) < 4:
-            raise ValueError("Password Length must be greater than 4")
+        :param file_path: The path to the file to upload.
 
-        server = (await self.__getServer())["servers"][0]["name"]
-        token = self.token if self.token else ""
-        req_dict = {}
-        if token:
-            req_dict["token"] = token.split(':')[1]
-        if folderId:
-            req_dict["folderId"] = folderId
-        if description:
-            req_dict["description"] = description
-        if password:
-            req_dict["password"] = password
-        if tags:
-            req_dict["tags"] = tags
-        if expire:
-            req_dict["expire"] = expire
-        
-        if self.dluploader.is_cancelled:
-            return
-        new_path = ospath.join(ospath.dirname(path), ospath.basename(path).replace(' ', '.'))
-        await aiorename(path, new_path)
-        self.dluploader.last_uploaded = 0
-        upload_file = await self.dluploader.upload_aiohttp(f"https://{server}.gofile.io/contents/uploadfile", new_path, "file", req_dict)
-        return await self.__resp_handler(upload_file)
-        
-    async def upload(self, file_path):
-        if not await self.is_goapi(self.token):
-            raise Exception("Invalid Gofile API Key, Recheck your account !!")
-        if await aiopath.isfile(file_path):
-            if (gCode := await self.upload_file(path=file_path)) and gCode.get("downloadPage", False):
-                return gCode['downloadPage']
-        elif await aiopath.isdir(file_path):
-            if (gCode := await self.upload_folder(path=file_path)):
-                return f"https://gofile.io/d/{gCode}"
-        if self.dluploader.is_cancelled:
-            return
-        raise Exception("Failed to upload file/folder to Gofile API, Retry or Try after sometimes...")
+        :return: A dictionary containing the uploaded file information.
+        """
+        async with aiofiles.open(file_path, "rb") as file:
+            data = await file.read()
 
-    async def create_folder(self, parentFolderId, folderName):
-        if self.token is None:
-            raise Exception()
-        
-        async with ClientSession() as session:
-            async with session.put(url=f"{self.api_url}contents/createFolder",
-                data={
-                        "parentFolderId": parentFolderId,
-                        "folderName": folderName,
-                        "token": self.token.split(':')[1]
-                    }
-                ) as resp:
-                return await self.__resp_handler(await resp.json())
+        url = f"{self.api_url}file/upload"
+        return await self.request("PUT", url, data=data)
 
-    async def __setOptions(self, contentId, option, value):
-        if self.token is None:
-            raise Exception()
-        
-        if not option in ["public", "password", "description", "expire", "tags"]:
-            raise Exception(f"Invalid GoFile Option Specified : {option}")
-        async with ClientSession() as session:
-            async with session.put(url=f"{self.api_url}contents/{contentId}/update",
-                data={
-                        "token": self.token.split(':')[1],
-                        "attribute": option,
-                        "attributevalue": value
-                    }
-                ) as resp:
-                return await self.__resp_handler(await resp.json())
+    async def delete_file(self, file_id: str) -> dict[str, Any]:
+        """
+        Deletes a file by its ID.
 
-    async def get_content(self, contentId):
-        if self.token is None:
-            raise Exception()
-        
-        async with ClientSession() as session:
-            async with session.get(url=f"{self.api_url}contents/{contentId}&token={self.token}") as resp:
-                return await self.__resp_handler(await resp.json())
+        :param file_id: The ID of the file to delete.
 
-    async def copy_content(self, contentsId, folderIdDest):
-        if self.token is None:
-            raise Exception()
-        async with ClientSession() as session:
-            async with session.put(url=f"{self.api_url}contents/copy",
-                    data={
-                        "token": self.token.split(':')[1],
-                        "contentsId": contentsId,
-                        "folderId": folderIdDest
-                    }
-                ) as resp:
-                return await self.__resp_handler(await resp.json())
-
-    async def delete_content(self, contentId):
-        if self.token is None:
-            raise Exception()
-        async with ClientSession() as session:
-            async with session.delete(url=f"{self.api_url}contents/{contentId}",
-                    data={
-                        "token": self.token.split(':')[1]
-                    }
-                ) as resp:
-                return await self.__resp_handler(await resp.json())
+        :return: A dictionary containing the deletion status.
+        """
+        url = f"{self.api_url}file/delete/{file_id}"
+        return await self.request("DELETE", url)

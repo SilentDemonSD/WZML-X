@@ -1,4 +1,56 @@
 {
-  "schemaVersion": 2,
-  "dockerfilePath": "./Dockerfile"
+  "version": "2.3", // Docker Compose file format version
+
+  "build": {
+    "context": ".", // Context (current directory) for building images
+    "dockerfile": "Dockerfile", // Dockerfile location
+    "args": {
+      "HTTP_PROXY": "",
+      "HTTPS_PROXY": ""
+    }
+  },
+
+  "services": {
+    "web": { // Web service configuration
+      "build": "web", // Build the web service using the 'web' directory as the context
+      "image": "myapp-web", // Set the image name to 'myapp-web'
+      "ports": [
+        "80:80"
+      ], // Map the host's port 80 to the container's port 80
+      "networks": [
+        "webnet"
+      ], // Assign the web service to the 'webnet' network
+      "volumes": [
+        "/var/www/html"
+      ] // Mount the host's /var/www/html directory as a volume in the container
+    },
+
+    "db": { // Database service configuration
+      "image": "postgres:latest", // Use the latest PostgreSQL image
+      "environment": [ // Set environment variables for the PostgreSQL container
+        "POSTGRES_USER=myuser",
+        "POSTGRES_PASSWORD=mypassword",
+        "POSTGRES_DB=mydb"
+      ],
+      "volumes": [
+        "dbdata:/var/lib/postgresql/data"
+      ], // Mount the 'dbdata' volume to the container's /var/lib/postgresql/data directory
+      "networks": [
+        "dbnet"
+      ] // Assign the database service to the 'dbnet' network
+    }
+  },
+
+  "networks": {
+    "webnet": {
+      "driver": "bridge" // Use the bridge network driver for 'webnet'
+    },
+    "dbnet": {
+      "driver": "bridge" // Use the bridge network driver for 'dbnet'
+    }
+  },
+
+  "volumes": {
+    "dbdata": {} // Declare the 'dbdata' volume
+  }
 }

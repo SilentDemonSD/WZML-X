@@ -1,37 +1,36 @@
-version: "3.3"
-services:
-  #gluetun:
-    #image: qmcgaw/gluetun:v3.34
-    #container_name: gluetun
-    # External Container --> https://github.com/qdm12/gluetun-wiki/blob/main/setup/connect-a-container-to-gluetun.md#external-container-to-gluetun
-    #cap_add:
-    #  - NET_ADMIN
-    #devices:
-    #  - /dev/net/tun:/dev/net/tun
-    #environment:
-    #  # SetUp --> https://github.com/qdm12/gluetun-wiki/tree/main/setup#setup
-    #  - VPN_SERVICE_PROVIDER=
-    #  - VPN_TYPE=
-    #  # OpenVPN --> https://github.com/qdm12/gluetun-wiki/blob/main/setup/options/openvpn.md
-    #  - OPENVPN_USER=  
-    #  - OPENVPN_PASSWORD=
-    #  # Wireguard --> https://github.com/qdm12/gluetun-wiki/blob/main/setup/options/wireguard.md
-    #  - WIREGUARD_PRIVATE_KEY=
-    #  - WIREGUARD_ADDRESS=
-    #  - WIREGUARD_PUBLIC_KEY=
-    #  # TimeZone Logs --> https://github.com/qdm12/gluetun-wiki/blob/main/setup/options/others.md
-    #  - TZ=Asia/Kolkata
-    #  # Server List Updater --> https://github.com/qdm12/gluetun-wiki/blob/main/setup/servers.md#update-the-vpn-servers-list
-    #  - UPDATER_PERIOD=24h
-    #ports:
-    #  - "80:80"
-    #  - "8080:8080"
-    #restart: on-failure
-  app:
-    build: .
-    #network_mode: "service:gluetun" #If using VPN, Remove the Hash from first and fill up Above Details.
-    command: bash start.sh
-    restart: on-failure
+# This is a Docker Compose file for a VPN and an application.
+
+version: "3.9"  # Specifies the version of Docker Compose to use.
+
+services:  # Defines the services (containers) that make up the application.
+
+  # The VPN service uses the qmcgaw/gluetun image and is named "vpn".
+  # It has NET_ADMIN capabilities and uses the /dev/net/tun device.
+  # It also has various environment variables for configuring the VPN.
+  # The VPN listens on ports 80 and 8080 and restarts if it fails.
+  vpn:
+    image: qmcgaw/gluetun:v3.34
+    container_name: vpn
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      - VPN_SERVICE_PROVIDER=wireguard
+      - VPN_TYPE=wireguard
+      - OPENVPN_USER=your_openvpn_username
+      - OPENVPN_PASSWORD=your_openvpn_password
+      - WIREGUARD_PRIVATE_KEY=your_wireguard_private_key
+      - WIREGUARD_ADDRESS=your_wireguard_address
+      - WIREGUARD_PUBLIC_KEY=your_wireguard_public_key
+      - TZ=Asia/Kolkata
+      - UPDATER_PERIOD=24h
     ports:
       - "80:80"
       - "8080:8080"
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

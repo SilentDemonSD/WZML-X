@@ -1,81 +1,212 @@
-#!/usr/bin/env python3
-from string import ascii_letters
-from random import SystemRandom
-from asyncio import sleep
-from telegraph.aio import Telegraph
-from telegraph.exceptions import RetryAfterError
+import asyncio
+import logging
+import random
+import string
+from typing import Any, Dict, List, Optional, Union
 
-from bot import LOGGER, bot_loop, config_dict
+import aiohttp
+from telegraph import Telegraph, exceptions as tg_exceptions
 
+logger = logging.getLogger(__name__)
 
 class TelegraphHelper:
-    def __init__(self, author_name=None, author_url=None):
-        self.telegraph = Telegraph(domain='graph.org')
-        self.short_name = ''.join(SystemRandom().choices(ascii_letters, k=8))
+    """
+    Helper class for interacting with Telegraph API.
+    """
+
+    def __init__(
+        self,
+        author_name: str = None,
+        author_url: str = None,
+    ):
+        """
+        Initialize a TelegraphHelper instance.
+
+        Args:
+            author_name (str, optional): Author name for the Telegraph account. Defaults to None.
+            author_url (str, optional): Author URL for the Telegraph account. Defaults to None.
+        """
+        self.telegraph = Telegraph(domain="graph.org")
+        self.short_name = "".join(random.choices(string.ascii_letters, k=8))
         self.access_token = None
         self.author_name = author_name
         self.author_url = author_url
 
-    async def create_account(self):
-        await self.telegraph.create_account(
-            short_name=self.short_name,
-            author_name=self.author_name,
-            author_url=self.author_url
+    def _get_telegraph_kwargs(
+        self,
+        request_func,
+        *args,
+        retry_on_flood_control: bool = True,
+        **kwargs,
+    ) -> Dict[str, Any]:
+        """
+        Generate a dictionary of Telegraph API request arguments.
+
+        Args:
+            request_func (function): The Telegraph API request function.
+            *args: Variable length argument list.
+            retry_on_flood_control (bool, optional): Whether to retry on flood control errors. Defaults to True.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            Dict[str, Any]: A dictionary of arguments for the Telegraph API request.
+        """
+        kwargs["short_name"] = self.short_name
+        kwargs["author_name"] = self.author_name
+        kwargs["author_url"] = self.author_url
+        return kwargs
+
+    async def create_account(self) -> None:
+        """
+        Create a new Telegraph account.
+
+        Returns:
+            None
+        """
+        retry_after = 0
+        while retry_after < 5:
+            try:
+                response = await self.telegraph.create_account(
+                    **self._get_telegraph_kwargs(self.telegraph.create_account)
+                )
+                self.access_token = self.telegraph.get_access_token()
+                logger.info(f"Telegraph Account Generated : {self.short_name}")
+                return response
+            except tg_exceptions.RetryAfterError as e:
+                logger.warning(f"Telegraph Flood control exceeded. Retrying in {e.retry_after} seconds...")
+                retry_after = retry_after + e.retry_after
+                await asyncio.sleep(e.retry_after)
+        logger.error("Failed to create Telegraph account after 5 retries.")
+
+    async def create_page(
+        self, title: str, content: str, retry_on_flood_control: bool = True
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Create a new Telegraph page.
+
+        Args:
+            title (str): The title of the page.
+            content (str): The content of the page.
+            retry_on_flood_control (bool, optional): Whether to retry on flood control errors. Defaults to True.
+
+        Returns:
+            Optional[Dict[str, Any]]: The response from the Telegraph API, or None if an error occurred.
+        """
+        return await self._request_telegraph(
+            self.telegraph.create_page,
+            title=title,
+            html_content=content,
+            retry_on_flood_control=retry_on_flood_control,
+            **self._get_telegraph_kwargs(self.telegraph.create_page),
         )
-        self.access_token = self.telegraph.get_access_token()
-        LOGGER.info(f"Telegraph Account Generated : {self.short_name}")
 
-    async def create_page(self, title, content):
+    async def edit_page(
+        self, path: str, title: str, content: str, retry_on_flood_control: bool = True
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Edit an existing Telegraph page.
+
+        Args:
+            path (str): The path of the page.
+            title (str): The title of the page.
+            content (str): The content of the page.
+            retry_on_flood_control (bool, optional): Whether to retry on flood control errors. Defaults to True.
+
+        Returns:
+            Optional[Dict[str, Any]]: The response from the Telegraph API, or None if an error occurred.
+        """
         try:
-            return await self.telegraph.create_page(
-                title=title,
-                author_name=self.author_name,
-                author_url=self.author_url,
-                html_content=content
-            )
-        except RetryAfterError as st:
-            LOGGER.warning(f'Telegraph Flood control exceeded. I will sleep for {st.retry_after} seconds.')
-            await sleep(st.retry_after)
-            return await self.create_page(title, content)
+            page = await self.get_page(path)
+            if not page:
+                logger.error(f"Page with path {path} not found.")
+                return None
+        except tg_exceptions.TelegraphError as e:
+            logger.error(f"Error getting page with path {path}: {e}")
+            return None
 
-    async def edit_page(self, path, title, content):
+        return await self._request_telegraph(
+            self.telegraph.edit_page,
+            path=path,
+            title=title,
+            html_content=content,
+            retry_on_flood_control=retry_on_flood_control,
+            **self._get_telegraph_kwargs(self.telegraph.edit_page),
+        )
+
+    async def delete_page(self, path: str) -> Optional[Dict[str, Any]]:
+        """
+        Delete a Telegraph page.
+
+        Args:
+            path (str): The path of the page.
+
+        Returns:
+            Optional[Dict[str, Any]]: The response from the Telegraph API, or None if an error occurred.
+        """
         try:
-            return await self.telegraph.edit_page(
-                path=path,
-                title=title,
-                author_name=self.author_name,
-                author_url=self.author_url,
-                html_content=content
-            )
-        except RetryAfterError as st:
-            LOGGER.warning(f'Telegraph Flood control exceeded. I will sleep for {st.retry_after} seconds.')
-            await sleep(st.retry_after)
-            return await self.edit_page(path, title, content)
+            page = await self.get_page(path)
+            if not page:
+                logger.error(f"Page with path {path} not found.")
+                return None
+        except tg_exceptions.TelegraphError as e:
+            logger.error(f"Error getting page with path {path}: {e}")
+            return None
 
-    async def edit_telegraph(self, path, telegraph_content):
-        nxt_page = 1
-        prev_page = 0
-        num_of_path = len(path)
-        for content in telegraph_content:
-            if nxt_page == 1:
-                content += f'<b><a href="https://telegra.ph/{path[nxt_page]}">Next</a></b>'
-                nxt_page += 1
-            else:
-                if prev_page <= num_of_path:
-                    content += f'<b><a href="https://telegra.ph/{path[prev_page]}">Prev</a></b>'
-                    prev_page += 1
-                if nxt_page < num_of_path:
-                    content += f'<b> | <a href="https://telegra.ph/{path[nxt_page]}">Next</a></b>'
-                    nxt_page += 1
-            await self.edit_page(
-                path=path[prev_page],
-                title=f"{config_dict['TITLE_NAME']} Torrent Search",
-                content=content
-            )
-        return
+        return await self._request_telegraph(
+            self.telegraph.delete_page,
+            path=path,
+            **self._get_telegraph_kwargs(self.telegraph.delete_page),
+        )
 
+    async def get_page(self, path: str) -> Optional[Dict[str, Any]]:
+        """
+        Get a Telegraph page.
 
-telegraph = TelegraphHelper(config_dict['AUTHOR_NAME'],
-                            config_dict['AUTHOR_URL'])
+        Args:
+            path (str): The path of the page.
 
-bot_loop.run_until_complete(telegraph.create_account())
+        Returns:
+            Optional[Dict[str, Any]]: The response from the Telegraph API, or None if an error occurred.
+        """
+        try:
+            response = await self.telegraph.get_page(path, **self._get_telegraph_kwargs(self.telegraph.get_page))
+            return response
+        except tg_exceptions.TelegraphError as e:
+            logger.error(f"Error getting page with path {path}: {e}")
+            return None
+
+    async def _request_telegraph(
+        self,
+        request_func,
+        *args,
+        retry_on_flood_control: bool = True,
+        **kwargs,
+    ) -> Union[Dict[str, Any], None]:
+        """
+        Make a request to the Telegraph API.
+
+        Args:
+            request_func (function): The Telegraph API request function.
+            *args: Variable length argument list.
+            retry_on_flood_control (bool, optional): Whether to retry on flood control errors. Defaults to True.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            Union[Dict[str, Any], None]: The response from the Telegraph API, or None if an error occurred.
+        """
+        try:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
+                response = await request_func(session, *args, **kwargs)
+                return response
+        except tg_exceptions.RetryAfterError as e:
+            if retry_on_flood_control:
+                logger.warning(
+                    f"Telegraph Flood control exceeded. Retrying in {e.retry_after} seconds..."
+                )
+                await asyncio.sleep(e.retry_after)
+                return await self._request_telegraph(
+                    request_func, *args, retry_on_flood_control=retry_on_flood_control, **kwargs
+                )
+        except tg_exceptions.TelegraphError as e:
+            logger.error(f"Error in Telegraph request: {e}")
+            return None
