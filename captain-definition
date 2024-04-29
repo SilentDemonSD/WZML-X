@@ -1,19 +1,51 @@
 {
-  "version": 2,
+  "version": "2.3",
   "build": {
     "context": ".",
     "dockerfile": "Dockerfile",
     "args": {
-      // Add any build arguments here
+      "HTTP_PROXY": "",
+      "HTTPS_PROXY": ""
     }
   },
   "services": {
-    // Define services here
+    "web": {
+      "build": "web",
+      "image": "myapp-web",
+      "ports": [
+        "80:80"
+      ],
+      "networks": [
+        "webnet"
+      ],
+      "volumes": [
+        "/var/www/html"
+      ]
+    },
+    "db": {
+      "image": "postgres:latest",
+      "environment": [
+        "POSTGRES_USER=myuser",
+        "POSTGRES_PASSWORD=mypassword",
+        "POSTGRES_DB=mydb"
+      ],
+      "volumes": [
+        "dbdata:/var/lib/postgresql/data"
+      ],
+      "networks": [
+        "dbnet"
+      ]
+    }
   },
   "networks": {
-    // Define networks here
+    "webnet": {
+      "driver": "bridge"
+    },
+    "dbnet": {
+      "driver": "bridge"
+    }
   },
   "volumes": {
-    // Define volumes here
+    "dbdata": {}
   }
 }
