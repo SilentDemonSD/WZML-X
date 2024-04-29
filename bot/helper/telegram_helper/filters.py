@@ -1,6 +1,7 @@
 import pyrogram
 from pyrogram.enums import ChatType
 from pyrogram.filters import User, ChatAdmin
+from typing import Callable, Coroutine
 
 class CustomFilters:
     def __init__(self, context: dict):
@@ -17,7 +18,10 @@ class CustomFilters:
         user = message.from_user or message.sender_chat
         user_id = user.id
 
-        if user_id == self.owner_id or (user_id in self.context and self.context[user_id].get('is_auth', False)):
+        if user_id == self.owner_id:
+            return True
+
+        if user_id in self.context and self.context[user_id].get('is_auth', False):
             return True
 
         chat = message.chat
@@ -46,7 +50,7 @@ class CustomFilters:
                     member = await client.get_chat_member(str(channel_id), user_id)
                     if member.status in (member.status.ADMINISTRATOR, member.status.OWNER):
                         return True
-                except:
+                except Exception:
                     continue
 
         return False
@@ -56,11 +60,13 @@ class CustomFilters:
         user_id = (message.from_user or message.sender_chat).id
         chat = message.chat
 
-        if (
-            user_id == self.owner_id
-            or (user_id in self.context and self.context[user_id].get('is_auth', False))
-            or (chat.id in self.context and self.context[chat.id].get('is_auth', False))
-        ):
+        if user_id == self.owner_id:
+            return True
+
+        if user_id in self.context and self.context[user_id].get('is_auth', False):
+            return True
+
+        if chat.id in self.context and self.context[chat.id].get('is_auth', False):
             return True
 
         if chat.type == ChatType.PRIVATE:
@@ -72,7 +78,7 @@ class CustomFilters:
                     member = await client.get_chat_member(str(channel_id), user_id)
                     if member.status in (member.status.ADMINISTRATOR, member.status.OWNER):
                         return True
-                except:
+                except Exception:
                     continue
 
         return False
@@ -81,13 +87,13 @@ class CustomFilters:
         """Check if the user is a sudo user."""
         user = message.from_user or message.sender_chat
         user_id = user.id
-        return user_id == self.owner_id or (user_id in self.context and self.context[user_id].get('is_sudo'))
+        return user_id == self.owner_id or (user_id in self.context and self.context[user_id].get('is_sudo', False))
 
     async def blacklisted(self, client: pyrogram.Client, message: pyrogram.types.Message) -> bool:
         """Check if the user is blacklisted."""
         user = message.from_user or message.sender_chat
         user_id = user.id
-        return user_id != self.owner_id and user_id in self.context and self.context[user_id].get('is_blacklist')
+        return user_id != self.owner_id and user_id in self.context and self.context[user_id].get('is_blacklist', False)
 
     def __getattr__(self, name: str) -> Callable[[pyrogram.Client, pyrogram.types.Message], Coroutine[Any, Any, bool]]:
         """Return a filter by name."""
