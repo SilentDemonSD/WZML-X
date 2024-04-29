@@ -1,64 +1,58 @@
+from typing import List, Union
+
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-
 class ButtonMaker:
+    """
+    Class for creating and managing inline keyboard buttons.
+    """
+
     def __init__(self):
-        self.__button = []
-        self.__header_button = []
-        self.__first_body_button = []
-        self.__last_body_button = []
-        self.__footer_button = []
+        self.__button_lists: List[List[Union[InlineKeyboardButton, str]]] = [
+            [],  # header
+            [],  # first body
+            [],  # last body
+            [],  # footer
+            []   # buttons
+        ]
 
-    def ubutton(self, key, link, position=None):
-        if not position:
-            self.__button.append(InlineKeyboardButton(text=key, url=link))
-        elif position == 'header':
-            self.__header_button.append(InlineKeyboardButton(text=key, url=link))
-        elif position == 'f_body':
-            self.__first_body_button.append(InlineKeyboardButton(text=key, url=link))
-        elif position == 'l_body':
-            self.__last_body_button.append(InlineKeyboardButton(text=key, url=link))
-        elif position == 'footer':
-            self.__footer_button.append(InlineKeyboardButton(text=key, url=link))
+    def ubutton(self, key: str, link: str, position: str = None) -> None:
+        """
+        Adds a URL button to the button list.
 
-    def ibutton(self, key, data, position=None):
-        if not position:
-            self.__button.append(InlineKeyboardButton(text=key, callback_data=data))
-        elif position == 'header':
-            self.__header_button.append(InlineKeyboardButton(text=key, callback_data=data))
-        elif position == 'f_body':
-            self.__first_body_button.append(InlineKeyboardButton(text=key, callback_data=data))
-        elif position == 'l_body':
-            self.__last_body_button.append(InlineKeyboardButton(text=key, callback_data=data))
-        elif position == 'footer':
-            self.__footer_button.append(InlineKeyboardButton(text=key, callback_data=data))
+        :param key: The text of the button
+        :param link: The URL of the button
+        :param position: The position of the button. Can be 'header', 'f_body', 'l_body', 'footer', or None
+        """
+        if position is None:
+            position = 'buttons'
 
-    def build_menu(self, b_cols=1, h_cols=8, fb_cols=2, lb_cols=2, f_cols=8):
-        menu = [self.__button[i:i+b_cols]
-                for i in range(0, len(self.__button), b_cols)]
-        if self.__header_button:
-            if len(self.__header_button) > h_cols:
-                header_buttons = [self.__header_button[i:i+h_cols]
-                                  for i in range(0, len(self.__header_button), h_cols)]
-                menu = header_buttons + menu
-            else:
-                menu.insert(0, self.__header_button)
-        if self.__first_body_button:
-            if len(self.__first_body_button) > fb_cols:
-                [menu.append(self.__first_body_button[i:i+fb_cols])
-                 for i in range(0, len(self.__first_body_button), fb_cols)]
-            else:
-                menu.append(self.__first_body_button)
-        if self.__last_body_button:
-            if len(self.__last_body_button) > lb_cols:
-                [menu.append(self.__last_body_button[i:i+lb_cols])
-                 for i in range(0, len(self.__last_body_button), lb_cols)]
-            else:
-                menu.append(self.__last_body_button)
-        if self.__footer_button:
-            if len(self.__footer_button) > f_cols:
-                [menu.append(self.__footer_button[i:i+f_cols])
-                 for i in range(0, len(self.__footer_button), f_cols)]
-            else:
-                menu.append(self.__footer_button)
+        if position not in ['header', 'f_body', 'l_body', 'footer', 'buttons']:
+            raise ValueError(f"Invalid position '{position}', must be one of 'header', 'f_body', 'l_body', 'footer', or None")
+
+        self.__button_lists[position].append(InlineKeyboardButton(text=key, url=link))
+
+    def ibutton(self, key: str, data: str, position: str = None) -> None:
+        """
+        Adds a callback button to the button list.
+
+        :param key: The text of the button
+        :param data: The callback data of the button
+        :param position: The position of the button. Can be 'header', 'f_body', 'l_body', 'footer', or None
+        """
+        if position is None:
+            position = 'buttons'
+
+        if position not in ['header', 'f_body', 'l_body', 'footer', 'buttons']:
+            raise ValueError(f"Invalid position '{position}', must be one of 'header', 'f_body', 'l_body', 'footer', or None")
+
+        self.__button_lists[position].append(InlineKeyboardButton(text=key, callback_data=data))
+
+    def build_menu(self) -> InlineKeyboardMarkup:
+        """
+        Builds the inline keyboard markup from the button lists.
+
+        :return: The InlineKeyboardMarkup object
+        """
+        menu = [self.__button_lists[i] for i in [4, 0, 2, 3, 1] if self.__button_lists[i]]
         return InlineKeyboardMarkup(menu)
