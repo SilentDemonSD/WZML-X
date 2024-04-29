@@ -13,11 +13,21 @@ from bot import LOGGER
 
 class DbManager:
     DATABASE_URL: Final = bot.DATABASE_URL
+    bot_id: str
+    config_dict: dict
+    aria2_options: dict
+    qbit_options: dict
+    user_data: dict[str, dict] = {}
+    rss_dict: dict[str, dict] = {}
 
-    def __init__(self):
+    def __init__(self, bot_id: str):
+        self.bot_id = bot_id
         self.__err = False
         self.__db = None
         self.__connect()
+        self.config_dict = bot.config_dict
+        self.aria2_options = bot.aria2_options
+        self.qbit_options = bot.qbit_options
 
     async def __connect(self):
         try:
@@ -29,6 +39,12 @@ class DbManager:
 
     def handle_exception(self, e: Exception) -> None:
         LOGGER.error(f"Error: {e}")
+
+    def log_debug(self, message: str) -> None:
+        LOGGER.debug(message)
+
+    def log_success(self, message: str) -> None:
+        LOGGER.success(message)
 
     async def db_load(self) -> None:
         if self.__err:
@@ -42,20 +58,20 @@ class DbManager:
         settings_collection = self.__db.settings
 
         settings = {
-            "_id": bot.bot_id,
-            "config_dict": bot.config_dict,
-            "aria2_options": bot.aria2_options,
-            "qbit_options": bot.qbit_options,
+            "_id": self.bot_id,
+            "config_dict": self.config_dict,
+            "aria2_options": self.aria2_options,
+            "qbit_options": self.qbit_options,
         }
 
         await settings_collection.update_one(
-            {"_id": bot.bot_id}, {"$set": settings}, upsert=True
+            {"_id": self.bot_id}, {"$set": settings}, upsert=True
         )
 
     async def __load_users(self) -> None:
         users_collection = self.__db.users
 
-        async for row in users_collection[bot.bot_id].find():
+        async for row in users_collection[self.bot_id].find():
             user_id = row["_id"]
             del row["_id"]
 
@@ -80,20 +96,20 @@ class DbManager:
 
                 row["rclone"] = rclone_path
 
-            LOGGER.debug(f"Loaded user data for user_id={user_id}")
-            bot.user_data[user_id] = row
+            self.user_data[user_id] = row
+            self.log_debug(f"Loaded user data for user_id={user_id}")
 
-        LOGGER.success("Users data has been imported from Database")
+        self.log_success("Users data has been imported from Database")
 
     async def __load_rss(self) -> None:
         rss_collection = self.__db.rss
 
-        async for row in rss_collection[bot.bot_id].find():
+        async for row in rss_collection[self.bot_id].find():
             user_id = row["_id"]
             del row["_id"]
-            bot.rss_dict[user_id] = row
+            self.rss_dict[user_id] = row
 
-        LOGGER.success("Rss data has been imported from Database.")
+        self.log_success("Rss data has been imported from Database.")
 
     async def update_deploy_config(self) -> None:
         if self.__err:
@@ -101,21 +117,21 @@ class DbManager:
 
         current_config = dict(dotenv_values("config.env"))
         await self.__db.settings.deployConfig.replace_one(
-            {"_id": bot.bot_id}, current_config, upsert=True
+            {"_id": self.bot_id}, current_config, upsert=True
         )
 
     async def update_config(self, dict_: dict[str, Any]) -> None:
         if self.__err:
             return
 
-        await self.__db.settings.config.update_one({"_id": bot.bot_id}, {"$set": dict_}, upsert=True)
+        await self.__db.settings.config.update_one({"_id": self.bot_id}, {"$set": dict_}, upsert=True)
 
     async def update_aria2(self, key: str, value: Any) -> None:
         if self.__err:
             return
 
         await self.__db.settings.aria2c.update_one(
-            {"_id": bot.bot_id}, {"$set": {key: value}}, upsert=True
+            {"_id": self.bot_id}, {"$set": {key: value}}, upsert=True
         )
 
     async def update_qbittorrent(self, key: str, value: Any) -> None:
@@ -123,7 +139,7 @@ class DbManager:
             return
 
         await self.__db.settings.qbittorrent.update_one(
-            {"_id": bot.bot_id}, {"$set": {key: value}}, upsert=True
+            {"_id": self.bot_id}, {"$set": {key: value}}, upsert=True
         )
 
     async def update_private_file(self, path: str) -> None:
@@ -138,7 +154,7 @@ class DbManager:
 
         path = path.replace(".", "__")
         await self.__db.settings.files.update_one(
-            {"_id": bot.bot_id}, {"$set": {path: pf_bin}}, upsert=True
+            {"_id": self.bot_id}, {"$set": {path: pf_bin}}, upsert=True
         )
 
         if path == "config.env":
@@ -148,13 +164,13 @@ class DbManager:
         if self.__err:
             return
 
-        data = bot.user_data[user_id]
+        data = self.user_data[user_id]
         if data.get("thumb"):
             del data["thumb"]
         if data.get("rclone"):
             del data["rclone"]
 
-        await self.__db.users[bot.bot_id].replace_one({"_id": user_id}, data, upsert=True)
+        await self.__db.users[self.bot_id].replace_one({"_id": user_id}, data, upsert=True)
 
     async def update_user_doc(self, user_id: str, key: str, path: str = "") -> None:
         if self.__err:
@@ -166,7 +182,7 @@ class DbManager:
         else:
             doc_bin = b""
 
-        await self.__db.users[bot.bot_id].update_one(
+        await self.__db.users[self.bot_id].update_one(
             {"_id": user_id}, {"$set": {key: doc_bin}}, upsert=True
         )
 
@@ -174,46 +190,46 @@ class DbManager:
         if self.__err:
             return []
 
-        return [doc["_id"] async for doc in self.__db.pm_users[bot.bot_id].find({})]
+        return [doc["_id"] async for doc in self.__db.pm_users[self.bot_id].find({})]
 
     async def update_pm_users(self, user_id: str) -> None:
         if self.__err:
             return
 
-        if not bool(await self.__db.pm_users[bot.bot_id].find_one({"_id": user_id})):
-            await self.__db.pm_users[bot.bot_id].insert_one({"_id": user_id})
-            LOGGER.info(f"New PM User Added : {user_id}")
+        if not bool(await self.__db.pm_users[self.bot_id].find_one({"_id": user_id})):
+            await self.__db.pm_users[self.bot_id].insert_one({"_id": user_id})
+            self.log_info(f"New PM User Added : {user_id}")
 
     async def rm_pm_user(self, user_id: str) -> None:
         if self.__err:
             return
 
-        await self.__db.pm_users[bot.bot_id].delete_one({"_id": user_id})
+        await self.__db.pm_users[self.bot_id].delete_one({"_id": user_id})
 
     async def rss_update_all(self) -> None:
         if self.__err:
             return
 
-        for user_id in list(bot.rss_dict.keys()):
-            await self.__db.rss[bot.bot_id].replace_one({"_id": user_id}, bot.rss_dict[user_id], upsert=True)
+        for user_id in list(self.rss_dict.keys()):
+            await self.__db.rss[self.bot_id].replace_one({"_id": user_id}, self.rss_dict[user_id], upsert=True)
 
     async def rss_update(self, user_id: str) -> None:
         if self.__err:
             return
 
-        await self.__db.rss[bot.bot_id].replace_one({"_id": user_id}, bot.rss_dict[user_id], upsert=True)
+        await self.__db.rss[self.bot_id].replace_one({"_id": user_id}, self.rss_dict[user_id], upsert=True)
 
     async def rss_delete(self, user_id: str) -> None:
         if self.__err:
             return
 
-        await self.__db.rss[bot.bot_id].delete_one({"_id": user_id})
+        await self.__db.rss[self.bot_id].delete_one({"_id": user_id})
 
     async def add_incomplete_task(self, cid: str, link: str, tag: str, msg_link: str, msg: str) -> None:
         if self.__err:
             return
 
-        await self.__db.tasks[bot.bot_id].insert_one(
+        await self.__db.tasks[self.bot_id].insert_one(
             {"_id": link, "cid": cid, "tag": tag, "source": msg_link, "org_msg": msg}
         )
 
@@ -221,7 +237,7 @@ class DbManager:
         if self.__err:
             return
 
-        await self.__db.tasks[bot.bot_id].delete_one({"_id": link})
+        await self.__db.tasks[self.bot_id].delete_one({"_id": link})
 
     async def get_incomplete_tasks(self) -> Dict[str, Dict[str, List[Dict[str, str]]]]:
         notifier_dict = {}
@@ -229,8 +245,8 @@ class DbManager:
         if self.__err:
             return notifier_dict
 
-        if await self.__db.tasks[bot.bot_id].find_one():
-            rows = self.__db.tasks[bot.bot_id].find({})
+        if await self.__db.tasks[self.bot_id].find_one():
+            rows = self.__db.tasks[self.bot_id].find({})
             async for row in rows:
                 if row["cid"] in list(notifier_dict.keys()):
                     if row["tag"] in list(notifier_dict[row["cid"]]):
@@ -244,7 +260,7 @@ class DbManager:
                 else:
                     notifier_dict[row["cid"]] = {row["tag"]: [{row["_id"]: row["source"]}]}
 
-        await self.__db.tasks[bot.bot_id].drop()
+        await self.__db.tasks[self.bot_id].drop()
 
         return notifier_dict
 
@@ -252,7 +268,7 @@ class DbManager:
         if self.__err:
             return
 
-        await self.__db[name][bot.bot_id].drop()
+        await self.__db[name][self.bot_id].drop()
 
     async def __aenter__(self):
         return self
@@ -265,5 +281,5 @@ class DbManager:
             await self.__conn.close()
 
 if DbManager.DATABASE_URL:
-    async with DbManager() as db:
+    async with DbManager(bot.bot_id) as db:
         await db.db_load()
