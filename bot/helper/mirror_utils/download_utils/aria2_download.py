@@ -122,4 +122,6 @@ async def add_aria2c_download(
             non_queued_dl.add(listener.uid)
 
 
-pip install aioaria2c
+# Install aioaria2c package as a separate step
+install_command = "pip install aioaria2c"
+
