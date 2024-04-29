@@ -25,9 +25,6 @@ class DbManager:
         self.__err = False
         self.__db = None
         self.__connect()
-        self.config_dict = bot.config_dict
-        self.aria2_options = bot.aria2_options
-        self.qbit_options = bot.qbit_options
 
     async def __connect(self):
         try:
@@ -39,12 +36,6 @@ class DbManager:
 
     def handle_exception(self, e: Exception) -> None:
         LOGGER.error(f"Error: {e}")
-
-    def log_debug(self, message: str) -> None:
-        LOGGER.debug(message)
-
-    def log_success(self, message: str) -> None:
-        LOGGER.success(message)
 
     async def db_load(self) -> None:
         if self.__err:
@@ -71,43 +62,39 @@ class DbManager:
     async def __load_users(self) -> None:
         users_collection = self.__db.users
 
-        async for row in users_collection[self.bot_id].find():
-            user_id = row["_id"]
-            del row["_id"]
+        async for row in users_collection.find({"_id": self.bot_id}):
+            user_data = {k: v for k, v in row.items() if k != "_id"}
+            thumb_path = f'Thumbnails/{row["_id"]}.jpg'
+            rclone_path = f'rclone/{row["_id"]}.conf'
 
-            thumb_path = f'Thumbnails/{user_id}.jpg'
-            rclone_path = f'rclone/{user_id}.conf'
-
-            if row.get("thumb"):
+            if "thumb" in user_data:
                 if not await aiopath.exists("Thumbnails"):
                     await makedirs("Thumbnails", exist_ok=True)
 
                 async with aiopen(thumb_path, "wb+") as f:
-                    await f.write(row["thumb"])
+                    await f.write(user_data["thumb"])
 
-                row["thumb"] = thumb_path
+                user_data["thumb"] = thumb_path
 
-            if row.get("rclone"):
+            if "rclone" in user_data:
                 if not await aiopath.exists("rclone"):
                     await makedirs("rclone", exist_ok=True)
 
                 async with aiopen(rclone_path, "wb+") as f:
-                    await f.write(row["rclone"])
+                    await f.write(user_data["rclone"])
 
-                row["rclone"] = rclone_path
+                user_data["rclone"] = rclone_path
 
-            self.user_data[user_id] = row
-            self.log_debug(f"Loaded user data for user_id={user_id}")
+            self.user_data[row["_id"]] = user_data
+            self.log_debug(f"Loaded user data for user_id={row['_id']}")
 
         self.log_success("Users data has been imported from Database")
 
     async def __load_rss(self) -> None:
         rss_collection = self.__db.rss
 
-        async for row in rss_collection[self.bot_id].find():
-            user_id = row["_id"]
-            del row["_id"]
-            self.rss_dict[user_id] = row
+        async for row in rss_collection.find({"_id": self.bot_id}):
+            self.rss_dict[row["_id"]] = {k: v for k, v in row.items() if k != "_id"}
 
         self.log_success("Rss data has been imported from Database.")
 
@@ -165,12 +152,12 @@ class DbManager:
             return
 
         data = self.user_data[user_id]
-        if data.get("thumb"):
-            del data["thumb"]
-        if data.get("rclone"):
-            del data["rclone"]
+        del data["thumb"]
+        del data["rclone"]
 
-        await self.__db.users[self.bot_id].replace_one({"_id": user_id}, data, upsert=True)
+        await self.__db.users.update_one(
+            {"_id": user_id}, {"$set": data}, upsert=True
+        )
 
     async def update_user_doc(self, user_id: str, key: str, path: str = "") -> None:
         if self.__err:
@@ -182,7 +169,7 @@ class DbManager:
         else:
             doc_bin = b""
 
-        await self.__db.users[self.bot_id].update_one(
+        await self.__db.users.update_one(
             {"_id": user_id}, {"$set": {key: doc_bin}}, upsert=True
         )
 
@@ -190,46 +177,50 @@ class DbManager:
         if self.__err:
             return []
 
-        return [doc["_id"] async for doc in self.__db.pm_users[self.bot_id].find({})]
+        return [doc["_id"] async for doc in self.__db.pm_users.find({"_id": self.bot_id})]
 
     async def update_pm_users(self, user_id: str) -> None:
         if self.__err:
             return
 
-        if not bool(await self.__db.pm_users[self.bot_id].find_one({"_id": user_id})):
-            await self.__db.pm_users[self.bot_id].insert_one({"_id": user_id})
+        if not bool(await self.__db.pm_users.find_one({"_id": user_id})):
+            await self.__db.pm_users.insert_one({"_id": user_id})
             self.log_info(f"New PM User Added : {user_id}")
 
     async def rm_pm_user(self, user_id: str) -> None:
         if self.__err:
             return
 
-        await self.__db.pm_users[self.bot_id].delete_one({"_id": user_id})
+        await self.__db.pm_users.delete_one({"_id": user_id})
 
     async def rss_update_all(self) -> None:
         if self.__err:
             return
 
         for user_id in list(self.rss_dict.keys()):
-            await self.__db.rss[self.bot_id].replace_one({"_id": user_id}, self.rss_dict[user_id], upsert=True)
+            await self.__db.rss.update_one(
+                {"_id": user_id}, {"$set": self.rss_dict[user_id]}, upsert=True
+            )
 
     async def rss_update(self, user_id: str) -> None:
         if self.__err:
             return
 
-        await self.__db.rss[self.bot_id].replace_one({"_id": user_id}, self.rss_dict[user_id], upsert=True)
+        await self.__db.rss.update_one(
+            {"_id": user_id}, {"$set": self.rss_dict[user_id]}, upsert=True
+        )
 
     async def rss_delete(self, user_id: str) -> None:
         if self.__err:
             return
 
-        await self.__db.rss[self.bot_id].delete_one({"_id": user_id})
+        await self.__db.rss.delete_one({"_id": user_id})
 
     async def add_incomplete_task(self, cid: str, link: str, tag: str, msg_link: str, msg: str) -> None:
         if self.__err:
             return
 
-        await self.__db.tasks[self.bot_id].insert_one(
+        await self.__db.tasks.insert_one(
             {"_id": link, "cid": cid, "tag": tag, "source": msg_link, "org_msg": msg}
         )
 
@@ -237,7 +228,7 @@ class DbManager:
         if self.__err:
             return
 
-        await self.__db.tasks[self.bot_id].delete_one({"_id": link})
+        await self.__db.tasks.delete_one({"_id": link})
 
     async def get_incomplete_tasks(self) -> Dict[str, Dict[str, List[Dict[str, str]]]]:
         notifier_dict = {}
@@ -245,8 +236,8 @@ class DbManager:
         if self.__err:
             return notifier_dict
 
-        if await self.__db.tasks[self.bot_id].find_one():
-            rows = self.__db.tasks[self.bot_id].find({})
+        if await self.__db.tasks.find_one():
+            rows = self.__db.tasks.find({})
             async for row in rows:
                 if row["cid"] in list(notifier_dict.keys()):
                     if row["tag"] in list(notifier_dict[row["cid"]]):
@@ -260,7 +251,7 @@ class DbManager:
                 else:
                     notifier_dict[row["cid"]] = {row["tag"]: [{row["_id"]: row["source"]}]}
 
-        await self.__db.tasks[self.bot_id].drop()
+        await self.__db.tasks.drop()
 
         return notifier_dict
 
@@ -268,7 +259,7 @@ class DbManager:
         if self.__err:
             return
 
-        await self.__db[name][self.bot_id].drop()
+        await self.__db[name].drop()
 
     async def __aenter__(self):
         return self
