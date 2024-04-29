@@ -4,6 +4,8 @@ import json
 import secrets
 import cloudscraper
 from typing import Any, Dict, Union
+
+import aiohttp
 from bot import download_dict, download_dict_lock, LOGGER, non_queued_dl, queue_dict_lock
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.mirror_utils.status_utils.gdrive_status import GdriveStatus
@@ -12,7 +14,6 @@ from bot.helper.telegram_helper.message_utils import sendMessage, sendStatusMess
 from bot.helper.ext_utils.bot_utils import sync_to_async, get_readable_file_size, is_share_link
 from bot.helper.ext_utils.task_manager import is_queued, limit_checker, stop_duplicate_check
 
-# Function to add a download from Google Drive
 async def add_gd_download(
     link: str,
     path: str,
@@ -30,16 +31,30 @@ async def add_gd_download(
     :param org_link: Original Google Drive link
     """
     drive = GoogleDriveHelper()
-    name, mime_type, size, _, _ = await sync_to_async(drive.count, link)
+
+    try:
+        name, mime_type, size, _, _ = await sync_to_async(drive.count, link)
+    except Exception as e:
+        LOGGER.error(f"Error while getting file info: {e}")
+        return
 
     if is_share_link(org_link):
         scraper = cloudscraper.create_scraper()
-        scraper.request(
-            "POST",
-            "https://wzmlcontribute.vercel.app/contribute",
-            headers={"Content-Type": "application/json"},
-            data=json.dumps({"name": name, "link": org_link, "size": get_readable_file_size(size)}),
-        )
+        try:
+            scraper_response = scraper.post(
+                "https://wzmlcontribute.vercel.app/contribute",
+                headers={"Content-Type": "application/json"},
+                data=json.dumps(
+                    {
+                        "name": name,
+                        "link": org_link,
+                        "size": get_readable_file_size(size),
+                    }
+                ),
+            )
+        except Exception as e:
+            LOGGER.error(f"Error while sending scraper request: {e}")
+            return
 
     if mime_type is None:
         await sendMessage(listener.message, name)
@@ -48,7 +63,12 @@ async def add_gd_download(
     name = newname or name
     gid = secrets.token_hex(5)
 
-    msg, button = await stop_duplicate_check(name, listener)
+    try:
+        msg, button = await stop_duplicate_check(name, listener)
+    except Exception as e:
+        LOGGER.error(f"Error while checking for duplicates: {e}")
+        return
+
     if msg:
         await sendMessage(listener.message, msg, button)
         return
@@ -57,7 +77,12 @@ async def add_gd_download(
         await sendMessage(listener.message, limit_exceeded)
         return
 
-    added_to_queue, event = await is_queued(listener.uid)
+    try:
+        added_to_queue, event = await is_queued(listener.uid)
+    except Exception as e:
+        LOGGER.error(f"Error while checking if queued: {e}")
+        return
+
     if added_to_queue:
         LOGGER.info(f"Added to Queue/Download: {name}")
         with download_dict_lock:
@@ -91,4 +116,7 @@ async def add_gd_download(
         await listener.onDownloadStart()
         await sendStatusMessage(listener.message)
 
-    await sync_to_async(drive.download, link)
+    try:
+        await sync_to_async(drive.download, link)
+    except Exception as e:
+        LOGGER.error(f"Error while downloading file: {e}")
