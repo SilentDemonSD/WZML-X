@@ -28,8 +28,10 @@ class Version:
 
     def to_tuple(self):
         """Return the version as a tuple of integers."""
+        # Return a tuple of (major, minor, patch)
         return (self.major, self.minor, self.patch)
 
     def to_string(self):
         """Return the version as a string in the format 'major.minor.patch'."""
+        # Return the version as a string with each number separated by a dot
         return f"{self.major}.{self.minor}.{self.patch}"
