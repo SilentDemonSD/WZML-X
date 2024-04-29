@@ -3,7 +3,10 @@
 from bot.helper.ext_utils.bot_utils import MirrorStatus, get_readable_file_size, get_readable_time
 
 class DDLStatus:
-    def __init__(self, obj, size: int, message, gid, upload_details):
+    """
+    A class representing the status of a file upload.
+    """
+    def __init__(self, obj, size: int, message, gid):
         """
         Initialize a new DDLStatus object.
 
@@ -11,29 +14,29 @@ class DDLStatus:
         :param size: The size of the file in bytes.
         :param message: A message associated with the upload.
         :param gid: A globally unique identifier for the upload.
-        :param upload_details: Additional details about the upload.
         """
         self.__obj = obj
         self.__size = size
         self.__gid = gid
-        self.upload_details = upload_details
         self.message = message
 
-    def processed_bytes(self) -> str:
+    @property
+    def processed_bytes(self) -> int:
         """
-        Return the number of bytes that have been processed during the upload in a human-readable format.
+        Return the number of bytes that have been processed during the upload.
 
-        :return: The processed bytes in a human-readable format.
+        :return: The processed bytes.
         """
-        return get_readable_file_size(self.__obj.processed_bytes)
+        return self.__obj.processed_bytes
 
-    def size(self) -> str:
+    @property
+    def size(self) -> int:
         """
-        Return the size of the file in a human-readable format.
+        Return the size of the file.
 
-        :return: The file size in a human-readable format.
+        :return: The file size.
         """
-        return get_readable_file_size(self.__size)
+        return self.__size
 
     @property
     def status(self) -> MirrorStatus:
@@ -44,6 +47,7 @@ class DDLStatus:
         """
         return MirrorStatus.STATUS_UPLOADING
 
+    @property
     def name(self) -> str:
         """
         Return the name of the file being uploaded.
@@ -52,23 +56,26 @@ class DDLStatus:
         """
         return self.__obj.name
 
-    def progress(self) -> str:
+    @property
+    def progress(self) -> float:
         """
         Return the progress of the upload as a percentage.
 
         :return: The progress of the upload as a percentage.
         """
         progress_raw = self.__obj.processed_bytes / self.__size * 100 if self.__size != 0 else 0
-        return f'{round(progress_raw, 2)}%'
+        return round(progress_raw, 2)
 
+    @property
     def speed(self) -> str:
         """
         Return the current upload speed in a human-readable format.
 
         :return: The current upload speed in a human-readable format.
         """
-        return f'{get_readable_file_size(self.__obj.speed)}/s'
+        return get_readable_file_size(self.__obj.speed) + "/s"
 
+    @property
     def eta(self) -> str:
         """
         Return the estimated time of arrival for the upload.
@@ -81,6 +88,7 @@ class DDLStatus:
         except:
             return '-'
 
+    @property
     def gid(self) -> str:
         """
         Return the globally unique identifier for the upload.
@@ -97,6 +105,7 @@ class DDLStatus:
         """
         return self.__obj
 
+    @property
     def eng(self):
         """
         Return the engine associated with the upload.
