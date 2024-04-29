@@ -1,5 +1,5 @@
 # Use an official Python runtime as the base image
-FROM python:3.9-slim-buster
+FROM python:3.9-slim-buster as builder
 
 # Set the working directory to /app
 WORKDIR /app
@@ -12,8 +12,17 @@ RUN pip install --no-cache-dir -r requirements.txt && \
 # Copy the rest of the application code
 COPY . .
 
+# Build a separate stage for production
+FROM python:3.9-slim-buster
+
+# Set the working directory to /app
+WORKDIR /app
+
+# Copy only the necessary files for production
+COPY --from=builder /app /app
+
 # Make the entrypoint.sh executable and set it as the container's default command
-COPY entrypoint.sh /app/
+COPY --from=builder /app/entrypoint.sh /app/
 RUN chmod +x /app/entrypoint.sh
 
 ENTRYPOINT ["/app/entrypoint.sh"]
@@ -23,6 +32,5 @@ CMD ["python", "app.py"]
 
 # Include a .dockerignore file to exclude unnecessary files from the build context
 # This can help reduce the build time and the size of the final image
-*.pyc
-__pycache__/
-
+echo "*pyc" > .dockerignore
+echo "*/__pycache__" >> .dockerignore
