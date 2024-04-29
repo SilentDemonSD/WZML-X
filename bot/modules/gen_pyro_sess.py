@@ -6,71 +6,66 @@ from contextlib import asynccontextmanager
 from cryptography.fernet import Fernet
 
 import aiofiles
-from aiogram import Bot, types, filters, Router
+from aiogram import Bot, types, filters, Router, FSMContext
+from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.executor import start_webhook
-from aiogram.utils.exceptions import Throttled, MessageCantBeEdited, MessageToDeleteNotFound
-
-from bot.helper.ext_utils.bot_utils import new_thread, new_task
+from aiogram.utils.exceptions import ThrottlingException, MessageCantBeEdited, MessageToDeleteNotFound
 
 router = Router()
 
-session_dict: dict[str, str] = {}
-session_lock = asyncio.Lock()
-isStop = False
-
 @router.message(filters=filters.Command("exportsession") & filters.Private)
-async def gen_pyro_string(message: types.Message):
-    global isStop
-    session_dict.clear()
-    sess_msg = await sendMessage(message, """⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>
+async def gen_pyro_string(message: types.Message, state: FSMContext):
+    async with state.proxy() as session_dict:
+        session_dict.clear()
+        sess_msg = await sendMessage(message, """⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>
  
 <i>Send your <code>API_ID</code> or <code>APP_ID</code>.
 Get from <a href='https://my.telegram.org'>my.telegram.org</a></i>. 
 <b>Timeout:</b> 120s
 
 <i>Send /stop to Stop Process</i>""")
-    session_dict['message'] = sess_msg
-    await new_task(invoke(message, 'API_ID'))
-    if isStop:
-        return
-    async with session_lock:
-        try:
-            api_id = int(session_dict['API_ID'])
-        except Exception:
-            return await editMessage(sess_msg, "<i><code>APP_ID</code> is Invalid.</i>\n\n ⌬ <b>Process Stopped.</b>")
-    await asyncio.sleep(1.5)
-    await editMessage(sess_msg, """⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>
+        session_dict['message'] = sess_msg
+        await create_task(invoke(message, 'API_ID', state))
+        if isStop:
+            return
+        async with session_dict['lock']:
+            try:
+                api_id = int(session_dict['API_ID'])
+            except Exception:
+                return await editMessage(sess_msg, "<i><code>APP_ID</code> is Invalid.</i>\n\n ⌬ <b>Process Stopped.</b>")
+        await asyncio.sleep(1.5)
+        await editMessage(sess_msg, """⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>
  
 <i>Send your <code>API_HASH</code>. Get from <a href='https://my.telegram.org'>my.telegram.org</a></i>.
 <b>Timeout:</b> 120s
 
 <i>Send /stop to Stop Process</i>""")
-    await new_task(invoke(message, 'API_HASH'))
-    if isStop:
-        return
-    async with session_lock:
-        api_hash = session_dict['API_HASH']
-    if len(api_hash) <= 30:
-        return await editMessage(sess_msg,  "<i><code>API_HASH</code> is Invalid.</i>\n\n ⌬ <b>Process Stopped.</b>")
-    while True:
-        await asyncio.sleep(1.5)
-        await editMessage(sess_msg,  """⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>
+        await create_task(invoke(message, 'API_HASH', state))
+        if isStop:
+            return
+        async with session_dict['lock']:
+            api_hash = session_dict['API_HASH']
+        if len(api_hash) <= 30:
+            return await editMessage(sess_msg,  "<i><code>API_HASH</code> is Invalid.</i>\n\n ⌬ <b>Process Stopped.</b>")
+        while True:
+            await asyncio.sleep(1.5)
+            await editMessage(sess_msg,  """⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>
  
 <i>Send your Telegram Account's Phone number in International Format ( Including Country Code ). <b>Example :</b> +14154566376</i>.
 <b>Timeout:</b> 120s
 
 <i>Send /stop to Stop Process</i>""")
-        await new_task(invoke(message, 'PHONE_NO'))
-        if isStop:
-            return
-        await editMessage(sess_msg, f"⌬ <b>Verification Confirmation:</b>\n\n <i>Is {session_dict['PHONE_NO']} correct? (y/n/yes/no):</i> \n\n<b>Send y/yes (Yes) | n/no (No)</b>")
-        await new_task(invoke(message, 'CONFIRM_PHN'))
-        if isStop:
-            return
-        async with session_lock:
-            if session_dict['CONFIRM_PHN'].lower() in ['y', 'yes']:
-                break
+            await create_task(invoke(message, 'PHONE_NO', state))
+            if isStop:
+                return
+            await editMessage(sess_msg, f"⌬ <b>Verification Confirmation:</b>\n\n <i>Is {session_dict['PHONE_NO']} correct? (y/n/yes/no):</i> \n\n<b>Send y/yes (Yes) | n/no (No)</b>")
+            await create_task(invoke(message, 'CONFIRM_PHN', state))
+            if isStop:
+                return
+            async with session_dict['lock']:
+                if session_dict['CONFIRM_PHN'].lower() in ['y', 'yes']:
+                    break
     try:
         pyro_client = Bot(f"WZML-X-{message.from_user.id}", api_id=api_id, api_hash=api_hash)
     except Exception as e:
@@ -85,7 +80,7 @@ Get from <a href='https://my.telegram.org'>my.telegram.org</a></i>.
     try:
         user_code = await pyro_client.send_code(session_dict['PHONE_NO'])
         await asyncio.sleep(1.5)
-    except Throttled as e:
+    except ThrottlingException as e:
         return await editMessage(sess_msg, f"<b>Floodwait of {e.value} Seconds. Retry Again</b>\n\n ⌬ <b>Process Stopped.</b>")
     except ApiIdInvalid:
         return await editMessage(sess_msg, "<b>API_ID and API_HASH are Invalid. Retry Again</b>\n\n ⌬ <b>Process Stopped.</b>")
@@ -99,10 +94,10 @@ Get from <a href='https://my.telegram.org'>my.telegram.org</a></i>.
 <b>Timeout:</b> 120s
 
 <i>Send /stop to Stop Process</i>""")
-    await new_task(invoke(message, 'OTP'))
+    await create_task(invoke(message, 'OTP', state))
     if isStop:
         return
-    async with session_lock:
+    async with session_dict['lock']:
         otp = ' '.join(str(session_dict['OTP']))
     try:
         await pyro_client.sign_in(session_dict['PHONE_NO'], user_code.phone_code_hash, phone_code=otp)
@@ -120,10 +115,10 @@ Get from <a href='https://my.telegram.org'>my.telegram.org</a></i>.
  <b>Password Hint</b> : {await pyro_client.get_password_hint()}
  
  <i>Send /stop to Stop Process</i>""")
-        await new_task(invoke(message, 'TWO_STEP_PASS'))
+        await create_task(invoke(message, 'TWO_STEP_PASS', state))
         if isStop:
             return
-        async with session_lock:
+        async with session_dict['lock']:
             password = session_dict['TWO_STEP_PASS'].strip()
         try:
             await pyro_client.check_password(password)
@@ -145,22 +140,23 @@ Get from <a href='https://my.telegram.org'>my.telegram.org</a></i>.
         pass
 
 @asynccontextmanager
-async def invoke(message: types.Message, key: str):
+async def invoke(message: types.Message, key: str, state: FSMContext):
     global isStop
     user_id = message.from_user.id
     start_time = time()
     handler = message.bot.add_handler(types.MessageHandler(types.Text(lambda m: m.from_user.id == user_id)), group=-1)
-    while not bool(session_dict.get(key)):
-        await asyncio.sleep(0.5)
-        if time() - start_time > 120:
-            await editMessage(message, "⌬ <b>Process Stopped</b>")
-            isStop = True
-            break
+    async with state.proxy() as session_dict:
+        while not bool(session_dict.get(key)):
+            await asyncio.sleep(0.5)
+            if time() - start_time > 120:
+                await editMessage(message, "⌬ <b>Process Stopped</b>")
+                isStop = True
+                break
     message.bot.remove_handler(handler)
     yield
 
 @router.message(filters=filters.Command("decrypt") & filters.Private)
-async def decrypt_message(message: types.Message):
+async def decrypt_message(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
     msg_id = message.id
     grp_prompt = None
@@ -194,7 +190,8 @@ async def decrypt_message(message: types.Message):
         if grp_prompt:
             await deleteMessage(grp_prompt)
     del bot_cache[msg_id]
-    return Fernet(key), is_cancelled
+    fernet = Fernet(key.encode())
+    return fernet, is_cancelled
 
 @router.message(filters=filters.Command("start") & filters.Private)
 async def start_command(message: types.Message):
@@ -203,9 +200,9 @@ async def start_command(message: types.Message):
 async def main():
     await bot.delete_webhook(drop_pending_updates=True)
     await bot.set_my_commands([
-        types.BotCommand("start", "Start the bot"),
-        types.BotCommand("exportsession", "Generate Pyrogram Session"),
-        types.BotCommand("decrypt", "Decrypt message")
+        types.BotCommand("start", "Start the bot", scope=types.BotCommandScopeDefault()),
+        types.BotCommand("exportsession", "Generate Pyrogram Session", scope=types.BotCommandScopeDefault()),
+        types.BotCommand("decrypt", "Decrypt message", scope=types.BotCommandScopeDefault())
     ])
     await start_webhook(bot, "0.0.0.0", port=int(os.environ.get("PORT", "80")), url_path="")
 
