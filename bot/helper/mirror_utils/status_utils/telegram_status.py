@@ -9,48 +9,69 @@ class TelegramStatus:
     """
 
     def __init__(self, obj, size: int, message, gid: str, status: str, upload_details):
-        self.__obj = obj
-        self.__size = size
-        self.__gid = gid
-        self.__status = status
+        """
+        Initialize the TelegramStatus object.
+
+        :param obj: The file transfer object
+        :param size: The total size of the file
+        :param message: The message object
+        :param gid: The global ID of the file transfer
+        :param status: The status of the file transfer
+        :param upload_details: The upload details
+        """
+        self._obj = obj
+        self._size = size
+        self._gid = gid
+        self._status = status
         self.upload_details = upload_details
         self.message = message
+        self.engine_status = EngineStatus().STATUS_TG
 
     @property
     def processed_bytes(self) -> str:
         """
         Returns the number of processed bytes in a readable format.
+
+        :return: The processed bytes in a readable format
         """
-        return get_readable_file_size(self.__obj.processed_bytes)
+        return get_readable_file_size(self._obj.processed_bytes)
 
     @property
     def size(self) -> str:
         """
         Returns the total size of the file in a readable format.
+
+        :return: The total size of the file in a readable format
         """
-        return get_readable_file_size(self.__size)
+        return get_readable_file_size(self._size)
 
     @property
     def status(self) -> MirrorStatus:
         """
         Returns the status of the file transfer.
+
+        :return: The status of the file transfer
         """
-        return MirrorStatus.STATUS_UPLOADING if self.__status == 'up' else MirrorStatus.STATUS_DOWNLOADING
+        return MirrorStatus[self._status.upper()]
 
     @property
     def name(self) -> str:
         """
         Returns the name of the file.
+
+        :return: The name of the file
         """
-        return self.__obj.name
+        return self._obj.name
 
     @property
     def progress(self) -> str:
         """
         Returns the progress of the file transfer as a percentage.
+
+        :return: The progress of the file transfer as a percentage
         """
         try:
-            progress_raw = self.__obj.processed_bytes / self.__size * 100
+            progress_raw = self._obj.processed_bytes / self._size * 100
             return f'{progress_raw:.2f}%'
         except:
             return '0.00%'
@@ -59,9 +80,11 @@ class TelegramStatus:
     def speed(self) -> str:
         """
         Returns the speed of the file transfer in a readable format.
+
+        :return: The speed of the file transfer in a readable format
         """
         try:
-            speed = self.__obj.speed
+            speed = self._obj.speed
             if not isinstance(speed, (int, float)):
                 return '-'
             return get_readable_file_size(speed) + '/s'
@@ -72,9 +95,11 @@ class TelegramStatus:
     def eta(self) -> str:
         """
         Returns the estimated time of arrival in a readable format.
+
+        :return: The estimated time of arrival in a readable format
         """
         try:
-            seconds = (self.__size - self.__obj.processed_bytes) / self.__obj.speed
+            seconds = (self._size - self._obj.processed_bytes) / self._obj.speed
             if not isinstance(seconds, (int, float)):
                 return '-'
             return get_readable_time(seconds)
@@ -85,18 +110,25 @@ class TelegramStatus:
     def gid(self) -> str:
         """
         Returns the global ID of the file transfer.
-        """
-        return self.__gid
 
+        :return: The global ID of the file transfer
+        """
+        return self._gid
+
+    @property
     def download(self) -> object:
         """
         Returns the file object for downloading.
-        """
-        return self.__obj
 
-    @property
-    def eng(self) -> EngineStatus:
+        :return: The file object for downloading
         """
-        Returns the engine status for Telegram.
+        return self._obj
+
+    @engine_status.setter
+    def engine_status(self, status: str):
         """
-        return EngineStatus().STATUS_TG
+        Set the engine status for Telegram.
+
+        :param status: The engine status
+        """
+        self._engine_status = EngineStatus().STATUS_TG if status == 'tg' else EngineStatus().STATUS_MD
