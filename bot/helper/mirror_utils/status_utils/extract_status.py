@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from pathlib import Path
 from time import time, sleep
 from typing import Optional
 
@@ -28,6 +29,7 @@ class ExtractionStatus:
         self.start_time = time()
         self.message = listener.message
         self.total_transferred = 0
+        self.path = Path(name)
 
     @property
     def readable_size(self) -> str:
@@ -54,7 +56,7 @@ class ExtractionStatus:
 
         :return: The size of the path in bytes.
         """
-        return get_path_size(self.name)
+        return get_path_size(self.path)
 
     def update_progress(self):
         """
@@ -62,7 +64,7 @@ class ExtractionStatus:
         """
         current_time = time()
         if current_time - self.start_time > self._progress_update_interval:
-            self.total_transferred = get_path_size(self.name)
+            self.total_transferred = self.path.stat().st_size
             self.start_time = current_time
 
     @property
@@ -103,6 +105,7 @@ class ExtractionStatus:
         speed = self.total_transferred / time_elapsed
         return get_readable_file_size(speed)
 
+    @progress
     def __str__(self) -> str:
         """
         Get a human-readable representation of the ExtractionStatus object.
@@ -111,6 +114,7 @@ class ExtractionStatus:
         """
         return f"ExtractionStatus(name='{self.name}', size={self.readable_size}, group_id={self.group_id}, user_id={self.user_id}, start_time={self.start_time}, message={self.message}, total_transferred={self.total_transferred})"
 
+    @progress
     def __repr__(self) -> str:
         """
         Get a more informative representation of the ExtractionStatus object.
@@ -146,3 +150,11 @@ class ExtractionStatus:
         if speed is not None:
             status += f"\nSpeed: {speed}"
         return status
+
+
+def progress(func):
+    def wrapper(*args, **kwargs):
+        result = func(*args, **kwargs)
+        args[0].update_progress()
+        return result
+    return wrapper
