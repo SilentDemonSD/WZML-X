@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import asyncio
+import os
 from pathlib import Path
 from typing import AsyncContextManager, Any, Dict, List, Optional
 
@@ -92,11 +94,14 @@ class Streamtape:
 
         self.dluploader.last_uploaded = 0
         async with aiofiles.open(file_path, mode="rb") as f:
-            uploaded = await self.dluploader.upload_aiohttp(upload_info["url"], f, file_name, {})
-        if uploaded:
-            file_id = (await self.list_folder(folder=folder_id))["files"][0]["linkid"]
-            await self.rename(file_id, file_name)
-            return f"https://streamtape.to/v/{file_id}"
+            async with self.__get_session() as session:
+                async with session.post(
+                    upload_info["url"], data=f, headers={"Content-Type": "application/octet-stream"}
+                ) as response:
+                    response.raise_for_status()
+                    file_id = (await response.json()).get("result")
+                    await self.rename(file_id, file_name)
+                    return f"https://streamtape.to/v/{file_id}"
         return None
 
     async def create_folder(self, name: str, parent: Optional[str] = None) -> Optional[Dict[str, Any]]:
@@ -114,7 +119,7 @@ class Streamtape:
             url += f"&pid={parent}"
 
         async with self.__get_session() as session:
-            async with session.get(url) as response:
+            async with session.post(url) as response:
                 response.raise_for_status()
                 data = await response.json()
                 if data.get("status") == 200:
@@ -125,7 +130,7 @@ class Streamtape:
         url = f"{self.base_url}/file/rename?login={self.__userLogin}&key={self.__passKey}&file={file_id}&name={name}"
 
         async with self.__get_session() as session:
-            async with session.get(url) as response:
+            async with session.post(url) as response:
                 response.raise_for_status()
                 data = await response.json()
                 if data.get("status") == 200:
@@ -140,7 +145,8 @@ class Streamtape:
 
         for fid in contents["folders"]:
             tg_html += f"<aside>╾──────────────────────╼</aside><br><aside><b>🗂 {fid['name']}</b></aside><br><aside>╾──────────────────────╼</aside><br>"
-            tg_html += await self.list_telegraph(fid["id"], True)
+            if nested:
+                tg_html += await self.list_telegraph(fid["id"], True)
 
         tg_html += "<ol>"
         for finfo in contents["files"]:
@@ -189,8 +195,8 @@ class Streamtape:
         return None
 
     async def upload(self, file_path: Path) -> Optional[str]:
-        if await aiofiles.os.isfile(file_path):
+        if os.path.isfile(file_path):
             return await self.upload_file(file_path)
-        elif await aiofiles.os.isdir(file_path):
+        elif os.path.isdir(file_path):
             return await self.upload_folder(file_path)
         return None
