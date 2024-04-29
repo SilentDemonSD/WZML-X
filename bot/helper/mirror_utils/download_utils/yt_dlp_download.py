@@ -8,7 +8,7 @@ from typing import Dict, Any, List, Tuple, Union
 import aiohttp
 import aiohttp_sessions
 from yt_dlp import YoutubeDL, DownloadError
-from logging import getLogger
+from logging import getLogger, Logger
 
 class YoutubeDLHelper(YoutubeDL):
     def __init__(self, listener):
@@ -84,18 +84,54 @@ class YoutubeDLHelper(YoutubeDL):
     def is_cancelled(self):
         return self.__is_cancelled
 
+    @property
+    def download_started(self):
+        return self.__size > 0
+
+    @property
+    def download_completed(self):
+        return self.__downloaded_bytes == self.__size
+
+    @property
+    def download_aborted(self):
+        return self.__is_cancelled and not self.download_completed
+
+    @property
+    def download_failed(self):
+        return not self.download_completed and not self.download_aborted
+
+    @property
+    def download_status(self):
+        if self.download_completed:
+            return 'completed'
+        elif self.download_aborted:
+            return 'aborted'
+        elif self.download_failed:
+            return 'failed'
+        else:
+            return 'in progress'
+
     def __onDownloadProgress(self, d):
         if d['status'] == 'downloading':
             self.__downloading = True
             self.__size = d['total_bytes']
-            self.__downloaded_bytes = d['downloaded_bytes']
-            self.__progress = self.__downloaded_bytes / self.__size
-            self.__download_speed = d['speed']
-            self.__eta = d['eta']
+            if self.__size > 0:
+                self.__downloaded_bytes = d['downloaded_bytes']
+                self.__progress = self.__downloaded_bytes / self.__size
+                self.__download_speed = d['speed']
+                self.__eta = d['eta']
         elif d['status'] == 'finished':
             self.__downloading = False
             self.__gid = d['id']
             self.__last_downloaded = self.__downloaded_bytes
+            self.__size = 0
+            self.__downloaded_bytes = 0
+            self.__progress = 0
+            self.__download_speed = 0
+            self.__eta = '-'
+        elif d['status'] == 'failed':
+            self.__downloading = False
+            self.__gid = d['id']
             self.__size = 0
             self.__downloaded_bytes = 0
             self.__progress = 0
