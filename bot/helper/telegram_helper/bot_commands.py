@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from bot import CMD_SUFFIX, config_dict
 
-class _BotCommands:
+class BotCommands:
     def __init__(self):
         command_list = [
             ('StartCommand', 'start'),
@@ -64,7 +64,9 @@ class _BotCommands:
             ]
             command_list += extra_cmds
 
-        for name, *commands in command_list:
-            setattr(self, name, commands)
+        self.commands = {name: commands for name, *commands in command_list}
 
-BotCommands = _BotCommands()
+bot_commands = BotCommands()
+
+
+print(bot_commands.commands['StartCommand'])  # Output: ('StartCommand', 'start')
