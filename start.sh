@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-# Check if python3 is installed
-if ! command -v python3 &> /dev/null; then
-    echo "Error: python3 not installed."
+# Check if python3 is installed and is a regular file
+if ! [ -x "$(command -v python3)" ] || ! [ -r "$(command -v python3)" ]; then
+    echo "Error: python3 not installed or not readable."
     exit 1
 fi
 
@@ -30,8 +30,8 @@ if [ -f "$UPDATE_PY" ] && [ -r "$UPDATE_PY" ] && [ -x "$UPDATE_PY" ]; then
   # Absolute path to the bot module
   BOT_MODULE="$SCRIPT_DIR/bot.py"
 
-  # Check if the bot module can be imported without errors
-  if python3 -c "import bot" &> /dev/null; then
+  # Check if bot.py exists and is a regular file
+  if [ -f "$BOT_MODULE" ] && [ -r "$BOT_MODULE" ]; then
     echo "Running bot..."
 
     # Create a temporary directory to store the logs
@@ -52,7 +52,7 @@ if [ -f "$UPDATE_PY" ] && [ -r "$UPDATE_PY" ] && [ -x "$UPDATE_PY" ]; then
     cat "$TMP_DIR_BOT/bot.log"
 
   else
-    echo "Error: bot module not found or import failed."
+    echo "Error: bot.py not found or not readable."
   fi
 else
   echo "Error: update.py not found, not a file, not readable, or not executable."
