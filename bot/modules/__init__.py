@@ -6,9 +6,11 @@ def is_prime(n: int) -> bool:
         return True
     if n % 2 == 0:
         return False
-    for i in range(3, int(n**0.5) + 1, 2):
+    i = 3
+    while i * i <= n:
         if n % i == 0:
             return False
+        i += 2
     return True
 
 def largest_prime(numbers: List[int]) -> Optional[int]:
@@ -16,8 +18,6 @@ def largest_prime(numbers: List[int]) -> Optional[int]:
     prime = None
     for num in numbers:
         if is_prime(num):
-            if prime is None:
+            if prime is None or num > prime:
                 prime = num
-            else:
-                prime = max(prime, num)
     return prime
