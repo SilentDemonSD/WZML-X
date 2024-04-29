@@ -1,8 +1,6 @@
 import os
 import logging
 import subprocess
-import pkg_resources
-import requests
 from pymongo import MongoClient
 from dotenv import load_dotenv
 
@@ -47,8 +45,9 @@ def upgrade_packages() -> None:
     packages = [dist.project_name for dist in pkg_resources.working_set]
     try:
         subprocess.check_call(["pip", "install"] + packages)
-    except subprocess.CalledProcessError as e:
-        logging.error(f"Failed to upgrade packages: {e}")
+    except subprocess.CalledProcessError:
+        logging.error("Failed to upgrade packages")
+        raise
 
 def update_codebase(upstream_url: str, upstream_branch: str) -> None:
     """Update the codebase from the upstream repository."""
@@ -65,36 +64,5 @@ def update_codebase(upstream_url: str, upstream_branch: str) -> None:
         )
     except subprocess.CalledProcessError as e:
         logging.error(f"Failed to update codebase: {e}")
+        raise
 
-if __name__ == "__main__":
-    # Load environment variables from .env file
-    load_env_variables()
-
-    # Check for missing environment variables
-    if 'MISSING_ENV_VAR' in os.environ:
-        logging.error('The README.md file should be read! Exiting now!')
-        exit()
-
-    # Check for BOT_TOKEN
-    if not os.getenv('BOT_TOKEN'):
-        logging.error("BOT_TOKEN variable is missing! Exiting now")
-        exit(1)
-
-    # Initialize MongoDB connection and update environment variables
-    bot_id = os.getenv('BOT_TOKEN').split(':', 1)[0]
-    DATABASE_URL = os.getenv('DATABASE_URL')
-
-    if DATABASE_URL:
-        client = initialize_mongodb_connection(DATABASE_URL)
-        update_environment_variables(client, bot_id)
-
-    # Upgrade Python packages if specified
-    if os.getenv('UPGRADE_PACKAGES', 'False').lower() == 'true':
-        upgrade_packages()
-
-    # Update codebase from the upstream repository if specified
-    UPSTREAM_REPO = os.getenv('UPSTREAM_REPO')
-    UPSTREAM_BRANCH = os.getenv('UPSTREAM_BRANCH', 'master')
-
-    if UPSTREAM_REPO:
-        update_codebase(UPSTREAM_REPO, UPSTREAM_BRANCH)
