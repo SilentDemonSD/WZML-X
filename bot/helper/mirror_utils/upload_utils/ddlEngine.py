@@ -99,7 +99,7 @@ class DDLUploader:
         """
         async with aiohttp.ClientSession() as self.__asyncSession:
             try:
-                with ProgressFileReader(filename=file_path, read_callback=self.__progress_callback) as file:
+                async with ProgressFileReader(filename=file_path, read_callback=self.__progress_callback) as file:
                     data[req_file] = file
                     async with self.__asyncSession.post(url, data=data) as resp:
                         if resp.status == 200:
@@ -111,6 +111,11 @@ class DDLUploader:
             except aiohttp.ClientError as e:
                 print(e)
                 return None
+            except Exception as e:
+                print(f"Error in upload_aiohttp: {e}")
+                return None
+            finally:
+                file.close()
 
     async def __upload_to_ddl(self, file_path: str) -> Optional[Dict[str, str]]:
         """
@@ -212,7 +217,3 @@ class DDLUploader:
             await self.__asyncSession.close()
         self.__listener.onUploadError('Your upload has been stopped!')
         return
-
-import user_data
-from gofile import Gofile
-from streamtape import Streamtape
