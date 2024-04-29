@@ -10,6 +10,11 @@ async def run_command(cmd: str) -> str:
     """
     Asynchronously run a shell command.
 
+    This function takes a command as a string argument and returns the output of
+    the command as a string. It uses asyncio to run the command asynchronously,
+    which allows the function to run other tasks while waiting for the command
+    to finish executing.
+
     :param cmd: The command to run.
     :type cmd: str
     :return: The output of the command.
@@ -17,6 +22,7 @@ async def run_command(cmd: str) -> str:
     if len(cmd) > 256:
         raise ValueError("Command length should not exceed 256 characters")
 
+    # Check if the command contains invalid characters
     if not match(r'^\w+(\s+\w+)*$', cmd):
         raise ValueError("Command contains invalid characters")
 
@@ -44,6 +50,7 @@ if __name__ == "__main__":
 
     cmd = sys.argv[1]
 
+    # Check if the command exists in the system
     if not os.path.exists(os.path.expanduser(f"/usr/bin/{cmd}")):
         print(textwrap.fill(
             f"Error: Command '{cmd}' not found.",
@@ -58,6 +65,7 @@ if __name__ == "__main__":
             width=72,
         ))
 
+    # Handle timeout error
     except asyncio.CancelledError as e:
         print(textwrap.fill(
             "Command execution timed out.",
@@ -65,6 +73,7 @@ if __name__ == "__main__":
         ))
         sys.exit(1)
 
+    # Handle ValueError exceptions
     except ValueError as e:
         print(textwrap.fill(
             f"Error: {e}\nUsage: python3 script.py [command]",
@@ -72,6 +81,7 @@ if __name__ == "__main__":
         ))
         sys.exit(1)
 
+    # Handle asyncio.exceptions.ProcessError exceptions
     except asyncio.exceptions.ProcessError as e:
         print(textwrap.fill(
             f"Error running command \"{e.cmd}\":\n{e.stderr}",
