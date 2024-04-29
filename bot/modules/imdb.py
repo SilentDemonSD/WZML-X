@@ -53,61 +53,54 @@ IMDB_GENRE_EMOJI = {
 LIST_ITEMS = 4
 
 async def imdb_search(client: bot.Bot, message: Message) -> None:
-    """
-    Handle the /imdb command to search for movies or TV series on IMDb.
-
-    If the user provides a movie or TV series name, this function will search for it on IMDb and display a list of
-    matching results. If the user provides an IMDb URL, this function will fetch the corresponding movie or TV series
-    details.
-
-    :param client: The Pyrogram bot client
-    :param message: The incoming Telegram message
-    :return: None
-    """
-    if " " in message.text:
-        # ... (rest of the function)
-    else:
-        # ... (rest of the function)
+    text = message.text.split(" ", 1)
+    if len(text) == 1:
+        await sendMessage(message, "Please provide a search query!")
+        return
+    query = text[1]
+    try:
+        movie = ia.search_movie(query)
+    except Cinemagoer.IMDbError:
+        movie = []
+    if not movie:
+        await sendMessage(message, "No results found!")
+        return
+    buttons = []
+    for m in movie:
+        buttons.append(
+            [
+                InlineKeyboardButton(
+                    f"{m.title} ({m.year})",
+                    callback_data=f"imdb_movie_{m.movieID}",
+                )
+            ]
+        )
+    if len(buttons) > LIST_ITEMS:
+        buttons = buttons[:LIST_ITEMS]
+        buttons.append(
+            [
+                InlineKeyboardButton(
+                    "Next >>", callback_data=f"imdb_next_{len(buttons)}"
+                )
+            ]
+        )
+    await editMessage(
+        message,
+        f"Results for '{query}':",
+        reply_markup=InlineKeyboardMarkup(buttons),
+    )
 
 def get_poster(query, bulk=False, id=False, file=None) -> Union[List[Dict[str, Any]], Dict[str, Any]]:
-    """
-    Fetch movie or TV series poster(s) from IMDb using the provided query.
-
-    :param query: The search query
-    :param bulk: Whether to return multiple posters in a list or a single poster as a dictionary
-    :param id: Whether to return the poster by ID instead of fetching it from IMDb
-    :param file: The file object of the poster to return
-    :return: A list of dictionaries containing movie or TV series poster details or a single dictionary if `bulk` is
-    False, or the file object of the poster if `id` and `file` are both True
-    """
     # ... (rest of the function)
 
 def list_to_str(k) -> str:
-    """
-    Convert a list of dictionaries to a single string.
-
-    :param k: The list of dictionaries
-    :return: A single string
-    """
     # ... (rest of the function)
 
 def list_to_hash(k, flagg=False, emoji=False) -> str:
-    """
-    Convert a list of dictionaries to a single string with hash tags.
-
-    :param k: The list of dictionaries
-    :param flagg: Whether to add hash tags before each item
-    :param emoji: Whether to add emojis before each item
-    :return: A single string
-    """
     # ... (rest of the function)
 
 async def imdb_callback(client: bot.Bot, query: CallbackQuery):
-    """
-    Handle IMDb callback queries.
-
-    :param client: The Pyrogram bot client
-    :param query: The incoming Telegram callback query
-    :return: None
-    """
     # ... (rest of the function)
+
+if __name__ == "__main__":
+    # ... (rest of the code)
