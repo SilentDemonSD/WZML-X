@@ -15,7 +15,7 @@ from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.ext_utils.bot_utils import is_gdrive_link, get_readable_file_size, new_task
-from telethon import TelegramClient
+from telethon import TelegramClient, events
 from pyrogram import Client as PyrogramClient
 from typing import List, Tuple, Union, Optional
 
@@ -94,3 +94,8 @@ async def get_id_from_url(link: str) -> Optional[str]:
 if bot.loop.current_instance() is bot.loop.instance(0):
     bot.add_handler(MessageHandler(driveclean, filters=command(BotCommands.GDCleanCommand) & CustomFilters.owner))
     bot.add_handler(CallbackQueryHandler(drivecleancb, filters=regex(r'^gdclean')))
+
+    # Add event-based handler for better performance
+    @bot.on(events.CallbackQuery(data=r'^gdclean'))
+    async def drivecleancb_event(event):
+        await drivecleancb(bot, event)
