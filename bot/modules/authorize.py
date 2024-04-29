@@ -1,147 +1,95 @@
 #!/usr/bin/env python3
 from pyrogram.handlers import MessageHandler
 from pyrogram.filters import command, regex
+from typing import Optional
 
 from bot import user_data, DATABASE_URL, bot
-from bot.helper.telegram_helper.message_utils import sendMessage
+from bot.helper.telegram_helper.message_utils import send_message
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.ext_utils.db_handler import DbManger
+from bot.helper.ext_utils.db_handler import DbManager
 from bot.helper.ext_utils.bot_utils import update_user_ldata
 
 
-async def authorize(client, message):
-    msg = message.text.split()
-    if len(msg) > 1:
-        id_ = int(msg[1].strip())
-    elif reply_to := message.reply_to_message:
-        id_ = reply_to.from_user.id
+async def handle_authorization(context, message, is_authorize: bool) -> None:
+    """Handles user authorization or unauthorization."""
+    user_id = get_user_id(message)
+    if user_id in user_data:
+        is_already_authorized = user_data[user_id].get("is_auth")
+        if is_authorize and is_already_authorized:
+            await send_message(message, "Already Authorized!")
+            return
+        if not is_authorize and not is_already_authorized:
+            await send_message(message, "Already Unauthorized!")
+            return
+
+    update_user_ldata(user_id, "is_auth", is_authorize)
+    if DATABASE_URL:
+        async with DbManager() as db_manager:
+            try:
+                await db_manager.update_user_data(user_id)
+            except Exception as e:
+                await send_message(message, f"Error updating user data: {e}")
+                return
+
+    if is_authorize:
+        await send_message(message, "Authorized")
     else:
-        id_ = message.chat.id
-    if id_ in user_data and user_data[id_].get('is_auth'):
-        msg = 'Already Authorized!'
+        await send_message(message, "Unauthorized")
+
+
+async def handle_sudo(context, message, is_add: bool) -> None:
+    """Handles adding or removing sudo users."""
+    user_id = get_user_id(message)
+    if user_id in user_data:
+        is_sudo = user_data[user_id].get("is_sudo")
+        if is_add and is_sudo:
+            await send_message(message, "Already Sudo!")
+            return
+        if not is_add and not is_sudo:
+            await send_message(message, "Not a Sudo User, Already Demoted")
+            return
+
+    update_user_ldata(user_id, "is_sudo", is_add)
+    if DATABASE_URL:
+        async with DbManager() as db_manager:
+            try:
+                await db_manager.update_user_data(user_id)
+            except Exception as e:
+                await send_message(message, f"Error updating user data: {e}")
+                return
+
+    if is_add:
+        await send_message(message, "Promoted as Sudo")
     else:
-        update_user_ldata(id_, 'is_auth', True)
-        if DATABASE_URL:
-            await DbManger().update_user_data(id_)
-        msg = 'Authorized'
-    await sendMessage(message, msg)
+        await send_message(message, "Demoted")
 
 
-async def unauthorize(client, message):
-    msg = message.text.split()
-    if len(msg) > 1:
-        id_ = int(msg[1].strip())
-    elif reply_to := message.reply_to_message:
-        id_ = reply_to.from_user.id
+async def handle_blacklist(context, message, is_add: bool) -> None:
+    """Handles adding or removing users from the blacklist."""
+    user_id = get_user_id(message)
+    if user_id in user_data:
+        is_blacklisted = user_data[user_id].get("is_blacklist")
+        if is_add and is_blacklisted:
+            await send_message(message, "User Already BlackListed!")
+            return
+        if not is_add and not is_blacklisted:
+            await send_message(message, "User Already Freed")
+            return
+
+    update_user_ldata(user_id, "is_blacklist", is_add)
+    if DATABASE_URL:
+        async with DbManager() as db_manager:
+            try:
+                await db_manager.update_user_data(user_id)
+            except Exception as e:
+                await send_message(message, f"Error updating user data: {e}")
+                return
+
+    if is_add:
+        await send_message(message, "User BlackListed")
     else:
-        id_ = message.chat.id
-    if id_ not in user_data or user_data[id_].get('is_auth'):
-        update_user_ldata(id_, 'is_auth', False)
-        if DATABASE_URL:
-            await DbManger().update_user_data(id_)
-        msg = 'Unauthorized'
-    else:
-        msg = 'Already Unauthorized!'
-    await sendMessage(message, msg)
+        await send_message(message, "User Set Free as Bird!")
 
 
-async def addSudo(client, message):
-    id_ = ""
-    msg = message.text.split()
-    if len(msg) > 1:
-        id_ = int(msg[1].strip())
-    elif reply_to := message.reply_to_message:
-        id_ = reply_to.from_user.id
-    if id_:
-        if id_ in user_data and user_data[id_].get('is_sudo'):
-            msg = 'Already Sudo!'
-        else:
-            update_user_ldata(id_, 'is_sudo', True)
-            if DATABASE_URL:
-                await DbManger().update_user_data(id_)
-            msg = 'Promoted as Sudo'
-    else:
-        msg = "<i>Give User's ID or Reply to User's message of whom you want to Promote as Sudo</i>"
-    await sendMessage(message, msg)
-
-
-async def removeSudo(client, message):
-    id_ = ""
-    msg = message.text.split()
-    if len(msg) > 1:
-        id_ = int(msg[1].strip())
-    elif reply_to := message.reply_to_message:
-        id_ = reply_to.from_user.id
-    if id_:
-        if id_ in user_data and not user_data[id_].get('is_sudo'):
-            msg = 'Not a Sudo User, Already Demoted'
-        else:
-            update_user_ldata(id_, 'is_sudo', False)
-            if DATABASE_URL:
-                await DbManger().update_user_data(id_)
-            msg = 'Demoted'
-    else:
-        msg = "<i>Give User's ID or Reply to User's message of whom you want to Demote</i>"
-    await sendMessage(message, msg)
-
-
-async def addBlackList(_, message):
-    id_ = ""
-    msg = message.text.split()
-    if len(msg) > 1:
-        id_ = int(msg[1].strip())
-    elif reply_to := message.reply_to_message:
-        id_ = reply_to.from_user.id
-    if id_:
-        if id_ in user_data and user_data[id_].get('is_blacklist'):
-            msg = 'User Already BlackListed!'
-        else:
-            update_user_ldata(id_, 'is_blacklist', True)
-            if DATABASE_URL:
-                await DbManger().update_user_data(id_)
-            msg = 'User BlackListed'
-    else:
-        msg = "Give ID or Reply To message of whom you want to blacklist."
-    await sendMessage(message, msg)
-
-
-async def rmBlackList(_, message):
-    id_ = ""
-    msg = message.text.split()
-    if len(msg) > 1:
-        id_ = int(msg[1].strip())
-    elif reply_to := message.reply_to_message:
-        id_ = reply_to.from_user.id
-    if id_:
-        if id_ in user_data and not user_data[id_].get('is_blacklist'):
-            msg = '<i>User Already Freed</i>'
-        else:
-            update_user_ldata(id_, 'is_blacklist', False)
-            if DATABASE_URL:
-                await DbManger().update_user_data(id_)
-            msg = '<i>User Set Free as Bird!</i>'
-    else:
-        msg = "Give ID or Reply To message of whom you want to remove from blacklisted"
-    await sendMessage(message, msg)
-    
-    
-async def black_listed(_, message):
-    await sendMessage(message, "<i>BlackListed Detected, Restricted from Bot</i>")
-    
-    
-bot.add_handler(MessageHandler(authorize, filters=command(
-    BotCommands.AuthorizeCommand) & CustomFilters.sudo))
-bot.add_handler(MessageHandler(unauthorize, filters=command(
-    BotCommands.UnAuthorizeCommand) & CustomFilters.sudo))
-bot.add_handler(MessageHandler(addSudo, filters=command(
-    BotCommands.AddSudoCommand) & CustomFilters.sudo))
-bot.add_handler(MessageHandler(removeSudo, filters=command(
-    BotCommands.RmSudoCommand) & CustomFilters.sudo))
-bot.add_handler(MessageHandler(addBlackList, filters=command(
-    BotCommands.AddBlackListCommand) & CustomFilters.sudo))
-bot.add_handler(MessageHandler(rmBlackList, filters=command(
-    BotCommands.RmBlackListCommand) & CustomFilters.sudo))
-bot.add_handler(MessageHandler(black_listed, filters=regex(r'^/')
-    & CustomFilters.authorized & CustomFilters.blacklisted))
-    
+def get_user_id(message:
