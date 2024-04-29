@@ -68,7 +68,7 @@ async def speedtest(_, message: Any) -> Optional[Coroutine[Any, Any, Any]]:
         except Exception as e:
             LOGGER.error(str(e))
 
-if __name__ == "__main__":
+async def main():
     try:
         bot.add_handler(MessageHandler(speedtest, filters=command(
             BotCommands.SpeedCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
@@ -76,7 +76,10 @@ if __name__ == "__main__":
         LOGGER.error(str(e))
 
     try:
-        asyncio.create_task(bot.start())
-        bot.loop.run_until_complete(bot.idle())
+        await new_task(bot.start())
+        await bot.idle()
     except KeyboardInterrupt:
-        pass
+        await bot.stop()
+
+if __name__ == "__main__":
+    sys.exit(asyncio.run(main()))
