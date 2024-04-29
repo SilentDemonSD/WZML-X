@@ -230,4 +230,5 @@ async def mdl_callback(client, query):
                             disable_web_page_preview=True,
                         ),
                         reply_markup=InlineKeyboardMarkup(buttons.build_menu(1)),
-                       
+                    )
+                )
