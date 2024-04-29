@@ -1,5 +1,5 @@
 def is_prime(n: int) -> bool:
-    """Returns True if n is a prime number, and False otherwise."""
+    """Returns True if n is a prime number, and False otherwise. Checks only odd numbers up to the square root of n."""
     if n < 2:
         return False
     if n == 2:
@@ -14,7 +14,11 @@ def is_prime(n: int) -> bool:
     return True
 
 def largest_prime(numbers: List[int]) -> Optional[int]:
-    """Returns the largest prime number in the input list, or None if no prime numbers are found."""
+    """Returns the largest prime number in the input list, or None if no prime numbers are found.
+    If the input list is empty, returns None.
+    """
+    if not numbers:
+        return None
     prime = None
     for num in numbers:
         if is_prime(num):
