@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass
-from typing import NamedTuple, Optional
+from typing import NamedTuple, Optional, Union
 from pathlib import Path
 from datetime import timedelta
 import dateutil.parser
@@ -19,6 +19,16 @@ class CustomNamedTuple(NamedTuple):
         """
         return get_readable_file_size(self.size)
 
+def get_readable_file_size(size: int) -> str:
+    """
+    Returns the size of the file in a human-readable format.
+    """
+    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+        if size < 1024:
+            break
+        size /= 1024.0
+    return f"{size:.2f} {unit}"
+
 @dataclass
 class MegaDownloadStatus:
     """
@@ -27,10 +37,10 @@ class MegaDownloadStatus:
     name: str
     size: int
     gid: str
-    obj: Optional[Path]
-    message: Optional[Path]
-    upload_details: str
-    time: timedelta
+    obj: Optional[Path] = None
+    message: Optional[Path] = None
+    upload_details: Union[str, None] = None
+    time: Optional[timedelta] = None
 
     @property
     def readable_size(self) -> str:
@@ -44,7 +54,9 @@ class MegaDownloadStatus:
         """
         Returns the time taken for the download in a human-readable format.
         """
-        return str(self.time)
+        if self.time is not None:
+            return str(self.time)
+        return "N/A"
 
     def __str__(self):
         """
