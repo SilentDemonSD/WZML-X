@@ -14,31 +14,26 @@ from bot.helper.telegram_helper.message_utils import sendMessage, deleteMessage,
 from bot.helper.ext_utils.bot_utils import get_download_by_gid, get_all_downloads, MirrorStatus, new_task
 from bot.helper.telegram_helper import button_build
 
-@new_task
-# async def cancel_mirror(client, message):  <-- Changed to cancel_mirror
 async def cancel_mirror(client, message):
     user_id = message.from_user.id
     args = message.text.split('_', maxsplit=1)
-    # Check if the correct number of arguments are provided
+
     if len(args) > 1:
         gid, cmd_name = args[1].split('@', maxsplit=1)
     else:
         return await sendMessage(message, "Invalid format. Use /cancel_mirror_gid_botname or reply to an active task.")
 
-    # Check if the bot name matches the one in the command
     if cmd_name != bot_name:
         return
 
     download_info = await get_download_by_gid(gid)
-    # Check if the download with the given gid exists
+
     if not download_info:
         return await sendMessage(message, f"GID: `{gid}` Not Found.")
 
-    # Check if the user is authorized to cancel the task
     if (user_id not in user_data or not user_data[user_id].get('is_sudo')) and download_info.message.from_user.id != user_id:
         return await sendMessage(message, "This task is not for you!")
 
-    # Cancel the download
     download_info.download().cancel_download()
     await sendMessage(message, f"Task with GID `{gid}` has been cancelled.")
 
@@ -48,7 +43,6 @@ async def cancel_all(status: MirrorStatus) -> bool:
     if not matches:
         return False
 
-    # Cancel all downloads with the given status
     for download_info in matches:
         download_info.download().cancel_download()
         await asyncio.sleep(1)
@@ -56,7 +50,6 @@ async def cancel_all(status: MirrorStatus) -> bool:
     return True
 
 
-@new_task
 async def cancel_all_buttons(client, message: Message):
     async with download_dict_lock:
         count = len(download_dict)
@@ -64,7 +57,6 @@ async def cancel_all_buttons(client, message: Message):
         return await sendMessage(message, "No active tasks!")
 
     buttons = button_build.ButtonMaker()
-    # Create buttons for each status
     buttons.ibutton("Downloading", f"canall {MirrorStatus.STATUS_DOWNLOADING}")
     buttons.ibutton("Uploading", f"canall {MirrorStatus.STATUS_UPLOADING}")
     buttons.ibutton("Seeding", f"canall {MirrorStatus.STATUS_SEEDING}")
@@ -77,12 +69,11 @@ async def cancel_all_buttons(client, message: Message):
     buttons.ibutton("All", "canall all")
     buttons.ibutton("Close", "canall close")
     button = buttons.build_menu(2)
-    # Send the buttons and set a timer to delete the message
+
     can_msg = await sendMessage(message, 'Choose tasks to cancel.', button)
     await auto_delete_message(message, can_msg)
 
 
-@new_task
 async def cancel_all_update(client, query: CallbackQuery):
     data = query.data.split()
     message = query.message
@@ -90,23 +81,16 @@ async def cancel_all_update(client, query: CallbackQuery):
     await query.answer()
 
     if data[1] == 'close':
-        # Delete the message and the reply message
         await delete_message(reply_to)
         await delete_message(message)
     else:
         res = await cancel_all(MirrorStatus(data[1]))
         if not res:
-            # If no tasks were found with the given status
             await sendMessage(reply_to, f"No matching tasks for {data[1]}!")
         else:
-            # If tasks were found and cancelled
             await sendMessage(reply_to, f"{res} tasks for {data[1]} have been cancelled!")
 
 
-# Add handlers for the functions
-bot.add_handler(MessageHandler(cancel_mirror, filters=Filters.regex(
-    f"^/{BotCommands.CancelMirror}(_\w+)?(?!all)") & CustomFilters.authorized & ~CustomFilters.blacklisted))
-bot.add_handler(MessageHandler(cancel_all_buttons, filters=Filters.command(
-    BotCommands.CancelAllCommand) & CustomFilters.sudo))
+bot.add_handler(MessageHandler(cancel_mirror, filters=Filters.regex(f"^/{BotCommands.CancelMirror}(_\w+)?(?!all)") & CustomFilters.authorized & ~CustomFilters.blacklisted))
+bot.add_handler(MessageHandler(cancel_all_buttons, filters=Filters.command(BotCommands.CancelAllCommand) & CustomFilters.sudo))
 bot.add_handler(CallbackQueryHandler(cancel_all_update, filters=Filters.regex(r"^canall")))
-
