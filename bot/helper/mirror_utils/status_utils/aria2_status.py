@@ -14,8 +14,19 @@ def get_download(gid) -> Optional[object]:
         return None
 
 class Aria2Status:
+    """
+    A class representing the status of an Aria2 download.
+    """
 
     def __init__(self, gid: str, listener, seeding: bool = False, queued: bool = False):
+        """
+        Initialize a new Aria2Status object.
+
+        :param gid: The GID of the download.
+        :param listener: The listener object for the download.
+        :param seeding: Whether the download is in seeding mode.
+        :param queued: Whether the download is in the queue.
+        """
         self.__gid = gid
         self.__download = get_download(gid)
         self.__listener = listener
@@ -26,6 +37,9 @@ class Aria2Status:
         self.message = self.__listener.message if self.__listener else None
 
     def __update(self):
+        """
+        Update the internal state of the object with the latest download info.
+        """
         if self.__download is None:
             return
         self.__download = get_download(self.__gid) if self.__download is None else self.__download.live
@@ -34,31 +48,86 @@ class Aria2Status:
             self.__download = get_download(self.__gid)
 
     def __str__(self):
+        """
+        Return a string representation of the object.
+
+        :return: A string representation of the object.
+        """
         return f"Aria2Status(gid={self.gid()}, status={self.status()}, progress={self.progress()})"
 
+    @property
+    def download(self):
+        """
+        Get the download object.
+
+        :return: The download object.
+        """
+        self.__update()
+        return self.__download
+
     def progress(self):
+        """
+        Get the progress of the download as a string.
+
+        :return: The progress of the download as a string.
+        """
         self.__update()
         return self.__download.progress_string()
 
     def processed_bytes(self):
+        """
+        Get the number of bytes processed by the download as a string.
+
+        :return: The number of bytes processed by the download as a string.
+        """
         return self.__download.completed_length_string()
 
     def speed(self):
+        """
+        Get the download speed of the download as a string.
+
+        :return: The download speed of the download as a string.
+        """
         return self.__download.download_speed_string()
 
     def name(self):
+        """
+        Get the name of the download.
+
+        :return: The name of the download.
+        """
         return self.__download.name
 
     def size(self):
+        """
+        Get the size of the download as a string.
+
+        :return: The size of the download as a string.
+        """
         return self.__download.total_length_string()
 
     def eta(self):
+        """
+        Get the estimated time of arrival of the download as a string.
+
+        :return: The estimated time of arrival of the download as a string.
+        """
         return self.__download.eta_string()
 
     def listener(self):
+        """
+        Get the listener object of the download.
+
+        :return: The listener object of the download.
+        """
         return self.__listener
 
     def status(self):
+        """
+        Get the status of the download as a string.
+
+        :return: The status of the download as a string.
+        """
         self.__update()
         if self.__download.is_waiting or self.queued:
             if self.seeding:
@@ -73,32 +142,77 @@ class Aria2Status:
             return MirrorStatus.STATUS_DOWNLOADING
 
     def seeders_num(self):
+        """
+        Get the number of seeders of the download.
+
+        :return: The number of seeders of the download.
+        """
         return self.__download.num_seeders
 
     def leechers_num(self):
+        """
+        Get the number of leechers of the download.
+
+        :return: The number of leechers of the download.
+        """
         return self.__download.connections
 
     def uploaded_bytes(self):
+        """
+        Get the number of bytes uploaded by the download as a string.
+
+        :return: The number of bytes uploaded by the download as a string.
+        """
         return self.__download.upload_length_string()
 
     def upload_speed(self):
+        """
+        Get the upload speed of the download as a string.
+
+        :return: The upload speed of the download as a string.
+        """
         self.__update()
         return self.__download.upload_speed_string()
 
     def ratio(self):
+        """
+        Get the upload/download ratio of the download as a string.
+
+        :return: The upload/download ratio of the download as a string.
+        """
         return f"{round(self.__download.upload_length / self.__download.completed_length, 3)}"
 
     def seeding_time(self):
+        """
+        Get the seeding time of the download as a string.
+
+        :return: The seeding time of the download as a string.
+        """
         return get_readable_time(time() - self.start_time)
 
-    def download(self):
-        return self
+    @staticmethod
+    def get_readable_time(seconds):
+        """
+        Get a human-readable string representation of a number of seconds.
 
-    def gid(self):
-        self.__update()
-        return self.__gid
+        :param seconds: The number of seconds to convert to a string.
+        :return: A human-readable string representation of the number of seconds.
+        """
+        pass
+
+    @classmethod
+    def Eng(cls):
+        """
+        Get the engine status of the download.
+
+        :return: The engine status of the download.
+        """
+        return EngineStatus().STATUS_ARIA
 
     async def cancel_download(self):
+        """
+        Cancel the download.
+        """
         self.__update()
         if self.__download is None:
             return
@@ -120,6 +234,3 @@ class Aria2Status:
                 msg = 'Download stopped by user!'
             await self.__listener.onDownloadError(msg)
             await sync_to_async(aria2.remove, [self.__download], force=True, files=True)
-
-    def eng(self):
-        return EngineStatus().STATUS_ARIA
