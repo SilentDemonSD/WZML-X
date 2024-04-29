@@ -1,5 +1,13 @@
-version: "3.8"
-services:
+# This is a Docker Compose file for a VPN and an application.
+
+version: "3.8"  # Specifies the version of Docker Compose to use.
+
+services:  # Defines the services (containers) that make up the application.
+
+  # The VPN service uses the qmcgaw/gluetun image and is named "gluetun".
+  # It has NET_ADMIN capabilities and uses the /dev/net/tun device.
+  # It also has various environment variables for configuring the VPN.
+  # The VPN listens on ports 80 and 8080 and restarts if it fails.
   vpn:
     image: qmcgaw/gluetun:v3.34
     container_name: gluetun
@@ -19,14 +27,4 @@ services:
       - UPDATER_PERIOD=24h
     ports:
       - "80:80"
-      - "8080:8080"
-    restart: on-failure
-
-  app:
-    build: .
-    network_mode: service:vpn
-    command: bash start.sh
-    restart: on-failure
-    ports:
-      - "80:80"
-      - "8080:8080"
+      - "8080:808
