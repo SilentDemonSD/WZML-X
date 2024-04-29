@@ -8,12 +8,15 @@ class YtDlpDownloadStatus:
     """
     A class representing the status of a youtube-dlp download.
     """
-    def __init__(self, obj, listener, gid, message: Optional[str] = None):
+    def __init__(self, obj: Optional[YoutubeDlpObject], listener: Optional[Listener], gid: Optional[str] = None, message: Optional[str] = None):
         self.obj = obj
         self.listener = listener
         self.upload_details = getattr(listener, 'upload_details', None)
         self.gid = gid
         self.message = message
+
+    def __str__(self):
+        return self.get_status()
 
     def get_status(self) -> str:
         """
@@ -31,7 +34,7 @@ class YtDlpDownloadStatus:
         elif status == EngineStatus.STATUS_DOWNLOADING:
             speed = self.obj.get_download_speed()
             eta = self.obj.get_eta()
-            if not eta or eta < 0:
+            if eta is None or eta < 0:
                 eta_str = "Unknown"
             else:
                 eta_str = get_readable_time(eta)
@@ -55,7 +58,7 @@ def get_readable_size(size: Union[int, float]) -> str:
     """
     Return a human-readable string representing the size.
     """
-    if not size:
+    if size is None:
         return "Unknown size"
 
     for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
@@ -69,5 +72,5 @@ if __name__ == "__main__":
     from youtube_dlp import YoutubeDlpObject
 
     obj = YoutubeDlpObject()
-    status = YtDlpDownloadStatus(obj, None, None)
-    print(status.get_status())
+    status = YtDlpDownloadStatus(obj, None)
+    print(status)
