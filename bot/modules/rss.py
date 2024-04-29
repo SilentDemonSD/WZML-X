@@ -59,7 +59,7 @@ class RssFeed:
     tag: str = ""
 
 
-async def rssMenu(event: Message) -> tuple[str, InlineKeyboardMarkup]:
+async def rss_menu(client, event):
     user_id = event.from_user.id
     buttons = ButtonMaker()
     buttons.ibutton("Subscribe", f"rss sub {user_id}")
@@ -82,5 +82,5 @@ async def rssMenu(event: Message) -> tuple[str, InlineKeyboardMarkup]:
     buttons.ibutton("Close", f"rss close {user_id}")
     button = buttons.build_menu(2)
     msg = f'Rss Menu | Users: {len(rss_dict)} | Running: {scheduler.running}'
-    return msg, button
+    await sendMessage(event.chat.id, msg, buttons=button)
 
