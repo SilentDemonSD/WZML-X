@@ -15,10 +15,10 @@ from bot.helper.ext_utils.telegraph_helper import telegraph
 from bot import LOGGER, bot, config_dict
 
 # Define the path for MediaInfo files
-PATH = "Mediainfo/"
+MEDIAINFO_PATH = "Mediainfo/"
 
 # Define the section dictionary for parsing MediaInfo output
-section_dict = {
+SECTION_DICT = {
     "General": "🔹",
     "Video": "🎥",
     "Audio": "🎶",
@@ -28,18 +28,18 @@ section_dict = {
 }
 
 # Asynchronous function to generate MediaInfo for a given link or media file
-async def gen_mediainfo(message, link=None, media=None, mmsg=None):
+async def generate_mediainfo(message, link=None, media=None, mmsg=None):
     # Send a message indicating that MediaInfo is being generated
     temp_send = await sendMessage(message, '<i>Generating MediaInfo...</i>')
     try:
         # Create a directory for MediaInfo files if it doesn't exist
-        if not await aiopath.isdir(PATH):
-            await mkdir(PATH)
+        if not await aiopath.isdir(MEDIAINFO_PATH):
+            await aiopath.mkdir(MEDIAINFO_PATH)
 
         # If a link is provided, download the file and generate MediaInfo
         if link:
             filename = re.search(".+/(.+)", link).group(1)
-            des_path = os.path.join(PATH, filename)
+            des_path = os.path.join(MEDIAINFO_PATH, filename)
             headers = {"user-agent": "Mozilla/5.0 (Linux; Android 12; 2201116PI) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Mobile Safari/537.36"}
             async with ClientSession() as session:
                 async with session.get(link, headers=headers) as response:
@@ -49,7 +49,7 @@ async def gen_mediainfo(message, link=None, media=None, mmsg=None):
                             break
         # If a media file is provided, generate MediaInfo for it
         elif media:
-            des_path = os.path.join(PATH, media.file_name)
+            des_path = os.path.join(MEDIAINFO_PATH, media.file_name)
             if media.file_size <= 50000000:
                 await mmsg.download(os.path.join(os.getcwd(), des_path))
             else:
@@ -60,7 +60,7 @@ async def gen_mediainfo(message, link=None, media=None, mmsg=None):
         stdout, _, _ = await cmd_exec(shlex.split(f'mediainfo "{des_path}"'))
         tc = f"<h4>📌 {os.path.basename(des_path)}</h4><br><br>"
         if len(stdout) != 0:
-            tc += parseinfo(stdout)
+            tc += parse_info(stdout)
     except Exception as e:
         LOGGER.error(e)
         await editMessage(temp_send, f"MediaInfo Stopped due to {str(e)}")
@@ -72,11 +72,11 @@ async def gen_mediainfo(message, link=None, media=None, mmsg=None):
     await temp_send.edit(f"<b>MediaInfo:</b>\n\n➲ <b>Link :</b> https://graph.org/{link_id}", disable_web_page_preview=False)
 
 # Function to parse the output of the 'mediainfo' command
-def parseinfo(out):
+def parse_info(out):
     tc = ''
     trigger = False
     for line in out.split('\n'):
-        for section, emoji in section_dict.items():
+        for section, emoji in SECTION_DICT.items():
             if line.startswith(section):
                 trigger = True
                 if not line.startswith('General'):
@@ -102,7 +102,7 @@ async def mediainfo(_, message):
     # If a media file or link is provided, generate MediaInfo
     if len(message.command) > 1 or rply and rply.text:
         link = rply.text if rply else message.command[1]
-        return await gen_mediainfo(message, link)
+        return await generate_mediainfo(message, link)
     # If a media file is replied to, generate MediaInfo
     elif rply:
         if file := next(
@@ -120,7 +120,7 @@ async def mediainfo(_, message):
             ),
             None,
         ):
-            return await gen_mediainfo(message, None, file, rply)
+            return await generate_mediainfo(message, None, file, rply)
         else:
             return await sendMessage(message, help_msg)
     # If no media file or link is provided, send a help message
