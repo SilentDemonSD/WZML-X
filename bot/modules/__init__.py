@@ -13,7 +13,7 @@ def is_prime(n: int) -> bool:
         i += 2
     return True
 
-def largest_prime(numbers: List[int]) -> Optional[int]:
+def largest_prime(numbers: list[int]) -> int | None:
     """Returns the largest prime number in the input list, or None if no prime numbers are found.
     If the input list is empty, returns None.
     """
