@@ -191,7 +191,6 @@ def list_to_hash(k, flagg=False, emoji=False) -> str:
             listing += f'#{ele}, '
         return listing[:-2]
 
-
 async def imdb_callback(client, query):
     message = query.message
     user_id = query.from_user.id
@@ -226,10 +225,10 @@ async def imdb_callback(client, query):
             ]
         )
         template = ''
-        # if int(data[1]) in user_data and user_data[int(data[1])].get('imdb_temp'):
-        #     template = user_data[int(data[1])].get('imdb_temp')
-        # if not template:
-        template = config_dict['IMDB_TEMPLATE']
+        if int(data[1]) in user_data and user_data[int(data[1])].get('imdb_temp'):
+            template = user_data[int(data[1])].get('imdb_temp')
+        if not template:
+            template = config_dict['IMDB_TEMPLATE']
         if imdb and template != "":
             cap = template.format(
                 title=imdb['title'],
@@ -285,7 +284,6 @@ async def imdb_callback(client, query):
         await query.answer()
         await query.message.delete()
         await query.message.reply_to_message.delete()
-
 
 bot.add_handler(MessageHandler(imdb_search, filters=command(BotCommands.IMDBCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
 bot.add_handler(CallbackQueryHandler(imdb_callback, filters=regex(r'^imdb')))
