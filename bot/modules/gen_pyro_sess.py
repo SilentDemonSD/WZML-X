@@ -1,18 +1,35 @@
 import os
 import asyncio
 import time
-import typing
-from contextlib import asynccontextmanager
-from cryptography.fernet import Fernet
+from typing import Dict, Any, Union, Optional
 
 import aiofiles
+from cryptography.fernet import Fernet
+
+import aiogram
 from aiogram import Bot, types, filters, Router, FSMContext
 from aiogram.fsm.context import FSMContext
+from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.executor import start_webhook
 from aiogram.utils.exceptions import ThrottlingException, MessageCantBeEdited, MessageToDeleteNotFound
+from aiogram.dispatcher.filters.text import Text
+from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.fsm.state import StatesGroup, State
+from aiogram.utils.deep_getattr import deep_getattr
 
 router = Router()
+
+bot = Bot(token=os.environ["BOT_TOKEN"])
+bot_cache: Dict[int, Tuple[bool, Optional[str], bool]] = {}
+
+class SessionGenStates(StatesGroup):
+    API_ID = State()
+    API_HASH = State()
+    PHONE_NO = State()
+    CONFIRM_PHN = State()
+    OTP = State()
+    TWO_STEP_PASS = State()
 
 @router.message(filters=filters.Command("exportsession") & filters.Private)
 async def gen_pyro_string(message: types.Message, state: FSMContext):
@@ -27,7 +44,7 @@ Get from <a href='https://my.telegram.org'>my.telegram.org</a></i>.
 <i>Send /stop to Stop Process</i>""")
         session_dict['message'] = sess_msg
         await create_task(invoke(message, 'API_ID', state))
-        if isStop:
+        if deep_getattr(session_dict, 'isStop', False):
             return
         async with session_dict['lock']:
             try:
@@ -42,7 +59,7 @@ Get from <a href='https://my.telegram.org'>my.telegram.org</a></i>.
 
 <i>Send /stop to Stop Process</i>""")
         await create_task(invoke(message, 'API_HASH', state))
-        if isStop:
+        if deep_getattr(session_dict, 'isStop', False):
             return
         async with session_dict['lock']:
             api_hash = session_dict['API_HASH']
@@ -57,11 +74,11 @@ Get from <a href='https://my.telegram.org'>my.telegram.org</a></i>.
 
 <i>Send /stop to Stop Process</i>""")
             await create_task(invoke(message, 'PHONE_NO', state))
-            if isStop:
+            if deep_getattr(session_dict, 'isStop', False):
                 return
             await editMessage(sess_msg, f"⌬ <b>Verification Confirmation:</b>\n\n <i>Is {session_dict['PHONE_NO']} correct? (y/n/yes/no):</i> \n\n<b>Send y/yes (Yes) | n/no (No)</b>")
             await create_task(invoke(message, 'CONFIRM_PHN', state))
-            if isStop:
+            if deep_getattr(session_dict, 'isStop', False):
                 return
             async with session_dict['lock']:
                 if session_dict['CONFIRM_PHN'].lower() in ['y', 'yes']:
@@ -95,7 +112,7 @@ Get from <a href='https://my.telegram.org'>my.telegram.org</a></i>.
 
 <i>Send /stop to Stop Process</i>""")
     await create_task(invoke(message, 'OTP', state))
-    if isStop:
+    if deep_getattr(session_dict, 'isStop', False):
         return
     async with session_dict['lock']:
         otp = ' '.join(str(session_dict['OTP']))
@@ -116,7 +133,7 @@ Get from <a href='https://my.telegram.org'>my.telegram.org</a></i>.
  
  <i>Send /stop to Stop Process</i>""")
         await create_task(invoke(message, 'TWO_STEP_PASS', state))
-        if isStop:
+        if deep_getattr(session_dict, 'isStop', False):
             return
         async with session_dict['lock']:
             password = session_dict['TWO_STEP_PASS'].strip()
@@ -141,10 +158,9 @@ Get from <a href='https://my.telegram.org'>my.telegram.org</a></i>.
 
 @asynccontextmanager
 async def invoke(message: types.Message, key: str, state: FSMContext):
-    global isStop
-    user_id = message.from_user.id
+    isStop = False
     start_time = time()
-    handler = message.bot.add_handler(types.MessageHandler(types.Text(lambda m: m.from_user.id == user_id)), group=-1)
+    handler = message.bot.add_handler(types.MessageHandler(Text(startswith=key), group=-1))
     async with state.proxy() as session_dict:
         while not bool(session_dict.get(key)):
             await asyncio.sleep(0.5)
@@ -153,7 +169,7 @@ async def invoke(message: types.Message, key: str, state: FSMContext):
                 isStop = True
                 break
     message.bot.remove_handler(handler)
-    yield
+    yield isStop
 
 @router.message(filters=filters.Command("decrypt") & filters.Private)
 async def decrypt_message(message: types.Message, state: FSMContext):
@@ -171,7 +187,7 @@ async def decrypt_message(message: types.Message, state: FSMContext):
         bot_cache[msg_id] = [False, message.text, False]
     
     start_time = time()
-    handler = message.bot.add_handler(types.MessageHandler(types.Text(lambda m: m.from_user.id == user_id)), group=-1)
+    handler = message.bot.add_handler(types.MessageHandler(Text(startswith="decrypt_key_"), group=-1))
     while bot_cache[msg_id][0]:
         await asyncio.sleep(0.5)
         if time() - start_time > 60:
