@@ -10,6 +10,6 @@ from async_timeout import asyncio_timeout
 
 @contextlib.asynccontextmanager
 async def async_lock(lock):
-    async with lock:
-        yield
+    async with async_conditional_create(lock):
+        yield lock
 
