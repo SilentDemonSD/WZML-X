@@ -7,24 +7,27 @@ def load_credentials():
     """Loads the Google Drive credentials from the file.
 
     Returns:
-        google.oauth2.credentials.Credentials: The Google Drive credentials or None if not found.
+        google.oauth2.credentials.Credentials or None: The Google Drive credentials or None if not found.
     """
     credentials = None
     token_file = "token.pickle"
 
     if os.path.exists(token_file):
         with open(token_file, 'rb') as f:
-            credentials = pickle.load(f)
+            try:
+                credentials = pickle.load(f)
+            except Exception as e:
+                print(f"Error loading credentials from file: {e}")
 
     return credentials
 
 def refresh_and_save_credentials():
     """Refreshes the Google Drive credentials if necessary and saves them to the file.
     """
-    credentials = None
+    credentials = load_credentials()
     oauth_scope = ["https://www.googleapis.com/auth/drive"]
 
-    if load_credentials() is None:
+    if credentials is None:
         flow = InstalledAppFlow.from_client_secrets_file(
             'credentials.json', oauth_scope)
         try:
