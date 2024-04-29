@@ -7,11 +7,16 @@ def calculate_rectangle_area(length: float, width: float) -> float:
     :return: The area of the rectangle.
     :raises ValueError: If the length or width is less than or equal to zero.
     """
+    # Check if the input types are numbers
     if not all([isinstance(num, (int, float)) for num in (length, width)]):
         raise TypeError("Both length and width must be numbers.")
-    
+
+    # Check if the input values are positive
     if length <= 0 or width <= 0:
         raise ValueError("Both length and width must be positive numbers.")
-    
+
+    # Calculate the area
     area = length * width
+
+    # Return the area
     return area
