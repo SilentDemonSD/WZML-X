@@ -28,14 +28,14 @@ class TelegraphHelper:
         retry_after = 0
         while retry_after < 5:
             try:
-                await self.telegraph.create_account(
+                response = await self.telegraph.create_account(
                     short_name=self.short_name,
                     author_name=self.author_name,
                     author_url=self.author_url,
                 )
                 self.access_token = self.telegraph.get_access_token()
                 logger.info(f"Telegraph Account Generated : {self.short_name}")
-                return
+                return response
             except tg_exceptions.RetryAfterError as e:
                 logger.warning(f"Telegraph Flood control exceeded. Retrying in {e.retry_after} seconds...")
                 retry_after = retry_after + e.retry_after
@@ -98,7 +98,8 @@ class TelegraphHelper:
         **kwargs,
     ) -> Optional[Dict[str, Any]]:
         try:
-            return await request_func(*args, **kwargs)
+            response = await request_func(*args, **kwargs)
+            return response
         except tg_exceptions.RetryAfterError as e:
             if retry_after_error:
                 logger.warning(f"Telegraph Flood control exceeded. Retrying in {e.retry_after} seconds...")
@@ -133,17 +134,24 @@ class TelegraphHelper:
                     if nxt_page < num_of_path:
                         content += f'<b> | <a href="https://telegra.ph/{path[nxt_page]}">Next</a></b>'
                         nxt_page += 1
-                await self.edit_page(
-                    path=path[prev_page],
-                    title=f"{config_dict['TITLE_NAME']} Torrent Search",
-                    content=content,
-                )
+                try:
+                    await self.edit_page(
+                        path=path[prev_page],
+                        title=f"{config_dict['TITLE_NAME']} Torrent Search",
+                        content=content,
+                    )
+                except tg_exceptions.RetryAfterError as e:
+                    logger.warning(f"Telegraph Flood control exceeded. Retrying in {e.retry_after} seconds...")
+                    await asyncio.sleep(e.retry_after)
 
 if __name__ == "__main__":
     # Ensure that the config_dict variable is defined
+    import sys
+
     if "config_dict" in globals():
         telegraph = TelegraphHelper(config_dict["AUTHOR_NAME"], config_dict["AUTHOR_URL"])
         bot_loop = asyncio.get_event_loop()
         bot_loop.run_until_complete(telegraph.create_account())
     else:
         logger.error("config_dict variable is not defined.")
+        sys.exit(1)
