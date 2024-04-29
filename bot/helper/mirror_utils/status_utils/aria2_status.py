@@ -1,6 +1,6 @@
 import asyncio
 import datetime
-from typing import Any
+from typing import Any, Callable, Dict, List, Optional
 
 import aioaria2rpc
 from bot import aria2, logger
@@ -14,13 +14,13 @@ def memoized(maxsize=128):
     with the same arguments. This can improve performance for functions
     that are called multiple times with the same arguments.
     """
-    cache = {}
+    cache: Dict[str, Any] = {}
 
-    def decorator(func):
-        def wrapper(*args, **kwargs):
+    def decorator(func: Callable) -> Callable:
+        async def wrapper(*args: List[Any], **kwargs: Dict[str, Any]) -> Any:
             key = str(args) + str(kwargs)
             if key not in cache:
-                cache[key] = func(*args, **kwargs)
+                cache[key] = await func(*args, **kwargs)
             return cache[key]
 
         return wrapper
@@ -28,7 +28,7 @@ def memoized(maxsize=128):
     return decorator
 
 @memoized
-def get_download_by_gid(gid: str) -> aioaria2rpc.Download:
+async def get_download_by_gid(gid: str) -> Optional[aioaria2rpc.Download]:
     """
     Get the download object by GID.
     This function sends an RPC request to the Aria2 instance to get the download
@@ -39,7 +39,7 @@ def get_download_by_gid(gid: str) -> aioaria2rpc.Download:
     :return: The download object, or None if the RPC request fails.
     """
     try:
-        return aria2.get_download(gid)
+        return await aria2.get_download(gid)
     except aioaria2rpc.RPCError as e:
         logger.error(f'{e}: Aria2c, Error while getting torrent info')
         return None
@@ -68,13 +68,14 @@ class Aria2Status:
         :param queued: Whether the download is in the queue.
         """
         self.__gid = gid
-        self.__download = get_download_by_gid(gid)
+        self.__download = None
         self.__listener = listener
         self.upload_details = self.__listener.upload_details if self.__listener else None
         self.queued = queued
-        self.start_time = datetime.datetime.now() if self.__download else None
+        self.start_time = None
         self.seeding = seeding
         self.message = self.__listener.message if self.__listener else None
+        self.__update()
 
     def __update(self):
         """
@@ -94,7 +95,8 @@ class Aria2Status:
 
         :return: The download object.
         """
-        self.__update()
+        if not self.__download:
+            self.__update()
         return self.__download
 
     @property
@@ -282,57 +284,3 @@ class Aria2Status:
         else:
             return MirrorStatus.STATUS_DOWNLOADING
 
-    def seeders_num(self):
-        """
-        Get the number of seeders of the download.
-        This method returns the number of seeders of the download.
-
-        :return: The number of seeders of the download.
-        """
-        download = self.download
-        return download.num_seeders if download else 0
-
-    def leechers_num(self):
-        """
-        Get the number of leechers of the download.
-        This method returns the number of leechers of the download.
-
-        :return: The number of leechers of the download.
-        """
-        download = self.download
-        return download.connections if download else 0
-
-    def uploaded_bytes(self):
-        """
-        Get the number of bytes uploaded by the download as a string.
-        This method returns a string representing the number of bytes
-        uploaded by the download, such as "10 MB".
-
-        :return: The number of bytes uploaded by the download as a string.
-        """
-        download = self.download
-        return download.upload_length_string() if download else "0 B"
-
-    def upload_speed(self):
-        """
-        Get the upload speed of the download as a string.
-        This method returns a string representing the upload speed of the
-        download, such as "10 MB/s".
-
-        :return: The upload speed of the download as a string.
-        """
-        download = self.download
-        return download.upload_speed_string() if download else "0 B/s"
-
-    def ratio(self):
-        """
-        Get the upload/download ratio of the download as a string.
-        This method returns a string representing the upload/download ratio
-        of the download, such as "1.5".
-
-        :return: The upload/download ratio of the download as a string.
-        """
-        download = self.download
-        if not download:
-            return "0.00"
-        return f"{download.upload_length / download.completed_length:.2f}"
