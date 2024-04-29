@@ -13,23 +13,17 @@ logging.basicConfig(
     level=logging.INFO,
 )
 
-load_dotenv('config.env', override=True)
+def load_env_variables(env_file: str) -> None:
+    """Load environment variables from a .env file."""
+    load_dotenv(env_file, override=True)
 
-MISSING_ENV_VAR = '_____REMOVE_THIS_LINE_____'
-if MISSING_ENV_VAR in os.environ:
-    logging.error('The README.md file should be read! Exiting now!')
-    exit()
+def initialize_mongodb_connection(database_url: str) -> MongoClient:
+    """Initialize a MongoDB connection."""
+    client = MongoClient(database_url)
+    return client
 
-BOT_TOKEN = os.getenv('BOT_TOKEN')
-if not BOT_TOKEN:
-    logging.error("BOT_TOKEN variable is missing! Exiting now")
-    exit(1)
-
-bot_id = BOT_TOKEN.split(':', 1)[0]
-DATABASE_URL = os.getenv('DATABASE_URL')
-
-if DATABASE_URL:
-    client = MongoClient(DATABASE_URL)
+def update_environment_variables(client: MongoClient, bot_id: str) -> None:
+    """Update the environment variables from the database."""
     db = client.wzmlx
     old_config = db.settings.deployConfig.find_one({'_id': bot_id})
     config_dict = db.settings.config.find_one({'_id': bot_id})
@@ -46,29 +40,55 @@ if DATABASE_URL:
 
     client.close()
 
-UPGRADE_PACKAGES = os.getenv('UPGRADE_PACKAGES', 'False').lower() == 'true'
-if UPGRADE_PACKAGES:
+def upgrade_packages() -> None:
+    """Upgrade Python packages."""
     packages = [dist.project_name for dist in pkg_resources.working_set]
-    subprocess.call(["pip", "install"] + packages, shell=True)
+    try:
+        os.system("pip install " + " ".join(pkg for pkg in packages))
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Failed to upgrade packages: {e}")
 
-UPSTREAM_REPO = os.getenv('UPSTREAM_REPO')
-UPSTREAM_BRANCH = os.getenv('UPSTREAM_BRANCH', 'master')
+def update_codebase(upstream_url: str, upstream_branch: str) -> None:
+    """Update the codebase from the upstream repository."""
+    try:
+        subprocess.run(
+            [
+                "git", "remote", "add", "origin", upstream_url,
+                "&&", "git", "fetch", "origin", "-q",
+                "&&", "git", "reset", "--hard", f"origin/{upstream_branch}", "-q"
+            ],
+            shell=True,
+            check=True,
+        )
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Failed to update codebase: {e}")
 
-if UPSTREAM_REPO:
-    if not os.path.exists('.git'):
-        subprocess.run(["git", "init", "-q"], check=True)
-        subprocess.run(["git", "add", "."], check=True)
-        subprocess.run(["git", "commit", "-sm", "update", "-q"], check=True)
+if __name__ == "__main__":
+    load_env_variables('config.env')
 
-    subprocess.run(
-        [
-            "git", "remote", "add", "origin", UPSTREAM_REPO,
-            "&&", "git", "fetch", "origin", "-q",
-            "&&", "git", "reset", "--hard", f"origin/{UPSTREAM_BRANCH}", "-q"
-        ],
-        shell=True,
-        check=True,
-    )
+    MISSING_ENV_VAR = '_____REMOVE_THIS_LINE_____'
+    if MISSING_ENV_VAR in os.environ:
+        logging.error('The README.md file should be read! Exiting now!')
+        exit()
 
-    repo = UPSTREAM_REPO.split('/')
-    UPSTREAM_REPO = f"https://github.com/{repo[-2]}/{repo[-1]}"
+    BOT_TOKEN = os.getenv('BOT_TOKEN')
+    if not BOT_TOKEN:
+        logging.error("BOT_TOKEN variable is missing! Exiting now")
+        exit(1)
+
+    bot_id = BOT_TOKEN.split(':', 1)[0]
+    DATABASE_URL = os.getenv('DATABASE_URL')
+
+    if DATABASE_URL:
+        client = initialize_mongodb_connection(DATABASE_URL)
+        update_environment_variables(client, bot_id)
+
+    UPGRADE_PACKAGES = os.getenv('UPGRADE_PACKAGES', 'False').lower() == 'true'
+    if UPGRADE_PACKAGES:
+        upgrade_packages()
+
+    UPSTREAM_REPO = os.getenv('UPSTREAM_REPO')
+    UPSTREAM_BRANCH = os.getenv('UPSTREAM_BRANCH', 'master')
+
+    if UPSTREAM_REPO:
+        update_codebase(UPSTREAM_REPO, UPSTREAM_BRANCH)
