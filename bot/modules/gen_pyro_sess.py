@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 from time import time
+import asyncio
 from aiofiles.os import remove as aioremove
-from asyncio import sleep, wrap_future, Lock
+from asyncio import wrap_future, Lock
 from functools import partial
 
-from pyrogram import Client
-from pyrogram.filters import command, user, text, private
-from pyrogram.handlers import MessageHandler
-from pyrogram.errors import SessionPasswordNeeded, FloodWait, PhoneNumberInvalid, ApiIdInvalid, PhoneCodeInvalid, PhoneCodeExpired, UsernameNotOccupied, ChatAdminRequired, PeerIdInvalid
+import aiogram
+from aiogram.types import Message
+from aiogram.filters import command, user, text, private
+from aiogram.handlers import MessageHandler
+from aiogram.errors import InputUserDeactivated, ChatAdminRequired, PeerIdInvalid
+from aiogram.utils.exceptions import Throttled, CantParseEntities, MessageCantBeEdited, MessageToEditNotFound, MessageNotModified, TelegramAPIError, NetworkError, RetryAfter, CantParseMessage, InvalidQueryID, CantParseParam, CantParseHTTPURL, CantParsePhoneNumber, CantParseEmailAddress, CantParseUsername, CantParseHash, CantParseVersion
 
 from bot import bot, LOGGER
 from bot.helper.ext_utils.bot_utils import new_thread, new_task
@@ -18,19 +21,18 @@ session_dict = {}
 session_lock = Lock()
 isStop = False
 
-@new_task
-async def genPyroString(client, message):
+async def genPyroString(message: Message):
     global isStop
     session_dict.clear()
     sess_msg = await sendMessage(message, """⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>
  
 <i>Send your <code>API_ID</code> or <code>APP_ID</code>.
-Get from https://my.telegram.org</i>. 
+Get from <a href='https://my.telegram.org'>https://my.telegram.org</a></i>. 
 <b>Timeout:</b> 120s
 
 <i>Send /stop to Stop Process</i>""")
     session_dict['message'] = sess_msg
-    await wrap_future(invoke(client, message, 'API_ID'))
+    await wrap_future(invoke(message, 'API_ID'))
     if isStop:
         return
     async with session_lock:
@@ -38,14 +40,14 @@ Get from https://my.telegram.org</i>.
             api_id = int(session_dict['API_ID'])
         except Exception:
             return await editMessage(sess_msg, "<i><code>APP_ID</code> is Invalid.</i>\n\n ⌬ <b>Process Stopped.</b>")
-    await sleep(1.5)
+    await asyncio.sleep(1.5)
     await editMessage(sess_msg, """⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>
  
-<i>Send your <code>API_HASH</code>. Get from https://my.telegram.org</i>.
+<i>Send your <code>API_HASH</code>. Get from <a href='https://my.telegram.org'>https://my.telegram.org</a></i>.
 <b>Timeout:</b> 120s
 
 <i>Send /stop to Stop Process</i>""")
-    await wrap_future(invoke(client, message, 'API_HASH'))
+    await wrap_future(invoke(message, 'API_HASH'))
     if isStop:
         return
     async with session_lock:
@@ -53,18 +55,18 @@ Get from https://my.telegram.org</i>.
     if len(api_hash) <= 30:
         return await editMessage(sess_msg,  "<i><code>API_HASH</code> is Invalid.</i>\n\n ⌬ <b>Process Stopped.</b>")
     while True:
-        await sleep(1.5)
+        await asyncio.sleep(1.5)
         await editMessage(sess_msg,  """⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>
  
 <i>Send your Telegram Account's Phone number in International Format ( Including Country Code ). <b>Example :</b> +14154566376</i>.
 <b>Timeout:</b> 120s
 
 <i>Send /stop to Stop Process</i>""")
-        await wrap_future(invoke(client, message, 'PHONE_NO'))
+        await wrap_future(invoke(message, 'PHONE_NO'))
         if isStop:
             return
         await editMessage(sess_msg, f"⌬ <b>Verification Confirmation:</b>\n\n <i>Is {session_dict['PHONE_NO']} correct? (y/n/yes/no):</i> \n\n<b>Send y/yes (Yes) | n/no (No)</b>")
-        await wrap_future(invoke(client, message, 'CONFIRM_PHN'))
+        await wrap_future(invoke(message, 'CONFIRM_PHN'))
         if isStop:
             return
         async with session_lock:
@@ -82,14 +84,12 @@ Get from https://my.telegram.org</i>.
         await pyro_client.connect()
     try:
         user_code = await pyro_client.send_code(session_dict['PHONE_NO'])
-        await sleep(1.5)
-    except FloodWait as e:
+        await asyncio.sleep(1.5)
+    except Throttled as e:
         return await editMessage(sess_msg, f"<b>Floodwait of {e.value} Seconds. Retry Again</b>\n\n ⌬ <b>Process Stopped.</b>")
-    except ApiIdInvalid:
-        return await editMessage(sess_msg, "<b>API_ID and API_HASH are Invalid. Retry Again</b>\n\n ⌬ <b>Process Stopped.</b>")
-    except PhoneNumberInvalid:
-        return await editMessage(sess_msg, "<b>Phone Number is Invalid. Retry Again</b>\n\n ⌬ <b>Process Stopped.</b>")
-    await sleep(1.5)
+    except (ApiIdInvalid, PhoneNumberInvalid):
+        return await editMessage(sess_msg, "<b>API_ID, API_HASH, or Phone Number are Invalid. Retry Again</b>\n\n ⌬ <b>Process Stopped.</b>")
+    await asyncio.sleep(1.5)
     await editMessage(sess_msg, """⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>
  
 <i>OTP has been sent to your Phone Number, Enter OTP in <code>1 2 3 4 5</code> format. ( Space between each Digits )</i>
@@ -97,7 +97,7 @@ Get from https://my.telegram.org</i>.
 <b>Timeout:</b> 120s
 
 <i>Send /stop to Stop Process</i>""")
-    await wrap_future(invoke(client, message, 'OTP'))
+    await wrap_future(invoke(message, 'OTP'))
     if isStop:
         return
     async with session_lock:
@@ -109,7 +109,7 @@ Get from https://my.telegram.org</i>.
     except PhoneCodeExpired:
         return await editMessage(sess_msg, "<i> Input OTP has Expired.</i>\n\n ⌬ <b>Process Stopped.</b>")
     except SessionPasswordNeeded:
-        await sleep(1.5)
+        await asyncio.sleep(1.5)
         await editMessage(sess_msg, f"""⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>
  
  <i>Account is being Protected via <b>Two-Step Verification.</b> Send your Password below.</i>
@@ -118,7 +118,7 @@ Get from https://my.telegram.org</i>.
  <b>Password Hint</b> : {await pyro_client.get_password_hint()}
  
  <i>Send /stop to Stop Process</i>""")
-        await wrap_future(invoke(client, message, 'TWO_STEP_PASS'))
+        await wrap_future(invoke(message, 'TWO_STEP_PASS'))
         if isStop:
             return
         async with session_lock:
@@ -140,9 +140,8 @@ Get from https://my.telegram.org</i>.
         await aioremove(f'WZML-X-{message.from_user.id}.session')
         await aioremove(f'WZML-X-{message.from_user.id}.session-journal')
     except: pass
-    
 
-async def set_details(_, message, newkey):
+async def set_details(_, message: Message, newkey):
     global isStop
     user_id = message.from_user.id
     value = message.text
@@ -154,21 +153,19 @@ async def set_details(_, message, newkey):
         isStop = True
         return await editMessage(session_dict['message'], '⌬ <b>Process Stopped</b>')
 
-
 @new_thread
-async def invoke(client, message, key):
+async def invoke(client, message: Message, key):
     global isStop
     user_id = message.from_user.id
     session_dict[user_id] = True
     start_time = time()
     handler = client.add_handler(MessageHandler(partial(set_details, newkey=key), filters=user(user_id) & text & private), group=-1)
     while session_dict[user_id]:
-        await sleep(0.5)
+        await asyncio.sleep(0.5)
         if time() - start_time > 120:
             session_dict[user_id] = False
             await editMessage(message, "⌬ <b>Process Stopped</b>")
             isStop = True
     client.remove_handler(*handler)
-
 
 bot.add_handler(MessageHandler(genPyroString, filters=command('exportsession') & private & CustomFilters.sudo))
