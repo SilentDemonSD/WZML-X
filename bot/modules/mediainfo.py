@@ -14,7 +14,10 @@ from bot.helper.ext_utils.bot_utils import cmd_exec
 from bot.helper.ext_utils.telegraph_helper import telegraph
 from bot import LOGGER, bot, config_dict
 
+# Define the path for MediaInfo files
 MEDIAINFO_PATH = "Mediainfo/"
+
+# Define a dictionary for different sections and their corresponding emojis
 SECTION_DICT = {
     "General": "🔹",
     "Video": "🎥",
@@ -24,12 +27,17 @@ SECTION_DICT = {
     "Other": "📦",
 }
 
+# This async function generates MediaInfo for the given link or media
 async def generate_mediainfo(message, link=None, media=None, mmsg=None):
+    # Send a message indicating that MediaInfo is being generated
     temp_send = await sendMessage(message, 'Generating MediaInfo...')
+
     try:
+        # Create MediaInfo directory if it doesn't exist
         if not await aiopath.isdir(MEDIAINFO_PATH):
             await aiopath.mkdir(MEDIAINFO_PATH)
 
+        # Download the file from the link or save the media file
         if link:
             filename = re.search(".+/(.+)", link).group(1)
             des_path = os.path.join(MEDIAINFO_PATH, filename)
@@ -49,6 +57,7 @@ async def generate_mediainfo(message, link=None, media=None, mmsg=None):
                     async with aiopen(des_path, "ab") as f:
                         await f.write(chunk)
 
+        # Execute mediainfo command and parse the output
         stdout, _, _ = await cmd_exec(shlex.split(f'mediainfo "{des_path}"'))
         tc = f"<h4>📌 {os.path.basename(des_path)}</h4><br><br>"
         if len(stdout) != 0:
@@ -59,9 +68,11 @@ async def generate_mediainfo(message, link=None, media=None, mmsg=None):
     finally:
         await aioremove(des_path)
 
+    # Create a Telegraph page with the parsed MediaInfo and send the link
     link_id = (await telegraph.create_page(title='MediaInfo X', content=tc))["path"]
     await temp_send.edit(f"<b>MediaInfo:</b>\n\n➲ <b>Link :</b> https://graph.org/{link_id}", disable_web_page_preview=False)
 
+# This function parses the MediaInfo output and returns the formatted string
 def parse_info(out):
     tc = ''
     trigger = False
@@ -81,6 +92,7 @@ def parse_info(out):
     tc += '</pre><br>'
     return tc
 
+# This async function handles the /mediainfo command
 async def mediainfo(_, message):
     rply = message.reply_to_message
     help_msg = "<b>By replying to media:</b>"
@@ -88,10 +100,12 @@ async def mediainfo(_, message):
     help_msg += "\n\n<b>By reply/sending download link:</b>"
     help_msg += f"\n<code>/{BotCommands.MediaInfoCommand[0]} or /{BotCommands.MediaInfoCommand[1]}" + " {link}" + "</code>"
 
+    # Check if a media file or link is provided
     if len(message.command) > 1 or rply and rply.text:
         link = rply.text if rply else message.command[1]
         return await generate_mediainfo(message, link)
     elif rply:
+        # Check if the replied message contains a file
         if file := next(
             (
                 i
@@ -109,8 +123,10 @@ async def mediainfo(_, message):
         ):
             return await generate_mediainfo(message, None, file, rply)
         else:
+            # Send help message if no file is found
             return await sendMessage(message, help_msg)
     else:
         return await sendMessage(message, help_msg)
 
+# Add the mediainfo function to the bot's message handler
 bot.add_handler(MessageHandler(mediainfo, filters=command(BotCommands.MediaInfoCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
