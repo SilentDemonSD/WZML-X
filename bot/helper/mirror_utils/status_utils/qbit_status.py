@@ -46,12 +46,12 @@ class QbittorrentStatus:
         self.__info = self.__client.torrents_info(f'{self.__listener.uid}')
         self.message = self.__listener.message
 
-    def __del__(self) -> None:
+    async def __del__(self) -> None:
         """
         Remove the torrent from the client when the object is garbage collected.
         """
         if not self.seeding:
-            asyncio.create_task(self.__client.torrents_delete(torrent_hashes=self.__info.hash, delete_files=True))
+            await asyncio.create_task(self.__client.torrents_delete(torrent_hashes=self.__info.hash, delete_files=True))
 
     @property
     def progress(self) -> str:
