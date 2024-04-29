@@ -45,7 +45,7 @@ async def _list_drive(key: str, message: Message, user_id: int, item_type: str, 
     else:
         await bot.edit_message_text(chat_id=message.chat.id, message_id=message.id, text=BotTheme.get_string('LIST_NOT_FOUND', NAME=key))
 
-async def select_type(_: Message, query: CallbackQuery):
+async def select_type(query: CallbackQuery):
     user_id = query.from_user.id
     message = query.message
     key = message.reply_to_message.text.split(maxsplit=1)[1].strip()
@@ -69,7 +69,7 @@ async def select_type(_: Message, query: CallbackQuery):
     await bot.edit_message_text(chat_id=message.chat.id, message_id=message.id, text=BotTheme.get_string('LIST_SEARCHING', NAME=key))
     await _list_drive(key, message, user_id, item_type, is_recursive)
 
-async def drive_list(_: Message, message: Message):
+async def drive_list(message: Message):
     args = message.text.split() if message.text else ['/cmd']
     if len(args) == 1:
         return await sendMessage(message, BotTheme.get_string('SEND_KEY'))
