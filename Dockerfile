@@ -4,19 +4,16 @@ FROM python:3.9-slim-buster
 # Set the working directory to /app
 WORKDIR /app
 
-# Copy the requirements file to the working directory
+# Copy the requirements file to the working directory and install packages
 COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Install any needed packages specified in requirements.txt
-RUN apt-get update && apt-get install -y --no-cache-dir \
-    build-essential \
-    && pip install --no-cache-dir -r requirements.txt
-
-# Copy the current directory contents into the container at /app
+# Copy the rest of the application code
 COPY . .
 
-# Make the entrypoint.sh executable
-RUN chmod +x entrypoint.sh
+# Make the entrypoint.sh executable and set it as the container's default command
+RUN chmod +x entrypoint.sh \
+ && sed -i '1s/^/#!\/bin\/bash\n/' /app/entrypoint.sh \
+ && sed -i '$s/$/&\nexit 0/' /app/entrypoint.sh
 
-# Run entrypoint.sh when the container launches
 ENTRYPOINT ["/app/entrypoint.sh"]
