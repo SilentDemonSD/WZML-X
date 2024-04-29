@@ -59,24 +59,4 @@ async def change_category(client: pyrogram.Client, message: Message):
         await sendMessage(message, CATEGORY_HELP_MESSAGE)
         return
     if not await CustomFilters.sudo(client, message) and dl.message.from_user.id != user_id:
-        await sendMessage(message, "This task is not for you!")
-        return
-    if dl.status() not in [MirrorStatus.STATUS_DOWNLOADING, MirrorStatus.STATUS_PAUSED, MirrorStatus.STATUS_QUEUEDL]:
-        await sendMessage(message, f'Task should be on {MirrorStatus.STATUS_DOWNLOADING} or {MirrorStatus.STATUS_PAUSED} or {MirrorStatus.STATUS_QUEUEDL}')
-        return
-    listener = dl.listener() if dl and hasattr(dl, 'listener') else None
-    if listener and not listener.isLeech:
-        if not index_link and not drive_id and categories_dict:
-            drive_id, index_link, is_cancelled = await open_category_btns(message)
-        if is_cancelled:
-            return
-        if not index_link and not drive_id:
-            return await sendMessage(message, "Time out")
-        msg = '<b>Task has been Updated Successfully!</b>'
-        if drive_id:
-            if not (folder_name := await sync_to_async(GoogleDriveHelper().getFolderData, drive_id)):
-                return await sendMessage(message, "Google Drive id validation failed!!")
-            if listener.drive_id and listener.drive_id == drive_id:
-                msg += f'\n\n<b>Folder name</b> : {folder_name} Already selected'
-            else:
-                msg += f'\n\n<b
+        await sendMessage
