@@ -1,127 +1,102 @@
-from __future__ import print_function  # Enable print function for Python 2.x
-
-# Import required libraries and modules
-from google.oauth2.service_account import Credentials
-import googleapiclient.discovery
-import json
-import progress.bar  # Progress bar module for displaying the processing progress
-import glob
 import sys
-import argparse
 import time
+import argparse
+import glob
+import pickle
+import progress.bar
+from google.oauth2.service_account import Credentials
+from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
-import os
-import pickle
 
-# Start the timer
-stt = time.time()
+def load_json_file(file_path):
+    try:
+        with open(file_path, 'r') as file:
+            return json.load(file)
+    except Exception as e:
+        print(f'Error loading JSON file: {e}')
+        sys.exit(1)
 
-# Initialize the argument parser
-parse = argparse.ArgumentParser(
-    description='A tool to add service accounts to a shared drive from a folder containing credential files.')
+def get_service_account_emails(account_folder):
+    service_account_files = glob.glob(f'{account_folder}/*.json')
+    service_account_emails = []
 
-# Define and add arguments
-parse.add_argument('--path', '-p', default='accounts',
-                   help='Specify an alternative path to the service accounts folder.')
-parse.add_argument('--credentials', '-c', default='./credentials.json',
-                   help='Specify the relative path for the credentials file.')
-parse.add_argument('--yes', '-y', default=False,
-                   action='store_true', help='Skips the sanity prompt.')
-parsereq = parse.add_argument_group('required arguments')
-parsereq.add_argument('--drive-id', '-d',
-                      help='The ID of the Shared Drive.', required=True)
+    for file in service_account_files:
+        data = load_json_file(file)
+        service_account_emails.append(data['client_email'])
 
-# Parse the arguments
-args = parse.parse_args()
+    return service_account_emails
 
-# Set the path for the service accounts folder
-acc_dir = args.path
+def get_drive_service(credentials_file, scopes):
+    creds = None
 
-# Get the ID of the shared drive
-did = args.drive_id
+    if os.path.exists('token_sa.pickle'):
+        with open('token_sa.pickle', 'rb') as token:
+            creds = pickle.load(token)
 
-# Find the credentials file
-credentials = glob.glob(args.credentials)
-
-# Check if the credentials file exists
-try:
-    open(credentials[0], 'r')
-    print('>> Found credentials.')
-except IndexError:
-    print('>> No credentials found.')
-    sys.exit(0)
-
-# Prompt the user for confirmation if the --yes flag is not set
-if not args.yes:
-    input('>> Make sure the **Google account** that has generated credentials.json\n   is added into your Team Drive '
-          '(shared drive) as Manager\n>> (Press any key to continue)')
-
-# Initialize the credentials object
-creds = None
-
-# Check if the token pickle file exists
-if os.path.exists('token_sa.pickle'):
-    # Load the credentials from the token pickle file
-    with open('token_sa.pickle', 'rb') as token:
-        creds = pickle.load(token)
-
-# If the credentials are not valid, refresh or obtain new credentials
-if not creds or not creds.valid:
-    if creds and creds.expired and creds.refresh_token:
-        # Refresh the credentials
-        creds.refresh(Request())
-    else:
-        # Obtain new credentials
-        flow = InstalledAppFlow.from_client_secrets_file(credentials[0], scopes=[
-            'https://www.googleapis.com/auth/admin.directory.group',
-            'https://www.googleapis.com/auth/admin.directory.group.member'
-        ])
-        # Run the flow to get the credentials
+    if not creds or not creds.valid:
+        flow = InstalledAppFlow.from_client_secrets_file(credentials_file, scopes)
         creds = flow.run_console()
-    # Save the credentials for the next run
-    with open('token_sa.pickle', 'wb') as token:
-        pickle.dump(creds, token)
 
-# Initialize the Google Drive API client
-drive = googleapiclient.discovery.build("drive", "v3", credentials=creds)
+        with open('token_sa.pickle', 'wb') as token:
+            pickle.dump(creds, token)
 
-# Initialize the batch request
-batch = drive.new_batch_http_request()
+    return build("drive", "v3", credentials=creds)
 
-# Find all service account JSON files in the specified folder
-aa = glob.glob('%s/*.json' % acc_dir)
+def main():
+    start_time = time.time()
 
-# Initialize the progress bar
-pbar = progress.bar.Bar("Readying accounts", max=len(aa))
+    parser = argparse.ArgumentParser(description='A tool to add service accounts to a shared drive from a folder containing credential files.')
+    parser.add_argument('--path', '-p', default='accounts', help='Specify an alternative path to the service accounts folder.')
+    parser.add_argument('--credentials', '-c', default='./credentials.json', help='Specify the relative path for the credentials file.')
+    parser.add_argument('--yes', '-y', default=False, action='store_true', help='Skips the sanity prompt.')
+    parser.add_argument('--drive-id', '-d', help='The ID of the Shared Drive.', required=True)
 
-# Process each service account JSON file
-for i in aa:
-    # Extract the client email from the JSON file
-    ce = json.loads(open(i, 'r').read())['client_email']
+    args = parser.parse_args()
 
-    # Add a permission for the service account on the shared drive
-    batch.add(drive.permissions().create(fileId=did, supportsAllDrives=True, body={
-        "role": "organizer",
-        "type": "user",
-        "emailAddress": ce
-    }))
+    account_folder = args.path
+    drive_id = args.drive_id
+    credentials_file = args.credentials
+    scopes = ['https://www.googleapis.com/auth/admin.directory.group', 'https://www.googleapis.com/auth/admin.directory.group.member']
 
-    # Update the progress bar
-    pbar.next()
+    if not os.path.exists(account_folder):
+        print(f'Error: The specified account folder "{account_folder}" does not exist.')
+        sys.exit(1)
 
-# Finish the progress bar
-pbar.finish()
+    if not os.path.exists(credentials_file):
+        print(f'Error: The specified credentials file "{credentials_file}" does not exist.')
+        sys.exit(1)
 
-# Execute the batch request
-print('Adding...')
-batch.execute()
+    if not args.yes:
+        input('>> Make sure the **Google account** that has generated credentials.json\n   is added into your Team Drive (shared drive) as Manager\n>> (Press any key to continue)')
 
-# Print completion message
-print('Complete.')
+    drive_service = get_drive_service(credentials_file, scopes)
 
-# Calculate and print the elapsed time
-hours, rem = divmod((time.time() - stt), 3600)
-minutes, sec = divmod(rem, 60)
-print("Elapsed Time:\n{:0>2}:{:0>2}:{:05.2f}".format(
-    int(hours), int(minutes), sec))
+    service_account_emails = get_service_account_emails(account_folder)
+
+    batch = drive_service.new_batch_http_request()
+
+    pbar = progress.bar.Bar("Readying accounts", max=len(service_account_emails))
+
+    for email in service_account_emails:
+        batch.add(drive_service.permissions().create(fileId=drive_id, supportsAllDrives=True, body={
+            "role": "organizer",
+            "type": "user",
+            "emailAddress": email
+        }))
+
+        pbar.next()
+
+    pbar.finish()
+
+    print('Adding...')
+    batch.execute()
+    print('Complete.')
+
+    elapsed_time = time.time() - start_time
+    hours, rem = divmod(elapsed_time, 3600)
+    minutes, sec = divmod(rem, 60)
+    print(f"Elapsed Time: {int(hours)}:{int(minutes)}:{sec:.2f}")
+
+if __name__ == '__main__':
+    main()
