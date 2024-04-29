@@ -1,11 +1,6 @@
-#!/usr/bin/env python3
-
 import asyncio
 from pyrogram.handlers import MessageHandler
 from pyrogram.filters import command
-
-# Importing required functions from the bot module
-from bot import bot
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.message_utils import deleteMessage, sendMessage
 from bot.helper.telegram_helper.filters import CustomFilters
@@ -14,7 +9,7 @@ from bot.helper.ext_utils.bot_utils import is_gdrive_link, sync_to_async, new_ta
 from bot.helper.themes import BotTheme
 
 @new_task
-async def countNode(_, message):
+async def count_node(_, message):
     """
     This function is responsible for counting the number of files and folders in a Google Drive folder.
     :param _: Underscore is used to represent the first parameter which is usually self in object-oriented programming
@@ -23,10 +18,7 @@ async def countNode(_, message):
     args = message.text.split()  # Split the received message into a list of arguments
 
     # Extract the username and mention of the user
-    if username := message.from_user.username:
-        tag = f"@{username}"
-    else:
-        tag = message.from_user.mention
+    tag = f"@{message.from_user.username}" if (username := message.from_user.username) else message.from_user.mention
 
     link = args[1] if len(args) > 1 else ''  # Get the link from the arguments
 
@@ -59,5 +51,4 @@ async def countNode(_, message):
         msg = 'Send Gdrive link along with command or by replying to the link by command'  # Inform the user that the provided link is not a Google Drive link
         await sendMessage(message, msg, photo='IMAGES')
 
-# Add the countNode function as a handler for the /count command
-bot.add_handler(MessageHandler(countNode, filters=command(BotCommands.CountCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
+bot.add_handler(MessageHandler(count_node, filters=command(BotCommands.CountCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
