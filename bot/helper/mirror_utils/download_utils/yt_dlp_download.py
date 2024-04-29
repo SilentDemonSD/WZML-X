@@ -2,13 +2,11 @@
 import os
 import re
 import asyncio
-import traceback
+import logging
 from typing import Dict, Any, List, Tuple, Union
 
 import aiohttp
-import aiohttp_sessions
 from yt_dlp import YoutubeDL, DownloadError
-from logging import getLogger, Logger
 
 class YoutubeDLHelper(YoutubeDL):
     def __init__(self, listener):
@@ -30,8 +28,8 @@ class YoutubeDLHelper(YoutubeDL):
 
     def __post_init__(self):
         self.opts: Dict[str, Any] = {
-            'progress_hooks': [self.__onDownloadProgress],
-            'logger': self.MyLogger(self),
+            'progress_hooks': [self.__on_download_progress],
+            'logger': self.MyLogger(),
             'usenetrc': True,
             'cookiefile': 'cookies.txt',
             'allow_multiple_video_streams': True,
@@ -53,55 +51,55 @@ class YoutubeDLHelper(YoutubeDL):
         self.__is_cancelled = True
 
     @property
-    def is_downloading(self):
+    def is_downloading(self) -> bool:
         return self.__downloading
 
     @property
-    def download_speed_str(self):
+    def download_speed_str(self) -> str:
         return f"{self.__download_speed} bytes/sec"
 
     @property
-    def eta_str(self):
+    def eta_str(self) -> str:
         return f"{self.__eta}" if isinstance(self.__eta, str) else f"{self.__eta:.2f} sec"
 
     @property
-    def downloaded_bytes_str(self):
+    def downloaded_bytes_str(self) -> str:
         return f"{self.__downloaded_bytes} bytes"
 
     @property
-    def size_str(self):
+    def size_str(self) -> str:
         return f"{self.__size} bytes"
 
     @property
-    def progress_str(self):
+    def progress_str(self) -> str:
         return f"{self.__progress * 100:.2f}%"
 
     @property
-    def gid(self):
+    def gid(self) -> str:
         return self.__gid
 
     @property
-    def is_cancelled(self):
+    def is_cancelled(self) -> bool:
         return self.__is_cancelled
 
     @property
-    def download_started(self):
+    def download_started(self) -> bool:
         return self.__size > 0
 
     @property
-    def download_completed(self):
+    def download_completed(self) -> bool:
         return self.__downloaded_bytes == self.__size
 
     @property
-    def download_aborted(self):
+    def download_aborted(self) -> bool:
         return self.__is_cancelled and not self.download_completed
 
     @property
-    def download_failed(self):
+    def download_failed(self) -> bool:
         return not self.download_completed and not self.download_aborted
 
     @property
-    def download_status(self):
+    def download_status(self) -> str:
         if self.download_completed:
             return 'completed'
         elif self.download_aborted:
@@ -111,7 +109,7 @@ class YoutubeDLHelper(YoutubeDL):
         else:
             return 'in progress'
 
-    def __onDownloadProgress(self, d):
+    def __on_download_progress(self, d):
         if d['status'] == 'downloading':
             self.__downloading = True
             self.__size = d['total_bytes']
@@ -129,6 +127,7 @@ class YoutubeDLHelper(YoutubeDL):
             self.__progress = 0
             self.__download_speed = 0
             self.__eta = '-'
+            self.__update_name(d)
         elif d['status'] == 'failed':
             self.__downloading = False
             self.__gid = d['id']
@@ -137,26 +136,30 @@ class YoutubeDLHelper(YoutubeDL):
             self.__progress = 0
             self.__download_speed = 0
             self.__eta = '-'
+            self.__update_name(d)
 
-    class MyLogger:
-        def __init__(self, obj):
-            self.obj = obj
+    @staticmethod
+    def MyLogger() -> logging.Logger:
+        logger = logging.getLogger()
+        logger.setLevel(logging.DEBUG)
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        ch = logging.StreamHandler()
+        ch.setFormatter(formatter)
+        logger.addHandler(ch)
+        return logger
 
-        def debug(self, msg: str):
-            # Hack to fix changing extension
-            if not self.obj.is_playlist:
-                if match := re.search(r'.Merger..Merging formats into..(.*?).$', msg) or \
-                        re.search(r'.ExtractAudio..Destination..(.*?)$', msg):
-                    LOGGER.info(msg)
-                    newname = match.group(1)
-                    newname = newname.rsplit("/", 1)[-1]
-                    self.obj.name = newname
+    def __update_name(self, d):
+        if not self.is_playlist:
+            if match := re.search(r'.Merger..Merging formats into..(.*?).$', d['filename']):
+                newname = match.group(1)
+                newname = newname.rsplit("/", 1)[-1]
+                self.name = newname
 
-        @staticmethod
-        def warning(msg: str):
-            LOGGER.warning(msg)
+    def __del__(self):
+        self.close()
 
-        @staticmethod
-        def error(msg: str):
-            if msg != "ERROR: Cancelling...":
-                LOGGER.error(msg)
+    def __repr__(self):
+        return (f'YoutubeDLHelper(name={self.name}, '
+                f'is_playlist={self.is_playlist}, '
+                f'download_status={self.download_status})')
