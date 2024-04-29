@@ -6,8 +6,9 @@ import re
 import aiofiles.os as aiopath
 import time
 import aiohttp
+from typing import Dict, Any, Union, Optional, Callable
 from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
-from typing import Dict, Any, Union, Optional
+import io
 
 class ProgressFileReader(io.BufferedReader):
     def __init__(self, filename: str, read_callback: Optional[Callable[[int], None]] = None):
@@ -50,6 +51,7 @@ class DDLUploader:
         chunk_size = current - self.last_uploaded
         self.last_uploaded = current
         self.__processed_bytes += chunk_size
+        return chunk_size
 
     @retry(wait=wait_exponential(multiplier=2, min=4, max=8), stop=stop_after_attempt(3),
         retry=retry_if_exception_type(Exception))
@@ -57,14 +59,17 @@ class DDLUploader:
         with ProgressFileReader(filename=file_path, read_callback=self.__progress_callback) as file:
             data[req_file] = file
             async with aiohttp.ClientSession() as self.__asyncSession:
-                async with self.__asyncSession.post(url, data=data) as resp:
-                    if resp.status == 200:
-                        try:
-                            return await resp.json()
-                        except aiohttp.ContentTypeError:
-                            return "Uploaded"
-                        except json.JSONDecodeError:
-                            return None
+                try:
+                    async with self.__asyncSession.post(url, data=data) as resp:
+                        if resp.status == 200:
+                            try:
+                                return await resp.json()
+                            except aiohttp.ContentTypeError:
+                                return "Uploaded"
+                        return None
+                except aiohttp.ClientError as e:
+                    print(e)
+                    return None
 
     async def __upload_to_ddl(self, file_path: str) -> Optional[Dict[str, Any]]:
         all_links = {}
@@ -121,6 +126,7 @@ class DDLUploader:
             if self.is_cancelled:
                 return
             print(f"Uploaded To DDL: {item_path}")
+            return link
         except Exception as err:
             print("DDL Upload has been Cancelled")
             if self.__asyncSession:
@@ -133,6 +139,7 @@ class DDLUploader:
             if self.is_cancelled or self.__is_errored:
                 return
             await self.__listener.onUploadComplete(link, size, self.total_files, self.total_folders, 'application/octet-stream', file_name)
+            return
 
     @property
     def speed(self) -> float:
@@ -155,3 +162,4 @@ class DDLUploader:
         if self.__asyncSession:
             await self.__asyncSession.close()
         await self.__listener.onUploadError('Your upload has been stopped!')
+        return
