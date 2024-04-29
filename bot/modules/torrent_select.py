@@ -11,8 +11,7 @@ from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.filters import regex, command, custom
 from pyrogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 
-from bot import bot, bot_name, aria2, download_dict, download_dict_lock, OWNER_ID, user_data, LOGGER
-from bot.helper.telegram_helper.bot_commands import BotCommands
+import bot.helper.telegram_helper.bot_commands as BotCommands
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import sendMessage, sendStatusMessage, deleteMessage
 from bot.helper.ext_utils.bot_utils import get_download_by_gid, MirrorStatus, bt_selection_buttons, sync_to_async
