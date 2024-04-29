@@ -14,9 +14,9 @@ def largest_prime(numbers: List[int]) -> Optional[int]:
 
     If the input list is empty, returns None.
     """
-    largest_prime = -1
+    largest_prime: Optional[int] = None
     for num in numbers:
         if is_prime(num):
-            if num > largest_prime:
+            if largest_prime is None or num > largest_prime:
                 largest_prime = num
     return largest_prime
