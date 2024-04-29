@@ -17,21 +17,27 @@ from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.message_utils import sendMessage, sendStatusMessage, deleteMessage
 from bot.helper.ext_utils.bot_utils import get_download_by_gid, MirrorStatus, bt_selection_buttons, sync_to_async
 
-
 async def select(client: pyrogram.Client, message: Message):
     user_id = message.from_user.id
     cmd_data = message.text.split('_', maxsplit=1)
+    gid = None
     if len(cmd_data) > 1:
         gid = cmd_data[1].split('@', maxsplit=1)[0].strip()
-        dl = await get_download_by_gid(gid)
     elif message.reply_to_message:
         reply_message = message.reply_to_message
         async with download_dict_lock:
-            dl = download_dict.get(reply_message.message_id, None)
+            download_info = download_dict.get(reply_message.message_id, None)
+            if download_info:
+                gid = download_info.get('gid')
     else:
         await sendMessage(message, "Invalid usage. Reply to a task or use /btselect <gid>")
         return
 
+    if not gid:
+        await sendMessage(message, "Task not found.")
+        return
+
+    dl = await get_download_by_gid(gid)
     if not dl:
         await sendMessage(message, "Task not found.")
         return
