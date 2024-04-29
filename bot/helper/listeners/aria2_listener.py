@@ -14,6 +14,8 @@ from bot.helper.ext_utils.fs_utils import get_base_name, clean_unwanted
 from bot.helper.ext_utils.bot_utils import getDownloadByGid, new_thread, bt_selection_buttons, sync_to_async, get_telegraph_list
 from bot.helper.telegram_helper.message_utils import sendMessage, deleteMessage, update_all_messages
 from bot.helper.themes import BotTheme
+import aiopath
+import aiofiles
 
 
 @new_thread
@@ -30,11 +32,11 @@ async def on_download_started(api: aioaria2.Aria2, gid: str) -> None:
             if listener.select:
                 metamsg = "Downloading Metadata, wait then you can select files. Use torrent file to avoid this wait."
                 meta = await sendMessage(listener.message, metamsg)
-                async with asyncio.wait_for(asyncio.create_task(asyncio.sleep(0.5)), timeout=1):
+                async for _ in range(0, 2):
                     if download.is_removed or download.followed_by_ids:
                         await deleteMessage(meta)
                         break
-                    download = download.live
+                    download = await api.get_download(gid)
         return
     else:
         LOGGER.info(f'onDownloadStarted: {get_base_name(download.name)} - Gid: {gid}')
@@ -46,7 +48,7 @@ async def on_download_started(api: aioaria2.Aria2, gid: str) -> None:
             config_dict['DAILY_TASK_LIMIT'],
             config_dict['DAILY_MIRROR_LIMIT'],
             config_dict['DAILY_LEECH_LIMIT']]):
-        async with asyncio.wait_for(asyncio.create_task(limit_checker(size, listener)), timeout=1):
+        async for _ in range(0, 1):
             if dl is None:
                 dl = await getDownloadByGid(gid)
             if dl:
@@ -65,7 +67,7 @@ async def on_download_started(api: aioaria2.Aria2, gid: str) -> None:
                     await listener.on_download_error(limit_exceeded)
                     await api.remove([download], force=True, files=True)
     if config_dict['STOP_DUPLICATE']:
-        async with asyncio.wait_for(asyncio.create_task(asyncio.sleep(1)), timeout=1):
+        async for _ in range(0, 1):
             if dl is None:
                 dl = await getDownloadByGid(gid)
             if dl:
@@ -101,7 +103,7 @@ async def on_download_started(api: aioaria2.Aria2, gid: str) -> None:
 @new_thread
 async def on_download_complete(api: aioaria2.Aria2, gid: str) -> None:
     """Handle the event when a download is completed."""
-    async with asyncio.wait_for(asyncio.create_task(asyncio.sleep(1)), timeout=1):
+    async for _ in range(0, 1):
         try:
             download = await api.get_download(gid)
         except Exception:
@@ -139,8 +141,7 @@ async def on_download_complete(api: aioaria2.Aria2, gid: str) -> None:
 async def on_bt_download_complete(api: aioaria2.Aria2, gid: str) -> None:
     """Handle the event when a BitTorrent download is completed."""
     seed_start_time = time.time()
-    await asyncio.sleep(1)
-    async with asyncio.wait_for(asyncio.create_task(asyncio.sleep(1)), timeout=1):
+    async for _ in range(0, 1):
         download = await api.get_download(gid)
         if download.options.follow_torrent == 'false':
             return
@@ -177,7 +178,7 @@ async def on_bt_download_complete(api: aioaria2.Aria2, gid: str) -> None:
                         await listener.on_upload_error(f"Seeding stopped with Ratio: {dl.ratio()} and Time: {dl.seeding_time()}")
                         await api.remove([download], force=True, files=True)
                 else:
-                    async with download_dict_lock:
+                    async with download_dict as download_dict_atomic:
                         if listener.uid not in download_dict:
                             await api.remove([download], force=True, files=True)
                             return
@@ -193,10 +194,10 @@ async def on_bt_download_complete(api: aioaria2.Aria2, gid: str) -> None:
 @new_thread
 async def on_download_stopped(api: aioaria2.Aria2, gid: str) -> None:
     """Handle the event when a download is stopped."""
-    await asyncio.sleep(6)
-    if dl := await getDownloadByGid(gid):
-        listener = dl.listener()
-        await listener.on_download_error('Dead torrent!')
+    async for _ in range(0, 1):
+        if dl := await getDownloadByGid(gid):
+            listener = dl.listener()
+            await listener.on_download_error('Dead torrent!')
 
 
 @new_thread
@@ -217,12 +218,17 @@ async def on_download_error(api: aioaria2.Aria2, gid: str) -> None:
         await listener.on_download_error(error)
 
 
-def start_aria2_listener() -> None:
+async def start_aria2_listener() -> None:
     """Start the aria2 event listener."""
-    aria2.listen_to_notifications(threaded=False,
-                                  on_download_start=on_download_started,
-                                  on_download_error=on_download_error,
-                                  on_download_stop=on_download_stopped,
-                                  on_download_complete=on_download_complete,
-                                  on_bt_download_complete=on_bt_download_complete,
-                                  timeout=60)
+    async for notification in aria2.notifications:
+        if notification.type == 'downloadStart':
+            await on_download_started(aria2, notification.gid)
+        elif notification.type == 'downloadError':
+            await on_download_error(aria2, notification.gid)
+        elif notification.type == 'downloadStop':
+            await on_download_stopped(aria2, notification.gid)
+        elif notification.type == 'downloadComplete':
+            await on_download_complete(aria2, notification.gid)
+        elif notification.type == 'btDownloadComplete':
+            await on_bt_download_complete(aria2, notification.gid)
+        await asyncio.sleep(0.1)
