@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import asyncio
 import logging
 import random
@@ -57,21 +56,14 @@ class TelegraphHelper:
         Returns:
             Optional[Dict[str, Any]]: The response from the Telegraph API, or None if an error occurred.
         """
-        try:
-            return await self.telegraph.create_page(
-                title=title,
-                author_name=self.author_name,
-                author_url=self.author_url,
-                html_content=content,
-            )
-        except tg_exceptions.RetryAfterError as e:
-            if retry_after_error:
-                logger.warning(f"Telegraph Flood control exceeded. Retrying in {e.retry_after} seconds...")
-                await asyncio.sleep(e.retry_after)
-                return await self.create_page(title, content, retry_after_error=False)
-            else:
-                logger.error(f"Telegraph Flood control exceeded and retry is disabled.")
-                return None
+        return await self._request_telegraph(
+            self.telegraph.create_page,
+            title=title,
+            author_name=self.author_name,
+            author_url=self.author_url,
+            html_content=content,
+            retry_after_error=retry_after_error,
+        )
 
     async def edit_page(
         self, path: str, title: str, content: str, retry_after_error: bool = True
@@ -88,19 +80,30 @@ class TelegraphHelper:
         Returns:
             Optional[Dict[str, Any]]: The response from the Telegraph API, or None if an error occurred.
         """
+        return await self._request_telegraph(
+            self.telegraph.edit_page,
+            path=path,
+            title=title,
+            author_name=self.author_name,
+            author_url=self.author_url,
+            html_content=content,
+            retry_after_error=retry_after_error,
+        )
+
+    async def _request_telegraph(
+        self,
+        request_func,
+        *args,
+        retry_after_error: bool = True,
+        **kwargs,
+    ) -> Optional[Dict[str, Any]]:
         try:
-            return await self.telegraph.edit_page(
-                path=path,
-                title=title,
-                author_name=self.author_name,
-                author_url=self.author_url,
-                html_content=content,
-            )
+            return await request_func(*args, **kwargs)
         except tg_exceptions.RetryAfterError as e:
             if retry_after_error:
                 logger.warning(f"Telegraph Flood control exceeded. Retrying in {e.retry_after} seconds...")
                 await asyncio.sleep(e.retry_after)
-                return await self.edit_page(path, title, content, retry_after_error=False)
+                return await self._request_telegraph(request_func, *args, **kwargs, retry_after_error=False)
             else:
                 logger.error(f"Telegraph Flood control exceeded and retry is disabled.")
                 return None
@@ -136,9 +139,11 @@ class TelegraphHelper:
                     content=content,
                 )
 
-# Ensure that the config_dict variable is defined
-if "config_dict" in globals():
-    telegraph = TelegraphHelper(config_dict["AUTHOR_NAME"], config_dict["AUTHOR_URL"])
-    bot_loop.run_until_complete(telegraph.create_account())
-else:
-    logger.error("config_dict variable is not defined.")
+if __name__ == "__main__":
+    # Ensure that the config_dict variable is defined
+    if "config_dict" in globals():
+        telegraph = TelegraphHelper(config_dict["AUTHOR_NAME"], config_dict["AUTHOR_URL"])
+        bot_loop = asyncio.get_event_loop()
+        bot_loop.run_until_complete(telegraph.create_account())
+    else:
+        logger.error("config_dict variable is not defined.")
