@@ -2,55 +2,65 @@
 from bot.helper.ext_utils.bot_utils import EngineStatus, MirrorStatus, get_readable_file_size, get_readable_time, async_to_sync
 from bot.helper.ext_utils.fs_utils import get_path_size
 
-
 class YtDlpDownloadStatus:
     def __init__(self, obj, listener, gid):
-        self.__obj = obj
-        self.__listener = listener
+        self.obj = obj
+        self.listener = listener
         self.upload_details = listener.upload_details
-        self.__gid = gid
+        self.gid = gid
         self.message = listener.message
 
-    def gid(self):
-        return self.__gid
+    def get_gid(self):
+        return self.gid
 
     def processed_bytes(self):
         return get_readable_file_size(self.processed_raw())
 
     def processed_raw(self):
-        if self.__obj.downloaded_bytes != 0:
-            return self.__obj.downloaded_bytes
+        if self.obj.downloaded_bytes != 0:
+            return self.obj.downloaded_bytes
         else:
-            return async_to_sync(get_path_size, self.__listener.dir)
+            return async_to_sync(get_path_size, self.listener.dir)
 
     def size(self):
-        return get_readable_file_size(self.__obj.size)
+        return get_readable_file_size(self.obj.size)
 
     def status(self):
         return MirrorStatus.STATUS_DOWNLOADING
 
     def name(self):
-        return self.__obj.name
+        return self.obj.name
 
     def progress(self):
-        return f'{round(self.__obj.progress, 2)}%'
+        return f'{round(self.obj.progress, 2)}%'
 
     def speed(self):
-        return f'{get_readable_file_size(self.__obj.download_speed)}/s'
+        return f'{get_readable_file_size(self.obj.download_speed)}/s'
 
     def eta(self):
-        if self.__obj.eta != '-':
-            return get_readable_time(self.__obj.eta)
+        if self.obj.eta != '-':
+            return get_readable_time(self.obj.eta)
         try:
-            seconds = (self.__obj.size - self.processed_raw()) / \
-                self.__obj.download_speed
+            seconds = (self.obj.size - self.processed_raw()) / self.obj.download_speed
             return get_readable_time(seconds)
         except:
             return '-'
 
     def download(self):
-        return self.__obj
+        return self.obj
 
-
-    def eng(self):
+    def engine(self):
         return EngineStatus().STATUS_YT
+
+    def __str__(self):
+        return (f"YtDlpDownloadStatus:\n"
+                f"gid: {self.gid}\n"
+                f"processed_bytes: {self.processed_bytes}\n"
+                f"size: {self.size}\n"
+                f"status: {self.status}\n"
+                f"name: {self.name}\n"
+                f"progress: {self.progress}\n"
+                f"speed: {self.speed}\n"
+                f"eta: {self.eta}\n"
+                f"download: {self.download}\n"
+                f"engine: {self.engine}\n")
