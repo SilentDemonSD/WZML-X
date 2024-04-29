@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 import asyncio
+from typing import List, Tuple
+
+import pyrogram.filters as Filters
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
-from pyrogram.filters import command, regex
+from pyrogram.types import Message, CallbackQuery
 
 from bot import download_dict, bot, bot_name, download_dict_lock, OWNER_ID, user_data
 from bot.helper.telegram_helper.bot_commands import BotCommands
@@ -11,7 +14,7 @@ from bot.helper.ext_utils.bot_utils import get_download_by_gid, get_all_download
 from bot.helper.telegram_helper import button_build
 
 
-async def cancel_mirror(_, message):
+async def cancel_mirror(client, message):
     user_id = message.from_user.id
     args = message.text.split('_', maxsplit=1)
     if len(args) > 1:
@@ -32,7 +35,7 @@ async def cancel_mirror(_, message):
     download_info.download().cancel_download()
 
 
-async def cancel_all(status):
+async def cancel_all(status: MirrorStatus) -> bool:
     matches = await get_all_downloads(status)
     if not matches:
         return False
@@ -44,7 +47,7 @@ async def cancel_all(status):
     return True
 
 
-async def cancel_all_buttons(_, message):
+async def cancel_all_buttons(client, message: Message):
     async with download_dict_lock:
         count = len(download_dict)
     if count == 0:
@@ -68,7 +71,7 @@ async def cancel_all_buttons(_, message):
 
 
 @new_task
-async def cancel_all_update(_, query):
+async def cancel_all_update(client, query: CallbackQuery):
     data = query.data.split()
     message = query.message
     reply_to = message.reply_to_message
@@ -78,13 +81,13 @@ async def cancel_all_update(_, query):
         await delete_message(reply_to)
         await delete_message(message)
     else:
-        res = await cancel_all(data[1])
+        res = await cancel_all(MirrorStatus(data[1]))
         if not res:
             await send_message(reply_to, f"No matching tasks for {data[1]}!")
 
 
-bot.add_handler(MessageHandler(cancel_mirror, filters=regex(
+bot.add_handler(MessageHandler(cancel_mirror, filters=Filters.regex(
     f"^/{BotCommands.CancelMirror}(_\w+)?(?!all)") & CustomFilters.authorized & ~CustomFilters.blacklisted))
-bot.add_handler(MessageHandler(cancel_all_buttons, filters=command(
+bot.add_handler(MessageHandler(cancel_all_buttons, filters=Filters.command(
     BotCommands.CancelAllCommand) & CustomFilters.sudo))
-bot.add_handler(CallbackQueryHandler(cancel_all_update, filters=regex(r"^canall")))
+bot.add_handler(CallbackQueryHandler(cancel_all_update, filters=Filters.regex(r"^canall")))
