@@ -8,6 +8,7 @@ from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.filters import command, regex
 from pyrogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 
+# bot.py imports
 from bot import LOGGER, bot, config_dict
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, delete_messages
@@ -17,7 +18,18 @@ from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.bot_utils import sync_to_async, new_task, get_telegraph_list, checking_access
 from bot.helper.themes import BotTheme
 
+# Function to create InlineKeyboardMarkup for list_buttons
 async def list_buttons(user_id: int, is_recursive: bool = True) -> InlineKeyboardMarkup:
+    """
+    Create an InlineKeyboardMarkup for the user to select list types.
+
+    Args:
+        user_id (int): The user's ID.
+        is_recursive (bool): Optional, default is True. Whether to list recursively or not.
+
+    Returns:
+        InlineKeyboardMarkup: An InlineKeyboardMarkup object with buttons for list types.
+    """
     buttons = ButtonMaker()
     buttons.ibutton("Only Folders", f"list_types {user_id} folders {is_recursive}")
     buttons.ibutton("Only Files", f"list_types {user_id} files {is_recursive}")
@@ -26,7 +38,18 @@ async def list_buttons(user_id: int, is_recursive: bool = True) -> InlineKeyboar
     buttons.ibutton("Cancel", f"list_types {user_id} cancel")
     return buttons.build_menu(2)
 
+# Function to list drive contents
 async def _list_drive(key: str, message: Message, user_id: int, item_type: str, is_recursive: bool):
+    """
+    List drive contents based on the provided key, message, user_id, item_type, and is_recursive.
+
+    Args:
+        key (str): The key for the drive.
+        message (Message): The original message object.
+        user_id (int): The user's ID.
+        item_type (str): The type of items to list (e.g., folders, files, or both).
+        is_recursive (bool): Whether to list recursively or not.
+    """
     LOGGER.info(f"GDrive List: {key}")
     gdrive = GoogleDriveHelper()
     try:
@@ -46,7 +69,14 @@ async def _list_drive(key: str, message: Message, user_id: int, item_type: str, 
     else:
         await bot.edit_message_text(chat_id=message.chat.id, message_id=message.id, text=BotTheme.get_string('LIST_NOT_FOUND', NAME=key))
 
+# Function to handle the list_types callback query
 async def select_type(query: CallbackQuery):
+    """
+    Handle the list_types callback query and display the appropriate list.
+
+    Args:
+        query (CallbackQuery): The callback query object.
+    """
     user_id = query.from_user.id
     message = query.message
     key = message.reply_to_message.text.split(maxsplit=1)[1].strip()
@@ -70,7 +100,14 @@ async def select_type(query: CallbackQuery):
     await bot.edit_message_text(chat_id=message.chat.id, message_id=message.id, text=BotTheme.get_string('LIST_SEARCHING', NAME=key))
     await _list_drive(key, message, user_id, item_type, is_recursive)
 
+# Function to initiate the list command
 async def drive_list(message: Message):
+    """
+    Handle the /list command and display the list options.
+
+    Args:
+        message (Message): The original message object.
+    """
     args = message.text.split() if message.text else ['/cmd']
     if len(args) == 1:
         return await sendMessage(message, BotTheme.get_string('SEND_KEY'))
@@ -82,5 +119,6 @@ async def drive_list(message: Message):
     buttons = await list_buttons(user_id)
     await sendMessage(message, BotTheme.get_string('CHOOSE_OPTIONS'), buttons, 'IMAGES')
 
+# Register handlers
 bot.add_handler(MessageHandler(drive_list, filters=command(BotCommands.ListCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted), group=2)
 bot.add_handler(CallbackQueryHandler(select_type, filters=regex("^list_types")), group=2)
