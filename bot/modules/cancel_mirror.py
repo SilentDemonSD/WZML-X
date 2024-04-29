@@ -33,6 +33,7 @@ async def cancel_mirror(client, message):
         return await send_message(message, "This task is not for you!")
 
     download_info.download().cancel_download()
+    await send_message(message, f"Task with GID `{gid}` has been cancelled.")
 
 
 async def cancel_all(status: MirrorStatus) -> bool:
@@ -84,6 +85,8 @@ async def cancel_all_update(client, query: CallbackQuery):
         res = await cancel_all(MirrorStatus(data[1]))
         if not res:
             await send_message(reply_to, f"No matching tasks for {data[1]}!")
+        else:
+            await send_message(reply_to, f"{res} tasks for {data[1]} have been cancelled!")
 
 
 bot.add_handler(MessageHandler(cancel_mirror, filters=Filters.regex(
@@ -91,3 +94,4 @@ bot.add_handler(MessageHandler(cancel_mirror, filters=Filters.regex(
 bot.add_handler(MessageHandler(cancel_all_buttons, filters=Filters.command(
     BotCommands.CancelAllCommand) & CustomFilters.sudo))
 bot.add_handler(CallbackQueryHandler(cancel_all_update, filters=Filters.regex(r"^canall")))
+
