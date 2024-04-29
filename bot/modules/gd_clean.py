@@ -15,13 +15,14 @@ from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.ext_utils.bot_utils import is_gdrive_link, get_readable_file_size, new_task
-from typing import List, Tuple, Union, Optional
 from telethon import TelegramClient
 from pyrogram import Client as PyrogramClient
+from typing import List, Tuple, Union, Optional
 
 OWNER_ID = 0  # Make sure to define this variable
 
-async def driveclean(bot: Union[TelegramClient, PyrogramClient], client, message: telethon.types.Message) -> None:
+async def driveclean(bot: Union[TelegramClient, PyrogramClient], update):
+    message = update.effective_message
     args = message.text.split()
     link = get_gdrive_link(args, message)
     if not link:
@@ -55,7 +56,7 @@ async def driveclean(bot: Union[TelegramClient, PyrogramClient], client, message
     )
 
 @new_task
-async def drivecleancb(bot: Union[TelegramClient, PyrogramClient], client, query: telegram.CallbackQuery) -> None:
+async def drivecleancb(bot: Union[TelegramClient, PyrogramClient], query: telegram.CallbackQuery) -> None:
     message = query.message
     user_id = query.from_user.id
     data = query.data.split()
@@ -90,5 +91,6 @@ async def get_id_from_url(link: str) -> Optional[str]:
     except SessionPasswordNeededError:
         return None
 
-bot.add_handler(MessageHandler(driveclean, filters=command(BotCommands.GDCleanCommand) & CustomFilters.owner))
-bot.add_handler(CallbackQueryHandler(drivecleancb, filters=regex(r'^gdclean')))
+if bot.loop.current_instance() is bot.loop.instance(0):
+    bot.add_handler(MessageHandler(driveclean, filters=command(BotCommands.GDCleanCommand) & CustomFilters.owner))
+    bot.add_handler(CallbackQueryHandler(drivecleancb, filters=regex(r'^gdclean')))
