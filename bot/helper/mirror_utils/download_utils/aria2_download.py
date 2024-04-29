@@ -16,24 +16,16 @@ import aioaria2c
 from aioaria2c.aioaria2c import Aria2c
 
 async def add_aria2c_download(
-    link: str,
-    path: str,
-    listener: Any,
-    filename: Optional[str] = None,
-    header: Optional[Dict[str, str]] = None,
-    ratio: Optional[float] = None,
-    seed_time: Optional[int] = None,
+    link: str,  # The download link
+    path: str,  # The path to save the download
+    listener: Any,  # The listener object
+    filename: Optional[str] = None,  # Optional filename
+    header: Optional[Dict[str, str]] = None,  # Optional headers
+    ratio: Optional[float] = None,  # Optional seed ratio
+    seed_time: Optional[int] = None  # Optional seed time
 ) -> None:
     """
     Add a download to Aria2 using aria2c with the given parameters.
-
-    :param link: The download link.
-    :param path: The path to save the download.
-    :param listener: The listener object.
-    :param filename: Optional filename.
-    :param header: Optional headers.
-    :param ratio: Optional seed ratio.
-    :param seed_time: Optional seed time.
     """
     a2c_opt = {**aria2_options}  # Copy aria2_options to a2c_opt
     [a2c_opt.pop(k) for k in aria2c_global if k in aria2_options]  # Remove aria2c_global keys from a2c_opt
@@ -49,7 +41,7 @@ async def add_aria2c_download(
     if TORRENT_TIMEOUT:
         a2c_opt["bt-stop-timeout"] = str(TORRENT_TIMEOUT)
 
-    added_to_queue, event = await is_queued(listener.uid)
+    added_to_queue, event = await is_queued(listener.uid)  # Check if the download is added to the queue
     if added_to_queue:
         if link.startswith("magnet:"):
             a2c_opt["pause-metadata"] = "true"
@@ -57,9 +49,9 @@ async def add_aria2c_download(
             a2c_opt["pause"] = "true"
 
     try:
-        aria2 = Aria2c()
-        await aria2.start()
-        download = await aria2.add_download(link, **a2c_opt)
+        aria2 = Aria2c()  # Initialize Aria2c
+        await aria2.start()  # Start Aria2c
+        download = await aria2.add_download(link, **a2c_opt)  # Add download with given parameters
     except aioaria2c.exceptions.Aria2cException as e:
         LOGGER.debug(f"Aria2c Download Error: {e}")
         await sendMessage(listener.message, f"{e}")
@@ -69,10 +61,10 @@ async def add_aria2c_download(
         await sendMessage(listener.message, f"Unexpected error: {e}")
         return
     finally:
-        await aria2.stop()
+        await aria2.stop()  # Stop Aria2c
 
     if await aiopath.exists(link):
-        await aioremove(link)
+        await aioremove(link)  # Remove the link if it exists
 
     if download.error_message:
         error = str(download.error_message).replace("<", " ").replace(">", " ")
@@ -124,4 +116,3 @@ async def add_aria2c_download(
 
 # Install aioaria2c package as a separate step
 install_command = "pip install aioaria2c"
-
