@@ -1,7 +1,5 @@
 import os
 import sys
-import warnings
-import pathlib
 import asyncio
 import aiofiles.os
 import aioshutil
@@ -43,37 +41,42 @@ def is_archive_split(file: str) -> bool:
 
 async def clean_target(path: pathlib.Path) -> None:
     """Clean the target directory."""
-    if path.exists():
-        print(f"Cleaning Target: {path}")
-        if path.is_dir():
-            try:
-                await aiormtree(path)
-            except Exception:
-                pass
-        elif path.is_file():
-            try:
-                await aioremove(path)
-            except Exception:
-                pass
+    if not path.exists():
+        return
+
+    print(f"Cleaning Target: {path}")
+    if path.is_dir():
+        try:
+            await aiormtree(path)
+        except Exception as e:
+            print(f"Error cleaning directory: {e}")
+    elif path.is_file():
+        try:
+            await aioremove(path)
+        except Exception as e:
+            print(f"Error removing file: {e}")
 
 
 async def clean_download(path: pathlib.Path) -> None:
     """Clean the download directory."""
-    if path.exists():
-        print(f"Cleaning Download: {path}")
-        try:
-            await aiormtree(path)
-        except Exception:
-            pass
+    if not path.exists():
+        return
+
+    print(f"Cleaning Download: {path}")
+    try:
+        await aiormtree(path)
+    except Exception as e:
+        print(f"Error cleaning download directory: {e}")
 
 
 async def start_cleanup() -> None:
     """Start the cleanup process."""
-    get_client().torrents_delete(torrent_hashes="all")
     try:
+        get_client().torrents_delete(torrent_hashes="all")
         await aiormtree(DOWNLOAD_DIR)
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"Error cleaning download directory: {e}")
+
     await asyncio.gather(
         aiofiles.os.makedirs(DOWNLOAD_DIR, exist_ok=True),
         aria2.remove_all(True)
@@ -86,8 +89,8 @@ def clean_all() -> None:
     get_client().torrents_delete(torrent_hashes="all")
     try:
         shutil.rmtree(DOWNLOAD_DIR)
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"Error removing download directory: {e}")
 
 
 def exit_clean_up(signal, frame) -> None:
@@ -105,26 +108,33 @@ def exit_clean_up(signal, frame) -> None:
 async def clean_unwanted(path: pathlib.Path) -> None:
     """Clean unwanted files and folders."""
     print(f"Cleaning unwanted files/folders: {path}")
-    for dirpath, dirs, files in path.rglob("*.!qB"):
-        await aiofiles.os.remove(dirpath)
-    for dirpath, dirs, files in path.rglob("*.parts"):
-        if files and files[0].startswith('.'):
-            await aiofiles.os.remove(dirpath / files[0])
-    for dirpath in path.glob(".unwanted"):
-        await aioshutil.rmtree(dirpath)
-    for dirpath in path.glob("splited_files_mltb"):
-        await aioshutil.rmtree(dirpath)
-    for dirpath in path.glob("copied_mltb"):
-        await aioshutil.rmtree(dirpath)
-    for dirpath, dirs, files in path.rglob("*"):
-        if not files:
-            await aiofiles.os.rmdir(dirpath)
+    try:
+        for dirpath, dirs, files in path.rglob("*.!qB"):
+            await aiofiles.os.remove(dirpath)
+        for dirpath, dirs, files in path.rglob("*.parts"):
+            if files and files[0].startswith('.'):
+                await aiofiles.os.remove(dirpath / files[0])
+        for dirpath in path.glob(".unwanted"):
+            await aioshutil.rmtree(dirpath)
+        for dirpath in path.glob("splited_files_mltb"):
+            await aioshutil.rmtree(dirpath)
+        for dirpath in path.glob("copied_mltb"):
+            await aioshutil.rmtree(dirpath)
+        for dirpath, dirs, files in path.rglob("*"):
+            if not files:
+                await aiofiles.os.rmdir(dirpath)
+    except Exception as e:
+        print(f"Error cleaning unwanted files/folders: {e}")
 
 
 async def get_path_size(path: pathlib.Path) -> int:
     """Get the size of the path."""
+    if not path.exists():
+        return 0
+
     if path.is_file():
         return path.stat().st_size
+
     total_size = 0
     for child in path.glob("*"):
         total_size += await get_path_size(child)
@@ -133,6 +143,9 @@ async def get_path_size(path: pathlib.Path) -> int:
 
 async def count_files_and_folders(path: pathlib.Path) -> tuple[int, int]:
     """Count the number of files and folders in the path."""
+    if not path.exists():
+        return 0, 0
+
     total_files = 0
     total_folders = 0
     for child in path.glob("*"):
@@ -153,7 +166,7 @@ def get_base_name(orig_path: str) -> str:
     if extension:
         return pathlib.Path(orig_path).with_suffix("").name
     else:
-        raise NotSupportedExtractionArchive("File format not supported for extraction")
+        return orig_path
 
 
 def get_mime_type(file_path: str) -> str:
