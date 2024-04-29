@@ -2,6 +2,7 @@ from os import remove as osremove, mkdir, path as ospath
 from time import sleep
 from telegraph import upload_file
 from telegram.ext import CommandHandler, CallbackQueryHandler
+from typing import Optional, List, Union
 
 from bot import dispatcher, LOGGER, config_dict, DATABASE_URL
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, sendPhoto, deleteMessage, editPhoto
@@ -10,7 +11,15 @@ from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.telegram_helper.button_build import ButtonMaker
 
-def picture_add(update, context):
+def picture_add(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
+    """Add a photo to the 'PICS' list in the config.
+
+    The photo can be either a link or a photo replied to the command message.
+
+    Args:
+        update (telegram.Update): The update object containing the command message.
+        context (telegram.ext.CallbackContext): The context object containing the dispatcher and other information.
+    """
     editable = sendMessage("<code>Checking Input ...</code>", context.bot, update.message)
     resm = update.message.reply_to_message
     if resm is not None and resm.text:
@@ -34,6 +43,8 @@ def picture_add(update, context):
         except Exception as e:
             LOGGER.error(f"Pictures Error: {e}")
             editMessage(str(e), editable)
+            osremove(photo_dir)
+            return
         finally:
             osremove(photo_dir)
     else:
@@ -43,15 +54,28 @@ def picture_add(update, context):
         help_msg += f"\n<code>/addpic" + " {photo}" + "</code>"
         editMessage(help_msg, editable)
         return
+    if 'PICS' not in config_dict:
+        config_dict['PICS'] = []
     config_dict['PICS'].append(pic_add)
     if DATABASE_URL:
-        DbManger().update_config({'PICS': config_dict['PICS']})
+        try:
+            DbManger().update_config({'PICS': config_dict['PICS']})
+        except Exception as e:
+            LOGGER.error(f"Database Error: {e}")
+            editMessage("Error updating the config in the database!", editable)
+            return
     sleep(1.5)
     editMessage(f"<b><i>Successfully Added to Existing Photos Status List!</i></b>\n\n<b>• Total Pics : </b><code>{len(config_dict['PICS'])}</code>", editable)
 
-def pictures(update, context):
+def pictures(update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
+    """Generate a grid of photos from the 'PICS' list in the config.
+
+    Args:
+        update (telegram.Update): The update object containing the command message.
+        context (telegram.ext.CallbackContext): The context object containing the dispatcher and other information.
+    """
     user_id = update.message.from_user.id
-    if not config_dict['PICS']:
+    if not config_dict.get('PICS', []):
         sendMessage("No Photo to Show ! Add by /addpic", context.bot, update.message)
     else:
         to_edit = sendMessage("Generating Grid of your Images...", context.bot, update.message)
@@ -61,10 +85,20 @@ def pictures(update, context):
         buttons.sbutton("Remove Photo", f"pics {user_id} remov 0")
         buttons.sbutton("Close", f"pics {user_id} close")
         buttons.sbutton("Remove All", f"pics {user_id} removall", 'footer')
-        deleteMessage(context.bot, to_edit)
-        sendPhoto(f'🌄 <b>Picture No. : 1 / {len(config_dict["PICS"])}</b>', context.bot, update.message, config_dict['PICS'][0], buttons.build_menu(2))
+        try:
+            sendPhoto(f'🌄 <b>Picture No. : 1 / {len(config_dict["PICS"])}</b>', context.bot, update.message, config_dict['PICS'][0], buttons.build_menu(2))
+        except Exception as e:
+            LOGGER.error(f"Error sending the picture grid: {e}")
+            deleteMessage(context.bot, to_edit)
+            sendMessage("Error sending the picture grid!", context.bot, update.message)
 
-def pics_callback(update, context):
+def pics_callback(update: telegram.CallbackQuery, context: telegram.ext.CallbackContext) -> None:
+    """Handle callback queries for the picture grid.
+
+    Args:
+        update (telegram.CallbackQuery): The callback query object containing the query data.
+        context (telegram.ext.CallbackContext): The context object containing the dispatcher and other information.
+    """
     query = update.callback_query
     message = query.message
     user_id = query.from_user.id
@@ -83,17 +117,29 @@ def pics_callback(update, context):
         buttons.sbutton("Remove Photo", f"pics {data[1]} remov {ind}")
         buttons.sbutton("Close", f"pics {data[1]} close")
         buttons.sbutton("Remove All", f"pics {data[1]} removall", 'footer')
-        editPhoto(pic_info, message, config_dict['PICS'][ind], buttons.build_menu(2))
+        try:
+            editPhoto(pic_info, message, config_dict['PICS'][ind], buttons.build_menu(2))
+        except Exception as e:
+            LOGGER.error(f"Error editing the picture grid: {e}")
+            query.answer(text="Error editing the picture grid!", show_alert=True)
     elif data[2] == "remov":
+        if int(data[3]) < 0 or int(data[3]) >= len(config_dict['PICS']):
+            query.answer(text="Invalid photo index!", show_alert=True)
+            return
         config_dict['PICS'].pop(int(data[3]))
         if DATABASE_URL:
-            DbManger().update_config({'PICS': config_dict['PICS']})
+            try:
+                DbManger().update_config({'PICS': config_dict['PICS']})
+            except Exception as e:
+                LOGGER.error(f"Database Error: {e}")
+                query.answer(text="Error updating the config in the database!", show_alert=True)
+                return
         query.answer("Photo Successfully Deleted", show_alert=True)
-        if len(config_dict['PICS']) == 0:
+        if not config_dict['PICS']:
             query.message.delete()
             sendMessage("No Photo to Show ! Add by /addpic", context.bot, update.message)
             return
-        ind = int(data[3])+1
+        ind = int(data[3])
         ind = len(config_dict['PICS']) - abs(ind) if ind < 0 else ind
         pic_info = f'🌄 <b>Picture No. : {ind+1} / {len(config_dict["PICS"])}</b>'
         buttons = ButtonMaker()
@@ -102,11 +148,20 @@ def pics_callback(update, context):
         buttons.sbutton("Remove Photo", f"pics {data[1]} remov {ind}")
         buttons.sbutton("Close", f"pics {data[1]} close")
         buttons.sbutton("Remove All", f"pics {data[1]} removall", 'footer')
-        editPhoto(pic_info, message, config_dict['PICS'][ind], buttons.build_menu(2))
+        try:
+            editPhoto(pic_info, message, config_dict['PICS'][ind], buttons.build_menu(2))
+        except Exception as e:
+            LOGGER.error(f"Error editing the picture grid: {e}")
+            query.answer(text="Error editing the picture grid!", show_alert=True)
     elif data[2] == 'removall':
         config_dict['PICS'].clear()
         if DATABASE_URL:
-            DbManger().update_config({'PICS': config_dict['PICS']})
+            try:
+                DbManger().update_config({'PICS': config_dict['PICS']})
+            except Exception as e:
+                LOGGER.error(f"Database Error: {e}")
+                query.answer(text="Error updating the config in the database!", show_alert=True)
+                return
         query.answer(text="All Photos Successfully Deleted", show_alert=True)
         query.message.delete()
         sendMessage("No Photo to Show ! Add by /addpic", context.bot, update.message)
@@ -114,7 +169,6 @@ def pics_callback(update, context):
         query.answer()
         query.message.delete()
         query.message.reply_to_message.delete()
-
 
 picture_add_handler = CommandHandler('addpic', picture_add,
                                     filters=CustomFilters.owner_filter | CustomFilters.sudo_user)
@@ -124,4 +178,4 @@ pic_call_handler = CallbackQueryHandler(pics_callback, pattern="pics")
 
 dispatcher.add_handler(picture_add_handler)
 dispatcher.add_handler(pictures_handler)
-dispatcher.add_handler(pic_call_handler)
+dispatcher.add_handler
