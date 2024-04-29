@@ -15,8 +15,8 @@ def get_readable_file_size(size: int) -> str:
     for i, unit in enumerate(units):
         if size < 1024:
             break
-        size /= 1024.0
-    return f"{size:.2f} {unit}"
+        size = size // 1024
+    return f"{size} {unit}"
 
 def get_readable_time(seconds: int) -> str:
     """
@@ -25,14 +25,18 @@ def get_readable_time(seconds: int) -> str:
     :param seconds: The time in seconds.
     :return: The time in a human-readable format.
     """
-    minutes, seconds = divmod(seconds, 60)
-    hours, minutes = divmod(minutes, 60)
-    days, hours = divmod(hours, 24)
-    if days > 0:
-        return f"{days} days, {hours} hours, {minutes} minutes, {seconds} seconds"
-    elif hours > 0:
-        return f"{hours} hours, {minutes} minutes, {seconds} seconds"
-    elif minutes > 0:
-        return f"{minutes} minutes, {seconds} seconds"
-    else:
-        return f"{seconds} seconds"
+    time_parts = []
+    time_dict = {
+        'days': (24, 'day'),
+        'hours': (60, 'hour'),
+        'minutes': (60, 'minute'),
+        'seconds': (1, 'second')
+    }
+
+    for unit, (divisor, name) in time_dict.items():
+        value = seconds // divisor
+        if value > 0:
+            time_parts.append(f"{value} {name}{('s' if value > 1 else '')}")
+            seconds -= value * divisor
+
+    return ', '.join(time_parts)
