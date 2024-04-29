@@ -1,24 +1,15 @@
-aiohttp==3.7.4
-aiofiles==22.1.0
-aioshutil==2.1.0
-anytree==2.8.0
-apscheduler==3.9.1
-aria2p==0.15.1
-async-timeout==4.0.2
-attrs==22.1.0
-beautifulsoup4==4.11.1
-blinker==1.4
-...
-
-
 #!/bin/bash
 
-# Create a new virtual environment
-python3 -m venv venv
-source venv/bin/activate
+# Create a new virtual environment with a specific name
+python3 -m venv my_project_env
 
-# Install the required libraries
-pip install -r requirements.txt
+# Activate the virtual environment
+source my_project_env/bin/activate
 
-# Generate the list of installed libraries
-pip freeze > requirements.txt
+# Install the required libraries and save them to a separate file
+pip install -r requirements.txt --system && pip freeze > requirements-installed.txt
+
+# Print the list of installed libraries for verification
+echo "Installed libraries:"
+cat requirements-installed.txt
+
