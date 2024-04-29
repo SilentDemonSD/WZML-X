@@ -6,14 +6,18 @@ from bot import LOGGER
 from bot.helper.ext_utils.bot_utils import EngineStatus, get_readable_file_size, MirrorStatus, async_to_sync
 from bot.helper.ext_utils.fs_utils import get_path_size
 
-class ZipArchiveStatus:
+class ZipCreationStatus:
     """
     A class to represent the status of a ZIP archive creation process.
     """
 
+    __slots__ = (
+        'name', 'size', 'gid', 'listener', 'upload_details', 'uid', 'start_time', 'message', '_processed_raw',
+    )
+
     def __init__(self, name: str, size: int, gid: int, listener):
         """
-        Initialize a new ZipArchiveStatus object.
+        Initialize a new ZipCreationStatus object.
 
         :param name: The name of the ZIP archive.
         :param size: The size of the ZIP archive in bytes.
@@ -121,13 +125,13 @@ class ZipArchiveStatus:
         """
         return MirrorStatus.STATUS_ARCHIVING
 
-    def download(self) -> 'ZipArchiveStatus':
+    def download(self) -> None:
         """
-        Return the ZipArchiveStatus object itself.
+        Return the ZipCreationStatus object itself.
 
-        :return: The ZipArchiveStatus object.
+        :return: None
         """
-        return self
+        return None
 
     async def cancel_download(self):
         """
@@ -140,6 +144,7 @@ class ZipArchiveStatus:
             self.listener.suproc = 'cancelled'
         await self.listener.on_upload_error('archiving stopped by user!')
 
+    @property
     def eng(self) -> EngineStatus:
         """
         Get the engine status of the ZIP archive creation.
@@ -150,9 +155,9 @@ class ZipArchiveStatus:
 
     def __str__(self):
         """
-        Get a human-readable representation of the ZipArchiveStatus object.
+        Get a human-readable representation of the ZipCreationStatus object.
 
-        :return: A human-readable string representation of the ZipArchiveStatus object.
+        :return: A human-readable string representation of the ZipCreationStatus object.
         """
         return (
             f'Name: {self.name}\n'
@@ -165,14 +170,25 @@ class ZipArchiveStatus:
             f'Processed: {self.processed}\n'
         )
 
+    @classmethod
+    def from_archive(cls, archive: str) -> 'ZipCreationStatus':
+        """
+        Create a new ZipCreationStatus object from an existing archive.
+
+        :param archive: The path to the existing archive.
+        :return: A new ZipCreationStatus object.
+        """
+        size = async_to_sync(get_path_size, archive)
+        return cls(archive, size, 0, None)
+
     def __repr__(self):
         """
-        Get a developer-friendly representation of the ZipArchiveStatus object.
+        Get a developer-friendly representation of the ZipCreationStatus object.
 
-        :return: A developer-friendly string representation of the ZipArchiveStatus object.
+        :return: A developer-friendly string representation of the ZipCreationStatus object.
         """
         return (
-            f'ZipArchiveStatus(\n'
+            f'ZipCreationStatus(\n'
             f'    name={self.name},\n'
             f'    size={self.size},\n'
             f'    gid={self.gid},\n'
