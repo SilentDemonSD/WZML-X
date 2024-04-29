@@ -53,8 +53,32 @@ async def rclone_node(
     rcf: str,
     tag: str,
 ) -> None:
-    # Add your implementation here
-    pass
+    if not is_rclone_path(link):
+        await sendMessage(message, "Invalid rclone path")
+        return
+
+    rclone_list = RcloneList(RCLONE_PATH)
+    remote_info = rclone_list.get_remote_info(link)
+    if not remote_info:
+        await sendMessage(message, "Failed to get remote info")
+        return
+
+    if dst_path.startswith("/"):
+        dst_path = dst_path[1:]
+
+    try:
+        rclone_transfer_helper = RcloneTransferHelper(
+            RCLONE_PATH,
+            remote_info["remote"],
+            remote_info["path"],
+            dst_path,
+            rcf,
+            STOP_DUPLICATE,
+        )
+        await rclone_transfer_helper.transfer()
+        await sendMessage(message, f"Successfully transferred {remote_info['path']} to {dst_path} in {remote_info['remote']}")
+    except Exception as e:
+        await sendMessage(message, f"Error: {str(e)}")
 
 @pyrogram.on_message(pyrogram.filters.command(BotCommands.RCLONE_NODE) & CustomFilters.authorized_chat)
 async def rclone_node_command(client: TelegramClient, message: Message):
