@@ -1,12 +1,12 @@
-import asyncio  # Standard library module for writing single-threaded concurrent code using coroutines, multiplexing I/O access over sockets and other resources, running network clients and servers, and other related primitives.
-import atexit  # Standard library module for registering cleanup functions to be called when the interpreter exits.
-import logging  # Standard library module for controlling what gets logged, where the log messages go, and how they look.
-import time  # Standard library module for measuring and manipulating time.
-from contextlib import asynccontextmanager  # Context manager for use with async/await for creating asynchronous context managers.
-from typing import (  # Module for providing optional static typing for Python.
-    Any,  # Type hint indicating that the value can be of any type.
-    AsyncContextManager,  # Context manager for use with async/await.
-    Callable,  # Type hint indicating that the value is callable (i.e., a function or method).
+import asyncio
+import atexit
+import logging
+import time
+from contextlib import asynccontextmanager
+from typing import (
+    Any,
+    AsyncContextManager,
+    Callable,
 )
 
 
@@ -27,7 +27,7 @@ async def timed(coroutine: Callable[..., Any], *args: Any, **kwargs: Any) -> Asy
     start_time = time.perf_counter()
     result = await coroutine(*args, **kwargs)
     end_time = time.perf_counter()
-    logging.info(f"Coroutine '{coroutine.__name__}' took {end_time - start_time:.4f} seconds")
+    logging.info(f"Coroutine '{coroutine.__name__}' took {end_time - start_time:.4f} seconds - {time.asctime()}")
     yield result
 
 
@@ -38,6 +38,7 @@ async def main() -> None:
     """
     logging.basicConfig(level=logging.INFO)
     await asyncio.sleep(1)
+
 
 if __name__ == "__main__":
     # Set up atexit to close the event loop when the program exits.
