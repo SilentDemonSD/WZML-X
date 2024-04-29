@@ -1,5 +1,6 @@
 import pickle
 import os
+from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
@@ -7,7 +8,7 @@ def load_credentials():
     """Loads the Google Drive credentials from the file.
 
     Returns:
-        google.oauth2.credentials.Credentials or None: The Google Drive credentials or None if not found.
+        Credentials or None: The Google Drive credentials or None if not found.
     """
     credentials = None
     token_file = "token.pickle"
@@ -35,18 +36,13 @@ def refresh_and_save_credentials():
         except Exception as e:
             print(f"Error running local server: {e}")
 
-    if (
-        credentials is not None
-        and not credentials.valid
-        and credentials.expired
-        and credentials.refresh_token
-    ):
+    if credentials and credentials.expired and credentials.refresh_token:
         try:
             credentials.refresh(Request())
         except Exception as e:
             print(f"Error refreshing credentials: {e}")
 
-    if credentials is not None:
+    if credentials:
         try:
             with open("token.pickle", 'wb') as token:
                 pickle.dump(credentials, token)
