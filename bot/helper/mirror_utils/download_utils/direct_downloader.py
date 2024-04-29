@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-from typing import Dict, Any, List, Union
-
 import asyncio
-from secrets import token_hex
+import secrets
+from typing import Dict, Any, List, Union, AsyncContextManager
 
+import aiohttp
 from bot import (
     LOGGER,
     aria2_options,
@@ -19,6 +19,17 @@ from bot.helper.listeners.direct_listener import DirectListener
 from bot.helper.mirror_utils.status_utils.direct_status import DirectStatus
 from bot.helper.mirror_utils.status_utils.queue_status import QueueStatus
 from bot.helper.telegram_helper.message_utils import sendMessage, sendStatusMessage
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def acquire_download_dict_lock() -> AsyncContextManager[None]:
+    async with download_dict_lock:
+        yield
+
+@asynccontextmanager
+async def acquire_queue_dict_lock() -> AsyncContextManager[None]:
+    async with queue_dict_lock:
+        yield
 
 async def add_direct_download(
     details: Dict[str, Union[str, int, bool, List[str]]],
@@ -49,22 +60,22 @@ async def add_direct_download(
         await sendMessage(listener.message, msg, button)
         return
 
-    gid = token_hex(5)
+    gid = secrets.token_hex(5)
     added_to_queue, event = await is_queued(listener.uid)
     if added_to_queue:
         LOGGER.info(f"Added to Queue/Download: {foldername}")
-        async with download_dict_lock:
+        async with acquire_download_dict_lock():
             download_dict[listener.uid] = QueueStatus(
                 foldername, size, gid, listener, "dl"
             )
         await listener.onDownloadStart()
         await sendStatusMessage(listener.message)
         await event.wait()
-        async with download_dict_lock:
+        async with acquire_download_dict_lock():
             if listener.uid not in download_dict:
                 return
     else:
-        async with download_dict_lock:
+        async with acquire_download_dict_lock():
             download_dict[listener.uid] = DirectStatus(
                 DirectListener(foldername, size, path, listener, aria2_options),
                 gid,
@@ -72,14 +83,15 @@ async def add_direct_download(
                 listener.upload_details,
             )
 
-    async with queue_dict_lock:
-        non_queued_dl.add(listener.uid)
+        async with acquire_queue_dict_lock():
+            non_queued_dl.add(listener.uid)
 
-    LOGGER.info(f"Download from Direct Download: {foldername}")
-    await listener.onDownloadStart()
-    await sendStatusMessage(listener.message)
+        LOGGER.info(f"Download from Direct Download: {foldername}")
+        await listener.onDownloadStart()
+        await sendStatusMessage(listener.message)
 
-    try:
-        await sync_to_async(DirectListener.download, details["contents"])
-    finally:
-        non_queued_dl.discard(listener.uid)
+        try:
+            await sync_to_async(DirectListener.download, contents)
+        finally:
+            async with acquire_queue_dict_lock():
+                non_queued_dl.discard(listener.uid)
