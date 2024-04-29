@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 from bot import CMD_SUFFIX, config_dict
+from typing import List, Tuple, Dict
 
 class BotCommands:
+    """A class to manage bot commands."""
+
     def __init__(self):
+        self.commands = self._create_commands()
+
+    def _create_commands(self) -> Dict[str, Tuple[str, ...]]:
         command_list = [
             ('StartCommand', 'start'),
             ('MirrorCommand', f'mirror{CMD_SUFFIX}', f'm{CMD_SUFFIX}'),
@@ -64,9 +70,8 @@ class BotCommands:
             ]
             command_list += extra_cmds
 
-        self.commands = {name: commands for name, *commands in command_list}
+        return {name: tuple(commands) for name, *commands in command_list}
 
 bot_commands = BotCommands()
-
 
 print(bot_commands.commands['StartCommand'])  # Output: ('StartCommand', 'start')
