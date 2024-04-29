@@ -2,12 +2,11 @@
 import asyncio
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Dict, List, Optional
 
 import aiofiles
 import aiohttp
 from aiohttp import ClientSession
-from bot.helper.ext_utils.telegraph_helper import telegraph
 
 ALLOWED_EXTS = [
     ".avi",
@@ -46,7 +45,7 @@ class Streamtape:
         if self.session:
             await self.session.close()
 
-    async def __get_acc_info(self) -> Optional[dict]:
+    async def __get_acc_info(self) -> Optional[Dict]:
         url = f"{self.base_url}/account/info?login={self.__userLogin}&key={self.__passKey}"
         async with self.session.get(url) as response:
             try:
@@ -60,7 +59,7 @@ class Streamtape:
 
     async def __get_upload_url(
         self, folder: Optional[str] = None, sha256: Optional[str] = None, httponly: bool = False
-    ) -> Optional[dict]:
+    ) -> Optional[Dict]:
         _url = f"{self.base_url}/file/ul?login={self.__userLogin}&key={self.__passKey}"
         if folder is not None:
             _url += f"&folder={folder}"
@@ -113,7 +112,7 @@ class Streamtape:
                 return f"https://streamtape.to/v/{file_id}"
         return None
 
-    async def create_folder(self, name: str, parent: Optional[str] = None) -> Optional[dict]:
+    async def create_folder(self, name: str, parent: Optional[str] = None) -> Optional[Dict]:
         exfolders = [
             folder["name"] for folder in (await self.list_folder(folder=parent) or {"folders": []})["folders"]
         ]
@@ -137,7 +136,7 @@ class Streamtape:
                 return data.get("result")
         return None
 
-    async def rename(self, file_id: str, name: str) -> Optional[dict]:
+    async def rename(self, file_id: str, name: str) -> Optional[Dict]:
         url = f"{self.base_url}/file/rename?login={self.__userLogin}&key={self.__passKey}&file={file_id}&name={name}"
 
         async with self.session.post(url) as response:
@@ -177,7 +176,7 @@ class Streamtape:
             print(f"Failed to create telegraph page: {e}")
             return None
 
-    async def list_folder(self, folder: Optional[str] = None) -> Optional[dict]:
+    async def list_folder(self, folder: Optional[str] = None) -> Optional[Dict]:
         url = f"{self.base_url}/file/listfolder?login={self.__userLogin}&key={self.__passKey}"
         if folder is not None:
             url += f"&folder={folder}"
