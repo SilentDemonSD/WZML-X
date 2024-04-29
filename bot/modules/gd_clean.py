@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.filters import command, regex
+from pyrogram.types import Button, CallbackQuery
+from typing import Optional
 
 from bot import bot, LOGGER, OWNER_ID, config_dict
 from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, auto_delete_message
@@ -10,19 +12,14 @@ from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.ext_utils.bot_utils import sync_to_async, new_task, is_gdrive_link, get_readable_file_size
 
-
-@new_task
-async def driveclean(_, message):
-    args = message.text.split()
-    if len(args) > 1:
-        link = args[1].strip()
-    elif reply_to := message.reply_to_message:
-        link = reply_to.text.split(maxsplit=1)[0].strip()
-    else:
+async def driveclean(context: MessageHandler) -> None:
+    args = context.args
+    link: Optional[str] = args[1].strip() if len(args) > 1 else None
+    if not link:
         link = f"https://drive.google.com/drive/folders/{config_dict['GDRIVE_ID']}"
     if not is_gdrive_link(link):
-        return await sendMessage(message, 'No GDrive Link Provided')
-    clean_msg = await sendMessage(message, '<i>Fetching ...</i>')
+        return await sendMessage(context.message, 'No GDrive Link Provided')
+    clean_msg = await sendMessage(context.message, '<i>Fetching ...</i>')
     gd = GoogleDriveHelper()
     name, mime_type, size, files, folders = await sync_to_async(gd.count, link)
     try:
@@ -30,8 +27,8 @@ async def driveclean(_, message):
     except (KeyError, IndexError):
         return await editMessage(clean_msg, "Google Drive ID could not be found in the provided link")
     buttons = ButtonMaker()
-    buttons.ibutton('Move to Bin', f'gdclean clear {drive_id} trash')
-    buttons.ibutton('Permanent Clean', f'gdclean clear {drive_id}')
+    buttons.ibutton('Move to Bin', f'gdclean clear {drive_id} trash', url=f'https://drive.google.com/drive/u/0/trash')
+    buttons.ibutton('Permanent Clean', f'gdclean clear {drive_id}', url='https://drive.google.com/drive/u/0/search?q=type:anyone')
     buttons.ibutton('Stop GDrive Clean', 'gdclean stop', 'footer')
     await editMessage(clean_msg, f'''⌬ <b><i>GDrive Clean/Trash :</i></b>
     
@@ -47,10 +44,8 @@ async def driveclean(_, message):
     
 <code>Choose the Required Action below to Clean your Drive!</code>''', buttons.build_menu(2))
 
-
-@new_task
-async def drivecleancb(_, query):
-    message = query.message
+async def drivecleancb(context: CallbackQueryHandler) -> None:
+    query: CallbackQuery = context.query
     user_id = query.from_user.id
     data = query.data.split()
     if user_id != OWNER_ID:
@@ -58,15 +53,14 @@ async def drivecleancb(_, query):
         return
     if data[1] == "clear":
         await query.answer()
-        await editMessage(message, '<i>Processing Drive Clean / Trash...</i>')
+        await editMessage(query.message, '<i>Processing Drive Clean / Trash...</i>')
         drive = GoogleDriveHelper()
         msg = await sync_to_async(drive.driveclean, data[2], trash=len(data)==4)
-        await editMessage(message, msg)
+        await editMessage(query.message, msg)
     elif data[1] == "stop":
         await query.answer()
-        await editMessage(message, '⌬ <b>DriveClean Stopped!</b>')
-        await auto_delete_message(message, message)
-        
+        await editMessage(query.message, '⌬ <b>DriveClean Stopped!</b>')
+        await auto_delete_message(query.message, query.message)
 
 bot.add_handler(MessageHandler(driveclean, filters=command(BotCommands.GDCleanCommand) & CustomFilters.owner))
 bot.add_handler(CallbackQueryHandler(drivecleancb, filters=regex(r'^gdclean')))
