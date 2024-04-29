@@ -9,9 +9,11 @@ from pyrogram import generate_filter, Client, filters, raw
 from pyrogram.errors import FloodWait
 from pyrogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 
+# Create a new Pyrogram client instance with the name ":memory:" and 1 worker.
 app = Client(":memory:", workers=1)
 
-# Add handlers here
+# Add handlers for various commands.
+# Each handler is a coroutine function that takes a Client and Message as arguments.
 app.add_handler(filters.command(["start"]), start_command)
 app.add_handler(filters.command(["help"]), help_command)
 app.add_handler(filters.command(["start"]), start_command)
@@ -28,6 +30,16 @@ app.add_handler(CallbackQueryHandler(get_confirm, filters=filters.regex("^btsel"
 async def select(client: Client, message: Message):
     """
     Handles the /btselect command.
+    This function is called when the user sends the /btselect command.
+    It extracts the gid (unique identifier for a torrent) from the user's message,
+    and then calls the get_download_by_gid function to get the download object.
+    If the download object is not found, it sends an error message.
+    Otherwise, it checks if the user is the owner of the download or has sudo privileges.
+    If not, it sends an error message.
+    If the user is the owner or has sudo privileges, it checks if the download is in a valid state.
+    If not, it sends an error message.
+    If the download is in a valid state, it pauses the download and sends a message with a keyboard
+    to allow the user to select files.
     """
     user_id = message.from_user.id
     cmd_data = message.text.split('_', maxsplit=1)
@@ -94,6 +106,11 @@ async def select(client: Client, message: Message):
 async def get_confirm(client: Client, query: CallbackQuery):
     """
     Handles the callback query for the /btselect command.
+    This function is called when the user presses a button in the keyboard sent by the select function.
+    It extracts the gid and the button type (pin, done, or rm) from the query data.
+    If the button type is pin, it sends a message with the selected files.
+    If the button type is done, it resumes the download and sends a message with the selected files.
+    If the button type is rm, it cancels the download and sends a message with the selected files.
     """
     user_id = query.from_user.id
     data = query.data.split()
