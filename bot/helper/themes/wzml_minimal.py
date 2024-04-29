@@ -1,19 +1,34 @@
 #!/usr/bin/env python3
 class WZMLStyle:
-    # ----------------------
-    # async def start(client, message) ---> __main__.py
-    ST_BN1_NAME = 'Repo'
-    ST_BN1_URL = 'https://www.github.com/weebzone/WZML-X'
-    ST_BN2_NAME = 'Updates'
-    ST_BN2_URL = 'https://t.me/WZML_X'
-    ST_MSG = '''<i>This bot can mirror all your links|files|torrents to Google Drive or any rclone cloud or to telegram or to ddl servers.</i>
-<b>Type {help_command} to get a list of available commands</b>'''
-    ST_BOTPM = '''<i>Now, This bot will send all your files and links here. Start Using ...</i>'''
-    ST_UNAUTH = '''<i>You Are not authorized user! Deploy your own WZML-X Mirror-Leech bot</i>'''
-    # ---------------------
+    """Class containing various message styles for the WZML bot."""
 
-    # async def stats(client, message):
-    BOT_STATS = '''⌬ <b><i>BOT STATISTICS :</i></b>
+    # ----------------------
+    # Message styles for bot startup
+    # ----------------------
+
+    #: The name of the first bot button
+    ST_BN1_NAME: str = 'Repo'
+    #: The URL of the first bot button
+    ST_BN1_URL: str = 'https://www.github.com/weebzone/WZML-X'
+    #: The name of the second bot button
+    ST_BN2_NAME: str = 'Updates'
+    #: The URL of the second bot button
+    ST_BN2_URL: str = 'https://t.me/WZML_X'
+    #: The startup message for the bot
+    ST_MSG: str = '''<i>This bot can mirror all your links|files|torrents to Google Drive or any rclone cloud or to telegram or to ddl servers.</i>
+<b>Type {help_command} to get a list of available commands</b>'''
+    #: The message to be sent when the bot is added to a new chat
+    ST_BOTPM: str = '''<i>Now, This bot will send all your files and links here. Start Using ...</i>'''
+    #: The message to be sent when the user is not authorized
+    ST_UNAUTH: str = '''<i>You Are not authorized user! Deploy your own WZML-X Mirror-Leech bot</i>'''
+    # ----------------------
+
+    # ----------------------
+    # Message styles for bot statistics
+    # ----------------------
+
+    #: The bot statistics message
+    BOT_STATS: str = '''⌬ <b><i>BOT STATISTICS :</i></b>
 ┖ <b>Bot Uptime :</b> {bot_uptime}
 
 ┎ <b><i>RAM ( MEMORY ) :</i></b>
@@ -31,7 +46,8 @@ class WZMLStyle:
 ┖ <b>U :</b> {disk_u} | <b>F :</b> {disk_f} | <b>T :</b> {disk_t}
     
     '''
-    SYS_STATS = '''⌬ <b><i>OS SYSTEM :</i></b>
+    #: The system statistics message
+    SYS_STATS: str = '''⌬ <b><i>OS SYSTEM :</i></b>
 ┠ <b>OS Uptime :</b> {os_uptime}
 ┠ <b>OS Version :</b> {os_version}
 ┖ <b>OS Arch :</b> {os_arch}
@@ -51,7 +67,8 @@ class WZMLStyle:
 ┠ <b>Total Core(s) :</b> {total_core}
 ┖ <b>Usable CPU(s) :</b> {cpu_use}
     '''
-    REPO_STATS = '''⌬ <b><i>REPO STATISTICS :</i></b>
+    #: The repository statistics message
+    REPO_STATS: str = '''⌬ <b><i>REPO STATISTICS :</i></b>
 ┠ <b>Bot Updated :</b> {last_commit}
 ┠ <b>Current Version :</b> {bot_version}
 ┠ <b>Latest Version :</b> {lat_version}
@@ -59,7 +76,8 @@ class WZMLStyle:
 
 ⌬ <b>REMARKS :</b> <code>{remarks}</code>
     '''
-    BOT_LIMITS = '''⌬ <b><i>BOT LIMITATIONS :</i></b>
+    #: The bot limitations message
+    BOT_LIMITS: str = '''⌬ <b><i>BOT LIMITATIONS :</i></b>
 ┠ <b>Direct Limit :</b> {DL} GB
 ┠ <b>Torrent Limit :</b> {TL} GB
 ┠ <b>GDrive Limit :</b> {GL} GB
@@ -74,194 +92,219 @@ class WZMLStyle:
 ┠ <b>User Parallel Tasks :</b> {UT}
 ┖ <b>Bot Parallel Tasks :</b> {BT}
     '''
-    # ---------------------
+    # ----------------------
 
-    # async def restart(client, message): ---> __main__.py
-    RESTARTING = '<i>Restarting...</i>'
-    # ---------------------
+    # ----------------------
+    # Message styles for bot restart
+    # ----------------------
 
-    # async def restart_notification(): ---> __main__.py
-    RESTART_SUCCESS = '''⌬ <b><i>Restarted Successfully!</i></b>
+    #: The restarting message
+    RESTARTING: str = '<i>Restarting...</i>'
+    #: The restart success message
+    RESTART_SUCCESS: str = '''⌬ <b><i>Restarted Successfully!</i></b>
 ┠ <b>Date:</b> {date}
 ┠ <b>Time:</b> {time}
 ┠ <b>TimeZone:</b> {timz}
 ┖ <b>Version:</b> {version}'''
-    RESTARTED = '''⌬ <b><i>Bot Restarted!</i></b>'''
-    # ---------------------
+    #: The restarted message
+    RESTARTED: str = '''⌬ <b><i>Bot Restarted!</i></b>'''
+    # ----------------------
 
-    # async def ping(client, message): ---> __main__.py
-    PING = '<i>Starting Ping..</i>'
-    PING_VALUE = '<b>Pong</b>\n<code>{value} ms..</code>'
-    # ---------------------
+    # ----------------------
+    # Message styles for bot ping
+    # ----------------------
 
-    # async def onDownloadStart(self): --> tasks_listener.py
-    LINKS_START = """<b><i>Task Started</i></b>
+    #: The ping message
+    PING: str = '<i>Starting Ping..</i>'
+    #: The ping value message
+    PING_VALUE: str = '<b>Pong</b>\n<code>{value} ms..</code>'
+    # ----------------------
+
+    # ----------------------
+    # Message styles for tasks listener
+    # ----------------------
+
+    #: The links start message
+    LINKS_START: str = """<b><i>Task Started</i></b>
 ┠ <b>Mode:</b> {Mode}
 ┖ <b>By:</b> {Tag}\n\n"""
-    LINKS_SOURCE = """➲ <b>Source:</b>
+    #: The links source message
+    LINKS_SOURCE: str = """➲ <b>Source:</b>
 ┖ <b>Added On:</b> {On}
 ------------------------------------------
 {Source}
 ------------------------------------------\n\n"""
-    
-    # async def __msg_to_reply(self): ---> pyrogramEngine.py
-    PM_START =            "➲ <b><u>Task Started :</u></b>\n┃\n┖ <b>Link:</b> <a href='{msg_link}'>Click Here</a>"
-    L_LOG_START =           "➲ <b><u>Leech Started :</u></b>\n┃\n┠ <b>User :</b> {mention} ( #ID{uid} )\n┖ <b>Source :</b> <a href='{msg_link}'>Click Here</a>"
+    #: The PM start message
+    PM_START: str =            "➲ <b><u>Task Started :</u></b>\n┃\n┖ <b>Link:</b> <a href='{msg_link}'>Click Here</a>"
+    #: The leech log start message
+    L_LOG_START: str =           "➲ <b><u>Leech Started :</u></b>\n┃\n┠ <b>User :</b> {mention} ( #ID{uid} )\n┖ <b>Source :</b> <a href='{msg_link}'>Click Here</a>"
 
-    # async def onUploadComplete(): ---> tasks_listener.py
-    NAME =                  '<b><i>{Name}</i></b>\n┃\n'
-    SIZE =                  '┠ <b>Size: </b>{Size}\n'
-    ELAPSE =                '┠ <b>Elapsed: </b>{Time}\n'
-    MODE =                  '┠ <b>Mode: </b>{Mode}\n'
+    #: The name message
+    NAME: str =                  '<b><i>{Name}</i></b>\n┃\n'
+    #: The size message
+    SIZE: str =                  '┠ <b>Size: </b>{Size}\n'
+    #: The elapsed message
+    ELAPSE: str =                '┠ <b>Elapsed: </b>{Time}\n'
+    #: The mode message
+    MODE: str =                  '┠ <b>Mode: </b>{Mode}\n'
 
-    # ----- LEECH -------
-    L_TOTAL_FILES =         '┠ <b>Total Files: </b>{Files}\n'
-    L_CORRUPTED_FILES =     '┠ <b>Corrupted Files: </b>{Corrupt}\n'
-    L_CC =                  '┖ <b>By: </b>{Tag}\n\n'
-    PM_BOT_MSG =            '➲ <b><i>File(s) have been Sent above</i></b>'
-    L_BOT_MSG =             '➲ <b><i>File(s) have been Sent to Bot PM (Private)</i></b>'
-    L_LL_MSG =              '➲ <b><i>File(s) have been Sent. Access via Links...</i></b>'
-    
-    # ----- MIRROR -------
-    M_TYPE =                '┠ <b>Type: </b>{Mimetype}\n'
-    M_SUBFOLD =             '┠ <b>SubFolders: </b>{Folder}\n'
-    TOTAL_FILES =           '┠ <b>Files: </b>{Files}\n'
-    RCPATH =                '┠ <b>Path: </b><code>{RCpath}</code>\n'
-    M_CC =                  '┖ <b>By: </b>{Tag}\n\n'
-    M_BOT_MSG =             '➲ <b><i>Link(s) have been Sent to Bot PM (Private)</i></b>'
-    
-    # ----- BUTTONS -------
-    CLOUD_LINK =      '☁️ Cloud Link'
-    SAVE_MSG =        '📨 Save Message'
-    RCLONE_LINK =     '♻️ RClone Link'
-    DDL_LINK =        '📎 {Serv} Link'
-    SOURCE_URL =      '🔐 Source Link'
-    INDEX_LINK_F =    '🗂 Index Link'
-    INDEX_LINK_D =    '⚡ Index Link'
-    VIEW_LINK =       '🌐 View Link'
-    CHECK_PM =        '📥 View in Bot PM'
-    CHECK_LL =        '🖇 View in Links Log'
-    MEDIAINFO_LINK =  '📃 MediaInfo'
-    # ---------------------
+    #: The total files message (leech)
+    L_TOTAL_FILES: str =         '┠ <b>Total Files: </b>{Files}\n'
+    #: The corrupted files message (leech)
+    L_CORRUPTED_FILES: str =     '┠ <b>Corrupted Files: </b>{Corrupt}\n'
+    #: The leech complete message
+    L_CC: str =                  '┖ <b>By: </b>{Tag}\n\n'
+    #: The PM bot message
+    PM_BOT_MSG: str =            '➲ <b><i>File(s) have been Sent above</i></b>'
+    #: The leech bot message
+    L_BOT_MSG: str =             '➲ <b><i>File(s) have been Sent to Bot PM (Private)</i></b>'
+    #: The leech link message
+    L_LL_MSG: str =              '➲ <b><i>File(s) have been Sent. Access via Links...</i></b>'
 
-    # def get_readable_message(): ---> bot_utilis.py
-    ####--------OVERALL MSG HEADER----------
-    STATUS_NAME =       '<b><i>{Name}</i></b>'
+    #: The type message (mirror)
+    M_TYPE: str =                '┠ <b>Type: </b>{Mimetype}\n'
+    #: The subfolders message (mirror)
+    M_SUBFOLD: str =             '┠ <b>SubFolders: </b>{Folder}\n'
+    #: The total files message (mirror)
+    TOTAL_FILES: str =           '┠ <b>Files: </b>{Files}\n'
+    #: The rcpath message (mirror)
+    RCPATH: str =                '┠ <b>Path: </b><code>{RCpath}</code>\n'
+    #: The mirror complete message
+    M_CC: str =                  '┖ <b>By: </b>{Tag}\n\n'
+    #: The mirror bot message
+    M_BOT_MSG: str =             '➲ <b><i>Link(s) have been Sent to Bot PM (Private)</i></b>'
+
+    #: The cloud link button
+    CLOUD_LINK: str =      '☁️ Cloud Link'
+    #: The save message button
+    SAVE_MSG: str =        '📨 Save Message'
+    #: The rclone link button
+    RCLONE_LINK: str =     '♻️ RClone Link'
+    #: The ddl link button
+    DDL_LINK: str =        '📎 {Serv} Link'
+    #: The source url button
+    SOURCE_URL: str =      '🔐 Source Link'
+    #: The index link folder button
+    INDEX_LINK_F: str =    '🗂 Index Link'
+    #: The index link download button
+    INDEX_LINK_D: str =    '⚡ Index Link'
+    #: The view link button
+    VIEW_LINK: str =       '🌐 View Link'
+    #: The check pm button
+    CHECK_PM: str =        '📥 View in Bot PM'
+    #: The check ll button
+    CHECK_LL: str =        '🖇 View in Links Log'
+    #: The mediainfo link button
+    MEDIAINFO_LINK: str =  '📃 MediaInfo'
+    # ----------------------
+
+    # ----------------------
+    # Message styles for bot utils
+    # ----------------------
+
+    #: The status name message
+    STATUS_NAME: str =       '<b><i>{Name}</i></b>'
 
     #####---------PROGRESSIVE STATUS-------
-    BAR =               '\n┃ {Bar}'
-    PROCESSED =         '\n┠ <b>Processed:</b> {Processed}'
-    STATUS =            '\n┠ <b>Status:</b> <a href="{Url}">{Status}</a>'
-    ETA =                                                ' | <b>ETA:</b> {Eta}'
-    SPEED =             '\n┠ <b>Speed:</b> {Speed}'
-    ELAPSED =                                     ' | <b>Elapsed:</b> {Elapsed}'
-    ENGINE =            '\n┠ <b>Engine:</b> {Engine}'
-    STA_MODE =          '\n┠ <b>Mode:</b> {Mode}'
-    SEEDERS =           '\n┠ <b>Seeders:</b> {Seeders} | '
-    LEECHERS =                                           '<b>Leechers:</b> {Leechers}'
+    #: The bar message
+    BAR: str =               '\n┃ {Bar}'
+    #: The processed message
+    PROCESSED: str =         '\n┠ <b>Processed:</b> {Processed}'
+    #: The status message
+    STATUS: str =            '\n┠ <b>Status:</b> <a href="{Url}">{Status}</a>'
+    #: The eta message
+    ETA: str =               ' | <b>ETA:</b> {Eta}'
+    #: The speed message
+    SPEED: str =             '\n┠ <b>Speed:</b> {Speed}'
+    #: The elapsed message
+    ELAPSED: str =           ' | <b>Elapsed:</b> {Elapsed}'
+    #: The engine message
+    ENGINE: str =            '\n┠ <b>Engine:</b> {Engine}'
+    #: The mode message
+    STA_MODE: str =          '\n┠ <b>Mode:</b> {Mode}'
+    #: The seeders message
+    SEEDERS: str =           '\n┠ <b>Seeders:</b> {Seeders} | '
+    #: The leechers message
+    LEECHERS: str =         '<b>Leechers:</b> {Leechers}'
 
-    ####--------SEEDING----------
-    SEED_SIZE =      '\n┠ <b>Size: </b>{Size}'
-    SEED_SPEED =     '\n┠ <b>Speed: </b> {Speed} | '
-    UPLOADED =                                     '<b>Uploaded: </b> {Upload}'
-    RATIO =          '\n┠ <b>Ratio: </b> {Ratio} | '
-    TIME =                                         '<b>Time: </b> {Time}'
-    SEED_ENGINE =    '\n┠ <b>Engine:</b> {Engine}'
+    #####---------SEEDING-------
+    #: The seed size message
+    SEED_SIZE: str =      '\n┠ <b>Size: </b>{Size}'
+    #: The seed speed message
+    SEED_SPEED: str =     '\n┠ <b>Speed: </b> {Speed} | '
+    #: The uploaded message
+    UPLOADED: str =                 '<b>Uploaded: </b> {Upload}'
+    #: The ratio message
+    RATIO: str =          '\n┠ <b>Ratio: </b> {Ratio} | '
+    #: The time message
+    TIME: str =           '\n┠ <b>Time: </b> {Time}'
+    #: The seed engine message
+    SEED_ENGINE: str =    '\n┠ <b>Engine:</b> {Engine}'
 
-    ####--------NON-PROGRESSIVE + NON SEEDING----------
-    STATUS_SIZE =    '\n┠ <b>Size: </b>{Size}'
-    NON_ENGINE =     '\n┠ <b>Engine:</b> {Engine}'
+    #####---------NON-PROGRESSIVE + NON SEEDING-------
+    #: The status size message
+    STATUS_SIZE: str =    '\n┠ <b>Size: </b>{Size}'
+    #: The non engine message
+    NON_ENGINE: str =     '\n┠ <b>Engine:</b> {Engine}'
 
-    ####--------OVERALL MSG FOOTER----------
-    USER =              '\n┠ <b>User:</b> <code>{User}</code> | '
-    ID =                                                        '<b>ID:</b> <code>{Id}</code>'
-    BTSEL =          '\n┠ <b>Select:</b> {Btsel}'
-    CANCEL =         '\n┖ {Cancel}\n\n'
+    #####---------OVERALL MSG FOOTER----------
+    #: The user message
+    USER: str =              '\n┠ <b>User:</b> <code>{User}</code> | '
+    #: The id message
+    ID: str =                                                        '<b>ID:</b> <code>{Id}</code>'
+    #: The btsel message
+    BTSEL: str =          '\n┠ <b>Select:</b> {Btsel}'
+    #: The cancel message
+    CANCEL: str =         '\n┖ {Cancel}\n\n'
 
-    ####------FOOTER--------
-    FOOTER = '⌬ <b><i>Bot Stats</i></b>\n'
-    TASKS =  '┠ <b>Tasks:</b> {Tasks}\n'
-    BOT_TASKS = '┠ <b>Tasks:</b> {Tasks}/{Ttask} | <b>AVL:</b> {Free}\n'
-    Cpu = '┠ <b>CPU:</b> {cpu}% | '
-    FREE =                      '<b>F:</b> {free} [{free_p}%]'
-    Ram = '\n┠ <b>RAM:</b> {ram}% | '
-    uptime =                     '<b>UPTIME:</b> {uptime}'
-    DL = '\n┖ <b>DL:</b> {DL}/s | '
-    UL =                        '<b>UL:</b> {UL}/s'
+    #: The footer message
+    FOOTER: str = '⌬ <b><i>Bot Stats</i></b>\n'
+    #: The tasks message
+    TASKS: str =  '┠ <b>Tasks:</b> {Tasks}\n'
+    #: The bot tasks message
+    BOT_TASKS: str = '┠ <b>Tasks:</b> {Tasks}/{Ttask} | <b>AVL:</b> {Free}\n'
+    #: The cpu message
+    Cpu: str = '┠ <b>CPU:</b> {cpu}% | '
+    #: The free message
+    FREE: str =      '<b>F:</b> {free} [{free_p}%]'
+    #: The ram message
+    Ram: str = '\n┠ <b>RAM:</b> {ram}% | '
+    #: The uptime message
+    uptime: str =     '<b>UPTIME:</b> {uptime}'
+    #: The dl message
+    DL: str = '\n┖ <b>DL:</b> {DL}/s | '
+    #: The ul message
+    UL: str =                        '<b>UL:</b> {UL}/s'
 
-    ###--------BUTTONS-------
-    PREVIOUS = '⫷'
-    REFRESH = 'ᴘᴀɢᴇs\n{Page}'
-    NEXT = '⫸'
-    # ---------------------
+    #####---------BUTTONS-------
+    #: The previous button
+    PREVIOUS: str = '⫷'
+    #: The refresh button
+    REFRESH: str = 'ᴘᴀɢᴇs\n{Page}'
+    #: The next button
+    NEXT: str = '⫸'
+    # ----------------------
 
-    #STOP_DUPLICATE_MSG: ---> clone.py, aria2_listener.py, task_manager.py
-    STOP_DUPLICATE = 'File/Folder is already available in Drive.\nHere are {content} list results:'
-    # ---------------------
+    # ----------------------
+    # Message styles for clone
+    # ----------------------
 
-    # async def countNode(_, message): ----> gd_count.py
-    COUNT_MSG = '<b>Counting:</b> <code>{LINK}</code>'
-    COUNT_NAME = '<b><i>{COUNT_NAME}</i></b>\n┃\n'
-    COUNT_SIZE = '┠ <b>Size: </b>{COUNT_SIZE}\n'
-    COUNT_TYPE = '┠ <b>Type: </b>{COUNT_TYPE}\n'
-    COUNT_SUB =  '┠ <b>SubFolders: </b>{COUNT_SUB}\n'
-    COUNT_FILE = '┠ <b>Files: </b>{COUNT_FILE}\n'
-    COUNT_CC =   '┖ <b>By: </b>{COUNT_CC}\n'
-    # ---------------------
+    #: The stop duplicate message
+    STOP_DUPLICATE: str = 'File/Folder is already available in Drive.\nHere are {content} list results:'
+    # ----------------------
 
-    # LIST ---> gd_list.py
-    LIST_SEARCHING = '<b>Searching for <i>{NAME}</i></b>'
-    LIST_FOUND = '<b>Found {NO} result for <i>{NAME}</i></b>'
-    LIST_NOT_FOUND = 'No result found for <i>{NAME}</i>'
-    # ---------------------
+    # ----------------------
+    # Message styles for gd_count
+    # ----------------------
 
-    # async def mirror_status(_, message): ----> status.py
-    NO_ACTIVE_DL = '''<i>No Active Downloads!</i>
-    
-⌬ <b><i>Bot Stats</i></b>
-┠ <b>CPU:</b> {cpu}% | <b>F:</b> {free} [{free_p}%]
-┖ <b>RAM:</b> {ram} | <b>UPTIME:</b> {uptime}
-    '''
-    # ---------------------
-
-    # USER Setting --> user_setting.py 
-    USER_SETTING = '''㊂ <b><u>User Settings :</u></b>
-        
-┎<b> Name :</b> {NAME} ( <code>{ID}</code> )
-┠<b> Username :</b> {USERNAME}
-┠<b> Telegram DC :</b> {DC}
-┖<b> Language :</b> {LANG}'''
-
-    UNIVERSAL = '''㊂ <b><u>Universal Settings : {NAME}</u></b>
-
-┎<b> YT-DLP Options :</b> <b><code>{YT}</code></b>
-┠<b> Daily Tasks :</b> <code>{DT}</code> per day
-┠<b> Last Bot Used :</b> <code>{LAST_USED}</code>
-┠<b> MediaInfo Mode :</b> <code>{MEDIAINFO}</code>
-┠<b> Save Mode :</b> <code>{SAVE_MODE}</code>
-┖<b> User Bot PM :</b> <code>{BOT_PM}</code>'''
-
-    MIRROR = '''㊂ <b><u>Mirror/Clone Settings : {NAME}</u></b>
-
-┎<b> RClone Config :</b> <i>{RCLONE}</i>
-┠<b> Mirror Prefix :</b> <code>{MPREFIX}</code>
-┠<b> Mirror Suffix :</b> <code>{MSUFFIX}</code>
-┠<b> Mirror Remname :</b> <code>{MREMNAME}</code>
-┠<b> DDL Server(s) :</b> <i>{DDL_SERVER}</i>
-┠<b> User TD Mode :</b> <i>{TMODE}</i>
-┠<b> Total User TD(s) :</b> <i>{USERTD}</i>
-┖<b> Daily Mirror :</b> <code>{DM}</code> per day'''
-
-    LEECH = '''㊂ <b><u>Leech Settings for {NAME}</u></b>
-
-┎<b> Daily Leech : </b><code>{DL}</code> per day
-┠<b> Leech Type :</b> <i>{LTYPE}</i>
-┠<b> Custom Thumbnail :</b> <i>{THUMB}</i>
-┠<b> Leech Split Size :</b> <code>{SPLIT_SIZE}</code>
-┠<b> Equal Splits :</b> <i>{EQUAL_SPLIT}</i>
-┠<b> Media Group :</b> <i>{MEDIA_GROUP}</i>
-┠<b> Leech Caption :</b> <code>{LCAPTION}</code>
-┠<b> Leech Prefix :</b> <code>{LPREFIX}</code>
-┠<b> Leech Suffix :</b> <code>{LSUFFIX}</code>
-┠<b> Leech Dumps :</b> <code>{LDUMP}</code>
-┖<b> Leech Remname :</b> <code>{LREMNAME}</code>'''
+    #: The count msg message
+    COUNT_MSG: str = '<b>Counting:</b> <code>{LINK}</code>'
+    #: The count name message
+    COUNT_NAME: str = '<b><i>{COUNT_NAME}</i></b>\n┃\n'
+    #: The count size message
+    COUNT_SIZE: str = '┠ <b>Size: </b>{COUNT_SIZE}\n'
+    #: The count type message
+    COUNT_TYPE: str = '┠ <b>Type: </b>{COUNT_TYPE}\n'
+    #: The count sub message
+    COUNT_SUB: str =  '┠ <b>SubFolders: </b>{COUNT_SUB}\n'
+    #:
