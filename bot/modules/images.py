@@ -42,4 +42,37 @@ async def picture_add(_, message):
                 if resp.status != 200:
                     await editMessage(editable, "Failed to download image.")
                     return
-              
+                image_data = await resp.read()
+    
+    except Exception as e:
+        LOGGER.error(f"Error downloading image: {e}")
+        await editMessage(editable, "Failed to download image.")
+        return
+
+    try:
+        # Save the image to a temporary file
+        temp_file = await aiofiles.open("temp_image.jpg", "wb")
+        await temp_file.write(image_data)
+        await temp_file.close()
+
+        # Upload the image to Telegraph
+        graph = telegraph.Telegraph()
+        response = graph.create_page("Image", html_content=f"<img src='{urlparse(msg_text).scheme}://{urlparse(msg_text).netloc}{urlparse(msg_text).path}'>")
+        image_url = response["url"]
+
+        # Delete the temporary file
+        os.remove("temp_image.jpg")
+
+    except Exception as e:
+        LOGGER.error(f"Error uploading image to Telegraph: {e}")
+        await editMessage(editable, "Failed to upload image.")
+        return
+
+    # Add the image to the database
+    try:
+        db_manager = DbManger()
+        await db_manager.add_image(image_url)
+        await editMessage(editable, f"Image added successfully. View at: {image_url}")
+    except Exception as e:
+        LOGGER.error(f"Error adding image to database: {e}")
+        await editMessage(editable, "Failed to add image to database.")
