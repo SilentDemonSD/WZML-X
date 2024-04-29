@@ -44,6 +44,15 @@ from bot.helper.ext_utils.bot_utils import (
 # Importing themes for displaying status
 from bot.helper.themes import BotTheme
 
+def cpu_percent():
+    return psutil.cpu_percent()
+
+def virtual_memory():
+    return psutil.virtual_memory()
+
+def disk_usage(path):
+    return psutil.disk_usage(path)
+
 async def mirror_status(_, message):
     """
     This function sends the current status of the bot, including CPU, RAM, and disk usage, as well as the number of active downloads.
@@ -100,3 +109,4 @@ async def status_pages(_, query):
 # Adding handlers for the mirror_status and status_pages functions
 bot.add_handler(MessageHandler(mirror_status, filters=command(BotCommands.StatusCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
 bot.add_handler(CallbackQueryHandler(status_pages, filters=regex("^status")))
+
