@@ -2,23 +2,19 @@
 from bot.helper.ext_utils.bot_utils import EngineStatus
 from bot.helper.ext_utils.fs_utils import get_path_size
 from bot.helper.ext_utils.time_utils import get_readable_time
-from typing import Union, Optional
+from typing import Optional
 
 class YtDlpDownloadStatus:
     """
     A class representing the status of a youtube-dlp download.
     """
-    def __init__(self, obj: Optional[YoutubeDlpObject], listener: Optional[Listener], gid: Optional[str] = None, message: Optional[str] = None):
+    def __init__(self, obj: Optional[YoutubeDlpObject], listener: Optional[Listener]):
         self.obj = obj
         self.listener = listener
         self.upload_details = getattr(listener, 'upload_details', None)
-        self.gid = gid
-        self.message = message
 
-    def __str__(self):
-        return self.get_status()
-
-    def get_status(self) -> str:
+    @property
+    def status(self) -> str:
         """
         Return the status of the download as a string.
         """
@@ -30,7 +26,8 @@ class YtDlpDownloadStatus:
             download_folder = self.obj.get_download_folder()
             if not download_folder:
                 return "Unknown status"
-            return f"Queued - Size: {get_readable_size(get_path_size(download_folder))}"
+            size = get_path_size(download_folder)
+            return f"Queued - Size: {self._get_readable_size(size)}"
         elif status == EngineStatus.STATUS_DOWNLOADING:
             speed = self.obj.get_download_speed()
             eta = self.obj.get_eta()
@@ -38,12 +35,14 @@ class YtDlpDownloadStatus:
                 eta_str = "Unknown"
             else:
                 eta_str = get_readable_time(eta)
-            return f"Downloading - Speed: {speed} - ETA: {eta_str} - Progress: {self.obj.get_progress()}"
+            progress = self.obj.get_progress()
+            return f"Downloading - Speed: {speed} - ETA: {eta_str} - Progress: {progress}"
         elif status == EngineStatus.STATUS_COMPLETE:
             download_folder = self.obj.get_download_folder()
             if not download_folder:
                 return "Unknown status"
-            return f"Complete - Size: {get_readable_size(get_path_size(download_folder))}"
+            size = get_path_size(download_folder)
+            return f"Complete - Size: {self._get_readable_size(size)}"
         elif status == EngineStatus.STATUS_ERROR:
             error = self.obj.get_error()
             if not error:
@@ -54,18 +53,19 @@ class YtDlpDownloadStatus:
         else:
             return "Unknown status"
 
-def get_readable_size(size: Union[int, float]) -> str:
-    """
-    Return a human-readable string representing the size.
-    """
-    if size is None:
-        return "Unknown size"
+    @staticmethod
+    def _get_readable_size(size: Union[int, float]) -> str:
+        """
+        Return a human-readable string representing the size.
+        """
+        if size is None:
+            return "Unknown size"
 
-    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
-        if size < 1024:
-            break
-        size /= 1024.0
-    return f"{size:.2f} {unit}"
+        for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+            if size < 1024:
+                break
+            size /= 1024.0
+        return f"{size:.2f} {unit}"
 
 if __name__ == "__main__":
     # Example usage
@@ -73,4 +73,4 @@ if __name__ == "__main__":
 
     obj = YoutubeDlpObject()
     status = YtDlpDownloadStatus(obj, None)
-    print(status)
+    print(status.status)
