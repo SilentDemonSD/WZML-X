@@ -1,115 +1,119 @@
 import pyrogram
-from pyrogram.filters import ChatAdmin, User, CreateFilter
-from typing import AsyncContextManager, Callable, Coroutine, Any
+from pyrogram.enums import ChatType
+from pyrogram.filters import User, ChatAdmin
 
 class CustomFilters:
 
-    async def owner_filter(self, client: pyrogram.Client, message: pyrogram.types.Message) -> bool:
+    OWNER_ID: int
+    """Owner ID."""
+
+    def __init__(self, context: dict):
         """
-        Check if the message is sent by the owner.
+        Initialize the CustomFilters class with a context dictionary.
 
-        :param client: Pyrogram client object.
-        :param message: Pyrogram message object.
-        :return: True if the message is sent by the owner, False otherwise.
+        :param context: A dictionary containing user data.
         """
-        user = message.from_user or message.sender_chat
-        return user.id == OWNER_ID
+        self.context = context
 
-    owner = CreateFilter(owner_filter)
+    @property
+    def owner(self) -> Callable[[pyrogram.Client, pyrogram.types.Message], Coroutine[Any, Any, bool]]:
+        """Check if the message is sent by the owner."""
 
-    async def authorized_user(self, client: pyrogram.Client, message: pyrogram.types.Message) -> bool:
-        """
-        Check if the user is authorized to use the command.
+        async def filter_(client: pyrogram.Client, message: pyrogram.types.Message) -> bool:
+            user = message.from_user or message.sender_chat
+            return user.id == self.OWNER_ID
 
-        :param client: Pyrogram client object.
-        :param message: Pyrogram message object.
-        :return: True if the user is authorized, False otherwise.
-        """
-        user = message.from_user or message.sender_chat
-        user_id = user.id
+        return filter_
 
-        if user_id == OWNER_ID or (user_id in user_data and user_data[user_id].get('is_auth', False)):
-            return True
+    @property
+    def authorized_user(self, raise_error: bool = False) -> Callable[[pyrogram.Client, pyrogram.types.Message], Coroutine[Any, Any, bool]]:
+        """Check if the user is authorized to use the command."""
 
-        chat = message.chat
-        if chat.id in user_data and user_data[chat.id].get('is_auth', False):
-            topic_ids = user_data[chat.id].get('topic_ids', [])
-            if not topic_ids:
+        async def filter_(client: pyrogram.Client, message: pyrogram.types.Message) -> bool:
+            user = message.from_user or message.sender_chat
+            user_id = user.id
+
+            if user_id == self.OWNER_ID or (user_id in self.context and self.context[user_id].get('is_auth', False)):
                 return True
 
-            is_forum = message.reply_to_message
+            chat = message.chat
+            if chat.id in self.context and self.context[chat.id].get('is_auth', False):
+                topic_ids = self.context[chat.id].get('topic_ids', [])
+                if not topic_ids:
+                    return True
+
+                is_forum = message.reply_to_message
+                if (
+                    not is_forum.text and not is_forum.caption and is_forum.id in topic_ids
+                    or (is_forum.text or is_forum.caption)
+                    and (
+                        not is_forum.reply_to_top_message_id and is_forum.reply_to_message_id in topic_ids
+                        or is_forum.reply_to_top_message_id in topic_ids
+                    )
+                ):
+                    return True
+
+            if raise_error:
+                raise pyrogram.errors.UserNotParticipant
+
+            return False
+
+        return filter_
+
+    @property
+    def authorized_user_setting(self) -> Callable[[pyrogram.Client, pyrogram.types.Message], Coroutine[Any, Any, bool]]:
+        """Check if the user is authorized to use the setting command."""
+
+        async def filter_(client: pyrogram.Client, message: pyrogram.types.Message) -> bool:
+            user_id = (message.from_user or message.sender_chat).id
+            chat = message.chat
+
             if (
-                not is_forum.text and not is_forum.caption and is_forum.id in topic_ids
-                or (is_forum.text or is_forum.caption)
-                and (
-                    not is_forum.reply_to_top_message_id and is_forum.reply_to_message_id in topic_ids
-                    or is_forum.reply_to_top_message_id in topic_ids
-                )
+                user_id == self.OWNER_ID
+                or (user_id in self.context and self.context[user_id].get('is_auth', False))
+                or (chat.id in self.context and self.context[chat.id].get('is_auth', False))
             ):
                 return True
 
-        return False
+            if chat.type == ChatType.PRIVATE:
+                for channel_id in self.context:
+                    if not (self.context[channel_id].get('is_auth') and str(channel_id).startswith('-100')):
+                        continue
 
-    authorized = CreateFilter(authorized_user)
+                    try:
+                        member = await client.get_chat_member(str(channel_id), user_id)
+                        if member.status in (member.status.ADMINISTRATOR, member.status.OWNER):
+                            return True
+                    except:
+                        continue
 
-    async def authorized_user_setting(self, client: pyrogram.Client, message: pyrogram.types.Message) -> bool:
-        """
-        Check if the user is authorized to use the setting command.
+            return False
 
-        :param client: Pyrogram client object.
-        :param message: Pyrogram message object.
-        :return: True if the user is authorized, False otherwise.
-        """
-        user_id = (message.from_user or message.sender_chat).id
-        chat = message.chat
+        return filter_
 
-        if (
-            user_id == OWNER_ID
-            or (user_id in user_data and user_data[user_id].get('is_auth', False))
-            or (chat.id in user_data and user_data[chat.id].get('is_auth', False))
-        ):
-            return True
+    @property
+    def sudo(self) -> Callable[[pyrogram.Client, pyrogram.types.Message], Coroutine[Any, Any, bool]]:
+        """Check if the user is a sudo user."""
 
-        if chat.type == pyrogram.enums.ChatType.PRIVATE:
-            for channel_id in user_data:
-                if not (user_data[channel_id].get('is_auth') and str(channel_id).startswith('-100')):
-                    continue
+        async def filter_(client: pyrogram.Client, message: pyrogram.types.Message) -> bool:
+            user = message.from_user or message.sender_chat
+            user_id = user.id
+            return user_id == self.OWNER_ID or (user_id in self.context and self.context[user_id].get('is_sudo'))
 
-                try:
-                    member = await chat_info(str(channel_id)).get_member(user_id)
-                    if member:
-                        return True
-                except:
-                    continue
+        return filter_
 
-        return False
+    @property
+    def blacklisted(self) -> Callable[[pyrogram.Client, pyrogram.types.Message], Coroutine[Any, Any, bool]]:
+        """Check if the user is blacklisted."""
 
-    authorized_user_setting = CreateFilter(authorized_user_setting)
+        async def filter_(client: pyrogram.Client, message: pyrogram.types.Message) -> bool:
+            user = message.from_user or message.sender_chat
+            user_id = user.id
+            return user_id != self.OWNER_ID and user_id in self.context and self.context[user_id].get('is_blacklist')
 
-    async def sudo_user(self, client: pyrogram.Client, message: pyrogram.types.Message) -> bool:
-        """
-        Check if the user is a sudo user.
+        return filter_
 
-        :param client: Pyrogram client object.
-        :param message: Pyrogram message object.
-        :return: True if the user is a sudo user, False otherwise.
-        """
-        user = message.from_user or message.sender_chat
-        user_id = user.id
-        return user_id == OWNER_ID or (user_id in user_data and user_data[user_id].get('is_sudo'))
+    def __getattr__(self, name: str) -> Callable[[pyrogram.Client, pyrogram.types.Message], Coroutine[Any, Any, bool]]:
+        """Return a filter by name."""
+        return getattr(self, name)
 
-    sudo = CreateFilter(sudo_user)
-
-    async def blacklist_user(self, client: pyrogram.Client, message: pyrogram.types.Message) -> bool:
-        """
-        Check if the user is blacklisted.
-
-        :param client: Pyrogram client object.
-        :param message: Pyrogram message object.
-        :return: True if the user is blacklisted, False otherwise.
-        """
-        user = message.from_user or message.sender_chat
-        user_id = user.id
-        return user_id != OWNER_ID and user_id in user_data and user_data[user_id].get('is_blacklist')
-
-    blacklisted = CreateFilter(blacklist_user)
