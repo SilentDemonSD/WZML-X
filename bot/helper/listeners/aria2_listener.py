@@ -11,14 +11,14 @@ from bot.helper.ext_utils.task_manager import limit_checker
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.mirror_utils.status_utils.aria2_status import Aria2Status
 from bot.helper.ext_utils.fs_utils import get_base_name, clean_unwanted
-from bot.helper.ext_utils.bot_utils import getDownloadByGid, new_thread, bt_selection_buttons, sync_to_async, get_telegraph_list
+from bot.helper.ext_utils.bot_utils import getDownloadByGid, create_task, sync_to_async
 from bot.helper.telegram_helper.message_utils import sendMessage, deleteMessage, update_all_messages
 from bot.helper.themes import BotTheme
 import aiopath
 import aiofiles
 
 
-@new_thread
+@create_task
 async def on_download_started(api: aioaria2.Aria2, gid: str) -> None:
     """Handle the event when a download is started."""
     download = await api.get_download(gid)
@@ -32,7 +32,7 @@ async def on_download_started(api: aioaria2.Aria2, gid: str) -> None:
             if listener.select:
                 metamsg = "Downloading Metadata, wait then you can select files. Use torrent file to avoid this wait."
                 meta = await sendMessage(listener.message, metamsg)
-                async for _ in range(0, 2):
+                async for _ in walrus.wait_for(lambda: download.is_removed or download.followed_by_ids, timeout=2):
                     if download.is_removed or download.followed_by_ids:
                         await deleteMessage(meta)
                         break
@@ -48,7 +48,7 @@ async def on_download_started(api: aioaria2.Aria2, gid: str) -> None:
             config_dict['DAILY_TASK_LIMIT'],
             config_dict['DAILY_MIRROR_LIMIT'],
             config_dict['DAILY_LEECH_LIMIT']]):
-        async for _ in range(0, 1):
+        async for _ in walrus.wait_for(lambda: dl is not None, timeout=1):
             if dl is None:
                 dl = await getDownloadByGid(gid)
             if dl:
@@ -67,7 +67,7 @@ async def on_download_started(api: aioaria2.Aria2, gid: str) -> None:
                     await listener.on_download_error(limit_exceeded)
                     await api.remove([download], force=True, files=True)
     if config_dict['STOP_DUPLICATE']:
-        async for _ in range(0, 1):
+        async for _ in walrus.wait_for(lambda: dl is not None, timeout=1):
             if dl is None:
                 dl = await getDownloadByGid(gid)
             if dl:
@@ -100,10 +100,10 @@ async def on_download_started(api: aioaria2.Aria2, gid: str) -> None:
                             return
 
 
-@new_thread
+@create_task
 async def on_download_complete(api: aioaria2.Aria2, gid: str) -> None:
     """Handle the event when a download is completed."""
-    async for _ in range(0, 1):
+    async for _ in walrus.wait_for(lambda: True, timeout=1):
         try:
             download = await api.get_download(gid)
         except Exception:
@@ -137,11 +137,11 @@ async def on_download_complete(api: aioaria2.Aria2, gid: str) -> None:
                 await api.remove([download], force=True, files=True)
 
 
-@new_thread
+@create_task
 async def on_bt_download_complete(api: aioaria2.Aria2, gid: str) -> None:
     """Handle the event when a BitTorrent download is completed."""
     seed_start_time = time.time()
-    async for _ in range(0, 1):
+    async for _ in walrus.wait_for(lambda: True, timeout=1):
         download = await api.get_download(gid)
         if download.options.follow_torrent == 'false':
             return
@@ -178,7 +178,7 @@ async def on_bt_download_complete(api: aioaria2.Aria2, gid: str) -> None:
                         await listener.on_upload_error(f"Seeding stopped with Ratio: {dl.ratio()} and Time: {dl.seeding_time()}")
                         await api.remove([download], force=True, files=True)
                 else:
-                    async with download_dict as download_dict_atomic:
+                    async with download_dict_lock:
                         if listener.uid not in download_dict:
                             await api.remove([download], force=True, files=True)
                             return
@@ -191,16 +191,16 @@ async def on_bt_download_complete(api: aioaria2.Aria2, gid: str) -> None:
                 await api.remove([download], force=True, files=True)
 
 
-@new_thread
+@create_task
 async def on_download_stopped(api: aioaria2.Aria2, gid: str) -> None:
     """Handle the event when a download is stopped."""
-    async for _ in range(0, 1):
+    async for _ in walrus.wait_for(lambda: True, timeout=1):
         if dl := await getDownloadByGid(gid):
             listener = dl.listener()
             await listener.on_download_error('Dead torrent!')
 
 
-@new_thread
+@create_task
 async def on_download_error(api: aioaria2.Aria2, gid: str) -> None:
     """Handle the event when a download encounters an error."""
     LOGGER.info(f"onDownloadError: {get_base_name(gid)}")
@@ -220,15 +220,10 @@ async def on_download_error(api: aioaria2.Aria2, gid: str) -> None:
 
 async def start_aria2_listener() -> None:
     """Start the aria2 event listener."""
-    async for notification in aria2.notifications:
-        if notification.type == 'downloadStart':
-            await on_download_started(aria2, notification.gid)
-        elif notification.type == 'downloadError':
-            await on_download_error(aria2, notification.gid)
-        elif notification.type == 'downloadStop':
-            await on_download_stopped(aria2, notification.gid)
-        elif notification.type == 'downloadComplete':
-            await on_download_complete(aria2, notification.gid)
-        elif notification.type == 'btDownloadComplete':
-            await on_bt_download_complete(aria2, notification.gid)
-        await asyncio.sleep(0.1)
+    notifications = aria2.notifications
+    coroutines = [on_download_started(aria2, notification.gid) for notification in notifications if notification.type == 'downloadStart']
+    coroutines += [on_download_error(aria2, notification.gid) for notification in notifications if notification.type == 'downloadError']
+    coroutines += [on_download_stopped(aria2, notification.gid) for notification in notifications if notification.type == 'downloadStop']
+    coroutines += [on_download_complete(aria2, notification.gid) for notification in notifications if notification.type == 'downloadComplete']
+    coroutines += [on_bt_download_complete(aria2, notification.gid) for notification in notifications if notification.type == 'btDownloadComplete']
+    await asyncio.wait(coroutines)
