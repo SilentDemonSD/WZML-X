@@ -2,83 +2,82 @@ import os
 import re
 import urllib.parse
 
-print(
-    "\n\n"
-    "        Bot can search files recursively, but you have to add the list of drives you want to search.\n"
-    "        Use the following format:\n"
-    "        teamdrive NAME      -->   anything that you likes\n"
-    "        teamdrive ID        -->   id of teamdrives in which you likes to search ('root' for main drive)\n"
-    "        teamdrive INDEX URL -->   enter index url for this drive.\n"
-    "                                  go to the respective drive and copy the url from address bar\n")
-# The function reads the contents of a file and returns it as a string
 def read_file(file_path: str) -> str:
+    """Read the contents of a file and returns it as a string."""
     if os.path.exists(file_path):
         with open(file_path, 'r') as f:
             return f.read()
     else:
         return ""
 
-# The function writes the given message to the file
 def write_file(file_path: str, msg: str) -> None:
+    """Write the given message to the file."""
     with open(file_path, 'w') as file:
         file.write(msg)
 
-# The function checks if the given url is a valid url
 def is_valid_url(url: str) -> bool:
+    """Check if the given url is a valid url."""
     try:
         result = urllib.parse.urlparse(url)
         return all([result.scheme, result.netloc])
     except ValueError:
         return False
 
-# Read the contents of the list_drives.txt file
-msg = read_file('list_drives.txt')
+def is_empty(string: str) -> bool:
+    """Check if the given string is empty or not."""
+    return not bool(string)
 
-# Print the contents of the list_drives.txt file
-if msg:
-    print(msg)
+def replace_spaces(string: str) -> str:
+    """Replace spaces in the given string with underscores."""
+    return string.replace(" ", "_")
+
+def is_valid_index_url(index: str, is_url_required: bool) -> bool:
+    """Check if the given index url is valid or not."""
+    if is_url_required and index:
+        return is_valid_url(index)
+    return True
+
+def add_drive_details() -> str:
+    """Add the details of the drive and return it as a string."""
+    name = input("    Enter Drive NAME (anything): ")
+    id = input("    Enter Drive ID: ")
+    index = input("    Enter Drive INDEX URL (optional): ")
+
+    if not is_empty(name) and not is_empty(id):
+        name = replace_spaces(name)
+        if is_valid_index_url(index, False):
+            return f"{name} {id} {index}\n"
+        else:
+            print("\n\n        ERROR: Invalid URL format.")
+            exit(1)
+    else:
+        print("\n\n        ERROR: Don't leave the name/id without filling.")
+        exit(1)
+
+def main() -> None:
     print(
         "\n\n"
-        "      DO YOU WISH TO KEEP THE ABOVE DETAILS THAT YOU PREVIOUSLY ADDED???? ENTER (y/n)\n"
-        "      IF NOTHING SHOWS ENTER n")
-# Get user input to decide whether to keep the previous details or not
-while True:
-    choice = input()
-    if choice in ['y', 'Y']:
-        break
-    elif choice in ['n', 'N']:
+        "        Bot can search files recursively, but you have to add the list of drives you want to search.\n"
+        "        Use the following format:\n"
+        "        teamdrive NAME      -->   anything that you likes\n"
+        "        teamdrive ID        -->   id of teamdrives in which you likes to search ('root' for main drive)\n"
+        "        teamdrive INDEX URL -->   enter index url for this drive.\n"
+        "                                  go to the respective drive and copy the url from address bar\n")
+
+    msg = read_file('list_drives.txt')
+    print(msg)
+
+    if input("\n      DO YOU WISH TO KEEP THE ABOVE DETAILS THAT YOU PREVIOUSLY ADDED???? ENTER (y/n)\n      IF NOTHING SHOWS ENTER n: ").lower() not in ['y', 'yes']:
         msg = ""
-        break
-    else:
-        print(
-            "\n\n      DO YOU WISH TO KEEP THE ABOVE DETAILS ???? y/n <=== this is option ..... OPEN YOUR EYES & READ...")
 
-# Get the number of drives/folders the user wants to add
-num = int(input("    How Many Drive/Folder You Likes To Add : "))
+    num = int(input("    How Many Drive/Folder You Likes To Add: "))
 
-# Loop through the given range to get the details of each drive/folder
-for count in range(1, num + 1):
-    print(f"\n        > DRIVE - {count}\n")
-    # Get the name of the drive
-    name = input("    Enter Drive NAME  (anything)     : ")
-    # Get the id of the drive
-    id = input("    Enter Drive ID                   : ")
-    # Get the index url of the drive
-    index = input("    Enter Drive INDEX URL (optional) : ")
-    # Check if the name and id are empty or not
-    if not name or not id:
-        print("\n\n        ERROR : Dont leave the name/id without filling.")
-        exit(1)
-    # Replace spaces in the name with underscores
-    name = name.replace(" ", "_")
-    # Check if the index url is valid or not
-    if index and not is_valid_url(index):
-        print("\n\n        ERROR : Invalid URL format.")
-        exit(1)
-    # Append the details of the drive to the message
-    msg += f"{name} {id} {index}\n"
+    for count in range(1, num + 1):
+        print(f"\n        > DRIVE - {count}\n")
+        msg += add_drive_details()
 
-# Write the message to the list_drives.txt file
-write_file('list_drives.txt', msg)
-print("\n\n    Done!")
+    write_file('list_drives.txt', msg)
+    print("\n\n    Done!")
 
+if __name__ == "__main__":
+    main()
