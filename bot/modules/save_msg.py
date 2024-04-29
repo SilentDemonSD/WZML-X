@@ -7,6 +7,7 @@ from pyrogram.handlers import CallbackQueryHandler
 from pyrogram.filters import regex
 
 # Import bot and bot_name from bot.py
+import bot
 from bot import bot, bot_name, user_data
 
 # Define the asynchronous function save_message
@@ -76,4 +77,3 @@ async def save_message(_, query: CallbackQuery) -> None:
 
 # Add the save_message function as a CallbackQueryHandler
 bot.add_handler(CallbackQueryHandler(save_message, filters=regex(r"^save")))
-
