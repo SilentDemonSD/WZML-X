@@ -40,8 +40,7 @@ async def on_seed_finish(tor: Any) -> None:
     download = await getDownloadByGid(ext_hash[:12])
     if hasattr(download, 'listener'):
         listener = download.listener()
-        msg = f"Seeding stopped with Ratio: {round(tor.ratio, 3)} and Time: {get_readable_time(tor.seeding_time)}"
-        await listener.onUploadError(msg)
+        await listener.onUploadError(f"Seeding stopped with Ratio: {round(tor.ratio, 3)} and Time: {get_readable_time(tor.seeding_time)}")
         await remove_torrent(download.client(), ext_hash, tor.tags)
 
 
@@ -82,10 +81,10 @@ async def on_download_complete(tor: Any) -> None:
         await listener.onDownloadComplete()
         client = await get_client()
         if listener.seed:
-            async with download_dict_lock:
-                if listener.uid in download_dict:
+            async with download.lock:
+                if listener.uid in download.download_dict:
                     removed = False
-                    download_dict[listener.uid] = QbittorrentStatus(listener, True)
+                    download.download_dict[listener.uid] = QbittorrentStatus(listener, True)
                 else:
                     removed = True
             if removed:
@@ -109,15 +108,15 @@ async def qb_listener():
         try:
             client = await get_client(session)
             tasks = [
-                asyncio.create_task(size_checked(tor_info)),
-                asyncio.create_task(stop_duplicate(tor_info)),
-                asyncio.create_task(on_download_error("Dead Torrent!", tor_info))
-                if TORRENT_TIMEOUT and time() - tor_info.added_on >= TORRENT_TIMEOUT else None,
-                asyncio.create_task(sync_to_async(client.torrents_reannounce, torrent_hashes=tor_info.hash))
+                size_checked(tor_info.data),
+                stop_duplicate(tor_info.data),
+                on_download_error("Dead Torrent!", tor_info.data)
+                if TORRENT_TIMEOUT and time() - tor_info.data.timeout >= TORRENT_TIMEOUT else None,
+                sync_to_async(client.torrents_reannounce, tor_info.data.hash)
                 if state == "metaDL" or state == "stalledDL" else None,
-                asyncio.create_task(on_download_complete(tor_info))
-                if tor_info.completion_on != 0 and state not in ['checkingUP', 'checkingDL', 'checkingResumeData'] else None,
-                asyncio.create_task(on_seed_finish(tor_info))
+                on_download_complete(tor_info.data)
+                if tor_info.data.completion_complete and state not in ['checkingUP', 'checkingDL', 'checkingResumeData'] else None,
+                on_seed_finish(tor_info.data)
                 if state in ['pausedUP', 'pausedDL'] and QbTorrents[tag].get('seeding') else None,
             ]
             await asyncio.gather(*tasks)
@@ -128,4 +127,7 @@ async def qb_listener():
 
 
 if __name__ == "__main__":
-    bot_loop.run_until_complete(qb_listener())
+    try:
+        bot_loop.run_until_complete(qb_listener())
+    except KeyboardInterrupt:
+        print("Shutting down...")
