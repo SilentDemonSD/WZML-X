@@ -4,33 +4,23 @@ import os
 import asyncio
 import sys
 from typing import Any, Coroutine, Optional
+from pathlib import Path
 
-try:
-    import speedtest
-except ModuleNotFoundError:
-    print("Error: the 'speedtest' module is not installed.")
-    sys.exit(1)
-
-try:
-    from pyrogram.handlers import MessageHandler
-except ModuleNotFoundError:
-    print("Error: the 'pyrogram' module is not installed.")
-    sys.exit(1)
-
+import speedtest
+from pyrogram.handlers import MessageHandler
 from pyrogram.filters import command
+from pyrogram.errors import ConfigRetrievalError
 
-try:
-    from bot import bot, LOGGER
-except ModuleNotFoundError:
-    print("Error: the 'bot' object is not defined.")
-    sys.exit(1)
-
+from bot import bot, LOGGER
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.message_utils import sendMessage, deleteMessage, editMessage
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, new_task
 
 async def speedtest(_, message: Any) -> Optional[Coroutine[Any, Any, Any]]:
+    """
+    Initiates a speedtest and sends the results to the user.
+    """
     speed = await sendMessage(message, "<i>Initiating Speedtest...</i>")
     try:
         test = Speedtest()
@@ -42,7 +32,7 @@ async def speedtest(_, message: Any) -> Optional[Coroutine[Any, Any, Any]]:
     test.upload()
     test.results.share()
     result = test.results.dict()
-    path = result['share']
+    path = Path(result['share'])
     string_speed = f'''
 ➲ <b><i>SPEEDTEST INFO</i></b>
 ┠ <b>Upload:</b> <code>{get_readable_file_size(result['upload'] / 8)}/s</code>
@@ -86,7 +76,7 @@ if __name__ == "__main__":
         LOGGER.error(str(e))
 
     try:
-        asyncio.get_event_loop().run_forever()
+        asyncio.create_task(bot.start())
+        bot.loop.run_until_complete(bot.idle())
     except KeyboardInterrupt:
         pass
-
