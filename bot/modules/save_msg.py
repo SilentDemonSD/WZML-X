@@ -29,45 +29,48 @@ async def save_message(query: CallbackQuery) -> None:
     will be displayed.
     """
     user_id = query.from_user.id
-    user_dict: Dict[str, Any] = user_data.get(user_id, {})
+    user_dict: Optional[Dict[str, Any]] = user_data.get(user_id)
 
     if not user_dict:
         await query.answer('User not found in the database. Please start the bot again.', show_alert=True)
         return
 
     if query.data == "save":
+        ldump = user_dict.get('ldump', {})
+        udump = user_dict.get('udump', {})
+
         if user_dict.get('save_mode'):
             try:
-                usr = next(iter(user_dict['ldump'].values()))
+                usr = next(iter(ldump.values()))
             except StopIteration:
-                await query.answer('No chats found to save messages to.', show_alert=True)
+                await query.answer('No chats found to save messages to in save mode.', show_alert=True)
                 return
         else:
             try:
-                usr = next(iter(user_dict['udump'].values()))
+                usr = next(iter(udump.values()))
             except StopIteration:
-                await query.answer('No chats found to save messages to.', show_alert=True)
+                await query.answer('No chats found to save messages to in normal mode.', show_alert=True)
                 return
 
         try:
-            reply_markup = query.message.reply_markup
+            message = query.message
+            if not message:
+                raise Exception('Message not found.')
+
+            reply_markup = message.reply_markup
             BTN = reply_markup.inline_keyboard[:-1] if reply_markup else None
             keyboard_markup = InlineKeyboardMarkup(BTN) if BTN else None
-            await query.message.copy(usr, reply_markup=keyboard_markup)
+            await message.copy(usr, reply_markup=keyboard_markup)
             await query.answer("Message/Media Successfully Saved !", show_alert=True)
         except Exception as e:
             if user_dict.get('save_mode'):
                 if 'POST' in str(e):
                     await query.answer('Make Bot as Admin and give Post Permissions and Try Again', show_alert=True)
                 else:
-                    await query.answer('An error occurred while saving the message. Please try again later.', show_alert=True)
+                    await query.answer('An error occurred while saving the message in save mode. Please try again later.', show_alert=True)
             else:
                 try:
                     await query.answer(url=f"https://t.me/{bot_name}?start=start")
-                    await asyncio.sleep(1)
-                    reply_markup = query.message.reply_markup
-                    BTN = reply_markup.inline_keyboard[:-1] if reply_markup else None
-                    keyboard_markup = InlineKeyboardMarkup(BTN) if BTN else None
-                    await query.message.copy(usr, reply_markup=keyboard_markup)
+                    await message.copy(usr)
                 except Exception as e:
-                    await query.answer('An error occurred while saving the message. Please try again later.', show_alert=True)
+                    await query.answer('An error occurred while saving the message in normal mode. Please try again later.', show_alert=True)
