@@ -3,6 +3,7 @@ from typing import Optional, Type, Union
 
 from bot import LOGGER, get_client, QbTorrents
 from bot.helper.ext_utils.bot_utils import EngineStatus, MirrorStatus, get_readable_file_size, get_readable_time
+from bot.qbittorrentclient import QbittorrentClient
 
 class QbittorrentStatus:
     __slots__ = (
@@ -16,20 +17,22 @@ class QbittorrentStatus:
 
     def __init__(
         self,
-        listener: typing.Any,  # Replace typing.Any with the actual type when known
+        client: QbittorrentClient,
+        listener: QbittorrentClient,  # Replace typing.Any with the actual type when known
         seeding: bool = False,
         queued: bool = False,
     ) -> None:
         """
         Initialize the QbittorrentStatus object.
 
-        :param listener: The listener object.
+        :param client: The QbittorrentClient object.
+        :param listener: The listener QbittorrentClient object.
         :param seeding: Whether the torrent is in seeding state.
         :param queued: Whether the torrent is in queued state.
         """
-        self.__client = get_client()
+        self.__client = client
         self.__listener = listener
-        self.__info = get_download(self.__client, f'{self.__listener.uid}')
+        self.__info = self.__client.torrents_info(f'{self.__listener.uid}')
         self.queued = queued
         self.seeding = seeding
         self.message = listener.message
@@ -197,7 +200,7 @@ class QbittorrentStatus:
         :return: A coroutine object or None.
         """
         self.__update()
-        if self.__info is not None:
+        if self.__info is not None and self.__info.state not in ["downloading", "stalledDL"]:
             await self.__client.torrents_pause(torrent_hashes=self.__info.hash)
             if not self.seeding:
                 if self.queued:
@@ -206,7 +209,7 @@ class QbittorrentStatus:
                 else:
                     LOGGER.info(f"Cancelling Download: {self.__info.name}")
                     msg = 'Download stopped by user!'
-                await asyncio.sleep(0.3)
+                await asyncio.sleep(0.5)
                 await self.__listener.onDownloadError(msg)
                 await self.__client.torrents_delete(torrent_hashes=self.__info.hash, delete_files=True)
                 await self.__client.torrents_delete_tags(tags=self.__info.tags)
@@ -218,7 +221,7 @@ class QbittorrentStatus:
         """
         Update the info object.
         """
-        new_info = get_download(self.__client, f'{self.__listener.uid}')
+        new_info = self.__client.torrents_info(f'{self.__listener.uid}')
         if new_info is not None:
             self.__info = new_info
 
@@ -263,3 +266,11 @@ class QbittorrentStatus:
                 yield client
         else:
             raise RuntimeError("Client object is not initialized.")
+
+    def __repr__(self) -> str:
+        """
+        Get the string representation of the object.
+
+        :return: The string representation of the object.
+        """
+        return f"<QbittorrentStatus(name='{self.name}', progress='{self.progress}', status='{self.status}')>"
