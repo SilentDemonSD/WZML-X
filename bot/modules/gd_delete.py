@@ -4,9 +4,7 @@ import sys
 from typing import Union
 
 import pyrogram
-from pyrogram.errors import exceptions
-from pyrogram.handlers import MessageHandler
-from pyrogram.filters import command
+from pyrogram.errors import exceptions, AbleToDelete, UserIsBlocked, ChatWriteForbidden, UserDeactivated, UserBannedInChannel, FloodWait
 from pyrogram.raw import functions, inputs
 
 from bot import LOGGER
@@ -53,6 +51,16 @@ async def deletefile(client: pyrogram.Client, context: pyrogram.Context) -> None
             return
         except exceptions.exceptions.forbidden_403.PeerIdInvalid:
             return
+        except FloodWait as e:
+            await asyncio.sleep(e.x)
+        except UserIsBlocked:
+            return
+        except ChatWriteForbidden:
+            return
+        except UserDeactivated:
+            return
+        except UserBannedInChannel:
+            return
         except Exception as e:
             LOGGER.error(f'Error in deletefile method: {e}')
             await sendMessage(context.message, 'An error occurred while deleting the file. Please try again later.')
@@ -64,10 +72,20 @@ async def deletefile(client: pyrogram.Client, context: pyrogram.Context) -> None
     # Auto-delete the original message
     try:
         await asyncio.sleep(1)
-        await context.bot.delete_message(context.message.chat.id, context.message.id)
+        message = context.message
+        if not await sync_to_async(message.delete, timeout=30):
+            if not await sync_to_async(message.chat.permissions.can_delete_messages, timeout=30):
+                await sendMessage(message.chat, 'I do not have permission to delete messages in this chat.')
+    except AbleToDelete:
+        pass
+    except FloodWait as e:
+        await asyncio.sleep(e.x)
     except exceptions.exceptions.forbidden_403.PeerIdInvalid:
         pass
-
+    except exceptions.exceptions.user.UserDeactivated:
+        pass
+    except exceptions.exceptions.channel.UserBannedInChannel:
+        pass
 
 if __name__ == '__main__':
     try:
