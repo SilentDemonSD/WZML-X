@@ -16,8 +16,11 @@ from bot import (
     config_dict,
     bot,
 )
+# Importing helper functions for telegram_helper module
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
+
+# Importing message_utils functions for sending and editing messages
 from bot.helper.telegram_helper.message_utils import (
     sendMessage,
     editMessage,
@@ -28,6 +31,8 @@ from bot.helper.telegram_helper.message_utils import (
     update_all_messages,
     delete_all_messages,
 )
+
+# Importing bot_utils functions for various utility functions
 from bot.helper.ext_utils.bot_utils import (
     get_readable_file_size,
     get_readable_time,
@@ -35,9 +40,15 @@ from bot.helper.ext_utils.bot_utils import (
     setInterval,
     new_task,
 )
+
+# Importing themes for displaying status
 from bot.helper.themes import BotTheme
 
 async def mirror_status(_, message):
+    """
+    This function sends the current status of the bot, including CPU, RAM, and disk usage, as well as the number of active downloads.
+    If there are no active downloads, it sends a message indicating that there are no active downloads.
+    """
     async with download_dict_lock:
         count = len(download_dict)
 
@@ -64,6 +75,9 @@ async def mirror_status(_, message):
                 Interval.append(setInterval(config_dict['STATUS_UPDATE_INTERVAL'], update_all_messages))
 
 async def status_pages(_, query):
+    """
+    This function handles callback queries for status pages, allowing the user to navigate through the pages of the status.
+    """
     user_id = query.from_user.id
     data = query.data.split()
 
@@ -83,5 +97,6 @@ async def status_pages(_, query):
         await delete_all_messages()
     await query.answer()
 
+# Adding handlers for the mirror_status and status_pages functions
 bot.add_handler(MessageHandler(mirror_status, filters=command(BotCommands.StatusCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
 bot.add_handler(CallbackQueryHandler(status_pages, filters=regex("^status")))
