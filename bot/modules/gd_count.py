@@ -24,7 +24,7 @@ async def count_node(_, message):
 
     # If the link is not provided directly, try to get it from the replied message
     if len(link) == 0 and (reply_to := message.reply_to_message):
-        link = reply_to.text.split(maxsplit=1)[0].strip()
+        link = reply_to.text.strip()
 
     # Check if the provided link is a Google Drive link
     if is_gdrive_link(link):
