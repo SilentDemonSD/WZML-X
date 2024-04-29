@@ -9,20 +9,21 @@ class QueueStatus:
 
     Attributes:
         name (str): The name of the queue.
-        size (int): The size of the queue.
         gid (int): The group id of the queue.
         listener (object): The listener object associated with the queue.
         status (str): The status of the queue ('dl' for download, 'up' for upload).
+        upload_details (dict): The upload details associated with the queue.
+        message (object): The message object associated with the queue.
     """
 
-    def __init__(self, name: str, size: int, gid: int, listener, status: str):
+    def __init__(self, name: str, gid: int, listener, status: str):
         self.__name = name
-        self.__size = size
         self.__gid = gid
         self.__listener = listener
         self.upload_details = listener.upload_details
         self.__status = status
         self.message = listener.message
+        self.total_size = sum(item.size for item in listener.queue)
 
     @property
     def name(self) -> str:
@@ -32,7 +33,7 @@ class QueueStatus:
     @property
     def size(self) -> int:
         """Return the size of the queue."""
-        return self.__size
+        return self.total_size
 
     @property
     def gid(self) -> int:
@@ -66,7 +67,7 @@ class QueueStatus:
 
     def download(self) -> 'QueueStatus':
         """Return the download object associated with the queue."""
-        return self
+        return None
 
     async def cancel_download(self):
         """Cancel the download or upload associated with the queue."""
@@ -89,13 +90,21 @@ class QueueStatus:
             f'QueueStatus: {self.status}\n'
         )
 
-def get_readable_file_size(size: int) -> str:
-    """Return the size in a human-readable format."""
-    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
-        if size < 1024:
-            break
-        size /= 1024.0
-    return f'{size:.2f} {unit}'
+    def __repr__(self):
+        """Return a more informative representation of the QueueStatus object."""
+        return (
+            f'QueueStatus(name={self.name}, gid={self.gid}, status={self.status}, '
+            f'total_size={self.total_size})'
+        )
+
+    @classmethod
+    def get_readable_file_size(cls, size: int) -> str:
+        """Return the size in a human-readable format."""
+        for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+            if size < 1024:
+                break
+            size /= 1024.0
+        return f'{size:.2f} {unit}'
 
 class CancellationError(Exception):
     """Custom error for cancellation."""
