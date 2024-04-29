@@ -5,6 +5,7 @@ import logging
 import secrets
 from typing import Any, Coroutine, List, Tuple
 
+import aiocontextvars
 import bot
 from bot import download_dict, download_dict_lock, queue_dict_lock, non_queued_dl, LOGGER
 from bot.helper.ext_utils.bot_utils import cmd_exec
@@ -66,14 +67,9 @@ async def add_rclone_download(
         name = rc_path.rsplit('/', 1)[-1]
     size = rsize['bytes']
     gid = secrets.token_hex(5)
-    msg, button = await stop_duplicate_check(name, listener)
-    if msg:
-        await sendMessage(listener.message, msg, button)
-        return
 
     added_to_queue, event = await is_queued(listener.uid)
     if added_to_queue:
-        logger.info(f"Added to Queue/Download: {name}")
         async with download_dict_lock:
             download_dict[listener.uid] = QueueStatus(
                 name, size, gid, listener, 'dl')
