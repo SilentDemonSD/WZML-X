@@ -45,7 +45,6 @@ config: typing.Final = config_dict
 RCLONE_PATH: typing.Final = config.get("RCLONE_PATH", "rcl")
 STOP_DUPLICATE: typing.Final = config.get("STOP_DUPLICATE", False)
 
-
 async def rclone_node(
     client: TelegramClient,
     message: Message,
@@ -54,5 +53,18 @@ async def rclone_node(
     rcf: str,
     tag: str,
 ) -> None:
-    ...
+    # Add your implementation here
+    pass
 
+@pyrogram.on_message(pyrogram.filters.command(BotCommands.RCLONE_NODE) & CustomFilters.authorized_chat)
+async def rclone_node_command(client: TelegramClient, message: Message):
+    if len(message.command) < 3:
+        await sendMessage(message, "Usage: /rclonenode link destination_path remote_config_file tag")
+        return
+
+    link = message.command[1]
+    dst_path = message.command[2]
+    rcf = message.command[3] if len(message.command) > 3 else ""
+    tag = message.command[4] if len(message.command) > 4 else ""
+
+    await rclone_node(client, message, link, dst_path, rcf, tag)
