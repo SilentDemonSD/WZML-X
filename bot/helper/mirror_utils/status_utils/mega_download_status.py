@@ -1,5 +1,19 @@
-#!/usr/bin/env python3
-from bot.helper.ext_utils.bot_utils import EngineStatus, get_readable_file_size, MirrorStatus, get_readable_time
+import os
+from dataclasses import dataclass
+from typing import NamedTuple
+from pathlib import Path
+from datetime import timedelta
+
+import dateutil.parser
+
+# Custom classes
+from bot.helper.ext_utils.bot_utils import EngineStatus, MirrorStatus, get_readable_file_size, get_readable_time
+
+
+class UploadDetails(NamedTuple):
+    user: str
+    url: str
+
 
 class MegaDownloadStatus:
     def __init__(self, name: str, size: int, gid: str, obj, message, upload_details):
@@ -13,21 +27,12 @@ class MegaDownloadStatus:
         :param message: The message object associated with the download
         :param upload_details: Details of the upload
         """
-        self.__obj = obj
-        self.__name = name
-        self.__size = size
-        self.__gid = gid
+        self.name = name
+        self.size = size
+        self.gid = gid
+        self.obj = obj
         self.message = message
         self.upload_details = upload_details
-
-    @property
-    def name(self) -> str:
-        """
-        Get the name of the file being downloaded.
-
-        :return: Name of the file
-        """
-        return self.__name
 
     @property
     def progress_raw(self) -> float:
@@ -37,7 +42,7 @@ class MegaDownloadStatus:
         :return: Progress in percentage
         """
         try:
-            return round(self.__obj.downloaded_bytes / self.__size * 100, 2)
+            return round(self.obj.downloaded_bytes / self.size * 100, 2)
         except:
             return 0.0
 
@@ -66,7 +71,7 @@ class MegaDownloadStatus:
 
         :return: Downloaded data size in a human-readable format
         """
-        return get_readable_file_size(self.__obj.downloaded_bytes)
+        return get_readable_file_size(self.obj.downloaded_bytes)
 
     @property
     def eta(self) -> str:
@@ -76,19 +81,10 @@ class MegaDownloadStatus:
         :return: Estimated time of arrival of the download
         """
         try:
-            seconds = (self.__size - self.__obj.downloaded_bytes) / self.__obj.speed
-            return get_readable_time(seconds)
+            seconds = (self.size - self.obj.downloaded_bytes) / self.obj.speed
+            return get_readable_time(timedelta(seconds=seconds).total_seconds())
         except ZeroDivisionError:
             return '-'
-
-    @property
-    def size(self) -> str:
-        """
-        Get the size of the file in a human-readable format.
-
-        :return: File size in a human-readable format
-        """
-        return get_readable_file_size(self.__size)
 
     @property
     def speed(self) -> str:
@@ -97,7 +93,7 @@ class MegaDownloadStatus:
 
         :return: Download speed in a human-readable format
         """
-        return f'{get_readable_file_size(self.__obj.speed)}/s'
+        return f'{get_readable_file_size(self.obj.speed)}/s'
 
     @property
     def gid(self) -> str:
@@ -106,7 +102,7 @@ class MegaDownloadStatus:
 
         :return: Unique identifier of the download
         """
-        return self.__gid
+        return self.gid
 
     @property
     def download(self) -> object:
@@ -115,7 +111,7 @@ class MegaDownloadStatus:
 
         :return: Object containing download details
         """
-        return self.__obj
+        return self.obj
 
     @property
     def eng(self) -> EngineStatus:
@@ -125,3 +121,21 @@ class MegaDownloadStatus:
         :return: Engine status
         """
         return EngineStatus().STATUS_MEGA
+
+    @classmethod
+    def from_dict(cls, data: dict):
+        """
+        Create a MegaDownloadStatus object from a dictionary.
+
+        :param data: Dictionary containing download details
+        :return: MegaDownloadStatus object
+        """
+        name = data['name']
+        size = data['size']
+        gid = data['gid']
+        obj = data['obj']
+        message = data['message']
+        upload_details = UploadDetails(user=data['upload_details']['user'],
+                                       url=data['upload_details']['url'])
+        return cls(name, size, gid, obj, message, upload_details)
+
