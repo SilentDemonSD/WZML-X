@@ -47,3 +47,13 @@ def get_default_setting(setting):
     """Return the default value for a given setting."""
     return DEFAULT_SETTINGS.get(setting, {}).get("value")
 
+# Function to get the command usage
+def get_command_usage(command):
+    """Return the usage message for a given command."""
+    return help_messages.get(command, {}).get("usage", "")
+
+# Function to get the command examples
+def get_command_examples(command):
+    """Return the examples for a given command."""
+    return help_messages.get(command, {}).get("examples", [])
+
