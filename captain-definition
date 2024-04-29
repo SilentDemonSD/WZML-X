@@ -1,4 +1,13 @@
 {
-  "schemaVersion": 2,
-  "dockerfilePath": "./Dockerfile"
+  "version": 2,
+  "build": {
+    "context": ".",
+    "dockerfile": "Dockerfile",
+    "args": {
+      // Add any build arguments here
+    }
+  },
+  "services": {
+    // Add any services here
+  }
 }
