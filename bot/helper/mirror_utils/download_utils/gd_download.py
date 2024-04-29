@@ -2,17 +2,19 @@
 
 import json
 import secrets
-import cloudscraper
+import aiohttp
 from typing import Any, Dict, Union
 
-import aiohttp
+import logging
 from bot import download_dict, download_dict_lock, LOGGER, non_queued_dl, queue_dict_lock
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
 from bot.helper.mirror_utils.status_utils.gdrive_status import GdriveStatus
 from bot.helper.mirror_utils.status_utils.queue_status import QueueStatus
 from bot.helper.telegram_helper.message_utils import sendMessage, sendStatusMessage
-from bot.helper.ext_utils.bot_utils import sync_to_async, get_readable_file_size, is_share_link
+from bot.helper.ext_utils.bot_utils import run_in_executor, get_readable_file_size, is_share_link
 from bot.helper.ext_utils.task_manager import is_queued, limit_checker, stop_duplicate_check
+
+logger = logging.getLogger(__name__)
 
 async def add_gd_download(
     link: str,
@@ -33,9 +35,9 @@ async def add_gd_download(
     drive = GoogleDriveHelper()
 
     try:
-        name, mime_type, size, _, _ = await sync_to_async(drive.count, link)
+        name, mime_type, size, _, _ = await run_in_executor(None, drive.count, link)
     except Exception as e:
-        LOGGER.error(f"Error while getting file info: {e}")
+        logger.error(f"Error while getting file info: {e}")
         return
 
     if is_share_link(org_link):
@@ -52,8 +54,11 @@ async def add_gd_download(
                     }
                 ),
             )
+            if scraper_response.status_code != 200:
+                logger.error(f"Error while sending scraper request: {scraper_response.status_code}")
+                return
         except Exception as e:
-            LOGGER.error(f"Error while sending scraper request: {e}")
+            logger.error(f"Error while sending scraper request: {e}")
             return
 
     if mime_type is None:
@@ -61,12 +66,12 @@ async def add_gd_download(
         return
 
     name = newname or name
-    gid = secrets.token_hex(5)
+    gid = secrets.token_hex(16)
 
     try:
         msg, button = await stop_duplicate_check(name, listener)
     except Exception as e:
-        LOGGER.error(f"Error while checking for duplicates: {e}")
+        logger.error(f"Error while checking for duplicates: {e}")
         return
 
     if msg:
@@ -80,11 +85,11 @@ async def add_gd_download(
     try:
         added_to_queue, event = await is_queued(listener.uid)
     except Exception as e:
-        LOGGER.error(f"Error while checking if queued: {e}")
+        logger.error(f"Error while checking if queued: {e}")
         return
 
     if added_to_queue:
-        LOGGER.info(f"Added to Queue/Download: {name}")
+        logger.debug(f"Added to Queue/Download: {name}")
         with download_dict_lock:
             download_dict[listener.uid] = QueueStatus(
                 name, size, gid, listener, "dl"
@@ -110,13 +115,13 @@ async def add_gd_download(
         non_queued_dl.add(listener.uid)
 
     if from_queue:
-        LOGGER.info(f'Start Queued Download from GDrive: {name}')
+        logger.debug(f'Start Queued Download from GDrive: {name}')
     else:
-        LOGGER.info(f"Download from GDrive: {name}")
+        logger.debug(f"Download from GDrive: {name}")
         await listener.onDownloadStart()
         await sendStatusMessage(listener.message)
 
     try:
-        await sync_to_async(drive.download, link)
+        await run_in_executor(None, drive.download, link)
     except Exception as e:
-        LOGGER.error(f"Error while downloading file: {e}")
+        logger.error(f"Error while downloading file: {e}")
