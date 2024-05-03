@@ -6,10 +6,10 @@ def get_version() -> str:
     :return: The version details in the format 'vMAJOR.MINOR.PATCH-STATE'
     :rtype: str
     '''
-    MAJOR = '1'
-    MINOR = '3'
-    PATCH = '3'
-    STATE = 'x'
+    MAJOR = '2'
+    MINOR = '0'
+    PATCH = '0'
+    STATE = 'dev'
     return f"v{MAJOR}.{MINOR}.{PATCH}-{STATE}"
 
 if __name__ == '__main__':
