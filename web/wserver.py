@@ -1,8 +1,11 @@
-from logging import getLogger, FileHandler, StreamHandler, INFO, basicConfig
+from logging import INFO, FileHandler, StreamHandler, basicConfig, getLogger
 from time import sleep
-from qbittorrentapi import NotFound404Error, Client as qbClient
-from aria2p import API as ariaAPI, Client as ariaClient
+
+from aria2p import API as ariaAPI
+from aria2p import Client as ariaClient
 from flask import Flask, request
+from qbittorrentapi import Client as qbClient
+from qbittorrentapi import NotFound404Error
 
 from web.nodes import make_tree
 
@@ -10,10 +13,12 @@ app = Flask(__name__)
 
 aria2 = ariaAPI(ariaClient(host="http://localhost", port=6800, secret=""))
 
-basicConfig(format="[%(asctime)s] [%(levelname)s] - %(message)s",
-            datefmt="%d-%b-%y %I:%M:%S %p",
-            handlers=[FileHandler('log.txt'), StreamHandler()],
-            level=INFO)
+basicConfig(
+    format="[%(asctime)s] [%(levelname)s] - %(message)s",
+    datefmt="%d-%b-%y %I:%M:%S %p",
+    handlers=[FileHandler("log.txt"), StreamHandler()],
+    level=INFO,
+)
 
 LOGGER = getLogger(__name__)
 
@@ -651,7 +656,6 @@ section span{
 
 
 def re_verfiy(paused, resumed, client, hash_id):
-
     paused = paused.strip()
     resumed = resumed.strip()
     if paused:
@@ -678,14 +682,16 @@ def re_verfiy(paused, resumed, client, hash_id):
         client = qbClient(host="localhost", port="8090")
         try:
             client.torrents_file_priority(
-                torrent_hash=hash_id, file_ids=paused, priority=0)
+                torrent_hash=hash_id, file_ids=paused, priority=0
+            )
         except NotFound404Error as e:
             raise NotFound404Error from e
         except Exception as e:
             LOGGER.error(f"{e} Errored in reverification paused!")
         try:
             client.torrents_file_priority(
-                torrent_hash=hash_id, file_ids=resumed, priority=1)
+                torrent_hash=hash_id, file_ids=resumed, priority=1
+            )
         except NotFound404Error as e:
             raise NotFound404Error from e
         except Exception as e:
@@ -697,9 +703,8 @@ def re_verfiy(paused, resumed, client, hash_id):
     return True
 
 
-@app.route('/app/files/<string:id_>', methods=['GET'])
+@app.route("/app/files/<string:id_>", methods=["GET"])
 def list_torrent_contents(id_):
-
     if "pin_code" not in request.args.keys():
         return code_page.replace("{form_url}", f"/app/files/{id_}")
 
@@ -720,12 +725,13 @@ def list_torrent_contents(id_):
     else:
         res = aria2.client.get_files(id_)
         cont = make_tree(res, True)
-    return page.replace("{My_content}", cont[0]).replace("{form_url}", f"/app/files/{id_}?pin_code={pincode}")
+    return page.replace("{My_content}", cont[0]).replace(
+        "{form_url}", f"/app/files/{id_}?pin_code={pincode}"
+    )
 
 
-@app.route('/app/files/<string:id_>', methods=['POST'])
+@app.route("/app/files/<string:id_>", methods=["POST"])
 def set_priority(id_):
-
     data = dict(request.form)
     resume = ""
     if len(id_) > 20:
@@ -746,15 +752,13 @@ def set_priority(id_):
         client = qbClient(host="localhost", port="8090")
 
         try:
-            client.torrents_file_priority(
-                torrent_hash=id_, file_ids=pause, priority=0)
+            client.torrents_file_priority(torrent_hash=id_, file_ids=pause, priority=0)
         except NotFound404Error as e:
             raise NotFound404Error from e
         except Exception as e:
             LOGGER.error(f"{e} Errored in paused")
         try:
-            client.torrents_file_priority(
-                torrent_hash=id_, file_ids=resume, priority=1)
+            client.torrents_file_priority(torrent_hash=id_, file_ids=resume, priority=1)
         except NotFound404Error as e:
             raise NotFound404Error from e
         except Exception as e:
@@ -767,11 +771,11 @@ def set_priority(id_):
         for i, value in data.items():
             if "filenode" in i and value == "on":
                 node_no = i.split("_")[-1]
-                resume += f'{node_no},'
+                resume += f"{node_no},"
 
         resume = resume.strip(",")
 
-        res = aria2.client.change_option(id_, {'select-file': resume})
+        res = aria2.client.change_option(id_, {"select-file": resume})
         if res == "OK":
             LOGGER.info(f"Verified! GID: {id_}")
         else:
@@ -779,7 +783,7 @@ def set_priority(id_):
     return list_torrent_contents(id_)
 
 
-@app.route('/')
+@app.route("/")
 def homepage():
     return """
 <html lang="en">
@@ -849,7 +853,10 @@ def homepage():
 
 @app.errorhandler(Exception)
 def page_not_found(e):
-    return f"<h1>404: Torrent not found! Mostly wrong input. <br><br>Error: {e}</h2>", 404
+    return (
+        f"<h1>404: Torrent not found! Mostly wrong input. <br><br>Error: {e}</h2>",
+        404,
+    )
 
 
 if __name__ == "__main__":
