@@ -38,6 +38,7 @@ class Gofile:
     async def __resp_handler(self, response):
         if (api_resp := response.get("status", "")) == "ok":
             return response["data"]
+        LOGGER.info(response)
         raise Exception(
             api_resp.split("-")[1]
             if "error-" in api_resp
@@ -71,7 +72,6 @@ class Gofile:
         folder_data = await self.create_folder(
             (await self.__getAccount())["rootFolder"], ospath.basename(path)
         )
-        LOGGER.info(folder_data)
         await self.__setOptions(
             contentId=folder_data["folderId"], option="public", value="true"
         )
@@ -184,6 +184,7 @@ class Gofile:
                     "attributevalue": value,
                 },
             ) as resp:
+                LOGGER.info(await resp.json())
                 return await self.__resp_handler(await resp.json())
 
     async def get_content(self, contentId):
