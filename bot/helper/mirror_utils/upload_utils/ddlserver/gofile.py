@@ -7,6 +7,7 @@ from aiofiles.os import path as aiopath
 from aiofiles.os import rename as aiorename
 from aiohttp import ClientSession
 
+from bot import LOGGER
 from bot.helper.ext_utils.bot_utils import sync_to_async
 
 
@@ -70,6 +71,7 @@ class Gofile:
         folder_data = await self.create_folder(
             (await self.__getAccount())["rootFolder"], ospath.basename(path)
         )
+        LOGGER.info(folder_data)
         await self.__setOptions(
             contentId=folder_data["folderId"], option="public", value="true"
         )
