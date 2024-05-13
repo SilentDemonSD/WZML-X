@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from asyncio import sleep
 
-from bot import LOGGER, get_client, QbTorrents, qb_listener_lock
+from bot import LOGGER, get_qb_client, QbTorrents, qb_listener_lock
 from bot.helper.ext_utils.bot_utils import EngineStatus, MirrorStatus, get_readable_file_size, get_readable_time, sync_to_async
 
 
@@ -17,7 +17,7 @@ def get_download(client, tag):
 class QbittorrentStatus:
 
     def __init__(self, listener, seeding=False, queued=False):
-        self.__client = get_client()
+        self.__client = get_qb_client()
         self.__listener = listener
         self.upload_details = listener.upload_details
         self.__info = get_download(self.__client, f'{self.__listener.uid}')

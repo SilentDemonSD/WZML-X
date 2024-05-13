@@ -28,7 +28,7 @@ from pyrogram.errors import PeerIdInvalid
 from bot.helper.ext_utils.db_handler import DbManger
 from bot.helper.themes import BotTheme
 from bot.version import get_version
-from bot import OWNER_ID, bot_name, bot_cache, DATABASE_URL, LOGGER, get_client, aria2, download_dict, download_dict_lock, botStartTime, user_data, config_dict, bot_loop, extra_buttons, user
+from bot import OWNER_ID, bot_name, bot_cache, DATABASE_URL, LOGGER, get_qb_client, aria2, download_dict, download_dict_lock, botStartTime, user_data, config_dict, bot_loop, extra_buttons, user
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.telegraph_helper import telegraph
@@ -176,7 +176,7 @@ def get_all_versions():
                                     'aiohttp': get_distribution('aiohttp').version,
                                     'gapi': get_distribution('google-api-python-client').version,
                                     'mega': MegaApi('test').getVersion(),
-                                    'qbit': get_client().app.version,
+                                    'qbit': get_qb_client().app.version,
                                     'pyro': vpy,
                                     'ytdlp': get_distribution('yt-dlp').version}
 

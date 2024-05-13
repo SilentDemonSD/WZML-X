@@ -5,7 +5,7 @@ from aiohttp import ClientSession
 from html import escape
 from urllib.parse import quote
 
-from bot import bot, LOGGER, config_dict, get_client
+from bot import bot, LOGGER, config_dict, get_qb_client
 from bot.helper.telegram_helper.message_utils import editMessage, sendMessage
 from bot.helper.ext_utils.telegraph_helper import telegraph
 from bot.helper.telegram_helper.filters import CustomFilters
@@ -19,7 +19,7 @@ TELEGRAPH_LIMIT = 300
 
 
 async def initiate_search_tools():
-    qbclient = await sync_to_async(get_client)
+    qbclient = await sync_to_async(get_qb_client)
     qb_plugins = await sync_to_async(qbclient.search_plugins)
     if SEARCH_PLUGINS := config_dict['SEARCH_PLUGINS']:
         globals()['PLUGINS'] = []
@@ -91,7 +91,7 @@ async def __search(key, site, message, method):
             return
     else:
         LOGGER.info(f"PLUGINS Searching: {key} from {site}")
-        client = await sync_to_async(get_client)
+        client = await sync_to_async(get_qb_client)
         search = await sync_to_async(client.search_start, pattern=key, plugins=site, category='all')
         search_id = search.id
         while True:
@@ -196,7 +196,7 @@ def __api_buttons(user_id, method):
 async def __plugin_buttons(user_id):
     buttons = ButtonMaker()
     if not PLUGINS:
-        qbclient = await sync_to_async(get_client)
+        qbclient = await sync_to_async(get_qb_client)
         pl = await sync_to_async(qbclient.search_plugins)
         for name in pl:
             PLUGINS.append(name['name'])

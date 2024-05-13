@@ -2,7 +2,7 @@
 from time import time
 from aiofiles.os import remove as aioremove, path as aiopath
 
-from bot import download_dict, download_dict_lock, get_client, LOGGER, config_dict, non_queued_dl, queue_dict_lock
+from bot import download_dict, download_dict_lock, get_qb_client, LOGGER, config_dict, non_queued_dl, queue_dict_lock
 from bot.helper.mirror_utils.status_utils.qbit_status import QbittorrentStatus
 from bot.helper.telegram_helper.message_utils import sendMessage, deleteMessage, sendStatusMessage
 from bot.helper.ext_utils.bot_utils import bt_selection_buttons, sync_to_async
@@ -31,7 +31,7 @@ def __get_hash_file(path):
 
 
 async def add_qb_torrent(link, path, listener, ratio, seed_time):
-    client = await sync_to_async(get_client)
+    client = await sync_to_async(get_qb_client)
     ADD_TIME = time()
     try:
         url = link

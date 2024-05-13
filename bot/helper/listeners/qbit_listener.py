@@ -2,7 +2,7 @@
 from asyncio import sleep
 from time import time
 
-from bot import download_dict, download_dict_lock, get_client, QbInterval, config_dict, QbTorrents, qb_listener_lock, LOGGER, bot_loop
+from bot import download_dict, download_dict_lock, get_qb_client, QbInterval, config_dict, QbTorrents, qb_listener_lock, LOGGER, bot_loop
 from bot.helper.mirror_utils.status_utils.qbit_status import QbittorrentStatus
 from bot.helper.telegram_helper.message_utils import update_all_messages
 from bot.helper.ext_utils.bot_utils import get_readable_time, getDownloadByGid, new_task, sync_to_async
@@ -82,7 +82,7 @@ async def __onDownloadComplete(tor):
     if listener.select:
         await clean_unwanted(listener.dir)
     await listener.onDownloadComplete()
-    client = await sync_to_async(get_client)
+    client = await sync_to_async(get_qb_client)
     if listener.seed:
         async with download_dict_lock:
             if listener.uid in download_dict:
@@ -106,7 +106,7 @@ async def __onDownloadComplete(tor):
 
 
 async def __qb_listener():
-    client = await sync_to_async(get_client)
+    client = await sync_to_async(get_qb_client)
     while True:
         async with qb_listener_lock:
             try:
@@ -161,7 +161,7 @@ async def __qb_listener():
                         __onSeedFinish(tor_info)
             except Exception as e:
                 LOGGER.error(str(e))
-                client = await sync_to_async(get_client)
+                client = await sync_to_async(get_qb_client)
         await sleep(3)
 
 

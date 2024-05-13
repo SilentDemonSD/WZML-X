@@ -850,10 +850,10 @@ def get_qb_client():
         REQUESTS_ARGS={"timeout": (30, 60)},
     )
 
-log_info("Creating client from BOT_TOKEN with PyroFork V{__version__}")
+log_info(f"Creating client from BOT_TOKEN with PyroFork V{__version__}")
 add_args = dict(workers=1000, parse_mode=ParseMode.HTML)
 if int(__version__.replace(".", "")[:3]) > 221:
-    add_args.update({"max_concurrent_transmissions": 50})
+    add_args["max_concurrent_transmissions"] = 50
 # Change to Multi Custom Clients for parallel ups
 bot: tgClient = tgClient(
     "wzbot", TELEGRAM_API, TELEGRAM_HASH, bot_token=BOT_TOKEN, **add_args
