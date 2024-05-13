@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from asyncio import Lock
+from contextlib import suppress
 from datetime import datetime
 from faulthandler import enable as faulthandler_enable
 from logging import (
@@ -26,7 +27,6 @@ from os import remove as osremove
 from socket import setdefaulttimeout
 from subprocess import Popen
 from subprocess import run as srun
-from threading import Thread
 from time import sleep, time
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -84,15 +84,12 @@ non_queued_dl = set()
 non_queued_up = set()
 
 
-try:
+with suppress(Exception):
     if bool(environ.get("_____REMOVE_THIS_LINE_____")):
         log_error(
             "The README.md file _____REMOVE_THIS_LINE_____ is not removed, there to be read! Exiting now!"
         )
         exit()
-except Exception:
-    pass
-
 download_dict_lock = Lock()
 status_reply_dict_lock = Lock()
 queue_dict_lock = Lock()
@@ -825,24 +822,6 @@ if not ospath.exists("accounts"):
     config_dict["USE_SERVICE_ACCOUNTS"] = False
 
 sleep(0.5)
-
-
-def aria2c_init():
-    try:
-        log_info("Initializing Aria2c")
-        link = "https://linuxmint.com/torrents/lmde-5-cinnamon-64bit.iso.torrent"
-        dire = DOWNLOAD_DIR.rstrip("/")
-        aria2.add_uris([link], {"dir": dire})
-        sleep(3)
-        downloads = aria2.get_downloads()
-        sleep(10)
-        aria2.remove(downloads, force=True, files=True, clean=True)
-    except Exception as e:
-        log_error(f"Aria2c initializing error: {e}")
-
-
-Thread(target=aria2c_init).start()
-sleep(1.5)
 
 aria2c_global = [
     "bt-max-open-files",

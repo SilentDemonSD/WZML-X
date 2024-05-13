@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from random import choice
 from time import time
 from copy import deepcopy
 from pytz import timezone
@@ -13,9 +12,9 @@ from aioshutil import move
 from asyncio import create_subprocess_exec, sleep, Event
 from pyrogram.enums import ChatType
 
-from bot import OWNER_ID, Interval, aria2, DOWNLOAD_DIR, download_dict, download_dict_lock, LOGGER, bot_name, DATABASE_URL, \
+from bot import OWNER_ID, Interval, aria2, DOWNLOAD_DIR, download_dict, download_dict_lock, LOGGER, DATABASE_URL, \
     MAX_SPLIT_SIZE, config_dict, status_reply_dict_lock, user_data, non_queued_up, non_queued_dl, queued_up, \
-    queued_dl, queue_dict_lock, bot, GLOBAL_EXTENSION_FILTER
+    queued_dl, queue_dict_lock, GLOBAL_EXTENSION_FILTER
 from bot.helper.ext_utils.bot_utils import extra_btns, sync_to_async, get_readable_file_size, get_readable_time, is_mega_link, is_gdrive_link
 from bot.helper.ext_utils.fs_utils import get_base_name, get_path_size, clean_download, clean_target, \
     is_first_archive_split, is_archive, is_archive_split, join_files
@@ -47,7 +46,7 @@ class MirrorLeechListener:
             sameDir = {}
         self.message = message
         self.uid = message.id
-        self.excep_chat = bool(str(message.chat.id) in config_dict['EXCEP_CHATS'].split())
+        self.excep_chat = str(message.chat.id) in config_dict['EXCEP_CHATS'].split()
         self.extract = extract
         self.compress = compress
         self.isQbit = isQbit
@@ -69,6 +68,8 @@ class MirrorLeechListener:
         self.suproc = None
         self.sameDir = sameDir
         self.rcFlags = rcFlags
+        self.name = ""
+        self.link = ""
         self.upPath = upPath
         self.random_pic = 'IMAGES' if config_dict['IMAGES'] else None
         self.join = join
@@ -241,7 +242,7 @@ class MirrorLeechListener:
                                     del_path = ospath.join(dirpath, file_)
                                     try:
                                         await aioremove(del_path)
-                                    except:
+                                    except Exception:
                                         return
                 else:
                     if self.seed:
@@ -262,7 +263,7 @@ class MirrorLeechListener:
                         if not self.seed:
                             try:
                                 await aioremove(dl_path)
-                            except:
+                            except Exception:
                                 return
                     else:
                         LOGGER.error(
@@ -341,12 +342,12 @@ class MirrorLeechListener:
                                     continue
                                 try:
                                     await aioremove(f_path)
-                                except:
+                                except Exception:
                                     return
                             elif not self.seed or self.newDir:
                                 try:
                                     await aioremove(f_path)
-                                except:
+                                except Exception:
                                     return
                             else:
                                 m_size.append(f_size)
@@ -420,7 +421,7 @@ class MirrorLeechListener:
             await DbManger().rm_complete_task(self.message.link)
         user_id = self.message.from_user.id
         name, _ = await format_filename(name, user_id, isMirror=not self.isLeech)
-        user_dict = user_data.get(user_id, {})
+        #user_dict = user_data.get(user_id, {})
         msg = BotTheme('NAME', Name="Task has been Completed!"if config_dict['SAFE_MODE'] and self.isSuperGroup else escape(name))
         msg += BotTheme('SIZE', Size=get_readable_file_size(size))
         msg += BotTheme('ELAPSE', Time=get_readable_time(time() - self.message.date.timestamp()))
@@ -433,7 +434,6 @@ class MirrorLeechListener:
             if mime_type != 0:
                 msg += BotTheme('L_CORRUPTED_FILES', Corrupt=mime_type)
             msg += BotTheme('L_CC', Tag=self.tag)
-            btn_added = False
 
             if not files:
                 await sendMessage(self.message, msg, photo=self.random_pic)
