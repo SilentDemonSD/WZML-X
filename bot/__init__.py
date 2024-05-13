@@ -149,6 +149,9 @@ if DATABASE_URL:
 else:
     config_dict = {}
 
+if not ospath.exists(".netrc"):
+    with open(".netrc", "w"):
+        pass
 srun(
     "chmod 600 .netrc && cp .netrc /root/.netrc && chmod +x aria-nox.sh && ./aria-nox.sh",
     shell=True,
@@ -257,7 +260,7 @@ if len(USER_SESSION_STRING) != 0:
     log_info("Creating client from USER_SESSION_STRING with PyroFork V{__version__}")
     add_args = dict(no_updates=True, parse_mode=ParseMode.HTML)
     if int(__version__.replace(".", "")[:3]) > 221:
-        add_args.update({"max_concurrent_transmissions": 50})
+        add_args["max_concurrent_transmissions"] = 50
     try:
         user = tgClient(
             "user",
@@ -839,16 +842,6 @@ aria2c_global = [
     "server-stat-of",
 ]
 
-
-aria2 = ariaAPI(ariaClient(host="http://localhost", port=6800, secret=""))
-
-if not aria2_options:
-    aria2_options = aria2.client.get_global_option()
-else:
-    a2c_glo = {op: aria2_options[op] for op in aria2c_global if op in aria2_options}
-    aria2.set_global_options(a2c_glo)
-
-
 def get_qb_client():
     return qbClient(
         host="localhost",
@@ -857,6 +850,18 @@ def get_qb_client():
         REQUESTS_ARGS={"timeout": (30, 60)},
     )
 
+log_info("Creating client from BOT_TOKEN with PyroFork V{__version__}")
+add_args = dict(workers=1000, parse_mode=ParseMode.HTML)
+if int(__version__.replace(".", "")[:3]) > 221:
+    add_args.update({"max_concurrent_transmissions": 50})
+# Change to Multi Custom Clients for parallel ups
+bot: tgClient = tgClient(
+    "wzbot", TELEGRAM_API, TELEGRAM_HASH, bot_token=BOT_TOKEN, **add_args
+).start()
+bot_loop = bot.loop
+bot_name = bot.me.username
+
+scheduler = AsyncIOScheduler(timezone=str(get_localzone()), event_loop=bot_loop)
 
 if not qbit_options:
     qbit_options = dict(get_qb_client().app_preferences())
@@ -871,15 +876,9 @@ else:
             del qb_opt[k]
     get_qb_client().app_set_preferences(qb_opt)
 
-log_info("Creating client from BOT_TOKEN with PyroFork V{__version__}")
-add_args = dict(workers=1000, parse_mode=ParseMode.HTML)
-if int(__version__.replace(".", "")[:3]) > 221:
-    add_args.update({"max_concurrent_transmissions": 50})
-# Change to Multi Custom Clients for parallel ups
-bot = tgClient(
-    "wzbot", TELEGRAM_API, TELEGRAM_HASH, bot_token=BOT_TOKEN, **add_args
-).start()
-bot_loop = bot.loop
-bot_name = bot.me.username
-
-scheduler = AsyncIOScheduler(timezone=str(get_localzone()), event_loop=bot_loop)
+aria2 = ariaAPI(ariaClient(host="http://localhost", port=6800, secret=""))
+if not aria2_options:
+    aria2_options = aria2.client.get_global_option()
+else:
+    a2c_glo = {op: aria2_options[op] for op in aria2c_global if op in aria2_options}
+    aria2.set_global_options(a2c_glo)
