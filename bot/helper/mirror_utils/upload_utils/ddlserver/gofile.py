@@ -80,7 +80,7 @@ class Gofile:
             rel_path = ospath.relpath(root, path)
             parentFolderId = folder_ids.get(ospath.dirname(rel_path), folderId)
             folder_name = ospath.basename(rel_path)
-            currFolderId = (await self.create_folder(parentFolderId, folder_name))["id"]
+            currFolderId = (await self.create_folder(parentFolderId, folder_name))["folderId"]
             await self.__setOptions(
                 contentId=currFolderId, option="public", value="true"
             )
