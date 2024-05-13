@@ -7,7 +7,6 @@ from aiofiles.os import path as aiopath
 from aiofiles.os import rename as aiorename
 from aiohttp import ClientSession
 
-from bot import LOGGER
 from bot.helper.ext_utils.bot_utils import sync_to_async
 
 
@@ -38,7 +37,6 @@ class Gofile:
     async def __resp_handler(self, response):
         if (api_resp := response.get("status", "")) == "ok":
             return response["data"]
-        LOGGER.info(response)
         raise Exception(
             api_resp.split("-")[1]
             if "error-" in api_resp
@@ -181,10 +179,9 @@ class Gofile:
                 data={
                     "token": self.token,
                     "attribute": option,
-                    "attributevalue": value,
+                    "attributeValue": value,
                 },
             ) as resp:
-                LOGGER.info(await resp.json())
                 return await self.__resp_handler(await resp.json())
 
     async def get_content(self, contentId):
