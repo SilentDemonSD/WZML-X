@@ -36,6 +36,7 @@ python-magic
 qbittorrent-api
 requests
 speedtest-cli
+swibots
 telegraph
 tenacity
 tgcrypto

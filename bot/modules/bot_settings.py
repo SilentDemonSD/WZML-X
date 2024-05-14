@@ -68,6 +68,10 @@ async def load_config():
     if len(TELEGRAM_HASH) == 0:
         TELEGRAM_HASH = config_dict['TELEGRAM_HASH']
 
+    SWI_BOT_TOKEN = environ.get("SWI_BOT_TOKEN", "")
+    if len(SWI_BOT_TOKEN) == 0:
+        SWI_BOT_TOKEN = config_dict['SWI_BOT_TOKEN']
+
     BOT_MAX_TASKS = environ.get('BOT_MAX_TASKS', '')
     BOT_MAX_TASKS = int(BOT_MAX_TASKS) if BOT_MAX_TASKS.isdigit() else ''
     
@@ -593,6 +597,7 @@ async def load_config():
                         'BASE_URL_PORT': BASE_URL_PORT,
                         'BLACKLIST_USERS': BLACKLIST_USERS,
                         'BOT_TOKEN': BOT_TOKEN,
+                        'SWI_BOT_TOKEN': SWI_BOT_TOKEN,
                         'BOT_MAX_TASKS': BOT_MAX_TASKS,
                         'CAP_FONT': CAP_FONT,
                         'CMD_SUFFIX': CMD_SUFFIX,

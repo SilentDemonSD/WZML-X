@@ -39,6 +39,7 @@ from pyrogram import __version__
 from pyrogram.enums import ParseMode
 from pytz import timezone
 from qbittorrentapi import Client as qbClient
+from swibots import Client as swClient
 from tzlocal import get_localzone
 from uvloop import install
 
@@ -180,6 +181,9 @@ TIMEZONE = environ.get("TIMEZONE", "")
 if len(TIMEZONE) == 0:
     TIMEZONE = "Asia/Kolkata"
 
+SWI_BOT_TOKEN = environ.get("SWI_BOT_TOKEN", "")
+if len(SWI_BOT_TOKEN) == 0:
+    SWI_BOT_TOKEN = ""
 
 def changetz(*args):
     return datetime.now(timezone(TIMEZONE)).timetuple()
@@ -658,6 +662,7 @@ config_dict = {
     "BASE_URL_PORT": BASE_URL_PORT,
     "BLACKLIST_USERS": BLACKLIST_USERS,
     "BOT_TOKEN": BOT_TOKEN,
+    "SWI_BOT_TOKEN": SWI_BOT_TOKEN,
     "BOT_MAX_TASKS": BOT_MAX_TASKS,
     "CAP_FONT": CAP_FONT,
     "CMD_SUFFIX": CMD_SUFFIX,
@@ -860,6 +865,13 @@ bot: tgClient = tgClient(
 ).start()
 bot_loop = bot.loop
 bot_name = bot.me.username
+
+if SWI_BOT_TOKEN:
+    log_info("Creating client from SWI_BOT_TOKEN with Swibots")
+    app: swClient = swClient(
+        SWI_BOT_TOKEN
+    ).start()
+    swbot_loop = app._loop
 
 scheduler = AsyncIOScheduler(timezone=str(get_localzone()), event_loop=bot_loop)
 
