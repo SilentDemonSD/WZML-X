@@ -18,19 +18,22 @@ from bot.helper.ext_utils.bot_utils import new_task
 
 namespaces = {}
 
-def namespace_of(message):
-    if message.chat.id not in namespaces:
-        namespaces[message.chat.id] = {
+def namespace_of(message, isSwitch):
+    chat_id = message.group.id or message.user.id if isSwitch else message.chat.id
+    if chat_id not in namespaces:
+        namespaces[chat_id] = {
             '__builtins__': globals()['__builtins__'],
             'bot': bot,
             'message': message,
             'user': user,
+            'app': app,
         }
-    return namespaces[message.chat.id]
+    return namespaces[chat_id]
 
 
-def log_input(message):
-    LOGGER.info(f"INPUT: {message.text if hasattr(message, "text") else message.message} (User ID ={message.from_user.id} | Chat ID ={message.chat.id})")
+def log_input(message, isSwitch):
+    chat_id = message.group_id or message.user_id if isSwitch else message.chat.id
+    LOGGER.info(f"INPUT: {message.message if isSwitch else message.text} (User ID ={message.user_id if isSwitch else message.from_user.id} | Chat ID ={chat_id})")
 
 
 async def send(msg, message, isSwitch=False):
@@ -55,7 +58,7 @@ async def evaluate(client, message):
 @new_task
 async def swi_evaluate(ctx):
     message = ctx.event.message
-    await send(await do(eval, message), message)
+    await send(await do(eval, message, True), message, isSwitch=True)
   
 
 @new_task
@@ -66,7 +69,7 @@ async def execute(client, message):
 @new_task
 async def swi_execute(ctx):
     message = ctx.event.message
-    await send(await do(exec, message), message, isSwitch=True)
+    await send(await do(exec, message, True), message, isSwitch=True)
 
 
 def cleanup_code(code):
@@ -75,11 +78,11 @@ def cleanup_code(code):
     return code.strip('` \n')
 
 
-async def do(func, message):
-    log_input(message)
-    content = (message.text if hasattr(message, "text") else message.message).split(maxsplit=1)[-1]
+async def do(func, message, isSwitch=False):
+    log_input(message, isSwitch)
+    content = (message.message if isSwitch else message.text).split(maxsplit=1)[-1]
     body = cleanup_code(content)
-    env = namespace_of(message)
+    env = namespace_of(message, isSwitch)
 
     chdir(getcwd())
     async with aiopen(ospath.join(getcwd(), 'bot/modules/temp.txt'), 'w') as temp:
@@ -134,9 +137,10 @@ bot.add_handler(MessageHandler(execute, filters=command(
 bot.add_handler(MessageHandler(clear, filters=command(
     BotCommands.ClearLocalsCommand) & CustomFilters.sudo))
 
-app.add_handler(
-    CommandHandler(BotCommands.ExecCommand, swi_execute, filter=CustomFilters.swi_owner)
-)
-app.add_handler(
-    CommandHandler(BotCommands.EvalCommand, swi_evaluate, filter=CustomFilters.swi_owner)
-)
+if app:
+    app.add_handler(
+        CommandHandler(BotCommands.ExecCommand, swi_execute, filter=CustomFilters.swi_owner)
+    )
+    app.add_handler(
+        CommandHandler(BotCommands.EvalCommand, swi_evaluate, filter=CustomFilters.swi_owner)
+    )

@@ -855,21 +855,23 @@ def get_qb_client():
         REQUESTS_ARGS={"timeout": (30, 60)},
     )
 
-log_info(f"Creating client from BOT_TOKEN with PyroFork V{__version__}")
-add_args = dict(workers=1000, parse_mode=ParseMode.HTML)
-if int(__version__.replace(".", "")[:3]) > 221:
-    add_args["max_concurrent_transmissions"] = 50
-# Change to Multi Custom Clients for parallel ups
-bot: tgClient = tgClient(
-    "wzbot", TELEGRAM_API, TELEGRAM_HASH, bot_token=BOT_TOKEN, **add_args
-).start()
-bot_loop = bot.loop
-bot_name = bot.me.username
+bot = None
+if BOT_TOKEN:
+    log_info(f"Creating client from BOT_TOKEN with PyroFork V{__version__}")
+    add_args = dict(workers=1000, parse_mode=ParseMode.HTML)
+    if int(__version__.replace(".", "")[:3]) > 221:
+        add_args["max_concurrent_transmissions"] = 50
+    # Change to Multi Custom Clients for parallel ups
+    bot: tgClient = tgClient(
+        "wzbot", TELEGRAM_API, TELEGRAM_HASH, bot_token=BOT_TOKEN, **add_args
+    ).start()
+    bot_loop = bot.loop
+    bot_name = bot.me.username
 
+app = None
 if SWI_BOT_TOKEN:
-    log_info("Creating client from SWI_BOT_TOKEN with Swibots")
+    log_info("Creating Switch client from SWI_BOT_TOKEN with Swibots")
     app: swClient = swClient(SWI_BOT_TOKEN, "WZML")
-    swbot_loop = app._loop
     swbot_name = app.user.user_name
 
 scheduler = AsyncIOScheduler(timezone=str(get_localzone()), event_loop=bot_loop)
