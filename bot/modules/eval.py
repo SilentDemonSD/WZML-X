@@ -40,14 +40,14 @@ async def send(msg, message, isSwitch=False):
     if len(str(msg)) > 2000:
         with BytesIO(str.encode(msg)) as out_file:
             out_file.name = "output.txt"
-            await sendFile(message, out_file, isSwitch)
+            await sendFile(message, out_file, isSwitch=isSwitch)
     else:
         LOGGER.info(f"OUTPUT: '{msg}'")
         if not msg or msg == '\n':
             msg = "MessageEmpty"
         elif not bool(match(r'<(spoiler|b|i|code|s|u|/a)>', msg)):
             msg = f"<code>{msg}</code>"
-        await sendMessage(message, msg, isSwitch)
+        await sendMessage(message, msg, isSwitch=isSwitch)
 
 
 @new_task
