@@ -17,13 +17,16 @@ class TelegraphHelper:
         self.author_url = author_url
 
     async def create_account(self):
-        await self.telegraph.create_account(
-            short_name=self.short_name,
-            author_name=self.author_name,
-            author_url=self.author_url
-        )
-        self.access_token = self.telegraph.get_access_token()
-        LOGGER.info(f"Telegraph Account Generated : {self.short_name}")
+        try:
+            await self.telegraph.create_account(
+                short_name=self.short_name,
+                author_name=self.author_name,
+                author_url=self.author_url
+            )
+            self.access_token = self.telegraph.get_access_token()
+            LOGGER.info(f"Telegraph Account Generated : {self.short_name}")
+        except Exception as e:
+            LOGGER.error(f'Telegraph Account can\'t be Generated : {e}')
 
     async def create_page(self, title, content):
         try:
