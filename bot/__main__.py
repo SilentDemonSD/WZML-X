@@ -16,6 +16,7 @@ from pyrogram.enums import ChatMemberStatus, ChatType
 from pyrogram.filters import command, private, regex
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from swibots import CommandHandler, BotCommand
 from pytz import timezone
 from requests import get as rget
 
@@ -373,8 +374,17 @@ async def log_check():
         except Exception as e:
             LOGGER.error(f"Not Connected Chat ID : {chat_id}, ERROR: {e}")
 
+def register_bot_cmds():
+    app.set_bot_commands(
+        [
+            BotCommand(BotCommands.EvalCommand, "Evaluate Code", True),
+        ]
+    )
 
 async def main():
+    if app:
+        register_bot_cmds()
+        await app.start()
     await gather(
         start_cleanup(),
         torrent_search.initiate_search_tools(),
@@ -383,7 +393,6 @@ async def main():
         rclone_serve_booter(),
         set_commands(bot),
         log_check(),
-        app.start()
     )
     await sync_to_async(start_aria2_listener, wait=False)
 
