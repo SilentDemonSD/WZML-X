@@ -30,7 +30,7 @@ def namespace_of(message):
 
 
 def log_input(message):
-    LOGGER.info(f"INPUT: {message.text} (User ID ={message.from_user.id} | Chat ID ={message.chat.id})")
+    LOGGER.info(f"INPUT: {message.text if hasattr(message, "text") else message.message} (User ID ={message.from_user.id} | Chat ID ={message.chat.id})")
 
 
 async def send(msg, message, isSwitch=False):
@@ -77,7 +77,7 @@ def cleanup_code(code):
 
 async def do(func, message):
     log_input(message)
-    content = message.text.split(maxsplit=1)[-1]
+    content = (message.text if hasattr(message, "text") else message.message).split(maxsplit=1)[-1]
     body = cleanup_code(content)
     env = namespace_of(message)
 
