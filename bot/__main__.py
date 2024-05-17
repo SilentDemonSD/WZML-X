@@ -31,6 +31,7 @@ from bot import (
     scheduler,
     user,
     user_data,
+    app,
 )
 from bot.helper.mirror_utils.rclone_utils.serve import rclone_serve_booter
 from bot.version import get_version
@@ -382,6 +383,7 @@ async def main():
         rclone_serve_booter(),
         set_commands(bot),
         log_check(),
+        app.start()
     )
     await sync_to_async(start_aria2_listener, wait=False)
 

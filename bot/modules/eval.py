@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from swibots import CommandHandler
 from pyrogram.handlers import MessageHandler
 from pyrogram.filters import command
 from os import path as ospath, getcwd, chdir
@@ -9,7 +10,7 @@ from io import StringIO, BytesIO
 from re import match
 from contextlib import redirect_stdout, suppress
 
-from bot import LOGGER, bot, user
+from bot import LOGGER, bot, user, app
 from bot.helper.telegram_helper.filters import CustomFilters
 from bot.helper.telegram_helper.bot_commands import BotCommands
 from bot.helper.telegram_helper.message_utils import sendFile, sendMessage
@@ -32,28 +33,40 @@ def log_input(message):
     LOGGER.info(f"INPUT: {message.text} (User ID ={message.from_user.id} | Chat ID ={message.chat.id})")
 
 
-async def send(msg, message):
+async def send(msg, message, isSwitch=False):
     if len(str(msg)) > 2000:
         with BytesIO(str.encode(msg)) as out_file:
             out_file.name = "output.txt"
-            await sendFile(message, out_file)
+            await sendFile(message, out_file, isSwitch)
     else:
         LOGGER.info(f"OUTPUT: '{msg}'")
         if not msg or msg == '\n':
             msg = "MessageEmpty"
         elif not bool(match(r'<(spoiler|b|i|code|s|u|/a)>', msg)):
             msg = f"<code>{msg}</code>"
-        await sendMessage(message, msg)
+        await sendMessage(message, msg, isSwitch)
 
 
 @new_task
 async def evaluate(client, message):
     await send(await do(eval, message), message)
+    
 
+@new_task
+async def swi_evaluate(ctx):
+    message = ctx.event.message
+    await send(await do(eval, message), message)
+  
 
 @new_task
 async def execute(client, message):
     await send(await do(exec, message), message)
+
+
+@new_task
+async def swi_execute(ctx):
+    message = ctx.event.message
+    await send(await do(exec, message), message, isSwitch=True)
 
 
 def cleanup_code(code):
@@ -120,3 +133,10 @@ bot.add_handler(MessageHandler(execute, filters=command(
     BotCommands.ExecCommand) & CustomFilters.sudo))
 bot.add_handler(MessageHandler(clear, filters=command(
     BotCommands.ClearLocalsCommand) & CustomFilters.sudo))
+
+app.add_handler(
+    CommandHandler(BotCommands.ExecCommand, swi_execute, filter=CustomFilters.swi_owner)
+)
+app.add_handler(
+    CommandHandler(BotCommands.EvalCommand, swi_evaluate, filter=CustomFilters.swi_owner)
+)

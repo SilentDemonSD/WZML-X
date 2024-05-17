@@ -50,9 +50,9 @@ from bot.helper.ext_utils.exceptions import TgLinkException
 from bot.helper.telegram_helper.button_build import ButtonMaker
 
 
-async def sendMessage(message, text, buttons=None, photo=None, **kwargs):
+async def sendMessage(message, text, buttons=None, photo=None, isSwitch=False, **kwargs):
     try:
-        if photo:
+        if photo and not isSwitch:
             try:
                 if photo == "IMAGES":
                     photo = rchoice(config_dict["IMAGES"])
@@ -68,12 +68,15 @@ async def sendMessage(message, text, buttons=None, photo=None, **kwargs):
                 pass
             except (PhotoInvalidDimensions, WebpageCurlFailed, MediaEmpty):
                 des_dir = await download_image_url(photo)
-                await sendMessage(message, text, buttons, des_dir)
+                await sendMessage(message, text, buttons, des_dir, isSwitch, **kwargs)
                 await aioremove(des_dir)
                 return
             except Exception:
                 LOGGER.error(format_exc())
-        return await message.reply(
+        if isSwitch:
+            return await message.reply_text(text, inline_markup=buttons)
+        else:
+            return await message.reply(
             text=text,
             quote=True,
             disable_web_page_preview=True,
@@ -83,13 +86,13 @@ async def sendMessage(message, text, buttons=None, photo=None, **kwargs):
             if (rply := message.reply_to_message) and not rply.text and not rply.caption
             else None,
             **kwargs,
-        )
+            )
     except FloodWait as f:
         LOGGER.warning(str(f))
         await sleep(f.value * 1.2)
-        return await sendMessage(message, text, buttons, photo)
+        return await sendMessage(message, text, buttons, photo, isSwitch, **kwargs)
     except ReplyMarkupInvalid:
-        return await sendMessage(message, text, None, photo)
+        return await sendMessage(message, text, None, photo, isSwitch, **kwargs)
     except MessageEmpty:
         return await sendMessage(message, text, parse_mode=ParseMode.DISABLED)
     except Exception as e:
@@ -182,7 +185,6 @@ async def sendMultiMessage(chat_ids, text, buttons=None, photo=None):
                 except Exception as e:
                     LOGGER.error(str(e))
                 continue
-            LOGGER.info("DEBUG CP 2")
             sent = await bot.send_message(
                 chat_id=chat.id,
                 text=text,
@@ -236,19 +238,22 @@ async def editReplyMarkup(message, reply_markup):
         return str(e)
 
 
-async def sendFile(message, file, caption=None, buttons=None):
+async def sendFile(message, file, caption=None, buttons=None, isSwitch=False):
     try:
-        return await message.reply_document(
+        if isSwitch:
+            return await message.reply_media(file, caption, description=caption)
+        else:
+            return await message.reply_document(
             document=file,
             quote=True,
             caption=caption,
             disable_notification=True,
             reply_markup=buttons,
-        )
+            )
     except FloodWait as f:
         LOGGER.warning(str(f))
         await sleep(f.value * 1.2)
-        return await sendFile(message, file, caption)
+        return await sendFile(message, file, caption, isSwitch)
     except Exception as e:
         LOGGER.error(str(e))
         return str(e)

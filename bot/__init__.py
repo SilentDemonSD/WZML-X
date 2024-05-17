@@ -868,7 +868,7 @@ bot_name = bot.me.username
 
 if SWI_BOT_TOKEN:
     log_info("Creating client from SWI_BOT_TOKEN with Swibots")
-    app: swClient = swClient(SWI_BOT_TOKEN, "WZML", receive_updates=False, loop=bot_loop)
+    app: swClient = swClient(SWI_BOT_TOKEN, "WZML")
     swbot_loop = app._loop
     swbot_name = app.user.user_name
 
