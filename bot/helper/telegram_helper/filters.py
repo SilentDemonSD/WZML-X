@@ -2,7 +2,7 @@
 from pyrogram.enums import ChatType
 from pyrogram.filters import create
 
-from swibots.filters import create as swi_create
+from swibots import filters as swi_filters
 
 from bot import OWNER_ID, user_data
 from bot.helper.telegram_helper.message_utils import chat_info
@@ -18,7 +18,7 @@ class CustomFilters:
     async def swi_owner_filter(self, ctx):
         return ctx.event.action_by_id == OWNER_ID
 
-    swi_owner = swi_create(swi_owner_filter)
+    swi_owner = swi_filters.create(swi_owner_filter)
 
     async def authorized_user(self, _, message):
         user = message.from_user or message.sender_chat
