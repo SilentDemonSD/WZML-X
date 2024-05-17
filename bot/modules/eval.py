@@ -19,7 +19,7 @@ from bot.helper.ext_utils.bot_utils import new_task
 namespaces = {}
 
 def namespace_of(message, isSwitch):
-    chat_id = message.group.id or message.user.id if isSwitch else message.chat.id
+    chat_id = message.group_id or message.user_id if isSwitch else message.chat.id
     if chat_id not in namespaces:
         namespaces[chat_id] = {
             '__builtins__': globals()['__builtins__'],
