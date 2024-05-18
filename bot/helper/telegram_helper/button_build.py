@@ -3,8 +3,12 @@ class ButtonMaker:
     def __init__(self, isSwitch=False):
         if isSwitch:
             from swibots import InlineKeyboardButton, InlineMarkup
+            self.InlineKeyboardButton = InlineKeyboardButton
+            self.InlineMarkup = InlineMarkup
         else:
             from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+            self.InlineKeyboardButton = InlineKeyboardButton
+            self.InlineMarkup = InlineKeyboardMarkup
         self.isSwitch = isSwitch
         self.__button = []
         self.__header_button = []
@@ -14,34 +18,34 @@ class ButtonMaker:
 
     def ubutton(self, key, link, position=None):
         if not position:
-            self.__button.append(InlineKeyboardButton(text=key, url=link))
+            self.__button.append(self.InlineKeyboardButton(text=key, url=link))
         elif position == "header":
-            self.__header_button.append(InlineKeyboardButton(text=key, url=link))
+            self.__header_button.append(self.InlineKeyboardButton(text=key, url=link))
         elif position == "f_body":
-            self.__first_body_button.append(InlineKeyboardButton(text=key, url=link))
+            self.__first_body_button.append(self.InlineKeyboardButton(text=key, url=link))
         elif position == "l_body":
-            self.__last_body_button.append(InlineKeyboardButton(text=key, url=link))
+            self.__last_body_button.append(self.InlineKeyboardButton(text=key, url=link))
         elif position == "footer":
-            self.__footer_button.append(InlineKeyboardButton(text=key, url=link))
+            self.__footer_button.append(self.InlineKeyboardButton(text=key, url=link))
 
     def ibutton(self, key, data, position=None):
         if not position:
-            self.__button.append(InlineKeyboardButton(text=key, callback_data=data))
+            self.__button.append(self.InlineKeyboardButton(text=key, callback_data=data))
         elif position == "header":
             self.__header_button.append(
-                InlineKeyboardButton(text=key, callback_data=data)
+                self.InlineKeyboardButton(text=key, callback_data=data)
             )
         elif position == "f_body":
             self.__first_body_button.append(
-                InlineKeyboardButton(text=key, callback_data=data)
+                self.InlineKeyboardButton(text=key, callback_data=data)
             )
         elif position == "l_body":
             self.__last_body_button.append(
-                InlineKeyboardButton(text=key, callback_data=data)
+                self.InlineKeyboardButton(text=key, callback_data=data)
             )
         elif position == "footer":
             self.__footer_button.append(
-                InlineKeyboardButton(text=key, callback_data=data)
+                self.InlineKeyboardButton(text=key, callback_data=data)
             )
 
     def build_menu(self, b_cols=1, h_cols=8, fb_cols=2, lb_cols=2, f_cols=8):
@@ -81,7 +85,7 @@ class ButtonMaker:
                 ]
             else:
                 menu.append(self.__footer_button)
-        return InlineMarkup(menu) if self.isSwitch else InlineKeyboardMarkup(menu) 
+        return self.InlineMarkup(menu)
     
     def reset(self):
         self.__button = []
