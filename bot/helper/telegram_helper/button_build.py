@@ -1,8 +1,11 @@
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-
 
 class ButtonMaker:
-    def __init__(self):
+    def __init__(self, isSwitch=False):
+        if isSwitch:
+            from swibots import InlineKeyboardButton, InlineMarkup
+        else:
+            from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+        self.isSwitch = isSwitch
         self.__button = []
         self.__header_button = []
         self.__first_body_button = []
@@ -78,7 +81,7 @@ class ButtonMaker:
                 ]
             else:
                 menu.append(self.__footer_button)
-        return InlineKeyboardMarkup(menu)
+        return InlineMarkup(menu) if self.isSwitch else InlineKeyboardMarkup(menu) 
     
     def reset(self):
         self.__button = []
