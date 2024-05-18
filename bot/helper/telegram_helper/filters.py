@@ -9,16 +9,11 @@ from bot.helper.telegram_helper.message_utils import chat_info
 
 
 class CustomFilters:
-    async def owner_filter(self, _, message):
-        user = message.from_user or message.sender_chat
-        return user.id == OWNER_ID
+    async def owner_filter(self, client, message=False):
+        return (message.from_user or message.sender_chat).id == OWNER_ID if message else client.event.action_by_id == SWI_OWNER_ID
 
     owner = create(owner_filter)
-    
-    async def swi_owner_filter(self, ctx):
-        return ctx.event.action_by_id == SWI_OWNER_ID
-
-    swi_owner = swi_filters.create(swi_owner_filter)
+    swi_owner = swi_filters.create(owner_filter)
 
     async def authorized_user(self, _, message):
         user = message.from_user or message.sender_chat
