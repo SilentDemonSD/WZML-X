@@ -78,6 +78,9 @@ async def load_config():
     OWNER_ID = environ.get('OWNER_ID', '')
     OWNER_ID = config_dict['OWNER_ID'] if len(OWNER_ID) == 0 else int(OWNER_ID)
 
+    SWI_OWNER_ID = environ.get("SWI_OWNER_ID", "")
+    SWI_OWNER_ID = config_dict['SWI_OWNER_ID'] if len(SWI_OWNER_ID) == 0 else int(SWI_OWNER_ID)
+    
     DATABASE_URL = environ.get('DATABASE_URL', '')
     if len(DATABASE_URL) == 0:
         DATABASE_URL = ''

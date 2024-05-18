@@ -4,7 +4,7 @@ from pyrogram.filters import create
 
 from swibots import filters as swi_filters
 
-from bot import OWNER_ID, user_data, LOGGER
+from bot import OWNER_ID, SWI_OWNER_ID, user_data, LOGGER
 from bot.helper.telegram_helper.message_utils import chat_info
 
 
@@ -16,8 +16,7 @@ class CustomFilters:
     owner = create(owner_filter)
     
     async def swi_owner_filter(self, ctx):
-        LOGGER.info(ctx.event.action_by_id)
-        return ctx.event.action_by_id == OWNER_ID
+        return ctx.event.action_by_id == SWI_OWNER_ID
 
     swi_owner = swi_filters.create(swi_owner_filter)
 

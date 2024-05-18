@@ -62,14 +62,9 @@ async def swi_evaluate(ctx):
   
 
 @new_task
-async def execute(client, message):
-    await send(await do(exec, message), message)
-
-
-@new_task
-async def swi_execute(ctx):
-    message = ctx.event.message
-    await send(await do(exec, message, True), message, isSwitch=True)
+async def execute(client, message=False):
+    message = message if message else client.event.message
+    await send(await do(exec, message, not message), message, not message)
 
 
 def cleanup_code(code):
@@ -139,7 +134,7 @@ bot.add_handler(MessageHandler(clear, filters=command(
 
 if app:
     app.add_handler(
-        CommandHandler(BotCommands.ExecCommand, swi_execute, filter=CustomFilters.swi_owner)
+        CommandHandler(BotCommands.ExecCommand, execute, filter=CustomFilters.swi_owner)
     )
     app.add_handler(
         CommandHandler(BotCommands.EvalCommand, swi_evaluate, filter=CustomFilters.swi_owner)

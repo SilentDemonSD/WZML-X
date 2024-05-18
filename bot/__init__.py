@@ -164,6 +164,10 @@ if len(OWNER_ID) == 0:
     exit(1)
 else:
     OWNER_ID = int(OWNER_ID)
+    
+SWI_OWNER_ID = environ.get("SWI_OWNER_ID", "")
+if len(SWI_OWNER_ID) != 0:
+    SWI_OWNER_ID = int(SWI_OWNER_ID)
 
 TELEGRAM_API = environ.get("TELEGRAM_API", "")
 if len(TELEGRAM_API) == 0:
