@@ -51,15 +51,10 @@ async def send(msg, message, isSwitch=False):
 
 
 @new_task
-async def evaluate(client, message):
-    await send(await do(eval, message), message)
-    
+async def evaluate(client, message=False):
+    message = message if message else client.event.message
+    await send(await do(eval, message, not message), message, not message)
 
-@new_task
-async def swi_evaluate(ctx):
-    message = ctx.event.message
-    await send(await do(eval, message, True), message, isSwitch=True)
-  
 
 @new_task
 async def execute(client, message=False):
@@ -115,27 +110,32 @@ async def do(func, message, isSwitch=False):
             return result
 
 
-async def clear(client, message):
+async def clear(client, message=False):
+    message = message if message else client.event.message
     log_input(message)
     global namespaces
-    if message.chat.id in namespaces:
-        del namespaces[message.chat.id]
+    chat_id = message.group_id or message.user_id if not message else message.chat.id
+    if chat_id in namespaces:
+        del namespaces[chat_id]
         await send("<b>Cached Locals Cleared !</b>", message)
     else:
         await send("<b>No Cache Locals Found !</b>", message)
 
-
-bot.add_handler(MessageHandler(evaluate, filters=command(
-    BotCommands.EvalCommand) & CustomFilters.sudo))
-bot.add_handler(MessageHandler(execute, filters=command(
-    BotCommands.ExecCommand) & CustomFilters.sudo))
-bot.add_handler(MessageHandler(clear, filters=command(
-    BotCommands.ClearLocalsCommand) & CustomFilters.sudo))
+if bot:
+    bot.add_handler(MessageHandler(evaluate, filters=command(
+        BotCommands.EvalCommand) & CustomFilters.sudo))
+    bot.add_handler(MessageHandler(execute, filters=command(
+        BotCommands.ExecCommand) & CustomFilters.sudo))
+    bot.add_handler(MessageHandler(clear, filters=command(
+        BotCommands.ClearLocalsCommand) & CustomFilters.sudo))
 
 if app:
     app.add_handler(
         CommandHandler(BotCommands.ExecCommand, execute, filter=CustomFilters.swi_owner)
     )
     app.add_handler(
-        CommandHandler(BotCommands.EvalCommand, swi_evaluate, filter=CustomFilters.swi_owner)
+        CommandHandler(BotCommands.EvalCommand, evaluate, filter=CustomFilters.swi_owner)
+    )
+    app.add_handler(
+        CommandHandler(BotCommands.ClearLocalsCommand, clear, filter=CustomFilters.swi_owner)
     )
