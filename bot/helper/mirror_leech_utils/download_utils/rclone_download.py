@@ -3,13 +3,13 @@ from asyncio import gather
 from json import loads
 from secrets import token_hex
 
-from bot import download_dict, download_dict_lock, queue_dict_lock, non_queued_dl, LOGGER
+from bot import task_dict, task_dict_lock, queue_dict_lock, non_queued_dl, LOGGER
 from bot.helper.ext_utils.bot_utils import cmd_exec
-from bot.helper.telegram_helper.message_utils import sendMessage, sendStatusMessage
+from bot.helper.tele_swi_helper.message_utils import sendMessage, sendStatusMessage
 from bot.helper.ext_utils.task_manager import is_queued, stop_duplicate_check
-from bot.helper.mirror_utils.status_utils.rclone_status import RcloneStatus
-from bot.helper.mirror_utils.status_utils.queue_status import QueueStatus
-from bot.helper.mirror_utils.rclone_utils.transfer import RcloneTransferHelper
+from bot.helper.mirror_leech_utils.status_utils.rclone_status import RcloneStatus
+from bot.helper.mirror_leech_utils.status_utils.queue_status import QueueStatus
+from bot.helper.mirror_leech_utils.rclone_utils.transfer import RcloneTransferHelper
 
 
 async def add_rclone_download(rc_path, config_path, path, name, listener):
@@ -49,22 +49,22 @@ async def add_rclone_download(rc_path, config_path, path, name, listener):
     added_to_queue, event = await is_queued(listener.uid)
     if added_to_queue:
         LOGGER.info(f"Added to Queue/Download: {name}")
-        async with download_dict_lock:
-            download_dict[listener.uid] = QueueStatus(
+        async with task_dict_lock:
+            task_dict[listener.uid] = QueueStatus(
                 name, size, gid, listener, 'dl')
         await listener.onDownloadStart()
         await sendStatusMessage(listener.message)
         await event.wait()
-        async with download_dict_lock:
-            if listener.uid not in download_dict:
+        async with task_dict_lock:
+            if listener.uid not in task_dict:
                 return
         from_queue = True
     else:
         from_queue = False
 
     RCTransfer = RcloneTransferHelper(listener, name)
-    async with download_dict_lock:
-        download_dict[listener.uid] = RcloneStatus(
+    async with task_dict_lock:
+        task_dict[listener.uid] = RcloneStatus(
             RCTransfer, listener.message, gid, 'dl', listener.upload_details)
     async with queue_dict_lock:
         non_queued_dl.add(listener.uid)

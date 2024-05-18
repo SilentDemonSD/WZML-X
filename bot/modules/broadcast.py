@@ -7,11 +7,11 @@ from pyrogram.filters import command
 from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated
 
 from bot import bot, LOGGER, DATABASE_URL
-from bot.helper.ext_utils.db_handler import DbManger
-from bot.helper.telegram_helper.message_utils import sendMessage, editMessage
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper.button_build import ButtonMaker
+from bot.helper.ext_utils.db_handler import DbManager
+from bot.helper.tele_swi_helper.message_utils import sendMessage, editMessage
+from bot.helper.tele_swi_helper.filters import CustomFilters
+from bot.helper.tele_swi_helper.bot_commands import BotCommands
+from bot.helper.tele_swi_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.bot_utils import new_task, get_readable_time
 
 bc_cache = {}
@@ -104,7 +104,7 @@ async def broadcast(_, message):
     updater = time()
     bc_hash, bc_msgs = str(uuid4()), []
     pls_wait = await sendMessage(message, status.format(**locals()))
-    for uid in (await DbManger().get_pm_uids()):
+    for uid in (await DbManager().get_pm_uids()):
         try:
             if forwarded:
                 bc_msg = await rply.forward(uid, disable_notification=quietly)
@@ -119,10 +119,10 @@ async def broadcast(_, message):
                 bc_msg = await rply.copy(uid, disable_notification=quietly)
             s += 1
         except UserIsBlocked:
-            await DbManger().rm_pm_user(uid)
+            await DbManager().rm_pm_user(uid)
             b += 1
         except InputUserDeactivated:
-            await DbManger().rm_pm_user(uid)
+            await DbManager().rm_pm_user(uid)
             d += 1
         except Exception:
             u += 1

@@ -13,7 +13,7 @@ from aiofiles.os import path as aiopath
 
 from bot import GLOBAL_EXTENSION_FILTER, config_dict
 from bot.helper.ext_utils.bot_utils import cmd_exec, sync_to_async
-from bot.helper.ext_utils.fs_utils import count_files_and_folders, get_mime_type
+from bot.helper.ext_utils.files_utils import count_files_and_folders, get_mime_type
 
 LOGGER = getLogger(__name__)
 

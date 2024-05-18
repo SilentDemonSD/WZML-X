@@ -5,9 +5,9 @@ from speedtest import ConfigRetrievalError, Speedtest
 
 from bot import LOGGER, bot
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, new_task
-from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import (
+from bot.helper.tele_swi_helper.bot_commands import BotCommands
+from bot.helper.tele_swi_helper.filters import CustomFilters
+from bot.helper.tele_swi_helper.message_utils import (
     deleteMessage,
     editMessage,
     sendMessage,

@@ -4,10 +4,10 @@ from pyrogram.handlers import MessageHandler
 
 from bot import DATABASE_URL, bot, user_data
 from bot.helper.ext_utils.bot_utils import update_user_ldata
-from bot.helper.ext_utils.db_handler import DbManger
-from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import sendMessage
+from bot.helper.ext_utils.db_handler import DbManager
+from bot.helper.tele_swi_helper.bot_commands import BotCommands
+from bot.helper.tele_swi_helper.filters import CustomFilters
+from bot.helper.tele_swi_helper.message_utils import sendMessage
 
 
 async def authorize(_, message):
@@ -34,7 +34,7 @@ async def authorize(_, message):
                 tids_.append(tid_)
                 update_user_ldata(id_, "topic_ids", tids_)
                 if DATABASE_URL:
-                    await DbManger().update_user_data(id_)
+                    await DbManager().update_user_data(id_)
                 msg = "Topic Authorized!"
             else:
                 msg = "Topic Already Authorized!"
@@ -46,7 +46,7 @@ async def authorize(_, message):
         else:
             msg = "Authorized"
         if DATABASE_URL:
-            await DbManger().update_user_data(id_)
+            await DbManager().update_user_data(id_)
     await sendMessage(message, msg)
 
 
@@ -79,7 +79,7 @@ async def unauthorize(_, message):
         if not tids_:
             update_user_ldata(id_, "is_auth", False)
         if DATABASE_URL:
-            await DbManger().update_user_data(id_)
+            await DbManager().update_user_data(id_)
         msg = "Unauthorized"
     else:
         msg = "Already Unauthorized!"
@@ -99,7 +99,7 @@ async def addSudo(_, message):
         else:
             update_user_ldata(id_, "is_sudo", True)
             if DATABASE_URL:
-                await DbManger().update_user_data(id_)
+                await DbManager().update_user_data(id_)
             msg = "Promoted as Sudo"
     else:
         msg = "<i>Give User's ID or Reply to User's message of whom you want to Promote as Sudo</i>"
@@ -119,7 +119,7 @@ async def removeSudo(_, message):
         else:
             update_user_ldata(id_, "is_sudo", False)
             if DATABASE_URL:
-                await DbManger().update_user_data(id_)
+                await DbManager().update_user_data(id_)
             msg = "Demoted"
     else:
         msg = "<i>Give User's ID or Reply to User's message of whom you want to Demote</i>"
@@ -139,7 +139,7 @@ async def addBlackList(_, message):
         else:
             update_user_ldata(id_, "is_blacklist", True)
             if DATABASE_URL:
-                await DbManger().update_user_data(id_)
+                await DbManager().update_user_data(id_)
             msg = "User BlackListed"
     else:
         msg = "Give ID or Reply To message of whom you want to blacklist."
@@ -159,7 +159,7 @@ async def rmBlackList(_, message):
         else:
             update_user_ldata(id_, "is_blacklist", False)
             if DATABASE_URL:
-                await DbManger().update_user_data(id_)
+                await DbManager().update_user_data(id_)
             msg = "<i>User Set Free as Bird!</i>"
     else:
         msg = "Give ID or Reply To message of whom you want to remove from blacklisted"

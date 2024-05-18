@@ -1,4 +1,4 @@
-from asyncio import create_subprocess_exec, gather
+from asyncio import create_subprocess_exec, gather, sleep
 from base64 import b64decode
 from datetime import datetime
 from os import execl as osexecl
@@ -16,26 +16,23 @@ from pyrogram.enums import ChatMemberStatus, ChatType
 from pyrogram.filters import command, private, regex
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from swibots import CommandHandler, BotCommand
 from pytz import timezone
 from requests import get as rget
+from swibots import BotCommand
 
 from bot import (
     DATABASE_URL,
     INCOMPLETE_TASK_NOTIFIER,
     LOGGER,
-    Interval,
-    QbInterval,
+    Intervals,
+    app,
     bot,
     bot_name,
     config_dict,
     scheduler,
     user,
     user_data,
-    app,
 )
-from bot.helper.mirror_utils.rclone_utils.serve import rclone_serve_booter
-from bot.version import get_version
 
 from .helper.ext_utils.bot_utils import (
     get_readable_time,
@@ -45,14 +42,16 @@ from .helper.ext_utils.bot_utils import (
     sync_to_async,
     update_user_ldata,
 )
-from .helper.ext_utils.db_handler import DbManger
-from .helper.ext_utils.fs_utils import clean_all, exit_clean_up, start_cleanup
+from .helper.ext_utils.db_handler import DbManager
+from .helper.ext_utils.files_utils import clean_all, exit_clean_up
+from .helper.ext_utils.telegraph_helper import telegraph
 from .helper.listeners.aria2_listener import start_aria2_listener
-from .helper.telegram_helper.bot_commands import BotCommands
-from .helper.telegram_helper.button_build import ButtonMaker
-from .helper.telegram_helper.filters import CustomFilters
-from .helper.telegram_helper.message_utils import (
-    delete_all_messages,
+from .helper.mirror_leech_utils.rclone_utils.serve import rclone_serve_booter
+from .helper.tele_swi_helper.bot_commands import BotCommands
+from .helper.tele_swi_helper.button_build import ButtonMaker
+from .helper.tele_swi_helper.filters import CustomFilters
+from .helper.tele_swi_helper.message_utils import (
+    delete_status,
     deleteMessage,
     editMessage,
     editReplyMarkup,
@@ -60,38 +59,11 @@ from .helper.telegram_helper.message_utils import (
     sendMessage,
 )
 from .helper.themes import BotTheme
-from .modules import (
-    anilist,
-    authorize,
-    bot_settings,
-    broadcast,
-    cancel_mirror,
-    category_select,
-    clone,
-    eval,
-    gd_clean,
-    gd_count,
-    gd_delete,
-    gd_list,
-    gen_pyro_sess,
-    images,
-    imdb,
-    mediainfo,
-    mirror_leech,
-    mydramalist,
-    rss,
-    save_msg,
-    shell,
-    speedtest,
-    status,
-    torrent_search,
-    torrent_select,
-    users_settings,
-    ytdlp,
-)
+from .modules import *  # noqa: F403
+from .version import get_version
 
 
-async def stats(client, message):
+async def stats(_, message):
     msg, btns = await get_stats(message)
     await sendMessage(message, msg, btns, photo="IMAGES")
 
@@ -133,7 +105,7 @@ async def start(client, message):
         await sendMessage(message, BotTheme("ST_BOTPM"), reply_markup, photo="IMAGES")
     else:
         await sendMessage(message, BotTheme("ST_UNAUTH"), reply_markup, photo="IMAGES")
-    await DbManger().update_pm_users(message.from_user.id)
+    await DbManager().update_pm_users(message.from_user.id)
 
 
 async def token_callback(_, query):
@@ -169,14 +141,19 @@ async def login(_, message):
 
 
 async def restart(_, message):
+    Intervals["stopAll"] = True
     restart_message = await sendMessage(message, BotTheme("RESTARTING"))
     if scheduler.running:
         scheduler.shutdown(wait=False)
-    await delete_all_messages()
-    for interval in [QbInterval, Interval]:
-        if interval:
-            interval[0].cancel()
+    await delete_status()
+    if qb := Intervals["qb"]:
+        qb.cancel()
+    if st := Intervals["status"]:
+        for intvl in list(st.values()):
+            intvl.cancel()
+    await sleep(0.5)
     await sync_to_async(clean_all)
+    await sleep(0.5)
     proc1 = await create_subprocess_exec(
         "pkill", "-9", "-f", "gunicorn|aria2c|qbittorrent-nox|ffmpeg|rclone"
     )
@@ -231,7 +208,7 @@ async def search_images():
         if len(config_dict["IMAGES"]) != 0:
             config_dict["STATUS_LIMIT"] = 2
         if DATABASE_URL:
-            await DbManger().update_config(
+            await DbManager().update_config(
                 {
                     "IMAGES": config_dict["IMAGES"],
                     "STATUS_LIMIT": config_dict["STATUS_LIMIT"],
@@ -241,7 +218,7 @@ async def search_images():
         LOGGER.error(f"An error occurred: {e}")
 
 
-async def bot_help(client, message):
+async def bot_help(_, message):
     buttons = ButtonMaker()
     user_id = message.from_user.id
     buttons.ibutton(BotTheme("BASIC_BT"), f"wzmlx {user_id} guide basic")
@@ -281,7 +258,7 @@ async def restart_notification():
             LOGGER.error(e)
 
     if INCOMPLETE_TASK_NOTIFIER and DATABASE_URL:
-        if notifier_dict := await DbManger().get_incomplete_tasks():
+        if notifier_dict := await DbManager().get_incomplete_tasks():
             for cid, data in notifier_dict.items():
                 msg = (
                     BotTheme(
@@ -374,27 +351,31 @@ async def log_check():
         except Exception as e:
             LOGGER.error(f"Not Connected Chat ID : {chat_id}, ERROR: {e}")
 
-def register_bot_cmds():
+
+async def setup_switch_bot_cmds():
     app.set_bot_commands(
         [
             BotCommand(BotCommands.EvalCommand, "Evaluate Code", True),
         ]
     )
 
+
 async def main():
     if app:
-        register_bot_cmds()
+        await setup_switch_bot_cmds()
         await app.start()
     await gather(
-        start_cleanup(),
+        sync_to_async(clean_all),
+        DbManager().db_load(),
         torrent_search.initiate_search_tools(),
         restart_notification(),
         search_images(),
+        telegraph.create_account(),
         rclone_serve_booter(),
         set_commands(bot),
         log_check(),
+        sync_to_async(start_aria2_listener, wait=False),
     )
-    await sync_to_async(start_aria2_listener, wait=False)
 
     bot.add_handler(
         MessageHandler(start, filters=command(BotCommands.StartCommand) & private)
@@ -437,19 +418,24 @@ async def main():
             & ~CustomFilters.blacklisted,
         )
     )
-    LOGGER.info(f"WZML-X Bot [@{bot_name}] Started!")
+    if app:
+        LOGGER.info("WZML-X Switch Bot Started!")
+    if bot:
+        LOGGER.info(f"WZML-X Telegram Bot [@{bot_name}] Started!")
     if user:
         LOGGER.info(f"WZ's User [@{user.me.username}] Ready!")
     signal(SIGINT, exit_clean_up)
 
 
 async def stop_signals():
+    if app:
+        await app.stop()
     if user:
         await gather(bot.stop(), user.stop())
     else:
         await bot.stop()
 
-
+# fix loop fetch
 bot_run = bot.loop.run_until_complete
 bot_run(main())
 bot_run(idle())

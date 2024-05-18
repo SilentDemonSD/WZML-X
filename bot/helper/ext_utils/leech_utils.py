@@ -7,7 +7,7 @@ from os import path as ospath
 from aiofiles.os import remove as aioremove, path as aiopath, mkdir, makedirs, listdir
 from aioshutil import rmtree as aiormtree
 from contextlib import suppress
-from asyncio import create_subprocess_exec, create_task, gather, Semaphore
+from asyncio import create_subprocess_exec, gather, Semaphore
 from asyncio.subprocess import PIPE
 from telegraph import upload_file
 from langcodes import Language
@@ -15,7 +15,7 @@ from langcodes import Language
 from bot import LOGGER, MAX_SPLIT_SIZE, config_dict, user_data
 from bot.modules.mediainfo import parseinfo
 from bot.helper.ext_utils.bot_utils import cmd_exec, sync_to_async, get_readable_file_size, get_readable_time
-from bot.helper.ext_utils.fs_utils import ARCH_EXT, get_mime_type
+from bot.helper.ext_utils.files_utils import ARCH_EXT, get_mime_type
 from bot.helper.ext_utils.telegraph_helper import telegraph
 
 
@@ -197,10 +197,8 @@ async def split_file(path, size, file_, dirpath, split_size, listener, start_tim
                 return False
             elif code != 0:
                 err = (await listener.suproc.stderr.read()).decode().strip()
-                try:
+                with suppress(Exception):
                     await aioremove(out_path)
-                except Exception:
-                    pass
                 if multi_streams:
                     LOGGER.warning(
                         f"{err}. Retrying without map, -map 0 not working in all situations. Path: {path}")

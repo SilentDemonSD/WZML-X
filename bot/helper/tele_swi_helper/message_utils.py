@@ -26,15 +26,14 @@ from pyrogram.types import InputMediaPhoto
 
 from bot import (
     LOGGER,
-    Interval,
+    Intervals,
     bot,
     bot_cache,
     bot_name,
     categories_dict,
     config_dict,
-    download_dict_lock,
-    status_reply_dict,
-    status_reply_dict_lock,
+    task_dict_lock,
+    status_dict,
     user,
     user_data,
 )
@@ -44,10 +43,9 @@ from bot.helper.ext_utils.bot_utils import (
     fetch_user_tds,
     get_readable_message,
     setInterval,
-    sync_to_async,
 )
 from bot.helper.ext_utils.exceptions import TgLinkException
-from bot.helper.telegram_helper.button_build import ButtonMaker
+from bot.helper.tele_swi_helper.button_build import ButtonMaker
 
 
 async def sendMessage(message, text, buttons=None, photo=None, isSwitch=False, **kwargs):
@@ -307,12 +305,12 @@ async def delete_links(message):
         await deleteMessage(message)
 
 
-async def delete_all_messages():
-    async with status_reply_dict_lock:
-        for key, data in list(status_reply_dict.items()):
+async def delete_status():
+    async with task_dict_lock:
+        for key, data in list(status_dict.items()):
             try:
-                del status_reply_dict[key]
-                await deleteMessage(data[0])
+                await deleteMessage(data["message"])
+                del status_dict[key]
             except Exception as e:
                 LOGGER.error(str(e))
 
@@ -402,54 +400,98 @@ async def get_tg_link_content(link, user_id, decrypter=None):
         )
 
 
-async def update_all_messages(force=False):
-    async with status_reply_dict_lock:
-        if (
-            not status_reply_dict
-            or not Interval
-            or (not force and time() - list(status_reply_dict.values())[0][1] < 3)
-        ):
+async def update_status_message(sid, force=False):
+    async with task_dict_lock:
+        if not status_dict.get(sid):
+            if obj := Intervals["status"].get(sid):
+                obj.cancel()
+                del Intervals["status"][sid]
             return
-        for chat_id in list(status_reply_dict.keys()):
-            status_reply_dict[chat_id][1] = time()
-    async with download_dict_lock:
-        msg, buttons = await sync_to_async(get_readable_message)
-    if msg is None:
-        return
-    async with status_reply_dict_lock:
-        for chat_id in list(status_reply_dict.keys()):
-            if status_reply_dict[chat_id] and msg != status_reply_dict[chat_id][0].text:
-                rmsg = await editMessage(
-                    status_reply_dict[chat_id][0], msg, buttons, "IMAGES"
-                )
-                if isinstance(rmsg, str) and rmsg.startswith("Telegram says: [400"):
-                    del status_reply_dict[chat_id]
-                    continue
-                status_reply_dict[chat_id][0].text = msg
-                status_reply_dict[chat_id][1] = time()
-
-
-async def sendStatusMessage(msg):
-    async with download_dict_lock:
-        progress, buttons = await sync_to_async(get_readable_message)
-    if progress is None:
-        return
-    async with status_reply_dict_lock:
-        chat_id = msg.chat.id
-        if chat_id in list(status_reply_dict.keys()):
-            message = status_reply_dict[chat_id][0]
-            await deleteMessage(message)
-            del status_reply_dict[chat_id]
-        if message := await sendMessage(msg, progress, buttons, photo="IMAGES"):
-            if hasattr(message, "caption"):
-                message.caption = progress
-            else:
-                message.text = progress
-        status_reply_dict[chat_id] = [message, time()]
-        if not Interval:
-            Interval.append(
-                setInterval(config_dict["STATUS_UPDATE_INTERVAL"], update_all_messages)
+        if not force and time() - status_dict[sid]["time"] < 3:
+            return
+        status_dict[sid]["time"] = time()
+        page_no = status_dict[sid]["page_no"]
+        status = status_dict[sid]["status"]
+        is_user = status_dict[sid]["is_user"]
+        page_step = status_dict[sid]["page_step"]
+        text, buttons = await get_readable_message(
+            sid, is_user, page_no, status, page_step
+        )
+        if text is None:
+            del status_dict[sid]
+            if obj := Intervals["status"].get(sid):
+                obj.cancel()
+                del Intervals["status"][sid]
+            return
+        if text != status_dict[sid]["message"].text:
+            message = await editMessage(
+                status_dict[sid]["message"], text, buttons, block=False
             )
+            if isinstance(message, str):
+                if message.startswith("Telegram says: [400"):
+                    del status_dict[sid]
+                    if obj := Intervals["status"].get(sid):
+                        obj.cancel()
+                        del Intervals["status"][sid]
+                else:
+                    LOGGER.error(
+                        f"Status with id: {sid} haven't been updated. Error: {message}"
+                    )
+                return
+            status_dict[sid]["message"].text = text
+            status_dict[sid]["time"] = time()
+
+
+async def sendStatusMessage(msg, user_id=0):
+    async with task_dict_lock:
+        sid = user_id or msg.chat.id
+        is_user = bool(user_id)
+        if sid in list(status_dict.keys()):
+            page_no = status_dict[sid]["page_no"]
+            status = status_dict[sid]["status"]
+            page_step = status_dict[sid]["page_step"]
+            text, buttons = await get_readable_message(
+                sid, is_user, page_no, status, page_step
+            )
+            if text is None:
+                del status_dict[sid]
+                if obj := Intervals["status"].get(sid):
+                    obj.cancel()
+                    del Intervals["status"][sid]
+                return
+            message = status_dict[sid]["message"]
+            await deleteMessage(message)
+            message = await sendMessage(msg, text, buttons, block=False)
+            if isinstance(message, str):
+                LOGGER.error(
+                    f"Status with id: {sid} haven't been sent. Error: {message}"
+                )
+                return
+            message.text = text
+            status_dict[sid].update({"message": message, "time": time()})
+        else:
+            text, buttons = await get_readable_message(sid, is_user)
+            if text is None:
+                return
+            message = await sendMessage(msg, text, buttons, block=False)
+            if isinstance(message, str):
+                LOGGER.error(
+                    f"Status with id: {sid} haven't been sent. Error: {message}"
+                )
+                return
+            message.text = text
+            status_dict[sid] = {
+                "message": message,
+                "time": time(),
+                "page_no": 1,
+                "page_step": 1,
+                "status": "All",
+                "is_user": is_user,
+            }
+    if not Intervals["status"].get(sid) and not is_user:
+        Intervals["status"][sid] = setInterval(
+            config_dict["STATUS_UPDATE_INTERVAL"], update_status_message, sid
+        )
 
 
 async def open_category_btns(message):

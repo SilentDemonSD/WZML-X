@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from bot.helper.telegram_helper.bot_commands import BotCommands
+from bot.helper.tele_swi_helper.bot_commands import BotCommands
 
 YT_HELP_MESSAGE = ["""<i>Send links/files along with cmd or reply to cmd to mirror or leech ytdl supported stes on Telegram or GDrive or DDLs with different Engines like RClone or yt-dlp</i>
 

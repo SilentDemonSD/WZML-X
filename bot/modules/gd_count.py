@@ -3,10 +3,10 @@ from pyrogram.handlers import MessageHandler
 from pyrogram.filters import command
 
 from bot import bot
-from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
-from bot.helper.telegram_helper.message_utils import deleteMessage, sendMessage
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.bot_commands import BotCommands
+from bot.helper.mirror_leech_utils.upload_utils.gdriveTools import GoogleDriveHelper
+from bot.helper.tele_swi_helper.message_utils import deleteMessage, sendMessage
+from bot.helper.tele_swi_helper.filters import CustomFilters
+from bot.helper.tele_swi_helper.bot_commands import BotCommands
 from bot.helper.ext_utils.bot_utils import is_gdrive_link, sync_to_async, new_task, get_readable_file_size
 from bot.helper.themes import BotTheme
 

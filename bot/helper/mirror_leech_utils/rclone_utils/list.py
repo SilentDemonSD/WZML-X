@@ -18,9 +18,9 @@ from bot.helper.ext_utils.bot_utils import (
     new_task,
     new_thread,
 )
-from bot.helper.ext_utils.db_handler import DbManger
-from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.telegram_helper.message_utils import (
+from bot.helper.ext_utils.db_handler import DbManager
+from bot.helper.tele_swi_helper.button_build import ButtonMaker
+from bot.helper.tele_swi_helper.message_utils import (
     deleteMessage,
     editMessage,
     sendMessage,
@@ -96,7 +96,7 @@ async def path_updates(_, query, obj):
             config_dict["RCLONE_PATH"] = path
             await obj.get_path_buttons()
             if config_dict["DATABASE_URL"]:
-                await DbManger().update_config({"RCLONE_PATH": path})
+                await DbManager().update_config({"RCLONE_PATH": path})
     elif data[1] == "owner":
         obj.config_path = "rclone.conf"
         obj.path = ""

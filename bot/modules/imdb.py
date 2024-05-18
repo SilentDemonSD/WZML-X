@@ -11,10 +11,10 @@ from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from bot import bot, config_dict
 from bot.helper.ext_utils.bot_utils import get_readable_time
-from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import editMessage, sendMessage
+from bot.helper.tele_swi_helper.bot_commands import BotCommands
+from bot.helper.tele_swi_helper.button_build import ButtonMaker
+from bot.helper.tele_swi_helper.filters import CustomFilters
+from bot.helper.tele_swi_helper.message_utils import editMessage, sendMessage
 
 imdb = Cinemagoer()
 

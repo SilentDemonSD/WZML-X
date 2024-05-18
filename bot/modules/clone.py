@@ -7,21 +7,21 @@ from aiofiles.os import path as aiopath
 from cloudscraper import create_scraper as cget
 from json import loads, dumps as jdumps
 
-from bot import LOGGER, download_dict, download_dict_lock, categories_dict, config_dict, bot
+from bot import LOGGER, task_dict, task_dict_lock, categories_dict, config_dict, bot
 from bot.helper.ext_utils.task_manager import limit_checker, task_utils
-from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
-from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage, sendStatusMessage, delete_links, auto_delete_message, open_category_btns
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.mirror_utils.status_utils.gdrive_status import GdriveStatus
+from bot.helper.mirror_leech_utils.upload_utils.gdriveTools import GoogleDriveHelper
+from bot.helper.tele_swi_helper.message_utils import sendMessage, editMessage, deleteMessage, sendStatusMessage, delete_links, auto_delete_message, open_category_btns
+from bot.helper.tele_swi_helper.filters import CustomFilters
+from bot.helper.tele_swi_helper.bot_commands import BotCommands
+from bot.helper.tele_swi_helper.button_build import ButtonMaker
+from bot.helper.mirror_leech_utils.status_utils.gdrive_status import GdriveStatus
 from bot.helper.ext_utils.bot_utils import is_gdrive_link, new_task, get_readable_file_size, sync_to_async, fetch_user_tds, is_share_link, new_task, is_rclone_path, cmd_exec, get_telegraph_list, arg_parser
 from bot.helper.ext_utils.exceptions import DirectDownloadLinkException
-from bot.helper.mirror_utils.download_utils.direct_link_generator import direct_link_generator
-from bot.helper.mirror_utils.rclone_utils.list import RcloneList
-from bot.helper.mirror_utils.rclone_utils.transfer import RcloneTransferHelper
+from bot.helper.mirror_leech_utils.download_utils.direct_link_generator import direct_link_generator
+from bot.helper.mirror_leech_utils.rclone_utils.list import RcloneList
+from bot.helper.mirror_leech_utils.rclone_utils.transfer import RcloneTransferHelper
 from bot.helper.ext_utils.help_messages import CLONE_HELP_MESSAGE
-from bot.helper.mirror_utils.status_utils.rclone_status import RcloneStatus
+from bot.helper.mirror_leech_utils.status_utils.rclone_status import RcloneStatus
 from bot.helper.listeners.tasks_listener import MirrorLeechListener
 from bot.helper.themes import BotTheme
 
@@ -88,8 +88,8 @@ async def rcloneNode(client, message, link, dst_path, rcf, tag):
     RCTransfer = RcloneTransferHelper(listener, name)
     LOGGER.info(f'Clone Started: Name: {name} - Source: {link} - Destination: {dst_path}')
     gid = token_hex(5)
-    async with download_dict_lock:
-        download_dict[message.id] = RcloneStatus(
+    async with task_dict_lock:
+        task_dict[message.id] = RcloneStatus(
             RCTransfer, message, gid, 'cl', listener.upload_details)
     await sendStatusMessage(message)
     link, destination = await RCTransfer.clone(config_path, remote, src_path, dst_path, rcf, mime_type)
@@ -162,8 +162,8 @@ async def gdcloneNode(message, link, listen_up):
             await deleteMessage(msg)
         else:
             gid = token_hex(5)
-            async with download_dict_lock:
-                download_dict[message.id] = GdriveStatus(
+            async with task_dict_lock:
+                task_dict[message.id] = GdriveStatus(
                     drive, size, message, gid, 'cl', listener.upload_details)
             await sendStatusMessage(message)
             link, size, mime_type, files, folders = await sync_to_async(drive.clone, link, listener.drive_id)

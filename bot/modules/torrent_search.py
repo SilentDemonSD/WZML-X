@@ -6,12 +6,12 @@ from html import escape
 from urllib.parse import quote
 
 from bot import bot, LOGGER, config_dict, get_qb_client
-from bot.helper.telegram_helper.message_utils import editMessage, sendMessage
+from bot.helper.tele_swi_helper.message_utils import editMessage, sendMessage
 from bot.helper.ext_utils.telegraph_helper import telegraph
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.bot_commands import BotCommands
+from bot.helper.tele_swi_helper.filters import CustomFilters
+from bot.helper.tele_swi_helper.bot_commands import BotCommands
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, sync_to_async, new_task, checking_access
-from bot.helper.telegram_helper.button_build import ButtonMaker
+from bot.helper.tele_swi_helper.button_build import ButtonMaker
 
 PLUGINS = []
 SITES = None

@@ -4,11 +4,11 @@ from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.filters import regex
 from aiofiles.os import remove as aioremove, path as aiopath
 
-from bot import bot, bot_name, aria2, download_dict, download_dict_lock, OWNER_ID, user_data, LOGGER
-from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import sendMessage, sendStatusMessage, deleteMessage
-from bot.helper.ext_utils.bot_utils import getDownloadByGid, MirrorStatus, bt_selection_buttons, sync_to_async
+from bot import bot, bot_name, aria2, task_dict, task_dict_lock, OWNER_ID, user_data, LOGGER
+from bot.helper.tele_swi_helper.bot_commands import BotCommands
+from bot.helper.tele_swi_helper.filters import CustomFilters
+from bot.helper.tele_swi_helper.message_utils import sendMessage, sendStatusMessage, deleteMessage
+from bot.helper.ext_utils.bot_utils import getTaskByGid, MirrorStatus, bt_selection_buttons, sync_to_async
 
 
 async def select(client, message):
@@ -19,13 +19,13 @@ async def select(client, message):
         if len(cmd_data) > 1 and cmd_data[1].strip() != bot_name:
             return
         gid = cmd_data[0]
-        dl = await getDownloadByGid(gid)
+        dl = await getTaskByGid(gid)
         if dl is None:
             await sendMessage(message, f"GID: <code>{gid}</code> Not Found.")
             return
     elif reply_to_id := message.reply_to_message_id:
-        async with download_dict_lock:
-            dl = download_dict.get(reply_to_id, None)
+        async with task_dict_lock:
+            dl = task_dict.get(reply_to_id, None)
         if dl is None:
             await sendMessage(message, "This is not an active task!")
             return
@@ -76,7 +76,7 @@ async def get_confirm(client, query):
     user_id = query.from_user.id
     data = query.data.split()
     message = query.message
-    dl = await getDownloadByGid(data[2])
+    dl = await getTaskByGid(data[2])
     if dl is None:
         await query.answer("This task has been cancelled!", show_alert=True)
         await deleteMessage(message)

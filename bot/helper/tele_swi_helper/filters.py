@@ -5,7 +5,7 @@ from pyrogram.filters import create
 from swibots import filters as swi_filters
 
 from bot import OWNER_ID, SWI_OWNER_ID, user_data, LOGGER
-from bot.helper.telegram_helper.message_utils import chat_info
+from bot.helper.tele_swi_helper.message_utils import chat_info
 
 
 class CustomFilters:

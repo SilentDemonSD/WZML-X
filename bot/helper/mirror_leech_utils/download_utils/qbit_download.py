@@ -2,9 +2,9 @@
 from time import time
 from aiofiles.os import remove as aioremove, path as aiopath
 
-from bot import download_dict, download_dict_lock, get_qb_client, LOGGER, config_dict, non_queued_dl, queue_dict_lock
-from bot.helper.mirror_utils.status_utils.qbit_status import QbittorrentStatus
-from bot.helper.telegram_helper.message_utils import sendMessage, deleteMessage, sendStatusMessage
+from bot import task_dict, task_dict_lock, get_qb_client, LOGGER, config_dict, non_queued_dl, queue_dict_lock
+from bot.helper.mirror_leech_utils.status_utils.qbit_status import QbittorrentStatus
+from bot.helper.tele_swi_helper.message_utils import sendMessage, deleteMessage, sendStatusMessage
 from bot.helper.ext_utils.bot_utils import bt_selection_buttons, sync_to_async
 from bot.helper.listeners.qbit_listener import onDownloadStart
 from bot.helper.ext_utils.task_manager import is_queued
@@ -59,8 +59,8 @@ async def add_qb_torrent(link, path, listener, ratio, seed_time):
             await sendMessage(listener.message, "This Torrent already added or unsupported/invalid link/file.")
             return
 
-        async with download_dict_lock:
-            download_dict[listener.uid] = QbittorrentStatus(
+        async with task_dict_lock:
+            task_dict[listener.uid] = QbittorrentStatus(
                 listener, queued=added_to_queue)
         await onDownloadStart(f'{listener.uid}')
 
@@ -89,7 +89,7 @@ async def add_qb_torrent(link, path, listener, ratio, seed_time):
                         if tor_info.state not in ["metaDL", "checkingResumeData", "pausedDL"]:
                             await deleteMessage(meta)
                             break
-                    except:
+                    except Exception:
                         await deleteMessage(meta)
                         return
 
@@ -105,10 +105,10 @@ async def add_qb_torrent(link, path, listener, ratio, seed_time):
         if added_to_queue:
             await event.wait()
 
-            async with download_dict_lock:
-                if listener.uid not in download_dict:
+            async with task_dict_lock:
+                if listener.uid not in task_dict:
                     return
-                download_dict[listener.uid].queued = False
+                task_dict[listener.uid].queued = False
 
             await sync_to_async(client.torrents_resume, torrent_hashes=ext_hash)
             LOGGER.info(

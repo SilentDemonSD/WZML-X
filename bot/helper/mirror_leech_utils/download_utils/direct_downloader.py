@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 from secrets import token_hex
 
-from bot import (LOGGER, aria2_options, aria2c_global, download_dict,
-                 download_dict_lock, non_queued_dl, queue_dict_lock)
+from bot import (LOGGER, aria2_options, aria2c_global, task_dict,
+                 task_dict_lock, non_queued_dl, queue_dict_lock)
 from bot.helper.ext_utils.bot_utils import sync_to_async
 from bot.helper.ext_utils.task_manager import is_queued, stop_duplicate_check
 from bot.helper.listeners.direct_listener import DirectListener
-from bot.helper.mirror_utils.status_utils.direct_status import DirectStatus
-from bot.helper.mirror_utils.status_utils.queue_status import QueueStatus
-from bot.helper.telegram_helper.message_utils import (sendMessage,
+from bot.helper.mirror_leech_utils.status_utils.direct_status import DirectStatus
+from bot.helper.mirror_leech_utils.status_utils.queue_status import QueueStatus
+from bot.helper.tele_swi_helper.message_utils import (sendMessage,
                                                       sendStatusMessage)
 
 
@@ -30,14 +30,14 @@ async def add_direct_download(details, path, listener, foldername):
     added_to_queue, event = await is_queued(listener.uid)
     if added_to_queue:
         LOGGER.info(f"Added to Queue/Download: {foldername}")
-        async with download_dict_lock:
-            download_dict[listener.uid] = QueueStatus(
+        async with task_dict_lock:
+            task_dict[listener.uid] = QueueStatus(
                 foldername, size, gid, listener, 'dl')
         await listener.onDownloadStart()
         await sendStatusMessage(listener.message)
         await event.wait()
-        async with download_dict_lock:
-            if listener.uid not in download_dict:
+        async with task_dict_lock:
+            if listener.uid not in task_dict:
                 return
         from_queue = True
     else:
@@ -50,8 +50,8 @@ async def add_direct_download(details, path, listener, foldername):
     a2c_opt['follow-torrent'] = 'false'
     a2c_opt['follow-metalink'] = 'false'
     directListener = DirectListener(foldername, size, path, listener, a2c_opt)
-    async with download_dict_lock:
-        download_dict[listener.uid] = DirectStatus(directListener, gid, listener, listener.upload_details)
+    async with task_dict_lock:
+        task_dict[listener.uid] = DirectStatus(directListener, gid, listener, listener.upload_details)
 
     async with queue_dict_lock:
         non_queued_dl.add(listener.uid)

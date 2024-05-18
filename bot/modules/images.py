@@ -7,12 +7,12 @@ from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.filters import command, regex
 
 from bot import bot, LOGGER, config_dict, DATABASE_URL
-from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage
+from bot.helper.tele_swi_helper.message_utils import sendMessage, editMessage, deleteMessage
 from bot.helper.ext_utils.bot_utils import handleIndex, new_task
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.ext_utils.db_handler import DbManger
-from bot.helper.telegram_helper.button_build import ButtonMaker
+from bot.helper.tele_swi_helper.filters import CustomFilters
+from bot.helper.tele_swi_helper.bot_commands import BotCommands
+from bot.helper.ext_utils.db_handler import DbManager
+from bot.helper.tele_swi_helper.button_build import ButtonMaker
 
 @new_task
 async def picture_add(_, message):
@@ -46,7 +46,7 @@ async def picture_add(_, message):
         return await editMessage(editable, help_msg)
     config_dict['IMAGES'].append(pic_add)
     if DATABASE_URL:
-        await DbManger().update_config({'IMAGES': config_dict['IMAGES']})
+        await DbManager().update_config({'IMAGES': config_dict['IMAGES']})
     await asleep(1.5)
     await editMessage(editable, f"<b><i>Successfully Added to Images List!</i></b>\n\n<b>• Total Images : {len(config_dict['IMAGES'])}</b>")
 
@@ -90,7 +90,7 @@ async def pics_callback(_, query):
     elif data[2] == "remov":
         config_dict['IMAGES'].pop(int(data[3]))
         if DATABASE_URL:
-            await DbManger().update_config({'IMAGES': config_dict['IMAGES']})
+            await DbManager().update_config({'IMAGES': config_dict['IMAGES']})
         query.answer("Image Successfully Deleted", show_alert=True)
         if len(config_dict['IMAGES']) == 0:
             await deleteMessage(query.message)
@@ -109,7 +109,7 @@ async def pics_callback(_, query):
     elif data[2] == 'removall':
         config_dict['IMAGES'].clear()
         if DATABASE_URL:
-            await DbManger().update_config({'IMAGES': config_dict['IMAGES']})
+            await DbManager().update_config({'IMAGES': config_dict['IMAGES']})
         await query.answer("All Images Successfully Deleted", show_alert=True)
         await sendMessage(message, f"<b>No Images to Show !</b> Add by /{BotCommands.AddImageCommand}")
         await deleteMessage(message)

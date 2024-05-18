@@ -3,14 +3,14 @@ from pyrogram.filters import command, regex
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
 from time import time
 
-from bot import bot, bot_cache, categories_dict, download_dict, download_dict_lock
-from bot.helper.ext_utils.bot_utils import MirrorStatus, arg_parser, fetch_user_tds, fetch_user_dumps, getDownloadByGid, is_gdrive_link, new_task, sync_to_async, get_readable_time
+from bot import bot, bot_cache, categories_dict, task_dict, task_dict_lock
+from bot.helper.ext_utils.bot_utils import MirrorStatus, arg_parser, fetch_user_tds, fetch_user_dumps, getTaskByGid, is_gdrive_link, new_task, sync_to_async, get_readable_time
 from bot.helper.ext_utils.help_messages import CATEGORY_HELP_MESSAGE
-from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
-from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import editMessage, sendMessage, open_category_btns
+from bot.helper.mirror_leech_utils.upload_utils.gdriveTools import GoogleDriveHelper
+from bot.helper.tele_swi_helper.bot_commands import BotCommands
+from bot.helper.tele_swi_helper.button_build import ButtonMaker
+from bot.helper.tele_swi_helper.filters import CustomFilters
+from bot.helper.tele_swi_helper.message_utils import editMessage, sendMessage, open_category_btns
 
 
 async def change_category(client, message):
@@ -35,13 +35,13 @@ async def change_category(client, message):
 
     dl = None
     if gid := args['link']:
-        dl = await getDownloadByGid(gid)
+        dl = await getTaskByGid(gid)
         if not dl:
             await sendMessage(message, f"GID: <code>{gid}</code> Not Found.")
             return
     if reply_to := message.reply_to_message:
-        async with download_dict_lock:
-            dl = download_dict.get(reply_to.id, None)
+        async with task_dict_lock:
+            dl = task_dict.get(reply_to.id, None)
         if not dl:
             await sendMessage(message, "This is not an active task!")
             return

@@ -15,14 +15,14 @@ from asyncio import sleep
 from cryptography.fernet import Fernet
 
 from bot import OWNER_ID, LOGGER, bot, user_data, config_dict, categories_dict, DATABASE_URL, IS_PREMIUM_USER, MAX_SPLIT_SIZE
-from bot.helper.telegram_helper.message_utils import sendMessage, sendCustomMsg, editMessage, deleteMessage, sendFile, chat_info, user_info
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper.button_build import ButtonMaker
-from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
-from bot.helper.ext_utils.db_handler import DbManger
+from bot.helper.tele_swi_helper.message_utils import sendMessage, sendCustomMsg, editMessage, deleteMessage, sendFile, chat_info, user_info
+from bot.helper.tele_swi_helper.filters import CustomFilters
+from bot.helper.tele_swi_helper.bot_commands import BotCommands
+from bot.helper.tele_swi_helper.button_build import ButtonMaker
+from bot.helper.mirror_leech_utils.upload_utils.gdriveTools import GoogleDriveHelper
+from bot.helper.ext_utils.db_handler import DbManager
 from bot.helper.ext_utils.bot_utils import getdailytasks, update_user_ldata, get_readable_file_size, sync_to_async, new_thread, is_gdrive_link
-from bot.helper.mirror_utils.upload_utils.ddlserver.gofile import Gofile
+from bot.helper.mirror_leech_utils.upload_utils.ddlserver.gofile import Gofile
 from bot.helper.themes import BotTheme
 
 handler_dict = {}
@@ -365,7 +365,7 @@ async def set_custom(client, message, pre_event, key, direct=False):
     await deleteMessage(message)
     await update_user_settings(pre_event, key, return_key, msg=message, sdirect=direct)
     if DATABASE_URL:
-        await DbManger().update_user_data(user_id)
+        await DbManager().update_user_data(user_id)
 
 
 async def set_thumb(client, message, pre_event, key, direct=False):
@@ -382,7 +382,7 @@ async def set_thumb(client, message, pre_event, key, direct=False):
     await deleteMessage(message)
     await update_user_settings(pre_event, key, 'leech', msg=message, sdirect=direct)
     if DATABASE_URL:
-        await DbManger().update_user_doc(user_id, 'thumb', des_dir)
+        await DbManager().update_user_doc(user_id, 'thumb', des_dir)
 
 
 async def add_rclone(client, message, pre_event):
@@ -397,7 +397,7 @@ async def add_rclone(client, message, pre_event):
     await deleteMessage(message)
     await update_user_settings(pre_event, 'rcc', 'mirror')
     if DATABASE_URL:
-        await DbManger().update_user_doc(user_id, 'rclone', des_dir)
+        await DbManager().update_user_doc(user_id, 'rclone', des_dir)
 
 
 async def leech_split_size(client, message, pre_event):
@@ -413,7 +413,7 @@ async def leech_split_size(client, message, pre_event):
     await deleteMessage(message)
     await update_user_settings(pre_event, 'split_size', 'leech')
     if DATABASE_URL:
-        await DbManger().update_user_data(user_id)
+        await DbManager().update_user_data(user_id)
 
 
 async def event_handler(client, query, pfunc, rfunc, photo=False, document=False):
@@ -460,7 +460,7 @@ async def edit_user_settings(client, query):
         await query.answer()
         await update_user_settings(query, 'leech')
         if DATABASE_URL:
-            await DbManger().update_user_data(user_id)
+            await DbManager().update_user_data(user_id)
     elif data[2] == 'vthumb':
         handler_dict[user_id] = False
         await query.answer()
@@ -490,7 +490,7 @@ async def edit_user_settings(client, query):
             update_user_ldata(user_id, 'thumb', '')
             await update_user_settings(query, 'thumb', 'leech')
             if DATABASE_URL:
-                await DbManger().update_user_doc(user_id, 'thumb')
+                await DbManager().update_user_doc(user_id, 'thumb')
         else:
             await query.answer("Old Settings", show_alert=True)
             await update_user_settings(query, 'leech')
@@ -516,7 +516,7 @@ async def edit_user_settings(client, query):
         update_user_ldata(user_id, data[2][1:], '')
         await update_user_settings(query, data[2][1:], 'universal')
         if DATABASE_URL:
-            await DbManger().update_user_data(user_id)
+            await DbManager().update_user_data(user_id)
     elif data[2] in ['bot_pm', 'mediainfo', 'save_mode', 'td_mode']:
         handler_dict[user_id] = False
         if data[2] == 'save_mode' and not user_dict.get(data[2], False) and not user_dict.get('ldump'):
@@ -533,7 +533,7 @@ async def edit_user_settings(client, query):
         else:
             await update_user_settings(query, 'universal')
         if DATABASE_URL:
-            await DbManger().update_user_data(user_id)
+            await DbManager().update_user_data(user_id)
     elif data[2] == 'split_size':
         await query.answer()
         edit_mode = len(data) == 4
@@ -548,21 +548,21 @@ async def edit_user_settings(client, query):
         update_user_ldata(user_id, 'split_size', '')
         await update_user_settings(query, 'split_size', 'leech')
         if DATABASE_URL:
-            await DbManger().update_user_data(user_id)
+            await DbManager().update_user_data(user_id)
     elif data[2] == 'esplits':
         handler_dict[user_id] = False
         await query.answer()
         update_user_ldata(user_id, 'equal_splits', not user_dict.get('equal_splits', False))
         await update_user_settings(query, 'leech')
         if DATABASE_URL:
-            await DbManger().update_user_data(user_id)
+            await DbManager().update_user_data(user_id)
     elif data[2] == 'mgroup':
         handler_dict[user_id] = False
         await query.answer()
         update_user_ldata(user_id, 'media_group', not user_dict.get('media_group', False))
         await update_user_settings(query, 'leech')
         if DATABASE_URL:
-            await DbManger().update_user_data(user_id)
+            await DbManager().update_user_data(user_id)
     elif data[2] in ['sgofile', 'sstreamtape', 'dgofile', 'dstreamtape']:
         handler_dict[user_id] = False
         ddl_dict = user_dict.get('ddl_servers', {})
@@ -578,7 +578,7 @@ async def edit_user_settings(client, query):
         update_user_ldata(user_id, 'ddl_servers', ddl_dict)
         await update_user_settings(query, key, 'ddl_servers')
         if DATABASE_URL:
-            await DbManger().update_user_data(user_id)
+            await DbManager().update_user_data(user_id)
     elif data[2] == 'rcc':
         await query.answer()
         edit_mode = len(data) == 4
@@ -595,7 +595,7 @@ async def edit_user_settings(client, query):
             update_user_ldata(user_id, 'rclone', '')
             await update_user_settings(query, 'rcc', 'mirror')
             if DATABASE_URL:
-                await DbManger().update_user_doc(user_id, 'rclone')
+                await DbManager().update_user_doc(user_id, 'rclone')
         else:
             await query.answer("Old Settings", show_alert=True)
             await update_user_settings(query)
@@ -624,7 +624,7 @@ async def edit_user_settings(client, query):
         update_user_ldata(user_id, data[2][1:], {} if data[2] == 'dldump' else '')
         await update_user_settings(query, data[2][1:], 'leech')
         if DATABASE_URL:
-            await DbManger().update_user_data(user_id)
+            await DbManager().update_user_data(user_id)
     elif data[2] in ['dmprefix', 'dmsuffix', 'dmremname', 'duser_tds']:
         handler_dict[user_id] = False
         await query.answer()
@@ -633,7 +633,7 @@ async def edit_user_settings(client, query):
             update_user_ldata(user_id, 'td_mode', False)
         await update_user_settings(query, data[2][1:], 'mirror')
         if DATABASE_URL:
-            await DbManger().update_user_data(user_id)
+            await DbManager().update_user_data(user_id)
     elif data[2] == 'back':
         handler_dict[user_id] = False
         await query.answer()
@@ -659,9 +659,9 @@ async def edit_user_settings(client, query):
         update_user_ldata(user_id, None, None)
         await update_user_settings(query)
         if DATABASE_URL:
-            await DbManger().update_user_data(user_id)
-            await DbManger().update_user_doc(user_id, 'thumb')
-            await DbManger().update_user_doc(user_id, 'rclone')
+            await DbManager().update_user_data(user_id)
+            await DbManager().update_user_doc(user_id, 'thumb')
+            await DbManager().update_user_doc(user_id, 'rclone')
     elif data[2] == 'user_del':
         user_id = int(data[3])
         await query.answer()
@@ -673,9 +673,9 @@ async def edit_user_settings(client, query):
             await aioremove(rclone_path)
         update_user_ldata(user_id, None, None)
         if DATABASE_URL:
-            await DbManger().update_user_data(user_id)
-            await DbManger().update_user_doc(user_id, 'thumb')
-            await DbManger().update_user_doc(user_id, 'rclone')
+            await DbManager().update_user_data(user_id)
+            await DbManager().update_user_doc(user_id, 'thumb')
+            await DbManager().update_user_doc(user_id, 'rclone')
         await editMessage(message, f'Data Reset for {user_id}')
     else:
         handler_dict[user_id] = False

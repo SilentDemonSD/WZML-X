@@ -11,9 +11,9 @@ from re import match
 from contextlib import redirect_stdout, suppress
 
 from bot import LOGGER, bot, user, app
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper.message_utils import sendFile, sendMessage
+from bot.helper.tele_swi_helper.filters import CustomFilters
+from bot.helper.tele_swi_helper.bot_commands import BotCommands
+from bot.helper.tele_swi_helper.message_utils import sendFile, sendMessage
 from bot.helper.ext_utils.bot_utils import new_task
 
 namespaces = {}

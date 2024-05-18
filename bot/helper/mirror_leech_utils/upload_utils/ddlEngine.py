@@ -16,9 +16,9 @@ from tenacity import (
 )
 
 from bot import LOGGER, user_data
-from bot.helper.ext_utils.fs_utils import get_mime_type
-from bot.helper.mirror_utils.upload_utils.ddlserver.gofile import Gofile
-from bot.helper.mirror_utils.upload_utils.ddlserver.streamtape import Streamtape
+from bot.helper.ext_utils.files_utils import get_mime_type
+from bot.helper.mirror_leech_utils.upload_utils.ddlserver.gofile import Gofile
+from bot.helper.mirror_leech_utils.upload_utils.ddlserver.streamtape import Streamtape
 
 
 class ProgressFileReader(BufferedReader):
@@ -94,10 +94,10 @@ class DDLUploader:
                     self.__engine = "StreamTape API"
                     try:
                         login, key = api_key.split(":")
-                    except IndexError:
+                    except IndexError as e:
                         raise Exception(
                             "StreamTape Login & Key not Found, Kindly Recheck !"
-                        )
+                        ) from e
                     nlink = await Streamtape(self, login, key).upload(file_path)
                     all_links["StreamTape"] = nlink
                 self.__processed_bytes = 0

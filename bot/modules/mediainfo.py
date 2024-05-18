@@ -15,9 +15,9 @@ from pyrogram.handlers import MessageHandler
 from bot import LOGGER, bot
 from bot.helper.ext_utils.bot_utils import cmd_exec
 from bot.helper.ext_utils.telegraph_helper import telegraph
-from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import editMessage, sendMessage
+from bot.helper.tele_swi_helper.bot_commands import BotCommands
+from bot.helper.tele_swi_helper.filters import CustomFilters
+from bot.helper.tele_swi_helper.message_utils import editMessage, sendMessage
 
 
 async def gen_mediainfo(message, link=None, media=None, mmsg=None):

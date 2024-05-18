@@ -10,14 +10,14 @@ from time import time
 
 from bot import DOWNLOAD_DIR, bot, categories_dict, config_dict, user_data, LOGGER
 from bot.helper.ext_utils.task_manager import task_utils
-from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage, auto_delete_message, delete_links, open_category_btns, open_dump_btns
-from bot.helper.telegram_helper.button_build import ButtonMaker
+from bot.helper.tele_swi_helper.message_utils import sendMessage, editMessage, deleteMessage, auto_delete_message, delete_links, open_category_btns, open_dump_btns
+from bot.helper.tele_swi_helper.button_build import ButtonMaker
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, fetch_user_tds, fetch_user_dumps, is_url, is_gdrive_link, new_task, sync_to_async, new_task, is_rclone_path, new_thread, get_readable_time, arg_parser
-from bot.helper.mirror_utils.download_utils.yt_dlp_download import YoutubeDLHelper
-from bot.helper.mirror_utils.rclone_utils.list import RcloneList
-from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
-from bot.helper.telegram_helper.filters import CustomFilters
+from bot.helper.mirror_leech_utils.download_utils.yt_dlp_download import YoutubeDLHelper
+from bot.helper.mirror_leech_utils.rclone_utils.list import RcloneList
+from bot.helper.tele_swi_helper.bot_commands import BotCommands
+from bot.helper.mirror_leech_utils.upload_utils.gdriveTools import GoogleDriveHelper
+from bot.helper.tele_swi_helper.filters import CustomFilters
 from bot.helper.listeners.tasks_listener import MirrorLeechListener
 from bot.helper.ext_utils.help_messages import YT_HELP_MESSAGE
 from bot.helper.ext_utils.bulk_links import extract_bulk_links

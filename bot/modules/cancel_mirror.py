@@ -3,12 +3,12 @@ from asyncio import sleep
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 from pyrogram.filters import command, regex
 
-from bot import download_dict, bot, bot_name, download_dict_lock, OWNER_ID, user_data
-from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.message_utils import sendMessage, deleteMessage, auto_delete_message
-from bot.helper.ext_utils.bot_utils import getDownloadByGid, getAllDownload, MirrorStatus, new_task
-from bot.helper.telegram_helper import button_build
+from bot import task_dict, bot, bot_name, task_dict_lock, OWNER_ID, user_data
+from bot.helper.tele_swi_helper.bot_commands import BotCommands
+from bot.helper.tele_swi_helper.filters import CustomFilters
+from bot.helper.tele_swi_helper.message_utils import sendMessage, deleteMessage, auto_delete_message
+from bot.helper.ext_utils.bot_utils import getTaskByGid, getAllDownload, MirrorStatus, new_task
+from bot.helper.tele_swi_helper import button_build
 
 
 async def cancel_mirror(_, message):
@@ -19,13 +19,13 @@ async def cancel_mirror(_, message):
         if len(cmd_data) > 1 and cmd_data[1].strip() != bot_name:
             return
         gid = cmd_data[0]
-        dl = await getDownloadByGid(gid)
+        dl = await getTaskByGid(gid)
         if dl is None:
             await sendMessage(message, f"GID: <code>{gid}</code> Not Found.")
             return
     elif reply_to_id := message.reply_to_message_id:
-        async with download_dict_lock:
-            dl = download_dict.get(reply_to_id, None)
+        async with task_dict_lock:
+            dl = task_dict.get(reply_to_id, None)
         if dl is None:
             await sendMessage(message, "This is not an active task!")
             return
@@ -54,8 +54,8 @@ async def cancel_all(status):
 
 
 async def cancell_all_buttons(_, message):
-    async with download_dict_lock:
-        count = len(download_dict)
+    async with task_dict_lock:
+        count = len(task_dict)
     if count == 0:
         await sendMessage(message, "No active tasks!")
         return

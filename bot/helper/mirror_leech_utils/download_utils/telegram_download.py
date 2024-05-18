@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
+import contextlib
 from logging import getLogger, ERROR
 from time import time
 from asyncio import Lock
 from pyrogram import Client
 
-from bot import LOGGER, download_dict, download_dict_lock, non_queued_dl, queue_dict_lock, bot, user, IS_PREMIUM_USER
-from bot.helper.mirror_utils.status_utils.telegram_status import TelegramStatus
-from bot.helper.mirror_utils.status_utils.queue_status import QueueStatus
-from bot.helper.telegram_helper.message_utils import sendStatusMessage, sendMessage, delete_links
+from bot import LOGGER, task_dict, task_dict_lock, non_queued_dl, queue_dict_lock, bot, user
+from bot.helper.mirror_leech_utils.status_utils.telegram_status import TelegramStatus
+from bot.helper.mirror_leech_utils.status_utils.queue_status import QueueStatus
+from bot.helper.tele_swi_helper.message_utils import sendStatusMessage, sendMessage, delete_links
 from bot.helper.ext_utils.task_manager import is_queued, limit_checker, stop_duplicate_check
 
 global_lock = Lock()
@@ -40,8 +41,8 @@ class TelegramDownloadHelper:
             GLOBAL_GID.add(file_id)
         self.name = name
         self.__id = file_id
-        async with download_dict_lock:
-            download_dict[self.__listener.uid] = TelegramStatus(
+        async with task_dict_lock:
+            task_dict[self.__listener.uid] = TelegramStatus(
                 self, size, self.__listener.message, file_id[:12], 'dl', self.__listener.upload_details)
         async with queue_dict_lock:
             non_queued_dl.add(self.__listener.uid)
@@ -59,10 +60,8 @@ class TelegramDownloadHelper:
 
     async def __onDownloadError(self, error):
         async with global_lock:
-            try:
+            with contextlib.suppress(Exception):
                 GLOBAL_GID.remove(self.__id)
-            except Exception:
-                pass
         await self.__listener.onDownloadError(error)
 
     async def __onDownloadComplete(self):
@@ -132,13 +131,13 @@ class TelegramDownloadHelper:
                 added_to_queue, event = await is_queued(self.__listener.uid)
                 if added_to_queue:
                     LOGGER.info(f"Added to Queue/Download: {name}")
-                    async with download_dict_lock:
-                        download_dict[self.__listener.uid] = QueueStatus(name, size, gid, self.__listener, 'dl')
+                    async with task_dict_lock:
+                        task_dict[self.__listener.uid] = QueueStatus(name, size, gid, self.__listener, 'dl')
                     await self.__listener.onDownloadStart()
                     await sendStatusMessage(self.__listener.message)
                     await event.wait()
-                    async with download_dict_lock:
-                        if self.__listener.uid not in download_dict:
+                    async with task_dict_lock:
+                        if self.__listener.uid not in task_dict:
                             return
                     from_queue = True
                 else:
