@@ -1,71 +1,75 @@
-from aiofiles.os import path as aiopath, remove, makedirs
-from asyncio import sleep, create_subprocess_exec, gather
+import contextlib
+from asyncio import create_subprocess_exec, gather, sleep
 from asyncio.subprocess import PIPE
-from os import walk, path as ospath
+from os import path as ospath
+from os import walk
+from re import I, sub
 from secrets import token_urlsafe
-from aioshutil import move, copy2
+from urllib.parse import unquote
+
+from aiofiles.os import makedirs, remove
+from aiofiles.os import path as aiopath
+from aioshutil import copy2, move
 from pyrogram.enums import ChatAction
-from re import sub, I
 
 from bot import (
     DOWNLOAD_DIR,
+    GLOBAL_EXTENSION_FILTER,
+    IS_PREMIUM_USER,
+    LOGGER,
     MAX_SPLIT_SIZE,
     config_dict,
-    user_data,
-    IS_PREMIUM_USER,
-    user,
-    multi_tags,
-    LOGGER,
-    task_dict_lock,
-    task_dict,
-    GLOBAL_EXTENSION_FILTER,
     cpu_eater_lock,
+    multi_tags,
     subprocess_lock,
+    task_dict,
+    task_dict_lock,
+    user,
+    user_data,
 )
-from bot.helper.ext_utils.bot_utils import new_task, sync_to_async, getSizeBytes
+from bot.helper.ext_utils.bot_utils import getSizeBytes, new_task, sync_to_async
 from bot.helper.ext_utils.bulk_links import extractBulkLinks
 from bot.helper.ext_utils.exceptions import NotSupportedExtractionArchive
 from bot.helper.ext_utils.files_utils import (
+    clean_target,
     get_base_name,
-    is_first_archive_split,
+    get_path_size,
     is_archive,
     is_archive_split,
-    get_path_size,
-    clean_target,
+    is_first_archive_split,
 )
 from bot.helper.ext_utils.links_utils import (
     is_gdrive_id,
-    is_rclone_path,
     is_gdrive_link,
+    is_rclone_path,
     is_telegram_link,
 )
 from bot.helper.ext_utils.media_utils import (
-    createThumb,
-    createSampleVideo,
-    take_ss,
-)
-from bot.helper.ext_utils.media_utils import (
-    split_file,
-    get_document_type,
-    convert_video,
     convert_audio,
+    convert_video,
+    createSampleVideo,
+    createThumb,
+    get_document_type,
+    split_file,
+    take_ss,
 )
 from bot.helper.mirror_leech_utils.gdrive_utils.list import gdriveList
 from bot.helper.mirror_leech_utils.rclone_utils.list import RcloneList
 from bot.helper.mirror_leech_utils.status_utils.extract_status import ExtractStatus
-from bot.helper.mirror_leech_utils.status_utils.sample_video_status import (
-    SampleVideoStatus,
-)
 from bot.helper.mirror_leech_utils.status_utils.media_convert_status import (
     MediaConvertStatus,
+)
+from bot.helper.mirror_leech_utils.status_utils.sample_video_status import (
+    SampleVideoStatus,
 )
 from bot.helper.mirror_leech_utils.status_utils.split_status import SplitStatus
 from bot.helper.mirror_leech_utils.status_utils.zip_status import ZipStatus
 from bot.helper.tele_swi_helper.bot_commands import BotCommands
 from bot.helper.tele_swi_helper.message_utils import (
+    get_tg_link_message,
+    open_category_btns,
     sendMessage,
     sendStatusMessage,
-    get_tg_link_message,
 )
 
 
@@ -79,22 +83,25 @@ class TaskConfig:
         self.link = ""
         self.upDest = ""
         self.rcFlags = ""
+        self.drive_id = ""
+        self.index_link = ""
+        self.gd_cat = ""
+        self.userDump = ""
         self.tag = ""
         self.name = ""
         self.newDir = ""
+        self.prefix = ""
         self.nameSub = ""
+        self.suffix = ""
         self.splitSize = 0
         self.maxSplitSize = 0
         self.multi = 0
         self.size = 0
         self.isLeech = False
         self.isQbit = False
-        self.isJd = False
         self.isClone = False
         self.isYtDlp = False
         self.equalSplits = False
-        self.userTransmission = False
-        self.mixedLeech = False
         self.extract = False
         self.compress = False
         self.select = False
@@ -108,6 +115,7 @@ class TaskConfig:
         self.convertAudio = False
         self.convertVideo = False
         self.screenShots = False
+        self.randomPics = "IMAGES" if config_dict["IMAGES"] else None
         self.asDoc = False
         self.isCancelled = False
         self.forceRun = False
@@ -116,8 +124,15 @@ class TaskConfig:
         self.isTorrent = False
         self.suproc = None
         self.thumb = None
+        self.source_url = ""
+        self.source_msg = ""
+        self.upload_details = {}
         self.extensionFilter = []
+        self.excep_chat = self.message.chat.id in map(int, config_dict['EXCEP_CHATS'].split())
         self.isSuperChat = self.message.chat.type.name in ["SUPERGROUP", "CHANNEL"]
+        self.logMessage = None
+        self.linkslogmsg = None
+        self.botpmmsg = None
 
     def getTokenPath(self, dest):
         if dest.startswith("mtp:"):
@@ -155,7 +170,47 @@ class TaskConfig:
             if not await aiopath.exists(token_path):
                 raise ValueError(f"NO TOKEN! {token_path} not Exists!")
 
+    def setupModes(self):
+        mode = f" #{'Leech' if self.isLeech else 'Clone' if self.isClone else 'RClone' if self.upPath not in ['gd', 'ddl'] else 'DDL' if self.upPath != 'gd' else 'GDrive'}"
+        mode += " (Zip)" if self.compress else " (Unzip)" if self.extract else ""
+        mode += f" | #{'qBit' if self.isQbit else 'ytdlp' if self.isYtdlp else 'GDrive' if (self.isClone or self.isGdrive) else 'Mega' if self.isMega else 'Aria2' if self.source_url and self.source_url != self.message.link else 'Tg'}"
+        self.upload_details["mode"] = mode
+        
+    def parseSource(self):
+        if self.source_url == self.message.link:
+            file = self.message.reply_to_message
+            if file:
+                self.source_url = file.link
+            if file is not None and file.media is not None:
+                mtype = file.media.value
+                media = getattr(file, mtype)
+                self.source_msg = f'┎ <b>Name:</b> <i>{media.file_name if hasattr(media, "file_name") else f"{mtype}_{media.file_unique_id}"}</i>\n┠ <b>Type:</b> {media.mime_type if hasattr(media, "mime_type") else "image/jpeg" if mtype == "photo" else "text/plain"}\n┠ <b>Size:</b> {get_readable_file_size(media.file_size)}\n┠ <b>Created Date:</b> {media.date}\n┖ <b>Media Type:</b> {mtype.capitalize()}'
+            else:
+                self.source_msg = f"<code>{self.message.reply_to_message.text}</code>"
+        elif self.source_url.startswith("https://t.me/share/url?url="):
+            msg = self.source_url.replace("https://t.me/share/url?url=", "")
+            if msg.startswith("magnet"):
+                mag = unquote(msg).split("&")
+                tracCount, name, amper = 0, "", False
+                for check in mag:
+                    if check.startswith("tr="):
+                        tracCount += 1
+                    elif check.startswith("magnet:?xt=urn:btih:"):
+                        hashh = check.replace("magnet:?xt=urn:btih:", "")
+                    else:
+                        name += ("&" if amper else "") + check.replace(
+                            "dn=", ""
+                        ).replace("+", " ")
+                        amper = True
+                self.source_msg = f"┎ <b>Name:</b> <i>{name}</i>\n┠ <b>Magnet Hash:</b> <code>{hashh}</code>\n┠ <b>Total Trackers:</b> {tracCount} \n┖ <b>Share:</b> <a href='https://t.me/share/url?url={quote(msg)}'>Share To Telegram</a>"
+            else:
+                self.source_msg = f"<code>{msg}</code>"
+        else:
+            self.source_msg = f"<code>{self.source_url}</code>"
+
     async def beforeStart(self):
+        self.source_url = self.link if self.link and self.link.startswith("http") else f"https://t.me/share/url?url={self.link}" if self.link else self.message.link
+        
         self.nameSub = (
             self.nameSub
             or self.userDict.get("name_sub", False)
@@ -172,24 +227,18 @@ class TaskConfig:
             else ["aria2", "!qB"]
         )
         if self.link not in ["rcl", "gdl"]:
-            if not self.isYtDlp and not self.isJd:
+            if not self.isYtDlp:
                 await self.isTokenExists(self.link, "dl")
         elif self.link == "rcl":
-            if not self.isYtDlp and not self.isJd:
+            if not self.isYtDlp:
                 self.link = await RcloneList(self).get_rclone_path("rcd")
                 if not is_rclone_path(self.link):
                     raise ValueError(self.link)
         elif self.link == "gdl":
-            if not self.isYtDlp and not self.isJd:
+            if not self.isYtDlp:
                 self.link = await gdriveList(self).get_target_id("gdd")
                 if not is_gdrive_id(self.link):
                     raise ValueError(self.link)
-
-        self.userTransmission = IS_PREMIUM_USER and (
-            self.userDict.get("user_transmission")
-            or config_dict["USER_TRANSMISSION"]
-            and "user_transmission" not in self.userDict
-        )
 
         if (
             "upload_paths" in self.userDict
@@ -212,12 +261,31 @@ class TaskConfig:
                     self.userDict.get("rclone_path") or config_dict["RCLONE_PATH"]
                 )
             elif (not self.upDest and default_upload == "gd") or self.upDest == "gd":
-                self.upDest = self.userDict.get("gdrive_id") or config_dict["GDRIVE_ID"]
+                user_tds = await fetch_user_tds(self.userId)
+                if not self.drive_id:
+                    if self.gd_cat:
+                        merged_dict = {**categories_dict, **user_tds}
+                        self.drive_id, self.index_link = next(((drive_dict['drive_id'], drive_dict['index_link']) for drive_name, drive_dict in merged_dict.items() if drive_name.casefold() == self.gd_cat.replace('_', ' ').casefold()), ('', ''))
+                    if len(user_tds) == 1:
+                        self.drive_id, self.index_link = next(iter(user_tds.values())).values()
+                    elif (len(categories_dict) > 1 and len(user_tds) == 0 or len(categories_dict) >= 1 and len(user_tds) > 1):
+                        self.drive_id, self.index_link, is_cancelled = await open_category_btns(self.message)
+                        if is_cancelled:
+                            raise ValueError("Process Cancelled!")
+
+                if self.drive_id and is_gdrive_link(self.drive_id):
+                    self.drive_id = GoogleDriveHelper.getIdFromUrl(self.drive_id)
+                if self.drive_id and not await sync_to_async(GoogleDriveHelper().getFolderData, self.drive_id):
+                    raise ValueError("Google Drive ID validation failed!!")
+                self.upDest = self.drive_id or self.userDict.get("gdrive_id") or config_dict["GDRIVE_ID"]
+            elif (not self.upDest and default_upload == "ddl") or self.upDest == "ddl":
+                self.upDest = "ddl"
+                # TODO add specific btns
             if not self.upDest:
                 raise ValueError("No Upload Destination!")
-            if not is_gdrive_id(self.upDest) and not is_rclone_path(self.upDest):
+            if not is_gdrive_id(self.upDest) and not is_rclone_path(self.upDest) and self.upDest != "ddl":
                 raise ValueError("Wrong Upload Destination!")
-            if self.upDest not in ["rcl", "gdl"]:
+            if self.upDest not in ["rcl", "gdl", "ddl"]:
                 await self.isTokenExists(self.upDest, "up")
 
             if self.upDest == "rcl":
@@ -259,58 +327,49 @@ class TaskConfig:
                 or self.userDict.get("leech_dest")
                 or config_dict["LEECH_DUMP_CHAT"]
             )
-            self.mixedLeech = IS_PREMIUM_USER and (
-                self.userDict.get("mixed_leech")
-                or config_dict["MIXED_LEECH"]
-                and "mixed_leech" not in self.userDict
-            )
-            if self.upDest:
-                if not isinstance(self.upDest, int):
-                    if self.upDest.startswith("b:"):
-                        self.upDest = self.upDest.replace("b:", "", 1)
-                        self.userTransmission = False
-                        self.mixedLeech = False
-                    elif self.upDest.startswith("u:"):
-                        self.upDest = self.upDest.replace("u:", "", 1)
-                        self.userTransmission = IS_PREMIUM_USER
-                    elif self.upDest.startswith("m:"):
-                        self.userTransmission = IS_PREMIUM_USER
-                        self.mixedLeech = self.userTransmission
-                    if self.upDest.isdigit() or self.upDest.startswith("-"):
-                        self.upDest = int(self.upDest)
-                    elif self.upDest.lower() == "pm":
+            if not self.upDest and self.userDump:
+                if not isinstance(self.userDump, int):
+                    if self.userDump.isdigit() or self.userDump.startswith("-"):
+                        self.upDest = int(self.userDump)
+                    elif self.userDump.startswith("@"):
+                        self.upDest = self.userDump
+                    elif self.userDump.lower() in ["pm", "private"]:
                         self.upDest = self.userId
-
-                if self.userTransmission:
-                    chat = await user.get_chat(self.upDest)
-                    uploader_id = user.me.id
-                else:
+                
+                if not self.upDest:
+                    ldumps = await fetch_user_dumps(self.userId)
+                    if self.userDump.casefold() == "all":
+                        self.upDest = list(ldumps.values())
+                    else:
+                        self.upDest = next((dump_id for name_, dump_id in ldumps.items() if self.userDump.casefold() == name_.casefold()), '')
+                    if not self.upDest:
+                        if len(ldumps) == 1:
+                            self.upDest = next(iter(ldumps.values()))
+                        else:
+                            self.upDest, is_cancelled = await open_dump_btns(self.message)
+                            if is_cancelled:
+                                raise ValueError("Process Cancelled!")
+                
+                if not isinstance(self.upDest, list):
                     chat = await self.client.get_chat(self.upDest)
-                    uploader_id = self.client.me.id
-
-                if chat.type.name in ["SUPERGROUP", "CHANNEL"]:
-                    member = await chat.get_member(uploader_id)
-                    if (
-                        not member.privileges.can_manage_chat
-                        or not member.privileges.can_delete_messages
-                    ):
-                        raise ValueError(
-                            "You don't have enough privileges in this chat!"
-                        )
-                elif self.userTransmission:
-                    raise ValueError(
-                        "Custom Leech Destination only allowed for super-group or channel when UserTransmission enalbed!\nDisable UserTransmission so bot can send files to user!"
-                    )
-                else:
-                    try:
-                        await self.client.send_chat_action(
-                            self.upDest, ChatAction.TYPING
-                        )
-                    except:
-                        raise ValueError("Start the bot and try again!")
-            elif (self.userTransmission or self.mixedLeech) and not self.isSuperChat:
-                self.userTransmission = False
-                self.mixedLeech = False
+                    if chat.type.name in ["SUPERGROUP", "CHANNEL"]:
+                        uploader_id = self.client.me.id
+                        member = await chat.get_member(uploader_id)
+                        if (
+                            not member.privileges.can_manage_chat
+                            or not member.privileges.can_delete_messages
+                        ):
+                            raise ValueError(
+                                "You don't have enough privileges in this chat!"
+                            )
+                    else:
+                        try:
+                            await self.client.send_chat_action(
+                                self.upDest, ChatAction.TYPING
+                            )
+                        except Exception:
+                            raise ValueError("Start the bot and try again!")
+                
             if self.splitSize:
                 if self.splitSize.isdigit():
                     self.splitSize = int(self.splitSize)
@@ -326,7 +385,7 @@ class TaskConfig:
                 or config_dict["EQUAL_SPLITS"]
                 and "equal_splits" not in self.userDict
             )
-            self.maxSplitSize = MAX_SPLIT_SIZE if self.userTransmission else 2097152000
+            self.maxSplitSize = MAX_SPLIT_SIZE
             self.splitSize = min(self.splitSize, self.maxSplitSize)
 
             self.asDoc = (
@@ -338,6 +397,11 @@ class TaskConfig:
             if is_telegram_link(self.thumb):
                 msg = (await get_tg_link_message(self.thumb))[0]
                 self.thumb = await createThumb(msg) if msg.photo or msg.document else ""
+            elif is_url(self.thumb):
+                self.thumb = await createThumb(msg) # TODO arg
+
+        self.setupModes()
+        self.parseSource()
 
     async def getTag(self, text: list):
         if len(text) > 1 and text[1].startswith("Tag: "):
@@ -345,10 +409,8 @@ class TaskConfig:
             self.user = self.message.from_user = await self.client.get_users(id_)
             self.userId = self.user.id
             self.userDict = user_data.get(self.userId, {})
-            try:
+            with contextlib.suppress(Exception):
                 await self.message.unpin()
-            except:
-                pass
         if self.user:
             if username := self.user.username:
                 self.tag = f"@{username}"
