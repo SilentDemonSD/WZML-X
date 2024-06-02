@@ -276,7 +276,7 @@ class YoutubeDLHelper:
 
         await sync_to_async(self.__download, link, path)
 
-    async def cancel_download(self):
+    async def cancel_task(self):
         self.__is_cancelled = True
         LOGGER.info(f"Cancelling Download: {self.name}")
         if not self.__downloading:

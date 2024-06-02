@@ -39,7 +39,7 @@ async def cancel_mirror(_, message):
         await sendMessage(message, "This task is not for you!")
         return
     obj = dl.download()
-    await obj.cancel_download()
+    await obj.cancel_task()
 
 
 async def cancel_all(status):
@@ -48,7 +48,7 @@ async def cancel_all(status):
         return False
     for dl in matches:
         obj = dl.download()
-        await obj.cancel_download()
+        await obj.cancel_task()
         await sleep(1)
     return True
 

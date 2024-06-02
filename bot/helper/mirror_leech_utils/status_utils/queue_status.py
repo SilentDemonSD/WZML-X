@@ -42,7 +42,7 @@ class QueueStatus:
     def download(self):
         return self
 
-    async def cancel_download(self):
+    async def cancel_task(self):
         LOGGER.info(f'Cancelling Queue{self.__status}: {self.__name}')
         if self.__status == 'dl':
             await self.__listener.onDownloadError('task have been removed from queue/download')

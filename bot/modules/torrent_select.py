@@ -122,7 +122,7 @@ async def get_confirm(client, query):
         await deleteMessage(message)
     elif data[1] == "rm":
         await query.answer()
-        await (dl.download()).cancel_download()
+        await (dl.download()).cancel_task()
         await deleteMessage(message)
 
 

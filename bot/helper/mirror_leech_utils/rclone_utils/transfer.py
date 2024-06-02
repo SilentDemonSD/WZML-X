@@ -485,7 +485,7 @@ class RcloneTransferHelper:
         options = config.options(remote)
         return {opt: config.get(remote, opt) for opt in options}
 
-    async def cancel_download(self):
+    async def cancel_task(self):
         self._listener.isCancelled = True
         if self._proc is not None:
             with suppress(Exception):

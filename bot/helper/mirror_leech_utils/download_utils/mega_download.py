@@ -101,7 +101,7 @@ class MegaAppListener(MegaListener):
                           f"TransferTempError: {errStr} ({filen})")
             self.continue_event.set()
 
-    async def cancel_download(self):
+    async def cancel_task(self):
         self.is_cancelled = True
         await self.listener.onDownloadError("Download Canceled by user")
 

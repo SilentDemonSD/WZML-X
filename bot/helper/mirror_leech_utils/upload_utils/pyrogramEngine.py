@@ -534,7 +534,7 @@ class TgUploader:
     def processed_bytes(self):
         return self.__processed_bytes
 
-    async def cancel_download(self):
+    async def cancel_task(self):
         self.__is_cancelled = True
         LOGGER.info(f"Cancelling Upload: {self.name}")
         await self.__listener.onUploadError('Your Upload has been Stopped!')

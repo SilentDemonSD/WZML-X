@@ -63,7 +63,7 @@ class ExtractStatus:
     def download(self):
         return self
 
-    async def cancel_download(self):
+    async def cancel_task(self):
         LOGGER.info(f'Cancelling Extract: {self.__name}')
         if self.__listener.suproc is not None:
             self.__listener.suproc.kill()

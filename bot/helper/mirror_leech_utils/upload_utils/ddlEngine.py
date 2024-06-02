@@ -150,7 +150,7 @@ class DDLUploader:
     def engine(self):
         return self.__engine
 
-    async def cancel_download(self):
+    async def cancel_task(self):
         self.is_cancelled = True
         LOGGER.info(f"Cancelling Upload: {self.name}")
         if self.__asyncSession:

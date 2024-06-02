@@ -95,7 +95,7 @@ class Aria2Status:
         self.__update()
         return self.__gid
 
-    async def cancel_download(self):
+    async def cancel_task(self):
         self.__update()
         await sync_to_async(self.__update)
         if self.__download.seeder and self.seeding:

@@ -101,7 +101,7 @@ class QbittorrentStatus:
     def listener(self):
         return self.__listener
 
-    async def cancel_download(self):
+    async def cancel_task(self):
         self.__update()
         await sync_to_async(self.__client.torrents_pause, torrent_hashes=self.__info.hash)
         if not self.seeding:

@@ -841,7 +841,7 @@ class GoogleDriveHelper:
                         raise err
         self.__file_processed_bytes = 0
 
-    async def cancel_download(self):
+    async def cancel_task(self):
         self.__is_cancelled = True
         if self.__is_downloading:
             LOGGER.info(f"Cancelling Download: {self.name}")
