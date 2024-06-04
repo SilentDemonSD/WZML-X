@@ -111,22 +111,19 @@ async def path_updates(_, query, obj):
 
 
 class RcloneList:
-    def __init__(self, client, message):
-        self.__user_id = message.from_user.id
-        self.__rc_user = False
-        self.__rc_owner = False
-        self.__client = client
-        self.__message = message
-        self.__sections = []
-        self.__reply_to = None
-        self.__time = time()
-        self.__timeout = 240
+    def __init__(self, listener):
+        self._rc_user = False
+        self._rc_owner = False
+        self._sections = []
+        self._reply_to = None
+        self._time = time()
+        self._timeout = 240
+        self.listener = listener
         self.remote = ""
-        self.is_cancelled = False
         self.query_proc = False
         self.item_type = "--dirs-only"
         self.event = Event()
-        self.user_rcc_path = f"rclone/{self.__user_id}.conf"
+        self.user_rcc_path = f"rclone/{self.listener.userId}.conf"
         self.config_path = ""
         self.path = ""
         self.list_status = ""
@@ -135,28 +132,28 @@ class RcloneList:
         self.page_step = 1
 
     @new_thread
-    async def __event_handler(self):
+    async def _event_handler(self):
         pfunc = partial(path_updates, obj=self)
-        handler = self.__client.add_handler(
-            CallbackQueryHandler(pfunc, filters=regex("^rcq") & user(self.__user_id)),
+        handler = self._client.add_handler(
+            CallbackQueryHandler(pfunc, filters=regex("^rcq") & user(self.listener.userId)),
             group=-1,
         )
         try:
-            await wait_for(self.event.wait(), timeout=self.__timeout)
+            await wait_for(self.event.wait(), timeout=self._timeout)
         except Exception:
             self.path = ""
             self.remote = "Timed Out. Task has been cancelled!"
-            self.is_cancelled = True
+            self.listener.isCancelled = True
             self.event.set()
         finally:
-            self.__client.remove_handler(*handler)
+            self._client.remove_handler(*handler)
 
-    async def __send_list_message(self, msg, button):
-        if not self.is_cancelled:
-            if self.__reply_to is None:
-                self.__reply_to = await sendMessage(self.__message, msg, button)
+    async def _send_list_message(self, msg, button):
+        if not self.listener.isCancelled:
+            if self._reply_to is None:
+                self._reply_to = await sendMessage(self._message, msg, button)
             else:
-                await editMessage(self.__reply_to, msg, button)
+                await editMessage(self._reply_to, msg, button)
 
     async def get_path_buttons(self):
         items_no = len(self.path_list)
@@ -192,7 +189,7 @@ class RcloneList:
             buttons.ibutton("Choose Current Path", "rcq cur", position="footer")
         if self.list_status == "rcu":
             buttons.ibutton("Set as Default Path", "rcq def", position="footer")
-        if self.path or len(self.__sections) > 1 or self.__rc_user and self.__rc_owner:
+        if self.path or len(self._sections) > 1 or self._rc_user and self._rc_owner:
             buttons.ibutton("Back", "rcq back pa", position="footer")
         if self.path:
             buttons.ibutton("Back To Root", "rcq root", position="footer")
@@ -211,8 +208,8 @@ class RcloneList:
             msg += f" | Page: {int(page)}/{pages} | Page Step: {self.page_step}"
         msg += f"\n\nItem Type: {self.item_type}\nConfig Path: {self.config_path}"
         msg += f"\nCurrent Path: <code>{self.remote}{self.path}</code>"
-        msg += f"\nTimeout: {get_readable_time(self.__timeout-(time()-self.__time))}"
-        await self.__send_list_message(msg, button)
+        msg += f"\nTimeout: {get_readable_time(self._timeout-(time()-self._time))}"
+        await self._send_list_message(msg, button)
 
     async def get_path(self, itype=""):
         if itype:
@@ -230,7 +227,7 @@ class RcloneList:
             self.config_path,
             f"{self.remote}{self.path}",
         ]
-        if self.is_cancelled:
+        if self.listener.isCancelled:
             return
         res, err, code = await cmd_exec(cmd)
         if code not in [0, -9]:
@@ -261,9 +258,9 @@ class RcloneList:
             config.read_string(contents)
         if config.has_section("combine"):
             config.remove_section("combine")
-        self.__sections = config.sections()
-        if len(self.__sections) == 1:
-            self.remote = f"{self.__sections[0]}:"
+        self._sections = config.sections()
+        if len(self._sections) == 1:
+            self.remote = f"{self._sections[0]}:"
             await self.get_path()
         else:
             msg = "Choose Rclone remote:" + (
@@ -273,35 +270,35 @@ class RcloneList:
             )
             msg += f"\nConfig Path: {self.config_path}"
             msg += (
-                f"\nTimeout: {get_readable_time(self.__timeout-(time()-self.__time))}"
+                f"\nTimeout: {get_readable_time(self._timeout-(time()-self._time))}"
             )
             buttons = ButtonMaker()
-            for remote in self.__sections:
+            for remote in self._sections:
                 buttons.ibutton(remote, f"rcq re {remote}:")
-            if self.__rc_user and self.__rc_owner:
+            if self._rc_user and self._rc_owner:
                 buttons.ibutton("Back", "rcq back re", position="footer")
             buttons.ibutton("Cancel", "rcq cancel", position="footer")
             button = buttons.build_menu(2)
-            await self.__send_list_message(msg, button)
+            await self._send_list_message(msg, button)
 
     async def list_config(self):
-        if self.__rc_user and self.__rc_owner:
+        if self._rc_user and self._rc_owner:
             msg = "Choose Rclone config:" + (
                 "\nTransfer Type: Download"
                 if self.list_status == "rcd"
                 else "\nTransfer Type: Upload"
             )
             msg += (
-                f"\nTimeout: {get_readable_time(self.__timeout-(time()-self.__time))}"
+                f"\nTimeout: {get_readable_time(self._timeout-(time()-self._time))}"
             )
             buttons = ButtonMaker()
             buttons.ibutton("Owner Config", "rcq owner")
             buttons.ibutton("My Config", "rcq user")
             buttons.ibutton("Cancel", "rcq cancel")
             button = buttons.build_menu(2)
-            await self.__send_list_message(msg, button)
+            await self._send_list_message(msg, button)
         else:
-            self.config_path = "rclone.conf" if self.__rc_owner else self.user_rcc_path
+            self.config_path = "rclone.conf" if self._rc_owner else self.user_rcc_path
             await self.list_remotes()
 
     async def back_from_path(self):
@@ -309,19 +306,19 @@ class RcloneList:
             path = self.path.rsplit("/", 1)
             self.path = path[0] if len(path) > 1 else ""
             await self.get_path()
-        elif len(self.__sections) > 1:
+        elif len(self._sections) > 1:
             await self.list_remotes()
         else:
             await self.list_config()
 
     async def get_rclone_path(self, status, config_path=None):
         self.list_status = status
-        future = self.__event_handler()
+        future = self._event_handler()
         if config_path is None:
             self._rc_user, self._rc_owner = await gather(
                 aiopath.exists(self.user_rcc_path), aiopath.exists("rclone.conf")
             )
-            if not self.__rc_owner and not self.__rc_user:
+            if not self._rc_owner and not self._rc_user:
                 self.event.set()
                 return "Rclone Config not Exists!"
             await self.list_config()
@@ -329,7 +326,7 @@ class RcloneList:
             self.config_path = config_path
             await self.list_remotes()
         await wrap_future(future)
-        await deleteMessage(self.__reply_to)
-        if self.config_path != "rclone.conf" and not self.is_cancelled:
+        await deleteMessage(self._reply_to)
+        if self.config_path != "rclone.conf" and not self.listener.isCancelled:
             return f"mrcc:{self.remote}{self.path}"
         return f"{self.remote}{self.path}"

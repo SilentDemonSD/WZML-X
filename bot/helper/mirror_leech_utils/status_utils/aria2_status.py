@@ -5,107 +5,105 @@ from bot import aria2, LOGGER
 from bot.helper.ext_utils.bot_utils import EngineStatus, MirrorStatus, get_readable_time, sync_to_async
 
 
-def get_download(gid):
+def get_download(gid, old_info=None):
     try:
-        return aria2.get_download(gid)
+        res = aria2.get_download(gid)
+        return res or old_info
     except Exception as e:
-        LOGGER.error(f'{e}: Aria2c, Error while getting torrent info')
-        return None
+        LOGGER.error(f"{e}: Aria2c, Error while getting torrent info")
+        return old_info
 
 
 class Aria2Status:
 
     def __init__(self, gid, listener, seeding=False, queued=False):
-        self.__gid = gid
-        self.__download = get_download(gid)
-        self.__listener = listener
-        self.upload_details = self.__listener.upload_details
+        self.gid = gid
+        self.download = None
+        self.listener = listener
         self.queued = queued
         self.start_time = 0
         self.seeding = seeding
-        self.message = self.__listener.message
 
-    def __update(self):
-        if self.__download is None:
-            self.__download = get_download(self.__gid)
+    def update(self):
+        if self.download is None:
+            self.download = get_download(self.gid)
         else:
-            self.__download = self.__download.live
-        if self.__download.followed_by_ids:
-            self.__gid = self.__download.followed_by_ids[0]
-            self.__download = get_download(self.__gid)
+            self.download = self.download.live
+        if self.download.followed_by_ids:
+            self.gid = self.download.followed_by_ids[0]
+            self.download = get_download(self.gid)
 
     def progress(self):
-        return self.__download.progress_string()
+        return self.download.progress_string()
 
     def processed_bytes(self):
-        return self.__download.completed_length_string()
+        return self.download.completed_length_string()
 
     def speed(self):
-        return self.__download.download_speed_string()
+        return self.download.download_speed_string()
 
     def name(self):
-        return self.__download.name
+        return self.download.name
 
     def size(self):
-        return self.__download.total_length_string()
+        return self.download.total_length_string()
 
     def eta(self):
-        return self.__download.eta_string()
+        return self.download.eta_string()
         
     def listener(self):
-        return self.__listener
+        return self.listener
 
     def status(self):
-        self.__update()
-        if self.__download.is_waiting or self.queued:
+        self.update()
+        if self.download.is_waiting or self.queued:
             if self.seeding:
                 return MirrorStatus.STATUS_QUEUEUP
             else:
                 return MirrorStatus.STATUS_QUEUEDL
-        elif self.__download.is_paused:
+        elif self.download.is_paused:
             return MirrorStatus.STATUS_PAUSED
-        elif self.__download.seeder and self.seeding:
+        elif self.download.seeder and self.seeding:
             return MirrorStatus.STATUS_SEEDING
         else:
             return MirrorStatus.STATUS_DOWNLOADING
 
     def seeders_num(self):
-        return self.__download.num_seeders
+        return self.download.num_seeders
 
     def leechers_num(self):
-        return self.__download.connections
+        return self.download.connections
 
     def uploaded_bytes(self):
-        return self.__download.upload_length_string()
+        return self.download.upload_length_string()
 
     def upload_speed(self):
-        self.__update()
-        return self.__download.upload_speed_string()
+        self.update()
+        return self.download.upload_speed_string()
 
     def ratio(self):
-        return f"{round(self.__download.upload_length / self.__download.completed_length, 3)}"
+        return f"{round(self.download.upload_length / self.download.completed_length, 3)}"
 
     def seeding_time(self):
         return get_readable_time(time() - self.start_time)
 
-    def download(self):
+    def task(self):
         return self
 
     def gid(self):
-        self.__update()
-        return self.__gid
+        return self.gid
 
     async def cancel_task(self):
-        self.__update()
-        await sync_to_async(self.__update)
-        if self.__download.seeder and self.seeding:
+        self.listener.isCancelled = True
+        await sync_to_async(self.update)
+        if self.download.seeder and self.seeding:
             LOGGER.info(f"Cancelling Seed: {self.name()}")
-            await self.__listener.onUploadError(f"Seeding stopped with Ratio: {self.ratio()} and Time: {self.seeding_time()}")
-            await sync_to_async(aria2.remove, [self.__download], force=True, files=True)
-        elif downloads := self.__download.followed_by:
+            await self.listener.onUploadError(f"Seeding stopped with Ratio: {self.ratio()} and Time: {self.seeding_time()}")
+            await sync_to_async(aria2.remove, [self.download], force=True, files=True)
+        elif downloads := self.download.followed_by:
             LOGGER.info(f"Cancelling Download: {self.name()}")
-            await self.__listener.onDownloadError('Download cancelled by user!')
-            downloads.append(self.__download)
+            await self.listener.onDownloadError('Download cancelled by user!')
+            downloads.append(self.download)
             await sync_to_async(aria2.remove, downloads, force=True, files=True)
         else:
             if self.queued:
@@ -114,8 +112,8 @@ class Aria2Status:
             else:
                 LOGGER.info(f"Cancelling Download: {self.name()}")
                 msg = 'Download stopped by user!'
-            await self.__listener.onDownloadError(msg)
-            await sync_to_async(aria2.remove, [self.__download], force=True, files=True)
+            await self.listener.onDownloadError(msg)
+            await sync_to_async(aria2.remove, [self.download], force=True, files=True)
 
     def eng(self):
         return EngineStatus().STATUS_ARIA
