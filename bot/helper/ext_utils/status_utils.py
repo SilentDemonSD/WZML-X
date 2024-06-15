@@ -6,6 +6,7 @@ from subprocess import run as srun
 from mega import MegaApi
 from pkg_resources import DistributionNotFound, get_distribution
 from psutil import cpu_percent, disk_usage, virtual_memory
+from pyrogram import __version__ as pyrogramversionstr
 
 from bot import (
     DOWNLOAD_DIR,
@@ -76,14 +77,8 @@ def get_all_versions():
         result = srun(["rclone", "version"], capture_output=True, text=True)
         vr = result.stdout.split("\n")[0].split(" ")[1]
     except FileNotFoundError:
-        vr = ""
-    try:
-        vpy = get_distribution("pyrogram").version
-    except DistributionNotFound:
-        try:
-            vpy = get_distribution("pyrofork").version
-        except DistributionNotFound:
-            vpy = "2.xx.xx"
+        vr = ""    
+    vpy = pyrogramversionstr
     bot_cache["eng_versions"] = {
         "p7zip": vp,
         "ffmpeg": vf,
