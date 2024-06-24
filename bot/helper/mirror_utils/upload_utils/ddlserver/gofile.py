@@ -8,6 +8,7 @@ from aiofiles.os import path as aiopath
 from aiofiles.os import rename as aiorename
 from aiohttp import ClientSession
 
+from bot import LOGGER
 from bot.helper.ext_utils.bot_utils import sync_to_async
 
 
@@ -105,7 +106,9 @@ class Gofile:
         if password and len(password) < 4:
             raise ValueError("Password Length must be greater than 4")
 
-        server = choice((await self.__getServer())["servers"])["name"]
+        server = choice((await self.__getServer())
+        LOGGER.info(server)
+        server = server["servers"])["name"]
         req_dict = {}
         if token := self.token or "":
             req_dict["token"] = token
