@@ -106,9 +106,7 @@ class Gofile:
         if password and len(password) < 4:
             raise ValueError("Password Length must be greater than 4")
 
-        server = await self.__getServer()
-        LOGGER.info(server)
-        server = choice(server["servers"])["name"]
+        server = choice((await self.__getServer())["servers"])["name"]
         req_dict = {}
         if token := self.token or "":
             req_dict["token"] = token
