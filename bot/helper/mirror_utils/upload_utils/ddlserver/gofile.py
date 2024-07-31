@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 #!/usr/bin/env python3
+import logging
 from os import path as ospath
 from os import walk
 from random import choice
-
 from aiofiles.os import path as aiopath
 from aiofiles.os import rename as aiorename
 from aiohttp import ClientSession
@@ -68,9 +68,18 @@ class Gofile:
         if not await aiopath.isdir(path):
             raise Exception(f"Path: {path} is not a valid directory")
 
+        account_data = await self.__getAccount()
+        logging.info(f"Account data: {account_data}")
         folder_data = await self.create_folder(
-            (await self.__getAccount())["rootFolder"], ospath.basename(path)
+            account_data["rootFolder"], ospath.basename(path)
         )
+        logging.info(f"Folder creation response: {folder_data}")
+        
+        if "id" not in folder_data:
+            raise KeyError("Folder creation failed, 'id' not found in response")
+        
+        folder_data["folderId"] = folder_data["id"]
+
         await self.__setOptions(
             contentId=folder_data["folderId"], option="public", value="true"
         )
@@ -81,7 +90,7 @@ class Gofile:
             rel_path = ospath.relpath(root, path)
             parentFolderId = folder_ids.get(ospath.dirname(rel_path), folderId)
             folder_name = ospath.basename(rel_path)
-            currFolderId = (await self.create_folder(parentFolderId, folder_name))["folderId"]
+            currFolderId = (await self.create_folder(parentFolderId, folder_name))["id"]
             await self.__setOptions(
                 contentId=currFolderId, option="public", value="true"
             )
@@ -220,4 +229,3 @@ class Gofile:
                 data={"token": self.token},
             ) as resp:
                 return await self.__resp_handler(await resp.json())
-                
