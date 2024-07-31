@@ -8,6 +8,7 @@ from aiofiles.os import path as aiopath
 from aiofiles.os import rename as aiorename
 from aiohttp import ClientSession
 
+from bot import LOGGER
 from bot.helper.ext_utils.bot_utils import sync_to_async
 
 

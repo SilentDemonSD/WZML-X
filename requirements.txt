@@ -1,4 +1,4 @@
-aiohttp
+aiohttp[speedups]
 aiofiles
 aioshutil
 anytree==2.8.0
@@ -30,7 +30,7 @@ psutil
 pybase64
 pycountry
 pymongo
-pyrogram
+pyrofork==2.2.11
 python-dotenv
 python-magic
 qbittorrent-api
@@ -39,6 +39,7 @@ speedtest-cli
 telegraph
 tenacity
 tgcrypto
+uv
 uvloop
 xattr
 yt-dlp
