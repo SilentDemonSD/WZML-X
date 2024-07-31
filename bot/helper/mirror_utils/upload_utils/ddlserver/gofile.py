@@ -69,7 +69,7 @@ class Gofile:
             raise Exception(f"Path: {path} is not a valid directory")
 
         account_data = await self.__getAccount()
-        logging.info(f"Account data: {account_data}")
+        logging.info(f"Account ID: {account_data.get('id')}, Account Name: {account_data.get('name')}")
         folder_data = await self.create_folder(
             account_data["rootFolder"], ospath.basename(path)
         )
