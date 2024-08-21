@@ -239,6 +239,8 @@ if len(MEGA_EMAIL) == 0 or len(MEGA_PASSWORD) == 0:
     log_warning('MEGA Credentials not provided!')
     MEGA_EMAIL = ''
     MEGA_PASSWORD = ''
+
+METADATA = environ.get('METADATA', '')
     
 GDTOT_CRYPT = environ.get('GDTOT_CRYPT', '')
 if len(GDTOT_CRYPT) == 0:
@@ -623,6 +625,7 @@ config_dict = {'ANIME_TEMPLATE': ANIME_TEMPLATE,
                'CLONE_LIMIT': CLONE_LIMIT,
                'MEGA_LIMIT': MEGA_LIMIT,
                'LEECH_LIMIT': LEECH_LIMIT,
+               'METADATA': METADATA,
                'FSUB_IDS': FSUB_IDS,
                'USER_MAX_TASKS': USER_MAX_TASKS,
                'USER_TIME_INTERVAL': USER_TIME_INTERVAL,
