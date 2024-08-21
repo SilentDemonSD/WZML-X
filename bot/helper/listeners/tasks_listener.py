@@ -18,8 +18,8 @@ from bot import OWNER_ID, Interval, aria2, DOWNLOAD_DIR, download_dict, download
     queued_dl, queue_dict_lock, bot, GLOBAL_EXTENSION_FILTER
 from bot.helper.ext_utils.bot_utils import extra_btns, sync_to_async, get_readable_file_size, get_readable_time, is_mega_link, is_gdrive_link
 from bot.helper.ext_utils.fs_utils import get_base_name, get_path_size, clean_download, clean_target, \
-    is_first_archive_split, is_archive, is_archive_split, join_files
-from bot.helper.ext_utils.leech_utils import split_file, format_filename
+    is_first_archive_split, is_archive, is_archive_split, join_files, edit_metadata
+from bot.helper.ext_utils.leech_utils import split_file, format_filename, get_document_type
 from bot.helper.ext_utils.exceptions import NotSupportedExtractionArchive
 from bot.helper.ext_utils.task_manager import start_from_queued
 from bot.helper.mirror_utils.status_utils.extract_status import ExtractStatus
@@ -28,6 +28,7 @@ from bot.helper.mirror_utils.status_utils.split_status import SplitStatus
 from bot.helper.mirror_utils.status_utils.gdrive_status import GdriveStatus
 from bot.helper.mirror_utils.status_utils.telegram_status import TelegramStatus
 from bot.helper.mirror_utils.status_utils.ddl_status import DDLStatus
+from bot.helper.mirror_utils.status_utils.metadata_status import MetadataStatus
 from bot.helper.mirror_utils.status_utils.rclone_status import RcloneStatus
 from bot.helper.mirror_utils.status_utils.queue_status import QueueStatus
 from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
@@ -273,6 +274,28 @@ class MirrorLeechListener:
                 LOGGER.info("Not any valid archive, uploading file as it is.")
                 self.newDir = ""
                 up_path = dl_path
+
+        if metadata := self.user_dict.get('lmeta') or config_dict['METADATA']:
+            meta_path = up_path or dl_path
+            self.newDir = f'{self.dir}10000'
+            await makedirs(self.newDir, exist_ok=True)
+            async with download_dict_lock:
+                download_dict[self.uid] = MetadataStatus(name, size, gid, self)
+            if await aiopath.isfile(meta_path) and (await get_document_type(meta_path))[0]:
+                base_dir, file_name = ospath.split(meta_path)
+                outfile = ospath.join(self.newDir, file_name)
+                await edit_metadata(self, base_dir, meta_path, outfile, metadata)
+                if self.suproc == 'cancelled':
+                    return
+            elif await aiopath.isdir(meta_path):
+                for dirpath, _, files in await sync_to_async(walk, meta_path):
+                    for file in files:
+                        if self.suproc == 'cancelled':
+                            return
+                        video_file = ospath.join(dirpath, file)
+                        if (await get_document_type(video_file))[0]:
+                            outfile = ospath.join(self.newDir, file)
+                            await edit_metadata(self, dirpath, video_file, outfile, metadata)
 
         if self.compress:
             pswd = self.compress if isinstance(self.compress, str) else ''
