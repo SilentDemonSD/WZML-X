@@ -724,7 +724,7 @@ async def get_buttons(key=None, edit_type=None, edit_mode=None, mess=None):
         buttons.ibutton('Close', "botset close")
         msg = '''<u>Send any of these private files:</u>
         
-<code>config.env, token.pickle, accounts.zip, list_drives.txt, categories.txt, shorteners.txt, cookies.txt, terabox.txt, .netrc or any other file!</code>
+<code>config.env, token.pickle, accounts.zip, list_drives.txt, categories.txt, shorteners.txt, cookies.txt .netrc or any other file!</code>
 
 <i>To delete private file send only the file name as text message with or without extension.</i>
 <b>NOTE:</b> Changing .netrc will not take effect for aria2c until restart.
