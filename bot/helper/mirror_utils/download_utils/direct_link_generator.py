@@ -460,7 +460,10 @@ def streamtape(url):
             html = HTML(session.get(url).text)
     except Exception as e:
         raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
-    if not (script := html.xpath("//script[contains(text(),'ideoooolink')]/text()")):
+    script = html.xpath(
+        "//script[contains(text(),'ideoooolink')]/text()"
+    ) or html.xpath("//script[contains(text(),'ideoolink')]/text()")
+    if not script:
         raise DirectDownloadLinkException("ERROR: requeries script not found")
     if not (link := findall(r"(&expires\S+)'", script[0])):
         raise DirectDownloadLinkException("ERROR: Download link not found")
@@ -555,23 +558,27 @@ def krakenfiles(url):
         try:
             _res = session.get(url)
         except Exception as e:
-            raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}') from e
+            raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
         html = HTML(_res.text)
-        if post_url:= html.xpath('//form[@id="dl-form"]/@action'):
-            post_url = f'https:{post_url[0]}'
+        if post_url := html.xpath('//form[@id="dl-form"]/@action'):
+            post_url = f"https://krakenfiles.com{post_url[0]}"
         else:
-            raise DirectDownloadLinkException('ERROR: Unable to find post link.')
-        if token:= html.xpath('//input[@id="dl-token"]/@value'):
-            data = {'token': token[0]}
+            raise DirectDownloadLinkException("ERROR: Unable to find post link.")
+        if token := html.xpath('//input[@id="dl-token"]/@value'):
+            data = {"token": token[0]}
         else:
-            raise DirectDownloadLinkException('ERROR: Unable to find token for post.')
+            raise DirectDownloadLinkException("ERROR: Unable to find token for post.")
         try:
             _json = session.post(post_url, data=data).json()
         except Exception as e:
-            raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__} While send post request') from e
-    if _json['status'] != 'ok':
-        raise DirectDownloadLinkException("ERROR: Unable to find download after post request")
-    return _json['url']
+            raise DirectDownloadLinkException(
+                f"ERROR: {e.__class__.__name__} While send post request"
+            ) from e
+    if _json["status"] != "ok":
+        raise DirectDownloadLinkException(
+            "ERROR: Unable to find download after post request"
+        )
+    return _json["url"]
 
 
 
