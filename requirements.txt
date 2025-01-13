@@ -43,3 +43,4 @@ uv
 uvloop
 xattr
 yt-dlp
+pytz
