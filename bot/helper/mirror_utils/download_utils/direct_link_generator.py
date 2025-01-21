@@ -179,6 +179,8 @@ def direct_link_generator(link):
         return sbembed(link)
     elif is_index_link(link) and link.endswith('/'):
         return gd_index(link, auth)
+    elif "buzzheavier.com" in domain:
+        return buzzheavier(link)
     elif is_share_link(link):
         if 'gdtot' in domain:
             return gdtot(link)
@@ -292,7 +294,40 @@ def get_captcha_token(session, params):
     res = session.post(f'{recaptcha_api}/reload', params=params)
     if token := findall(r'"rresp","(.*?)"', res.text):
         return token[0]
+def buzzheavier(url):
+    """
+    Generate a direct download link for buzzheavier URLs.
+    @param link: URL from buzzheavier
+    @return: Direct download link
+    """
+    session = Session()
+    if "/download" not in url:
+        url += "/download"
 
+    # Normalize URL
+    url = url.strip()
+    session.headers.update(
+        {
+            "referer": url.split("/download")[0],
+            "hx-current-url": url.split("/download")[0],
+            "hx-request": "true",
+            "priority": "u=1, i",
+        }
+    )
+
+    try:
+        response = session.get(url)
+        d_url = response.headers.get("Hx-Redirect")
+
+        if not d_url:
+            raise DirectDownloadLinkException("ERROR: Failed to fetch direct link.")
+
+        parsed_url = urlparse(url)
+        return f"{parsed_url.scheme}://{parsed_url.netloc}{d_url}"
+    except Exception as e:
+        raise DirectDownloadLinkException(f"ERROR: {str(e)}") from e
+    finally:
+        session.close()
 
 def mediafire(url, session=None):
     if '/folder/' in url:
@@ -460,7 +495,10 @@ def streamtape(url):
             html = HTML(session.get(url).text)
     except Exception as e:
         raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
-    if not (script := html.xpath("//script[contains(text(),'ideoooolink')]/text()")):
+    script = html.xpath(
+        "//script[contains(text(),'ideoooolink')]/text()"
+    ) or html.xpath("//script[contains(text(),'ideoolink')]/text()")
+    if not script:
         raise DirectDownloadLinkException("ERROR: requeries script not found")
     if not (link := findall(r"(&expires\S+)'", script[0])):
         raise DirectDownloadLinkException("ERROR: Download link not found")
@@ -558,7 +596,7 @@ def krakenfiles(url):
             raise DirectDownloadLinkException(f'ERROR: {e.__class__.__name__}') from e
         html = HTML(_res.text)
         if post_url:= html.xpath('//form[@id="dl-form"]/@action'):
-            post_url = f'https:{post_url[0]}'
+            post_url = f"https://krakenfiles.com{post_url[0]}"
         else:
             raise DirectDownloadLinkException('ERROR: Unable to find post link.')
         if token:= html.xpath('//input[@id="dl-token"]/@value'):
