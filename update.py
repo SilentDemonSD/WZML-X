@@ -75,7 +75,7 @@ UPSTREAM_REPO = (
 UPSTREAM_BRANCH = (
     getenv("UPSTREAM_BRANCH", "")
     or config_file.get("UPSTREAM_BRANCH", "").strip()
-    or "master"
+    or "wzv3"
 )
 
 if UPSTREAM_REPO:
