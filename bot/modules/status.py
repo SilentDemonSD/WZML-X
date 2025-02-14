@@ -1,60 +1,187 @@
-#!/usr/bin/env python3
-from pyrogram.handlers import MessageHandler, CallbackQueryHandler
-from pyrogram.filters import command, regex
 from psutil import cpu_percent, virtual_memory, disk_usage
 from time import time
-from asyncio import sleep
+from asyncio import gather, iscoroutinefunction
 
-from bot import bot_cache, status_reply_dict_lock, download_dict, download_dict_lock, botStartTime, Interval, config_dict, bot
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper.message_utils import sendMessage, editMessage, deleteMessage, auto_delete_message, sendStatusMessage, user_info, update_all_messages, delete_all_messages
-from bot.helper.ext_utils.bot_utils import get_readable_file_size, get_readable_time, turn_page, setInterval, new_task
-from bot.helper.themes import BotTheme
+from .. import (
+    task_dict_lock,
+    status_dict,
+    task_dict,
+    bot_start_time,
+    intervals,
+    sabnzbd_client,
+    DOWNLOAD_DIR,
+)
+from ..core.torrent_manager import TorrentManager
+from ..core.jdownloader_booter import jdownloader
+from ..helper.ext_utils.bot_utils import new_task
+from ..helper.ext_utils.status_utils import (
+    MirrorStatus,
+    get_readable_file_size,
+    get_readable_time,
+    speed_string_to_bytes,
+)
+from ..helper.telegram_helper.bot_commands import BotCommands
+from ..helper.telegram_helper.message_utils import (
+    send_message,
+    delete_message,
+    auto_delete_message,
+    send_status_message,
+    update_status_message,
+    edit_message,
+)
+from ..helper.telegram_helper.button_build import ButtonMaker
 
 
 @new_task
-async def mirror_status(_, message):
-    async with download_dict_lock:
-        count = len(download_dict)
+async def task_status(_, message):
+    async with task_dict_lock:
+        count = len(task_dict)
     if count == 0:
-        currentTime = get_readable_time(time() - botStartTime)
-        free = get_readable_file_size(disk_usage(config_dict['DOWNLOAD_DIR']).free)
-        msg = BotTheme('NO_ACTIVE_DL', cpu=cpu_percent(), free=free, free_p=round(100-disk_usage(config_dict['DOWNLOAD_DIR']).percent, 1),
-                       ram=virtual_memory().percent, uptime=currentTime)
-        reply_message = await sendMessage(message, msg)
+        currentTime = get_readable_time(time() - bot_start_time)
+        free = get_readable_file_size(disk_usage(DOWNLOAD_DIR).free)
+        msg = f"""〶 <b><i>No Active Bot Tasks!</i></b>
+│
+┖ <b>NOTE</b> → <i>Each user can get status for his tasks by adding "me" or user_id like "1234xxx" after cmd: /{BotCommands.StatusCommand[0]} me or /{BotCommands.StatusCommand[1]} me</i>
+
+⌬ <b><u>Bot Stats</u></b>
+┟ <b>CPU</b> → {cpu_percent()}% | <b>F</b> → {free} [{round(100 - disk_usage(DOWNLOAD_DIR).percent, 1)}%]
+┖ <b>RAM</b> → {virtual_memory().percent}% | <b>UP</b> → {currentTime}
+"""
+        reply_message = await send_message(message, msg)
         await auto_delete_message(message, reply_message)
     else:
-        await sendStatusMessage(message)
-        await deleteMessage(message)
-        async with status_reply_dict_lock:
-            if Interval:
-                Interval[0].cancel()
-                Interval.clear()
-                Interval.append(setInterval(config_dict['STATUS_UPDATE_INTERVAL'], update_all_messages))
+        text = message.text.split()
+        if len(text) > 1:
+            user_id = message.from_user.id if text[1] == "me" else int(text[1])
+        else:
+            user_id = 0
+            sid = message.chat.id
+            if obj := intervals["status"].get(sid):
+                obj.cancel()
+                del intervals["status"][sid]
+        await send_status_message(message, user_id)
+        await delete_message(message)
+
+
+async def get_download_status(download):
+    eng = download.engine
+    if eng.startswith(("Pyro", "yt-dlp", "RClone", "Google-API")):
+        speed = download.speed()
+    else:
+        speed = 0
+    return (
+        await download.status()
+        if iscoroutinefunction(download.status)
+        else download.status()
+    ), speed
 
 
 @new_task
 async def status_pages(_, query):
-    user_id = query.from_user.id
     data = query.data.split()
-    if data[1] == 'ref':
-        bot_cache.setdefault('status_refresh', {})
-        if user_id in (refresh_status := bot_cache['status_refresh']) and (curr := (time() - refresh_status[user_id])) < 7:
-            return await query.answer(f'Already Refreshed! Try after {get_readable_time(7 - curr)}', show_alert=True)
-        else:
-            refresh_status[user_id] = time()
-        await editMessage(query.message, f"{(await user_info(user_id)).mention(style='html')}, <i>Refreshing Status...</i>")
-        await sleep(1.5)
-        await update_all_messages(True)
-    elif data[1] in ['nex', 'pre']:
-        await turn_page(data)
-        await update_all_messages(True)
-    elif data[1] == 'close':
-        await delete_all_messages()
+    key = int(data[1])
     await query.answer()
+    if data[2] == "ref":
+        await update_status_message(key, force=True)
+    elif data[2] in ["nex", "pre"]:
+        async with task_dict_lock:
+            if key in status_dict:
+                if data[2] == "nex":
+                    status_dict[key]["page_no"] += status_dict[key]["page_step"]
+                else:
+                    status_dict[key]["page_no"] -= status_dict[key]["page_step"]
+    elif data[2] == "ps":
+        async with task_dict_lock:
+            if key in status_dict:
+                status_dict[key]["page_step"] = int(data[3])
+    elif data[2] == "st":
+        async with task_dict_lock:
+            if key in status_dict:
+                status_dict[key]["status"] = data[3]
+        await update_status_message(key, force=True)
+    elif data[2] == "ov":
+        ds, ss = await TorrentManager.overall_speed()
+        if sabnzbd_client.LOGGED_IN:
+            sds = await sabnzbd_client.get_downloads()
+            sds = int(sds.get("kbpersec", "0")) * 1024
+            ds += sds
+        if jdownloader.is_connected:
+            jdres = await jdownloader.device.downloadcontroller.get_speed_in_bytes()
+            ds += jdres
+        message = query.message
+        tasks = {
+            "Download": 0,
+            "Upload": 0,
+            "Seed": 0,
+            "Archive": 0,
+            "Extract": 0,
+            "Split": 0,
+            "QueueDl": 0,
+            "QueueUp": 0,
+            "Clone": 0,
+            "CheckUp": 0,
+            "Pause": 0,
+            "SamVid": 0,
+            "ConvertMedia": 0,
+            "FFmpeg": 0,
+        }
+        dl_speed = ds
+        up_speed = 0
+        seed_speed = ss
+        async with task_dict_lock:
+            status_results = await gather(
+                *(get_download_status(download) for download in task_dict.values())
+            )
+            for status, speed in status_results:
+                match status:
+                    case MirrorStatus.STATUS_DOWNLOAD:
+                        tasks["Download"] += 1
+                        if speed:
+                            dl_speed += speed_string_to_bytes(speed)
+                    case MirrorStatus.STATUS_UPLOAD:
+                        tasks["Upload"] += 1
+                        up_speed += speed_string_to_bytes(speed)
+                    case MirrorStatus.STATUS_SEED:
+                        tasks["Seed"] += 1
+                    case MirrorStatus.STATUS_ARCHIVE:
+                        tasks["Archive"] += 1
+                    case MirrorStatus.STATUS_EXTRACT:
+                        tasks["Extract"] += 1
+                    case MirrorStatus.STATUS_SPLIT:
+                        tasks["Split"] += 1
+                    case MirrorStatus.STATUS_QUEUEDL:
+                        tasks["QueueDl"] += 1
+                    case MirrorStatus.STATUS_QUEUEUP:
+                        tasks["QueueUp"] += 1
+                    case MirrorStatus.STATUS_CLONE:
+                        tasks["Clone"] += 1
+                    case MirrorStatus.STATUS_CHECK:
+                        tasks["CheckUp"] += 1
+                    case MirrorStatus.STATUS_PAUSED:
+                        tasks["Pause"] += 1
+                    case MirrorStatus.STATUS_SAMVID:
+                        tasks["SamVid"] += 1
+                    case MirrorStatus.STATUS_CONVERT:
+                        tasks["ConvertMedia"] += 1
+                    case MirrorStatus.STATUS_FFMPEG:
+                        tasks["FFMPEG"] += 1
+                    case _:
+                        tasks["Download"] += 1
 
-
-bot.add_handler(MessageHandler(mirror_status, filters=command(
-    BotCommands.StatusCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
-bot.add_handler(CallbackQueryHandler(status_pages, filters=regex("^status")))
+        msg = f"""㊂ <b>Tasks Overview</b> :
+        
+┎ <b>Download:</b> {tasks["Download"]} | <b>Upload:</b> {tasks["Upload"]}
+┠ <b>Seed:</b> {tasks["Seed"]} | <b>Archive:</b> {tasks["Archive"]}
+┠ <b>Extract:</b> {tasks["Extract"]} | <b>Split:</b> {tasks["Split"]}
+┠ <b>QueueDL:</b> {tasks["QueueDl"]} | <b>QueueUP:</b> {tasks["QueueUp"]}
+┠ <b>Clone:</b> {tasks["Clone"]} | <b>CheckUp:</b> {tasks["CheckUp"]}
+┠ <b>Paused:</b> {tasks["Pause"]} | <b>SamVideo:</b> {tasks["SamVid"]}
+┞ <b>Convert:</b> {tasks["ConvertMedia"]} | <b>FFmpeg:</b> {tasks["FFmpeg"]}
+│
+┟ <b>Total Download Speed:</b> {get_readable_file_size(dl_speed)}/s
+┠ <b>Total Upload Speed:</b> {get_readable_file_size(up_speed)}/s
+┖ <b>Total Seeding Speed:</b> {get_readable_file_size(seed_speed)}/s
+"""
+        button = ButtonMaker()
+        button.data_button("Back", f"status {data[1]} ref")
+        await edit_message(message, msg, button.build_menu())

@@ -1,220 +1,203 @@
-#!/usr/bin/env python3
+from aiofiles.os import remove, path as aiopath
 from asyncio import sleep
 from time import time
-from aiofiles.os import remove as aioremove, path as aiopath
 
-from bot import aria2, download_dict_lock, download_dict, LOGGER, config_dict
-from bot.helper.ext_utils.task_manager import limit_checker
-from bot.helper.mirror_utils.upload_utils.gdriveTools import GoogleDriveHelper
-from bot.helper.mirror_utils.status_utils.aria2_status import Aria2Status
-from bot.helper.ext_utils.fs_utils import get_base_name, clean_unwanted
-from bot.helper.ext_utils.bot_utils import getDownloadByGid, new_thread, bt_selection_buttons, sync_to_async, get_telegraph_list
-from bot.helper.telegram_helper.message_utils import sendMessage, deleteMessage, update_all_messages
-from bot.helper.themes import BotTheme
+from ... import task_dict_lock, task_dict, LOGGER, intervals
+from ...core.config_manager import Config
+from ...core.torrent_manager import TorrentManager, is_metadata, aria2_name
+from ..ext_utils.bot_utils import bt_selection_buttons
+from ..ext_utils.files_utils import clean_unwanted
+from ..ext_utils.status_utils import get_task_by_gid
+from ..ext_utils.task_manager import stop_duplicate_check
+from ..mirror_leech_utils.status_utils.aria2_status import Aria2Status
+from ..telegram_helper.message_utils import (
+    send_message,
+    delete_message,
+    update_status_message,
+)
 
 
-@new_thread
-async def __onDownloadStarted(api, gid):
-    download = await sync_to_async(api.get_download, gid)
-    if download.options.follow_torrent == 'false':
+async def _on_download_started(api, data):
+    gid = data["params"][0]["gid"]
+    download = await api.tellStatus(gid)
+    options = await api.getOption(gid)
+    if options.get("follow-torrent", "") == "false":
         return
-    if download.is_metadata:
-        LOGGER.info(f'onDownloadStarted: {gid} METADATA')
+    if is_metadata(download):
+        LOGGER.info(f"onDownloadStarted: {gid} METADATA")
         await sleep(1)
-        if dl := await getDownloadByGid(gid):
-            listener = dl.listener()
-            if listener.select:
+        if task := await get_task_by_gid(gid):
+            task.listener.is_torrent = True
+            if task.listener.select:
                 metamsg = "Downloading Metadata, wait then you can select files. Use torrent file to avoid this wait."
-                meta = await sendMessage(listener.message, metamsg)
+                meta = await send_message(task.listener.message, metamsg)
                 while True:
                     await sleep(0.5)
-                    if download.is_removed or download.followed_by_ids:
-                        await deleteMessage(meta)
+                    if download.get("status", "") == "removed" or download.get(
+                        "followedBy", []
+                    ):
+                        await delete_message(meta)
                         break
-                    download = download.live
+                    download = await api.tellStatus(gid)
         return
     else:
-        LOGGER.info(f'onDownloadStarted: {download.name} - Gid: {gid}')
-    dl = None
-    if any([config_dict['DIRECT_LIMIT'],
-            config_dict['TORRENT_LIMIT'],
-            config_dict['LEECH_LIMIT'],
-            config_dict['STORAGE_THRESHOLD'],
-            config_dict['DAILY_TASK_LIMIT'],
-            config_dict['DAILY_MIRROR_LIMIT'],
-            config_dict['DAILY_LEECH_LIMIT']]):
+        LOGGER.info(f"onDownloadStarted: {aria2_name(download)} - Gid: {gid}")
         await sleep(1)
-        if dl is None:
-            dl = await getDownloadByGid(gid)
-        if dl:
-            if not hasattr(dl, 'listener'):
-                LOGGER.warning(
-                    f"onDownloadStart: {gid}. at Download limit didn't pass since download completed earlier!")
-                return
-            listener = dl.listener()
-            download = await sync_to_async(api.get_download, gid)
-            if not download.is_torrent:
-                await sleep(3)
-                download = download.live
-            size = download.total_length
-            LOGGER.info(f"listener size : {size}")
-            if limit_exceeded := await limit_checker(size, listener):
-                await listener.onDownloadError(limit_exceeded)
-                await sync_to_async(api.remove, [download], force=True, files=True)
-    if config_dict['STOP_DUPLICATE']:
-        await sleep(1)
-        if dl is None:
-            dl = await getDownloadByGid(gid)
-        if dl:
-            if not hasattr(dl, 'listener'):
-                LOGGER.warning(
-                    f"onDownloadStart: {gid}. STOP_DUPLICATE didn't pass since download completed earlier!")
-                return
-            listener = dl.listener()
-            if not listener.isLeech and not listener.select and listener.upPath == 'gd':
-                download = await sync_to_async(api.get_download, gid)
-                if not download.is_torrent:
-                    await sleep(3)
-                    download = download.live
-                LOGGER.info('Checking File/Folder if already in Drive...')
-                name = download.name
-                if listener.compress:
-                    name = f"{name}.zip"
-                elif listener.extract:
-                    try:
-                        name = get_base_name(name)
-                    except Exception:
-                        name = None
-                if name is not None:
-                    telegraph_content, contents_no = await sync_to_async(GoogleDriveHelper().drive_list, name, True)
-                    if telegraph_content:
-                        msg = BotTheme('STOP_DUPLICATE', content=contents_no)
-                        button = await get_telegraph_list(telegraph_content)
-                        await listener.onDownloadError(msg, button)
-                        await sync_to_async(api.remove, [download], force=True, files=True)
-                        return
+
+    await sleep(2)
+    if task := await get_task_by_gid(gid):
+        download = await api.tellStatus(gid)
+        task.listener.name = aria2_name(download)
+        msg, button = await stop_duplicate_check(task.listener)
+        if msg:
+            await task.listener.on_download_error(msg, button)
+            try:
+                await api.forceRemove(gid)
+            except:
+                pass
 
 
-
-
-@new_thread
-async def __onDownloadComplete(api, gid):
+async def _on_download_complete(api, data):
     try:
-        download = await sync_to_async(api.get_download, gid)
-    except Exception:
+        gid = data["params"][0]["gid"]
+        download = await api.tellStatus(gid)
+        options = await api.getOption(gid)
+    except:
         return
-    if download.options.follow_torrent == 'false':
+    if options.get("follow-torrent", "") == "false":
         return
-    if download.followed_by_ids:
-        new_gid = download.followed_by_ids[0]
-        LOGGER.info(f'Gid changed from {gid} to {new_gid}')
-        if dl := await getDownloadByGid(new_gid):
-            listener = dl.listener()
-            if config_dict['BASE_URL'] and listener.select:
-                if not dl.queued:
-                    await sync_to_async(api.client.force_pause, new_gid)
+    if download.get("followedBy", []):
+        new_gid = download.get("followedBy", [])[0]
+        LOGGER.info(f"Gid changed from {gid} to {new_gid}")
+        if task := await get_task_by_gid(new_gid):
+            task.listener.is_torrent = True
+            if Config.BASE_URL and task.listener.select:
+                if not task.queued:
+                    await api.forcePause(new_gid)
                 SBUTTONS = bt_selection_buttons(new_gid)
                 msg = "Your download paused. Choose files then press Done Selecting button to start downloading."
-                await sendMessage(listener.message, msg, SBUTTONS)
-    elif download.is_torrent:
-        if dl := await getDownloadByGid(gid):
-            if hasattr(dl, 'listener') and dl.seeding:
+                await send_message(task.listener.message, msg, SBUTTONS)
+    elif "bittorrent" in download:
+        if task := await get_task_by_gid(gid):
+            task.listener.is_torrent = True
+            if hasattr(task, "seeding") and task.seeding:
                 LOGGER.info(
-                    f"Cancelling Seed: {download.name} onDownloadComplete")
-                listener = dl.listener()
-                await listener.onUploadError(f"Seeding stopped with Ratio: {dl.ratio()} and Time: {dl.seeding_time()}")
-                await sync_to_async(api.remove, [download], force=True, files=True)
+                    f"Cancelling Seed: {aria2_name(download)} onDownloadComplete"
+                )
+                await api.forceRemove(gid)
+                await task.listener.on_upload_error(
+                    f"Seeding stopped with Ratio: {task.ratio()} and Time: {task.seeding_time()}"
+                )
     else:
-        LOGGER.info(f"onDownloadComplete: {download.name} - Gid: {gid}")
-        if dl := await getDownloadByGid(gid):
-            listener = dl.listener()
-            await listener.onDownloadComplete()
-            await sync_to_async(api.remove, [download], force=True, files=True)
+        LOGGER.info(f"onDownloadComplete: {aria2_name(download)} - Gid: {gid}")
+        if task := await get_task_by_gid(gid):
+            await task.listener.on_download_complete()
+            if intervals["stopAll"]:
+                return
+            try:
+                await api.forceRemove(gid)
+            except:
+                pass
 
 
-@new_thread
-async def __onBtDownloadComplete(api, gid):
-    seed_start_time = time()
+async def _on_bt_download_complete(api, data):
+    gid = data["params"][0]["gid"]
     await sleep(1)
-    download = await sync_to_async(api.get_download, gid)
-    if download.options.follow_torrent == 'false':
-        return
-    LOGGER.info(f"onBtDownloadComplete: {download.name} - Gid: {gid}")
-    if dl := await getDownloadByGid(gid):
-        listener = dl.listener()
-        if listener.select:
-            res = download.files
+    download = await api.tellStatus(gid)
+    LOGGER.info(f"onBtDownloadComplete: {aria2_name(download)} - Gid: {gid}")
+    if task := await get_task_by_gid(gid):
+        task.listener.is_torrent = True
+        if task.listener.select:
+            res = download.get("files", [])
             for file_o in res:
-                f_path = file_o.path
-                if not file_o.selected and await aiopath.exists(f_path):
+                f_path = file_o.get("path", "")
+                if file_o.get("selected", "") != "true" and await aiopath.exists(
+                    f_path
+                ):
                     try:
-                        await aioremove(f_path)
-                    except Exception:
+                        await remove(f_path)
+                    except:
                         pass
             await clean_unwanted(download.dir)
-        if listener.seed:
+        if task.listener.seed:
             try:
-                await sync_to_async(api.set_options, {'max-upload-limit': '0'}, [download])
+                await api.changeOption(gid, {"max-upload-limit": "0"})
             except Exception as e:
                 LOGGER.error(
-                    f'{e} You are not able to seed because you added global option seed-time=0 without adding specific seed_time for this torrent GID: {gid}')
+                    f"{e} You are not able to seed because you added global option seed-time=0 without adding specific seed_time for this torrent GID: {gid}"
+                )
         else:
             try:
-                await sync_to_async(api.client.force_pause, gid)
+                await api.forcePause(gid)
             except Exception as e:
                 LOGGER.error(f"{e} GID: {gid}")
-        await listener.onDownloadComplete()
-        download = download.live
-        if listener.seed:
-            if download.is_complete:
-                if dl := await getDownloadByGid(gid):
-                    LOGGER.info(f"Cancelling Seed: {download.name}")
-                    await listener.onUploadError(f"Seeding stopped with Ratio: {dl.ratio()} and Time: {dl.seeding_time()}")
-                    await sync_to_async(api.remove, [download], force=True, files=True)
-            else:
-                async with download_dict_lock:
-                    if listener.uid not in download_dict:
-                        await sync_to_async(api.remove, [download], force=True, files=True)
-                        return
-                    download_dict[listener.uid] = Aria2Status(
-                        gid, listener, True)
-                    download_dict[listener.uid].start_time = seed_start_time
-                LOGGER.info(f"Seeding started: {download.name} - Gid: {gid}")
-                await update_all_messages()
+        await task.listener.on_download_complete()
+        if intervals["stopAll"]:
+            return
+        download = await api.tellStatus(gid)
+        if (
+            task.listener.seed
+            and download.get("status", "") == "complete"
+            and await get_task_by_gid(gid)
+        ):
+            LOGGER.info(f"Cancelling Seed: {aria2_name(download)}")
+            await task.listener.on_upload_error(
+                f"Seeding stopped with Ratio: {task.ratio()} and Time: {task.seeding_time()}"
+            )
+            try:
+                await api.forceRemove(gid)
+            except:
+                pass
+        elif (
+            task.listener.seed
+            and download.get("status", "") == "complete"
+            and not await get_task_by_gid(gid)
+        ):
+            pass
+        elif task.listener.seed and not task.listener.is_cancelled:
+            async with task_dict_lock:
+                if task.listener.mid not in task_dict:
+                    await api.forceRemove(gid)
+                    return
+                task_dict[task.listener.mid] = Aria2Status(task.listener, gid, True)
+                task_dict[task.listener.mid].start_time = time()
+            LOGGER.info(f"Seeding started: {aria2_name(download)} - Gid: {gid}")
+            await update_status_message(task.listener.message.chat.id)
         else:
-            await sync_to_async(api.remove, [download], force=True, files=True)
+            try:
+                await api.forceRemove(gid)
+            except:
+                pass
 
 
-@new_thread
-async def __onDownloadStopped(api, gid):
-    await sleep(6)
-    if dl := await getDownloadByGid(gid):
-        listener = dl.listener()
-        await listener.onDownloadError('Dead torrent!')
+async def _on_download_stopped(_, data):
+    gid = data["params"][0]["gid"]
+    await sleep(4)
+    if task := await get_task_by_gid(gid):
+        await task.listener.on_download_error("Dead torrent!")
 
 
-@new_thread
-async def __onDownloadError(api, gid):
+async def _on_download_error(api, data):
+    gid = data["params"][0]["gid"]
+    await sleep(1)
     LOGGER.info(f"onDownloadError: {gid}")
     error = "None"
     try:
-        download = await sync_to_async(api.get_download, gid)
-        if download.options.follow_torrent == 'false':
+        download = await api.tellStatus(gid)
+        options = await api.getOption(gid)
+        if options.get("follow-torrent", "") == "false":
             return
-        error = download.error_message
+        error = download.get("errorMessage", "")
         LOGGER.info(f"Download Error: {error}")
-    except Exception:
+    except:
         pass
-    if dl := await getDownloadByGid(gid):
-        listener = dl.listener()
-        await listener.onDownloadError(error)
+    if task := await get_task_by_gid(gid):
+        await task.listener.on_download_error(error)
 
 
-def start_aria2_listener():
-    aria2.listen_to_notifications(threaded=False,
-                                  on_download_start=__onDownloadStarted,
-                                  on_download_error=__onDownloadError,
-                                  on_download_stop=__onDownloadStopped,
-                                  on_download_complete=__onDownloadComplete,
-                                  on_bt_download_complete=__onBtDownloadComplete,
-                                  timeout=60)
+def add_aria2_callbacks():
+    TorrentManager.aria2.onBtDownloadComplete(_on_bt_download_complete)
+    TorrentManager.aria2.onDownloadComplete(_on_download_complete)
+    TorrentManager.aria2.onDownloadError(_on_download_error)
+    TorrentManager.aria2.onDownloadStart(_on_download_started)
+    TorrentManager.aria2.onDownloadStop(_on_download_stopped)

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WZML-X</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Exo:wght@300;400;600;700&display=swap');
+
+        body {
+            font-family: 'Exo', sans-serif !important;
+        }
+        
+        :root {
+            --bg-color: #0a0f1c;
+            --primary-blue: #00b7ff;
+            --primary-yellow: #ffd700;
+            --primary-orange: #ff4500;
+            --text-color: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #000000;
+            color: var(--text-color);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .background-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 20%, var(--primary-blue) 0%, transparent 40%),
+                radial-gradient(circle at 80% 20%, var(--primary-yellow) 0%, transparent 40%),
+                radial-gradient(circle at 50% 80%, var(--primary-orange) 0%, transparent 40%);
+            opacity: 0.15;
+            filter: blur(70px);
+            z-index: 0;
+        }
+
+        .content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            background: rgba(10, 15, 28, 0.7);
+            padding: 3rem;
+            border-radius: 15px;
+            backdrop-filter: blur(20px);
+            box-shadow: 
+                0 0 30px rgba(0, 183, 255, 0.2),
+                inset 0 0 30px rgba(0, 183, 255, 0.1);
+            border: 1px solid rgba(0, 183, 255, 0.1);
+            animation: contentAppear 1s ease-out;
+        }
+
+        @keyframes contentAppear {
+            from { 
+                opacity: 0; 
+                transform: translateY(20px);
+                backdrop-filter: blur(0px);
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0);
+                backdrop-filter: blur(20px);
+            }
+        }
+
+        .logo {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 1.5rem;
+            border: 2px solid var(--primary-blue);
+            box-shadow: 0 0 20px rgba(0, 183, 255, 0.3);
+            animation: logoSpin 10s linear infinite;
+        }
+
+        @keyframes logoSpin {
+            from { transform: rotateY(0deg); }
+            to { transform: rotateY(360deg); }
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            background: linear-gradient(45deg, var(--primary-blue), var(--primary-yellow), var(--primary-orange));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 20px rgba(0, 183, 255, 0.3);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            color: var(--text-color);
+            opacity: 0.9;
+        }
+
+        .version {
+            font-size: 1rem;
+            color: var(--primary-blue);
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .links {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 0.8rem 1.5rem;
+            background: linear-gradient(45deg, var(--bg-color), #FF4D00, #FFDD00, #FFDD00, var(--primary-blue), var(--primary-blue), #00FFFF, white);
+            color: var(--bg-color);
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: all 0.5s ease;
+        }
+
+        .button:hover::before {
+            left: 100%;
+        }
+
+        .button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 183, 255, 0.3);
+        }
+
+        .copyright {
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            opacity: 0.7;
+            color: var(--text-color);
+        }
+
+        .tagline {
+            font-size: 1rem;
+            color: var(--primary-yellow);
+            margin-top: 1.5rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                padding: 2rem;
+            }
+
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .subtitle {
+                font-size: 1rem;
+            }
+
+            .links {
+                flex-direction: column;
+            }
+
+            .button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="background-animation"></div>
+        <div class="content">
+            <img class="logo" src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/IMG_20250213_112455_659.jpg-n4TftLXY3h5mHsdJIZQPSWUTX58iLY.jpeg" alt="WZMLX Logo">
+            <div class="version">V3.0.0</div>
+            <h1><b>WZML-X</b></h1>
+            <p class="subtitle">Experience the next generation of workflow automation</p>
+
+            <div class="links">
+              <a href="https://t.me/WZML_X" class="button">
+                <i class="fab fa-telegram-plane"></i> Telegram Channel
+              </a>
+              <a href="https://t.me/WZML_Support" class="button">
+                <i class="fas fa-comments"></i> Support Group
+              </a>
+              <a href="https://github.com/SilentDemonSD/WZML-X" class="button">
+                <i class="fab fa-github"></i> GitHub Repository
+              </a>
+              <a href="https://wzmlx.mysterysd.in/docs" class="button">
+                <i class="fas fa-book"></i> Documentation
+              </a>
+            </div>
+
+            <div class="tagline">SIMPLIFY YOUR WORKFLOW, MAXIMIZE YOUR IMPACT!</div>
+            <p class="copyright">&copy; 2025 WZML-X. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
