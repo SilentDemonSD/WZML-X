@@ -1,0 +1,91 @@
+name: Deploy to Heroku
+
+on:
+  workflow_dispatch:
+    inputs:
+      HEROKU_APP_NAME:
+        description: "Heroku App name"
+        required: true
+      HEROKU_API_KEY:
+        description: "Heroku API key"
+        required: true
+      HEROKU_EMAIL:
+        description: "Heroku email address"
+        required: true
+      HEROKU_TEAM_NAME:
+        description: "Heroku Team Name"
+        required: false
+      BOT_TOKEN:
+        description: "Telegram bot token"
+        required: true
+      OWNER_ID:
+        description: "Owner's telegram ID"
+        required: true
+      DATABASE_URL:
+        description: "Database URL from MongoDB"
+        required: true
+      TELEGRAM_API:
+        description: "Telegram API ID from https://my.telegram.org/"
+        required: true
+      TELEGRAM_HASH:
+        description: "Telegram HASH from https://my.telegram.org/"
+        required: true
+      UPSTREAM_REPO:
+        description: "Upstream Repo of your Fork or Main Repo"
+        required: true
+      
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout deploy branch
+        uses: actions/checkout@v4
+
+      - name: CleanUp Dirs and Files
+        run: |
+          for dir in bot qBittorrent web myjd sabnzbd sabnzbdapi; do
+            if [ -d "./$dir" ]; then
+              echo "Deleting directory: $dir"
+              rm -rf ./$dir
+            else
+              echo "Directory not found: $dir"
+            fi
+          done
+
+          if [ -f "./README.md" ]; then
+            echo "Deleting file: README.md"
+            rm -f ./README.md
+          else
+            echo "File not found: README.md"
+          fi
+
+          if [ -f "./setpkgs.sh" ]; then
+            echo "Deleting file: setpkgs.sh"
+            rm -f ./setpkgs.sh
+          else
+            echo "File not found: setpkgs.sh"
+          fi
+
+      - name: Install Heroku CLI
+        run: |
+          curl https://cli-assets.heroku.com/install.sh | sh
+          heroku --version
+
+      - name: Deploy to Heroku
+        uses: akhileshns/heroku-deploy@v3.13.15
+        with:
+          heroku_api_key: ${{inputs.HEROKU_API_KEY}}
+          heroku_app_name: ${{inputs.HEROKU_APP_NAME}}
+          heroku_email: ${{inputs.HEROKU_EMAIL}}
+          team: ${{ inputs.HEROKU_TEAM_NAME != '' && format('{0}', inputs.HEROKU_TEAM_NAME) || '' }}
+          usedocker: true
+          docker_heroku_process_type: web
+          stack: "container"
+          region: "eu"
+        env:
+          HD_OWNER_ID: ${{inputs.OWNER_ID}}
+          HD_TELEGRAM_API: ${{inputs.TELEGRAM_API}}
+          HD_TELEGRAM_HASH: ${{inputs.TELEGRAM_HASH}}
+          HD_DATABASE_URL: ${{inputs.DATABASE_URL}}
+          HD_BOT_TOKEN: ${{inputs.BOT_TOKEN}}
+          HD_UPSTREAM_REPO: ${{inputs.UPSTREAM_REPO}}
