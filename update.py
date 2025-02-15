@@ -10,12 +10,14 @@ from logging import (
     getLogger,
     ERROR,
 )
-from os import path, remove, getenv
+from os import path, remove, environ
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 from subprocess import run as srun, call as scall
 
 getLogger("pymongo").setLevel(ERROR)
+
+var_list = ['BOT_TOKEN', 'TELEGRAM_API', 'TELEGRAM_HASH', 'OWNER_ID', 'DATABASE_URL', 'BASE_URL', 'UPSTREAM_REPO', 'UPSTREAM_BRANCH']
 
 if path.exists("log.txt"):
     with open("log.txt", "r+") as f:
@@ -38,20 +40,22 @@ try:
         if not key.startswith("__")
     }
 except ModuleNotFoundError:
-    log_info("Config file not found!")
+    log_info("Config.py file is not Added! Checking ENVs..")
     config_file = {}
 
+env_updates = {key: value.strip() if isinstance(value, str) else value for key, value in environ.items() if key in var_list}
+if env_updates:
+    log_info("Config data is updated with ENVs!")
+    config_file.update(env_updates)
 
-BOT_TOKEN = getenv("BOT_TOKEN", "") or config_file.get("BOT_TOKEN", "")
+BOT_TOKEN = config_file.get("BOT_TOKEN", "")
 if not BOT_TOKEN:
     log_error("BOT_TOKEN variable is missing! Exiting now")
     exit(1)
 
 BOT_ID = BOT_TOKEN.split(":", 1)[0]
 
-if DATABASE_URL := (
-    getenv("DATABASE_URL", "") or config_file.get("DATABASE_URL", "")
-).strip():
+if DATABASE_URL := config_file.get("DATABASE_URL", "").strip():
     try:
         conn = MongoClient(DATABASE_URL, server_api=ServerApi("1"))
         db = conn.wzmlx
@@ -61,22 +65,14 @@ if DATABASE_URL := (
             old_config is not None and old_config == config_file or old_config is None
         ) and config_dict is not None:
             config_file["UPSTREAM_REPO"] = config_dict["UPSTREAM_REPO"]
-            config_file["UPSTREAM_BRANCH"] = config_dict.get(
-                "UPSTREAM_BRANCH", "master"
-            )
-            config_file["UPDATE_PKGS"] = config_dict.get("UPDATE_PKGS", "False")
+            config_file["UPSTREAM_BRANCH"] = config_dict.get("UPSTREAM_BRANCH", "wzv3")
+            config_file["UPDATE_PKGS"] = config_dict.get("UPDATE_PKGS", "True")
         conn.close()
     except Exception as e:
         log_error(f"Database ERROR: {e}")
 
-UPSTREAM_REPO = (
-    getenv("UPSTREAM_REPO", "") or config_file.get("UPSTREAM_REPO", "").strip()
-)
-UPSTREAM_BRANCH = (
-    getenv("UPSTREAM_BRANCH", "")
-    or config_file.get("UPSTREAM_BRANCH", "").strip()
-    or "wzv3"
-)
+UPSTREAM_REPO = config_file.get("UPSTREAM_REPO", "").strip()
+UPSTREAM_BRANCH = config_file.get("UPSTREAM_BRANCH", "").strip() or "wzv3"
 
 if UPSTREAM_REPO:
     if path.exists(".git"):
@@ -105,7 +101,7 @@ if UPSTREAM_REPO:
     log_info(f"UPSTREAM_REPO: {UPSTREAM_REPO} | UPSTREAM_BRANCH: {UPSTREAM_BRANCH}")
 
 
-UPDATE_PKGS = getenv("UPDATE_PKGS", "") or config_file.get("UPDATE_PKGS", "False")
+UPDATE_PKGS = config_file.get("UPDATE_PKGS", "True")
 if (isinstance(UPDATE_PKGS, str) and UPDATE_PKGS.lower() == "true") or UPDATE_PKGS:
-    result = scall("uv pip install -U -r requirements.txt", shell=True)
+    scall("uv pip install -U -r requirements.txt", shell=True)
     log_info("Successfully Updated all the Packages !")
