@@ -164,7 +164,7 @@ async def save_settings():
         return
     config_file = Config.get_all()
     await database.db.settings.config.update_one(
-        {"_id": TgClient.ID}, config_file, upsert=True
+        {"_id": TgClient.ID}, {"$set": config_file}, upsert=True
     )
     if await database.db.settings.aria2c.find_one({"_id": TgClient.ID}) is None:
         await database.db.settings.aria2c.update_one(
