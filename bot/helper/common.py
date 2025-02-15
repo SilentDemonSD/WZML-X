@@ -777,6 +777,7 @@ class TaskConfig:
     async def substitute(self, dl_path):
         def perform_swap(name, swaps):
             name, ext = ospath.splitext(name)
+            name = sub(r"www\S+", "", name)
             for swap in swaps:
                 pattern, res, cnt, sen = (swap + ["", "0", "NOFLAG"][min(len(swap)-1, 2):])[0:4]
                 cnt = 0 if len(cnt) == 0 else int(cnt)

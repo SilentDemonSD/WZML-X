@@ -88,6 +88,12 @@ async def load_settings():
             await database.db.settings.deployConfig.replace_one(
                 {"_id": BOT_ID}, config_file, upsert=True
             )
+            config_dict = await database.db.settings.config.find_one(
+                {"_id": BOT_ID}, {"_id": 0}
+            ) or {}
+            config_dict.update(config_file)
+            if config_dict:
+                Config.load_dict(config_dict)
         else:
             LOGGER.info("Updating.. Saved Config imported from MongoDB")
             config_dict = await database.db.settings.config.find_one(
