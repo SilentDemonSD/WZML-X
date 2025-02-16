@@ -63,6 +63,7 @@ class YoutubeDLHelper:
             "overwrites": True,
             "writethumbnail": True,
             "trim_file_name": 220,
+            "ffmpeg_location": "/bin/videomancer",
             "fragment_retries": 10,
             "retries": 10,
             "retry_sleep_functions": {

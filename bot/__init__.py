@@ -1,8 +1,7 @@
 from uvloop import install
 
 install()
-from subprocess import run as srun
-from os import getcwd
+
 from asyncio import Lock, new_event_loop, set_event_loop
 from datetime import datetime
 from logging import (
@@ -98,7 +97,5 @@ sabnzbd_client = SabnzbdClient(
     api_key="admin",
     port="8070",
 )
-
-srun(["torrentmaster", "-d", f"--profile={getcwd()}"], check=False)
 
 scheduler = AsyncIOScheduler(timezone=str(get_localzone()), event_loop=bot_loop)
