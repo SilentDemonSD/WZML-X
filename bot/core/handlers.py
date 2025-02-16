@@ -57,7 +57,7 @@ def add_handlers():
     TgClient.bot.add_handler(
         MessageHandler(
             cancel,
-            filters=regex(rf"^/{BotCommands.CancelTaskCommand[1]}(_\w+)?(?!all)")
+            filters=regex(rf"^/{BotCommands.CancelTaskCommand[1]}?(?:_\w+).*$")
             & CustomFilters.authorized,
         )
     )

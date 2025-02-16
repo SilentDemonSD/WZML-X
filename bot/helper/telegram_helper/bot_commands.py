@@ -17,7 +17,7 @@ class BotCommands:
     CountCommand = f"count{Config.CMD_SUFFIX}"
     DeleteCommand = f"del{Config.CMD_SUFFIX}"
     CancelTaskCommand = [f"cancel{Config.CMD_SUFFIX}", f"c{Config.CMD_SUFFIX}"]
-    CancelAllCommand = f"cancelall{Config.CMD_SUFFIX}"
+    CancelAllCommand = [f"cancelall{Config.CMD_SUFFIX}", f"call{Config.CMD_SUFFIX}"]
     ForceStartCommand = [f"forcestart{Config.CMD_SUFFIX}", f"fs{Config.CMD_SUFFIX}"]
     ListCommand = f"list{Config.CMD_SUFFIX}"
     SearchCommand = f"search{Config.CMD_SUFFIX}"
@@ -29,7 +29,7 @@ class BotCommands:
     AddSudoCommand = [f"addsudo{Config.CMD_SUFFIX}", f"as{Config.CMD_SUFFIX}"]
     RmSudoCommand = [f"rmsudo{Config.CMD_SUFFIX}", f"rs{Config.CMD_SUFFIX}"]
     PingCommand = f"ping{Config.CMD_SUFFIX}"
-    RestartCommand = [f"restart{Config.CMD_SUFFIX}", f"r{Config.CMD_SUFFIX}"]
+    RestartCommand = [f"restart{Config.CMD_SUFFIX}", f"r{Config.CMD_SUFFIX}", "restartall"]
     RestartSessionsCommand = f"restartses{Config.CMD_SUFFIX}"
     StatsCommand = [f"stats{Config.CMD_SUFFIX}", f"st{Config.CMD_SUFFIX}"]
     HelpCommand = [f"help{Config.CMD_SUFFIX}", f"h{Config.CMD_SUFFIX}"]
