@@ -2,7 +2,7 @@ from aiofiles.os import path as aiopath, remove, makedirs
 from aiofiles import open as aiopen
 from aioshutil import rmtree
 from importlib import import_module
-from os import getenv, path as ospath, environ, getcwd
+from os import getenv, path as ospath, environ
 from asyncio import create_subprocess_exec, create_subprocess_shell
 
 from .. import (
@@ -258,10 +258,6 @@ async def load_configurations():
             "chmod 600 .netrc && cp .netrc /root/.netrc && chmod +x setpkgs.sh && ./setpkgs.sh"
         )
     ).wait()
-    
-    await (
-            await create_subprocess_exec("torrentmaster", "-d", f"--profile={getcwd()}")
-        ).wait()
 
     PORT = getenv("PORT", "") or Config.BASE_URL_PORT
     if Config.BASE_URL:
