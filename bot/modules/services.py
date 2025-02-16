@@ -36,8 +36,7 @@ async def start(_, message):
 
     if len(message.command) > 1 and message.command[1] == "wzmlx":
         await delete_message(message)
-
-    elif len(message.command) > 1:
+    elif len(message.command) > 1 and message.command[1] != "start":
         decrypted_url = decode_slink(message.command[1])
         if Config.MEDIA_STORE and decrypted_url.startswith("file"):
             decrypted_url = decrypted_url.replace("file", "")

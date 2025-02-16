@@ -130,6 +130,7 @@ async def load_settings():
             file_ = key.replace("__", ".")
             async with aiopen(f"sabnzbd/{file_}", "wb+") as f:
                 await f.write(value)
+            LOGGER.info("Loaded.. Sabnzbd Data from MongoDB")
 
         if await database.db.users[BOT_ID].find_one():
             rows = database.db.users[BOT_ID].find({})

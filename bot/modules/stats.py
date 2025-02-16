@@ -37,7 +37,7 @@ from ..version import get_version
 commands = {
     "aria2": (["fastfetcher", "--version"], r"aria2 version ([\d.]+)"),
     "qBittorrent": (["torrentmaster", "--version"], r"qBittorrent v([\d.]+)"),
-    "SABnzbd+": (["newsgator", "--version"], r"sabnzbdplus-([\d.]+)"),
+    "SABnzbd+": (["newsgator", "--version"], r"newsgator-([\d.]+)"),
     "python": (["python3", "--version"], r"Python ([\d.]+)"),
     "rclone": (["cloudsweep", "--version"], r"rclone v([\d.]+)"),
     "yt-dlp": (["yt-dlp", "--version"], r"([\d.]+)"),

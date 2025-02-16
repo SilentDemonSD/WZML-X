@@ -62,6 +62,8 @@ class TelegramUploader:
         self._up_path = ""
         self._lprefix = ""
         self._lsuffix = ""
+        self._lcaption = ""
+        self._lfont = ""
         self._bot_pm = False
         self._media_group = False
         self._is_private = False
@@ -85,6 +87,8 @@ class TelegramUploader:
             "BOT_PM": ("_bot_pm", False),
             "LEECH_PREFIX": ("_lprefix", ""),
             "LEECH_SUFFIX": ("_lsuffix", ""),
+            "LEECH_CAPTION": ("_lcaption", ""),
+            "LEECH_FONT": ("_lfont", ""),
         }
 
         for key, (attr, default) in settings_map.items():
@@ -140,17 +144,24 @@ class TelegramUploader:
             self._sent_msg = self._listener.message
         return True
 
-    async def _prepare_file(self, file_, dirpath):
+    async def _prepare_file(self, pre_file_, dirpath):
+        cap_file_ = file_ = pre_file_
+        
         if self._lprefix:
-            cap_mono = f"{self._lprefix}{file_}"
-            self._lprefix = re_sub("<.*?>", "", self._lprefix)
-            file_ = f"{self._lprefix}{file_}"
-            new_path = ospath.join(dirpath, file_)
-            await rename(self._up_path, new_path)
-            self._up_path = new_path
-        else:
-            cap_mono = f"<code>{file_}</code>"
-        if len(file_) > 60:
+            cap_file_ = self._lprefix.replace(r"\s", " ") + file_
+            self._lprefix = re_sub(r"<.*?>", "", self._lprefix).replace(r"\s", " ")
+            if not file_.startswith(self._lprefix):
+                file_ = f"{self._lprefix}{file_}"
+        
+        if self._lsuffix:
+            name, ext = ospath.splitext(file_)
+            cap_file_ = name + self._lsuffix.replace(r"\s", " ") + ext
+            self._lsuffix = re_sub(r"<.*?>", "", self._lsuffix).replace(r"\s", " ")
+        
+        cap_mono = f"<code>{cap_file_}</code>"
+        # TODO : Add cap & font
+        
+        if len(file_) > 64:
             if is_archive(file_):
                 name = get_base_name(file_)
                 ext = file_.split(name, 1)[1]
@@ -163,12 +174,19 @@ class TelegramUploader:
             else:
                 name = file_
                 ext = ""
-            extn = len(ext)
-            remain = 60 - extn
-            name = name[:remain]
-            new_path = ospath.join(dirpath, f"{name}{ext}")
+            if self._lsuffix:
+                ext = f"{self._lsuffix}{ext}"
+            name = name[:64 - len(ext)]
+            file_ = f"{name}{ext}"
+        elif self._lsuffix:
+            name, ext = ospath.splitext(file_)
+            file_ = f"{name}{self._lsuffix}{ext}"
+            
+        if pre_file_ != file_:
+            new_path = ospath.join(dirpath, file_)
             await rename(self._up_path, new_path)
             self._up_path = new_path
+            
         return cap_mono
 
     def _get_input_media(self, subkey, key):
