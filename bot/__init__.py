@@ -19,7 +19,6 @@ from time import time
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from pyrogram import utils as pyroutils
 from pytz import timezone
-from tzlocal import get_localzone
 
 from sabnzbdapi import SabnzbdClient
 
@@ -96,4 +95,4 @@ sabnzbd_client = SabnzbdClient(
     port="8070",
 )
 
-scheduler = AsyncIOScheduler(timezone=str(get_localzone()), event_loop=bot_loop)
+scheduler = AsyncIOScheduler(event_loop=bot_loop)
