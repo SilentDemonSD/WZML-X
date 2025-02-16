@@ -1,7 +1,8 @@
 from aiofiles.os import path as aiopath, remove, makedirs
 from aiofiles import open as aiopen
 from aioshutil import rmtree
-from os import getenv, path as ospath
+from importlib import import_module
+from os import getenv, path as ospath, environ
 from asyncio import create_subprocess_exec, create_subprocess_shell
 
 from .. import (
@@ -12,6 +13,7 @@ from .. import (
     drives_names,
     index_urls,
     shortener_dict,
+    var_list,
     user_data,
     excluded_extensions,
     LOGGER,
@@ -63,7 +65,16 @@ async def load_settings():
     await database.connect()
     if database.db is not None:
         BOT_ID = Config.BOT_TOKEN.split(":", 1)[0]
-        config_file = Config.get_all()
+        try:
+            settings = import_module("config")
+            config_file = {
+                key: value.strip() if isinstance(value, str) else value
+                for key, value in vars(settings).items()
+                if not key.startswith("__")
+            }
+        except ModuleNotFoundError:
+            config_file = {}
+        config_file.update({key: value.strip() if isinstance(value, str) else value for key, value in environ.items() if key in var_list})
 
         old_config = await database.db.settings.deployConfig.find_one(
             {"_id": BOT_ID}, {"_id": 0}
@@ -77,6 +88,12 @@ async def load_settings():
             await database.db.settings.deployConfig.replace_one(
                 {"_id": BOT_ID}, config_file, upsert=True
             )
+            config_dict = await database.db.settings.config.find_one(
+                {"_id": BOT_ID}, {"_id": 0}
+            ) or {}
+            config_dict.update(config_file)
+            if config_dict:
+                Config.load_dict(config_dict)
         else:
             LOGGER.info("Updating.. Saved Config imported from MongoDB")
             config_dict = await database.db.settings.config.find_one(
@@ -84,10 +101,6 @@ async def load_settings():
             )
             if config_dict:
                 Config.load_dict(config_dict)
-
-        await database.db.settings.config.replace_one(
-            {"_id": BOT_ID}, config_file, upsert=True
-        )
 
         if pf_dict := await database.db.settings.files.find_one(
             {"_id": BOT_ID}, {"_id": 0}
@@ -117,6 +130,7 @@ async def load_settings():
             file_ = key.replace("__", ".")
             async with aiopen(f"sabnzbd/{file_}", "wb+") as f:
                 await f.write(value)
+            LOGGER.info("Loaded.. Sabnzbd Data from MongoDB")
 
         if await database.db.users[BOT_ID].find_one():
             rows = database.db.users[BOT_ID].find({})
@@ -155,6 +169,10 @@ async def load_settings():
 async def save_settings():
     if database.db is None:
         return
+    config_file = Config.get_all()
+    await database.db.settings.config.update_one(
+        {"_id": TgClient.ID}, {"$set": config_file}, upsert=True
+    )
     if await database.db.settings.aria2c.find_one({"_id": TgClient.ID}) is None:
         await database.db.settings.aria2c.update_one(
             {"_id": TgClient.ID}, {"$set": aria2_options}, upsert=True

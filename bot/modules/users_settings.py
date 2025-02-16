@@ -3,6 +3,7 @@ from functools import partial
 from html import escape
 from io import BytesIO
 from os import getcwd
+from re import sub
 from time import time
 
 from aiofiles.os import makedirs, remove
@@ -567,7 +568,7 @@ async def set_option(_, message, option, rfunc):
     elif option in ["UPLOAD_PATHS", "FFMPEG_CMDS", "YT_DLP_OPTIONS"]:
         if value.startswith("{") and value.endswith("}"):
             try:
-                value = eval(value)
+                value = eval(sub(r"\s+", " ", value))
             except Exception as e:
                 await send_message(message, str(e))
                 return

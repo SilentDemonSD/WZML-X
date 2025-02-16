@@ -2,6 +2,7 @@ from json import dumps, loads, JSONDecodeError
 from httpx import AsyncClient, RequestError
 from httpx import AsyncHTTPTransport
 from functools import wraps
+from asyncio import sleep
 
 from .exception import (
     MYJDApiException,
@@ -727,7 +728,6 @@ class MyJdApi:
         transport = AsyncHTTPTransport(retries=10, verify=False)
 
         self._http_session = clientSession(transport=transport)
-
         self._http_session.verify = False
 
         return self._http_session
@@ -736,52 +736,53 @@ class MyJdApi:
         if self._http_session is not None:
             await self._http_session.aclose()
             self._http_session = None
-
+        
     async def request_api(self, path, params=None):
         session = self._session()
-
-        # Prepare params_request based on the input params
-        params_request = params if params is not None else []
-
-        # Construct the request payload
-        params_request = {
-            "params": params_request,
-        }
-        data = dumps(params_request)
-        # Removing quotes around null elements.
-        data = data.replace('"null"', "null")
-        data = data.replace("'null'", "null")
-        request_url = self.__api_url + path
-        try:
-            res = await session.request(
-                "POST",
-                request_url,
-                headers={"Content-Type": "application/json; charset=utf-8"},
-                content=data,
-            )
-            response = res.text
-        except RequestError:
-            return None
-        if res.status_code != 200:
+        
+        data = dumps({"params": params if params is not None else []})
+        data = data.replace('"null"', "null").replace("'null'", "null")
+        url = f"{self.__api_url}{path}"
+        
+        for attempt in range(3):
             try:
-                error_msg = loads(response)
+                res = await session.request(
+                    "POST", url,
+                    headers={"Content-Type": "application/json; charset=utf-8"},
+                    content=data,
+                )
+                txt = res.text
+            except RequestError:
+                if attempt == 2:
+                    return None
+                await sleep(1.2)
+                continue
+            
+            if res.status_code == 200:
+                try:
+                    return loads(txt)
+                except JSONDecodeError as exc:
+                    if attempt == 2:
+                        raise MYJDDecodeException(f"Failed to decode response: {txt}") from exc
+                    await sleep(1.2)
+                    continue
+                
+            try:
+                err = loads(txt)
             except JSONDecodeError as exc:
-                raise MYJDDecodeException(
-                    "Failed to decode response: {}", response
-                ) from exc
-            msg = (
-                "\n\tSOURCE: "
-                + error_msg["src"]
-                + "\n\tTYPE: "
-                + error_msg["type"]
-                + "\n------\nREQUEST_URL: "
-                + self.__api_url
-                + path
-            )
-            msg += "\n"
-            if data is not None:
-                msg += "DATA:\n" + data
-            raise (
-                MYJDApiException.get_exception(error_msg["src"], error_msg["type"], msg)
-            )
-        return loads(response)
+                if attempt == 2:
+                    raise MYJDDecodeException(f"Failed to decode response: {txt}") from exc
+                await sleep(1.2)
+                continue
+            
+            msg = (f"\n\tSOURCE: {err.get('src', 'Unknown')}"
+                   f"\n\tTYPE: {err.get('type', 'Unknown')}"
+                   f"\n------\nREQUEST_URL: {url}\n")
+            if data:
+                msg += f"DATA:\n{data}"
+            if attempt == 2:
+                raise MYJDApiException.get_exception(err.get("src", "Unknown"), err.get("type", "Unknown"), msg)
+            
+            await sleep(1.2)
+        return None
+    

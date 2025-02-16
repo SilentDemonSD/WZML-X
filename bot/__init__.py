@@ -1,6 +1,9 @@
 from uvloop import install
 
 install()
+
+from subprocess import run as srun
+from os import getcwd
 from asyncio import Lock, new_event_loop, set_event_loop
 from datetime import datetime
 from logging import (
@@ -72,6 +75,7 @@ status_dict = {}
 task_dict = {}
 rss_dict = {}
 shortener_dict = {}
+var_list = ['BOT_TOKEN', 'TELEGRAM_API', 'TELEGRAM_HASH', 'OWNER_ID', 'DATABASE_URL', 'BASE_URL', 'UPSTREAM_REPO', 'UPSTREAM_BRANCH']
 auth_chats = {}
 excluded_extensions = ["aria2", "!qB"]
 drives_names = []
@@ -94,5 +98,6 @@ sabnzbd_client = SabnzbdClient(
     api_key="admin",
     port="8070",
 )
+srun(["torrentmaster", "-d", f"--profile={getcwd()}"], check=False)
 
 scheduler = AsyncIOScheduler(event_loop=bot_loop)
