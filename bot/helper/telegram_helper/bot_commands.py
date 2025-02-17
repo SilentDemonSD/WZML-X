@@ -1,7 +1,6 @@
 from ...core.config_manager import Config
 
 class BotCommands:
-    SUFFIX = Config.CMD_SUFFIX
     StartCommand = "start"
 
     commands = {
@@ -47,5 +46,5 @@ class BotCommands:
     }
 
     for key, cmds in commands.items():
-        vars()[f"{key}Command"] = [f"{cmd}{SUFFIX}" for cmd in cmds] if isinstance(cmds, list) else f"{cmds}{SUFFIX}"
+        vars()[f"{key}Command"] = [f"{cmd}{Config.CMD_SUFFIX}" for cmd in cmds] if isinstance(cmds, list) else f"{cmds}{Config.CMD_SUFFIX}"
     
