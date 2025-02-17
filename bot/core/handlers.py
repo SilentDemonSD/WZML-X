@@ -343,6 +343,7 @@ def add_handlers():
                     description,
                 )
                 for cmd, description in BOT_COMMANDS.items()
-                if (cmds := getattr(BotCommands, f"{cmd}Command", None))
-            ],
+                for cmds in [getattr(BotCommands, f"{cmd}Command", None)]
+                if cmds is not None
+            ]
         )
