@@ -339,9 +339,10 @@ def add_handlers():
         TgClient.bot.set_bot_commands(
             [
                 BotCommand(
-                    (cmds := getattr(BotCommands, f"{cmd}Command"))[0] if isinstance(cmds, list) else cmds,
+                    cmds[0] if isinstance(cmds, list) else cmds,
                     description,
                 )
                 for cmd, description in BOT_COMMANDS.items()
+                if (cmds := getattr(BotCommands, f"{cmd}Command", None))
             ],
         )
