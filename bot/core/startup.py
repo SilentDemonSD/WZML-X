@@ -1,14 +1,15 @@
-from aiofiles.os import path as aiopath, remove, makedirs
-from aiofiles import open as aiopen
-from aioshutil import rmtree
-from importlib import import_module
-from os import getenv, path as ospath, environ
 from asyncio import create_subprocess_exec, create_subprocess_shell
+from importlib import import_module
+from os import environ, getenv, path as ospath
+
+from aiofiles import open as aiopen
+from aiofiles.os import makedirs, remove, path as aiopath
+from aioshutil import rmtree
 
 from .. import (
+    LOGGER,
     aria2_options,
-    qbit_options,
-    nzb_options,
+    auth_chats,
     drives_ids,
     drives_names,
     index_urls,
@@ -16,10 +17,10 @@ from .. import (
     var_list,
     user_data,
     excluded_extensions,
-    LOGGER,
+    nzb_options,
+    qbit_options,
     rss_dict,
     sabnzbd_client,
-    auth_chats,
     sudo_users,
 )
 from ..helper.ext_utils.db_handler import database
@@ -74,7 +75,13 @@ async def load_settings():
             }
         except ModuleNotFoundError:
             config_file = {}
-        config_file.update({key: value.strip() if isinstance(value, str) else value for key, value in environ.items() if key in var_list})
+        config_file.update(
+            {
+                key: value.strip() if isinstance(value, str) else value
+                for key, value in environ.items()
+                if key in var_list
+            }
+        )
 
         old_config = await database.db.settings.deployConfig.find_one(
             {"_id": BOT_ID}, {"_id": 0}
@@ -271,6 +278,7 @@ async def load_configurations():
         await (
             await create_subprocess_exec("7z", "x", "cfg.zip", "-o/JDownloader")
         ).wait()
+        await remove("cfg.zip")
 
     if await aiopath.exists("accounts.zip"):
         if await aiopath.exists("accounts"):

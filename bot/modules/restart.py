@@ -107,8 +107,8 @@ async def restart_notification():
 ┠ <b>TimeZone:</b> Asia/Kolkata
 ┖ <b>Version:</b> {get_version()}""",
             )
-        except Exception:
-            pass
+        except Exception as e:
+            LOGGER.error(e)
         await remove(".restartmsg")
 
 

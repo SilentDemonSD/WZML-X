@@ -2,17 +2,19 @@
 from uvloop import install
 
 install()
+
+from asyncio import sleep
 from contextlib import asynccontextmanager
+from logging import INFO, WARNING, FileHandler, StreamHandler, basicConfig, getLogger
+
+from aioaria2 import Aria2HttpClient
+from aiohttp.client_exceptions import ClientResponseError
+from aioqbt.client import create_client
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
-from logging import getLogger, FileHandler, StreamHandler, INFO, basicConfig, WARNING
-from asyncio import sleep
-from sabnzbdapi import SabnzbdClient
-from aioaria2 import Aria2HttpClient
-from aioqbt.client import create_client
-from aiohttp.client_exceptions import ClientResponseError
 
+from sabnzbdapi import SabnzbdClient
 from web.nodes import extract_file_ids, make_tree
 
 getLogger("httpx").setLevel(WARNING)

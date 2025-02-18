@@ -1,22 +1,24 @@
-from aioshutil import rmtree as aiormtree
 from asyncio import create_subprocess_exec, sleep, wait_for
 from asyncio.subprocess import PIPE
-from magic import Magic
-from os import walk, path as ospath, readlink
-from re import split as re_split, I, search as re_search, escape
+from contextlib import suppress
+from os import path as ospath, readlink, walk
+from re import I, escape, search as re_search, split as re_split
+
 from aiofiles.os import (
-    remove,
-    path as aiopath,
     listdir,
+    remove,
     rmdir,
-    readlink as aioreadlink,
     symlink,
     makedirs as aiomakedirs,
+    path as aiopath,
+    readlink as aioreadlink,
 )
+from aioshutil import rmtree as aiormtree
+from magic import Magic
 
-from ... import LOGGER, DOWNLOAD_DIR
+from ... import DOWNLOAD_DIR, LOGGER
 from ...core.torrent_manager import TorrentManager
-from .bot_utils import sync_to_async, cmd_exec
+from .bot_utils import cmd_exec, sync_to_async
 from .exceptions import NotSupportedExtractionArchive
 
 ARCH_EXT = [
@@ -129,11 +131,9 @@ async def clean_download(opath):
 
 async def clean_all():
     await TorrentManager.remove_all()
-    try:
+    with suppress(Exception):
         LOGGER.info("Cleaning Download Directory")
         await aiormtree(DOWNLOAD_DIR, ignore_errors=True)
-    except Exception:
-        pass
     await aiomakedirs(DOWNLOAD_DIR, exist_ok=True)
 
 

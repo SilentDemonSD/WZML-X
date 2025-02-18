@@ -1,5 +1,6 @@
 from aiofiles.os import path as aiopath, remove, makedirs, listdir
 from asyncio import sleep, gather
+from contextlib import suppress
 from os import walk, path as ospath
 from secrets import token_hex
 from aioshutil import move, rmtree
@@ -470,10 +471,8 @@ class TaskConfig:
             self.user = self.message.from_user = await self.client.get_users(id_)
             self.user_id = self.user.id
             self.user_dict = user_data.get(self.user_id, {})
-            try:
+            with suppress(Exception):
                 await self.message.unpin()
-            except Exception:
-                pass
         if self.user:
             if username := self.user.username:
                 self.tag = f"@{username}"

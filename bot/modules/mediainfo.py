@@ -70,7 +70,7 @@ section_dict = {
 
 def parseinfo(out, size):
     tc, trigger = "", False
-    size_line = f"File size                               : {size / (1024 * 1024):.2f} MiB"
+    size_line = f"File size                                 : {size / (1024 * 1024):.2f} MiB"
     for line in out.split("\n"):
         for section, emoji in section_dict.items():
             if line.startswith(section):

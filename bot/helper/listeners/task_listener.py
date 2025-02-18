@@ -2,6 +2,7 @@ from asyncio import gather, sleep
 from html import escape
 from time import time
 from re import match
+from contextlib import suppress
 
 from aiofiles.os import listdir, makedirs, remove
 from aiofiles.os import path as aiopath
@@ -58,14 +59,12 @@ class TaskListener(TaskConfig):
         super().__init__()
 
     async def clean(self):
-        try:
+        with suppress(Exception):
             if st := intervals["status"]:
                 for intvl in list(st.values()):
                     intvl.cancel()
             intervals["status"].clear()
             await gather(TorrentManager.aria2.purgeDownloadResult(), delete_status())
-        except Exception:
-            pass
 
     def clear(self):
         self.subname = ""

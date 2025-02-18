@@ -1,4 +1,5 @@
 from time import time
+from contextlib import suppress
 
 from .... import LOGGER
 from ...ext_utils.status_utils import (
@@ -64,8 +65,6 @@ class SevenZStatus:
             self.listener.subproc is not None
             and self.listener.subproc.returncode is None
         ):
-            try:
+            with suppress(Exception):
                 self.listener.subproc.kill()
-            except Exception:
-                pass
         await self.listener.on_upload_error(f"{self._cstatus} stopped by user!")

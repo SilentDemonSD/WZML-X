@@ -69,5 +69,5 @@ __all__ = [
     "MYJDTokenInvalidException",
     "MYJDTooManyRequestsException",
     "MYJDUnknownException",
-    "Myjdapi",
+    "MyJdApi",
 ]

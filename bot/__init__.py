@@ -1,3 +1,5 @@
+# ruff: noqa: E402
+
 from uvloop import install
 
 install()
@@ -57,7 +59,7 @@ def changetz(*args):
 
 
 Formatter.converter = changetz
-LOGGER.info("Logging synced with Timezone !")
+LOGGER.info("Logging Time synced with Local Timezone !")
 
 bot_cache = {}
 DOWNLOAD_DIR = "/usr/src/app/downloads/"

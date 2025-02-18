@@ -9,9 +9,11 @@ from .config_manager import Config
 class TgClient:
     _lock = Lock()
     _hlock = Lock()
+
     bot = None
     user = None
     helper_bots = {}
+
     BNAME = ""
     ID = 0
     IS_PREMIUM_USER = False
@@ -19,26 +21,39 @@ class TgClient:
 
     @classmethod
     def wztgClient(cls, *args, **kwargs):
+        kwargs["api_id"] = Config.TELEGRAM_API
+        kwargs["api_hash"] = Config.TELEGRAM_HASH
+        kwargs["proxy"] = Config.TG_PROXY
         kwargs["parse_mode"] = enums.ParseMode.HTML
-        if "max_concurrent_transmissions" in signature(Client.__init__).parameters:
-            kwargs["max_concurrent_transmissions"] = 100
+        kwargs["in_memory"] = True
+        for param, value in {
+            "max_concurrent_transmissions": 100,
+            "skip_updates": False,
+        }.items():
+            if param in signature(Client.__init__).parameters:
+                kwargs[param] = value
         return Client(*args, **kwargs)
 
     @classmethod
-    async def start_helper_bot(cls, b_token):
+    async def start_helper_bot(cls):
         LOGGER.info("Generating helper client from HELPER_TOKENS")
         async with cls._hlock:
-            cls.helper_bots[b_token] = cls.wztgClient(
-                f"WZ-HBot{b_token}",
-                Config.TELEGRAM_API,
-                Config.TELEGRAM_HASH,
-                bot_token=b_token,
-                no_updates=True,
-            )
-            await cls.helper_bots[b_token].start()
-            LOGGER.info(
-                f"Helper Bot [@{cls.helper_bots[b_token].me.username}] Started!"
-            )
+            for b_token in Config.HELPER_TOKENS.split():
+                try:
+                    cls.helper_bots[b_token] = cls.wztgClient(
+                        f"WZ-HBot{b_token}",
+                        bot_token=b_token,
+                        no_updates=True,
+                    )
+                    await cls.helper_bots[b_token].start()
+                    LOGGER.info(
+                        f"Helper Bot [@{cls.helper_bots[b_token].me.username}] Started!"
+                    )
+                except Exception as e:
+                    LOGGER.error(f"Failed to start helper bot {b_token} from HELPER_TOKENS. {e}")
+                    if b_token in cls.helper_bots:
+                        del cls.helper_bots[b_token]
+
 
     @classmethod
     async def start_bot(cls):
@@ -46,17 +61,13 @@ class TgClient:
         cls.ID = Config.BOT_TOKEN.split(":", 1)[0]
         cls.bot = cls.wztgClient(
             f"WZ-Bot{cls.ID}",
-            Config.TELEGRAM_API,
-            Config.TELEGRAM_HASH,
-            proxy=Config.TG_PROXY,
             bot_token=Config.BOT_TOKEN,
             workdir="/usr/src/app",
-            parse_mode=enums.ParseMode.HTML,
         )
         await cls.bot.start()
         cls.BNAME = cls.bot.me.username
         cls.ID = Config.BOT_TOKEN.split(":", 1)[0]
-        LOGGER.info(f"WZ Bot [@{cls.BNAME}] Started!")
+        LOGGER.info(f"WZ Bot : [@{cls.BNAME}] Started!")
 
     @classmethod
     async def start_user(cls):
@@ -65,12 +76,7 @@ class TgClient:
             try:
                 cls.user = cls.wztgClient(
                     "WZ-User",
-                    Config.TELEGRAM_API,
-                    Config.TELEGRAM_HASH,
-                    proxy=Config.TG_PROXY,
                     session_string=Config.USER_SESSION_STRING,
-                    in_memory=False,
-                    parse_mode=enums.ParseMode.HTML,
                     sleep_threshold=60,
                     no_updates=True,
                 )
@@ -78,7 +84,8 @@ class TgClient:
                 cls.IS_PREMIUM_USER = cls.user.me.is_premium
                 if cls.IS_PREMIUM_USER:
                     cls.MAX_SPLIT_SIZE = 4194304000
-                LOGGER.info(f"WZ User [@{cls.user.me.username}] Started!")
+                uname = f"@{cls.user.me.username}" or cls.user.me.first_name
+                LOGGER.info(f"WZ User : [{uname}] Started!")
             except Exception as e:
                 LOGGER.error(f"Failed to start client from USER_SESSION_STRING. {e}")
                 cls.IS_PREMIUM_USER = False
@@ -88,8 +95,10 @@ class TgClient:
     async def stop(cls):
         async with cls._lock:
             if cls.bot:
+                cls.bot = None
                 await cls.bot.stop()
             if cls.user:
+                cls.user = None
                 await cls.user.stop()
             LOGGER.info("Client(s) stopped")
 

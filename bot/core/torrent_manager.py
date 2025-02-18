@@ -1,9 +1,9 @@
+from asyncio import gather
+from contextlib import suppress
+from pathlib import Path
+
 from aioaria2 import Aria2WebsocketClient
 from aioqbt.client import create_client
-from aioaria2.exceptions import Aria2rpcException
-from asyncio import gather
-from pathlib import Path
-from json import loads, JSONDecodeError
 
 from .. import LOGGER, aria2_options
 
@@ -25,26 +25,11 @@ class TorrentManager:
 
     @classmethod
     async def aria2_remove(cls, download):
-        try:
-            if download.get("status", "") in ["active", "paused", "waiting"]:
-                await cls.aria2.forceRemove(download.get("gid", ""))
-            else:
+        if download.get("status", "") in ["active", "paused", "waiting"]:
+            await cls.aria2.forceRemove(download.get("gid", ""))
+        else:
+            with suppress(Exception):
                 await cls.aria2.removeDownloadResult(download.get("gid", ""))
-        except Aria2rpcException as er:
-            err_str = str(er)
-            prefix = "unexpected result: "
-            if err_str.startswith(prefix):
-                err_str = err_str[len(prefix):]
-            else:
-                LOGGER.error(f"Aria2 Error: {err_str}")
-                return
-            try:
-                data = loads(err_str)
-                error_message = data.get("error", {}).get("message", "Unknown error")
-                if not (error_message.startswith("GID ") and "is not found" in error_message):
-                    LOGGER.error(f"Aria2 Exception: {error_message}")
-            except JSONDecodeError:
-                LOGGER.error(f"Aria2 Error: {err_str}")
 
     @classmethod
     async def remove_all(cls):
@@ -61,10 +46,8 @@ class TorrentManager:
         tasks.extend(
             cls.aria2.forceRemove(download.get("gid")) for download in downloads
         )
-        try:
+        with suppress(Exception):
             await gather(*tasks)
-        except Exception:
-            pass
 
     @classmethod
     async def overall_speed(cls):

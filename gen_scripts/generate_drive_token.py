@@ -1,25 +1,56 @@
-import os
+from os.path import exists
 import pickle
+
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 
-credentials = None
-__G_DRIVE_TOKEN_FILE = "token.pickle"
-__OAUTH_SCOPE = ["https://www.googleapis.com/auth/drive"]
-if os.path.exists(__G_DRIVE_TOKEN_FILE):
-    with open(__G_DRIVE_TOKEN_FILE, "rb") as f:
-        credentials = pickle.load(f)
-        if (
-            (credentials is None or not credentials.valid)
-            and credentials
-            and credentials.expired
-            and credentials.refresh_token
-        ):
-            credentials.refresh(Request())
-else:
-    flow = InstalledAppFlow.from_client_secrets_file("credentials.json", __OAUTH_SCOPE)
-    credentials = flow.run_local_server(port=0, open_browser=False)
+TOKEN_FILE = "token.pickle"
+OAUTH_SCOPE = ["https://www.googleapis.com/auth/drive"]
 
-# Save the credentials for the next run
-with open(__G_DRIVE_TOKEN_FILE, "wb") as token:
-    pickle.dump(credentials, token)
+def load_credentials(token_file: str):
+    if exists(token_file):
+        try:
+            with open(token_file, "rb") as f:
+                creds = pickle.load(f)
+                return creds
+        except Exception as e:
+            print(f"Error loading credentials: {e}")
+    return None
+
+def save_credentials(token_file: str, credentials) -> None:
+    try:
+        with open(token_file, "wb") as f:
+            pickle.dump(credentials, f)
+    except Exception as e:
+        print(f"Error saving credentials: {e}")
+
+def get_credentials():
+    credentials = load_credentials(TOKEN_FILE)
+    if credentials and credentials.valid:
+        return credentials
+
+    if credentials and credentials.expired and credentials.refresh_token:
+        try:
+            credentials.refresh(Request())
+            return credentials
+        except Exception as e:
+            print(f"Error refreshing credentials: {e}")
+
+    try:
+        flow = InstalledAppFlow.from_client_secrets_file("credentials.json", OAUTH_SCOPE)
+        credentials = flow.run_local_server(port=0, open_browser=False)
+    except Exception as e:
+        print(f"Error during OAuth flow: {e}")
+        raise
+
+    return credentials
+
+def main():
+    try:
+        credentials = get_credentials()
+        save_credentials(TOKEN_FILE, credentials)
+    except Exception as e:
+        print(f"Failed to obtain credentials: {e}")
+
+if __name__ == "__main__":
+    main()

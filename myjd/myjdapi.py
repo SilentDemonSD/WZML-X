@@ -252,45 +252,49 @@ class Linkgrabber:
 
     async def query_links(self, params=None):
         """
+        Get the links in the linkcollector/linkgrabber.
 
-        Get the links in the linkcollector/linkgrabber
+        :param params: A dictionary with options. The default dictionary is configured 
+                   to return all downloads with full details, but you can provide your own options.
+                   Available options:
+                   {
+                       "bytesTotal"    : false,
+                       "comment"       : false,
+                       "status"        : false,
+                       "enabled"       : false,
+                       "maxResults"    : -1,
+                       "startAt"       : 0,
+                       "packageUUIDs"  : null,
+                       "hosts"         : false,
+                       "url"           : false,
+                       "availability"  : false,
+                       "variantIcon"   : false,
+                       "variantName"   : false,
+                       "variantID"     : false,
+                       "variants"      : false,
+                       "priority"      : false
+                   }
+        :type params: dict
+        :rtype: list of dict
 
-        :param params: A dictionary with options. The default dictionary is
-        configured so it returns you all the downloads with all details, but you
-        can put your own with your options. All the options available are this
-        ones:
-        {
-        "bytesTotal"    : false,
-        "comment"       : false,
-        "status"        : false,
-        "enabled"       : false,
-        "maxResults"    : -1,
-        "startAt"       : 0,
-        "packageUUIDs"  : null,
-        "hosts"         : false,
-        "url"           : false,
-        "availability"  : false,
-        "variantIcon"   : false,
-        "variantName"   : false,
-        "variantID"     : false,
-        "variants"      : false,
-        "priority"      : false
-        }
-        :type: Dictionary
-        :rtype: List of dictionaries of this style, with more or less detail based on your options.
-
-        [   {   'availability': 'ONLINE',
-            'bytesTotal': 68548274,
-            'enabled': True,
-            'name': 'The Rick And Morty Theory - The Original        Morty_ - '
-                    'Cartoon Conspiracy (Ep. 74) @ChannelFred (192kbit).m4a',
-            'packageUUID': 1450430888524,
-            'url': 'youtubev2://DEMUX_M4A_192_720P_V4/d1NZf1w2BxQ/',
-            'uuid': 1450430889576,
-            'variant': {   'id': 'DEMUX_M4A_192_720P_V4',
-                        'name': '192kbit/s M4A-Audio'},
-            'variants': True
-            }, ... ]
+        Example response:
+            [
+            {
+                'availability': 'ONLINE',
+                'bytesTotal': 68548274,
+                'enabled': True,
+                'name': 'The Rick And Morty Theory - The Original Morty_ - Cartoon Conspiracy (Ep. 74) @ChannelFred (192kbit).m4a',
+                'packageUUID': 1450430888524,
+                'url': 'youtubev2://DEMUX_M4A_192_720P_V4/d1NZf1w2BxQ/',
+                'uuid': 1450430889576,
+                'variant': {
+                'id': 'DEMUX_M4A_192_720P_V4',
+                'name': '192kbit/s M4A-Audio'
+                },
+                'variants': True
+            },
+            ...
+            ]
         """
         if params is None:
             params = [
