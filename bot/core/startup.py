@@ -59,10 +59,11 @@ async def update_nzb_options():
 
 
 async def load_settings():
-    if await aiopath.exists("Thumbnails"):
-        await rmtree("Thumbnails", ignore_errors=True)
     if not Config.DATABASE_URL:
         return
+    for p in ["thumbnails", "tokens", "rclone"]:
+        if await aiopath.exists(p):
+            await rmtree(p, ignore_errors=True)
     await database.connect()
     if database.db is not None:
         BOT_ID = Config.BOT_TOKEN.split(":", 1)[0]
@@ -145,7 +146,7 @@ async def load_settings():
                 uid = row["_id"]
                 del row["_id"]
                 paths = {
-                    "THUMBNAIL": f"Thumbnails/{uid}.jpg",
+                    "THUMBNAIL": f"thumbnails/{uid}.jpg",
                     "RCLONE_CONFIG": f"rclone/{uid}.conf",
                     "TOKEN_PICKLE": f"tokens/{uid}.pickle",
                 }

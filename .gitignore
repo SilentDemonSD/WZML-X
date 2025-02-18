@@ -6,9 +6,10 @@ rclone.conf
 log.txt
 cfg.zip
 accounts/*
-Thumbnails/*
+thumbnails/*
 rclone/*
 tokens/*
+mediainfo/*
 sabnzbd/*
 list_drives.txt
 shortener.txt

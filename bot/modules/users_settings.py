@@ -38,9 +38,10 @@ leech_options = [
     "LEECH_DUMP_CHAT",
     "LEECH_PREFIX",
     "LEECH_SUFFIX",
+    "LEECH_CAPTION",
     "THUMBNAIL_LAYOUT",
 ]
-rclone_options = ["RCLONE_CONFIG", "RCLONE_PATH"]
+rclone_options = ["RCLONE_CONFIG", "RCLONE_PATH", "RCLONE_FLAGS"]
 gdrive_options = ["TOKEN_PICKLE", "GDRIVE_ID", "INDEX_URL"]
 ffset_options = ["FFMPEG_CMDS"]
 advanced_options = [
@@ -63,8 +64,10 @@ user_settings_text = {
 ┖ <b>Time Left :</b> <code>60 sec</code>""",
     "LEECH_PREFIX": "Send Leech Filename Prefix. You can add HTML tags. Example: <code>@mychannel</code>.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     "LEECH_SUFFIX": "Send Leech Filename Suffix. You can add HTML tags. Example: <code>@mychannel</code>.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
+    "LEECH_CAPTION": "Send Leech Caption. You can add HTML tags. Example: <code>@mychannel</code>.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     "THUMBNAIL_LAYOUT": "Send thumbnail layout (widthxheight, 2x2, 3x3, 2x4, 4x4, ...). Example: 3x3.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     "RCLONE_PATH": "Send Rclone Path. If you want to use your rclone config edit using owner/user config from usetting or add mrcc: before rclone path. Example mrcc:remote:folder. </i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
+    "RCLONE_FLAGS": "key:value|key|key|key:value . Check here all <a href='https://rclone.org/flags/'>RcloneFlags</a>\nEx: --buffer-size:8M|--drive-starred-only",
     "GDRIVE_ID": "Send Gdrive ID. If you want to use your token.pickle edit using owner/user token from usetting or add mtp: before the id. Example: mtp:F435RGGRDXXXXXX . </i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     "INDEX_URL": "Send Index URL for your gdrive option. </i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     "UPLOAD_PATHS": "Send Dict of keys that have path values. Example: {'path 1': 'remote:rclonefolder', 'path 2': 'gdrive1 id', 'path 3': 'tg chat id', 'path 4': 'mrcc:remote:', 'path 5': b:@username} . </i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
@@ -75,7 +78,9 @@ user_settings_text = {
 """,
     "YT_DLP_OPTIONS": """Format: {key: value, key: value, key: value}.
 Example: {"format": "bv*+mergeall[vcodec=none]", "nocheckcertificate": True, "playliststart": 10, "fragment_retries": float("inf"), "matchtitle": "S13", "writesubtitles": True, "live_from_start": True, "postprocessor_args": {"ffmpeg": ["-threads", "4"]}, "wait_for_video": (5, 100), "download_ranges": [{"start_time": 0, "end_time": 10}]}
-Check all yt-dlp api options from this <a href='https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L184'>FILE</a> or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to convert cli arguments to api options.""",
+Check all yt-dlp api options from this <a href='https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L184'>FILE</a> or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to convert cli arguments to api options.
+
+<i>Send dict of YT-DLP Options according to format.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>""",
     "FFMPEG_CMDS": """Dict of list values of ffmpeg commands. You can set multiple ffmpeg commands for all files before upload. Don't write ffmpeg at beginning, start directly with the arguments.
 Examples: {"subtitle": ["-i mltb.mkv -c copy -c:s srt mltb.mkv", "-i mltb.video -c copy -c:s srt mltb"], "convert": ["-i mltb.m4a -c:a libmp3lame -q:a 2 mltb.mp3", "-i mltb.audio -c:a libmp3lame -q:a 2 mltb.mp3"], extract: ["-i mltb -map 0:a -c copy mltb.mka -map 0:s -c copy mltb.srt"]}
 Notes:
@@ -87,7 +92,7 @@ Here I will explain how to use mltb.* which is reference to files you want to wo
 3. Third cmd: the input in mltb.m4a so this cmd will work only on m4a audios and the output is mltb.mp3 so the output extension is mp3.
 4. Fourth cmd: the input is mltb.audio so this cmd will work on all audios and the output is mltb.mp3 so the output extension is mp3.
 
-<i>Send dict of YT-DLP Options according to format.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>
+<i>Send dict of FFMPEG_CMDS Options according to format.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>
 """,
 }
 
@@ -185,14 +190,22 @@ async def get_user_settings(from_user, stype="main"):
         elif "LEECH_PREFIX" not in user_dict and Config.LEECH_PREFIX:
             lprefix = Config.LEECH_PREFIX
         else:
-            lprefix = "None"
+            lprefix = "Not Exists"
         buttons.data_button("Leech Suffix", f"userset {user_id} menu LEECH_SUFFIX")
         if user_dict.get("LEECH_SUFFIX", False):
             lsuffix = user_dict["LEECH_SUFFIX"]
         elif "LEECH_SUFFIX" not in user_dict and Config.LEECH_SUFFIX:
             lsuffix = Config.LEECH_SUFFIX
         else:
-            lsuffix = "None"
+            lsuffix = "Not Exists"
+
+        buttons.data_button("Leech Caption", f"userset {user_id} menu LEECH_CAPTION")
+        if user_dict.get("LEECH_CAPTION", False):
+            lcap = user_dict["LEECH_CAPTION"]
+        elif "LEECH_CAPTION" not in user_dict and Config.LEECH_CAPTION:
+            lcap = Config.LEECH_CAPTION
+        else:
+            lcap = "Not Exists"
 
         if (
             user_dict.get("AS_DOCUMENT", False)
@@ -294,6 +307,7 @@ async def get_user_settings(from_user, stype="main"):
 ┠ Media Group → <b>{media_group}</b>
 ┠ Leech Prefix → <code>{escape(lprefix)}</code>
 ┠ Leech Suffix → <code>{escape(lsuffix)}</code>
+┠ Leech Caption → <code>{escape(lcap)}</code>
 ┠ Leech Destination → <code>{leech_dest}</code>
 ┠ Leech by <b>{leech_method}</b> session
 ┠ Mixed Leech → <b>{hybrid_leech}</b>
@@ -305,22 +319,32 @@ async def get_user_settings(from_user, stype="main"):
         buttons.data_button(
             "Default Rclone Path", f"userset {user_id} menu RCLONE_PATH"
         )
+        buttons.data_button("Rclone Flags", f"userset {user_id} menu RCLONE_FLAGS")
+
         buttons.data_button("Back", f"userset {user_id} back mirror", "footer")
         buttons.data_button("Close", f"userset {user_id} close", "footer")
 
         rccmsg = "Exists" if await aiopath.exists(rclone_conf) else "Not Exists"
         if user_dict.get("RCLONE_PATH", False):
             rccpath = user_dict["RCLONE_PATH"]
-        elif RP := Config.RCLONE_PATH:
-            rccpath = RP
+        elif Config.RCLONE_PATH:
+            rccpath = Config.RCLONE_PATH
         else:
             rccpath = "None"
         btns = buttons.build_menu(1)
+
+        if user_dict.get("RCLONE_FLAGS", False):
+            rcflags = user_dict["RCLONE_FLAGS"]
+        elif "RCLONE_FLAGS" not in user_dict and Config.RCLONE_FLAGS:
+            rcflags = Config.RCLONE_FLAGS
+        else:
+            rcflags = "None"
 
         text = f"""⌬ <b>RClone Settings :</b>
 ┟ <b>Name</b> → {user_name}
 ┃
 ┠ <b>Rclone Config</b> → <b>{rccmsg}</b>
+┠ <b>Rclone Flags</b> → <code>{rcflags}</code>
 ┖ <b>Rclone Path</b> → <code>{rccpath}</code>"""
 
     elif stype == "gdrive":
@@ -586,7 +610,7 @@ async def get_menu(option, message, user_id):
     user_dict = user_data.get(user_id, {})
 
     file_dict = {
-        "THUMBNAIL": f"Thumbnails/{user_id}.jpg",
+        "THUMBNAIL": f"thumbnails/{user_id}.jpg",
         "RCLONE_CONFIG": f"rclone/{user_id}.conf",
         "TOKEN_PICKLE": f"tokens/{user_id}.pickle",
     }
@@ -606,8 +630,12 @@ async def get_menu(option, message, user_id):
                 "View Thumb", f"userset {user_id} view THUMBNAIL", "header"
             )
         elif option in ["YT_DLP_OPTIONS", "FFMPEG_CMDS", "UPLOAD_PATHS"]:
-            buttons.data_button("Add one", f"userset {user_id} addone {option}")
-            buttons.data_button("Remove one", f"userset {user_id} rmone {option}")
+            buttons.data_button(
+                "Add One", f"userset {user_id} addone {option}", "header"
+            )
+            buttons.data_button(
+                "Remove One", f"userset {user_id} rmone {option}", "header"
+            )
 
         if key != "file":  # TODO: option default val check
             buttons.data_button("Reset", f"userset {user_id} reset {option}")
@@ -634,8 +662,8 @@ async def get_menu(option, message, user_id):
 ┃
 ┠ <b>Option's Value</b> → {val if val else "Not Exists"}
 ┃
-┠ <b>Default Input Type</b> → {type(val) if val else "N/A"}
-┖ <b>Description</b> → 
+┠ <b>Default Input Type</b> → {"N/A"}
+┖ <b>Description</b> → {"N/A"}
 """
     await edit_message(message, text, buttons.build_menu(2))
 
@@ -686,7 +714,7 @@ async def edit_user_settings(client, query):
     data = query.data.split()
 
     handler_dict[user_id] = False
-    thumb_path = f"Thumbnails/{user_id}.jpg"
+    thumb_path = f"thumbnails/{user_id}.jpg"
     rclone_conf = f"rclone/{user_id}.conf"
     token_pickle = f"tokens/{user_id}.pickle"
 

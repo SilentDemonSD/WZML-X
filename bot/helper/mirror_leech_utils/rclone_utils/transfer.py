@@ -488,7 +488,7 @@ class RcloneTransferHelper:
             cmd.extend(("--files-from", self._listener.link))
         else:
             cmd.extend(("--exclude", ext))
-        if rcflags := self._listener.rc_flags or Config.RCLONE_FLAGS:
+        if rcflags := self._listener.rc_flags:
             rcflags = rcflags.split("|")
             for flag in rcflags:
                 if ":" in flag:

@@ -23,7 +23,7 @@ aria2 = None
 qbittorrent = None
 sabnzbd_client = SabnzbdClient(
     host="http://localhost",
-    api_key="mltb",
+    api_key="admin",
     port="8070",
 )
 
