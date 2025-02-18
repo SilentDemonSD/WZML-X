@@ -64,6 +64,7 @@ class Config:
     THUMBNAIL_LAYOUT = ""
     VERIFY_TIMEOUT = 0
     TORRENT_TIMEOUT = 0
+    TIMEZONE = "Asia/Kolkata"
     USER_MAX_TASKS = 0
     USER_TIME_INTERVAL = 0
     UPLOAD_PATHS = {}

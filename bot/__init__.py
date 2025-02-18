@@ -7,13 +7,11 @@ install()
 from subprocess import run as srun
 from os import getcwd
 from asyncio import Lock, new_event_loop, set_event_loop
-from datetime import datetime
 from logging import (
     ERROR,
     INFO,
     WARNING,
     FileHandler,
-    Formatter,
     StreamHandler,
     basicConfig,
     getLogger,
@@ -23,7 +21,6 @@ from time import time
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from pyrogram import utils as pyroutils
-from pytz import timezone
 
 from sabnzbdapi import SabnzbdClient
 
@@ -52,14 +49,6 @@ basicConfig(
 
 LOGGER = getLogger(__name__)
 cpu_no = cpu_count()
-
-
-def changetz(*args):
-    return datetime.now(timezone("Asia/Kolkata")).timetuple()
-
-
-Formatter.converter = changetz
-LOGGER.info("Logging Time synced with Local Timezone !")
 
 bot_cache = {}
 DOWNLOAD_DIR = "/usr/src/app/downloads/"

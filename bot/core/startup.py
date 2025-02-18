@@ -6,6 +6,8 @@ from aiofiles import open as aiopen
 from aiofiles.os import makedirs, remove, path as aiopath
 from aioshutil import rmtree
 
+from sabnzbdapi.exception import APIResponseError
+
 from .. import (
     LOGGER,
     aria2_options,
@@ -54,9 +56,11 @@ async def update_aria2_options():
 
 
 async def update_nzb_options():
-    no = (await sabnzbd_client.get_config())["config"]["misc"]
-    nzb_options.update(no)
-
+    try:
+        no = (await sabnzbd_client.get_config())["config"]["misc"]
+        nzb_options.update(no)
+    except APIResponseError as e:
+        LOGGER.error(f"Error in NZB Options: {e}")
 
 async def load_settings():
     if not Config.DATABASE_URL:
@@ -92,7 +96,7 @@ async def load_settings():
                 {"_id": BOT_ID}, config_file, upsert=True
             )
         if old_config and old_config != config_file:
-            LOGGER.info("Saving.. Config imported from Bot")
+            LOGGER.info("Saving.. Deploy Config imported from Bot")
             await database.db.settings.deployConfig.replace_one(
                 {"_id": BOT_ID}, config_file, upsert=True
             )

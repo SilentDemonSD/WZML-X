@@ -1,7 +1,13 @@
 # ruff: noqa: E402
+
 from .core.config_manager import Config
 
 Config.load()
+
+from datetime import datetime
+from logging import Formatter
+
+from pytz import timezone
 
 from . import LOGGER, bot_loop
 from .core.tg_client import TgClient
@@ -21,6 +27,10 @@ async def main():
     )
 
     await load_settings()
+
+    def changetz(*args):
+        return datetime.now(timezone(Config.TIMEZONE)).timetuple()
+    Formatter.converter = changetz
 
     await gather(TgClient.start_bot(), TgClient.start_user())
     await gather(load_configurations(), update_variables())
