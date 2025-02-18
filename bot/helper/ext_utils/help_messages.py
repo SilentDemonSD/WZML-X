@@ -389,21 +389,38 @@ NOTE: Try each command without any argument to see more detalis.
 """
 
 BOT_COMMANDS = {
-    "Mirror": "- Mirror files",
-    "Leech": "- Leech files",
-    "Ytdl": "- Mirror YouTube link",
-    "YtdlLeech": "- Leech YouTube link",
-    "Clone": "- Copy to Drive",
-    "ForceStart": "- Start queued task",
-    "Count": "- Count files in Drive",
-    "List": "- Search in Drive",
-    "Search": "- Search torrents",
-    "UserSet": "- User settings",
-    "Status": "- Mirror status",
-    "Stats": "- Bot & system stats",
-    "CancelAll": "- Cancel all your tasks",
-    "Help": "- Detailed help",
-    "BotSet": "- [ADMIN] Bot settings",
-    "Log": "- [ADMIN] View logs",
-    "Restart": "- [ADMIN] Restart bot",
+    "Mirror": "[link/file] Mirror to Upload Destination",
+    "QbMirror": "[magnet/torrent] Mirror to Upload Destination using qbit",
+    "Ytdl": "[link] Mirror YouTube, m3u8, Social Media and yt-dlp supported urls",
+    "Leech": "[link/file] Leech files to Upload to Telegram",
+    "QbLeech": "[magnet/torrent] Leech files to Upload to Telegram using qbit",
+    "YtdlLeech": "[link] Leech YouTube, m3u8, Social Media and yt-dlp supported urls",
+    "Clone": "[link] Clone files/folders to GDrive",
+    "UserSet": "User personal settings",
+    "ForceStart": "[gid/reply] Force start from queued task",
+    "Count": "[link] Count no. of files/folders in GDrive",
+    "List": "[query] Search any Text which is available in GDrive",
+    "Search": "[query] Search torrents via Qbit Plugins",
+    "MediaInfo": "[reply/link] Get MediaInfo of the Target Media",
+    "Select": "[gid/reply] Select files for NZB, Aria2, Qbit Tasks",
+    "Ping": "Ping Bot to test Response Speed",
+    "Status": "[id/me] Tasks Status of Bot",
+    "Stats": "Bot, OS, Repo & System full Statistics",
+    "Rss": "User RSS Management Settings",
+    "CancelAll": "Cancel all Tasks on the Bot",
+    "Help": "Detailed help usage of the WZ Bot",
+    "BotSet": "[SUDO] Bot Management Settings",
+    "Log": "[SUDO] Get Bot Logs for Internal Working",
+    "Restart": "[SUDO] Reboot bot",
+    "RestartSessions": "[SUDO] Reboot User Sessions",
 }
+
+"""
+
+    "JdMirror": "",
+    "NzbMirror": "",
+        
+    "JdLeech": "",
+    "NzbLeech": "",
+    
+"""
