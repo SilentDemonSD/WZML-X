@@ -6,7 +6,7 @@ TELEGRAM_HASH = ""
 DATABASE_URL = ""
 
 # OPTIONAL CONFIG
-TG_PROXY = {}
+TG_PROXY = {}            # {"scheme": ”socks5”, "hostname": ””, "port": 1234, "username": ”user”, "password": ”pass”}
 USER_SESSION_STRING = ""
 CMD_SUFFIX = ""
 AUTHORIZED_CHATS = ""

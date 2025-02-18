@@ -8,12 +8,11 @@ from contextlib import asynccontextmanager
 from logging import INFO, WARNING, FileHandler, StreamHandler, basicConfig, getLogger
 
 from aioaria2 import Aria2HttpClient
-from aiohttp.client_exceptions import ClientResponseError
+from aiohttp.client_exceptions import ClientError
 from aioqbt.client import create_client
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
-
 from sabnzbdapi import SabnzbdClient
 from web.nodes import extract_file_ids, make_tree
 
@@ -75,14 +74,14 @@ async def re_verify(paused, resumed, hash_id):
                 await qbittorrent.torrents.file_prio(
                     hash=hash_id, id=paused, priority=0
                 )
-            except ClientResponseError as e:
+            except ClientError as e:
                 LOGGER.error(f"{e} Errored in reverification paused!")
         if resumed:
             try:
                 await qbittorrent.torrents.file_prio(
                     hash=hash_id, id=resumed, priority=1
                 )
-            except ClientResponseError as e:
+            except ClientError as e:
                 LOGGER.error(f"{e} Errored in reverification resumed!")
         k += 1
         if k > 5:
@@ -188,7 +187,7 @@ async def handle_torrent(request: Request):
                 op = await aria2.getOption(gid)
                 fpath = f"{op['dir']}/"
                 content = make_tree(res, "aria2", fpath)
-        except (Exception, ClientResponseError) as e:
+        except (Exception, ClientError) as e:
             LOGGER.error(str(e))
             content = {
                 "files": [],
@@ -207,7 +206,7 @@ async def handle_rename(gid, data):
             await qbittorrent.torrents.rename_file(hash=gid, **data)
         else:
             await qbittorrent.torrents.rename_folder(hash=gid, **data)
-    except ClientResponseError as e:
+    except ClientError as e:
         LOGGER.error(f"{e} Errored in renaming")
 
 
@@ -222,14 +221,14 @@ async def set_qbittorrent(gid, selected_files, unselected_files):
             await qbittorrent.torrents.file_prio(
                 hash=gid, id=unselected_files, priority=0
             )
-        except ClientResponseError as e:
+        except ClientError as e:
             LOGGER.error(f"{e} Errored in paused")
     if selected_files:
         try:
             await qbittorrent.torrents.file_prio(
                 hash=gid, id=selected_files, priority=1
             )
-        except ClientResponseError as e:
+        except ClientError as e:
             LOGGER.error(f"{e} Errored in resumed")
     await sleep(0.5)
     if not await re_verify(unselected_files, selected_files, gid):

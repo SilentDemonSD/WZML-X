@@ -1,5 +1,3 @@
-from aiofiles import open as aiopen
-from aiofiles.os import path as aiopath, makedirs, listdir
 from asyncio import create_subprocess_exec, gather, sleep, wait_for
 from asyncio.subprocess import PIPE
 from configparser import RawConfigParser
@@ -8,11 +6,15 @@ from logging import getLogger
 from random import randrange
 from re import findall as re_findall
 
+from aiofiles import open as aiopen
+from aiofiles.os import listdir, makedirs, path as aiopath
+from contextlib import suppress
+
 from ....core.config_manager import Config
 from ...ext_utils.bot_utils import cmd_exec, sync_to_async
 from ...ext_utils.files_utils import (
-    get_mime_type,
     count_files_and_folders,
+    get_mime_type,
 )
 
 LOGGER = getLogger(__name__)
@@ -63,7 +65,7 @@ class RcloneTransferHelper:
         ):
             try:
                 data = await wait_for(self._proc.stdout.readline(), 60)
-            except:
+            except Exception:
                 break
             if not data:
                 break
@@ -180,13 +182,19 @@ class RcloneTransferHelper:
             config_path, f"{remote}:{self._listener.link}", path, "copy"
         )
 
-        if (
-            remote_type == "drive"
-            and not Config.RCLONE_FLAGS
-            and not self._listener.rc_flags
-        ):
+        if remote_type == "drive" and not self._listener.rc_flags:
             cmd.extend(
-                ("--drive-acknowledge-abuse", "--tpslimit", "1", "--transfers", "1")
+                (
+                    "--drive-acknowledge-abuse",
+                    "--drive-chunk-size",
+                    "128M",
+                    "--tpslimit",
+                    "1",
+                    "--tpslimit-burst",
+                    "1",
+                    "--transfers",
+                    "1",
+                )
             )
 
         await self._start_download(cmd, remote_type)
@@ -308,11 +316,7 @@ class RcloneTransferHelper:
         cmd = self._get_updated_command(
             fconfig_path, path, f"{fremote}:{rc_path}", method
         )
-        if (
-            remote_type == "drive"
-            and not Config.RCLONE_FLAGS
-            and not self._listener.rc_flags
-        ):
+        if remote_type == "drive" and not self._listener.rc_flags:
             cmd.extend(
                 (
                     "--drive-chunk-size",
@@ -320,6 +324,8 @@ class RcloneTransferHelper:
                     "--drive-upload-cutoff",
                     "128M",
                     "--tpslimit",
+                    "1",
+                    "--tpslimit-burst",
                     "1",
                     "--transfers",
                     "1",
@@ -385,11 +391,18 @@ class RcloneTransferHelper:
         cmd = self._get_updated_command(
             config_path, f"{src_remote}:{src_path}", destination, method
         )
-        if not self._listener.rc_flags and not Config.RCLONE_FLAGS:
-            if src_remote_type == "drive" and dst_remote_type != "drive":
-                cmd.append("--drive-acknowledge-abuse")
-            elif src_remote_type == "drive":
-                cmd.extend(("--tpslimit", "3", "--transfers", "3"))
+        if not self._listener.rc_flags and src_remote_type == "drive":
+            cmd.extend(
+                (
+                    "--drive-acknowledge-abuse",
+                    "--tpslimit",
+                    "3",
+                    "--tpslimit-burst",
+                    "1",
+                    "--transfers",
+                    "3",
+                )
+            )
 
         self._proc = await create_subprocess_exec(*cmd, stdout=PIPE, stderr=PIPE)
         await self._progress()
@@ -497,10 +510,8 @@ class RcloneTransferHelper:
     async def cancel_task(self):
         self._listener.is_cancelled = True
         if self._proc is not None:
-            try:
+            with suppress(Exception):
                 self._proc.kill()
-            except:
-                pass
         if self._is_download:
             LOGGER.info(f"Cancelling Download: {self._listener.name}")
             await self._listener.on_download_error("Stopped by user!")
