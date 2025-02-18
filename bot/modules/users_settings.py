@@ -842,8 +842,7 @@ async def edit_user_settings(client, query):
         await update_user_settings(query, stype)
     else:
         await query.answer()
-        await delete_message(message.reply_to_message)
-        await delete_message(message)
+        await delete_message(message, message.reply_to_message)
 
 
 @new_task

@@ -19,7 +19,7 @@ async def arg_usage(_, query):
     message = query.message
     await query.answer()
     if data[1] == "close":
-        return await delete_message(message)
+        return await delete_message(message, message.reply_to_message)
     pg_no = int(data[3])
     if data[1] == "nex":
         if data[2] == "mirror":

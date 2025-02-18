@@ -168,9 +168,7 @@ async def stats_pages(_, query):
         await query.answer("Not Yours!", show_alert=True)
     elif data[2] == "close":
         await query.answer()
-        await delete_message(message)
-        if message.reply_to_message:
-            await delete_message(message.reply_to_message)
+        await delete_message(message, message.reply_to_message)
     else:
         await query.answer()
         msg, btns = await get_stats(query, data[2])

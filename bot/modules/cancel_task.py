@@ -75,7 +75,7 @@ async def cancel_multi(_, query):
     else:
         msg = "Already Stopped/Finished!"
     await query.answer(msg, show_alert=True)
-    await delete_message(query.message)
+    await delete_message(query.message, query.message.reply_to_message)
 
 
 async def cancel_all(status, user_id):
@@ -155,8 +155,7 @@ async def cancel_all_update(_, query):
     else:
         await query.answer()
     if data[1] == "close":
-        await delete_message(reply_to)
-        await delete_message(message)
+        await delete_message(reply_to, message)
     elif data[1] == "back":
         button = create_cancel_buttons(is_sudo, user_id)
         await edit_message(message, "Choose tasks to cancel!", button)

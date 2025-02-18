@@ -482,8 +482,7 @@ async def rss_listener(client, query):
     elif data[1] == "close":
         await query.answer()
         handler_dict[user_id] = False
-        await delete_message(message.reply_to_message)
-        await delete_message(message)
+        await delete_message(message, message.reply_to_message)
     elif data[1] == "back":
         await query.answer()
         handler_dict[user_id] = False

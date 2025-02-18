@@ -1,4 +1,4 @@
-from asyncio import sleep
+from asyncio import sleep, gather
 from re import match as re_match
 from time import time
 
@@ -131,26 +131,23 @@ async def send_rss(text, chat_id, thread_id):
         return str(e)
 
 
-async def delete_message(message):
-    try:
-        await message.delete()
-    except Exception as e:
-        LOGGER.error(str(e))
+async def delete_message(*args):
+    tasks = [msg.delete() for msg in args if msg]
+    results = await gather(*tasks, return_exceptions=True)
+    for result in results:
+        if isinstance(result, Exception):
+            LOGGER.error(result)
 
 
 async def delete_links(message):
     if Config.DELETE_LINKS:
-        if reply_to := message.reply_to_message:
-            await delete_message(reply_to)
-        await delete_message(message)
+        await delete_message(message, message.reply_to_message)
 
 
-async def auto_delete_message(cmd_message=None, bot_message=None):
-    await sleep(120)
-    if cmd_message is not None:
-        await delete_message(cmd_message)
-    if bot_message is not None:
-        await delete_message(bot_message)
+async def auto_delete_message(*args, stime=90):
+    if stime and stime > 0:
+        await sleep(stime)
+    await delete_message(*args)
 
 
 async def delete_status():

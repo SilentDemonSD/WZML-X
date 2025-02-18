@@ -149,9 +149,7 @@ async def log_cb(_, query):
         await query.answer("Not Yours!", show_alert=True)
     elif data[2] == "close":
         await query.answer()
-        await delete_message(message)
-        if message.reply_to_message:
-            await delete_message(message.reply_to_message)
+        await delete_message(message, message.reply_to_message)
     elif data[2] == "disp":
         await query.answer("Fetching Log..")
         async with aiopen("log.txt", "r") as f:
