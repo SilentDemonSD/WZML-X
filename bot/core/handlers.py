@@ -337,6 +337,7 @@ def add_handlers():
         )
     )
     if Config.SET_COMMANDS:
+        global BOT_COMMANDS
         def insert_at(d, k, v, i):
             return dict(list(d.items())[:i] + [(k, v)] + list(d.items())[i:])
 
