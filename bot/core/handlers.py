@@ -4,7 +4,9 @@ from pyrogram.filters import command, regex
 from pyrogram.handlers import CallbackQueryHandler, EditedMessageHandler, MessageHandler
 from pyrogram.types import BotCommand
 
+from .. import sabnzbd_client
 from ..core.config_manager import Config
+from ..core.jdownloader_booter import jdownloader
 from ..helper.ext_utils.help_messages import BOT_COMMANDS
 from ..helper.telegram_helper.bot_commands import BotCommands
 from ..helper.telegram_helper.filters import CustomFilters
@@ -335,6 +337,17 @@ def add_handlers():
         )
     )
     if Config.SET_COMMANDS:
+        def insert_at(d, k, v, i):
+            return dict(list(d.items())[:i] + [(k, v)] + list(d.items())[i:])
+
+        if jdownloader.is_connected:
+            BOT_COMMANDS = insert_at(BOT_COMMANDS, "JdMirror", "[link/file] Mirror to Upload Destination using JDownloader", 2)
+            BOT_COMMANDS = insert_at(BOT_COMMANDS, "JdLeech", "[link/file] Leech files to Upload to Telegram using JDownloader", 6)
+
+        if sabnzbd_client.LOGGED_IN:
+            BOT_COMMANDS = insert_at(BOT_COMMANDS, "NzbMirror", "[nzb] Mirror to Upload Destination using Sabnzbd", 2)
+            BOT_COMMANDS = insert_at(BOT_COMMANDS, "NzbLeech", "[nzb] Leech files to Upload to Telegram using Sabnzbd", 6)
+
         TgClient.bot.set_bot_commands(
             [
                 BotCommand(
