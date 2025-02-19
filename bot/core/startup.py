@@ -276,6 +276,9 @@ async def load_configurations():
         await create_subprocess_shell(
             f"gunicorn -k uvicorn.workers.UvicornWorker -w 1 web.wserver:app --bind 0.0.0.0:{PORT}"
         )
+        await create_subprocess_shell(
+            "python3 cron_boot.py" 
+        )
 
     if await aiopath.exists("cfg.zip"):
         if await aiopath.exists("/JDownloader/cfg"):

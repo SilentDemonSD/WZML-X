@@ -30,7 +30,7 @@ class HyperTGDownload:
         self.dump_chat = None
         self.download_dir = "downloads/"
         self.directory = None
-        self.num_parts = Config.HYPER_THREADS or min(8, len(self.clients))
+        self.num_parts = Config.HYPER_THREADS or max(8, len(self.clients))
         self.cache_file_ref = {}
         self._processed_bytes = 0
         self.file_size = 0

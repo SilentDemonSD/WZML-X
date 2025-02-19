@@ -17,7 +17,7 @@ from subprocess import run as srun, call as scall
 
 getLogger("pymongo").setLevel(ERROR)
 
-var_list = ['BOT_TOKEN', 'TELEGRAM_API', 'TELEGRAM_HASH', 'OWNER_ID', 'DATABASE_URL', 'BASE_URL', 'UPSTREAM_REPO', 'UPSTREAM_BRANCH']
+var_list = ['BOT_TOKEN', 'TELEGRAM_API', 'TELEGRAM_HASH', 'OWNER_ID', 'DATABASE_URL', 'BASE_URL', 'UPSTREAM_REPO', 'UPSTREAM_BRANCH', "UPDATE_PKGS"]
 
 if path.exists("log.txt"):
     with open("log.txt", "r+") as f:

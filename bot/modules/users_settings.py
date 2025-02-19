@@ -165,7 +165,7 @@ async def get_user_settings(from_user, stype="main"):
 """
 
     elif stype == "leech":
-        thumbpath = f"Thumbnails/{user_id}.jpg"
+        thumbpath = f"thumbnails/{user_id}.jpg"
         buttons.data_button("Thumbnail", f"userset {user_id} menu THUMBNAIL")
         thumbmsg = "Exists" if await aiopath.exists(thumbpath) else "Not Exists"
         buttons.data_button(
@@ -301,7 +301,7 @@ async def get_user_settings(from_user, stype="main"):
 ┟ <b>Name</b> → {user_name}
 ┃
 ┠ Leech Type → <b>{ltype}</b>
-┠ Custom Thumbnail <b>{thumbmsg}</b>
+┠ Custom Thumbnail → <b>{thumbmsg}</b>
 ┠ Leech Split Size → <b>{split_size}</b>
 ┠ Equal Splits → <b>{equal_splits}</b>
 ┠ Media Group → <b>{media_group}</b>
@@ -438,7 +438,10 @@ async def get_user_settings(from_user, stype="main"):
         elif "FFMPEG_CMDS" not in user_dict and Config.FFMPEG_CMDS:
             ffc = Config.FFMPEG_CMDS
         else:
-            ffc = "None"
+            ffc = "<b>Not Exists</b>"
+            
+        if ffc != "<b>Not Exists</b>":
+            ffc = "\n".join([f"{no}. <b>{key}</b>: <code>{value}</code>" for no, (key, value) in enumerate(ffc.items())])
 
         buttons.data_button("Back", f"userset {user_id} back", "footer")
         buttons.data_button("Close", f"userset {user_id} close", "footer")
@@ -447,7 +450,7 @@ async def get_user_settings(from_user, stype="main"):
         text = f"""⌬ <b>FF Settings :</b>
 ┟ <b>Name</b> → {user_name}
 ┃
-┖ <b>FFmpeg Commands</b> → <code>{ffc}</code>"""
+┖ <b>FFmpeg Commands</b> → {ffc}"""
 
     elif stype == "advanced":
         buttons.data_button(
@@ -495,7 +498,7 @@ async def get_user_settings(from_user, stype="main"):
 ┠ <b>Name Swaps</b> → {ns_msg}
 ┠ <b>Excluded Extensions</b> → <code>{ex_ex}</code>
 ┠ <b>Upload Paths</b> → <b>{upload_paths}</b>
-┖ <b>YT-DLP Options</b> → <code>{escape(ytopt)}</code>"""
+┖ <b>YT-DLP Options</b> → <code>{ytopt}</code>"""
 
     return text, btns
 
@@ -656,11 +659,13 @@ async def get_menu(option, message, user_id):
     buttons.data_button("Back", f"userset {user_id} {back_to}", "footer")
     buttons.data_button("Close", f"userset {user_id} close", "footer")
     val = user_dict.get(option)
+    if await aiopath.exists(file_dict[option]):
+        val = "<b>Exists</b>"
     text = f"""⌬ <b><u>Menu Settings :</u></b>
 │
 ┟ <b>Option</b> → {option}
 ┃
-┠ <b>Option's Value</b> → {val if val else "Not Exists"}
+┠ <b>Option's Value</b> → {val if val else "<b>Not Exists</b>"}
 ┃
 ┠ <b>Default Input Type</b> → {"N/A"}
 ┖ <b>Description</b> → {"N/A"}
