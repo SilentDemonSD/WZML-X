@@ -327,7 +327,7 @@ class HyperTGDownload:
         dump_chat=None,
     ):
         if dump_chat:
-            await TgClient.bot.copy_message(
+            self.message = await TgClient.bot.copy_message(
                 chat_id=dump_chat,
                 from_chat_id=message.chat.id,
                 message_id=message.id,
@@ -335,7 +335,7 @@ class HyperTGDownload:
             )
 
         self.dump_chat =  dump_chat or message.chat.id
-        self.message = message
+        self.message = self.message or message
         media = await self.get_media_type(self.message)
 
         file_id_str = media if isinstance(media, str) else media.file_id
