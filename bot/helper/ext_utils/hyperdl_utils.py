@@ -258,13 +258,6 @@ class HyperTGDownload:
 
     async def handle_download(self, progress, progress_args):
         await makedirs(self.directory, exist_ok=True)
-        temp_file_path = (
-            ospath.abspath(
-                sub("\\\\", "/", ospath.join(self.directory, self.file_name))
-            )
-            + ".temp"
-        )
-
         part_size = self.file_size // self.num_parts
         ranges = [
             (i * part_size, (i + 1) * part_size - 1) for i in range(self.num_parts)
@@ -274,7 +267,6 @@ class HyperTGDownload:
 
         try:
             tasks = [create_task(self.single_part(start, end, i)) for i, (start, end) in enumerate(ranges)]
-
             prog = create_task(self.progress_callback(progress, progress_args))
             
             results = await gather(*tasks)
@@ -300,10 +292,7 @@ class HyperTGDownload:
                 if not task.done():
                     task.cancel()
             raise e
-        else:
-            file_path = ospath.splitext(temp_file_path)[0]
-            await move(temp_file_path, file_path)
-            return file_path
+        return final_file_path
 
     @staticmethod
     async def get_extension(file_type, mime_type):
