@@ -185,8 +185,7 @@ async def delete_links(message):
 
 
 async def auto_delete_message(*args, stime=90):
-    if stime and stime > 0:
-        await sleep(stime)
+    await sleep(stime)
     await delete_message(*args)
 
 

@@ -61,6 +61,9 @@ class TelegramDownloadHelper:
         if self._listener.is_cancelled:
             if self.session == "user":
                 TgClient.user.stop_transmission()
+            elif self.session == "hbots":
+                for hbot in TgClient.helper_bots.values():
+                    hbot.stop_transmission()
             else:
                 TgClient.bot.stop_transmission()
         self._processed_bytes = current
@@ -81,6 +84,7 @@ class TelegramDownloadHelper:
         try:
             # TODO : Add support for user session
             if self._hyper_dl:
+                self.session == "hbots"
                 download = await HyperTGDownload().download_media(
                     message, file_name=path, progress=self._on_download_progress, dump_chat=Config.LEECH_DUMP_CHAT
                 )

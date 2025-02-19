@@ -19,17 +19,18 @@ from pyrogram.types import Message
 
 from ... import LOGGER
 from ...core.tg_client import TgClient
+from ...core.config_manager import Config
 
 
 class HyperTGDownload:
-    def __init__(self, part_count=None):
+    def __init__(self):
         self.clients = TgClient.helper_bots
         self.work_loads = TgClient.helper_loads
         self.message = None
         self.dump_chat = None
         self.download_dir = "downloads/"
         self.directory = None
-        self.num_parts = part_count or max(4, len(self.clients))
+        self.num_parts = Config.HYPER_THREADS or min(8, len(self.clients))
         self.cache_file_ref = {}
         self._processed_bytes = 0
         self.file_size = 0
@@ -237,17 +238,14 @@ class HyperTGDownload:
         if progress:
             await sleep(2)
             while 1:
-                try:
-                    await progress(
-                        min(self._processed_bytes, self.file_size)
-                        if self.file_size != 0
-                        else self._processed_bytes,
-                        self.file_size,
-                        *progress_args,
-                    )
-                    await sleep(0.5)
-                except Exception as e:
-                    LOGGER.error(str(e))
+                await progress(
+                    min(self._processed_bytes, self.file_size)
+                    if self.file_size != 0
+                    else self._processed_bytes,
+                    self.file_size,
+                    *progress_args,
+                )
+                await sleep(0.5)
 
     async def single_part(self, start, end, part_index):
         chunk_size = self.chunk_size

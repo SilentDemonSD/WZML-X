@@ -36,6 +36,7 @@ class Config:
     LEECH_SPLIT_SIZE = 2097152000
     MEDIA_GROUP = False
     HYBRID_LEECH = True
+    HYPER_THREADS = 0
     NAME_SWAP = ""
     OWNER_ID = 0
     QUEUE_ALL = 0
