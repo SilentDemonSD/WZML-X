@@ -1,5 +1,6 @@
 from ..telegram_helper.bot_commands import BotCommands
-#from ...core.tg_client import TgClient
+from ...core.jdownloader_booter import jdownloader
+from ... import sabnzbd_client
 
 mirror = """<b>Send link along with command line or </b>
 
@@ -414,13 +415,14 @@ BOT_COMMANDS = {
     "Restart": "[SUDO] Reboot bot",
     "RestartSessions": "[SUDO] Reboot User Sessions",
 }
+def insert_at(d, k, v, i):
+    return dict(list(d.items())[:i] + [(k, v)] + list(d.items())[i:])
 
-"""
+if jdownloader.is_connected:
+    BOT_COMMANDS = insert_at(BOT_COMMANDS, "JdMirror", "[link/file] Mirror to Upload Destination using JDownloader", 2)
+    BOT_COMMANDS = insert_at(BOT_COMMANDS, "JdLeech", "[link/file] Leech files to Upload to Telegram using JDownloader", 6)
 
-    "JdMirror": "",
-    "NzbMirror": "",
-        
-    "JdLeech": "",
-    "NzbLeech": "",
-    
-"""
+if sabnzbd_client.LOGGED_IN:
+    BOT_COMMANDS = insert_at(BOT_COMMANDS, "NzbMirror", "[nzb] Mirror to Upload Destination using Sabnzbd", 2)
+    BOT_COMMANDS = insert_at(BOT_COMMANDS, "NzbLeech", "[nzb] Leech files to Upload to Telegram using Sabnzbd", 6)
+

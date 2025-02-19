@@ -15,6 +15,7 @@ from ..core.torrent_manager import TorrentManager
 from ..core.jdownloader_booter import jdownloader
 from ..helper.ext_utils.bot_utils import new_task
 from ..helper.ext_utils.status_utils import (
+    EngineStatus,
     MirrorStatus,
     get_readable_file_size,
     get_readable_time,
@@ -65,15 +66,16 @@ async def task_status(_, message):
 
 async def get_download_status(download):
     eng = download.engine
-    if eng.startswith(("Pyro", "yt-dlp", "RClone", "Google-API")):
-        speed = download.speed()
-    else:
-        speed = 0
+    speed = (
+        download.speed()
+        if eng.startswith(("Pyro", "yt-dlp", "RClone", "Google-API"))
+        else 0
+    )
     return (
         await download.status()
         if iscoroutinefunction(download.status)
         else download.status()
-    ), speed
+    ), speed, eng
 
 
 @new_task
@@ -100,14 +102,6 @@ async def status_pages(_, query):
                 status_dict[key]["status"] = data[3]
         await update_status_message(key, force=True)
     elif data[2] == "ov":
-        ds, ss = await TorrentManager.overall_speed()
-        if sabnzbd_client.LOGGED_IN:
-            sds = await sabnzbd_client.get_downloads()
-            sds = int(float(sds["queue"].get("kbpersec", "0"))) * 1024
-            ds += sds
-        if jdownloader.is_connected:
-            jdres = await jdownloader.device.downloadcontroller.get_speed_in_bytes()
-            ds += jdres
         message = query.message
         tasks = {
             "Download": 0,
@@ -125,48 +119,71 @@ async def status_pages(_, query):
             "ConvertMedia": 0,
             "FFmpeg": 0,
         }
-        dl_speed = ds
+        dl_speed = 0
         up_speed = 0
-        seed_speed = ss
+        seed_speed = 0
+
         async with task_dict_lock:
             status_results = await gather(
                 *(get_download_status(download) for download in task_dict.values())
             )
-            for status, speed in status_results:
-                match status:
-                    case MirrorStatus.STATUS_DOWNLOAD:
-                        tasks["Download"] += 1
-                        if speed:
-                            dl_speed += speed_string_to_bytes(speed)
-                    case MirrorStatus.STATUS_UPLOAD:
-                        tasks["Upload"] += 1
-                        up_speed += speed_string_to_bytes(speed)
-                    case MirrorStatus.STATUS_SEED:
-                        tasks["Seed"] += 1
-                    case MirrorStatus.STATUS_ARCHIVE:
-                        tasks["Archive"] += 1
-                    case MirrorStatus.STATUS_EXTRACT:
-                        tasks["Extract"] += 1
-                    case MirrorStatus.STATUS_SPLIT:
-                        tasks["Split"] += 1
-                    case MirrorStatus.STATUS_QUEUEDL:
-                        tasks["QueueDl"] += 1
-                    case MirrorStatus.STATUS_QUEUEUP:
-                        tasks["QueueUp"] += 1
-                    case MirrorStatus.STATUS_CLONE:
-                        tasks["Clone"] += 1
-                    case MirrorStatus.STATUS_CHECK:
-                        tasks["CheckUp"] += 1
-                    case MirrorStatus.STATUS_PAUSED:
-                        tasks["Pause"] += 1
-                    case MirrorStatus.STATUS_SAMVID:
-                        tasks["SamVid"] += 1
-                    case MirrorStatus.STATUS_CONVERT:
-                        tasks["ConvertMedia"] += 1
-                    case MirrorStatus.STATUS_FFMPEG:
-                        tasks["FFMPEG"] += 1
-                    case _:
-                        tasks["Download"] += 1
+
+        eng_status = EngineStatus()
+        if any(eng in (eng_status.STATUS_ARIA2, eng_status.STATUS_QBIT) for _, __, eng in status_results):
+            dl_speed, seed_speed = await TorrentManager.overall_speed()
+        
+        if any(eng == eng_status.STATUS_SABNZBD for _, __, eng in status_results):
+            if sabnzbd_client.LOGGED_IN:
+                dl_speed += (
+                    int(
+                        float(
+                            (await sabnzbd_client.get_downloads())["queue"].get(
+                                "kbpersec", "0"
+                            )
+                        )
+                    )
+                    * 1024
+                )
+
+        if any(eng == eng_status.STATUS_JD for _, __, eng in status_results):
+            if jdownloader.is_connected:
+                dl_speed += await jdownloader.device.downloadcontroller.get_speed_in_bytes()
+
+        for status, speed, _ in status_results:
+            match status:
+                case MirrorStatus.STATUS_DOWNLOAD:
+                    tasks["Download"] += 1
+                    if speed:
+                        dl_speed += speed_string_to_bytes(speed)
+                case MirrorStatus.STATUS_UPLOAD:
+                    tasks["Upload"] += 1
+                    up_speed += speed_string_to_bytes(speed)
+                case MirrorStatus.STATUS_SEED:
+                    tasks["Seed"] += 1
+                case MirrorStatus.STATUS_ARCHIVE:
+                    tasks["Archive"] += 1
+                case MirrorStatus.STATUS_EXTRACT:
+                    tasks["Extract"] += 1
+                case MirrorStatus.STATUS_SPLIT:
+                    tasks["Split"] += 1
+                case MirrorStatus.STATUS_QUEUEDL:
+                    tasks["QueueDl"] += 1
+                case MirrorStatus.STATUS_QUEUEUP:
+                    tasks["QueueUp"] += 1
+                case MirrorStatus.STATUS_CLONE:
+                    tasks["Clone"] += 1
+                case MirrorStatus.STATUS_CHECK:
+                    tasks["CheckUp"] += 1
+                case MirrorStatus.STATUS_PAUSED:
+                    tasks["Pause"] += 1
+                case MirrorStatus.STATUS_SAMVID:
+                    tasks["SamVid"] += 1
+                case MirrorStatus.STATUS_CONVERT:
+                    tasks["ConvertMedia"] += 1
+                case MirrorStatus.STATUS_FFMPEG:
+                    tasks["FFMPEG"] += 1
+                case _:
+                    tasks["Download"] += 1
 
         msg = f"""㊂ <b>Tasks Overview</b> :
         

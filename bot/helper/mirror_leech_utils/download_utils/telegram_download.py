@@ -1,6 +1,6 @@
 from asyncio import Lock, sleep
 from time import time
-from pyrogram.errors import FloodWait
+from pyrogram.errors import FloodWait, PeerIdInvalid, ChannelInvalid
 try:
     from pyrogram.errors import FloodPremiumWait
 except ImportError:
@@ -75,6 +75,7 @@ class TelegramDownloadHelper:
 
     async def _download(self, message, path):
         try:
+            # TODO : USess & Hyper DL
             download = await message.download(
                 file_name=path, progress=self._on_download_progress
             )
@@ -100,22 +101,16 @@ class TelegramDownloadHelper:
         if not self.session:
             if self._listener.user_transmission and self._listener.is_super_chat:
                 self.session = "user"
-                message = await TgClient.user.get_messages(
-                    chat_id=message.chat.id, message_ids=message.id
-                )
+                try:
+                    message = await TgClient.user.get_messages(
+                        chat_id=message.chat.id, message_ids=message.id
+                    )
+                except (PeerIdInvalid, ChannelInvalid):
+                    LOGGER.warning("User session is not in this chat!, Downloading with bot session")
+                    self.session = "bot"
             else:
                 self.session = "bot"
-        media = (
-            message.document
-            or message.photo
-            or message.video
-            or message.audio
-            or message.voice
-            or message.video_note
-            or message.sticker
-            or message.animation
-            or None
-        )
+        media = getattr(message, message.media.value) if message.media else None
 
         if media is not None:
             async with global_lock:

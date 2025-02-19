@@ -130,7 +130,7 @@ class GoogleDriveUpload(GoogleDriveHelper):
     def _upload_file(self, file_path, file_name, mime_type, dest_id, in_dir=True):
         file_metadata = {
             "name": file_name,
-            "description": "Uploaded by Mirror-leech-telegram-bot",
+            "description": Config.GD_DESP,
             "mimeType": mime_type,
         }
         if dest_id is not None:

@@ -8,6 +8,10 @@ from pyrogram.errors import (
     MessageNotModified,
     MessageEmpty,
     ReplyMarkupInvalid,
+    PhotoInvalidDimensions,
+    WebpageCurlFailed,
+    MediaEmpty,
+    MediaCaptionTooLong,
 )
 
 try:
@@ -23,8 +27,44 @@ from ..ext_utils.exceptions import TgLinkException
 from ..ext_utils.status_utils import get_readable_message
 
 
-async def send_message(message, text, buttons=None, block=True, **kwargs):
+async def send_message(message, text, buttons=None, block=True, photo=None, **kwargs):
     try:
+        if photo:
+            try:
+                if isinstance(message, int):
+                    return await TgClient.bot.send_photo(
+                        chat_id=message,
+                        photo=photo,
+                        caption=text,
+                        reply_markup=buttons,
+                        disable_notification=True,
+                        **kwargs,
+                    )
+                return await message.reply_photo(
+                    photo=photo,
+                    reply_to_message_id=message.id,
+                    caption=text,
+                    quote=True,
+                    reply_markup=buttons,
+                    disable_notification=True,
+                    **kwargs,
+                )
+            except FloodWait as f:
+                LOGGER.warning(str(f))
+                if not block:
+                    return str(f)
+                await sleep(f.value * 1.2)
+                return await send_message(message, text, buttons, block, photo)
+            except MediaCaptionTooLong:
+                return await send_message(
+                    message, text[:1024], buttons, block, photo,
+                )
+            except (PhotoInvalidDimensions, WebpageCurlFailed, MediaEmpty):
+                LOGGER.error("Invalid photo dimensions or empty media", exc_info=True)
+                return
+            except Exception as e:
+                LOGGER.error("Error while sending photo", exc_info=True)
+                return
         if isinstance(message, int):
             return await TgClient.bot.send_message(
                 chat_id=message,

@@ -24,6 +24,9 @@ NAME_SWAP = ""
 FFMPEG_CMDS = {}
 UPLOAD_PATHS = {}
 
+# Hyper Tg Downloader
+HELPER_TOKENS = ""
+
 # Task Tools
 FORCE_SUB_IDS = ""
 MEDIA_STORE = True
@@ -36,9 +39,11 @@ VERIFY_TIMEOUT = 0
 # Bot Settings
 BOT_PM = False
 SET_COMMANDS = True
+TIMEZONE = "Asia/Kolkata"
 
 # GDrive Tools
 GDRIVE_ID = ""
+GD_DESP = "Uploaded with WZ Bot"
 IS_TEAM_DRIVE = False
 STOP_DUPLICATE = False
 INDEX_URL = ""
@@ -91,6 +96,8 @@ USER_TRANSMISSION = True
 HYBRID_LEECH = True
 LEECH_PREFIX = ""
 LEECH_SUFFIX = ""
+LEECH_FONT = ""
+LEECH_CAPTION = ""
 LEECH_DUMP_CHAT = ""
 THUMBNAIL_LAYOUT = ""
 
