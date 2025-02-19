@@ -29,10 +29,11 @@ class HyperTGDownload:
         self.dump_chat = None
         self.download_dir = "downloads/"
         self.directory = None
-        self.num_parts = part_count or max(6, len(self.clients))
+        self.num_parts = part_count or max(4, len(self.clients))
         self.cache_file_ref = {}
         self._processed_bytes = 0
         self.file_size = 0
+        self.chunk_size = self.get_chunk_size()
         self.file_name = ""
         create_task(self._clean_cache())
 
@@ -53,6 +54,14 @@ class HyperTGDownload:
             if media := getattr(message, attr, None):
                 return media
         raise ValueError("This message doesn't contain any downloadable media")
+
+    def get_chunk_size(self):
+        if self.file_size > 1 * 1024 * 1024 * 1024:
+            return 4 * 1024 * 1024
+        elif self.file_size > 100 * 1024 * 1024:
+            return 2 * 1024 * 1024
+        else:
+            return 1024 * 1024
 
     async def get_specific_file_ref(self, mid, client):
         try:
@@ -241,7 +250,7 @@ class HyperTGDownload:
                     LOGGER.error(str(e))
 
     async def single_part(self, start, end, part_index):
-        chunk_size = 1024 * 1024
+        chunk_size = self.chunk_size
         until_bytes, from_bytes = min(end, self.file_size - 1), start
 
         offset = from_bytes - (from_bytes % chunk_size)
@@ -270,14 +279,13 @@ class HyperTGDownload:
             prog = create_task(self.progress_callback(progress, progress_args))
             
             results = await gather(*tasks)
-            results.sort(key=lambda x: x[0])
-                
+            
             final_file_path = ospath.join(self.directory, self.file_name)
             async with aiopen(final_file_path, "wb") as final_file:
-                for _, part_file_path in results:
+                for _, part_file_path in sorted(results, key=lambda x: x[0]):
                     async with aiopen(part_file_path, "rb") as part_file:
                         while True:
-                            chunk = await part_file.read(1024 * 1024)
+                            chunk = await part_file.read(self.chunk_size)
                             if not chunk:
                                 break
                             await final_file.write(chunk)
