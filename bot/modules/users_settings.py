@@ -440,8 +440,8 @@ async def get_user_settings(from_user, stype="main"):
         else:
             ffc = "<b>Not Exists</b>"
             
-        if ffc != "<b>Not Exists</b>":
-            ffc = "\n".join([f"{no}. <b>{key}</b>: <code>{value}</code>" for no, (key, value) in enumerate(ffc.items())])
+        if isinstance(ffc, dict):
+            ffc = "\n" + "\n".join([f"{no}. <b>{key}</b>: <code>{value[0]}</code>" for no, (key, value) in enumerate(ffc.items(), start=1)])
 
         buttons.data_button("Back", f"userset {user_id} back", "footer")
         buttons.data_button("Close", f"userset {user_id} close", "footer")
@@ -659,7 +659,7 @@ async def get_menu(option, message, user_id):
     buttons.data_button("Back", f"userset {user_id} {back_to}", "footer")
     buttons.data_button("Close", f"userset {user_id} close", "footer")
     val = user_dict.get(option)
-    if await aiopath.exists(file_dict[option]):
+    if option in file_dict and await aiopath.exists(file_dict[option]):
         val = "<b>Exists</b>"
     text = f"""⌬ <b><u>Menu Settings :</u></b>
 │
