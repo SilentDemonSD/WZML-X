@@ -271,7 +271,6 @@ class HyperTGDownload:
         ranges = [
             (i * part_size, (i + 1) * part_size - 1) for i in range(self.num_parts)
         ]
-
         ranges[-1] = (ranges[-1][0], self.file_size - 1)
 
         try:
@@ -294,7 +293,6 @@ class HyperTGDownload:
             if not prog.done():
                 prog.cancel()
         except BaseException as e:
-            await remove(temp_file_path)
             LOGGER.error(f"HyperDL Error : {e}")
             for task in tasks:
                 if not task.done():
