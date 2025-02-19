@@ -32,7 +32,7 @@ async def main():
         return datetime.now(timezone(Config.TIMEZONE)).timetuple()
     Formatter.converter = changetz
 
-    await gather(TgClient.start_bot(), TgClient.start_user())
+    await gather(TgClient.start_bot(), TgClient.start_user(), TgClient.start_helper_bots())
     await gather(load_configurations(), update_variables())
 
     from .core.torrent_manager import TorrentManager

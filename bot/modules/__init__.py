@@ -10,6 +10,7 @@ from .gd_delete import delete_file
 from .gd_search import gdrive_search, select_type
 from .help import arg_usage, bot_help
 from .mediainfo import mediainfo
+from .speedtest import speedtest
 from .mirror_leech import (
     mirror,
     leech,
@@ -79,6 +80,7 @@ __all__ = [
     "start_cb",
     "bot_help",
     "mediainfo",
+    "speedtest",
     "ping",
     "log",
     "log_cb",

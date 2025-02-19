@@ -1,5 +1,5 @@
 from pyrogram import Client, enums
-from asyncio import Lock
+from asyncio import Lock, gather
 from inspect import signature
 
 from .. import LOGGER
@@ -13,6 +13,7 @@ class TgClient:
     bot = None
     user = None
     helper_bots = {}
+    helper_loads = {}
 
     BNAME = ""
     ID = 0
@@ -35,24 +36,27 @@ class TgClient:
         return Client(*args, **kwargs)
 
     @classmethod
-    async def start_helper_bot(cls):
+    async def start_helper_bots(cls):
+        if not Config.HELPER_TOKENS:
+            return
         LOGGER.info("Generating helper client from HELPER_TOKENS")
         async with cls._hlock:
-            for b_token in Config.HELPER_TOKENS.split():
+            for no, b_token in enumerate(Config.HELPER_TOKENS.split(), start=1):
                 try:
-                    cls.helper_bots[b_token] = cls.wztgClient(
-                        f"WZ-HBot{b_token}",
+                    cls.helper_bots[no] = cls.wztgClient(
+                        f"WZ-HBot{no}",
                         bot_token=b_token,
                         no_updates=True,
                     )
-                    await cls.helper_bots[b_token].start()
+                    await cls.helper_bots[no].start()
                     LOGGER.info(
-                        f"Helper Bot [@{cls.helper_bots[b_token].me.username}] Started!"
+                        f"Helper Bot [@{cls.helper_bots[no].me.username}] Started!"
                     )
+                    cls.helper_loads[no] = 0
                 except Exception as e:
-                    LOGGER.error(f"Failed to start helper bot {b_token} from HELPER_TOKENS. {e}")
-                    if b_token in cls.helper_bots:
-                        del cls.helper_bots[b_token]
+                    LOGGER.error(f"Failed to start helper bot {no} from HELPER_TOKENS. {e}")
+                    if no in cls.helper_bots:
+                        del cls.helper_bots[no]
 
 
     @classmethod
@@ -100,7 +104,10 @@ class TgClient:
             if cls.user:
                 await cls.user.stop()
                 cls.user = None
-            LOGGER.info("Client(s) stopped")
+            if cls.helper_bots:
+                await gather(*[h_bot.stop() for h_bot in cls.helper_bots.values()])
+                cls.helper_bots = {}
+            LOGGER.info("All Client(s) stopped")
 
     @classmethod
     async def reload(cls):
@@ -108,4 +115,6 @@ class TgClient:
             await cls.bot.restart()
             if cls.user:
                 await cls.user.restart()
-            LOGGER.info("Client(s) restarted")
+            if cls.helper_bots:
+                await gather(*[h_bot.restart() for h_bot in cls.helper_bots.values()])
+            LOGGER.info("All Client(s) restarted")
