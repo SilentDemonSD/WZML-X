@@ -5,7 +5,7 @@ from mimetypes import MimeTypes
 from os import path as ospath
 from pathlib import Path
 from re import sub
-from shutil import move
+from aioshutil import move
 from sys import argv
 
 from aiofiles import open as aiopen
@@ -59,7 +59,7 @@ class HyperTGDownload:
             media = await client.get_messages(self.dump_chat, mid)
         except Exception:
             LOGGER.error(
-                f"Failed to get message {mid} from {self.dump_chat} with Client {client}"
+                f"Failed to get message {mid} from {self.dump_chat} with Client {client.me.username}"
             )
             raise ValueError(
                 "Make sure Bot is Admin in the Chat and the Message is not Deleted"
@@ -240,7 +240,7 @@ class HyperTGDownload:
                 except Exception as e:
                     LOGGER.error(str(e))
 
-    async def single_part(self, start, end):
+    async def single_part(self, start, end, part_index):
         chunk_size = 1024 * 1024
         until_bytes, from_bytes = min(end, self.file_size - 1), start
 
@@ -250,12 +250,11 @@ class HyperTGDownload:
 
         part_count = ceil(until_bytes / chunk_size) - floor(offset / chunk_size)
 
-        chunks = []
-        async for chunk in self.get_file(
-            offset, first_part_cut, last_part_cut, part_count, chunk_size
-        ):
-            chunks.append(chunk)
-        return start, chunks
+        part_file_path = ospath.join(self.directory, f"{self.file_name}.temp.{part_index:02d}")
+        async with aiopen(part_file_path, "wb") as f:
+            async for chunk in self.get_file(offset, first_part_cut, last_part_cut, part_count, chunk_size):
+                await f.write(chunk)
+        return part_index, part_file_path
 
     async def handle_download(self, progress, progress_args):
         await makedirs(self.directory, exist_ok=True)
@@ -274,30 +273,36 @@ class HyperTGDownload:
         ranges[-1] = (ranges[-1][0], self.file_size - 1)
 
         try:
-            tasks = [create_task(self.single_part(start, end)) for start, end in ranges]
+            tasks = [create_task(self.single_part(start, end, i)) for i, (start, end) in enumerate(ranges)]
 
             prog = create_task(self.progress_callback(progress, progress_args))
+            
             results = await gather(*tasks)
-
             results.sort(key=lambda x: x[0])
+                
+            final_file_path = ospath.join(self.directory, self.file_name)
+            async with aiopen(final_file_path, "wb") as final_file:
+                for _, part_file_path in results:
+                    async with aiopen(part_file_path, "rb") as part_file:
+                        while True:
+                            chunk = await part_file.read(1024 * 1024)
+                            if not chunk:
+                                break
+                            await final_file.write(chunk)
+                    await remove(part_file_path)
 
-            async with aiopen(temp_file_path, "wb") as file:
-                for _, result in results:
-                    for chunk in result:
-                        await file.write(chunk)
             if not prog.done():
                 prog.cancel()
         except BaseException as e:
             await remove(temp_file_path)
-
-            LOGGER.error(f"FASTDL: {e}")
+            LOGGER.error(f"HyperDL Error : {e}")
             for task in tasks:
                 if not task.done():
                     task.cancel()
             raise e
         else:
             file_path = ospath.splitext(temp_file_path)[0]
-            move(temp_file_path, file_path)
+            await move(temp_file_path, file_path)
             return file_path
 
     @staticmethod
