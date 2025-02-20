@@ -188,7 +188,7 @@ class TelegramUploader:
                 quality=qual,
                 languages=lang,
                 subtitles=subs,
-                md5_hash=await sync_to_async(get_md5_hash(up_path)),
+                md5_hash=await sync_to_async(get_md5_hash, up_path),
                 # prefilename = 
                 # precaption =
             )
@@ -373,7 +373,7 @@ class TelegramUploader:
                             f"Total Attempts: {err.last_attempt.attempt_number}"
                         )
                         err = err.last_attempt.exception()
-                    LOGGER.error(f"{err}. Path: {self._up_path}")
+                    LOGGER.error(f"{err}. Path: {self._up_path}", exc_info=True)
                     self._error = str(err)
                     self._corrupted += 1
                     if self._listener.is_cancelled:
