@@ -1,4 +1,4 @@
-FROM mysterysd/wzmlx:latest
+FROM sujanch/wzml-x:latest
 
 WORKDIR /usr/src/app
 RUN chmod 777 /usr/src/app
