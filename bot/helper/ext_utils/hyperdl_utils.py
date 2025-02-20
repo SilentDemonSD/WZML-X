@@ -11,7 +11,7 @@ from sys import argv
 from aiofiles import open as aiopen
 from aiofiles.os import makedirs, remove, scandir
 from pyrogram import raw, utils, StopTransmission
-from pyrogram.errors import AuthBytesInvalid, FloodWait:
+from pyrogram.errors import AuthBytesInvalid, FloodWait
 from pyrogram.file_id import PHOTO_TYPES, FileId, FileType, ThumbnailSource
 from pyrogram.session import Auth, Session
 from pyrogram.session.internals import MsgId
