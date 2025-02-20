@@ -158,7 +158,7 @@ class TelegramUploader:
             cap_file_ = name + self._lsuffix.replace(r"\s", " ") + ext
             self._lsuffix = re_sub(r"<.*?>", "", self._lsuffix).replace(r"\s", " ")
         
-        cap_mono = f"<code>{cap_file_}</code>"
+        cap_mono = f"{cap_file_}"
         # TODO : Add cap & font
         
         if len(file_) > 56:
@@ -521,7 +521,7 @@ class TelegramUploader:
             ):
                 await remove(thumb)
             err_type = "RPCError: " if isinstance(err, RPCError) else ""
-            LOGGER.error(f"{err_type}{err}. Path: {self._up_path}")
+            LOGGER.error(f"{err_type}{err}. Path: {self._up_path}", exc_info=True)
             if isinstance(err, BadRequest) and key != "documents":
                 LOGGER.error(f"Retrying As Document. Path: {self._up_path}")
                 return await self._upload_file(cap_mono, file, o_path, True)

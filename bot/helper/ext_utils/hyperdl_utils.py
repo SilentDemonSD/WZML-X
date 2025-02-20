@@ -297,7 +297,7 @@ class HyperTGDownload:
                 if not task.done():
                     task.cancel()
 
-            async for entry in scandir(directory):
+            async for entry in scandir(self.directory):
                 if entry.name.startswith(prefix) and entry.is_file():
                     await remove(entry.path)
             

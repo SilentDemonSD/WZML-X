@@ -258,7 +258,10 @@ async def fetch_response(method: str, url: str, headers: dict, params: dict, bod
         async with session.request(method, url, headers=headers, params=params, data=body) as upstream_response:
             content = await upstream_response.read()
             media_type = upstream_response.headers.get("Content-Type", "text/html")
+            LOGGER.info(media_type)
+            LOGGER.info(content)
             resp_headers = {k: v for k, v in upstream_response.headers.items() if k.lower() != "content-length"}
+            LOGGER.info(resp_headers)
             return HTMLResponse(content=content, status_code=upstream_response.status, headers=resp_headers, media_type=media_type)
 
 

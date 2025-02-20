@@ -99,7 +99,7 @@ class TelegramDownloadHelper:
             await self._download(message, path)
             return
         except Exception as e:
-            LOGGER.error(str(e))
+            LOGGER.error(str(e), exc_info=True)
             await self._on_download_error(str(e))
             return
         if download is not None:
