@@ -44,3 +44,4 @@ uv
 uvloop
 xattr
 yt-dlp
+werkzeug==2.0.2
