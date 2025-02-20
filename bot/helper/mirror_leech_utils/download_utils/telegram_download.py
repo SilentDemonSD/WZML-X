@@ -84,7 +84,6 @@ class TelegramDownloadHelper:
         try:
             # TODO : Add support for user session
             if self._hyper_dl:
-                self.session == "hbots"
                 download = await HyperTGDownload().download_media(
                     message, file_name=path, progress=self._on_download_progress, dump_chat=Config.LEECH_DUMP_CHAT
                 )
@@ -112,7 +111,9 @@ class TelegramDownloadHelper:
     async def add_download(self, message, path, session):
         self.session = session
         if not self.session:
-            if self._listener.user_transmission and self._listener.is_super_chat:
+            if self._hyper_dl:
+                self.session == "hbots"
+            elif self._listener.user_transmission and self._listener.is_super_chat:
                 self.session = "user"
                 try:
                     message = await TgClient.user.get_messages(
@@ -160,9 +161,14 @@ class TelegramDownloadHelper:
                             chat_id=message.chat.id, message_ids=message.id
                         )
                     else:
-                        message = await TgClient.user.get_messages(
-                            chat_id=message.chat.id, message_ids=message.id
-                        )
+                        try:
+                            message = await TgClient.user.get_messages(
+                                chat_id=message.chat.id, message_ids=message.id
+                            )
+                        except (PeerIdInvalid, ChannelInvalid):
+                            message = await self._listener.client.get_messages(
+                                chat_id=message.chat.id, message_ids=message.id
+                            )
                     if self._listener.is_cancelled:
                         async with global_lock:
                             if self._id in GLOBAL_GID:

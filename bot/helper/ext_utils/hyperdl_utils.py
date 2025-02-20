@@ -1,4 +1,4 @@
-from asyncio import create_task, gather, sleep
+from asyncio import create_task, gather, sleep, CancelledError
 from datetime import datetime
 from math import ceil, floor
 from mimetypes import MimeTypes
@@ -9,9 +9,9 @@ from aioshutil import move
 from sys import argv
 
 from aiofiles import open as aiopen
-from aiofiles.os import makedirs, remove
-from pyrogram import raw, utils
-from pyrogram.errors import AuthBytesInvalid
+from aiofiles.os import makedirs, remove, scandir
+from pyrogram import raw, utils, StopTransmission
+from pyrogram.errors import AuthBytesInvalid, FloodWait:
 from pyrogram.file_id import PHOTO_TYPES, FileId, FileType, ThumbnailSource
 from pyrogram.session import Auth, Session
 from pyrogram.session.internals import MsgId
@@ -229,6 +229,8 @@ class HyperTGDownload:
                             location=location, offset=offset_bytes, limit=chunk_size
                         ),
                     )
+        except (StopTransmission, FloodWait):
+            raise
         except (TimeoutError, AttributeError):
             pass
         finally:
@@ -265,6 +267,7 @@ class HyperTGDownload:
 
     async def handle_download(self, progress, progress_args):
         await makedirs(self.directory, exist_ok=True)
+        temp_file_path = ospath.abspath(sub("\\\\", "/", ospath.join(self.directory, self.file_name))) + ".temp"
         part_size = self.file_size // self.num_parts
         ranges = [
             (i * part_size, (i + 1) * part_size - 1) for i in range(self.num_parts)
@@ -277,26 +280,37 @@ class HyperTGDownload:
             
             results = await gather(*tasks)
             
-            final_file_path = ospath.join(self.directory, self.file_name)
-            async with aiopen(final_file_path, "wb") as final_file:
+            async with aiopen(temp_file_path, "wb") as temp_file:
                 for _, part_file_path in sorted(results, key=lambda x: x[0]):
                     async with aiopen(part_file_path, "rb") as part_file:
                         while True:
                             chunk = await part_file.read(self.chunk_size)
                             if not chunk:
                                 break
-                            await final_file.write(chunk)
+                            await temp_file.write(chunk)
                     await remove(part_file_path)
 
             if not prog.done():
                 prog.cancel()
         except BaseException as e:
-            LOGGER.error(f"HyperDL Error : {e}")
             for task in tasks:
                 if not task.done():
                     task.cancel()
-            raise e
-        return final_file_path
+
+            async for entry in scandir(directory):
+                if entry.name.startswith(prefix) and entry.is_file():
+                    await remove(entry.path)
+            
+            if isinstance(e, (CancelledError, FloodWait)):
+                raise e
+            else:
+                LOGGER.error(f"HyperDL Error : {e}")
+                
+            return None
+        else:
+            file_path = ospath.splitext(temp_file_path)[0]
+            await move(temp_file_path, file_path)
+            return file_path
 
     @staticmethod
     async def get_extension(file_type, mime_type):
