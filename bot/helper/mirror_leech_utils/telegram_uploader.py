@@ -42,6 +42,7 @@ from ..ext_utils.media_utils import (
     get_media_info,
     get_multiple_frames_thumbnail,
     get_video_thumbnail,
+    get_md5_hash,
 )
 from ..telegram_helper.message_utils import delete_message
 
@@ -166,7 +167,14 @@ class TelegramUploader:
             else cap_file_
         )
         if self._lcaption:
-            self._lcaption = re_sub(r"\||\{|\}|\s", lambda m: {"|": "%%", "{": "&%&", "}": "$%$", " ": " "}[m.group()], self._lcaption)
+            self._lcaption = re_sub(
+                r"(\\\||\\\{|\\\}|\\s)",
+                lambda m: {r"\|": "%%", r"\{": "&%&", r"\}": "$%$", r"\s": " "}[
+                    m.group(0)
+                ],
+                self._lcaption,
+            )
+
             parts = self._lcaption.split("|")
             parts[0] = re_sub(
                 r"\{([^}]+)\}", lambda m: f"{{{m.group(1).lower()}}}", parts[0]
@@ -180,6 +188,9 @@ class TelegramUploader:
                 quality=qual,
                 languages=lang,
                 subtitles=subs,
+                md5_hash=await sync_to_async(get_md5_hash(up_path)),
+                # prefilename = 
+                # precaption =
             )
 
             for part in parts[1:]:
@@ -189,7 +200,11 @@ class TelegramUploader:
                     args[1] if len(args) > 1 else "",
                     int(args[2]) if len(args) == 3 else -1,
                 )
-            cap_mono = re_sub(r"%%|&%&|\$%$", lambda m: {"%%": "|", "&%&": "{", "$%$": "}"}[m.group()], cap_mono)
+            cap_mono = re_sub(
+                r"%%|&%&|\$%\$",
+                lambda m: {"%%": "|", "&%&": "{", "$%$": "}"}[m.group()],
+                cap_mono,
+            )
 
         if len(file_) > 56:
             if is_archive(file_):

@@ -1,5 +1,6 @@
 from contextlib import suppress
 from PIL import Image
+from hashlib import md5
 from aiofiles.os import remove, path as aiopath, makedirs
 from asyncio import (
     create_subprocess_exec,
@@ -18,6 +19,14 @@ from ... import LOGGER, cpu_no, DOWNLOAD_DIR
 from .bot_utils import cmd_exec, sync_to_async
 from .files_utils import get_mime_type, is_archive, is_archive_split
 from .status_utils import time_to_seconds
+
+
+def get_md5_hash(up_path):
+    md5_hash = md5()
+    with open(up_path, "rb") as f:
+        for byte_block in iter(lambda: f.read(4096), b""):
+            md5_hash.update(byte_block)
+        return md5_hash.hexdigest()
 
 
 async def create_thumb(msg, _id=""):
@@ -60,16 +69,22 @@ async def get_media_info(path, extra_info=False):
         duration = round(float(fields.get("duration", 0)))
         if extra_info:
             lang, qual, stitles = "", "", ""
-            if (streams := ffresult.get('streams')) and streams[0].get('codec_type') == 'video':
-                qual = int(streams[0].get('height'))
+            if (streams := ffresult.get("streams")) and streams[0].get(
+                "codec_type"
+            ) == "video":
+                qual = int(streams[0].get("height"))
                 qual = f"{480 if qual <= 480 else 540 if qual <= 540 else 720 if qual <= 720 else 1080 if qual <= 1080 else 2160 if qual <= 2160 else 4320 if qual <= 4320 else 8640}p"
                 for stream in streams:
-                    if stream.get('codec_type') == 'audio' and (lc := stream.get('tags', {}).get('language')):
+                    if stream.get("codec_type") == "audio" and (
+                        lc := stream.get("tags", {}).get("language")
+                    ):
                         with suppress(Exception):
                             lc = Language.get(lc).display_name()
                         if lc not in lang:
                             lang += f"{lc}, "
-                    if stream.get('codec_type') == 'subtitle' and (st := stream.get('tags', {}).get('language')):
+                    if stream.get("codec_type") == "subtitle" and (
+                        st := stream.get("tags", {}).get("language")
+                    ):
                         with suppress(Exception):
                             st = Language.get(st).display_name()
                         if st not in stitles:
@@ -556,7 +571,7 @@ class FFMpeg:
         else:
             try:
                 stderr = stderr.decode().strip()
-            except Exception: 
+            except Exception:
                 stderr = "Unable to decode the error!"
             LOGGER.error(
                 f"{stderr}. Something went wrong while converting audio, mostly file need specific codec. Path: {audio_file}"
