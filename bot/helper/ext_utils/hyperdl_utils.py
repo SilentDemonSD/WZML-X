@@ -1,16 +1,16 @@
-from asyncio import create_task, gather, sleep, CancelledError
+from asyncio import CancelledError, create_task, gather, sleep
 from datetime import datetime
 from math import ceil, floor
 from mimetypes import MimeTypes
 from os import path as ospath
 from pathlib import Path
 from re import sub
-from aioshutil import move
 from sys import argv
 
 from aiofiles import open as aiopen
-from aiofiles.os import makedirs, remove, scandir
-from pyrogram import raw, utils, StopTransmission
+from aiofiles.os import makedirs, remove
+from aioshutil import move
+from pyrogram import StopTransmission, raw, utils
 from pyrogram.errors import AuthBytesInvalid, FloodWait
 from pyrogram.file_id import PHOTO_TYPES, FileId, FileType, ThumbnailSource
 from pyrogram.session import Auth, Session
@@ -18,8 +18,8 @@ from pyrogram.session.internals import MsgId
 from pyrogram.types import Message
 
 from ... import LOGGER
-from ...core.tg_client import TgClient
 from ...core.config_manager import Config
+from ...core.tg_client import TgClient
 
 
 class HyperTGDownload:
@@ -225,7 +225,9 @@ class HyperTGDownload:
 
                     r = await media_session.invoke(
                         raw.functions.upload.GetFile(
-                            location=location, offset=offset_bytes, limit=self.chunk_size
+                            location=location,
+                            offset=offset_bytes,
+                            limit=self.chunk_size,
                         ),
                     )
         except (StopTransmission, FloodWait):
@@ -239,14 +241,17 @@ class HyperTGDownload:
         if progress:
             await sleep(2)
             while 1:
-                await progress(
-                    min(self._processed_bytes, self.file_size)
-                    if self.file_size != 0
-                    else self._processed_bytes,
-                    self.file_size,
-                    *progress_args,
-                )
-                await sleep(0.5)
+                try:
+                    await progress(
+                        min(self._processed_bytes, self.file_size)
+                        if self.file_size != 0
+                        else self._processed_bytes,
+                        self.file_size,
+                        *progress_args,
+                    )
+                    await sleep(0.5)
+                except (CancelledError, StopTransmission):
+                    break
 
     async def single_part(self, start, end, part_index):
         until_bytes, from_bytes = min(end, self.file_size - 1), start
@@ -255,17 +260,28 @@ class HyperTGDownload:
         first_part_cut = from_bytes - offset
         last_part_cut = until_bytes % self.chunk_size + 1
 
-        part_count = ceil(until_bytes / self.chunk_size) - floor(offset / self.chunk_size)
+        part_count = ceil(until_bytes / self.chunk_size) - floor(
+            offset / self.chunk_size
+        )
 
-        part_file_path = ospath.join(self.directory, f"{self.file_name}.temp.{part_index:02d}")
+        part_file_path = ospath.join(
+            self.directory, f"{self.file_name}.temp.{part_index:02d}"
+        )
         async with aiopen(part_file_path, "wb") as f:
-            async for chunk in self.get_file(offset, first_part_cut, last_part_cut, part_count):
+            async for chunk in self.get_file(
+                offset, first_part_cut, last_part_cut, part_count
+            ):
                 await f.write(chunk)
         return part_index, part_file_path
 
     async def handle_download(self, progress, progress_args):
         await makedirs(self.directory, exist_ok=True)
-        temp_file_path = ospath.abspath(sub("\\\\", "/", ospath.join(self.directory, self.file_name))) + ".temp"
+        temp_file_path = (
+            ospath.abspath(
+                sub("\\\\", "/", ospath.join(self.directory, self.file_name))
+            )
+            + ".temp"
+        )
         part_size = self.file_size // self.num_parts
         ranges = [
             (i * part_size, (i + 1) * part_size - 1) for i in range(self.num_parts)
@@ -273,11 +289,14 @@ class HyperTGDownload:
         ranges[-1] = (ranges[-1][0], self.file_size - 1)
 
         try:
-            tasks = [create_task(self.single_part(start, end, i)) for i, (start, end) in enumerate(ranges)]
+            tasks = [
+                create_task(self.single_part(start, end, i))
+                for i, (start, end) in enumerate(ranges)
+            ]
             prog = create_task(self.progress_callback(progress, progress_args))
-            
+
             results = await gather(*tasks)
-            
+
             async with aiopen(temp_file_path, "wb") as temp_file:
                 for _, part_file_path in sorted(results, key=lambda x: x[0]):
                     async with aiopen(part_file_path, "rb") as part_file:
@@ -290,20 +309,20 @@ class HyperTGDownload:
 
             if not prog.done():
                 prog.cancel()
+
         except BaseException as e:
             for task in tasks:
                 if not task.done():
                     task.cancel()
 
-            for entry in await scandir(self.directory):
-                if entry.name.startswith(self.file_name) and entry.is_file():
-                    await remove(entry.path)
-            
+            if not prog.done():
+                prog.cancel()
+
             if isinstance(e, (CancelledError, FloodWait)):
                 raise e
             else:
                 LOGGER.error(f"HyperDL Error : {e}")
-                
+
             return None
         else:
             file_path = ospath.splitext(temp_file_path)[0]
@@ -344,7 +363,7 @@ class HyperTGDownload:
                 disable_notification=True,
             )
 
-        self.dump_chat =  dump_chat or message.chat.id
+        self.dump_chat = dump_chat or message.chat.id
         self.message = self.message or message
         media = await self.get_media_type(self.message)
 

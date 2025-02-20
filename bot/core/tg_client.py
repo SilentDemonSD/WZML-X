@@ -58,7 +58,6 @@ class TgClient:
                     if no in cls.helper_bots:
                         del cls.helper_bots[no]
 
-
     @classmethod
     async def start_bot(cls):
         LOGGER.info("Generating client from BOT_TOKEN")
@@ -88,7 +87,7 @@ class TgClient:
                 cls.IS_PREMIUM_USER = cls.user.me.is_premium
                 if cls.IS_PREMIUM_USER:
                     cls.MAX_SPLIT_SIZE = 4194304000
-                uname = f"@{cls.user.me.username}" or cls.user.me.first_name
+                uname = cls.user.me.username or cls.user.me.first_name
                 LOGGER.info(f"WZ User : [{uname}] Started!")
             except Exception as e:
                 LOGGER.error(f"Failed to start client from USER_SESSION_STRING. {e}")

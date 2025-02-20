@@ -806,9 +806,10 @@ async def edit_user_settings(client, query):
             if await aiopath.exists(fpath):
                 await remove(fpath)
             del user_dict[data[3]]
+            await database.update_user_doc(user_id, data[3])
         else:
             update_user_ldata(user_id, data[3], "")
-        await database.update_user_data(user_id)
+            await database.update_user_data(user_id)
         await get_menu(data[3], message, user_id)
     elif data[2] == "reset":
         await query.answer("Reset Done!", show_alert=True)
@@ -816,17 +817,14 @@ async def edit_user_settings(client, query):
             del user_dict[data[3]]
             await get_menu(data[3], message, user_id)
         else:
-            if user_dict and any(
-                key in user_dict
-                for key in ("is_sudo", "is_auth", "VERIFY_TOKEN", "VERIFY_TIME")
-            ):
-                user_dict = {
-                    k: v
-                    for k, v in user_dict.items()
-                    if k in ("is_sudo", "is_auth", "VERIFY_TOKEN", "VERIFY_TIME")
-                }
-            else:
-                user_dict.clear()
+            for k in list(user_dict.keys()):
+                if k not in (
+                    "SUDO",
+                    "AUTH",
+                    "VERIFY_TOKEN", 
+                    "VERIFY_TIME"
+                ):
+                    del user_dict[k]
             for fpath in [thumb_path, rclone_conf, token_pickle]:
                 if await aiopath.exists(fpath):
                     await remove(fpath)

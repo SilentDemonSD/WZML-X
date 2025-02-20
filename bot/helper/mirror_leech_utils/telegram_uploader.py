@@ -114,22 +114,19 @@ class TelegramUploader:
 ┠ <b>User :</b> {self._listener.user.mention} ( #ID{self._listener.user_id} ){f"\n┠ <b>Message Link :</b> <a href='{msg_link}'>Click Here</a>" if msg_link else ""}
 ┖ <b>Source :</b> <a href='{self._listener.source_url}'>Click Here</a>"""
             try:
+                self._sent_msg = await self._listener.client.send_message(
+                    chat_id=self._listener.up_dest,
+                    text=msg,
+                    disable_web_page_preview=True,
+                    message_thread_id=self._listener.chat_thread_id,
+                    disable_notification=True,
+                )
                 if self._user_session:
-                    self._sent_msg = await TgClient.user.send_message(
-                        chat_id=self._listener.up_dest,
-                        text=msg,
-                        disable_web_page_preview=True,
-                        message_thread_id=self._listener.chat_thread_id,
-                        disable_notification=True,
+                    self._sent_msg = await TgClient.user.get_messages(
+                        chat_id=self._sent_msg.chat.id,
+                        message_ids=self._sent_msg.id,
                     )
                 else:
-                    self._sent_msg = await self._listener.client.send_message(
-                        chat_id=self._listener.up_dest,
-                        text=msg,
-                        disable_web_page_preview=True,
-                        message_thread_id=self._listener.chat_thread_id,
-                        disable_notification=True,
-                    )
                     self._is_private = self._sent_msg.chat.type.name == "PRIVATE"
             except Exception as e:
                 await self._listener.on_upload_error(str(e))
@@ -297,9 +294,9 @@ class TelegramUploader:
         if not res:
             return
         for dirpath, _, files in natsorted(await sync_to_async(walk, self._path)):
-            if dirpath.endswith("/yt-dlp-thumb"):
+            if dirpath.strip().endswith("/yt-dlp-thumb"):
                 continue
-            if dirpath.endswith("_mltbss"):
+            if dirpath.strip().endswith("_mltbss"):
                 await self._send_screenshots(dirpath, files)
                 await rmtree(dirpath, ignore_errors=True)
                 continue
