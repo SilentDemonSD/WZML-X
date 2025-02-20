@@ -253,15 +253,13 @@ async def homepage(request: Request):
     return templates.TemplateResponse("landing.html", {"request": request})
 
 
-async def fetch_response(method, url, headers, params, body):
+async def fetch_response(method: str, url: str, headers: dict, params: dict, body: bytes):
     async with ClientSession() as session:
         async with session.request(method, url, headers=headers, params=params, data=body) as upstream_response:
             content = await upstream_response.read()
-            return Response(
-                content=content,
-                status_code=upstream_response.status,
-                headers={k: v for k, v in upstream_response.headers.items() if k.lower() != "content-length"}
-            )
+            media_type = upstream_response.headers.get("Content-Type", "text/html")
+            resp_headers = {k: v for k, v in upstream_response.headers.items() if k.lower() != "content-length"}
+            return HTMLResponse(content=content, status_code=upstream_response.status, headers=resp_headers, media_type=media_type)
 
 
 @app.api_route("/{service}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
@@ -273,8 +271,8 @@ async def proxy(request: Request, service: str, path: str = ""):
     url = f"{SERVICES[service]}/{path}" if path else SERVICES[service]
     headers = {k: v for k, v in request.headers.items() if k.lower() != "host"}
     
-    return await fetch_response(request.method, url, headers, request.query_params, await request.body())
-    
+    return await fetch_response(request.method, url, headers, dict(request.query_params), await request.body())
+
 
 @app.exception_handler(Exception)
 async def page_not_found(_, exc):
