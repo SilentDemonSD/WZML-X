@@ -54,6 +54,7 @@ async def get_media_info(path, extra_info=False):
                 "-print_format",
                 "json",
                 "-show_format",
+                "-show_streams",
                 path,
             ]
         )
