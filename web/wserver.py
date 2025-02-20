@@ -11,10 +11,13 @@ from aioaria2 import Aria2HttpClient
 from aiohttp.client_exceptions import ClientError
 from aioqbt.client import create_client
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import Response, HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sabnzbdapi import SabnzbdClient
 from web.nodes import extract_file_ids, make_tree
+from httpx import AsyncClient
+
+http_client = AsyncClient()
 
 getLogger("httpx").setLevel(WARNING)
 getLogger("aiohttp").setLevel(WARNING)
@@ -26,6 +29,10 @@ sabnzbd_client = SabnzbdClient(
     api_key="admin",
     port="8070",
 )
+SERVICES = {
+    "sabnzbd": "http://localhost:8070/sabnzbd",
+    "qbittorrent": "http://localhost:8090",
+}
 
 
 @asynccontextmanager
@@ -248,9 +255,28 @@ async def homepage(request: Request):
     return templates.TemplateResponse("landing.html", {"request": request})
 
 
+@app.api_route("/{service}/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
+async def proxy(service: str, path: str = "", request: Request):
+    if service not in SERVICES:
+        return Response("Service not found", status_code=404)
+
+    url = f"{SERVICES[service]}/{path}" if path else SERVICES[service]
+    response = await http_client.request(
+        request.method, url,
+        headers={k: v for k, v in request.headers.items() if k.lower() != "host"},
+        params=request.query_params, content=await request.body()
+    )
+    return Response(response.content, status_code=response.status_code, headers=response.headers)
+
+
 @app.exception_handler(Exception)
 async def page_not_found(_, exc):
     return HTMLResponse(
         f"<h1>404: Task not found! Mostly wrong input. <br><br>Error: {exc}</h1>",
         status_code=404,
     )
+    
+
+@app.on_event("shutdown")
+async def shutdown():
+    await http_client.aclose()
