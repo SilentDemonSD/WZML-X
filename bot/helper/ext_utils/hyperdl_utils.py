@@ -181,7 +181,6 @@ class HyperTGDownload:
         first_part_cut: int,
         last_part_cut: int,
         part_count: int,
-        chunk_size: int,
     ):
         index = min(self.work_loads, key=self.work_loads.get)
         client = self.clients[index]
@@ -199,7 +198,7 @@ class HyperTGDownload:
         try:
             r = await media_session.invoke(
                 raw.functions.upload.GetFile(
-                    location=location, offset=offset_bytes, limit=chunk_size
+                    location=location, offset=offset_bytes, limit=self.chunk_size
                 ),
             )
             if isinstance(r, raw.types.upload.File):
@@ -218,15 +217,15 @@ class HyperTGDownload:
                         yield chunk
 
                     current_part += 1
-                    offset_bytes += chunk_size
-                    self._processed_bytes += chunk_size
+                    offset_bytes += self.chunk_size
+                    self._processed_bytes += self.chunk_size
 
                     if current_part > part_count:
                         break
 
                     r = await media_session.invoke(
                         raw.functions.upload.GetFile(
-                            location=location, offset=offset_bytes, limit=chunk_size
+                            location=location, offset=offset_bytes, limit=self.chunk_size
                         ),
                     )
         except (StopTransmission, FloodWait):
@@ -250,18 +249,17 @@ class HyperTGDownload:
                 await sleep(0.5)
 
     async def single_part(self, start, end, part_index):
-        chunk_size = self.chunk_size
         until_bytes, from_bytes = min(end, self.file_size - 1), start
 
-        offset = from_bytes - (from_bytes % chunk_size)
+        offset = from_bytes - (from_bytes % self.chunk_size)
         first_part_cut = from_bytes - offset
-        last_part_cut = until_bytes % chunk_size + 1
+        last_part_cut = until_bytes % self.chunk_size + 1
 
-        part_count = ceil(until_bytes / chunk_size) - floor(offset / chunk_size)
+        part_count = ceil(until_bytes / self.chunk_size) - floor(offset / self.chunk_size)
 
         part_file_path = ospath.join(self.directory, f"{self.file_name}.temp.{part_index:02d}")
         async with aiopen(part_file_path, "wb") as f:
-            async for chunk in self.get_file(offset, first_part_cut, last_part_cut, part_count, chunk_size):
+            async for chunk in self.get_file(offset, first_part_cut, last_part_cut, part_count, self.chunk_size):
                 await f.write(chunk)
         return part_index, part_file_path
 
@@ -298,7 +296,7 @@ class HyperTGDownload:
                     task.cancel()
 
             for entry in await scandir(self.directory):
-                if entry.name.startswith(prefix) and entry.is_file():
+                if entry.name.startswith(self.file_name) and entry.is_file():
                     await remove(entry.path)
             
             if isinstance(e, (CancelledError, FloodWait)):
