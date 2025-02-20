@@ -283,7 +283,3 @@ async def page_not_found(_, exc):
         status_code=404,
     )
     
-
-@app.on_event("shutdown")
-async def shutdown():
-    await http_client.aclose()
