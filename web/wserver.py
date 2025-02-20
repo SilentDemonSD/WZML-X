@@ -10,12 +10,12 @@ from logging import INFO, WARNING, FileHandler, StreamHandler, basicConfig, getL
 from aioaria2 import Aria2HttpClient
 from aiohttp.client_exceptions import ClientError
 from aioqbt.client import create_client
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response, HTTPException
 from fastapi.responses import StreamingResponse, HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sabnzbdapi import SabnzbdClient
 from web.nodes import extract_file_ids, make_tree
-from httpx import AsyncClient
+from httpx import AsyncClient, RequestError, StreamClosed
 
 http_client = AsyncClient()
 
@@ -255,35 +255,48 @@ async def homepage(request: Request):
     return templates.TemplateResponse("landing.html", {"request": request})
 
 
+async def stream_response(upstream_response):
+    """Yield chunks while handling errors properly."""
+    try:
+        async for chunk in upstream_response.aiter_bytes():
+            yield chunk
+    except StreamClosed:
+        LOGGER.warning("Stream was closed prematurely by the upstream server.")
+        yield b""
+
+
 @app.api_route("/{service}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 @app.api_route("/{service}/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def proxy(request: Request, service: str, path: str = ""):
     if service not in SERVICES:
-        return Response("Service not found", status_code=404)
-
+        raise HTTPException(status_code=404, detail="Service not found")
+    
     url = SERVICES[service] if not path else f"{SERVICES[service]}/{path}"
     headers = {k: v for k, v in request.headers.items() if k.lower() != "host"}
-
-    response = await http_client.request(
-        request.method,
-        url,
-        headers=headers,
-        params=request.query_params,
-        content=await request.body(),
-        stream=True
-    )
-    proxied_headers = dict(response.headers)
-    proxied_headers.pop("content-length", None)
-
-    async def stream_response():
-        try:
-            async for chunk in response.aiter_bytes():
-                yield chunk
-        finally:
-            await response.aclose()
-
-    return StreamingResponse(stream_response(), status_code=response.status_code, headers=proxied_headers)
     
+    try:
+        async with http_client.stream(
+            request.method, url, headers=headers,
+            params=request.query_params, content=await request.body()
+        ) as upstream_response:
+            proxied_headers = dict(upstream_response.headers)
+            proxied_headers.pop("content-length", None)
+
+            return StreamingResponse(
+                stream_response(upstream_response), 
+                status_code=upstream_response.status_code, 
+                headers=proxied_headers
+            )
+    except StreamClosed:
+        LOGGER.warning("StreamClosed occurred, returning partial response.")
+        return Response("Upstream stream closed unexpectedly.", status_code=502)
+    except RequestError as exc:
+        LOGGER.error(f"Upstream request error: {exc}")
+        raise HTTPException(status_code=502, detail="Bad Gateway")
+    except Exception as exc:
+        LOGGER.exception("Unhandled error in proxy")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+        
 
 @app.exception_handler(Exception)
 async def page_not_found(_, exc):
