@@ -10,8 +10,8 @@ from logging import INFO, WARNING, FileHandler, StreamHandler, basicConfig, getL
 from aioaria2 import Aria2HttpClient
 from aiohttp.client_exceptions import ClientError
 from aioqbt.client import create_client
-from fastapi import FastAPI, Request
-from fastapi.responses import Response, HTMLResponse, JSONResponse
+from fastapi import FastAPI, Request, Response
+from fastapi.responses import StreamingResponse, HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sabnzbdapi import SabnzbdClient
 from web.nodes import extract_file_ids, make_tree
@@ -258,18 +258,21 @@ async def homepage(request: Request):
 @app.api_route("/{service}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 @app.api_route("/{service}/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def proxy(request: Request, service: str, path: str = ""):
-    LOGGER.info(service)
-    LOGGER.info(path)
     if service not in SERVICES:
         return Response("Service not found", status_code=404)
     url = SERVICES[service] if not path else f"{SERVICES[service]}/{path}"
-    r = await http_client.request(
-        request.method, url,
-        headers={k: v for k, v in request.headers.items() if k.lower() != "host"},
-        params=request.query_params, content=await request.body()
-    )
-    return Response(r.content, r.status_code, r.headers)
-
+    headers = {k: v for k, v in request.headers.items() if k.lower() != "host"}
+    async with http_client.stream(
+        request.method,
+        url,
+        headers=headers,
+        params=request.query_params,
+        content=request.stream()
+    ) as resp:
+        proxied_headers = dict(resp.headers)
+        proxied_headers.pop("content-length", None)
+        return StreamingResponse(resp.aiter_bytes(), status_code=resp.status_code, headers=proxied_headers)
+        
 
 @app.exception_handler(Exception)
 async def page_not_found(_, exc):
