@@ -260,19 +260,30 @@ async def homepage(request: Request):
 async def proxy(request: Request, service: str, path: str = ""):
     if service not in SERVICES:
         return Response("Service not found", status_code=404)
+
     url = SERVICES[service] if not path else f"{SERVICES[service]}/{path}"
     headers = {k: v for k, v in request.headers.items() if k.lower() != "host"}
-    async with http_client.stream(
+
+    response = await http_client.request(
         request.method,
         url,
         headers=headers,
         params=request.query_params,
-        content=request.stream()
-    ) as resp:
-        proxied_headers = dict(resp.headers)
-        proxied_headers.pop("content-length", None)
-        return StreamingResponse(resp.aiter_bytes(), status_code=resp.status_code, headers=proxied_headers)
-        
+        content=await request.body(),
+        stream=True
+    )
+    proxied_headers = dict(response.headers)
+    proxied_headers.pop("content-length", None)
+
+    async def stream_response():
+        try:
+            async for chunk in response.aiter_bytes():
+                yield chunk
+        finally:
+            await response.aclose()
+
+    return StreamingResponse(stream_response(), status_code=response.status_code, headers=proxied_headers)
+    
 
 @app.exception_handler(Exception)
 async def page_not_found(_, exc):
