@@ -259,7 +259,7 @@ class HyperTGDownload:
 
         part_file_path = ospath.join(self.directory, f"{self.file_name}.temp.{part_index:02d}")
         async with aiopen(part_file_path, "wb") as f:
-            async for chunk in self.get_file(offset, first_part_cut, last_part_cut, part_count, self.chunk_size):
+            async for chunk in self.get_file(offset, first_part_cut, last_part_cut, part_count):
                 await f.write(chunk)
         return part_index, part_file_path
 
