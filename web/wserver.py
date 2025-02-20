@@ -258,21 +258,24 @@ async def fetch_response(method: str, url: str, headers: dict, params: dict, bod
         async with session.request(method, url, headers=headers, params=params, data=body) as upstream_response:
             content = await upstream_response.read()
             media_type = upstream_response.headers.get("Content-Type", "text/html")
-            LOGGER.info(content)
             resp_headers = {k: v for k, v in upstream_response.headers.items() if k.lower() not in ["content-length", "content-encoding"]}
             LOGGER.info(resp_headers)
             return HTMLResponse(content=content, status_code=upstream_response.status, headers=resp_headers, media_type=media_type)
 
 
-@app.api_route("/{service}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
-@app.api_route("/{service}/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
-async def proxy(request: Request, service: str, path: str = ""):
-    if service not in SERVICES:
-        raise HTTPException(status_code=404, detail="Service not found")
-    
-    url = f"{SERVICES[service]}/{path}" if path else SERVICES[service]
+@app.api_route("/qbittorrent/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
+async def qbittorrent_proxy(path: str = "", request: Request = None):
+    base_url = SERVICES["qbittorrent"]
+    url = f"{base_url}/{path}" if path else base_url
     headers = {k: v for k, v in request.headers.items() if k.lower() != "host"}
+    return await fetch_response(request.method, url, headers, dict(request.query_params), await request.body())
     
+
+@app.api_route("/sabnzbd/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
+async def sabnzbd_proxy(path: str = "", request: Request = None):
+    base_url = SERVICES["sabnzbd"]
+    url = f"{base_url}/{path}" if path else base_url
+    headers = {k: v for k, v in request.headers.items() if k.lower() != "host"}
     return await fetch_response(request.method, url, headers, dict(request.query_params), await request.body())
 
 
