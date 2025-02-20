@@ -255,18 +255,19 @@ async def homepage(request: Request):
     return templates.TemplateResponse("landing.html", {"request": request})
 
 
-@app.api_route("/{service}/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
-async def proxy(service: str, path: str = "", request: Request):
+@app.api_route("/{service:regex(^.+$)}/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
+async def proxy(request: Request, service: str, path: str = ""):
     if service not in SERVICES:
         return Response("Service not found", status_code=404)
-
     url = f"{SERVICES[service]}/{path}" if path else SERVICES[service]
-    response = await http_client.request(
-        request.method, url,
+    r = await http_client.request(
+        request.method,
+        url,
         headers={k: v for k, v in request.headers.items() if k.lower() != "host"},
-        params=request.query_params, content=await request.body()
+        params=request.query_params,
+        content=await request.body()
     )
-    return Response(response.content, status_code=response.status_code, headers=response.headers)
+    return Response(r.content, r.status_code, r.headers)
 
 
 @app.exception_handler(Exception)
