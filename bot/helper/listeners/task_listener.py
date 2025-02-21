@@ -232,7 +232,7 @@ class TaskListener(TaskConfig):
         if self.is_leech and self.is_file:
             fname = ospath.basename(up_path)
             self.file_details["filename"] = fname
-            self.file_details["mime_type"] = (mimetypes.guess_type(fname))[0] or "application/octet-stream"
+            self.file_details["mime_type"] = (guess_type(fname))[0] or "application/octet-stream"
             
         if self.name_swap:
             up_path = await self.substitute(up_path)
