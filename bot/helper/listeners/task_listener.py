@@ -2,6 +2,7 @@ from asyncio import gather, sleep
 from html import escape
 from time import time
 from re import match
+from mimetypes import guess_type
 from contextlib import suppress
 
 from aiofiles.os import listdir, makedirs, remove
@@ -226,7 +227,12 @@ class TaskListener(TaskConfig):
             self.name = up_path.replace(f"{up_dir}/", "").split("/", 1)[0]
             self.size = await get_path_size(up_dir)
             self.clear()
-
+            
+        if self.is_leech and self.is_file:
+            fname = ospath.basename(up_path)
+            self.file_details["filename"] = fname
+            self.file_details["mime_type"] = (mimetypes.guess_type(fname))[0] or "application/octet-stream"
+            
         if self.name_swap:
             up_path = await self.substitute(up_path)
             if self.is_cancelled:

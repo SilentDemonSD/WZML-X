@@ -277,7 +277,7 @@ class Mirror(TaskListener):
                 or reply_to.animation
                 or None
             )
-            self.file_details = {"filename": file_.file_name, "caption": reply_to.caption, "mime_type": file_.mime_type}
+            self.file_details = {"caption": reply_to.caption}
             
             if file_ is None:
                 if reply_text := reply_to.text:
