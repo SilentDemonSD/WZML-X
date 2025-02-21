@@ -182,15 +182,16 @@ class TelegramUploader:
             up_path = ospath.join(dirpath, pre_file_)
             dur, qual, lang, subs = await get_media_info(up_path, True)
             cap_mono = parts[0].format(
-                filename=cap_file_,
-                size=get_readable_file_size(await aiopath.getsize(up_path)),
-                duration=get_readable_time(dur),
-                quality=qual,
-                languages=lang,
-                subtitles=subs,
-                md5_hash=await sync_to_async(get_md5_hash, up_path),
-                # prefilename = 
-                # precaption =
+                filename = cap_file_,
+                size = get_readable_file_size(await aiopath.getsize(up_path)),
+                duration = get_readable_time(dur),
+                quality = qual,
+                languages = lang,
+                subtitles = subs,
+                md5_hash = await sync_to_async(get_md5_hash, up_path),
+                mime_type = self._listener.file_details["mime_type"]
+                prefilename = self._listener.file_details["filename"]
+                precaption = self._listener.file_details["caption"]
             )
 
             for part in parts[1:]:

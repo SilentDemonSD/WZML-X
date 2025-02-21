@@ -124,6 +124,7 @@ class TaskConfig:
         self.source_url = None
         self.bot_pm = Config.BOT_PM or self.user_dict.get('BOT_PM')
         self.pm_msg = None
+        self.file_details = {}
         self.mode = tuple()
 
     def _set_mode_engine(self):
@@ -511,7 +512,7 @@ class TaskConfig:
             msg.append(f"{self.bulk[0]} -i {self.multi - 1} {self.options}")
             msgts = " ".join(msg)
             if self.multi > 2:
-                msgts += f"\nCancel Multi: <code>/{BotCommands.CancelTaskCommand[1]} {self.multi_tag}</code>"
+                msgts += f"\n• <b>Cancel Multi:</b> <i>/{BotCommands.CancelTaskCommand[1]}_{self.multi_tag}</i>"
             nextmsg = await send_message(self.message, msgts)
         else:
             msg = [s.strip() for s in input_list]
@@ -523,7 +524,7 @@ class TaskConfig:
             )
             msgts = " ".join(msg)
             if self.multi > 2:
-                msgts += f"\nCancel Multi: <code>/{BotCommands.CancelTaskCommand[1]} {self.multi_tag}</code>"
+                msgts += f"\n• <b>Cancel Multi:</b> <i>/{BotCommands.CancelTaskCommand[1]}_{self.multi_tag}</i>"
             nextmsg = await send_message(nextmsg, msgts)
         nextmsg = await self.client.get_messages(
             chat_id=self.message.chat.id, message_ids=nextmsg.id

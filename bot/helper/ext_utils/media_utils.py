@@ -95,7 +95,7 @@ async def get_media_info(path, extra_info=False):
         artist = tags.get("artist") or tags.get("ARTIST") or tags.get("Artist")
         title = tags.get("title") or tags.get("TITLE") or tags.get("Title")
         return duration, artist, title
-    return 0, None, None
+    return (0, "", "", "") if extra_info else (0, None, None)
 
 
 async def get_document_type(path):
