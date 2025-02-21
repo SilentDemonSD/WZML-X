@@ -36,7 +36,7 @@ class TgClient:
         return Client(*args, **kwargs)
         
     @classmethod
-    async def start_hclient(cls, no, b_token)
+    async def start_hclient(cls, no, b_token):
         try:
             hbot = await (cls.wztgClient(
                 f"WZ-HBot{no}",

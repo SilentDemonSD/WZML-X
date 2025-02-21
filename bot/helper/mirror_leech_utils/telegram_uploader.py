@@ -189,9 +189,9 @@ class TelegramUploader:
                 languages = lang,
                 subtitles = subs,
                 md5_hash = await sync_to_async(get_md5_hash, up_path),
-                mime_type = self._listener.file_details["mime_type"]
-                prefilename = self._listener.file_details["filename"]
-                precaption = self._listener.file_details["caption"]
+                mime_type = self._listener.file_details["mime_type"],
+                prefilename = self._listener.file_details["filename"],
+                precaption = self._listener.file_details["caption"],
             )
 
             for part in parts[1:]:
