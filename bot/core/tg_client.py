@@ -34,6 +34,22 @@ class TgClient:
             if param in signature(Client.__init__).parameters:
                 kwargs[param] = value
         return Client(*args, **kwargs)
+        
+    @classmethod
+    async def start_hclient(cls, no, b_token)
+        try:
+            hbot = await (cls.wztgClient(
+                f"WZ-HBot{no}",
+                bot_token=b_token,
+                no_updates=True,
+            )).start()
+            LOGGER.info(
+                f"Helper Bot [@{hbot.me.username}] Started!"
+            )
+            cls.helper_bots[no], cls.helper_loads[no] = hbot, 0
+        except Exception as e:
+            LOGGER.error(f"Failed to start helper bot {no} from HELPER_TOKENS. {e}")
+            cls.helper_bots.pop(no, None)
 
     @classmethod
     async def start_helper_bots(cls):
@@ -41,22 +57,7 @@ class TgClient:
             return
         LOGGER.info("Generating helper client from HELPER_TOKENS")
         async with cls._hlock:
-            for no, b_token in enumerate(Config.HELPER_TOKENS.split(), start=1):
-                try:
-                    cls.helper_bots[no] = cls.wztgClient(
-                        f"WZ-HBot{no}",
-                        bot_token=b_token,
-                        no_updates=True,
-                    )
-                    await cls.helper_bots[no].start()
-                    LOGGER.info(
-                        f"Helper Bot [@{cls.helper_bots[no].me.username}] Started!"
-                    )
-                    cls.helper_loads[no] = 0
-                except Exception as e:
-                    LOGGER.error(f"Failed to start helper bot {no} from HELPER_TOKENS. {e}")
-                    if no in cls.helper_bots:
-                        del cls.helper_bots[no]
+            await gather(*(cls.start_hclient(no, b_token) for no, b_token in enumerate(Config.HELPER_TOKENS.split(), start=1)))
 
     @classmethod
     async def start_bot(cls):
