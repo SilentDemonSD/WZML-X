@@ -492,7 +492,7 @@ class TaskConfig:
     async def run_multi(self, input_list, obj):
         await sleep(7)
         if not self.multi_tag and self.multi > 1:
-            self.multi_tag = token_hex(5)
+            self.multi_tag = token_hex(3)
             multi_tags.add(self.multi_tag)
         elif self.multi <= 1:
             if self.multi_tag in multi_tags:
@@ -563,9 +563,9 @@ class TaskConfig:
             b_msg.append(f"{self.bulk[0]} -i {len(self.bulk)} {self.options}")
             msg = " ".join(b_msg)
             if len(self.bulk) > 2:
-                self.multi_tag = token_hex(5)
+                self.multi_tag = token_hex(3)
                 multi_tags.add(self.multi_tag)
-                msg += f"\nCancel Multi: <code>/{BotCommands.CancelTaskCommand[1]} {self.multi_tag}</code>"
+                msg += f"\n• <b>Cancel Multi:</b> <i>/{BotCommands.CancelTaskCommand[1]}_{self.multi_tag}</i>"
             nextmsg = await send_message(self.message, msg)
             nextmsg = await self.client.get_messages(
                 chat_id=self.message.chat.id, message_ids=nextmsg.id

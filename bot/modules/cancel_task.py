@@ -29,7 +29,7 @@ async def cancel(_, message):
         if len(cmd_data) > 1 and cmd_data[1].strip() != TgClient.BNAME:
             return
         gid = cmd_data[0]
-        if len(gid) == 4:
+        if len(gid) == 6:
             multi_tags.discard(gid)
             return
         else:

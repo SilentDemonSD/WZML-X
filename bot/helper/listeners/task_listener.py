@@ -4,6 +4,7 @@ from time import time
 from re import match
 from mimetypes import guess_type
 from contextlib import suppress
+from os import path as ospath
 
 from aiofiles.os import listdir, makedirs, remove
 from aiofiles.os import path as aiopath
