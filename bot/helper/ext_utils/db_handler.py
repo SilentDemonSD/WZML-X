@@ -123,11 +123,11 @@ class DbManager:
         if path:
             async with aiopen(path, "rb+") as doc:
                 doc_bin = await doc.read()
-            await self.db.users.update_one(
+            await self.db.users[TgClient.ID].update_one(
                 {"_id": user_id}, {"$set": {key: doc_bin}}, upsert=True
             )
         else:
-            await self.db.users.update_one(
+            await self.db.users[TgClient.ID].update_one(
                 {"_id": user_id}, {"$unset": {key: ""}}, upsert=True
             )
 
