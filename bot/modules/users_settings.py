@@ -200,18 +200,17 @@ async def get_user_settings(from_user, stype="main"):
 
         if user_dict and any(
             key in user_dict
-            for key in list(user_settings_text.keys()).extend(
-                [
-                    "USER_TOKENS",
-                    "AS_DOCUMENT",
-                    "EQUAL_SPLITS",
-                    "MEDIA_GROUP",
-                    "USER_TRANSMISSION",
-                    "HYBRID_LEECH",
-                    "STOP_DUPLICATE",
-                    "DEFAULT_UPLOAD",
-                ]
-            )
+            for key in list(user_settings_text.keys())
+            + [
+                "USER_TOKENS",
+                "AS_DOCUMENT",
+                "EQUAL_SPLITS",
+                "MEDIA_GROUP",
+                "USER_TRANSMISSION",
+                "HYBRID_LEECH",
+                "STOP_DUPLICATE",
+                "DEFAULT_UPLOAD",
+            ]
         ):
             buttons.data_button(
                 "Reset All", f"userset {user_id} reset all", position="footer"
