@@ -11,7 +11,7 @@ from logging import INFO, WARNING, FileHandler, StreamHandler, basicConfig, getL
 from aioaria2 import Aria2HttpClient
 from aiohttp.client_exceptions import ClientError
 from aioqbt.client import create_client
-from fastapi import FastAPI, Request, Response, HTTPException, Query
+from fastapi import FastAPI, Request, Response, HTTPException
 from fastapi.responses import StreamingResponse, HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sabnzbdapi import SabnzbdClient
@@ -29,7 +29,7 @@ sabnzbd_client = SabnzbdClient(
     port="8070",
 )
 SERVICES = {
-    "nzb": {"url": "http://localhost:8070/", "password": "wzmlx"},
+    "nzb": {"url": "http://localhost:8070/"},
     "qbit": {"url": "http://localhost:8090", "password": "wzmlx"},
 }
 
@@ -269,7 +269,7 @@ async def proxy_fetch(method: str, url: str, headers: dict, params: dict, body: 
             if upstream.status in (301, 302, 303, 307, 308) and upstream.headers.get("Location"):
                 loc = upstream.headers["Location"]
                 new_loc = rewrite_location(loc, proxy_prefix)
-                return Response(status_code=upstream.status, headers={"Location": new_loc})
+                return HTMLResponse(status_code=upstream.status, headers={"Location": new_loc})
             content = await upstream.read()
             media_type = upstream.headers.get("Content-Type", "text/html")
             resp_headers = {k: v for k, v in upstream.headers.items() if k.lower() not in ["content-length", "content-encoding"]}
@@ -292,14 +292,20 @@ async def protected_proxy(service: str, path: str, request: Request, password: s
 
 
 @app.api_route("/nzb/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
-async def sabnzbd_proxy(path: str = "", request: Request = None, password: str = Query(..., alias="pass")):
+async def sabnzbd_proxy(path: str = "", request: Request = None):
     return await protected_proxy("nzb", path, request, password)
 
 
 @app.api_route("/qbit/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
-async def qbittorrent_proxy(path: str = "", request: Request = None, password: str = Query(..., alias="pass")):
-    return await protected_proxy("qbit", path, request, password)
-
+async def qbittorrent_proxy(path: str = "", request: Request = None):
+    password = request.query_params.get("pass") or request.cookies.get("qbit_pass")
+    if not password:
+        raise HTTPException(status_code=403, detail="Missing password")
+    response = await protected_proxy("qbit", path, request, password)
+    if "pass" in request.query_params:
+        response.set_cookie("qbit_pass", password)
+    return response
+    
 
 @app.exception_handler(Exception)
 async def page_not_found(_, exc):
