@@ -28,7 +28,7 @@ sabnzbd_client = SabnzbdClient(
     port="8070",
 )
 SERVICES = {
-    "sabnzbd": "http://localhost:8070/sabnzbd",
+    "sabnzbd": "http://localhost:8070",
     "qbittorrent": "http://localhost:8090",
 }
 
@@ -253,30 +253,42 @@ async def homepage(request: Request):
     return templates.TemplateResponse("landing.html", {"request": request})
 
 
-async def fetch_response(method: str, url: str, headers: dict, params: dict, body: bytes):
-    async with ClientSession() as session:
-        async with session.request(method, url, headers=headers, params=params, data=body) as upstream_response:
-            content = await upstream_response.read()
-            media_type = upstream_response.headers.get("Content-Type", "text/html")
-            resp_headers = {k: v for k, v in upstream_response.headers.items() if k.lower() not in ["content-length", "content-encoding"]}
-            LOGGER.info(resp_headers)
-            return HTMLResponse(content=content, status_code=upstream_response.status, headers=resp_headers, media_type=media_type)
+def rewrite_location(location: str, proxy_prefix: str) -> str:
+    parsed = urlparse(location)
+    if not parsed.netloc:
+        return proxy_prefix + location
+    if parsed.hostname in ["localhost", "127.0.0.1"]:
+        return proxy_prefix + parsed.path
+    return location
 
 
-@app.api_route("/qbittorrent/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
+async def proxy_fetch(method: str, url: str, headers: dict, params: dict, body: bytes, proxy_prefix: str):
+    async with ClientSession(auto_decompress=True) as session:
+        async with session.request(method, url, headers=headers, params=params, data=body, allow_redirects=False) as upstream:
+            if upstream.status in (301, 302, 303, 307, 308) and upstream.headers.get("Location"):
+                loc = upstream.headers["Location"]
+                new_loc = rewrite_location(loc, proxy_prefix)
+                return Response(status_code=upstream.status, headers={"Location": new_loc})
+            content = await upstream.read()
+            media_type = upstream.headers.get("Content-Type", "text/html")
+            resp_headers = {k: v for k, v in upstream.headers.items() if k.lower() not in ["content-length", "content-encoding"]}
+            return HTMLResponse(content=content, status_code=upstream.status, headers=resp_headers, media_type=media_type)
+            
+
+@app.api_route("/qbit/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def qbittorrent_proxy(path: str = "", request: Request = None):
     base_url = SERVICES["qbittorrent"]
     url = f"{base_url}/{path}" if path else base_url
     headers = {k: v for k, v in request.headers.items() if k.lower() != "host"}
-    return await fetch_response(request.method, url, headers, dict(request.query_params), await request.body())
+    return await proxy_fetch(request.method, url, headers, dict(request.query_params), await request.body(), "/qbit")
     
 
-@app.api_route("/sabnzbd/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
+@app.api_route("/nzb/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def sabnzbd_proxy(path: str = "", request: Request = None):
     base_url = SERVICES["sabnzbd"]
     url = f"{base_url}/{path}" if path else base_url
     headers = {k: v for k, v in request.headers.items() if k.lower() != "host"}
-    return await fetch_response(request.method, url, headers, dict(request.query_params), await request.body())
+    return await proxy_fetch(request.method, url, headers, dict(request.query_params), await request.body(), "/nzb")
 
 
 @app.exception_handler(Exception)

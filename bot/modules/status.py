@@ -82,7 +82,6 @@ async def get_download_status(download):
 async def status_pages(_, query):
     data = query.data.split()
     key = int(data[1])
-    await query.answer()
     if data[2] == "ref":
         await update_status_message(key, force=True)
     elif data[2] in ["nex", "pre"]:
@@ -202,3 +201,5 @@ async def status_pages(_, query):
         button = ButtonMaker()
         button.data_button("Back", f"status {data[1]} ref")
         await edit_message(message, msg, button.build_menu())
+
+    await query.answer()
