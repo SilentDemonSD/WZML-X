@@ -276,14 +276,12 @@ async def proxy_fetch(method: str, url: str, headers: dict, params: dict, body: 
             return HTMLResponse(content=content, status_code=upstream.status, headers=resp_headers, media_type=media_type)
 
 
-async def protected_proxy(service: str, path: str, request: Request, password: str):
+async def protected_proxy(service: str, path: str, request: Request, password: str = None):
     service_info = SERVICES.get(service)
     if not service_info:
         raise HTTPException(status_code=404, detail="Service not found")
-    
-    if password != service_info["password"]:
+    if "password" in service_info and password != service_info["password"]:
         raise HTTPException(status_code=403, detail="Unauthorized access")
-
     base = service_info["url"]
     url = f"{base}/{path}" if path else base
     headers = {k: v for k, v in request.headers.items() if k.lower() != "host"}
@@ -293,7 +291,7 @@ async def protected_proxy(service: str, path: str, request: Request, password: s
 
 @app.api_route("/nzb/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def sabnzbd_proxy(path: str = "", request: Request = None):
-    return await protected_proxy("nzb", path, request, password)
+    return await protected_proxy("nzb", path, request)
 
 
 @app.api_route("/qbit/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
