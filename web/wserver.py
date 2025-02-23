@@ -11,7 +11,7 @@ from logging import INFO, WARNING, FileHandler, StreamHandler, basicConfig, getL
 from aioaria2 import Aria2HttpClient
 from aiohttp.client_exceptions import ClientError
 from aioqbt.client import create_client
-from fastapi import FastAPI, Request, Response, HTTPException
+from fastapi import FastAPI, Request, Response, HTTPException, Query
 from fastapi.responses import StreamingResponse, HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sabnzbdapi import SabnzbdClient
