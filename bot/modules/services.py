@@ -42,13 +42,12 @@ async def start(_, message):
             decrypted_url = decrypted_url.replace("file", "")
             chat_id, msg_id = decrypted_url.split("&&")
             LOGGER.info(f"Copying message from {chat_id} & {msg_id} to {userid}")
-            return await TgClient.bot.copy_message( # TODO: make it function
-                    chat_id=userid,
-                    from_chat_id=int(chat_id) if match(r'\d+', chat_id) else chat_id,
-                    message_id=int(msg_id),
-                    
-                    disable_notification=True,
-                )
+            return await TgClient.bot.copy_message(  # TODO: make it function
+                chat_id=userid,
+                from_chat_id=int(chat_id) if match(r"\d+", chat_id) else chat_id,
+                message_id=int(msg_id),
+                disable_notification=True,
+            )
         elif Config.VERIFY_TIMEOUT:
             input_token, pre_uid = decrypted_url.split("&&")
             if int(pre_uid) != userid:
@@ -61,6 +60,14 @@ async def start(_, message):
                 return await send_message(
                     message,
                     "<b>Access Token already used!</b>\n\n<i>Kindly generate a new one.</i>",
+                )
+            elif (
+                Config.LOGIN_PASS
+                and data["VERIFY_TOKEN"].casefold() == Config.LOGIN_PASS.casefold()
+            ):
+                return await send_message(
+                    message,
+                    "<b>Bot Already Logged In via Password</b>\n\n<i>No Need to Accept Temp Tokens.</i>",
                 )
             buttons.data_button(
                 "Activate Access Token", f"start pass {input_token}", "header"
@@ -118,6 +125,34 @@ async def start_cb(_, query):
         [InlineKeyboardButton("✅️ Activated ✅", callback_data="start pass activated")],
     )
     await edit_reply_markup(query.message, InlineKeyboardMarkup(kb))
+
+
+@new_task
+async def login(_, message):
+    if Config.LOGIN_PASS is None:
+        return await send_message(message, "<i>Login is not enabled !</i>")
+    elif len(message.command) > 1:
+        user_id = message.from_user.id
+        input_pass = message.command[1]
+
+        if user_data.get(user_id, {}).get("VERIFY_TOKEN", "") == Config.LOGIN_PASS:
+            return await send_message(
+                message, "<b>Already Bot Login In!</b>\n\n<i>No Need to Login Again</i>"
+            )
+
+        if input_pass.casefold() != Config.LOGIN_PASS.casefold():
+            return await send_message(
+                message, "<b>Wrong Password!</b>\n\n<i>Kindly check and try again</i>"
+            )
+
+        update_user_ldata(user_id, "VERIFY_TOKEN", Config.LOGIN_PASS)
+        return await send_message(
+            message, "<b>Bot Permanent Logged In!</b>\n\n<i>Now you can use the bot</i>"
+        )
+    else:
+        await send_message(
+            message, "<b>Bot Login Usage :</b>\n\n<code>/login [password]</code>"
+        )
 
 
 @new_task

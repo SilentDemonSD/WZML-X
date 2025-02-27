@@ -2,6 +2,7 @@ from ...core.config_manager import Config
 
 class BotCommands:
     StartCommand = "start"
+    LoginCommand = "login"
 
     commands = {
         "Mirror": ["mirror", "m"],

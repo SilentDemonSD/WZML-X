@@ -90,6 +90,8 @@ async def verify_token(user_id, button=None):
     user_data.setdefault(user_id, {})
     data = user_data[user_id]
     expire = data.get("VERIFY_TIME")
+    if Config.LOGIN_PASS and data.get('VERIFY_TOKEN', '') == Config.LOGIN_PASS:
+        return None, button
     isExpired = (
         expire is None
         or expire is not None

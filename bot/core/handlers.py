@@ -228,6 +228,11 @@ def add_handlers():
     )
     TgClient.bot.add_handler(
         MessageHandler(
+            login, filters=command(BotCommands.LoginCommand, case_sensitive=True)
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
             log,
             filters=command(BotCommands.LogCommand, case_sensitive=True)
             & CustomFilters.sudo,
@@ -353,6 +358,9 @@ def add_handlers():
         if len(Config.USENET_SERVERS) != 0:
             BOT_COMMANDS = insert_at(BOT_COMMANDS, "NzbMirror", "[nzb] Mirror to Upload Destination using Sabnzbd", 2)
             BOT_COMMANDS = insert_at(BOT_COMMANDS, "NzbLeech", "[nzb] Leech files to Upload to Telegram using Sabnzbd", 6)
+
+        if Config.LOGIN_PASS:
+            BOT_COMMANDS = insert_at(BOT_COMMANDS, "Login", "[password] Login to Bot", 14)
 
         TgClient.bot.set_bot_commands(
             [
