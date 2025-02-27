@@ -29,6 +29,7 @@ class Config:
     JD_EMAIL = ""
     JD_PASS = ""
     LEECH_DUMP_CHAT = ""
+    CLEAN_LOG_MSG = ""
     LEECH_PREFIX = ""
     LEECH_CAPTION = ""
     LEECH_SUFFIX = ""

@@ -72,6 +72,7 @@ class TelegramUploader:
         self._media_group = False
         self._is_private = False
         self._sent_msg = None
+        self._log_msg = None
         self._user_session = self._listener.user_transmission
         self._error = ""
 
@@ -115,13 +116,14 @@ class TelegramUploader:
 ┠ <b>User :</b> {self._listener.user.mention} ( #ID{self._listener.user_id} ){f"\n┠ <b>Message Link :</b> <a href='{msg_link}'>Click Here</a>" if msg_link else ""}
 ┖ <b>Source :</b> <a href='{self._listener.source_url}'>Click Here</a>"""
             try:
-                self._sent_msg = await self._listener.client.send_message(
+                self._log_msg = await self._listener.client.send_message(
                     chat_id=self._listener.up_dest,
                     text=msg,
                     disable_web_page_preview=True,
                     message_thread_id=self._listener.chat_thread_id,
                     disable_notification=True,
                 )
+                self._sent_msg = self._log_msg
                 if self._user_session:
                     self._sent_msg = await TgClient.user.get_messages(
                         chat_id=self._sent_msg.chat.id,
@@ -132,6 +134,7 @@ class TelegramUploader:
             except Exception as e:
                 await self._listener.on_upload_error(str(e))
                 return False
+            
         elif self._user_session:
             self._sent_msg = await TgClient.user.get_messages(
                 chat_id=self._listener.message.chat.id, message_ids=self._listener.mid
@@ -157,7 +160,7 @@ class TelegramUploader:
                 file_ = f"{self._lprefix}{file_}"
 
         if self._lsuffix:
-            name, ext = ospath.splitext(file_)
+            name, ext = ospath.splitext(cap_file_)
             cap_file_ = name + self._lsuffix.replace(r"\s", " ") + ext
             self._lsuffix = re_sub(r"<.*?>", "", self._lsuffix).replace(r"\s", " ")
 
@@ -309,6 +312,7 @@ class TelegramUploader:
         res = await self._msg_to_reply()
         if not res:
             return
+        is_log_del = False
         for dirpath, _, files in natsorted(await sync_to_async(walk, self._path)):
             if dirpath.strip().endswith("/yt-dlp-thumb"):
                 continue
@@ -359,6 +363,9 @@ class TelegramUploader:
                     self._last_msg_in_group = False
                     self._last_uploaded = 0
                     await self._upload_file(cap_mono, file_, f_path)
+                    if self._log_msg and not is_log_del and Config.CLEAN_LOG_MSG:
+                        await delete_message(self._log_msg)
+                        is_log_del = True
                     if self._listener.is_cancelled:
                         return
                     if (
@@ -590,3 +597,4 @@ class TelegramUploader:
         self._listener.is_cancelled = True
         LOGGER.info(f"Cancelling Upload: {self._listener.name}")
         await self._listener.on_upload_error("your upload has been stopped!")
+

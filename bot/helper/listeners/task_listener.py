@@ -49,6 +49,7 @@ from ..mirror_leech_utils.status_utils.telegram_status import TelegramStatus
 from ..mirror_leech_utils.telegram_uploader import TelegramUploader
 from ..telegram_helper.button_build import ButtonMaker
 from ..telegram_helper.message_utils import (
+    delete_message,
     delete_status,
     send_message,
     update_status_message,
@@ -434,6 +435,10 @@ class TaskListener(TaskConfig):
                     non_queued_up.remove(self.mid)
             await start_from_queued()
             return
+
+        if self.pm_msg and (not Config.DELETE_LINKS or Config.CLEAN_LOG_MSG):
+            await delete_message(self.pm_msg)
+
         await clean_download(self.dir)
         async with task_dict_lock:
             if self.mid in task_dict:
