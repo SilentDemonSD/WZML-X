@@ -11,6 +11,7 @@ from .gd_search import gdrive_search, select_type
 from .help import arg_usage, bot_help
 from .mediainfo import mediainfo
 from .speedtest import speedtest
+from .broadcast import broadcast
 from .mirror_leech import (
     mirror,
     leech,
@@ -82,6 +83,7 @@ __all__ = [
     "bot_help",
     "mediainfo",
     "speedtest",
+    "broadcast",
     "ping",
     "log",
     "log_cb",

@@ -146,6 +146,8 @@ async def login(_, message):
             )
 
         update_user_ldata(user_id, "VERIFY_TOKEN", Config.LOGIN_PASS)
+        if Config.DATABASE_URL:
+            await database.update_user_data(user_id)
         return await send_message(
             message, "<b>Bot Permanent Logged In!</b>\n\n<i>Now you can use the bot</i>"
         )

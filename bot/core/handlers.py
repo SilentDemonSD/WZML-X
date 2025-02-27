@@ -49,6 +49,13 @@ def add_handlers():
         )
     )
     TgClient.bot.add_handler(
+        MessageHandler(
+            broadcast,
+            filters=command(BotCommands.BroadcastCommand, case_sensitive=True)
+            & CustomFilters.sudo,
+        )
+    )
+    TgClient.bot.add_handler(
         CallbackQueryHandler(
             edit_bot_settings, filters=regex("^botset") & CustomFilters.sudo
         )

@@ -34,14 +34,6 @@ async def speedtest(_, message):
 ┠ <b>Latency:</b> <code>{result['server']['latency']}</code>
 ┠ <b>Latitude:</b> <code>{result['server']['lat']}</code>
 ┖ <b>Longitude:</b> <code>{result['server']['lon']}</code>
-
-➲ <b><i>CLIENT DETAILS</i></b>
-┠ <b>IP Address:</b> <code>{result['client']['ip']}</code>
-┠ <b>Latitude:</b> <code>{result['client']['lat']}</code>
-┠ <b>Longitude:</b> <code>{result['client']['lon']}</code>
-┠ <b>Country:</b> <code>{result['client']['country']}</code>
-┠ <b>ISP:</b> <code>{result['client']['isp']}</code>
-┖ <b>ISP Rating:</b> <code>{result['client']['isprating']}</code>
 '''
     try:
         await send_message(message, string_speed, photo=result['share'])

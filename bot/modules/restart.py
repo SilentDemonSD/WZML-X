@@ -117,9 +117,9 @@ async def confirm_restart(_, query):
     await query.answer()
     data = query.data.split()
     message = query.message
+    reply_to = message.reply_to_message
     await delete_message(message)
     if data[1] == "confirm":
-        reply_to = message.reply_to_message
         intervals["stopAll"] = True
         restart_message = await send_message(reply_to, "<i>Restarting...</i>")
         await delete_message(message)
@@ -168,4 +168,4 @@ async def confirm_restart(_, query):
             await f.write(f"{restart_message.chat.id}\n{restart_message.id}\n")
         osexecl(executable, executable, "-m", "bot")
     else:
-        await delete_message(message)
+        await delete_message(message, reply_to)
