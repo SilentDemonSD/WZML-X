@@ -12,6 +12,16 @@ from ..helper.telegram_helper.message_utils import send_message, edit_message
 async def list_buttons(user_id, is_recursive=True, user_token=False):
     buttons = ButtonMaker()
     buttons.data_button(
+        f"{'✅️' if user_token else '❌️'} User Token",
+        f"list_types {user_id} ut {is_recursive} {user_token}",
+        "header"
+    )
+    buttons.data_button(
+        f"{'✅️' if is_recursive else '❌️'} Recursive",
+        f"list_types {user_id} rec {is_recursive} {user_token}",
+        "header"
+    )
+    buttons.data_button(
         "Folders", f"list_types {user_id} folders {is_recursive} {user_token}"
     )
     buttons.data_button(
@@ -20,23 +30,16 @@ async def list_buttons(user_id, is_recursive=True, user_token=False):
     buttons.data_button(
         "Both", f"list_types {user_id} both {is_recursive} {user_token}"
     )
-    buttons.data_button(
-        f"Recursive: {is_recursive}",
-        f"list_types {user_id} rec {is_recursive} {user_token}",
-    )
-    buttons.data_button(
-        f"User Token: {user_token}",
-        f"list_types {user_id} ut {is_recursive} {user_token}",
-    )
-    buttons.data_button("Cancel", f"list_types {user_id} cancel")
+    
+    buttons.data_button("Cancel", f"list_types {user_id} cancel", "footer")
     return buttons.build_menu(2)
 
 
 async def _list_drive(key, message, item_type, is_recursive, user_token, user_id):
-    LOGGER.info(f"listing: {key}")
+    LOGGER.info(f"GD Listing: {key}")
     if user_token:
         user_dict = user_data.get(user_id, {})
-        target_id = user_dict.get("gdrive_id", "") or ""
+        target_id = user_dict.get("GDRIVE_ID", "") or ""
         LOGGER.info(target_id)
     else:
         target_id = ""
@@ -78,19 +81,19 @@ async def select_type(_, query):
         return await edit_message(message, "Choose list options:", buttons)
     elif data[2] == "cancel":
         await query.answer()
-        return await edit_message(message, "list has been canceled!")
+        return await edit_message(message, "<i>List has been canceled!</i>")
     await query.answer()
     item_type = data[2]
     is_recursive = eval(data[3])
     user_token = eval(data[4])
-    await edit_message(message, f"<b>Searching for <i>{key}</i></b>")
+    await edit_message(message, f"<b>Searching.. for <i>{key}</i></b>")
     await _list_drive(key, message, item_type, is_recursive, user_token, user_id)
 
 
 @new_task
 async def gdrive_search(_, message):
     if len(message.text.split()) == 1:
-        return await send_message(message, "Send a search key along with command")
+        return await send_message(message, "<i>Send a search query along with list command</i>")
     user_id = message.from_user.id
     buttons = await list_buttons(user_id)
     await send_message(message, "Choose list options:", buttons)

@@ -55,6 +55,7 @@ class TelegramUploader:
         self._processed_bytes = 0
         self._listener = listener
         self._path = path
+        self._client = None
         self._start_time = time()
         self._total_files = 0
         self._thumb = self._listener.thumb or f"thumbnails/{listener.user_id}.jpg"
@@ -116,7 +117,7 @@ class TelegramUploader:
 ┠ <b>User :</b> {self._listener.user.mention} ( #ID{self._listener.user_id} ){f"\n┠ <b>Message Link :</b> <a href='{msg_link}'>Click Here</a>" if msg_link else ""}
 ┖ <b>Source :</b> <a href='{self._listener.source_url}'>Click Here</a>"""
             try:
-                self._log_msg = await self._listener.client.send_message(
+                self._log_msg = await TgClient.bot.send_message(
                     chat_id=self._listener.up_dest,
                     text=msg,
                     disable_web_page_preview=True,
