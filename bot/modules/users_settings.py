@@ -481,7 +481,7 @@ async def get_user_settings(from_user, stype="main"):
 ┠ <b>Index URL</b> → <code>{index}</code>
 ┖ <b>Stop Duplicate</b> → <b>{sd_msg}</b>"""
     elif stype == "mirror":
-        buttons.data_button("Rclone", f"userset {user_id} rclone")
+        buttons.data_button("RClone Tools", f"userset {user_id} rclone")
         rccmsg = "Exists" if await aiopath.exists(rclone_conf) else "Not Exists"
         if user_dict.get("RCLONE_PATH", False):
             rccpath = user_dict["RCLONE_PATH"]
@@ -490,7 +490,7 @@ async def get_user_settings(from_user, stype="main"):
         else:
             rccpath = "None"
 
-        buttons.data_button("Gdrive Tools", f"userset {user_id} gdrive")
+        buttons.data_button("GDrive Tools", f"userset {user_id} gdrive")
         tokenmsg = "Exists" if await aiopath.exists(token_pickle) else "Not Exists"
         if user_dict.get("GDRIVE_ID", False):
             gdrive_id = user_dict["GDRIVE_ID"]
@@ -501,8 +501,8 @@ async def get_user_settings(from_user, stype="main"):
 
         index = user_dict["INDEX_URL"] if user_dict.get("INDEX_URL", False) else "None"
         if (
-            user_dict.get("stop_duplicate", False)
-            or "stop_duplicate" not in user_dict
+            user_dict.get("STOP_DUPLICATE", False)
+            or "STOP_DUPLICATE" not in user_dict
             and Config.STOP_DUPLICATE
         ):
             sd_msg = "Enabled"

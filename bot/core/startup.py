@@ -59,7 +59,7 @@ async def update_nzb_options():
     try:
         no = (await sabnzbd_client.get_config())["config"]["misc"]
         nzb_options.update(no)
-    except APIResponseError as e:
+    except (APIResponseError, Exception) as e:
         LOGGER.error(f"Error in NZB Options: {e}")
 
 async def load_settings():
