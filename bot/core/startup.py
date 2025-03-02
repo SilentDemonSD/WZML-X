@@ -56,11 +56,12 @@ async def update_aria2_options():
 
 
 async def update_nzb_options():
-    try:
-        no = (await sabnzbd_client.get_config())["config"]["misc"]
-        nzb_options.update(no)
-    except (APIResponseError, Exception) as e:
-        LOGGER.error(f"Error in NZB Options: {e}")
+    if Config.USENET_SERVERS:
+        try:
+            no = (await sabnzbd_client.get_config())["config"]["misc"]
+            nzb_options.update(no)
+        except (APIResponseError, Exception) as e:
+            LOGGER.error(f"Error in NZB Options: {e}")
 
 async def load_settings():
     if not Config.DATABASE_URL:
