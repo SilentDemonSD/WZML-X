@@ -1,6 +1,5 @@
 from asyncio import CancelledError, create_task, gather, sleep, wait_for, TimeoutError as AsyncTimeoutError, Event
 from datetime import datetime
-from functools import lru_cache
 from math import ceil, floor
 from mimetypes import guess_extension
 from os import path as ospath
@@ -17,7 +16,6 @@ from pyrogram.errors import AuthBytesInvalid, FloodWait
 from pyrogram.file_id import PHOTO_TYPES, FileId, FileType, ThumbnailSource
 from pyrogram.session import Auth, Session
 from pyrogram.session.internals import MsgId
-from pyrogram.types import Message
 
 from ... import LOGGER
 from ...core.config_manager import Config
@@ -45,7 +43,6 @@ class HyperTGDownload:
         create_task(self._clean_cache())
 
     @staticmethod
-    @lru_cache(maxsize=128)
     async def get_media_type(message):
         media_types = (
             "audio", "document", "photo", "sticker", "animation",
@@ -429,7 +426,7 @@ class HyperTGDownload:
 
     async def download_media(
         self,
-        message: Message,
+        message,
         file_name="downloads/",
         progress=None,
         progress_args=(),
