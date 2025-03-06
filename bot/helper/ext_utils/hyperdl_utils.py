@@ -53,16 +53,6 @@ class HyperTGDownload:
                 return media
         raise ValueError("This message doesn't contain any downloadable media")
 
-    def get_chunk_size(self):
-        if self.file_size > 2 * 1024 * 1024 * 1024:  # > 2GB
-            return 8 * 1024 * 1024  # 8MB
-        elif self.file_size > 512 * 1024 * 1024:  # > 512MB
-            return 4 * 1024 * 1024  # 4MB
-        elif self.file_size > 64 * 1024 * 1024:   # > 64MB
-            return 2 * 1024 * 1024  # 2MB
-        else:
-            return 1024 * 1024      # 1MB
-
     def _update_cache(self, index, file_ref):
         self.cache_file_ref[index] = file_ref
         self.cache_last_access[index] = time()
@@ -303,7 +293,6 @@ class HyperTGDownload:
                 await sleep(1)
 
     async def single_part(self, start, end, part_index, max_retries=3):
-        self.chunk_size = self.get_chunk_size()
         until_bytes, from_bytes = min(end, self.file_size - 1), start
 
         offset = from_bytes - (from_bytes % self.chunk_size)
