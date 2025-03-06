@@ -81,6 +81,8 @@ def direct_link_generator(link):
         return berkasdrive(link)
     elif "swisstransfer.com" in domain:
         return swisstransfer(link)
+    elif "instagram.com" in domain:
+        return instagram(link)
     elif any(x in domain for x in ["akmfiles.com", "akmfls.xyz"]):
         return akmfiles(link)
     elif any(
@@ -1887,3 +1889,39 @@ def swisstransfer(link):
         "total_size": total_size,
         "header": "User-Agent:Mozilla/5.0",
     }
+def instagram(link: str) -> str:
+    """
+    Fetches the direct video download URL from an Instagram post.
+
+    Args:
+        link (str): The Instagram post URL.
+
+    Returns:
+        str: The direct video URL.
+
+    Raises:
+        DirectDownloadLinkException: If any error occurs during the process.
+    """
+    if not Config.INSTADL_API:
+        raise DirectDownloadLinkException(
+            f"ERROR: Instagram downloader API not added, Try ytdl commands"
+        )
+    full_url = f"{Config.INSTADL_API}/api/video?postUrl={link}"
+
+    try:
+        response = get(full_url)
+        response.raise_for_status()
+
+        data = response.json()
+
+        if (
+            data.get("status") == "success"
+            and "data" in data
+            and "videoUrl" in data["data"]
+        ):
+            return data["data"]["videoUrl"]
+
+        raise DirectDownloadLinkException("ERROR: Failed to retrieve video URL.")
+
+    except Exception as e:
+        raise DirectDownloadLinkException(f"ERROR: {e}")

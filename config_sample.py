@@ -27,6 +27,9 @@ UPLOAD_PATHS = {}
 # Hyper Tg Downloader
 HELPER_TOKENS = ""
 
+#Ista video downloader api
+INSTADL_API = ""
+
 # Task Tools
 FORCE_SUB_IDS = ""
 MEDIA_STORE = True
