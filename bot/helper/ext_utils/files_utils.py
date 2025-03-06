@@ -14,7 +14,6 @@ from aiofiles.os import (
     path as aiopath,
     readlink as aioreadlink,
 )
-from aioshutil import rmtree as aiormtree
 from magic import Magic
 
 from ... import DOWNLOAD_DIR, LOGGER
