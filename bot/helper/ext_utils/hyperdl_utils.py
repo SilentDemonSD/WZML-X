@@ -108,13 +108,11 @@ class HyperTGDownload:
                 if key in self.cache_last_access:
                     del self.cache_last_access[key]
 
-    async def generate_media_session(self, client, file_id, max_retries=3):
-        session_key = (client.session_name, file_id.dc_id)
-        
+    async def generate_media_session(self, client, file_id, index, max_retries=3):
+        session_key = (index, file_id.dc_id)
+
         if session_key in self.session_pool:
-            media_session = self.session_pool[session_key]
-            if media_session.is_connected:
-                return media_session
+            return self.session_pool[session_key]
             
         retries = 0
         while retries < max_retries:
@@ -226,7 +224,7 @@ class HyperTGDownload:
                         
                     file_id = await self.get_file_id(client, index)
                     media_session, location = await gather(
-                        self.generate_media_session(client, file_id),
+                        self.generate_media_session(client, file_id, index),
                         self.get_location(file_id)
                     )
 
