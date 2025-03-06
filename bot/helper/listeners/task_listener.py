@@ -5,9 +5,7 @@ from mimetypes import guess_type
 from contextlib import suppress
 from os import path as ospath
 
-from aiofiles.os import listdir, makedirs, remove
-from aiofiles.os import path as aiopath
-from aioshutil import move
+from aiofiles.os import listdir, remove, path as aiopath
 from requests import utils as rutils
 
 from ... import (
@@ -36,6 +34,7 @@ from ..ext_utils.files_utils import (
     get_path_size,
     join_files,
     remove_excluded_files,
+    move_and_merge,
 )
 from ..ext_utils.links_utils import is_gdrive_id
 from ..ext_utils.status_utils import get_readable_file_size, get_readable_time
@@ -118,7 +117,7 @@ class TaskListener(TaskConfig):
                     async with task_dict_lock:
                         if self.mid not in self.same_dir[self.folder_name]["tasks"]:
                             return
-                        if self.mid in self.same_dir[self.folder_name]["tasks"] and (
+                        if (
                             self.same_dir[self.folder_name]["total"] <= 1
                             or len(self.same_dir[self.folder_name]["tasks"]) > 1
                         ):
@@ -132,30 +131,19 @@ class TaskListener(TaskConfig):
                                     0
                                 ]
                                 des_path = f"{DOWNLOAD_DIR}{des_id}{self.folder_name}"
-                                await makedirs(des_path, exist_ok=True)
                                 LOGGER.info(f"Moving files from {self.mid} to {des_id}")
-                                for item in await listdir(spath):
-                                    if item.strip().endswith((".aria2", ".!qB")):
-                                        continue
-                                    item_path = f"{self.dir}{self.folder_name}/{item}"
-                                    if item in await listdir(des_path):
-                                        await move(
-                                            item_path, f"{des_path}/{self.mid}-{item}"
-                                        )
-                                    else:
-                                        await move(item_path, f"{des_path}/{item}")
+                                await move_and_merge(spath, des_path, self.mid)
                                 multi_links = True
                             break
                     await sleep(1)
         async with task_dict_lock:
             if self.is_cancelled:
                 return
-            if self.mid in task_dict:
-                download = task_dict[self.mid]
-                self.name = download.name()
-                gid = download.gid()
-            else:
+            if self.mid not in task_dict:
                 return
+            download = task_dict[self.mid]
+            self.name = download.name()
+            gid = download.gid()
         LOGGER.info(f"Download completed: {self.name}")
 
         if not (self.is_torrent or self.is_qbit):
