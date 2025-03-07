@@ -1902,22 +1902,18 @@ def instagram(link: str) -> str:
     Raises:
         DirectDownloadLinkException: If any error occurs during the process.
     """
-    if not Config.INSTADL_API:
-        raise DirectDownloadLinkException(
-            f"ERROR: Instagram downloader API not added, Try ytdl commands"
-        )
-    full_url = f"{Config.INSTADL_API}/api/video?postUrl={link}"
-
+    api_url = Config.INSTADL_API or 'https://instagramcdn.vercel.app'
+    full_url = f"{api_url}/api/video?postUrl={link}"
+    
     try:
         response = get(full_url)
         response.raise_for_status()
-
         data = response.json()
 
         if (
-            data.get("status") == "success"
-            and "data" in data
-            and "videoUrl" in data["data"]
+            data.get("status") == "success" and
+            "data" in data and
+            "videoUrl" in data["data"]
         ):
             return data["data"]["videoUrl"]
 
