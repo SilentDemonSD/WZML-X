@@ -23,6 +23,7 @@ class Config:
     FORCE_SUB_IDS = ""
     GDRIVE_ID = ""
     GD_DESP = "Uploaded with WZ Bot"
+    INSTADL_API = ""
     INCOMPLETE_TASK_NOTIFIER = False
     INDEX_URL = ""
     IS_TEAM_DRIVE = False
