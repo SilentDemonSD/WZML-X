@@ -25,7 +25,7 @@ class Language:
         for file in listdir(LOCALES_DIR):
             if file.endswith(".py") and file != "__init__.py":
                 lang_code = file.split(".")[0]
-                cls._modules[lang_code] = import_module(f".{lang_code}")
+                cls._modules[lang_code] = import_module(f"bot.helper.languages.{lang_code}")
         return cls._modules
 
     def __getattr__(self, key):
