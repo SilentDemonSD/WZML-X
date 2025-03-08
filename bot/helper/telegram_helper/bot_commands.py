@@ -38,6 +38,7 @@ class BotCommands:
         "AExec": "aexec",
         "Exec": "exec",
         "ClearLocals": "clearlocals",
+        "IMDB": "imdb",
         "Rss": "rss",
         "Authorize": ["authorize", "a"],
         "UnAuthorize": ["unauthorize", "ua"],

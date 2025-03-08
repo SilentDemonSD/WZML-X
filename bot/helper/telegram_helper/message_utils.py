@@ -2,6 +2,7 @@ from asyncio import sleep, gather
 from re import match as re_match
 from time import time
 
+from pyrogram.types import Message
 from pyrogram.enums import ParseMode
 from pyrogram.errors import (
     FloodWait,
@@ -62,7 +63,7 @@ async def send_message(message, text, buttons=None, block=True, photo=None, **kw
             except (PhotoInvalidDimensions, WebpageCurlFailed, MediaEmpty):
                 LOGGER.error("Invalid photo dimensions or empty media", exc_info=True)
                 return
-            except Exception as e:
+            except Exception:
                 LOGGER.error("Error while sending photo", exc_info=True)
                 return
         if isinstance(message, int):
@@ -172,7 +173,9 @@ async def send_rss(text, chat_id, thread_id):
 
 
 async def delete_message(*args):
-    tasks = [msg.delete() for msg in args if msg]
+    tasks = [msg.delete() for msg in args if isinstance(msg, Message)]
+    if not tasks:
+        return
     results = await gather(*tasks, return_exceptions=True)
     for result in results:
         if isinstance(result, Exception):

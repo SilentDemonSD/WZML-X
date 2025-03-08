@@ -407,6 +407,7 @@ BOT_COMMANDS = {
     "Status": "[id/me] Tasks Status of Bot",
     "Stats": "Bot, OS, Repo & System full Statistics",
     "Rss": "User RSS Management Settings",
+    "IMDB": "[query] or ttxxxxxx Get IMDB info",
     "CancelAll": "Cancel all Tasks on the Bot",
     "Help": "Detailed help usage of the WZ Bot",
     "BotSet": "[SUDO] Bot Management Settings",

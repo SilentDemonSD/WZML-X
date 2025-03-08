@@ -28,6 +28,7 @@ from .restart import (
     confirm_restart,
     restart_sessions,
 )
+from .imdb import imdb_search, imdb_callback
 from .rss import get_rss_menu, rss_listener
 from .search import torrent_search, torrent_search_update, initiate_search_tools
 from .services import start, start_cb, login, ping, log, log_cb
@@ -72,6 +73,8 @@ __all__ = [
     "restart_notification",
     "confirm_restart",
     "restart_sessions",
+    "imdb_search",
+    "imdb_callback",
     "get_rss_menu",
     "rss_listener",
     "torrent_search",

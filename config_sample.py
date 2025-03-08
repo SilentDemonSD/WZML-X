@@ -27,8 +27,22 @@ UPLOAD_PATHS = {}
 # Hyper Tg Downloader
 HELPER_TOKENS = ""
 
-#Ista video downloader api
+#Insta video downloader api
 INSTADL_API = ""
+
+# Media Search
+IMDB_TEMPLATE = """<b>Title: </b> {title} [{year}]
+<b>Also Known As:</b> {aka}
+<b>Rating ⭐️:</b> <i>{rating}</i>
+<b>Release Info: </b> <a href="{url_releaseinfo}">{release_date}</a>
+<b>Genre: </b>{genres}
+<b>IMDb URL:</b> {url}
+<b>Language: </b>{languages}
+<b>Country of Origin : </b> {countries}
+
+<b>Story Line: </b><code>{plot}</code>
+
+<a href="{url_cast}">Read More ...</a>"""
 
 # Task Tools
 FORCE_SUB_IDS = ""
