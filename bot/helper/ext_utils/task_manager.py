@@ -178,7 +178,9 @@ async def pre_task_check(message):
     button = None
     if await CustomFilters.sudo("", message):
         return msg, button
-    user_id = message.from_user.id
+    user_id = (message.from_user or message.sender_chat).id
+    if user_id == Config.RSS_CHAT:
+        return msg, button
     if message.chat.type != message.chat.type.BOT:
         if ids := Config.FORCE_SUB_IDS:
             _msg, button = await forcesub(message, ids, button)
