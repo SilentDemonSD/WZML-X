@@ -9,8 +9,9 @@ class Language:
     _modules = {}
     _user_langs = {}
 
-    def __init__(self, lang_code = Config.DEFAULT_LANG, user_id = None):
+    def __init__(self, lang_code = None, user_id = None):
         self.load_translations()
+        lang_code = lang_code or Config.DEFAULT_LANG
 
         if user_id:
             self._user_langs[user_id] = lang_code

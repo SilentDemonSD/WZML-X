@@ -29,11 +29,11 @@ from ..helper.telegram_helper.message_utils import (
 @new_task
 async def start(_, message):
     userid = message.from_user.id
-    buttons = ButtonMaker()
-    buttons.url_button("Git Repo", "https://www.github.com/SilentDemonSD/WZML-X")
-    buttons.url_button("Updates", "https://t.me/WZML_X")
-    reply_markup = buttons.build_menu(2)
     lang = Language()
+    buttons = ButtonMaker()
+    buttons.url_button(lang.START_BUTTON1, "https://www.github.com/SilentDemonSD/WZML-X")
+    buttons.url_button(lang.START_BUTTON2, "https://t.me/WZML_X")
+    reply_markup = buttons.build_menu(2)
 
     if len(message.command) > 1 and message.command[1] == "wzmlx":
         await delete_message(message)
