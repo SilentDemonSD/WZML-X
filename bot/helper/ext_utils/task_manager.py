@@ -179,7 +179,7 @@ async def pre_task_check(message):
     if await CustomFilters.sudo("", message):
         return msg, button
     user_id = (message.from_user or message.sender_chat).id
-    if user_id == Config.RSS_CHAT:
+    if Config.RSS_CHAT and user_id == int(Config.RSS_CHAT):
         return msg, button
     if message.chat.type != message.chat.type.BOT:
         if ids := Config.FORCE_SUB_IDS:

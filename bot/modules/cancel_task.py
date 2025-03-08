@@ -22,7 +22,7 @@ from ..helper.telegram_helper.message_utils import (
 
 @new_task
 async def cancel(_, message):
-    user_id = message.from_user.id if message.from_user else message.sender_chat.id
+    user_id = (message.from_user or message.sender_chat).id
     msg = message.text.split("_", maxsplit=1)
     if len(msg) > 1:
         cmd_data = msg[1].split("@", maxsplit=1)

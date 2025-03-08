@@ -14,9 +14,7 @@ async def authorize(_, message):
         else:
             chat_id = int(msg[1].strip())
     elif reply_to := message.reply_to_message:
-        chat_id = (
-            reply_to.from_user.id if reply_to.from_user else reply_to.sender_chat.id
-        )
+        chat_id = (reply_to.from_user or reply_to.sender_chat).id
     else:
         if message.is_topic_message:
             thread_id = message.message_thread_id
@@ -53,9 +51,7 @@ async def unauthorize(_, message):
         else:
             chat_id = int(msg[1].strip())
     elif reply_to := message.reply_to_message:
-        chat_id = (
-            reply_to.from_user.id if reply_to.from_user else reply_to.sender_chat.id
-        )
+        chat_id = (reply_to.from_user or reply_to.sender_chat).id
     else:
         if message.is_topic_message:
             thread_id = message.message_thread_id
@@ -81,7 +77,7 @@ async def add_sudo(_, message):
     if len(msg) > 1:
         id_ = int(msg[1].strip())
     elif reply_to := message.reply_to_message:
-        id_ = reply_to.from_user.id if reply_to.from_user else reply_to.sender_chat.id
+        id_ = (reply_to.from_user or reply_to.sender_chat).id
     if id_:
         if id_ in user_data and user_data[id_].get("SUDO"):
             msg = "Already Sudo!"
@@ -101,7 +97,7 @@ async def remove_sudo(_, message):
     if len(msg) > 1:
         id_ = int(msg[1].strip())
     elif reply_to := message.reply_to_message:
-        id_ = reply_to.from_user.id if reply_to.from_user else reply_to.sender_chat.id
+        id_ = (reply_to.from_user or reply_to.sender_chat).id
     if id_ and id_ not in user_data or user_data[id_].get("SUDO"):
         update_user_ldata(id_, "SUDO", False)
         await database.update_user_data(id_)
