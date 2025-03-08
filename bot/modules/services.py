@@ -13,6 +13,7 @@ from ..core.tg_client import TgClient
 from ..helper.ext_utils.bot_utils import decode_slink, new_task, update_user_ldata
 from ..helper.ext_utils.status_utils import get_readable_time
 from ..helper.ext_utils.db_handler import database
+from ..helper.languages import Language
 from ..helper.telegram_helper.bot_commands import BotCommands
 from ..helper.telegram_helper.button_build import ButtonMaker
 from ..helper.telegram_helper.filters import CustomFilters
@@ -32,6 +33,7 @@ async def start(_, message):
     buttons.url_button("Git Repo", "https://www.github.com/SilentDemonSD/WZML-X")
     buttons.url_button("Updates", "https://t.me/WZML_X")
     reply_markup = buttons.build_menu(2)
+    lang = Language()
 
     if len(message.command) > 1 and message.command[1] == "wzmlx":
         await delete_message(message)
@@ -81,10 +83,9 @@ async def start(_, message):
             return await send_message(message, msg, reply_markup)
 
     if await CustomFilters.authorized(_, message):
-        start_string = f"""
-This bot can mirror from links|tgfiles|torrents|nzb|rclone-cloud to any rclone cloud, Google Drive or to telegram.
-Type /{BotCommands.HelpCommand[0]} to get a list of available commands
-"""
+        start_string = lang.START_MSG.format(
+            cmd=BotCommands.HelpCommand[0],
+        )
         await send_message(message, start_string, reply_markup)
     elif Config.BOT_PM:
         await send_message(

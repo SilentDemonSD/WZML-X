@@ -1,5 +1,5 @@
 from aiofiles import open as aiopen
-from contextlib import redirect_stdout
+from contextlib import redirect_stdout, suppress
 from io import StringIO, BytesIO
 from os import path as ospath, getcwd, chdir
 from textwrap import indent
@@ -87,7 +87,7 @@ async def do(func, message):
             func_return = (
                 await sync_to_async(rfunc) if func == "exec" else await rfunc()
             )
-    except:
+    except Exception:
         value = stdout.getvalue()
         return f"{value}{format_exc()}"
     else:
@@ -97,10 +97,8 @@ async def do(func, message):
             if value:
                 result = f"{value}"
             else:
-                try:
+                with suppress(Exception):
                     result = f"{repr(await sync_to_async(eval, body, env))}"
-                except:
-                    pass
         else:
             result = f"{value}{func_return}"
         if result:
