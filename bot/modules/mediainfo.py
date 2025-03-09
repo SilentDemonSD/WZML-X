@@ -59,18 +59,14 @@ async def gen_mediainfo(message, link=None, media=None, mmsg=None):
     )
 
 
-section_dict = {
-    "General": "🗒", 
-    "Video": "🎞", 
-    "Audio": "🔊", 
-    "Text": "🔠", 
-    "Menu": "🗃"
-}
+section_dict = {"General": "🗒", "Video": "🎞", "Audio": "🔊", "Text": "🔠", "Menu": "🗃"}
 
 
 def parseinfo(out, size):
     tc, trigger = "", False
-    size_line = f"File size                                 : {size / (1024 * 1024):.2f} MiB"
+    size_line = (
+        f"File size                                 : {size / (1024 * 1024):.2f} MiB"
+    )
     for line in out.split("\n"):
         for section, emoji in section_dict.items():
             if line.startswith(section):
@@ -80,7 +76,7 @@ def parseinfo(out, size):
                 tc += f"<h4>{emoji} {line.replace('Text', 'Subtitle')}</h4>"
                 break
         if line.startswith("File size"):
-                line = size_line
+            line = size_line
         if trigger:
             tc += "<br><pre>"
             trigger = False

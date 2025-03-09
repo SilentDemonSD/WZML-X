@@ -39,7 +39,12 @@ from ..helper.mirror_leech_utils.download_utils.rclone_download import (
 from ..helper.mirror_leech_utils.download_utils.telegram_download import (
     TelegramDownloadHelper,
 )
-from ..helper.telegram_helper.message_utils import send_message, delete_links, auto_delete_message, get_tg_link_message
+from ..helper.telegram_helper.message_utils import (
+    send_message,
+    delete_links,
+    auto_delete_message,
+    get_tg_link_message,
+)
 
 
 class Mirror(TaskListener):
@@ -79,9 +84,11 @@ class Mirror(TaskListener):
         check_msg, check_button = await pre_task_check(self.message)
         if check_msg:
             await delete_links(self.message)
-            await auto_delete_message(await send_message(self.message, check_msg, check_button))
-            return 
-        
+            await auto_delete_message(
+                await send_message(self.message, check_msg, check_button)
+            )
+            return
+
         args = {
             "-doc": False,
             "-med": False,
@@ -278,7 +285,7 @@ class Mirror(TaskListener):
                 or None
             )
             self.file_details = {"caption": reply_to.caption}
-            
+
             if file_ is None:
                 if reply_text := reply_to.text:
                     self.link = reply_text.split("\n", 1)[0].strip()
@@ -325,9 +332,11 @@ class Mirror(TaskListener):
         self.source_url = (
             self.link
             if len(self.link) > 0 and self.link.startswith("http")
-            else f"https://t.me/share/url?url={self.link}"
-            if self.link
-            else self.message.link
+            else (
+                f"https://t.me/share/url?url={self.link}"
+                if self.link
+                else self.message.link
+            )
         )
         self._set_mode_engine()
 

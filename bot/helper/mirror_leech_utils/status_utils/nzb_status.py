@@ -73,7 +73,7 @@ class SabnzbdStatus:
     def speed_raw(self):
         try:
             return int(float(self._info["mb"]) * 1048576) / self.eta_raw()
-        except:
+        except Exception:
             return 0
 
     def speed(self):
@@ -127,4 +127,3 @@ class SabnzbdStatus:
         async with nzb_listener_lock:
             if self._gid in nzb_jobs:
                 del nzb_jobs[self._gid]
-

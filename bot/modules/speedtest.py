@@ -1,9 +1,14 @@
 from speedtest import Speedtest, ConfigRetrievalError
 
 from .. import LOGGER
-from ..helper.telegram_helper.message_utils import send_message, edit_message, delete_message
+from ..helper.telegram_helper.message_utils import (
+    send_message,
+    edit_message,
+    delete_message,
+)
 from ..helper.ext_utils.bot_utils import new_task, sync_to_async
 from ..helper.ext_utils.status_utils import get_readable_file_size
+
 
 @new_task
 async def speedtest(_, message):
@@ -14,11 +19,14 @@ async def speedtest(_, message):
         await sync_to_async(speed_results.download)
         await sync_to_async(speed_results.upload)
     except ConfigRetrievalError:
-        await edit_message(speed, "<b>ERROR:</b> <i>Can't connect to Server at the Moment, Try Again Later !</i>")
+        await edit_message(
+            speed,
+            "<b>ERROR:</b> <i>Can't connect to Server at the Moment, Try Again Later !</i>",
+        )
         return
     speed_results.results.share()
     result = speed_results.results.dict()
-    string_speed = f'''
+    string_speed = f"""
 ➲ <b><i>SPEEDTEST INFO</i></b>
 ┠ <b>Upload:</b> <code>{get_readable_file_size(result['upload'] / 8)}/s</code>
 ┠ <b>Download:</b>  <code>{get_readable_file_size(result['download'] / 8)}/s</code>
@@ -34,9 +42,9 @@ async def speedtest(_, message):
 ┠ <b>Latency:</b> <code>{result['server']['latency']}</code>
 ┠ <b>Latitude:</b> <code>{result['server']['lat']}</code>
 ┖ <b>Longitude:</b> <code>{result['server']['lon']}</code>
-'''
+"""
     try:
-        await send_message(message, string_speed, photo=result['share'])
+        await send_message(message, string_speed, photo=result["share"])
         await delete_message(speed)
     except Exception as e:
         LOGGER.error(str(e))

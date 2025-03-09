@@ -72,10 +72,14 @@ async def get_download_status(download):
         else 0
     )
     return (
-        await download.status()
-        if iscoroutinefunction(download.status)
-        else download.status()
-    ), speed, eng
+        (
+            await download.status()
+            if iscoroutinefunction(download.status)
+            else download.status()
+        ),
+        speed,
+        eng,
+    )
 
 
 @new_task
@@ -128,9 +132,12 @@ async def status_pages(_, query):
             )
 
         eng_status = EngineStatus()
-        if any(eng in (eng_status.STATUS_ARIA2, eng_status.STATUS_QBIT) for _, __, eng in status_results):
+        if any(
+            eng in (eng_status.STATUS_ARIA2, eng_status.STATUS_QBIT)
+            for _, __, eng in status_results
+        ):
             dl_speed, seed_speed = await TorrentManager.overall_speed()
-        
+
         if any(eng == eng_status.STATUS_SABNZBD for _, __, eng in status_results):
             if sabnzbd_client.LOGGED_IN:
                 dl_speed += (
@@ -146,7 +153,9 @@ async def status_pages(_, query):
 
         if any(eng == eng_status.STATUS_JD for _, __, eng in status_results):
             if jdownloader.is_connected:
-                dl_speed += await jdownloader.device.downloadcontroller.get_speed_in_bytes()
+                dl_speed += (
+                    await jdownloader.device.downloadcontroller.get_speed_in_bytes()
+                )
 
         for status, speed, _ in status_results:
             match status:

@@ -58,7 +58,11 @@ async def send_message(message, text, buttons=None, block=True, photo=None, **kw
                 return await send_message(message, text, buttons, block, photo)
             except MediaCaptionTooLong:
                 return await send_message(
-                    message, text[:1024], buttons, block, photo,
+                    message,
+                    text[:1024],
+                    buttons,
+                    block,
+                    photo,
                 )
             except (PhotoInvalidDimensions, WebpageCurlFailed, MediaEmpty):
                 LOGGER.error("Invalid photo dimensions or empty media", exc_info=True)

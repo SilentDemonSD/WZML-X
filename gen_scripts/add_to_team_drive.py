@@ -31,7 +31,9 @@ def parse_args():
     )
     parser.add_argument("--yes", "-y", action="store_true", help="Skips the prompt.")
     req = parser.add_argument_group("required arguments")
-    req.add_argument("--drive-id", "-d", required=True, help="The ID of the Shared Drive.")
+    req.add_argument(
+        "--drive-id", "-d", required=True, help="The ID of the Shared Drive."
+    )
     return parser.parse_args()
 
 
@@ -62,7 +64,11 @@ def authenticate(creds_file):
         print(">> Failed to load existing token:", e)
     try:
         if not creds or not getattr(creds, "valid", False):
-            if creds and getattr(creds, "expired", False) and getattr(creds, "refresh_token", None):
+            if (
+                creds
+                and getattr(creds, "expired", False)
+                and getattr(creds, "refresh_token", None)
+            ):
                 creds.refresh(Request())
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
@@ -97,7 +103,11 @@ def add_service_accounts(drive_client, account_dir, drive_id):
                 drive_client.permissions().create(
                     fileId=drive_id,
                     supportsAllDrives=True,
-                    body={"role": "organizer", "type": "user", "emailAddress": client_email},
+                    body={
+                        "role": "organizer",
+                        "type": "user",
+                        "emailAddress": client_email,
+                    },
                 )
             )
         except Exception as e:
@@ -135,7 +145,11 @@ def main():
     hours, rem = divmod(elapsed, 3600)
     minutes, seconds = divmod(rem, 60)
     print("Complete.")
-    print("Elapsed Time:\n{:0>2}:{:0>2}:{:05.2f}".format(int(hours), int(minutes), seconds))
+    print(
+        "Elapsed Time:\n{:0>2}:{:0>2}:{:05.2f}".format(
+            int(hours), int(minutes), seconds
+        )
+    )
 
 
 if __name__ == "__main__":

@@ -14,12 +14,12 @@ async def list_buttons(user_id, is_recursive=True, user_token=False):
     buttons.data_button(
         f"{'✅️' if user_token else '❌️'} User Token",
         f"list_types {user_id} ut {is_recursive} {user_token}",
-        "header"
+        "header",
     )
     buttons.data_button(
         f"{'✅️' if is_recursive else '❌️'} Recursive",
         f"list_types {user_id} rec {is_recursive} {user_token}",
-        "header"
+        "header",
     )
     buttons.data_button(
         "Folders", f"list_types {user_id} folders {is_recursive} {user_token}"
@@ -30,7 +30,7 @@ async def list_buttons(user_id, is_recursive=True, user_token=False):
     buttons.data_button(
         "Both", f"list_types {user_id} both {is_recursive} {user_token}"
     )
-    
+
     buttons.data_button("Cancel", f"list_types {user_id} cancel", "footer")
     return buttons.build_menu(2)
 
@@ -93,7 +93,9 @@ async def select_type(_, query):
 @new_task
 async def gdrive_search(_, message):
     if len(message.text.split()) == 1:
-        return await send_message(message, "<i>Send a search query along with list command</i>")
+        return await send_message(
+            message, "<i>Send a search query along with list command</i>"
+        )
     user_id = message.from_user.id
     buttons = await list_buttons(user_id)
     await send_message(message, "Choose list options:", buttons)

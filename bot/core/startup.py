@@ -63,6 +63,7 @@ async def update_nzb_options():
         except (APIResponseError, Exception) as e:
             LOGGER.error(f"Error in NZB Options: {e}")
 
+
 async def load_settings():
     if not Config.DATABASE_URL:
         return
@@ -101,9 +102,10 @@ async def load_settings():
             await database.db.settings.deployConfig.replace_one(
                 {"_id": BOT_ID}, config_file, upsert=True
             )
-            config_dict = await database.db.settings.config.find_one(
-                {"_id": BOT_ID}, {"_id": 0}
-            ) or {}
+            config_dict = (
+                await database.db.settings.config.find_one({"_id": BOT_ID}, {"_id": 0})
+                or {}
+            )
             config_dict.update(config_file)
             if config_dict:
                 Config.load_dict(config_dict)
@@ -292,9 +294,7 @@ async def load_configurations():
         await create_subprocess_shell(
             f"gunicorn -k uvicorn.workers.UvicornWorker -w 1 web.wserver:app --bind 0.0.0.0:{PORT}"
         )
-        await create_subprocess_shell(
-            "python3 cron_boot.py" 
-        )
+        await create_subprocess_shell("python3 cron_boot.py")
 
     if await aiopath.exists("cfg.zip"):
         if await aiopath.exists("/JDownloader/cfg"):

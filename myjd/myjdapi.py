@@ -254,7 +254,7 @@ class Linkgrabber:
         """
         Get the links in the linkcollector/linkgrabber.
 
-        :param params: A dictionary with options. The default dictionary is configured 
+        :param params: A dictionary with options. The default dictionary is configured
                    to return all downloads with full details, but you can provide your own options.
                    Available options:
                    {
@@ -740,18 +740,19 @@ class MyJdApi:
         if self._http_session is not None:
             await self._http_session.aclose()
             self._http_session = None
-        
+
     async def request_api(self, path, params=None):
         session = self._session()
-        
+
         data = dumps({"params": params if params is not None else []})
         data = data.replace('"null"', "null").replace("'null'", "null")
         url = f"{self.__api_url}{path}"
-        
+
         for attempt in range(3):
             try:
                 res = await session.request(
-                    "POST", url,
+                    "POST",
+                    url,
                     headers={"Content-Type": "application/json; charset=utf-8"},
                     content=data,
                 )
@@ -761,32 +762,39 @@ class MyJdApi:
                     return None
                 await sleep(1.2)
                 continue
-            
+
             if res.status_code == 200:
                 try:
                     return loads(txt)
                 except JSONDecodeError as exc:
                     if attempt == 2:
-                        raise MYJDDecodeException(f"Failed to decode response: {txt}") from exc
+                        raise MYJDDecodeException(
+                            f"Failed to decode response: {txt}"
+                        ) from exc
                     await sleep(1.2)
                     continue
-                
+
             try:
                 err = loads(txt)
             except JSONDecodeError as exc:
                 if attempt == 2:
-                    raise MYJDDecodeException(f"Failed to decode response: {txt}") from exc
+                    raise MYJDDecodeException(
+                        f"Failed to decode response: {txt}"
+                    ) from exc
                 await sleep(1.2)
                 continue
-            
-            msg = (f"\n\tSOURCE: {err.get('src', 'Unknown')}"
-                   f"\n\tTYPE: {err.get('type', 'Unknown')}"
-                   f"\n------\nREQUEST_URL: {url}\n")
+
+            msg = (
+                f"\n\tSOURCE: {err.get('src', 'Unknown')}"
+                f"\n\tTYPE: {err.get('type', 'Unknown')}"
+                f"\n------\nREQUEST_URL: {url}\n"
+            )
             if data:
                 msg += f"DATA:\n{data}"
             if attempt == 2:
-                raise MYJDApiException.get_exception(err.get("src", "Unknown"), err.get("type", "Unknown"), msg)
-            
+                raise MYJDApiException.get_exception(
+                    err.get("src", "Unknown"), err.get("type", "Unknown"), msg
+                )
+
             await sleep(1.2)
         return None
-    

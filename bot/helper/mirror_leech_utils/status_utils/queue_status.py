@@ -50,4 +50,3 @@ class QueueStatus:
             await self.listener.on_upload_error(
                 "task have been removed from queue/upload"
             )
-

@@ -135,7 +135,7 @@ class TelegramUploader:
             except Exception as e:
                 await self._listener.on_upload_error(str(e))
                 return False
-            
+
         elif self._user_session:
             self._sent_msg = await TgClient.user.get_messages(
                 chat_id=self._listener.message.chat.id, message_ids=self._listener.mid
@@ -186,16 +186,16 @@ class TelegramUploader:
             up_path = ospath.join(dirpath, pre_file_)
             dur, qual, lang, subs = await get_media_info(up_path, True)
             cap_mono = parts[0].format(
-                filename = cap_file_,
-                size = get_readable_file_size(await aiopath.getsize(up_path)),
-                duration = get_readable_time(dur),
-                quality = qual,
-                languages = lang,
-                subtitles = subs,
-                md5_hash = await sync_to_async(get_md5_hash, up_path),
-                mime_type = self._listener.file_details.get("mime_type", "text/plain"),
-                prefilename = self._listener.file_details.get("filename", ""),
-                precaption = self._listener.file_details.get("caption", ""),
+                filename=cap_file_,
+                size=get_readable_file_size(await aiopath.getsize(up_path)),
+                duration=get_readable_time(dur),
+                quality=qual,
+                languages=lang,
+                subtitles=subs,
+                md5_hash=await sync_to_async(get_md5_hash, up_path),
+                mime_type=self._listener.file_details.get("mime_type", "text/plain"),
+                prefilename=self._listener.file_details.get("filename", ""),
+                precaption=self._listener.file_details.get("caption", ""),
             )
 
             for part in parts[1:]:
@@ -300,9 +300,9 @@ class TelegramUploader:
                     chat_id=self._listener.user_id,
                     from_chat_id=self._sent_msg.chat.id,
                     message_id=self._sent_msg.id,
-                    reply_to_message_id=self._listener.pm_msg.id
-                    if self._listener.pm_msg
-                    else None,
+                    reply_to_message_id=(
+                        self._listener.pm_msg.id if self._listener.pm_msg else None
+                    ),
                 )
         except Exception as err:
             if not self._listener.is_cancelled:
@@ -598,4 +598,3 @@ class TelegramUploader:
         self._listener.is_cancelled = True
         LOGGER.info(f"Cancelling Upload: {self._listener.name}")
         await self._listener.on_upload_error("your upload has been stopped!")
-

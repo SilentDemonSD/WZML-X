@@ -191,14 +191,24 @@ async def pre_task_check(message):
             _msg, button = await check_botpm(message, button)
             if _msg:
                 msg.append(_msg)
-    if (uti := Config.USER_TIME_INTERVAL) and (ut := await user_interval_check(user_id)):
+    if (uti := Config.USER_TIME_INTERVAL) and (
+        ut := await user_interval_check(user_id)
+    ):
         msg.append(
             f"┠ <b>Waiting Time</b> → {get_readable_time(ut)}\n┠ <i>User's Time Interval Restrictions</i> → {get_readable_time(uti)}"
         )
-    if (bmax_tasks := Config.BOT_MAX_TASKS) and len(await get_specific_tasks("All", False)) >= int(bmax_tasks):
-        msg.append(f"┠ Max Concurrent Bot's Tasks Limit exceeded.\n┠ Bot Tasks Limit : {bmax_tasks} task")
-    if (maxtask := Config.USER_MAX_TASKS) and len(await get_specific_tasks("All", user_id)) >= int(maxtask):
-        msg.append(f"┠ Max Concurrent User's Task(s) Limit exceeded! \n┠ User Task Limit : {maxtask} tasks")
+    if (bmax_tasks := Config.BOT_MAX_TASKS) and len(
+        await get_specific_tasks("All", False)
+    ) >= int(bmax_tasks):
+        msg.append(
+            f"┠ Max Concurrent Bot's Tasks Limit exceeded.\n┠ Bot Tasks Limit : {bmax_tasks} task"
+        )
+    if (maxtask := Config.USER_MAX_TASKS) and len(
+        await get_specific_tasks("All", user_id)
+    ) >= int(maxtask):
+        msg.append(
+            f"┠ Max Concurrent User's Task(s) Limit exceeded! \n┠ User Task Limit : {maxtask} tasks"
+        )
 
     token_msg, button = await verify_token(user_id, button)
     if token_msg is not None:
