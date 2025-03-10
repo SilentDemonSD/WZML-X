@@ -4,11 +4,12 @@ from secrets import token_hex
 from pyrogram.errors import FloodWait, PeerIdInvalid, ChannelInvalid
 
 from bot.helper.ext_utils.hyperdl_utils import HyperTGDownload
+
 try:
     from pyrogram.errors import FloodPremiumWait
 except ImportError:
     FloodPremiumWait = FloodWait
-    
+
 from .... import (
     LOGGER,
     task_dict,
@@ -86,7 +87,10 @@ class TelegramDownloadHelper:
             # TODO : Add support for user session
             if self._hyper_dl:
                 download = await HyperTGDownload().download_media(
-                    message, file_name=path, progress=self._on_download_progress, dump_chat=Config.LEECH_DUMP_CHAT
+                    message,
+                    file_name=path,
+                    progress=self._on_download_progress,
+                    dump_chat=Config.LEECH_DUMP_CHAT,
                 )
             else:
                 download = await message.download(
@@ -121,7 +125,9 @@ class TelegramDownloadHelper:
                         chat_id=message.chat.id, message_ids=message.id
                     )
                 except (PeerIdInvalid, ChannelInvalid):
-                    LOGGER.warning("User session is not in this chat!, Downloading with bot session")
+                    LOGGER.warning(
+                        "User session is not in this chat!, Downloading with bot session"
+                    )
                     self.session = "bot"
             else:
                 self.session = "bot"

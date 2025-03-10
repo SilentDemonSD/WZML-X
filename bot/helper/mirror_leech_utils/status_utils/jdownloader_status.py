@@ -31,7 +31,7 @@ def _get_combined_info(result, old_info):
                 time() - old_info.get("last_update", 0)
             )
         eta = (bytesTotal - bytesLoaded) / speed
-    except:
+    except Exception:
         eta = 0
     return {
         "name": name,
@@ -124,4 +124,3 @@ class JDownloaderStatus:
         async with jd_listener_lock:
             del jd_downloads[self._gid]
         await self.listener.on_download_error("Cancelled by user!")
-

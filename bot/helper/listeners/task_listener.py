@@ -216,12 +216,14 @@ class TaskListener(TaskConfig):
             self.name = up_path.replace(f"{up_dir}/", "").split("/", 1)[0]
             self.size = await get_path_size(up_dir)
             self.clear()
-            
+
         if self.is_leech and self.is_file:
             fname = ospath.basename(up_path)
             self.file_details["filename"] = fname
-            self.file_details["mime_type"] = (guess_type(fname))[0] or "application/octet-stream"
-            
+            self.file_details["mime_type"] = (guess_type(fname))[
+                0
+            ] or "application/octet-stream"
+
         if self.name_swap:
             up_path = await self.substitute(up_path)
             if self.is_cancelled:
@@ -363,7 +365,9 @@ class TaskListener(TaskConfig):
                 for index, (link, name) in enumerate(files.items(), start=1):
                     chat_id, msg_id = link.split("/")[-2:]
                     fmsg += f"{index}. <a href='{link}'>{name}</a>"
-                    if Config.MEDIA_STORE and (self.is_super_chat or Config.LEECH_DUMP_CHAT):
+                    if Config.MEDIA_STORE and (
+                        self.is_super_chat or Config.LEECH_DUMP_CHAT
+                    ):
                         if chat_id.isdigit():
                             chat_id = f"-100{chat_id}"
                         flink = f"https://t.me/{TgClient.BNAME}?start={encode_slink('file' + chat_id + '&&' + msg_id)}"

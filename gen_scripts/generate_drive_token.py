@@ -7,6 +7,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 TOKEN_FILE = "token.pickle"
 OAUTH_SCOPE = ["https://www.googleapis.com/auth/drive"]
 
+
 def load_credentials(token_file: str):
     if exists(token_file):
         try:
@@ -17,12 +18,14 @@ def load_credentials(token_file: str):
             print(f"Error loading credentials: {e}")
     return None
 
+
 def save_credentials(token_file: str, credentials) -> None:
     try:
         with open(token_file, "wb") as f:
             pickle.dump(credentials, f)
     except Exception as e:
         print(f"Error saving credentials: {e}")
+
 
 def get_credentials():
     credentials = load_credentials(TOKEN_FILE)
@@ -37,7 +40,9 @@ def get_credentials():
             print(f"Error refreshing credentials: {e}")
 
     try:
-        flow = InstalledAppFlow.from_client_secrets_file("credentials.json", OAUTH_SCOPE)
+        flow = InstalledAppFlow.from_client_secrets_file(
+            "credentials.json", OAUTH_SCOPE
+        )
         credentials = flow.run_local_server(port=0, open_browser=False)
     except Exception as e:
         print(f"Error during OAuth flow: {e}")
@@ -45,12 +50,14 @@ def get_credentials():
 
     return credentials
 
+
 def main():
     try:
         credentials = get_credentials()
         save_credentials(TOKEN_FILE, credentials)
     except Exception as e:
         print(f"Failed to obtain credentials: {e}")
+
 
 if __name__ == "__main__":
     main()

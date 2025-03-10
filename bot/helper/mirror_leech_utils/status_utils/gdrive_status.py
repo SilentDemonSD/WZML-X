@@ -51,9 +51,8 @@ class GoogleDriveStatus:
         try:
             seconds = (self._size - self._obj.processed_bytes) / self._obj.speed
             return get_readable_time(seconds)
-        except:
+        except Exception:
             return "-"
 
     def task(self):
         return self._obj
-

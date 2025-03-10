@@ -89,9 +89,11 @@ def compare_versions(v1, v2):
     return (
         "New Version Update is Available! Check Now!"
         if v1 < v2
-        else "More Updated! Kindly Contribute in Official"
-        if v1 > v2
-        else "Already up to date with latest version"
+        else (
+            "More Updated! Kindly Contribute in Official"
+            if v1 > v2
+            else "Already up to date with latest version"
+        )
     )
 
 
@@ -246,7 +248,9 @@ def encode_slink(string):
 
 
 def decode_slink(b64_str):
-    return urlsafe_b64decode((b64_str.strip("=") + "=" * (-len(b64_str.strip("=")) % 4)).encode("ascii")).decode("ascii")
+    return urlsafe_b64decode(
+        (b64_str.strip("=") + "=" * (-len(b64_str.strip("=")) % 4)).encode("ascii")
+    ).decode("ascii")
 
 
 async def cmd_exec(cmd, shell=False):

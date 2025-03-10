@@ -40,4 +40,3 @@ class RcloneStatus:
 
     def task(self):
         return self._obj
-

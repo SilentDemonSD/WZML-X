@@ -487,7 +487,9 @@ async def update_private_file(_, message, pre_message, key, new_file=False):
             elif file_name in [".netrc", "netrc"]:
                 await (await create_subprocess_exec("touch", ".netrc")).wait()
                 await (await create_subprocess_exec("chmod", "600", ".netrc")).wait()
-                await (await create_subprocess_exec("cp", ".netrc", "/root/.netrc")).wait()
+                await (
+                    await create_subprocess_exec("cp", ".netrc", "/root/.netrc")
+                ).wait()
         await delete_message(message)
     elif doc := message.document:
         file_name = doc.file_name
@@ -545,7 +547,7 @@ async def update_private_file(_, message, pre_message, key, new_file=False):
                 else:
                     index_urls.append("")
     elif file_name == "shortener.txt" and await aiopath.exists("shortener.txt"):
-        async with aiopen('shortener.txt', 'r+') as f:
+        async with aiopen("shortener.txt", "r+") as f:
             lines = await f.readlines()
             for line in lines:
                 temp = line.strip().split()
@@ -744,7 +746,12 @@ async def edit_bot_settings(client, query):
             await update_buttons(message, data[1])
         elif data[2] in ("edit", "new"):
             await update_buttons(message, data[1], edit_mode=True)
-            pfunc = partial(update_private_file, pre_message=message, key=data[1], new_file=data[2] == "new")
+            pfunc = partial(
+                update_private_file,
+                pre_message=message,
+                key=data[1],
+                new_file=data[2] == "new",
+            )
             rfunc = partial(update_buttons, message, data[1])
             await event_handler(client, query, pfunc, rfunc, True)
     elif data[1] == "botvar" and state == "edit":

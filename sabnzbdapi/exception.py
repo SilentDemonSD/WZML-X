@@ -9,6 +9,7 @@ class APIError(Exception):
 class APIConnectionError(RequestError, APIError):
     """Base class for all communications errors including HTTP errors."""
 
+
 class APIResponseError(APIError, JSONDecodeError):
     """Base class for all errors from the API response."""
 

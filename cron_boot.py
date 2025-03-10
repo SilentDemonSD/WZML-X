@@ -3,7 +3,7 @@ from requests import get as rget
 from os import getenv
 from logging import error as logerror
 
-BASE_URL = getenv('BASE_URL', None)
+BASE_URL = getenv("BASE_URL", None)
 try:
     if len(BASE_URL) == 0:
         raise TypeError
@@ -11,7 +11,7 @@ try:
 except TypeError:
     BASE_URL = None
 
-PORT = getenv('PORT', None)
+PORT = getenv("PORT", None)
 if PORT is not None and BASE_URL is not None:
     while True:
         try:
