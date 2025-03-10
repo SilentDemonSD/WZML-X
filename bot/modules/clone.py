@@ -69,8 +69,10 @@ class Clone(TaskListener):
         check_msg, check_button = await pre_task_check(self.message)
         if check_msg:
             await delete_links(self.message)
-            await auto_delete_message(await send_message(self.message, check_msg, check_button))
-            return 
+            await auto_delete_message(
+                await send_message(self.message, check_msg, check_button)
+            )
+            return
 
         args = {
             "link": "",
@@ -132,9 +134,11 @@ class Clone(TaskListener):
         self.source_url = (
             self.link
             if len(self.link) > 0 and self.link.startswith("http")
-            else f"https://t.me/share/url?url={self.link}"
-            if self.link
-            else self.message.link
+            else (
+                f"https://t.me/share/url?url={self.link}"
+                if self.link
+                else self.message.link
+            )
         )
         self._set_mode_engine()
 

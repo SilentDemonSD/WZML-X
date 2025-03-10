@@ -122,7 +122,7 @@ class TaskConfig:
         self.files_to_proceed = []
         self.is_super_chat = self.message.chat.type.name in ["SUPERGROUP", "CHANNEL"]
         self.source_url = None
-        self.bot_pm = Config.BOT_PM or self.user_dict.get('BOT_PM')
+        self.bot_pm = Config.BOT_PM or self.user_dict.get("BOT_PM")
         self.pm_msg = None
         self.file_details = {}
         self.mode = tuple()
@@ -176,11 +176,7 @@ class TaskConfig:
         self.name_swap = (
             self.name_swap
             or self.user_dict.get("NAME_SWAP", False)
-            or (
-                Config.NAME_SWAP
-                if "NAME_SWAP" not in self.user_dict
-                else ""
-            )
+            or (Config.NAME_SWAP if "NAME_SWAP" not in self.user_dict else "")
         )
         if self.name_swap:
             self.name_swap = [x.split(":") for x in self.name_swap.split("|")]
@@ -785,10 +781,14 @@ class TaskConfig:
             name, ext = ospath.splitext(name)
             name = sub(r"www\S+", "", name)
             for swap in swaps:
-                pattern, res, cnt, sen = (swap + ["", "0", "NOFLAG"][min(len(swap)-1, 2):])[0:4]
+                pattern, res, cnt, sen = (
+                    swap + ["", "0", "NOFLAG"][min(len(swap) - 1, 2) :]
+                )[0:4]
                 cnt = 0 if len(cnt) == 0 else int(cnt)
                 try:
-                    name = sub(rf"{pattern}", res, name, cnt, flags=getattr(re, sen.upper(), 0))
+                    name = sub(
+                        rf"{pattern}", res, name, cnt, flags=getattr(re, sen.upper(), 0)
+                    )
                 except Exception as e:
                     LOGGER.error(
                         f"Swap Error: pattern: {pattern} res: {res}. Error: {e}"

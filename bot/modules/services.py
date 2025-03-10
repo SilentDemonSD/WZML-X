@@ -31,7 +31,9 @@ async def start(_, message):
     userid = message.from_user.id
     lang = Language()
     buttons = ButtonMaker()
-    buttons.url_button(lang.START_BUTTON1, "https://www.github.com/SilentDemonSD/WZML-X")
+    buttons.url_button(
+        lang.START_BUTTON1, "https://www.github.com/SilentDemonSD/WZML-X"
+    )
     buttons.url_button(lang.START_BUTTON2, "https://t.me/WZML_X")
     reply_markup = buttons.build_menu(2)
 

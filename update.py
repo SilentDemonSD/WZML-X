@@ -17,7 +17,17 @@ from subprocess import run as srun, call as scall
 
 getLogger("pymongo").setLevel(ERROR)
 
-var_list = ['BOT_TOKEN', 'TELEGRAM_API', 'TELEGRAM_HASH', 'OWNER_ID', 'DATABASE_URL', 'BASE_URL', 'UPSTREAM_REPO', 'UPSTREAM_BRANCH', "UPDATE_PKGS"]
+var_list = [
+    "BOT_TOKEN",
+    "TELEGRAM_API",
+    "TELEGRAM_HASH",
+    "OWNER_ID",
+    "DATABASE_URL",
+    "BASE_URL",
+    "UPSTREAM_REPO",
+    "UPSTREAM_BRANCH",
+    "UPDATE_PKGS",
+]
 
 if path.exists("log.txt"):
     with open("log.txt", "r+") as f:
@@ -43,7 +53,11 @@ except ModuleNotFoundError:
     log_info("Config.py file is not Added! Checking ENVs..")
     config_file = {}
 
-env_updates = {key: value.strip() if isinstance(value, str) else value for key, value in environ.items() if key in var_list}
+env_updates = {
+    key: value.strip() if isinstance(value, str) else value
+    for key, value in environ.items()
+    if key in var_list
+}
 if env_updates:
     log_info("Config data is updated with ENVs!")
     config_file.update(env_updates)

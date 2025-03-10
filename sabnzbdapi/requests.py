@@ -78,7 +78,9 @@ class SabnzbdClient(JobFunctions):
                 response = res.json()
                 break
             except APIResponseError as err:
-                raise APIResponseError(f"Failed to decode response!: {res.text}") from err
+                raise APIResponseError(
+                    f"Failed to decode response!: {res.text}"
+                ) from err
             except APIConnectionError as err:
                 if retry_count >= (retries - 1):
                     raise err

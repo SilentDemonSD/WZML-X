@@ -1,6 +1,7 @@
 from os import path
 from re import match
 
+
 def main():
     info = (
         "\n\n"
@@ -70,6 +71,7 @@ def main():
         print(f"Error writing to {filename}: {e}")
         exit(1)
     print("\n\n    Done!")
+
 
 if __name__ == "__main__":
     main()

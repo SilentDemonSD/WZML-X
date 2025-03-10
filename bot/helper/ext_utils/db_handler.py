@@ -112,7 +112,35 @@ class DbManager:
         data = data.copy()
         for key in ("THUMBNAIL", "RCLONE_CONFIG", "TOKEN_PICKLE"):
             data.pop(key, None)
-        pipeline = [{"$replaceRoot": {"newRoot": {"$mergeObjects": [data, {"$arrayToObject": {"$filter": {"input": {"$objectToArray": "$$ROOT"}, "as": "field", "cond": {"$in": ["$$field.k", ["THUMBNAIL", "RCLONE_CONFIG", "TOKEN_PICKLE"]]}}}}]}}}]
+        pipeline = [
+            {
+                "$replaceRoot": {
+                    "newRoot": {
+                        "$mergeObjects": [
+                            data,
+                            {
+                                "$arrayToObject": {
+                                    "$filter": {
+                                        "input": {"$objectToArray": "$$ROOT"},
+                                        "as": "field",
+                                        "cond": {
+                                            "$in": [
+                                                "$$field.k",
+                                                [
+                                                    "THUMBNAIL",
+                                                    "RCLONE_CONFIG",
+                                                    "TOKEN_PICKLE",
+                                                ],
+                                            ]
+                                        },
+                                    }
+                                }
+                            },
+                        ]
+                    }
+                }
+            }
+        ]
         await self.db.users[TgClient.ID].update_one(
             {"_id": user_id}, pipeline, upsert=True
         )

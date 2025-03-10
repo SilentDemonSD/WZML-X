@@ -11,8 +11,8 @@ from logging import INFO, WARNING, FileHandler, StreamHandler, basicConfig, getL
 from aioaria2 import Aria2HttpClient
 from aiohttp.client_exceptions import ClientError
 from aioqbt.client import create_client
-from fastapi import FastAPI, Request, Response, HTTPException
-from fastapi.responses import StreamingResponse, HTMLResponse, JSONResponse
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sabnzbdapi import SabnzbdClient
 from web.nodes import extract_file_ids, make_tree
@@ -263,20 +263,44 @@ def rewrite_location(location: str, proxy_prefix: str) -> str:
     return location
 
 
-async def proxy_fetch(method: str, url: str, headers: dict, params: dict, body: bytes, proxy_prefix: str):
+async def proxy_fetch(
+    method: str, url: str, headers: dict, params: dict, body: bytes, proxy_prefix: str
+):
     async with ClientSession(auto_decompress=True) as session:
-        async with session.request(method, url, headers=headers, params=params, data=body, allow_redirects=False) as upstream:
-            if upstream.status in (301, 302, 303, 307, 308) and upstream.headers.get("Location"):
+        async with session.request(
+            method,
+            url,
+            headers=headers,
+            params=params,
+            data=body,
+            allow_redirects=False,
+        ) as upstream:
+            if upstream.status in (301, 302, 303, 307, 308) and upstream.headers.get(
+                "Location"
+            ):
                 loc = upstream.headers["Location"]
                 new_loc = rewrite_location(loc, proxy_prefix)
-                return HTMLResponse(status_code=upstream.status, headers={"Location": new_loc})
+                return HTMLResponse(
+                    status_code=upstream.status, headers={"Location": new_loc}
+                )
             content = await upstream.read()
             media_type = upstream.headers.get("Content-Type", "text/html")
-            resp_headers = {k: v for k, v in upstream.headers.items() if k.lower() not in ["content-length", "content-encoding"]}
-            return HTMLResponse(content=content, status_code=upstream.status, headers=resp_headers, media_type=media_type)
+            resp_headers = {
+                k: v
+                for k, v in upstream.headers.items()
+                if k.lower() not in ["content-length", "content-encoding"]
+            }
+            return HTMLResponse(
+                content=content,
+                status_code=upstream.status,
+                headers=resp_headers,
+                media_type=media_type,
+            )
 
 
-async def protected_proxy(service: str, path: str, request: Request, password: str = None):
+async def protected_proxy(
+    service: str, path: str, request: Request, password: str = None
+):
     service_info = SERVICES.get(service)
     if not service_info:
         raise HTTPException(status_code=404, detail="Service not found")
@@ -286,7 +310,9 @@ async def protected_proxy(service: str, path: str, request: Request, password: s
     url = f"{base}/{path}" if path else base
     headers = {k: v for k, v in request.headers.items() if k.lower() != "host"}
     body = await request.body()
-    return await proxy_fetch(request.method, url, headers, dict(request.query_params), body, f"/{service}")
+    return await proxy_fetch(
+        request.method, url, headers, dict(request.query_params), body, f"/{service}"
+    )
 
 
 @app.api_route("/nzb/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
@@ -303,7 +329,7 @@ async def qbittorrent_proxy(path: str = "", request: Request = None):
     if "pass" in request.query_params:
         response.set_cookie("qbit_pass", password)
     return response
-    
+
 
 @app.exception_handler(Exception)
 async def page_not_found(_, exc):
@@ -311,4 +337,3 @@ async def page_not_found(_, exc):
         f"<h1>404: Task not found! Mostly wrong input. <br><br>Error: {exc}</h1>",
         status_code=404,
     )
-    

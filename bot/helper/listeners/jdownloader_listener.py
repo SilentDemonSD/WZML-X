@@ -53,7 +53,7 @@ async def _jd_listener():
                 packages = await jdownloader.device.downloads.query_packages(
                     [{"finished": True, "saveTo": True}]
                 )
-            except:
+            except Exception:
                 continue
 
             all_packages = {pack["uuid"]: pack for pack in packages}

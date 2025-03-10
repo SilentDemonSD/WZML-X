@@ -9,7 +9,11 @@ from ..core.tg_client import TgClient
 from ..core.config_manager import Config
 from ..helper.ext_utils.status_utils import get_readable_time
 from ..helper.telegram_helper.button_build import ButtonMaker
-from ..helper.telegram_helper.message_utils import send_message, edit_message, delete_message
+from ..helper.telegram_helper.message_utils import (
+    send_message,
+    edit_message,
+    delete_message,
+)
 
 imdb = Cinemagoer()
 
@@ -227,14 +231,10 @@ async def imdb_callback(_, query):
         buttons = ButtonMaker()
         if imdb["trailer"]:
             if isinstance(imdb["trailer"], list):
-                buttons.url_button(
-                    "▶️ IMDb Trailer ", imdb["trailer"][-1]
-                )
+                buttons.url_button("▶️ IMDb Trailer ", imdb["trailer"][-1])
                 imdb["trailer"] = list_to_str(imdb["trailer"])
             else:
-                buttons.url_button(
-                    "▶️ IMDb Trailer ", imdb["trailer"]
-                )
+                buttons.url_button("▶️ IMDb Trailer ", imdb["trailer"])
         buttons.data_button("🚫 Close 🚫", f"imdb {user_id} close")
         buttons = buttons.build_menu(1)
         template = ""
@@ -257,9 +257,7 @@ async def imdb_callback(_, query):
                 )
             except (MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty):
                 poster = imdb.get("poster").replace(".jpg", "._V1_UX360.jpg")
-                await send_message(
-                    message.reply_to_message, cap, buttons, photo=poster
-                )
+                await send_message(message.reply_to_message, cap, buttons, photo=poster)
         else:
             await send_message(
                 message.reply_to_message,

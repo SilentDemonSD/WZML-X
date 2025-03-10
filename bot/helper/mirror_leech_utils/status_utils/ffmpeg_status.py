@@ -58,7 +58,6 @@ class FFmpegStatus:
         ):
             try:
                 self.listener.subproc.kill()
-            except:
+            except Exception:
                 pass
         await self.listener.on_upload_error(f"{self._cstatus} stopped by user!")
-

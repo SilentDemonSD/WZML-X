@@ -16,6 +16,7 @@ from ..helper.telegram_helper.message_utils import (
 
 bc_cache = {}
 
+
 @new_task
 async def broadcast(_, message):
     bc_id, forwarded, quietly, deleted, edited = "", False, False, False, False
@@ -70,7 +71,7 @@ async def broadcast(_, message):
         temp_wait = await send_message(
             message, "<i>Deleting the Broadcasted Message! Please Wait ...</i>"
         )
-        for (uid, msg_id) in (msgs := bc_cache[bc_id]):
+        for uid, msg_id in (msgs := bc_cache[bc_id]):
             try:
                 await (await TgClient.bot.get_messages(uid, msg_id)).delete()
                 await sleep(0.2)
@@ -92,7 +93,7 @@ async def broadcast(_, message):
         temp_wait = await send_message(
             message, "<i>Editing the Broadcasted Message! Please Wait ...</i>"
         )
-        for (uid, msg_id) in bc_cache[bc_id]:
+        for uid, msg_id in bc_cache[bc_id]:
             msg = await TgClient.bot.get_messages(uid, msg_id)
             if hasattr(msg, "forward_from"):
                 return await edit_message(
@@ -138,11 +139,19 @@ async def broadcast(_, message):
     pls_wait = await send_message(message, status.format(**locals()))
     for uid in await database.get_pm_uids():
         try:
-            bc_msg = await rply.forward(uid, disable_notification=quietly) if forwarded else await rply.copy(uid, disable_notification=quietly)
+            bc_msg = (
+                await rply.forward(uid, disable_notification=quietly)
+                if forwarded
+                else await rply.copy(uid, disable_notification=quietly)
+            )
             s += 1
         except FloodWait as e:
             await sleep(e.value * 1.1)
-            bc_msg = await rply.forward(uid, disable_notification=quietly) if forwarded else await rply.copy(uid, disable_notification=quietly)
+            bc_msg = (
+                await rply.forward(uid, disable_notification=quietly)
+                if forwarded
+                else await rply.copy(uid, disable_notification=quietly)
+            )
             s += 1
         except UserIsBlocked:
             await database.rm_pm_user(uid)
