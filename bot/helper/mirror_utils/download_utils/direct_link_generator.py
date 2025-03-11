@@ -627,6 +627,8 @@ def direct_link_generator(link):
         return easyupload(link)
     elif "streamvid.net" in domain:
         return streamvid(link)
+    elif "instagram.com" in domain:
+        return instagram(link)
     elif any(
         x in domain
         for x in [
@@ -1961,3 +1963,36 @@ def streamvid(url: str):
         elif error := html.xpath('//div[@class="not-found-text"]/text()'):
             raise DirectDownloadLinkException(f"ERROR: {error[0]}")
         raise DirectDownloadLinkException("ERROR: Something went wrong")
+
+def instagram(link: str) -> str:
+    """
+    Fetches the direct video download URL from an Instagram post.
+
+    Args:
+        link (str): The Instagram post URL.
+
+    Returns:
+        str: The direct video URL.
+
+    Raises:
+        DirectDownloadLinkException: If any error occurs during the process.
+    """
+ 
+    full_url = f"https://instagramcdn.vercel.app/api/video?postUrl={link}"
+
+    try:
+        response = get(full_url)
+        response.raise_for_status()
+        data = response.json()
+
+        if (
+            data.get("status") == "success"
+            and "data" in data
+            and "videoUrl" in data["data"]
+        ):
+            return data["data"]["videoUrl"]
+
+        raise DirectDownloadLinkException("ERROR: Failed to retrieve video URL.")
+
+    except Exception as e:
+        raise DirectDownloadLinkException(f"ERROR: {e}")
