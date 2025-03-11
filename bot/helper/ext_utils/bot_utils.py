@@ -88,6 +88,7 @@ class MirrorStatus:
     STATUS_SPLITTING = "Split"
     STATUS_CHECKING = "CheckUp"
     STATUS_SEEDING = "Seed"
+    STATUS_METADATA = "Metadata"
 
 
 class setInterval:
@@ -284,6 +285,7 @@ def get_readable_message():
         if download.status() not in [
             MirrorStatus.STATUS_SPLITTING,
             MirrorStatus.STATUS_SEEDING,
+            MirrorStatus.STATUS_METADATA,
         ]:
             msg += BotTheme(
                 "BAR",

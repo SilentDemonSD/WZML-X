@@ -68,6 +68,7 @@ qbit_options = {}
 queued_dl = {}
 queued_up = {}
 bot_cache = {}
+bot_cache["pkgs"] = ["7z", "rclone", "ffmpeg"]
 non_queued_dl = set()
 non_queued_up = set()
 
@@ -265,6 +266,8 @@ if len(MEGA_EMAIL) == 0 or len(MEGA_PASSWORD) == 0:
     log_warning("MEGA Credentials not provided!")
     MEGA_EMAIL = ""
     MEGA_PASSWORD = ""
+
+METADATA = environ.get("METADATA", "")
 
 GDTOT_CRYPT = environ.get("GDTOT_CRYPT", "")
 if len(GDTOT_CRYPT) == 0:
@@ -707,6 +710,7 @@ config_dict = {
     "MEDIA_GROUP": MEDIA_GROUP,
     "MEGA_EMAIL": MEGA_EMAIL,
     "MEGA_PASSWORD": MEGA_PASSWORD,
+    "METADATA": METADATA,
     "OWNER_ID": OWNER_ID,
     "QUEUE_ALL": QUEUE_ALL,
     "QUEUE_DOWNLOAD": QUEUE_DOWNLOAD,

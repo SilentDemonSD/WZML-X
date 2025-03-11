@@ -24,7 +24,6 @@ class MyLogger:
         self.obj = obj
         self._listener = listener
 
-
     def debug(self, msg):
         # Hack to fix changing extension
         if not self.obj.is_playlist:
@@ -83,7 +82,6 @@ class YoutubeDLHelper:
                 "extractor": lambda n: 3,
             },
         }
-
 
     @property
     def download_speed(self):

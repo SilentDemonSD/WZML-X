@@ -66,7 +66,7 @@ if DATABASE_URL is not None:
 
 UPGRADE_PACKAGES = environ.get("UPGRADE_PACKAGES", "False")
 if UPGRADE_PACKAGES.lower() == "true":
-    packages = [dist.metadata['Name'] for dist in distributions()]
+    packages = [dist.metadata["Name"] for dist in distributions()]
     scall("uv pip install --system " + " ".join(packages), shell=True)
 
 UPSTREAM_REPO = environ.get("UPSTREAM_REPO", "")

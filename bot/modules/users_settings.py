@@ -14,6 +14,7 @@ from io import BytesIO
 from asyncio import sleep
 from cryptography.fernet import Fernet
 
+import asyncio
 from bot import (
     OWNER_ID,
     LOGGER,
@@ -120,12 +121,17 @@ desp_dict = {
         "Streamtape is free Video Streaming & sharing Hoster",
         "Send StreamTape's Login and Key\n<b>Format:</b> <code>user_login:pass_key</code>\n<b>Timeout:</b> 60 sec",
     ],
+    "lmeta": [
+        "Your Channel Name that will be used while editing metadata of the Video File",
+        "Send Metadata Text for Leeching Files.\n<b>Timeout:</b> 60 Sec.",
+    ],
 }
 fname_dict = {
     "rcc": "RClone",
     "lprefix": "Prefix",
     "lsuffix": "Suffix",
     "lremname": "Remname",
+    "lmeta": "Metadata",
     "mprefix": "Prefix",
     "msuffix": "Suffix",
     "mremname": "Remname",
@@ -428,6 +434,16 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
         buttons.ibutton("Leech Dump", f"userset {user_id} ldump")
         ldump = "Not Exists" if (val := user_dict.get("ldump", "")) == "" else len(val)
 
+        lmeta = (
+            "Not Exists"
+            if (val := user_dict.get("lmeta", config_dict.get("METADATA", ""))) == ""
+            else val
+        )
+        buttons.ibutton(
+            f"{'✅️' if lmeta != 'Not Exists' else ''} Metadata",
+            f"userset {user_id} lmeta",
+        )
+
         text = BotTheme(
             "LEECH",
             NAME=name,
@@ -442,6 +458,7 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
             LSUFFIX=escape(lsuffix),
             LDUMP=ldump,
             LREMNAME=escape(lremname),
+            LMETA=escape(lmeta),
         )
 
         buttons.ibutton("Back", f"userset {user_id} back", "footer")
@@ -517,7 +534,7 @@ async def get_user_settings(from_user, key=None, edit_type=None, edit_mode=None)
                 buttons.ibutton(
                     "Enable Media Group", f"userset {user_id} mgroup", "header"
                 )
-        elif key in ["lprefix", "lremname", "lsuffix", "lcaption", "ldump"]:
+        elif key in ["lprefix", "lremname", "lsuffix", "lcaption", "ldump", "lmeta"]:
             set_exist = (
                 "Not Exists"
                 if (
@@ -647,7 +664,15 @@ async def user_settings(client, message):
                 )
             if (
                 set_arg
-                in ["lprefix", "lsuffix", "lremname", "lcaption", "ldump", "yt_opt"]
+                in [
+                    "lprefix",
+                    "lsuffix",
+                    "lremname",
+                    "lcaption",
+                    "ldump",
+                    "yt_opt",
+                    "lmeta",
+                ]
                 and reply_to.text
             ):
                 return await set_custom(client, reply_to, msg, set_arg, True)
@@ -668,6 +693,8 @@ async def user_settings(client, message):
     /cmd -s lremname
 ➲ <b>Leech Filename Caption :</b>
     /cmd -s lcaption
+➲ <b>Leech Metadata Text :</b>
+    /cmd -s lmeta
 ➲ <b>YT-DLP Options :</b>
     /cmd -s yt_opt
 ➲ <b>Leech User Dump :</b>
@@ -1063,6 +1090,7 @@ async def edit_user_settings(client, query):
         "mprefix",
         "msuffix",
         "mremname",
+        "lmeta",
     ]:
         handler_dict[user_id] = False
         await query.answer()
@@ -1074,7 +1102,14 @@ async def edit_user_settings(client, query):
         pfunc = partial(set_custom, pre_event=query, key=data[2])
         rfunc = partial(update_user_settings, query, data[2], return_key)
         await event_handler(client, query, pfunc, rfunc)
-    elif data[2] in ["dlprefix", "dlsuffix", "dlremname", "dlcaption", "dldump"]:
+    elif data[2] in [
+        "dlprefix",
+        "dlsuffix",
+        "dlremname",
+        "dlcaption",
+        "dldump",
+        "dlmeta",
+    ]:
         handler_dict[user_id] = False
         await query.answer()
         update_user_ldata(user_id, data[2][1:], {} if data[2] == "dldump" else "")

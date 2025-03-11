@@ -186,6 +186,8 @@ async def load_config():
         MEGA_EMAIL = ""
         MEGA_PASSWORD = ""
 
+    METADATA = environ.get("METADATA", "")
+
     GDTOT_CRYPT = environ.get("GDTOT_CRYPT", "")
     if len(GDTOT_CRYPT) == 0:
         GDTOT_CRYPT = ""
@@ -735,6 +737,7 @@ async def load_config():
             "MEDIA_GROUP": MEDIA_GROUP,
             "MEGA_EMAIL": MEGA_EMAIL,
             "MEGA_PASSWORD": MEGA_PASSWORD,
+            "METADATA": METADATA,
             "MDL_TEMPLATE": MDL_TEMPLATE,
             "OWNER_ID": OWNER_ID,
             "QUEUE_ALL": QUEUE_ALL,
