@@ -5,6 +5,7 @@ from secrets import token_hex
 from aiofiles.os import remove
 
 from .. import LOGGER, bot_loop, task_dict, task_dict_lock
+from ..core.config_manager import BinConfig
 from ..helper.ext_utils.bot_utils import (
     COMMAND_USAGE,
     arg_parser,
@@ -206,7 +207,7 @@ class Clone(TaskListener):
             else:
                 src_path = self.link
                 cmd = [
-                    "cloudsweep",
+                    BinConfig.RCLONE_NAME,
                     "lsjson",
                     "--fast-list",
                     "--stat",
@@ -261,7 +262,7 @@ class Clone(TaskListener):
                 return
             LOGGER.info(f"Cloning Done: {self.name}")
             cmd1 = [
-                "cloudsweep",
+                BinConfig.RCLONE_NAME,
                 "lsf",
                 "--fast-list",
                 "-R",
@@ -273,7 +274,7 @@ class Clone(TaskListener):
                 "--log-systemd",
             ]
             cmd2 = [
-                "cloudsweep",
+                BinConfig.RCLONE_NAME,
                 "lsf",
                 "--fast-list",
                 "-R",
@@ -285,7 +286,7 @@ class Clone(TaskListener):
                 "--log-systemd",
             ]
             cmd3 = [
-                "cloudsweep",
+                BinConfig.RCLONE_NAME,
                 "size",
                 "--fast-list",
                 "--json",

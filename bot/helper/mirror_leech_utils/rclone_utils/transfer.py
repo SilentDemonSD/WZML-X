@@ -10,7 +10,7 @@ from aiofiles import open as aiopen
 from aiofiles.os import listdir, makedirs, path as aiopath
 from contextlib import suppress
 
-from ....core.config_manager import Config
+from ....core.config_manager import Config, BinConfig
 from ...ext_utils.bot_utils import cmd_exec, sync_to_async
 from ...ext_utils.files_utils import (
     count_files_and_folders,
@@ -202,7 +202,7 @@ class RcloneTransferHelper:
     async def _get_gdrive_link(self, config_path, destination, mime_type):
         epath = destination.rsplit("/", 1)[0] if mime_type == "Folder" else destination
         cmd = [
-            "cloudsweep",
+            BinConfig.RCLONE_NAME,
             "lsjson",
             "--fast-list",
             "--no-mimetype",
@@ -347,7 +347,7 @@ class RcloneTransferHelper:
             link = await self._get_gdrive_link(oconfig_path, destination, mime_type)
         else:
             cmd = [
-                "cloudsweep",
+                BinConfig.RCLONE_NAME,
                 "link",
                 "--config",
                 oconfig_path,
@@ -426,7 +426,7 @@ class RcloneTransferHelper:
                 )
             else:
                 cmd = [
-                    "cloudsweep",
+                    BinConfig.RCLONE_NAME,
                     "link",
                     "--config",
                     config_path,
@@ -466,7 +466,7 @@ class RcloneTransferHelper:
         else:
             ext = "*.{" + ",".join(self._listener.excluded_extensions) + "}"
         cmd = [
-            "cloudsweep",
+            BinConfig.RCLONE_NAME,
             method,
             "--fast-list",
             "--config",

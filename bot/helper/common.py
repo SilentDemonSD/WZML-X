@@ -1,59 +1,60 @@
-from aiofiles.os import path as aiopath, remove, makedirs, listdir
-from asyncio import sleep, gather
-from contextlib import suppress
-from os import walk, path as ospath
-from secrets import token_hex
-from aioshutil import move, rmtree
-from pyrogram.enums import ChatAction
-from re import sub
 import re
+from asyncio import gather, sleep
+from contextlib import suppress
+from os import path as ospath, walk
+from re import sub
+from secrets import token_hex
 from shlex import split
 
+from aiofiles.os import listdir, makedirs, remove, path as aiopath
+from aioshutil import move, rmtree
+from pyrogram.enums import ChatAction
+
 from .. import (
-    user_data,
-    multi_tags,
-    LOGGER,
-    task_dict_lock,
-    task_dict,
-    excluded_extensions,
-    cpu_eater_lock,
-    intervals,
     DOWNLOAD_DIR,
+    LOGGER,
+    cpu_eater_lock,
+    excluded_extensions,
+    intervals,
+    multi_tags,
+    task_dict,
+    task_dict_lock,
+    user_data,
 )
-from ..core.config_manager import Config
+from ..core.config_manager import Config, BinConfig
 from ..core.tg_client import TgClient
-from .ext_utils.bot_utils import new_task, sync_to_async, get_size_bytes
+from .ext_utils.bot_utils import get_size_bytes, new_task, sync_to_async
 from .ext_utils.bulk_links import extract_bulk_links
-from .mirror_leech_utils.gdrive_utils.list import GoogleDriveList
-from .mirror_leech_utils.rclone_utils.list import RcloneList
-from .mirror_leech_utils.status_utils.sevenz_status import SevenZStatus
-from .mirror_leech_utils.status_utils.ffmpeg_status import FFmpegStatus
-from .telegram_helper.bot_commands import BotCommands
 from .ext_utils.files_utils import (
+    SevenZ,
     get_base_name,
-    is_first_archive_split,
+    get_path_size,
     is_archive,
     is_archive_split,
-    get_path_size,
+    is_first_archive_split,
     split_file,
-    SevenZ,
 )
 from .ext_utils.links_utils import (
     is_gdrive_id,
-    is_rclone_path,
     is_gdrive_link,
+    is_rclone_path,
     is_telegram_link,
 )
 from .ext_utils.media_utils import (
-    create_thumb,
-    take_ss,
-    get_document_type,
     FFMpeg,
+    create_thumb,
+    get_document_type,
+    take_ss,
 )
+from .mirror_leech_utils.gdrive_utils.list import GoogleDriveList
+from .mirror_leech_utils.rclone_utils.list import RcloneList
+from .mirror_leech_utils.status_utils.ffmpeg_status import FFmpegStatus
+from .mirror_leech_utils.status_utils.sevenz_status import SevenZStatus
+from .telegram_helper.bot_commands import BotCommands
 from .telegram_helper.message_utils import (
+    get_tg_link_message,
     send_message,
     send_status_message,
-    get_tg_link_message,
 )
 
 
@@ -622,7 +623,6 @@ class TaskConfig:
                     or is_archive(file_)
                     and not file_.strip().lower().endswith(".rar")
                 ):
-
                     self.proceed_count += 1
                     f_path = ospath.join(dirpath, file_)
                     t_path = get_base_name(f_path) if self.is_file else dirpath
@@ -652,7 +652,7 @@ class TaskConfig:
             for ffmpeg_cmd in cmds:
                 self.proceed_count = 0
                 cmd = [
-                    "videomancer",
+                    BinConfig.FFMPEG_NAME,
                     "-hide_banner",
                     "-loglevel",
                     "error",

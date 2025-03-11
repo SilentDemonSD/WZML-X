@@ -4,6 +4,7 @@ from secrets import token_hex
 from aiofiles.os import remove
 
 from .... import task_dict, task_dict_lock, LOGGER
+from ....core.config_manager import BinConfig
 from ...ext_utils.bot_utils import cmd_exec
 from ...ext_utils.task_manager import check_running_tasks, stop_duplicate_check
 from ...mirror_leech_utils.rclone_utils.transfer import RcloneTransferHelper
@@ -29,7 +30,7 @@ async def add_rclone_download(listener, path):
         rpath = listener.link
 
     cmd1 = [
-        "cloudsweep",
+        BinConfig.RCLONE_NAME,
         "lsjson",
         "--fast-list",
         "--stat",
@@ -42,7 +43,7 @@ async def add_rclone_download(listener, path):
         "--log-systemd",
     ]
     cmd2 = [
-        "cloudsweep",
+        BinConfig.RCLONE_NAME,
         "size",
         "--fast-list",
         "--json",

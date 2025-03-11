@@ -684,6 +684,7 @@ async def set_option(_, message, option, rfunc):
         if not value.isdigit():
             value = get_size_bytes(value)
         value = min(int(value), TgClient.MAX_SPLIT_SIZE)
+    #elif option == "LEECH_DUMP_CHAT": # TODO: Add
     elif option == "EXCLUDED_EXTENSIONS":
         fx = value.split()
         value = ["aria2", "!qB"]

@@ -22,6 +22,7 @@ from time import time
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from pyrogram import utils as pyroutils
 
+from .core.config_manager import BinConfig
 from sabnzbdapi import SabnzbdClient
 
 getLogger("requests").setLevel(WARNING)
@@ -99,6 +100,6 @@ sabnzbd_client = SabnzbdClient(
     api_key="admin",
     port="8070",
 )
-srun(["torrentmaster", "-d", f"--profile={getcwd()}"], check=False)
+srun([BinConfig.QBIT_NAME, "-d", f"--profile={getcwd()}"], check=False)
 
 scheduler = AsyncIOScheduler(event_loop=bot_loop)

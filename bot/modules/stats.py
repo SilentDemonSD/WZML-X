@@ -19,7 +19,7 @@ from psutil import (
 )
 
 from .. import bot_cache, bot_start_time
-from ..core.config_manager import Config
+from ..core.config_manager import Config, BinConfig
 from ..helper.ext_utils.bot_utils import cmd_exec, compare_versions, new_task
 from ..helper.ext_utils.status_utils import (
     get_progress_bar_string,
@@ -35,17 +35,18 @@ from ..helper.telegram_helper.message_utils import (
 from ..version import get_version
 
 commands = {
-    "aria2": (["fastfetcher", "--version"], r"aria2 version ([\d.]+)"),
-    "qBittorrent": (["torrentmaster", "--version"], r"qBittorrent v([\d.]+)"),
-    "SABnzbd+": (["newsgator", "--version"], r"newsgator-([\d.]+)"),
+    "aria2": ([BinConfig.ARIA2_NAME, "--version"], r"aria2 version ([\d.]+)"),
+    "qBittorrent": ([BinConfig.QBIT_NAME, "--version"], r"qBittorrent v([\d.]+)"),
+    "SABnzbd+": ([BinConfig.SABNZBD_NAME, "--version"], rf"{BinConfig.SABNZBD_NAME}-([\d.]+)"),
     "python": (["python3", "--version"], r"Python ([\d.]+)"),
-    "rclone": (["cloudsweep", "--version"], r"rclone v([\d.]+)"),
+    "rclone": ([BinConfig.RCLONE_NAME, "--version"], r"rclone v([\d.]+)"),
     "yt-dlp": (["yt-dlp", "--version"], r"([\d.]+)"),
-    "ffmpeg": (["videomancer", "-version"], r"ffmpeg version ([\d.]+(-\w+)?).*"),
+    "ffmpeg": ([BinConfig.FFMPEG_NAME, "-version"], r"ffmpeg version ([\d.]+(-\w+)?).*"),
     "7z": (["7z", "i"], r"7-Zip ([\d.]+)"),
     "aiohttp": (["uv", "pip", "show", "aiohttp"], r"Version: ([\d.]+)"),
     "pyrofork": (["uv", "pip", "show", "pyrofork"], r"Version: ([\d.]+)"),
     "gapi": (["uv", "pip", "show", "google-api-python-client"], r"Version: ([\d.]+)"),
+    "mega": (["pip", "show", "megasdk"], r"Version: ([\d.]+)"),
 }
 
 
@@ -146,7 +147,8 @@ async def get_stats(event, key="home"):
 ┠ <b>7z:</b> {bot_cache["eng_versions"]["7z"]}
 ┠ <b>Aiohttp:</b> {bot_cache["eng_versions"]["aiohttp"]}
 ┠ <b>Pyrofork:</b> {bot_cache["eng_versions"]["pyrofork"]}
-┖ <b>Google API:</b> {bot_cache["eng_versions"]["gapi"]}
+┠ <b>Google API:</b> {bot_cache["eng_versions"]["gapi"]}
+┖ <b>Mega SDK:</b> {bot_cache["eng_versions"]["mega"]}
 """
 
     btns.data_button("Close", f"stats {user_id} close")

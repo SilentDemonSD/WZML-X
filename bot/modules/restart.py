@@ -10,7 +10,7 @@ from pytz import timezone
 from bot.version import get_version
 
 from .. import LOGGER, intervals, sabnzbd_client, scheduler
-from ..core.config_manager import Config
+from ..core.config_manager import Config, BinConfig
 from ..core.jdownloader_booter import jdownloader
 from ..core.tg_client import TgClient
 from ..core.torrent_manager import TorrentManager
@@ -160,7 +160,7 @@ async def confirm_restart(_, query):
             "pkill",
             "-9",
             "-f",
-            "gunicorn|fastfetcher|torrentmaster|videomancer|cloudsweep|java|newsgator|7z|split",
+            f"gunicorn|{BinConfig.ARIA2_NAME}|{BinConfig.QBIT_NAME}|{BinConfig.FFMPEG_NAME}|{BinConfig.RCLONE_NAME}|java|{BinConfig.SABNZBD_NAME}|7z|split",
         )
         proc2 = await create_subprocess_exec("python3", "update.py")
         await gather(proc1.wait(), proc2.wait())
