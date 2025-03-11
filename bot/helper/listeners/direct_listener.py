@@ -31,17 +31,17 @@ class DirectListener:
         for content in contents:
             if self.__is_cancelled:
                 break
-            if content['path']:
-                self.__a2c_opt['dir'] = f"{self.__path}/{content['path']}"
+            if content["path"]:
+                self.__a2c_opt["dir"] = f"{self.__path}/{content['path']}"
             else:
-                self.__a2c_opt['dir'] = self.__path
-            filename = content['filename']
-            self.__a2c_opt['out'] = filename
+                self.__a2c_opt["dir"] = self.__path
+            filename = content["filename"]
+            self.__a2c_opt["out"] = filename
             try:
-                self.task = aria2.add_uris([content['url']], self.__a2c_opt, position=0)
+                self.task = aria2.add_uris([content["url"]], self.__a2c_opt, position=0)
             except Exception as e:
                 self.__failed += 1
-                LOGGER.error(f'Unable to download {filename} due to: {e}')
+                LOGGER.error(f"Unable to download {filename} due to: {e}")
                 continue
             self.task = self.task.live
             while True:
@@ -50,9 +50,11 @@ class DirectListener:
                         self.task.remove(True, True)
                     break
                 self.task = self.task.live
-                if error_message:= self.task.error_message:
+                if error_message := self.task.error_message:
                     self.__failed += 1
-                    LOGGER.error(f'Unable to download {self.task.name} due to: {error_message}')
+                    LOGGER.error(
+                        f"Unable to download {self.task.name} due to: {error_message}"
+                    )
                     self.task.remove(True, True)
                     break
                 elif self.task.is_complete:
@@ -64,7 +66,9 @@ class DirectListener:
         if self.__is_cancelled:
             return
         if self.__failed == len(contents):
-            async_to_sync(self.__listener.onDownloadError, 'All files are failed to download!')
+            async_to_sync(
+                self.__listener.onDownloadError, "All files are failed to download!"
+            )
             return
         async_to_sync(self.__listener.onDownloadComplete)
 

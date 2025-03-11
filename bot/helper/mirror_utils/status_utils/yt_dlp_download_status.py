@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-from bot.helper.ext_utils.bot_utils import EngineStatus, MirrorStatus, get_readable_file_size, get_readable_time, async_to_sync
+from bot.helper.ext_utils.bot_utils import (
+    EngineStatus,
+    MirrorStatus,
+    get_readable_file_size,
+    get_readable_time,
+    async_to_sync,
+)
 from bot.helper.ext_utils.fs_utils import get_path_size
 
 
@@ -33,24 +39,24 @@ class YtDlpDownloadStatus:
         return self.__obj.name
 
     def progress(self):
-        return f'{round(self.__obj.progress, 2)}%'
+        return f"{round(self.__obj.progress, 2)}%"
 
     def speed(self):
-        return f'{get_readable_file_size(self.__obj.download_speed)}/s'
+        return f"{get_readable_file_size(self.__obj.download_speed)}/s"
 
     def eta(self):
-        if self.__obj.eta != '-':
+        if self.__obj.eta != "-":
             return get_readable_time(self.__obj.eta)
         try:
-            seconds = (self.__obj.size - self.processed_raw()) / \
-                self.__obj.download_speed
+            seconds = (
+                self.__obj.size - self.processed_raw()
+            ) / self.__obj.download_speed
             return get_readable_time(seconds)
-        except:
-            return '-'
+        except Exception:
+            return "-"
 
     def download(self):
         return self.__obj
-
 
     def eng(self):
         return EngineStatus().STATUS_YT

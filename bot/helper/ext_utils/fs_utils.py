@@ -12,14 +12,49 @@ from .exceptions import NotSupportedExtractionArchive
 from bot import aria2, LOGGER, DOWNLOAD_DIR, get_client, GLOBAL_EXTENSION_FILTER
 from bot.helper.ext_utils.bot_utils import sync_to_async, cmd_exec
 
-ARCH_EXT = [".tar.bz2", ".tar.gz", ".bz2", ".gz", ".tar.xz", ".tar", ".tbz2", ".tgz", ".lzma2",
-            ".zip", ".7z", ".z", ".rar", ".iso", ".wim", ".cab", ".apm", ".arj", ".chm",
-            ".cpio", ".cramfs", ".deb", ".dmg", ".fat", ".hfs", ".lzh", ".lzma", ".mbr",
-            ".msi", ".mslz", ".nsis", ".ntfs", ".rpm", ".squashfs", ".udf", ".vhd", ".xar"]
+ARCH_EXT = [
+    ".tar.bz2",
+    ".tar.gz",
+    ".bz2",
+    ".gz",
+    ".tar.xz",
+    ".tar",
+    ".tbz2",
+    ".tgz",
+    ".lzma2",
+    ".zip",
+    ".7z",
+    ".z",
+    ".rar",
+    ".iso",
+    ".wim",
+    ".cab",
+    ".apm",
+    ".arj",
+    ".chm",
+    ".cpio",
+    ".cramfs",
+    ".deb",
+    ".dmg",
+    ".fat",
+    ".hfs",
+    ".lzh",
+    ".lzma",
+    ".mbr",
+    ".msi",
+    ".mslz",
+    ".nsis",
+    ".ntfs",
+    ".rpm",
+    ".squashfs",
+    ".udf",
+    ".vhd",
+    ".xar",
+]
 
-FIRST_SPLIT_REGEX = r'(\.|_)part0*1\.rar$|(\.|_)7z\.0*1$|(\.|_)zip\.0*1$|^(?!.*(\.|_)part\d+\.rar$).*\.rar$'
+FIRST_SPLIT_REGEX = r"(\.|_)part0*1\.rar$|(\.|_)7z\.0*1$|(\.|_)zip\.0*1$|^(?!.*(\.|_)part\d+\.rar$).*\.rar$"
 
-SPLIT_REGEX = r'\.r\d+$|\.7z\.\d+$|\.z\d+$|\.zip\.\d+$'
+SPLIT_REGEX = r"\.r\d+$|\.7z\.\d+$|\.z\d+$|\.zip\.\d+$"
 
 
 def is_first_archive_split(file):
@@ -78,10 +113,9 @@ def clean_all():
 
 def exit_clean_up(signal, frame):
     try:
-        LOGGER.info(
-            "Please wait, while we clean up and stop the running downloads")
+        LOGGER.info("Please wait, while we clean up and stop the running downloads")
         clean_all()
-        srun(['pkill', '-9', '-f', 'gunicorn|aria2c|qbittorrent-nox|ffmpeg'])
+        srun(["pkill", "-9", "-f", "gunicorn|aria2c|qbittorrent-nox|ffmpeg"])
         sexit(0)
     except KeyboardInterrupt:
         LOGGER.warning("Force Exiting before the cleanup finishes!")
@@ -92,7 +126,11 @@ async def clean_unwanted(path):
     LOGGER.info(f"Cleaning unwanted files/folders: {path}")
     for dirpath, _, files in await sync_to_async(walk, path, topdown=False):
         for filee in files:
-            if filee.endswith(".!qB") or filee.endswith('.parts') and filee.startswith('.'):
+            if (
+                filee.endswith(".!qB")
+                or filee.endswith(".parts")
+                and filee.startswith(".")
+            ):
                 await aioremove(ospath.join(dirpath, filee))
         if dirpath.endswith((".unwanted", "splited_files_mltb", "copied_mltb")):
             await aiormtree(dirpath)
@@ -125,14 +163,11 @@ async def count_files_and_folders(path):
 
 
 def get_base_name(orig_path):
-    extension = next(
-        (ext for ext in ARCH_EXT if orig_path.lower().endswith(ext)), ''
-    )
-    if extension != '':
-        return re_split(f'{extension}$', orig_path, maxsplit=1, flags=I)[0]
+    extension = next((ext for ext in ARCH_EXT if orig_path.lower().endswith(ext)), "")
+    if extension != "":
+        return re_split(f"{extension}$", orig_path, maxsplit=1, flags=I)[0]
     else:
-        raise NotSupportedExtractionArchive(
-            'File format not supported for extraction')
+        raise NotSupportedExtractionArchive("File format not supported for extraction")
 
 
 def get_mime_type(file_path):
@@ -145,7 +180,12 @@ def get_mime_type(file_path):
 def check_storage_threshold(size, threshold, arch=False, alloc=False):
     free = disk_usage(DOWNLOAD_DIR).free
     if not alloc:
-        if (not arch and free - size < threshold or arch and free - (size * 2) < threshold):
+        if (
+            not arch
+            and free - size < threshold
+            or arch
+            and free - (size * 2) < threshold
+        ):
             return False
     elif not arch:
         if free < threshold:
@@ -159,19 +199,23 @@ async def join_files(path):
     files = await listdir(path)
     results = []
     for file_ in files:
-        if re_search(r"\.0+2$", file_) and await sync_to_async(get_mime_type, f'{path}/{file_}') == 'application/octet-stream':
-            final_name = file_.rsplit('.', 1)[0]
-            cmd = f'cat {path}/{final_name}.* > {path}/{final_name}'
+        if (
+            re_search(r"\.0+2$", file_)
+            and await sync_to_async(get_mime_type, f"{path}/{file_}")
+            == "application/octet-stream"
+        ):
+            final_name = file_.rsplit(".", 1)[0]
+            cmd = f"cat {path}/{final_name}.* > {path}/{final_name}"
             _, stderr, code = await cmd_exec(cmd, True)
             if code != 0:
-                LOGGER.error(f'Failed to join {final_name}, stderr: {stderr}')
+                LOGGER.error(f"Failed to join {final_name}, stderr: {stderr}")
             else:
                 results.append(final_name)
         else:
-            LOGGER.warning('No Binary files to join!')
+            LOGGER.warning("No Binary files to join!")
     if results:
-        LOGGER.info('Join Completed!')
+        LOGGER.info("Join Completed!")
         for res in results:
             for file_ in files:
-                if re_search(fr"{res}\.0[0-9]+$", file_):
-                    await aioremove(f'{path}/{file_}')
+                if re_search(rf"{res}\.0[0-9]+$", file_):
+                    await aioremove(f"{path}/{file_}")

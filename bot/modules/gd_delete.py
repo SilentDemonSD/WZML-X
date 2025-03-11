@@ -18,16 +18,24 @@ async def deletefile(_, message):
     elif reply_to := message.reply_to_message:
         link = reply_to.text.split(maxsplit=1)[0].strip()
     else:
-        link = ''
+        link = ""
     if is_gdrive_link(link):
         LOGGER.info(link)
         drive = GoogleDriveHelper()
         msg = await sync_to_async(drive.deletefile, link)
     else:
-        msg = 'Send Gdrive link along with command or by replying to the link by command'
+        msg = (
+            "Send Gdrive link along with command or by replying to the link by command"
+        )
     reply_message = await sendMessage(message, msg)
     await auto_delete_message(message, reply_message)
 
 
-bot.add_handler(MessageHandler(deletefile, filters=command(
-    BotCommands.DeleteCommand) & CustomFilters.authorized & ~CustomFilters.blacklisted))
+bot.add_handler(
+    MessageHandler(
+        deletefile,
+        filters=command(BotCommands.DeleteCommand)
+        & CustomFilters.authorized
+        & ~CustomFilters.blacklisted,
+    )
+)
