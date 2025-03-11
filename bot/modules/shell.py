@@ -14,11 +14,11 @@ from bot.helper.telegram_helper.bot_commands import BotCommands
 async def shell(_, message):
     cmd = message.text.split(maxsplit=1)
     if len(cmd) == 1:
-        await sendMessage(message, 'No command to execute was given.')
+        await sendMessage(message, "No command to execute was given.")
         return
     cmd = cmd[1]
     stdout, stderr, _ = await cmd_exec(cmd, shell=True)
-    reply = ''
+    reply = ""
     if len(stdout) != 0:
         reply += f"*Stdout*\n{stdout}\n"
         LOGGER.info(f"Shell - {cmd} - {stdout}")
@@ -32,10 +32,16 @@ async def shell(_, message):
     elif len(reply) != 0:
         await sendMessage(message, reply)
     else:
-        await sendMessage(message, 'No Reply')
+        await sendMessage(message, "No Reply")
 
 
-bot.add_handler(MessageHandler(shell, filters=command(
-    BotCommands.ShellCommand) & CustomFilters.sudo))
-bot.add_handler(EditedMessageHandler(shell, filters=command(
-    BotCommands.ShellCommand) & CustomFilters.sudo))
+bot.add_handler(
+    MessageHandler(
+        shell, filters=command(BotCommands.ShellCommand) & CustomFilters.sudo
+    )
+)
+bot.add_handler(
+    EditedMessageHandler(
+        shell, filters=command(BotCommands.ShellCommand) & CustomFilters.sudo
+    )
+)

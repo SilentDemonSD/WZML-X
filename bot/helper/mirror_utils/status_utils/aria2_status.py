@@ -2,14 +2,19 @@
 from time import time
 
 from bot import aria2, LOGGER
-from bot.helper.ext_utils.bot_utils import EngineStatus, MirrorStatus, get_readable_time, sync_to_async
+from bot.helper.ext_utils.bot_utils import (
+    EngineStatus,
+    MirrorStatus,
+    get_readable_time,
+    sync_to_async,
+)
 
 
 def get_download(gid):
     try:
         return aria2.get_download(gid)
     except Exception as e:
-        LOGGER.error(f'{e}: Aria2c, Error while getting torrent info')
+        LOGGER.error(f"{e}: Aria2c, Error while getting torrent info")
         return None
 
 
@@ -51,7 +56,7 @@ class Aria2Status:
 
     def eta(self):
         return self.__download.eta_string()
-        
+
     def listener(self):
         return self.__listener
 
@@ -100,20 +105,22 @@ class Aria2Status:
         await sync_to_async(self.__update)
         if self.__download.seeder and self.seeding:
             LOGGER.info(f"Cancelling Seed: {self.name()}")
-            await self.__listener.onUploadError(f"Seeding stopped with Ratio: {self.ratio()} and Time: {self.seeding_time()}")
+            await self.__listener.onUploadError(
+                f"Seeding stopped with Ratio: {self.ratio()} and Time: {self.seeding_time()}"
+            )
             await sync_to_async(aria2.remove, [self.__download], force=True, files=True)
         elif downloads := self.__download.followed_by:
             LOGGER.info(f"Cancelling Download: {self.name()}")
-            await self.__listener.onDownloadError('Download cancelled by user!')
+            await self.__listener.onDownloadError("Download cancelled by user!")
             downloads.append(self.__download)
             await sync_to_async(aria2.remove, downloads, force=True, files=True)
         else:
             if self.queued:
-                LOGGER.info(f'Cancelling QueueDl: {self.name()}')
-                msg = 'task have been removed from queue/download'
+                LOGGER.info(f"Cancelling QueueDl: {self.name()}")
+                msg = "task have been removed from queue/download"
             else:
                 LOGGER.info(f"Cancelling Download: {self.name()}")
-                msg = 'Download stopped by user!'
+                msg = "Download stopped by user!"
             await self.__listener.onDownloadError(msg)
             await sync_to_async(aria2.remove, [self.__download], force=True, files=True)
 

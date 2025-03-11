@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 from bot import LOGGER
 from bot.helper.ext_utils.bot_utils import (
     EngineStatus,
@@ -7,7 +8,7 @@ from bot.helper.ext_utils.bot_utils import (
 )
 
 
-class SplitStatus:
+class MetadataStatus:
     def __init__(self, name, size, gid, listener):
         self.__name = name
         self.__gid = gid
@@ -35,7 +36,7 @@ class SplitStatus:
         return "0s"
 
     def status(self):
-        return MirrorStatus.STATUS_SPLITTING
+        return MirrorStatus.STATUS_METADATA
 
     def processed_bytes(self):
         return 0
@@ -44,12 +45,14 @@ class SplitStatus:
         return self
 
     async def cancel_download(self):
-        LOGGER.info(f"Cancelling Split: {self.__name}")
+        LOGGER.info(f"Cancelling metadata edit: {self.__name}")
         if self.__listener.suproc is not None:
-            self.__listener.suproc.kill()
-        else:
-            self.__listener.suproc = "cancelled"
-        await self.__listener.onUploadError("splitting stopped by user!")
+            try:
+                self.__listener.suproc.kill()
+            except:
+                pass
+        self.__listener.suproc = "cancelled"
+        await self.__listener.onUploadError("Metada edit stopped by user!")
 
     def eng(self):
         return EngineStatus().STATUS_SPLIT_MERGE

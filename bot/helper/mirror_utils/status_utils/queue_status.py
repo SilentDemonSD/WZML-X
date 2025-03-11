@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 from bot import LOGGER
-from bot.helper.ext_utils.bot_utils import EngineStatus, get_readable_file_size, MirrorStatus
+from bot.helper.ext_utils.bot_utils import (
+    EngineStatus,
+    get_readable_file_size,
+    MirrorStatus,
+)
 
 
 class QueueStatus:
@@ -23,7 +27,7 @@ class QueueStatus:
         return get_readable_file_size(self.__size)
 
     def status(self):
-        if self.__status == 'dl':
+        if self.__status == "dl":
             return MirrorStatus.STATUS_QUEUEDL
         return MirrorStatus.STATUS_QUEUEUP
 
@@ -31,24 +35,27 @@ class QueueStatus:
         return 0
 
     def progress(self):
-        return '0%'
+        return "0%"
 
     def speed(self):
-        return '0B/s'
+        return "0B/s"
 
     def eta(self):
-        return '-'
+        return "-"
 
     def download(self):
         return self
 
     async def cancel_download(self):
-        LOGGER.info(f'Cancelling Queue{self.__status}: {self.__name}')
-        if self.__status == 'dl':
-            await self.__listener.onDownloadError('task have been removed from queue/download')
+        LOGGER.info(f"Cancelling Queue{self.__status}: {self.__name}")
+        if self.__status == "dl":
+            await self.__listener.onDownloadError(
+                "task have been removed from queue/download"
+            )
         else:
-            await self.__listener.onUploadError('task have been removed from queue/upload')
-
+            await self.__listener.onUploadError(
+                "task have been removed from queue/upload"
+            )
 
     def eng(self):
         return EngineStatus().STATUS_QUEUE
