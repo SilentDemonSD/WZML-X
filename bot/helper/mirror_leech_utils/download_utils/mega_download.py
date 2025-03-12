@@ -40,7 +40,7 @@ async def add_mega_download(listener, path):
     LOGGER.info("Debug: After Login")
     if get_mega_link_type(listener.link) == "file":
         LOGGER.info(listener.link)
-        await async_api.run(api.getPublicNode, listener.link)
+        await sync_to_async(async_api.run, api.getPublicNode, listener.link)
         node = mega_listener.public_node
         LOGGER.info(node)
     else:

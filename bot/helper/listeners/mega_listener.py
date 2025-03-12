@@ -1,4 +1,4 @@
-from asyncio import Event
+from threading import Event
 
 from mega.mega import MegaApi, MegaError, MegaListener, MegaRequest, MegaTransfer
 
@@ -12,11 +12,11 @@ class AsyncMega:
         self.folder_api = None
         self.continue_event = Event()
 
-    async def run(self, function, *args, **kwargs):
+    def run(self, function, *args, **kwargs):
         self.continue_event.clear()
         LOGGER.info(f"Debug: on Run {function}")
-        await sync_to_async(function, *args, **kwargs)
-        await self.continue_event.wait()
+        function(*args, **kwargs)
+        self.continue_event.wait()
 
     async def logout(self):
         await self.run(self.api.logout)
