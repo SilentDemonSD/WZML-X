@@ -2,7 +2,7 @@ from asyncio import Event
 
 from mega.mega import MegaApi, MegaError, MegaListener, MegaRequest, MegaTransfer
 
-from .... import LOGGER
+from ... import LOGGER
 from ..ext_utils.bot_utils import async_to_sync, sync_to_async
 
 
