@@ -57,6 +57,7 @@ class MegaAppListener(MegaListener):
         return self._bytes_transferred
 
     def onRequestFinish(self, api, request, error):
+        LOGGER.info("Debug: onRequestFinish")
         if error and str(error).lower() != "no error":
             self.error = error.copy()
             if str(self.error).casefold() != "not found":

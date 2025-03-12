@@ -37,6 +37,8 @@ async def add_mega_download(listener, path):
     if (MEGA_EMAIL := Config.MEGA_EMAIL) and (MEGA_PASSWORD := Config.MEGA_PASSWORD):
         await async_api.login(MEGA_EMAIL, MEGA_PASSWORD)
 
+
+    LOGGER.info("Debug: After Login")
     if get_mega_link_type(listener.link) == "file":
         await async_api.getPublicNode(listener.link)
         node = mega_listener.public_node.copy() if mega_listener.public_node else None
@@ -47,6 +49,7 @@ async def add_mega_download(listener, path):
         await async_api.run(folder_api.loginToFolder, listener.link)
         node = await sync_to_async(folder_api.authorizeNode, mega_listener.node.copy() if mega_listener.node else None)
 
+    LOGGER.info("Debug: After Fetch Nodes")
     if mega_listener.error:
         mmsg = await send_message(listener.message, str(mega_listener.error))
         await async_api.logout()
@@ -75,6 +78,7 @@ async def add_mega_download(listener, path):
         return"
     """
 
+    LOGGER.info("Debug: After Checks")
     gid = token_hex(5)
     listener.size = await sync_to_async(api.getSize, node)
     (added_to_queue, event) = await check_running_tasks(listener)
@@ -94,6 +98,7 @@ async def add_mega_download(listener, path):
     else:
         from_queue = False
 
+    LOGGER.info("Debug: Add to Status")
     async with task_dict_lock:
         task_dict[listener.mid] = MegaDownloadStatus(listener, mega_listener, gid, "dl")
     async with queue_dict_lock:
@@ -106,6 +111,7 @@ async def add_mega_download(listener, path):
         await send_status_message(listener.message)
         LOGGER.info(f"Download from Mega: {listener.name}")
 
+    LOGGER.info("Debug: API Start Download")
     await makedirs(path, exist_ok=True)
     await async_api.startDownload(node, path, listener.name, None, False, None)
     await async_api.logout()

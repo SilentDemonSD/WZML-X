@@ -25,6 +25,9 @@ from pyrogram import utils as pyroutils
 from .core.config_manager import BinConfig
 from sabnzbdapi import SabnzbdClient
 
+from faulthandler import enable
+enable()
+
 getLogger("requests").setLevel(WARNING)
 getLogger("urllib3").setLevel(WARNING)
 getLogger("pyrogram").setLevel(ERROR)
