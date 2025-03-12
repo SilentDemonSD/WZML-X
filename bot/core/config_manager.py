@@ -31,6 +31,8 @@ class Config:
     IS_TEAM_DRIVE = False
     JD_EMAIL = ""
     JD_PASS = ""
+    MEGA_EMAIL = ""
+    MEGA_PASSWORD = ""
     LEECH_DUMP_CHAT = ""
     CLEAN_LOG_MSG = False
     LEECH_PREFIX = ""
