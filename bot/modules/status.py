@@ -2,8 +2,6 @@ from psutil import cpu_percent, virtual_memory, disk_usage
 from time import time
 from asyncio import gather, iscoroutinefunction
 
-from pyrogram.errors import QueryIdInvalid
-
 from .. import (
     task_dict_lock,
     status_dict,
@@ -213,7 +211,4 @@ async def status_pages(_, query):
         button.data_button("Back", f"status {data[1]} ref")
         await edit_message(message, msg, button.build_menu())
 
-    try:
-        await query.answer()
-    except QueryIdInvalid:
-        pass
+    await query.answer()
