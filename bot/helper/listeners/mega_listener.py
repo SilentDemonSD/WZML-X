@@ -7,8 +7,8 @@ from ..ext_utils.bot_utils import async_to_sync, sync_to_async
 
 
 class AsyncMega:
-    def __init__(self, api):
-        self.api = api
+    def __init__(self):
+        self.api = None
         self.folder_api = None
         self.continue_event = Event()
 
