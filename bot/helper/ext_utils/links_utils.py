@@ -22,6 +22,14 @@ def is_telegram_link(url: str):
     return url.startswith(("https://t.me/", "tg://openmessage?user_id="))
 
 
+def is_mega_link(url: str):
+    return "mega.nz" in url or "mega.co.nz" in url
+
+
+def get_mega_link_type(url):
+    return "folder" if "folder" in url or "/#F!" in url else "file"
+
+
 def is_share_link(url: str):
     return bool(
         re_match(
