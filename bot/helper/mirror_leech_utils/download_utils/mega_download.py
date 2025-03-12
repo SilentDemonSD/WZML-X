@@ -37,9 +37,12 @@ async def add_mega_download(listener, path):
     if (MEGA_EMAIL := Config.MEGA_EMAIL) and (MEGA_PASSWORD := Config.MEGA_PASSWORD):
         await async_api.run(api.login, MEGA_EMAIL, MEGA_PASSWORD)
     
+    LOGGER.info("Debug: After Login")
     if get_mega_link_type(listener.link) == "file":
-        await async_api.run(api.getPublicNode, listener.link)
+        LOGGER.info(listener.link)
+        await async_api.run(api.getPublicNode, (listener.link,))
         node = mega_listener.public_node
+        LOGGER.info(node)
     else:
         async_api.folder_api = folder_api = MegaApi(None, None, None, "WZML-X")
         folder_api.addListener(mega_listener)

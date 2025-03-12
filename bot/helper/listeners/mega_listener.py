@@ -12,9 +12,9 @@ class AsyncMega:
         self.folder_api = None
         self.continue_event = Event()
 
-    async def run(self, function, *args, **kwargs):
+    async def run(self, function, args):
         self.continue_event.clear()
-        await sync_to_async(function, *args, **kwargs)
+        await sync_to_async(function, *args)
         await self.continue_event.wait()
 
     async def logout(self):
