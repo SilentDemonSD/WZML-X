@@ -12,9 +12,10 @@ class AsyncMega:
         self.folder_api = None
         self.continue_event = Event()
 
-    async def run(self, function, args):
+    async def run(self, function, *args, **kwargs):
         self.continue_event.clear()
-        await sync_to_async(function, *args)
+        LOGGER.info(f"Debug: on Run {function}")
+        await sync_to_async(function, *args, **kwargs)
         await self.continue_event.wait()
 
     async def logout(self):
@@ -57,27 +58,28 @@ class MegaAppListener(MegaListener):
         return self._bytes_transferred
 
     def onRequestFinish(self, api, request, error):
+        LOGGER.info("Debug: After onRequestFinish Node")
         if error and str(error).lower() != "no error":
-            self.error = error.copy()
+            self.error = error
             if str(self.error).casefold() != "not found":
                 LOGGER.error(f"Mega onRequestFinishError: {self.error}")
             self.continue_event.set()
             return
 
-        request = request.copy()
+        #request = request.copy()
         request_type = request.getType()
 
         if request_type == MegaRequest.TYPE_LOGIN:
             api.fetchNodes()
         elif request_type == MegaRequest.TYPE_GET_PUBLIC_NODE:
-            self.public_node = request.getPublicMegaNode().copy() if request.getPublicMegaNode() else None
+            self.public_node = request.getPublicMegaNode()#.copy() if request.getPublicMegaNode() else None
             if self.public_node:
                 self._name = self.public_node.getName()
             else:
                 LOGGER.error("Error: Public node is None.")
         elif request_type == MegaRequest.TYPE_FETCH_NODES:
             LOGGER.info("Fetching Root Node.")
-            self.node = api.getRootNode().copy() if api.getRootNode() else None
+            self.node = api.getRootNode()#.copy() if api.getRootNode() else None
             if self.node:
                 self._name = self.node.getName()
                 LOGGER.info(f"Node Name: {self.node.getName()}")
