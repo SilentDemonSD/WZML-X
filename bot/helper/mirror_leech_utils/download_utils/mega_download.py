@@ -39,13 +39,13 @@ async def add_mega_download(listener, path):
 
     if get_mega_link_type(listener.link) == "file":
         await async_api.getPublicNode(listener.link)
-        node = mega_listener.public_node
+        node = mega_listener.public_node.copy() if mega_listener.public_node else None
     else:
         async_api.folder_api = folder_api = MegaApi(None, None, None, "WZML-X")
         folder_api.addListener(mega_listener)
 
         await async_api.run(folder_api.loginToFolder, listener.link)
-        node = await sync_to_async(folder_api.authorizeNode, mega_listener.node)
+        node = await sync_to_async(folder_api.authorizeNode, mega_listener.node.copy() if mega_listener.node else None)
 
     if mega_listener.error:
         mmsg = await send_message(listener.message, str(mega_listener.error))
