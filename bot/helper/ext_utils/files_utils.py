@@ -2,6 +2,7 @@ from aioshutil import rmtree as aiormtree, move
 from asyncio import create_subprocess_exec, sleep, wait_for
 from asyncio.subprocess import PIPE
 from contextlib import suppress
+from psutil import disk_usage
 from os import path as ospath, readlink, walk
 from re import I, escape, search as re_search, split as re_split
 
@@ -149,6 +150,11 @@ async def clean_unwanted(opath):
     for dirpath, _, files in await sync_to_async(walk, opath, topdown=False):
         if not await listdir(dirpath):
             await rmdir(dirpath)
+            
+
+async def check_storage_threshold(size, threshold, io_task=False, alloc=False):
+    free = (await sync_to_async(disk_usage, DOWNLOAD_DIR)).free
+    return free >= (threshold + (size * (2 if io_task else 1) if not alloc else 0))
 
 
 async def get_path_size(opath):

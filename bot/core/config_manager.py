@@ -33,6 +33,7 @@ class Config:
     JD_PASS = ""
     MEGA_EMAIL = ""
     MEGA_PASSWORD = ""
+    MEGA_LIMIT = ""
     LEECH_DUMP_CHAT = ""
     CLEAN_LOG_MSG = False
     LEECH_PREFIX = ""

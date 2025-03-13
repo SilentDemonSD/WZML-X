@@ -11,6 +11,7 @@ from ...ext_utils.bot_utils import sync_to_async
 from ...ext_utils.task_manager import (
     check_running_tasks,
     stop_duplicate_check,
+    limit_checker,
 )
 from ...mirror_leech_utils.status_utils.mega_dl_status import MegaDownloadStatus
 from ...mirror_leech_utils.status_utils.queue_status import QueueStatus
@@ -65,15 +66,13 @@ async def add_mega_download(listener, path):
         await auto_delete_message(listener.message, mmsg)
         return
 
-    """
-    listener.size = api.getSize(node)
-    if limit_exceeded := await limit_checker(listener, is_mega=True):
+    listener.size = await sync_to_async(api.getSize, node)
+    if limit_exceeded := await limit_checker(listener):
         mmsg = await send_message(listener.message, limit_exceeded)
-        await mega_logout(async_api, api, folder_api)
+        await async_api.logout()
         await delete_links(listener.message)
         await auto_delete_message(listener.message, mmsg)
-        return"
-    """
+        return
 
     gid = token_hex(5)
     listener.size = await sync_to_async(api.getSize, node)
@@ -107,5 +106,5 @@ async def add_mega_download(listener, path):
         LOGGER.info(f"Download from Mega: {listener.name}")
 
     await makedirs(path, exist_ok=True)
-    await async_api.startDownload(node, path, listener.name, None, False, None, 1, 0, False)
+    await async_api.startDownload(node, path, listener.name, None, False, None, 3, 2, False)
     await async_api.logout()

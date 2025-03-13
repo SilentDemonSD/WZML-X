@@ -45,7 +45,7 @@ from ..mirror_leech_utils.status_utils.gdrive_status import GoogleDriveStatus
 from ..mirror_leech_utils.status_utils.queue_status import QueueStatus
 from ..mirror_leech_utils.status_utils.rclone_status import RcloneStatus
 from ..mirror_leech_utils.status_utils.telegram_status import TelegramStatus
-from ..mirror_leech_utils.telegram_uploader import TelegramUploader
+from ..mirror_leech_utils.upload_utils.telegram_uploader import TelegramUploader
 from ..telegram_helper.button_build import ButtonMaker
 from ..telegram_helper.message_utils import (
     delete_message,

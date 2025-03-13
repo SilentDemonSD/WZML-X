@@ -18,7 +18,7 @@ from ..telegram_helper.tg_utils import check_botpm, forcesub, verify_token
 from .bot_utils import get_telegraph_list, sync_to_async
 from .files_utils import get_base_name
 from .links_utils import is_gdrive_id
-from .status_utils import get_readable_time, get_specific_tasks
+from .status_utils import get_readable_time, get_readable_file_size, get_specific_tasks
 
 
 async def stop_duplicate_check(listener):
@@ -160,6 +160,40 @@ async def start_from_queued():
             if queued_dl:
                 for mid in list(queued_dl.keys()):
                     await start_dl_from_queued(mid)
+
+
+async def limit_checker(listener, is_ytplaylist=None):
+    LOGGER.info('Checking Size Limit...')
+    if await CustomFilters.sudo('', listener.message):
+        return
+    
+    user_id = listener.message.from_user.id
+    size = listener.size
+    limits = {
+        listener.is_clone: ('CLONE_LIMIT', 'Clone'),
+        listener.is_mega: ('MEGA_LIMIT', 'Mega'),
+        listener.is_gdrive: ('GDRIVE_LIMIT', 'GDrive'),
+        listener.is_ytdlp: ('YTDLP_LIMIT', 'yt-dlp'),
+        listener.is_torrent or listener.is_qbit: ('TORRENT_LIMIT', 'Torrent'),
+        True: ('DIRECT_LIMIT', 'Direct')
+    }
+    
+    limit_exceeded = ''
+    for condition, (attr, name) in limits.items():
+        if condition and (limit := getattr(Config, attr, 0)):
+            byte_limit = limit * 1024**3
+            if size > byte_limit:
+                limit_exceeded = f'{name} limit is {get_readable_file_size(byte_limit)}'
+            break
+    
+    if listener.is_ytdlp and is_ytplaylist and (play_limit := getattr(Config, 'PLAYLIST_LIMIT', 0)) and is_ytplaylist > play_limit:
+        limit_exceeded = f'YT Playlist limit is {play_limit}'
+    
+    if limit_exceeded:
+        if size:
+            return f"{limit_exceeded}.\nLink/File/Folder exceeded size is {get_readable_file_size(size)}."
+        elif is_ytplaylist != 0:
+            return f"{limit_exceeded}.\nYT-Playlist exceeded limit has {is_ytplaylist} files."
 
 
 async def user_interval_check(user_id):
