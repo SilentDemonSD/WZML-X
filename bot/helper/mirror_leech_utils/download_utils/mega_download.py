@@ -107,5 +107,5 @@ async def add_mega_download(listener, path):
         LOGGER.info(f"Download from Mega: {listener.name}")
 
     await makedirs(path, exist_ok=True)
-    await async_api.startDownload(node, path, listener.name, None, False, None)
+    await async_api.startDownload(node, path, listener.name, None, False, None, 1, 0, False)
     await async_api.logout()
