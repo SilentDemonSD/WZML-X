@@ -342,7 +342,7 @@ class Mirror(TaskListener):
                 else self.message.link
             )
         )
-        self.is_mega = is_mega_link(self.link)  if self.source_url else False
+        self.is_mega = is_mega_link(self.link) if self.source_url else False
         self._set_mode_engine()
 
         if (
@@ -396,7 +396,7 @@ class Mirror(TaskListener):
         elif is_gdrive_link(self.link) or is_gdrive_id(self.link):
             await add_gd_download(self, path)
         elif is_mega_link(self.link):
-            await add_mega_download(self,f"{path}/")
+            await add_mega_download(self, f"{path}/")
         else:
             ussr = args["-au"]
             pssw = args["-ap"]

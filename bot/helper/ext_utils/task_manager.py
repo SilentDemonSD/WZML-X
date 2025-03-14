@@ -170,14 +170,14 @@ async def limit_checker(listener, is_ytplaylist=False):
     
     user_id = listener.message.from_user.id
     size = listener.size
-    LOGGER.info(size)
-    LOGGER.info(user_id)
+    LOGGER.info(listener.is_mega)
+    LOGGER.info(listener.is_torrent or listener.is_qbit)
     limits = {
         listener.is_clone: ('CLONE_LIMIT', 'Clone'),
         listener.is_mega: ('MEGA_LIMIT', 'Mega'),
         listener.is_gdrive: ('GDRIVE_LIMIT', 'GDrive'),
         listener.is_ytdlp: ('YTDLP_LIMIT', 'yt-dlp'),
-        listener.is_torrent or listener.is_qbit: ('TORRENT_LIMIT', 'Torrent'),
+        bool(listener.is_torrent or listener.is_qbit): ('TORRENT_LIMIT', 'Torrent'),
         True: ('DIRECT_LIMIT', 'Direct')
     }
     
