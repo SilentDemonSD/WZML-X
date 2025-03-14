@@ -183,7 +183,7 @@ async def limit_checker(listener, is_ytplaylist=False):
     
     LOGGER.info('DEBUG: Start Limit Check')
     limit_exceeded = ''
-    for condition, attr, name in limits.items():
+    for condition, attr, name in limits:
         LOGGER.info(f'DEBUG: Limit Check Loop : {attr}')
         if condition and (limit := getattr(Config, attr, 0)):
             LOGGER.info(f'DEBUG: Limit Check Loop Checks : {attr}')
