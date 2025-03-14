@@ -184,6 +184,7 @@ async def limit_checker(listener, is_ytplaylist=False):
             byte_limit = limit * 1024**3
             if size >= byte_limit:
                 limit_exceeded = f"┠ <b>{name} Limit</b> → {get_readable_file_size(byte_limit)}\n┖ <b>Task By</b> → {listener.tag}"
+                LOGGER.info(f"{name} Limit Breached: {listener.name} & Size: {get_readable_file_size(size)}")
             break
     
     if listener.is_ytdlp and is_ytplaylist and (play_limit := getattr(Config, 'PLAYLIST_LIMIT', 0)) and is_ytplaylist > play_limit:

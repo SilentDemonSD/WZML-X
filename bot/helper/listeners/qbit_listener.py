@@ -59,7 +59,7 @@ async def _stop_duplicate(tor):
             ]
             msg, button = await stop_duplicate_check(task.listener)
             if msg:
-                _on_download_error(msg, tor, button)
+                await _on_download_error(msg, tor, button)
 
 
 @new_task
@@ -68,7 +68,6 @@ async def _size_check(tor):
         task.listener.size = tor.size
         mmsg = await limit_checker(task.listener)
         if mmsg:
-            LOGGER.info(f"qBit Limit Breached: {task.listener.name} | {get_readable_file_size(task.listener.size)}")
             await _on_download_error(mmsg, tor)
 
 

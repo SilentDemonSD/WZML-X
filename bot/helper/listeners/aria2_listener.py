@@ -10,7 +10,7 @@ from ...core.torrent_manager import TorrentManager, is_metadata, aria2_name
 from ..ext_utils.bot_utils import bt_selection_buttons
 from ..ext_utils.files_utils import clean_unwanted
 from ..ext_utils.status_utils import get_task_by_gid
-from ..ext_utils.task_manager import stop_duplicate_check
+from ..ext_utils.task_manager import stop_duplicate_check, limit_checker
 from ..mirror_leech_utils.status_utils.aria2_status import Aria2Status
 from ..telegram_helper.message_utils import (
     send_message,
@@ -51,21 +51,30 @@ async def _on_download_started(api, data):
         download = await api.tellStatus(gid)
         if "bittorrent" in download:
             task.listener.is_torrent = True
+        
         task.listener.name = aria2_name(download)
         msg, button = await stop_duplicate_check(task.listener)
         if msg:
             await TorrentManager.aria2_remove(download)
             await task.listener.on_download_error(msg, button)
+            return
+            
+        task.listener.size = int(download.get("totalLength", "0"))
+        mmsg = await limit_checker(task.listener)
+        if mmsg:
+            await TorrentManager.aria2_remove(download)
+            await task.listener.on_download_error(mmsg)
+            return
 
 
 async def _on_download_complete(api, data):
     try:
         gid = data["params"][0]["gid"]
         download, options = await api.tellStatus(gid), await api.getOption(gid)
+        if options.get("follow-torrent", "") == "false":
+            return
     except (TimeoutError, ClientError, Exception) as e:
         LOGGER.error(f"onDownloadComplete: {e}")
-        return
-    if options.get("follow-torrent", "") == "false":
         return
     if download.get("followedBy", []):
         new_gid = download.get("followedBy", [])[0]
@@ -76,7 +85,7 @@ async def _on_download_complete(api, data):
                 if not task.queued:
                     await api.forcePause(new_gid)
                 SBUTTONS = bt_selection_buttons(new_gid)
-                msg = "Your download paused. Choose files then press Done Selecting button to start downloading."
+                msg = "Download paused. Choose files then press Done Selecting button to start downloading."
                 await send_message(task.listener.message, msg, SBUTTONS)
     elif "bittorrent" in download:
         if task := await get_task_by_gid(gid):
