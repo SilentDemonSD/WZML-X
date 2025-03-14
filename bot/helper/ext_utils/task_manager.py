@@ -193,10 +193,10 @@ async def limit_checker(listener, yt_playlist=0):
         (listener.is_gdrive, 'GD_DL_LIMIT', 'GDriveDL'),
         (listener.is_clone, 'CLONE_LIMIT', 'Clone'),
         (listener.is_jd, "JD_LIMIT", "JDownloader"),
-        (listener.is_rclone, "RC_DL_LIMIT", "RCloneDL")
+        (listener.is_rclone, "RC_DL_LIMIT", "RCloneDL"),
         (listener.is_ytdlp, 'YTDLP_LIMIT', 'YT-DLP'),
         (bool(yt_playlist), "PLAYLIST_LIMIT", "Playlist"),
-        (True, 'DIRECT_LIMIT', 'Direct')
+        (True, 'DIRECT_LIMIT', 'Direct'),
     ]
     limit_exceeded = await recurr_limits(limits)
     
