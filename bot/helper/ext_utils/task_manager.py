@@ -190,9 +190,9 @@ async def limit_checker(listener, is_ytplaylist=False):
     if listener.is_ytdlp and is_ytplaylist and (play_limit := getattr(Config, 'PLAYLIST_LIMIT', 0)) and is_ytplaylist > play_limit:
         limit_exceeded = f'YT Playlist limit is {play_limit}'
     
-    if limit_exceeded:
+    if limit_exceeded: # Refactor
         if size:
-            return f"〶 <b><i><u>Limit Breached:</u></i></b>a\n│\n┟ <b>Task Size</b> → {get_readable_file_size(size)}\n{limit_exceeded}"
+            return limit_exceeded
         elif is_ytplaylist != 0:
             return f"{limit_exceeded}.\nYT-Playlist exceeded limit has {is_ytplaylist} files."
     

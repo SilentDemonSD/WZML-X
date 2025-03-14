@@ -63,7 +63,7 @@ async def _on_download_started(api, data):
         mmsg = await limit_checker(task.listener)
         if mmsg:
             await TorrentManager.aria2_remove(download)
-            await task.listener.on_download_error(mmsg)
+            await task.listener.on_download_error(mmsg, is_limit=True)
             return
 
 

@@ -2,7 +2,7 @@ from secrets import token_hex
 
 from .... import task_dict, task_dict_lock, LOGGER
 from ...ext_utils.bot_utils import sync_to_async
-from ...ext_utils.task_manager import check_running_tasks, stop_duplicate_check
+from ...ext_utils.task_manager import check_running_tasks, stop_duplicate_check, limit_checker
 from ...mirror_leech_utils.gdrive_utils.count import GoogleDriveCount
 from ...mirror_leech_utils.gdrive_utils.download import GoogleDriveDownload
 from ...mirror_leech_utils.status_utils.gdrive_status import GoogleDriveStatus
@@ -26,7 +26,11 @@ async def add_gd_download(listener, path):
     if msg:
         await listener.on_download_error(msg, button)
         return
-
+    
+    if limit_exceeded := await limit_checker(listener):
+        await listener.on_download_error(limit_exceeded, is_limit=True)
+        return
+    
     add_to_queue, event = await check_running_tasks(listener)
     if add_to_queue:
         LOGGER.info(f"Added to Queue/Download: {listener.name}")

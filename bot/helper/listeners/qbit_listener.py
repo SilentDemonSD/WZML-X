@@ -30,11 +30,11 @@ async def _remove_torrent(hash_, tag):
 
 
 @new_task
-async def _on_download_error(err, tor, button=None):
+async def _on_download_error(err, tor, button=None, is_limit=False):
     LOGGER.info(f"Cancelling Download: {tor.name}")
     ext_hash = tor.hash
     if task := await get_task_by_gid(ext_hash[:12]):
-        await task.listener.on_download_error(err, button)
+        await task.listener.on_download_error(err, button, is_limit)
     await TorrentManager.qbittorrent.torrents.stop([ext_hash])
     await sleep(0.3)
     await _remove_torrent(ext_hash, tor.tags[0])
@@ -68,7 +68,7 @@ async def _size_check(tor):
         task.listener.size = tor.size
         mmsg = await limit_checker(task.listener)
         if mmsg:
-            await _on_download_error(mmsg, tor)
+            await _on_download_error(mmsg, tor, is_limit=True)
 
 
 @new_task

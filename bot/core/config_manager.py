@@ -35,6 +35,7 @@ class Config:
     MEGA_PASSWORD = ""
     MEGA_LIMIT = 0
     TORRENT_LIMIT = 0
+    GDRIVE_LIMIT = 0
     LEECH_DUMP_CHAT = ""
     CLEAN_LOG_MSG = False
     LEECH_PREFIX = ""

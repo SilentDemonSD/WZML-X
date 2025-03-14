@@ -447,13 +447,13 @@ class TaskListener(TaskConfig):
 
         await start_from_queued()
 
-    async def on_download_error(self, error, button=None):
+    async def on_download_error(self, error, button=None, is_limit=False):
         async with task_dict_lock:
             if self.mid in task_dict:
                 del task_dict[self.mid]
             count = len(task_dict)
         await self.remove_from_same_dir()
-        msg = f"{self.tag} Download: {escape(str(error))}"
+        msg = f"〶 <b><i><u>Limit Breached:</u></i></b>a\n│\n┟ <b>Task Size</b> → {get_readable_file_size(self.size)}\n{error}" if is_limit else f"{self.tag} Download: {escape(str(error))}"
         await send_message(self.message, msg, button)
         if count == 0:
             await self.clean()

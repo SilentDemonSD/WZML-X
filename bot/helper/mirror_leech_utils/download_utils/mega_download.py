@@ -3,7 +3,7 @@ from aiofiles.os import makedirs
 
 from mega import MegaApi
 
-from .... import LOGGER, task_dict, task_dict_lock, non_queued_dl, queue_dict_lock
+from .... import LOGGER, task_dict, task_dict_lock
 from ....core.config_manager import Config
 from ...ext_utils.links_utils import get_mega_link_type
 from ...ext_utils.bot_utils import sync_to_async
@@ -49,61 +49,48 @@ async def add_mega_download(listener, path):
         node = await sync_to_async(folder_api.authorizeNode, mega_listener.node)
 
     if mega_listener.error:
-        mmsg = await send_message(listener.message, str(mega_listener.error))
+        await listener.on_download_error(mega_listener.error)
         await async_api.logout()
-        await delete_links(listener.message)
-        await auto_delete_message(listener.message, mmsg)
         return
 
-    listener.name = (
-        listener.name or node.getName()
-    )
-    (msg, button) = await stop_duplicate_check(listener)
+    listener.name = listener.name or node.getName()
+    gid = token_hex(5)
+    
+    msg, button = await stop_duplicate_check(listener)
     if msg:
-        mmsg = await send_message(listener.message, msg, button)
+        await listener.on_download_error(msg, button)
         await async_api.logout()
-        await delete_links(listener.message)
-        await auto_delete_message(listener.message, mmsg)
         return
 
     listener.size = await sync_to_async(api.getSize, node)
     if limit_exceeded := await limit_checker(listener):
-        mmsg = await send_message(listener.message, limit_exceeded)
+        await listener.on_download_error(limit_exceeded, is_limit=True)
         await async_api.logout()
-        await delete_links(listener.message)
-        await auto_delete_message(listener.message, mmsg)
         return
 
-    gid = token_hex(5)
-    listener.size = await sync_to_async(api.getSize, node)
-    (added_to_queue, event) = await check_running_tasks(listener)
+    added_to_queue, event = await check_running_tasks(listener)
     if added_to_queue:
         LOGGER.info(f"Added to Queue/Download: {listener.name}")
         async with task_dict_lock:
             task_dict[listener.mid] = QueueStatus(listener, gid, "Dl")
         await listener.on_download_start()
-        await send_status_message(listener.message)
+        if listener.multi <= 1:
+            await send_status_message(listener.message)
         await event.wait()
-        async with task_dict_lock:
-            if listener.mid not in task_dict:
-                await async_api.logout()
-                return
-        from_queue = True
-        LOGGER.info(f"Start Queued Download from Mega: {listener.name}")
-    else:
-        from_queue = False
+        if listener.is_cancelled:
+            await async_api.logout()
+            return
 
     async with task_dict_lock:
         task_dict[listener.mid] = MegaDownloadStatus(listener, mega_listener, gid, "dl")
-    async with queue_dict_lock:
-        non_queued_dl.add(listener.mid)
 
-    if from_queue:
+    if added_to_queue:
         LOGGER.info(f"Start Queued Download from Mega: {listener.name}")
     else:
-        await listener.on_download_start()
-        await send_status_message(listener.message)
         LOGGER.info(f"Download from Mega: {listener.name}")
+        await listener.on_download_start()
+        if listener.multi <= 1:
+            await send_status_message(listener.message)
 
     await makedirs(path, exist_ok=True)
     await async_api.startDownload(node, path, listener.name, None, False, None, 3, 2, False)
