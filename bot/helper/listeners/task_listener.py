@@ -337,7 +337,7 @@ class TaskListener(TaskConfig):
             await database.rm_complete_task(self.message.link)
         msg = (
             f"<b><i>{escape(self.name)}</i></b>\n│"
-            f"\n┟ <b>Size</b> → {get_readable_file_size(self.size)}"
+            f"\n┟ <b>Task Size</b> → {get_readable_file_size(self.size)}"
             f"\n┠ <b>Time Taken</b> → {get_readable_time(time() - self.message.date.timestamp())}"
             f"\n┠ <b>In Mode</b> → {self.mode[0]}"
             f"\n┠ <b>Out Mode</b> → {self.mode[1]}"
@@ -347,7 +347,7 @@ class TaskListener(TaskConfig):
             msg += f"\n┠ <b>Total Files</b> → {folders}"
             if mime_type != 0:
                 msg += f"\n┠ <b>Corrupted Files</b> → {mime_type}"
-            msg += f"\n┖ <b>By</b> → {self.tag}\n\n"
+            msg += f"\n┖ <b>Task By</b> → {self.tag}\n\n"
 
             if self.bot_pm:
                 pmsg = msg
@@ -418,7 +418,7 @@ class TaskListener(TaskConfig):
             else:
                 msg += f"\n┃\n┠ Path: <code>{rclone_path}</code>"
                 button = None
-            msg += f"\n┃\n┖ <b>By</b> → {self.tag}"
+            msg += f"\n┃\n┖ <b>Task By</b> → {self.tag}"
             await send_message(self.message, msg, button)
         if self.seed:
             await clean_target(self.up_dir)
@@ -453,7 +453,20 @@ class TaskListener(TaskConfig):
                 del task_dict[self.mid]
             count = len(task_dict)
         await self.remove_from_same_dir()
-        msg = f"〶 <b><i><u>Limit Breached:</u></i></b>a\n│\n┟ <b>Task Size</b> → {get_readable_file_size(self.size)}\n{error}" if is_limit else f"{self.tag} Download: {escape(str(error))}"
+        msg = f"""〶 <b><i><u>Limit Breached:</u></i></b>
+│
+┟ <b>Task Size</b> → {get_readable_file_size(self.size)}
+┠ <b>In Mode</b> → {self.mode[0]}
+┠ <b>Out Mode</b> → {self.mode[1]}
+{error}""" if is_limit else f"""<i><b>〶 Download Stopped!</b></i>
+│
+┟ <b>Due To</b> → {escape(str(error))}
+┠ <b>Task Size</b> → {get_readable_file_size(self.size)}
+┠ <b>Time Taken</b> → {get_readable_time(time() - self.message.date.timestamp())}
+┠ <b>In Mode</b> → {self.mode[0]}
+┠ <b>Out Mode</b> → {self.mode[1]}
+┖ <b>Task By</b> → {self.tag}"""
+
         await send_message(self.message, msg, button)
         if count == 0:
             await self.clean()

@@ -162,7 +162,7 @@ async def start_from_queued():
                     await start_dl_from_queued(mid)
 
 
-async def limit_checker(listener, is_ytplaylist=False):
+async def limit_checker(listener, is_ytplaylist=0):
     LOGGER.info('Checking Size Limit...')
     if await CustomFilters.sudo('', listener.message):
         LOGGER.info('SUDO User. Skipping Size Limit...')
@@ -170,11 +170,11 @@ async def limit_checker(listener, is_ytplaylist=False):
     
     user_id, size = listener.user_id, listener.size
     limits = [
-        (listener.is_clone, 'CLONE_LIMIT', 'Clone'),
+        (listener.is_torrent or listener.is_qbit, 'TORRENT_LIMIT', 'Torrent'),
         (listener.is_mega, 'MEGA_LIMIT', 'Mega'),
         (listener.is_gdrive, 'GDRIVE_LIMIT', 'GDrive'),
+        (listener.is_clone, 'CLONE_LIMIT', 'Clone'),
         (listener.is_ytdlp and not is_ytplaylist, 'YTDLP_LIMIT', 'yt-dlp'),
-        (listener.is_torrent or listener.is_qbit, 'TORRENT_LIMIT', 'Torrent'),
         (True, 'DIRECT_LIMIT', 'Direct')
     ]
     
