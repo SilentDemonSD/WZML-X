@@ -342,7 +342,6 @@ class Mirror(TaskListener):
                 else self.message.link
             )
         )
-        self.is_mega = is_mega_link(self.link) if self.source_url else False
         self._set_mode_engine()
 
         if (

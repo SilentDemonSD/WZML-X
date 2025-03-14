@@ -5,7 +5,7 @@ from .... import (
     task_dict,
     task_dict_lock,
 )
-from ...ext_utils.task_manager import check_running_tasks, stop_duplicate_check
+from ...ext_utils.task_manager import check_running_tasks, stop_duplicate_check, limit_checker
 from ...listeners.direct_listener import DirectListener
 from ...mirror_leech_utils.status_utils.direct_status import DirectStatus
 from ...mirror_leech_utils.status_utils.queue_status import QueueStatus
@@ -26,6 +26,10 @@ async def add_direct_download(listener, path):
     msg, button = await stop_duplicate_check(listener)
     if msg:
         await listener.on_download_error(msg, button)
+        return
+    
+    if limit_exceeded := await limit_checker(listener):
+        await listener.on_download_error(limit_exceeded, is_limit=True)
         return
 
     gid = token_hex(5)

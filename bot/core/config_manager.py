@@ -35,8 +35,12 @@ class Config:
     MEGA_PASSWORD = ""
     MEGA_LIMIT = 0
     TORRENT_LIMIT = 0
-    GDRIVE_LIMIT = 0
+    GD_DL_LIMIT = 0
+    RC_DL_LIMIT = 0
     CLONE_LIMIT = 0
+    JD_LIMIT = 0
+    YTDLP_LIMIT = 0
+    PLAYLIST_LIMIT = 0
     LEECH_DUMP_CHAT = ""
     CLEAN_LOG_MSG = False
     LEECH_PREFIX = ""

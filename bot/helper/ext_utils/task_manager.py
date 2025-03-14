@@ -162,7 +162,7 @@ async def start_from_queued():
                     await start_dl_from_queued(mid)
 
 
-async def limit_checker(listener, is_ytplaylist=0):
+async def limit_checker(listener, yt_playlist=0):
     LOGGER.info('Checking Size Limit...')
     if await CustomFilters.sudo('', listener.message):
         LOGGER.info('SUDO User. Skipping Size Limit...')
@@ -172,30 +172,34 @@ async def limit_checker(listener, is_ytplaylist=0):
     limits = [
         (listener.is_torrent or listener.is_qbit, 'TORRENT_LIMIT', 'Torrent'),
         (listener.is_mega, 'MEGA_LIMIT', 'Mega'),
-        (listener.is_gdrive, 'GDRIVE_LIMIT', 'GDrive'),
+        (listener.is_gdrive, 'GD_DL_LIMIT', 'GDriveDL'),
         (listener.is_clone, 'CLONE_LIMIT', 'Clone'),
-        (listener.is_ytdlp and not is_ytplaylist, 'YTDLP_LIMIT', 'yt-dlp'),
+        (listener.is_jd, "JD_LIMIT", "JDownloader"),
+        (listener.is_rclone, "RC_DL_LIMIT", "RCloneDL")
+        (listener.is_ytdlp, 'YTDLP_LIMIT', 'YT-DLP'),
+        (bool(yt_playlist), "PLAYLIST_LIMIT", "Playlist"),
         (True, 'DIRECT_LIMIT', 'Direct')
     ]
     
-    limit_exceeded = ''
+    limit_exceeded = ""
     for condition, attr, name in limits:
         if condition and (limit := getattr(Config, attr, 0)):
-            byte_limit = limit * 1024**3
-            if size >= byte_limit:
-                limit_exceeded = f"┠ <b>{name} Limit</b> → {get_readable_file_size(byte_limit)}\n┖ <b>Task By</b> → {listener.tag}"
-                LOGGER.info(f"{name} Limit Breached: {listener.name} & Size: {get_readable_file_size(size)}")
+            if attr == "PLAYLIST_LIMIT":
+                if yt_playlist >= limit:
+                    limit_exceeded = f"┠ <b>{name} Limit Count</b> → {limit}\n┖ <b>Task By</b> → {listener.tag}"
+            else:
+                byte_limit = limit * 1024**3
+                if size >= byte_limit:
+                    limit_exceeded = f"┠ <b>{name} Limit</b> → {get_readable_file_size(byte_limit)}\n┖ <b>Task By</b> → {listener.tag}"
+                    
+            LOGGER.info(f"{name} Limit Breached: {listener.name} & Size: {get_readable_file_size(size)}")
             break
     
-    if listener.is_ytdlp and is_ytplaylist and (play_limit := getattr(Config, 'PLAYLIST_LIMIT', 0)) and is_ytplaylist > play_limit:
-        limit_exceeded = f'YT Playlist limit is {play_limit}'
+    return limit_exceeded
     
-    if limit_exceeded: # Refactor
-        if size:
-            return limit_exceeded
-        elif is_ytplaylist != 0:
-            return f"{limit_exceeded}.\nYT-Playlist exceeded limit has {is_ytplaylist} files."
-    
+"""
+class UsageChecks: # TODO: Dynamic Check for All Task
+"""
 
 async def user_interval_check(user_id):
     bot_cache.setdefault("time_interval", {})
