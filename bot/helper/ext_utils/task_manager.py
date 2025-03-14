@@ -214,7 +214,8 @@ async def limit_checker(listener, yt_playlist=0):
             if not await check_storage_threshold(size, limit, any([listener.compress, listener.extract])):
                 limit_exceeded = f"┠ <b>Threshold Storage Limit</b> → {get_readable_file_size(limit)}"
     
-    return limit_exceeded + f"\n┖ <b>Task By</b> → {listener.tag}"
+    if limit_exceeded:
+        return limit_exceeded + f"\n┖ <b>Task By</b> → {listener.tag}"
     
 """
 class UsageChecks: # TODO: Dynamic Check for All Task
