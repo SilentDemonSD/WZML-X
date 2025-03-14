@@ -167,15 +167,15 @@ async def get_stats(event, key="home"):
 ┠ <b>Leech Limit :</b> {Config.LEECH_LIMIT or "∞"} GB
 ┠ <b>Archive Limit :</b> {Config.ARCHIVE_LIMIT or "∞"} GB
 ┠ <b>Extract Limit :</b> {Config.EXTRACT_LIMIT or "∞"} GB
-┖ <b>Storage Limit :</b> {Config.STORAGE_LIMIT or "∞"} GB
-
-┎ <b>Token Validity :</b> {Config.VERIFY_TIMEOUT or "Disabled"}
+┞ <b>Storage Limit :</b> {Config.STORAGE_LIMIT or "∞"} GB
+│
+┟ <b>Token Validity :</b> {Config.VERIFY_TIMEOUT or "Disabled"}
 ┠ <b>User Time Limit :</b> {Config.USER_TIME_INTERVAL or "0"}s / task
 ┠ <b>User Max Tasks :</b> {Config.USER_MAX_TASKS or "∞"}
 ┖ <b>Bot Max Tasks :</b> {Config.BOT_MAX_TASKS or "∞"}
     """
 
-    btns.data_button("Close", f"stats {user_id} close")
+    btns.data_button("Close", f"stats {user_id} close", "footer")
     return msg, btns.build_menu(2)
 
 
