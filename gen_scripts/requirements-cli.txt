@@ -5,3 +5,4 @@ progressbar2
 httplib2shim
 google_auth_oauthlib
 pyrofork==2.2.11
+tgcrypto
