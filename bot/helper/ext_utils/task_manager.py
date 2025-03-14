@@ -172,18 +172,18 @@ async def limit_checker(listener, is_ytplaylist=False):
     size = listener.size
     LOGGER.info(listener.is_mega)
     LOGGER.info(listener.is_torrent or listener.is_qbit)
-    limits = {
-        listener.is_clone: ('CLONE_LIMIT', 'Clone'),
-        listener.is_mega: ('MEGA_LIMIT', 'Mega'),
-        listener.is_gdrive: ('GDRIVE_LIMIT', 'GDrive'),
-        listener.is_ytdlp: ('YTDLP_LIMIT', 'yt-dlp'),
-        bool(listener.is_torrent or listener.is_qbit): ('TORRENT_LIMIT', 'Torrent'),
-        True: ('DIRECT_LIMIT', 'Direct')
-    }
+    limits = [
+        (listener.is_clone, 'CLONE_LIMIT', 'Clone'),
+        (listener.is_mega, 'MEGA_LIMIT', 'Mega'),
+        (listener.is_gdrive, 'GDRIVE_LIMIT', 'GDrive'),
+        (listener.is_ytdlp, 'YTDLP_LIMIT', 'yt-dlp'),
+        (bool(listener.is_torrent or listener.is_qbit), 'TORRENT_LIMIT', 'Torrent'),
+        (True, 'DIRECT_LIMIT', 'Direct')
+    ]
     
     LOGGER.info('DEBUG: Start Limit Check')
     limit_exceeded = ''
-    for condition, (attr, name) in limits.items():
+    for condition, attr, name in limits.items():
         LOGGER.info(f'DEBUG: Limit Check Loop : {attr}')
         if condition and (limit := getattr(Config, attr, 0)):
             LOGGER.info(f'DEBUG: Limit Check Loop Checks : {attr}')
