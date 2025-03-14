@@ -1,0 +1,45 @@
+name: Format Code via Ruff
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to format'
+        required: true
+        default: 'wzv3'
+        type: string
+
+jobs:
+  code-format:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Repo
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.inputs.branch }}
+
+    - name: Set up Python3
+      uses: actions/setup-python@v4
+
+    - name: Install ruff Linter
+      run: pip install ruff
+
+    - name: Run ruff to format code
+      run: |
+        ruff check . --exit-zero
+        ruff format .
+        git add -u
+
+    - name: Commit and Push Changes
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        if git diff-index --quiet HEAD --; then
+          echo "No changes to commit."
+        else
+          git commit -m "style: Auto Ruff Formatter"
+          git push origin ${{ github.ref }}
+        fi

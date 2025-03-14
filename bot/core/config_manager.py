@@ -41,6 +41,10 @@ class Config:
     JD_LIMIT = 0
     YTDLP_LIMIT = 0
     PLAYLIST_LIMIT = 0
+    LEECH_LIMIT = 0
+    EXTRACT_LIMIT = 0
+    ARCHIVE_LIMIT = 0
+    STORAGE_LIMIT = 0
     LEECH_DUMP_CHAT = ""
     CLEAN_LOG_MSG = False
     LEECH_PREFIX = ""
