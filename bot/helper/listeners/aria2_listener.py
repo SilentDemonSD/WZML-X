@@ -21,10 +21,10 @@ from ..telegram_helper.message_utils import (
 
 async def _on_download_started(api, data):
     gid = data["params"][0]["gid"]
-    download = await api.tellStatus(gid)
-    options = await api.getOption(gid)
-    if options.get("follow-torrent", "") == "false":
-        return
+    with suppress(TimeoutError, ClientError, Exception):
+        download, options = await api.tellStatus(gid), await api.getOption(gid)
+        if options.get("follow-torrent", "") == "false":
+            return
     if is_metadata(download):
         LOGGER.info(f"onDownloadStarted: {gid} METADATA")
         await sleep(1)
@@ -174,12 +174,11 @@ async def _on_download_error(api, data):
     LOGGER.info(f"onDownloadError: {gid}")
     error = "None"
     with suppress(TimeoutError, ClientError, Exception):
-        download = await api.tellStatus(gid)
-        options = await api.getOption(gid)
+        download, options = await api.tellStatus(gid), await api.getOption(gid)
         error = download.get("errorMessage", "")
         LOGGER.info(f"Download Error: {error}")
-    if options.get("follow-torrent", "") == "false":
-        return
+        if options.get("follow-torrent", "") == "false":
+            return
     if task := await get_task_by_gid(gid):
         await task.listener.on_download_error(error)
 
