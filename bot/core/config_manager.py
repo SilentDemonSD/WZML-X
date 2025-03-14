@@ -33,12 +33,14 @@ class Config:
     JD_PASS = ""
     MEGA_EMAIL = ""
     MEGA_PASSWORD = ""
+    DIRECT_LIMIT = 0
     MEGA_LIMIT = 0
     TORRENT_LIMIT = 0
     GD_DL_LIMIT = 0
     RC_DL_LIMIT = 0
     CLONE_LIMIT = 0
     JD_LIMIT = 0
+    NZB_LIMIT = 0
     YTDLP_LIMIT = 0
     PLAYLIST_LIMIT = 0
     LEECH_LIMIT = 0

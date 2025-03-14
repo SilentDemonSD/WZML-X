@@ -25,11 +25,11 @@ async def _remove_job(nzo_id, mid):
 
 
 @new_task
-async def _on_download_error(err, nzo_id, button=None):
+async def _on_download_error(err, nzo_id, button=None, is_limit=False):
     if task := await get_task_by_gid(nzo_id):
         LOGGER.info(f"Cancelling Download: {task.name()}")
         await gather(
-            task.listener.on_download_error(err, button),
+            task.listener.on_download_error(err, button, is_limit),
             _remove_job(nzo_id, task.listener.mid),
         )
 
@@ -41,7 +41,17 @@ async def _stop_duplicate(nzo_id):
         task.listener.name = task.name()
         msg, button = await stop_duplicate_check(task.listener)
         if msg:
-            _on_download_error(msg, nzo_id, button)
+            await _on_download_error(msg, nzo_id, button)
+
+
+@new_task
+async def _size_check(nzo_id):
+    if task := await get_task_by_gid(nzo_id):
+        await task.update()
+        task.listener.size = task.size()
+        mmsg = await limit_checker(task.listener)
+        if mmsg:
+            await _on_download_error(msg, nzo_id, is_limit=True)
 
 
 @new_task
@@ -83,11 +93,14 @@ async def _nzb_listener():
                         continue
                     if (
                         dl["status"] == "Downloading"
-                        and not nzb_jobs[nzo_id]["stop_dup_check"]
                         and not dl["filename"].startswith("Trying")
                     ):
-                        nzb_jobs[nzo_id]["stop_dup_check"] = True
-                        await _stop_duplicate(nzo_id)
+                        if not nzb_jobs[nzo_id]["stop_dup_check"]:
+                            nzb_jobs[nzo_id]["stop_dup_check"] = True
+                            await _stop_duplicate(nzo_id)
+                        if not nzb_jobs[nzo_id]["size_check"]:
+                            nzb_jobs[nzo_id]["size_check"] = True
+                            await _size_check(nzo_id)
             except Exception as e:
                 LOGGER.error(str(e))
         await sleep(3)
@@ -98,6 +111,7 @@ async def on_download_start(nzo_id):
         nzb_jobs[nzo_id] = {
             "uploaded": False,
             "stop_dup_check": False,
+            "size_check": False,
             "status": "Downloading",
         }
         if not intervals["nzb"]:
