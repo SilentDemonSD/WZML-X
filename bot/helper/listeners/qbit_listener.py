@@ -63,6 +63,16 @@ async def _stop_duplicate(tor):
 
 
 @new_task
+async def _size_check(tor):
+    if task := await get_task_by_gid(tor.hash[:12]):
+        task.listener.size = tor.size
+        mmsg = await limit_checker(task.listener)
+        if mmsg:
+            LOGGER.info(f"qBit Limit Breached: {task.listener.name} | {get_readable_file_size(task.listener.size)}")
+            await _on_download_error(mmsg, tor)
+
+
+@new_task
 async def _on_download_complete(tor):
     ext_hash = tor.hash
     tag = tor.tags[0]
@@ -138,6 +148,9 @@ async def _qb_listener():
                         if not qb_torrents[tag]["stop_dup_check"]:
                             qb_torrents[tag]["stop_dup_check"] = True
                             await _stop_duplicate(tor_info)
+                        if not qb_torrents[tag]["size_check"]:
+                            qb_torrents[tag]["size_check"] = True
+                            await _size_check(tor_info)
                     elif state == "stalledDL":
                         if (
                             not qb_torrents[tag]["rechecked"]
@@ -195,6 +208,7 @@ async def on_download_start(tag):
             "start_time": time(),
             "stalled_time": time(),
             "stop_dup_check": False,
+            "size_check": False,
             "rechecked": False,
             "uploaded": False,
             "seeding": False,

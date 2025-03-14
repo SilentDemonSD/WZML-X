@@ -168,7 +168,7 @@ async def limit_checker(listener, is_ytplaylist=False):
         LOGGER.info('SUDO User. Skipping Size Limit...')
         return
     
-    user_id, size = listener.message.from_user.id, listener.size
+    user_id, size = listener.user_id, listener.size
     limits = [
         (listener.is_clone, 'CLONE_LIMIT', 'Clone'),
         (listener.is_mega, 'MEGA_LIMIT', 'Mega'),
