@@ -168,28 +168,22 @@ async def limit_checker(listener, is_ytplaylist=False):
         LOGGER.info('SUDO User. Skipping Size Limit...')
         return
     
-    user_id = listener.message.from_user.id
-    size = listener.size
-    LOGGER.info(listener.is_mega)
-    LOGGER.info(listener.is_torrent or listener.is_qbit)
+    user_id, size = listener.message.from_user.id, listener.size
     limits = [
         (listener.is_clone, 'CLONE_LIMIT', 'Clone'),
         (listener.is_mega, 'MEGA_LIMIT', 'Mega'),
         (listener.is_gdrive, 'GDRIVE_LIMIT', 'GDrive'),
-        (listener.is_ytdlp, 'YTDLP_LIMIT', 'yt-dlp'),
-        (bool(listener.is_torrent or listener.is_qbit), 'TORRENT_LIMIT', 'Torrent'),
+        (listener.is_ytdlp and not is_ytplaylist, 'YTDLP_LIMIT', 'yt-dlp'),
+        (listener.is_torrent or listener.is_qbit, 'TORRENT_LIMIT', 'Torrent'),
         (True, 'DIRECT_LIMIT', 'Direct')
     ]
     
-    LOGGER.info('DEBUG: Start Limit Check')
     limit_exceeded = ''
     for condition, attr, name in limits:
-        LOGGER.info(f'DEBUG: Limit Check Loop : {attr}')
         if condition and (limit := getattr(Config, attr, 0)):
-            LOGGER.info(f'DEBUG: Limit Check Loop Checks : {attr}')
             byte_limit = limit * 1024**3
             if size >= byte_limit:
-                limit_exceeded = f'{name} limit is {get_readable_file_size(byte_limit)}'
+                limit_exceeded = f"┠ <b>{name} Limit</b> → {get_readable_file_size(byte_limit)}\n┖ <b>Task By</b> → {listener.tag}"
             break
     
     if listener.is_ytdlp and is_ytplaylist and (play_limit := getattr(Config, 'PLAYLIST_LIMIT', 0)) and is_ytplaylist > play_limit:
@@ -197,10 +191,9 @@ async def limit_checker(listener, is_ytplaylist=False):
     
     if limit_exceeded:
         if size:
-            return f"{limit_exceeded}.\nLink/File/Folder exceeded size is {get_readable_file_size(size)}."
+            return f"〶 <b><i><u>Limit Breached:</u></i></b>a\n│\n┟ <b>Task Size</b> → {get_readable_file_size(size)}\n{limit_exceeded}"
         elif is_ytplaylist != 0:
             return f"{limit_exceeded}.\nYT-Playlist exceeded limit has {is_ytplaylist} files."
-    LOGGER.info('DEBUG: End Limit Check')
     
 
 async def user_interval_check(user_id):
