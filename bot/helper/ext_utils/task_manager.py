@@ -170,6 +170,8 @@ async def limit_checker(listener, is_ytplaylist=False):
     
     user_id = listener.message.from_user.id
     size = listener.size
+    LOGGER.info(size)
+    LOGGER.info(user_id)
     limits = {
         listener.is_clone: ('CLONE_LIMIT', 'Clone'),
         listener.is_mega: ('MEGA_LIMIT', 'Mega'),
@@ -179,9 +181,12 @@ async def limit_checker(listener, is_ytplaylist=False):
         True: ('DIRECT_LIMIT', 'Direct')
     }
     
+    LOGGER.info('DEBUG: Start Limit Check')
     limit_exceeded = ''
     for condition, (attr, name) in limits.items():
+        LOGGER.info(f'DEBUG: Limit Check Loop : {attr}')
         if condition and (limit := getattr(Config, attr, 0)):
+            LOGGER.info(f'DEBUG: Limit Check Loop Checks : {attr}')
             byte_limit = limit * 1024**3
             if size >= byte_limit:
                 limit_exceeded = f'{name} limit is {get_readable_file_size(byte_limit)}'
@@ -195,7 +200,8 @@ async def limit_checker(listener, is_ytplaylist=False):
             return f"{limit_exceeded}.\nLink/File/Folder exceeded size is {get_readable_file_size(size)}."
         elif is_ytplaylist != 0:
             return f"{limit_exceeded}.\nYT-Playlist exceeded limit has {is_ytplaylist} files."
-
+    LOGGER.info('DEBUG: End Limit Check')
+    
 
 async def user_interval_check(user_id):
     bot_cache.setdefault("time_interval", {})

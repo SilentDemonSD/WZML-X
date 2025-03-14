@@ -61,8 +61,7 @@ async def _on_download_started(api, data):
 async def _on_download_complete(api, data):
     try:
         gid = data["params"][0]["gid"]
-        download = await api.tellStatus(gid)
-        options = await api.getOption(gid)
+        download, options = await api.tellStatus(gid), await api.getOption(gid)
     except (TimeoutError, ClientError, Exception) as e:
         LOGGER.error(f"onDownloadComplete: {e}")
         return
