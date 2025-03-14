@@ -249,7 +249,10 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
             if tstatus == MirrorStatus.STATUS_DOWNLOAD and (
                 task.listener.is_torrent or task.listener.is_qbit
             ):
-                msg += f"\n┠ <b>Seeders</b> → {task.seeders_num()} | <b>Leechers</b> → {task.leechers_num()}"
+                try:
+                    msg += f"\n┠ <b>Seeders</b> → {task.seeders_num()} | <b>Leechers</b> → {task.leechers_num()}"
+                except Exception:
+                    pass
             # TODO: Add Connected Peers
         elif tstatus == MirrorStatus.STATUS_SEED:
             msg += f"\n┠ <b>Size</b> → <i>{task.size()}</i> | <b>Uploaded</b>  → <i>{task.uploaded_bytes()}</i>"

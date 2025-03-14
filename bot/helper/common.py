@@ -39,6 +39,7 @@ from .ext_utils.links_utils import (
     is_gdrive_link,
     is_rclone_path,
     is_telegram_link,
+    is_mega_link,
 )
 from .ext_utils.media_utils import (
     FFMpeg,
