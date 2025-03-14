@@ -162,9 +162,10 @@ async def start_from_queued():
                     await start_dl_from_queued(mid)
 
 
-async def limit_checker(listener, is_ytplaylist=None):
+async def limit_checker(listener, is_ytplaylist=False):
     LOGGER.info('Checking Size Limit...')
     if await CustomFilters.sudo('', listener.message):
+        LOGGER.info('SUDO User. Skipping Size Limit...')
         return
     
     user_id = listener.message.from_user.id
@@ -182,7 +183,7 @@ async def limit_checker(listener, is_ytplaylist=None):
     for condition, (attr, name) in limits.items():
         if condition and (limit := getattr(Config, attr, 0)):
             byte_limit = limit * 1024**3
-            if size > byte_limit:
+            if size >= byte_limit:
                 limit_exceeded = f'{name} limit is {get_readable_file_size(byte_limit)}'
             break
     
