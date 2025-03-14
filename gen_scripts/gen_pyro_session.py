@@ -3,15 +3,6 @@ try:
 except Exception:
     print("\nInstall Pyrogram and try again: pip3 install -r requirements.txt --break-system-packages")
     exit(1)
-    
-print(
-"  ____                    ____                _              "
-" |  _ \\ _   _ _ __ ___   / ___|  ___  ___ ___(_) ___  _ __   "
-" | |_) | | | | '__/ _ \\  \\___ \\ / _ \\/ __/ __| |/ _ \\| '_ \\  "
-" |  __/| |_| | | | (_) |  ___) |  __/\\__ \\__ \\ | (_) | | | | "
-" |_|    \\__, |_|  \\___/  |____/ \\___||___/___/_|\\___/|_| |_| "
-"        |___/                                                "
-    )
 
 print("Get your app credentials from https://my.telegram.org/apps and enter them below.")
 
