@@ -167,7 +167,7 @@ async def get_stats(event, key="home"):
 ┠ <b>Leech Limit :</b> {Config.LEECH_LIMIT or "∞"} GB
 ┠ <b>Archive Limit :</b> {Config.ARCHIVE_LIMIT or "∞"} GB
 ┠ <b>Extract Limit :</b> {Config.EXTRACT_LIMIT or "∞"} GB
-┞ <b>Storage Limit :</b> {Config.STORAGE_LIMIT or "∞"} GB
+┞ <b>Threshold Storage :</b> {Config.STORAGE_LIMIT or "∞"} GB
 │
 ┟ <b>Token Validity :</b> {Config.VERIFY_TIMEOUT or "Disabled"}
 ┠ <b>User Time Limit :</b> {Config.USER_TIME_INTERVAL or "0"}s / task
