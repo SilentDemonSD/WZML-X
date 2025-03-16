@@ -51,7 +51,7 @@ async def _size_check(nzo_id):
         task.listener.size = get_raw_file_size(task.size())
         mmsg = await limit_checker(task.listener)
         if mmsg:
-            await _on_download_error(msg, nzo_id, is_limit=True)
+            await _on_download_error(mmsg, nzo_id, is_limit=True)
 
 
 @new_task
