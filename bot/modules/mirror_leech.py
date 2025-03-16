@@ -370,6 +370,8 @@ class Mirror(TaskListener):
                     await self.remove_from_same_dir()
                     await delete_links(self.message)
                     return
+                
+        await delete_links(self.message)
 
         if file_ is not None:
             await TelegramDownloadHelper(self).add_download(
@@ -398,7 +400,6 @@ class Mirror(TaskListener):
                     f" authorization: Basic {b64encode(auth.encode()).decode('ascii')}"
                 )
             await add_aria2_download(self, path, headers, ratio, seed_time)
-        await delete_links(self.message)
 
 
 async def mirror(client, message):

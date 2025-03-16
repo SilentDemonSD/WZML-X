@@ -136,9 +136,9 @@ class Clone(TaskListener):
             return
 
         self._set_mode_engine()
+        await delete_links(self.message)
 
         await self._proceed_to_clone(sync)
-        await delete_links(self.message)
 
     async def _proceed_to_clone(self, sync):
         if is_share_link(self.link):
