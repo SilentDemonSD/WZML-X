@@ -19,7 +19,6 @@ from ..telegram_helper.button_build import ButtonMaker
 
 SIZE_UNITS = ["B", "KB", "MB", "GB", "TB", "PB"]
 
-
 class MirrorStatus:
     STATUS_UPLOAD = "Upload"
     STATUS_DOWNLOAD = "Download"
@@ -116,6 +115,11 @@ async def get_all_tasks(req_status: str, user_id):
     async with task_dict_lock:
         return await get_specific_tasks(req_status, user_id)
 
+
+def get_raw_file_size(size):
+    num, unit = size.split()
+    return int(float(num) * (1024 ** SIZE_UNITS.index(unit)))
+    
 
 def get_readable_file_size(size_in_bytes):
     if not size_in_bytes:

@@ -8,7 +8,7 @@ from ... import (
     LOGGER,
 )
 from ..ext_utils.bot_utils import new_task
-from ..ext_utils.status_utils import get_task_by_gid
+from ..ext_utils.status_utils import get_task_by_gid, get_raw_file_size
 from ..ext_utils.task_manager import stop_duplicate_check, limit_checker
 
 
@@ -48,7 +48,7 @@ async def _stop_duplicate(nzo_id):
 async def _size_check(nzo_id):
     if task := await get_task_by_gid(nzo_id):
         await task.update()
-        task.listener.size = int((task.size().split())[0])
+        task.listener.size = get_raw_file_size(task.size())
         mmsg = await limit_checker(task.listener)
         if mmsg:
             await _on_download_error(msg, nzo_id, is_limit=True)
