@@ -48,7 +48,7 @@ async def _stop_duplicate(nzo_id):
 async def _size_check(nzo_id):
     if task := await get_task_by_gid(nzo_id):
         await task.update()
-        task.listener.size = int(task.size())
+        task.listener.size = int((task.size().split())[0])
         mmsg = await limit_checker(task.listener)
         if mmsg:
             await _on_download_error(msg, nzo_id, is_limit=True)
