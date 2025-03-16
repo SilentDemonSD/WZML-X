@@ -246,6 +246,7 @@ class Mirror(TaskListener):
             except Exception as e:
                 await send_message(self.message, f"ERROR: {e}")
                 await self.remove_from_same_dir()
+                await delete_links(self.message)
                 return
 
         if isinstance(reply_to, list):
@@ -333,15 +334,6 @@ class Mirror(TaskListener):
             await delete_links(self.message)
             return
 
-        self.source_url = (
-            self.link
-            if len(self.link) > 0 and self.link.startswith("http")
-            else (
-                f"https://t.me/share/url?url={self.link}"
-                if self.link
-                else self.message.link
-            )
-        )
         self._set_mode_engine()
 
         if (
@@ -376,6 +368,7 @@ class Mirror(TaskListener):
                 except Exception as e:
                     await send_message(self.message, e)
                     await self.remove_from_same_dir()
+                    await delete_links(self.message)
                     return
 
         if file_ is not None:
