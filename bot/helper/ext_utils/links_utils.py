@@ -27,6 +27,8 @@ def is_mega_link(url: str):
 
 
 def get_mega_link_type(url):
+    if "/file/" in url:
+        return "file"
     return "folder" if "folder" in url or "/#F!" in url else "file"
 
 
