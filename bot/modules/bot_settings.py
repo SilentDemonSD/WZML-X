@@ -329,6 +329,8 @@ async def edit_variable(_, message, pre_message, key):
         aid = value.split()
         for id_ in aid:
             sudo_users.append(int(id_.strip()))
+    elif key == "LOGIN_PASS":
+        value = str(value)
     elif value.isdigit():
         value = int(value)
     elif value.startswith("[") and value.endswith("]"):
