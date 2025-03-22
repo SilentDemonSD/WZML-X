@@ -65,6 +65,7 @@ class Config:
     RCLONE_FLAGS = ""
     RCLONE_PATH = ""
     RCLONE_SERVE_URL = ""
+    SHOW_CLOUD_LINK = True
     RCLONE_SERVE_USER = ""
     RCLONE_SERVE_PASS = ""
     RCLONE_SERVE_PORT = 8080
