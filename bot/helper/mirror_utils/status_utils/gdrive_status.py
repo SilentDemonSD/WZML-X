@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-from bot.helper.ext_utils.bot_utils import EngineStatus, MirrorStatus, get_readable_file_size, get_readable_time
+from bot.helper.ext_utils.bot_utils import (
+    EngineStatus,
+    MirrorStatus,
+    get_readable_file_size,
+    get_readable_time,
+)
 
 
 class GdriveStatus:
@@ -18,9 +23,9 @@ class GdriveStatus:
         return get_readable_file_size(self.__size)
 
     def status(self):
-        if self.__status == 'up':
+        if self.__status == "up":
             return MirrorStatus.STATUS_UPLOADING
-        elif self.__status == 'dl':
+        elif self.__status == "dl":
             return MirrorStatus.STATUS_DOWNLOADING
         else:
             return MirrorStatus.STATUS_CLONING
@@ -34,22 +39,21 @@ class GdriveStatus:
     def progress_raw(self):
         try:
             return self.__obj.processed_bytes / self.__size * 100
-        except:
+        except Exception:
             return 0
 
     def progress(self):
-        return f'{round(self.progress_raw(), 2)}%'
+        return f"{round(self.progress_raw(), 2)}%"
 
     def speed(self):
-        return f'{get_readable_file_size(self.__obj.speed)}/s'
+        return f"{get_readable_file_size(self.__obj.speed)}/s"
 
     def eta(self):
         try:
-            seconds = (self.__size - self.__obj.processed_bytes) / \
-                self.__obj.speed
+            seconds = (self.__size - self.__obj.processed_bytes) / self.__obj.speed
             return get_readable_time(seconds)
-        except:
-            return '-'
+        except Exception:
+            return "-"
 
     def download(self):
         return self.__obj

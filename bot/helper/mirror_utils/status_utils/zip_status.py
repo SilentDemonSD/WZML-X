@@ -2,7 +2,13 @@
 from time import time
 
 from bot import LOGGER
-from bot.helper.ext_utils.bot_utils import EngineStatus, get_readable_file_size, MirrorStatus, get_readable_time, async_to_sync
+from bot.helper.ext_utils.bot_utils import (
+    EngineStatus,
+    get_readable_file_size,
+    MirrorStatus,
+    get_readable_time,
+    async_to_sync,
+)
 from bot.helper.ext_utils.fs_utils import get_path_size
 
 
@@ -26,14 +32,14 @@ class ZipStatus:
     def progress_raw(self):
         try:
             return self.processed_raw() / self.__size * 100
-        except:
+        except Exception:
             return 0
 
     def progress(self):
-        return f'{round(self.progress_raw(), 2)}%'
+        return f"{round(self.progress_raw(), 2)}%"
 
     def speed(self):
-        return f'{get_readable_file_size(self.speed_raw())}/s'
+        return f"{get_readable_file_size(self.speed_raw())}/s"
 
     def name(self):
         return self.__name
@@ -45,8 +51,8 @@ class ZipStatus:
         try:
             seconds = (self.__size - self.processed_raw()) / self.speed_raw()
             return get_readable_time(seconds)
-        except:
-            return '-'
+        except Exception:
+            return "-"
 
     def status(self):
         return MirrorStatus.STATUS_ARCHIVING
@@ -64,13 +70,12 @@ class ZipStatus:
         return self
 
     async def cancel_download(self):
-        LOGGER.info(f'Cancelling Archive: {self.__name}')
+        LOGGER.info(f"Cancelling Archive: {self.__name}")
         if self.__listener.suproc is not None:
             self.__listener.suproc.kill()
         else:
-            self.__listener.suproc = 'cancelled'
-        await self.__listener.onUploadError('archiving stopped by user!')
-
+            self.__listener.suproc = "cancelled"
+        await self.__listener.onUploadError("archiving stopped by user!")
 
     def eng(self):
         return EngineStatus().STATUS_ZIP

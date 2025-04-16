@@ -28,9 +28,9 @@ class RcloneStatus:
         return self.__obj.eta
 
     def status(self):
-        if self.__status == 'dl':
+        if self.__status == "dl":
             return MirrorStatus.STATUS_DOWNLOADING
-        elif self.__status == 'up':
+        elif self.__status == "up":
             return MirrorStatus.STATUS_UPLOADING
         else:
             return MirrorStatus.STATUS_CLONING
@@ -40,7 +40,6 @@ class RcloneStatus:
 
     def download(self):
         return self.__obj
-
 
     def eng(self):
         return EngineStatus().STATUS_RCLONE

@@ -1,4 +1,4 @@
-aiohttp
+aiohttp[speedups]
 aiofiles
 aioshutil
 anytree==2.8.0
@@ -8,6 +8,7 @@ asyncio
 beautifulsoup4
 cinemagoer
 cloudscraper
+cryptography
 dnspython
 feedparser
 flask
@@ -18,6 +19,7 @@ google-auth-oauthlib
 gunicorn
 git+https://github.com/zevtyardt/lk21.git
 httpx
+langcodes[data]
 lxml
 motor
 mutagen
@@ -28,7 +30,7 @@ psutil
 pybase64
 pycountry
 pymongo
-pyrogram==2.0.77
+pyrofork==2.2.11
 python-dotenv
 python-magic
 qbittorrent-api
@@ -37,6 +39,8 @@ speedtest-cli
 telegraph
 tenacity
 tgcrypto
+uv
 uvloop
 xattr
-yt-dlp==2023.3.4
+yt-dlp[default,curl-cffi]
+pytz
