@@ -453,12 +453,15 @@ class TaskListener(TaskConfig):
                 del task_dict[self.mid]
             count = len(task_dict)
         await self.remove_from_same_dir()
-        msg = f"""〶 <b><i><u>Limit Breached:</u></i></b>
+        msg = (
+            f"""〶 <b><i><u>Limit Breached:</u></i></b>
 │
 ┟ <b>Task Size</b> → {get_readable_file_size(self.size)}
 ┠ <b>In Mode</b> → {self.mode[0]}
 ┠ <b>Out Mode</b> → {self.mode[1]}
-{error}""" if is_limit else f"""<i><b>〶 Download Stopped!</b></i>
+{error}"""
+            if is_limit
+            else f"""<i><b>〶 Download Stopped!</b></i>
 │
 ┟ <b>Due To</b> → {escape(str(error))}
 ┠ <b>Task Size</b> → {get_readable_file_size(self.size)}
@@ -466,6 +469,7 @@ class TaskListener(TaskConfig):
 ┠ <b>In Mode</b> → {self.mode[0]}
 ┠ <b>Out Mode</b> → {self.mode[1]}
 ┖ <b>Task By</b> → {self.tag}"""
+        )
 
         await send_message(self.message, msg, button)
         if count == 0:

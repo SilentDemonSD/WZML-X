@@ -51,14 +51,14 @@ async def _on_download_started(api, data):
         download = await api.tellStatus(gid)
         if "bittorrent" in download:
             task.listener.is_torrent = True
-        
+
         task.listener.name = aria2_name(download)
         msg, button = await stop_duplicate_check(task.listener)
         if msg:
             await TorrentManager.aria2_remove(download)
             await task.listener.on_download_error(msg, button)
             return
-            
+
         task.listener.size = int(download.get("totalLength", "0"))
         mmsg = await limit_checker(task.listener)
         if mmsg:

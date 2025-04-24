@@ -18,7 +18,11 @@ from .... import (
 )
 from ...ext_utils.bot_utils import new_task
 from ....core.jdownloader_booter import jdownloader
-from ...ext_utils.task_manager import check_running_tasks, stop_duplicate_check, limit_checker
+from ...ext_utils.task_manager import (
+    check_running_tasks,
+    stop_duplicate_check,
+    limit_checker,
+)
 from ...listeners.jdownloader_listener import on_download_start
 from ...mirror_leech_utils.status_utils.jdownloader_status import JDownloaderStatus
 from ...mirror_leech_utils.status_utils.queue_status import QueueStatus
@@ -268,7 +272,7 @@ async def add_jd_download(listener, path):
             async with jd_listener_lock:
                 del jd_downloads[gid]
             return
-        
+
         if limit_exceeded := await limit_checker(listener):
             await jdownloader.device.linkgrabber.remove_links(
                 package_ids=online_packages

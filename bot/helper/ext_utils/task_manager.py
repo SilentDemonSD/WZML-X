@@ -163,13 +163,13 @@ async def start_from_queued():
 
 
 async def limit_checker(listener, yt_playlist=0):
-    LOGGER.info('Checking Size Limit...')
-    if await CustomFilters.sudo('', listener.message):
-        LOGGER.info('SUDO User. Skipping Size Limit...')
+    LOGGER.info("Checking Size Limit...")
+    if await CustomFilters.sudo("", listener.message):
+        LOGGER.info("SUDO User. Skipping Size Limit...")
         return
-    
+
     user_id, size = listener.user_id, listener.size
-    
+
     async def recurr_limits(limits):
         nonlocal yt_playlist, size
         limit_exceeded = ""
@@ -182,46 +182,52 @@ async def limit_checker(listener, yt_playlist=0):
                     byte_limit = limit * 1024**3
                     if size >= byte_limit:
                         limit_exceeded = f"┠ <b>{name} Limit</b> → {get_readable_file_size(byte_limit)}"
-                        
-                LOGGER.info(f"{name} Limit Breached: {listener.name} & Size: {get_readable_file_size(size)}")
+
+                LOGGER.info(
+                    f"{name} Limit Breached: {listener.name} & Size: {get_readable_file_size(size)}"
+                )
                 break
         return limit_exceeded
-    
+
     limits = [
-        (listener.is_torrent or listener.is_qbit, 'TORRENT_LIMIT', 'Torrent'),
-        (listener.is_mega, 'MEGA_LIMIT', 'Mega'),
-        (listener.is_gdrive, 'GD_DL_LIMIT', 'GDriveDL'),
-        (listener.is_clone, 'CLONE_LIMIT', 'Clone'),
+        (listener.is_torrent or listener.is_qbit, "TORRENT_LIMIT", "Torrent"),
+        (listener.is_mega, "MEGA_LIMIT", "Mega"),
+        (listener.is_gdrive, "GD_DL_LIMIT", "GDriveDL"),
+        (listener.is_clone, "CLONE_LIMIT", "Clone"),
         (listener.is_jd, "JD_LIMIT", "JDownloader"),
         (listener.is_nzb, "NZB_LIMIT", "SABnzbd"),
         (listener.is_rclone, "RC_DL_LIMIT", "RCloneDL"),
-        (listener.is_ytdlp, 'YTDLP_LIMIT', 'YT-DLP'),
+        (listener.is_ytdlp, "YTDLP_LIMIT", "YT-DLP"),
         (bool(yt_playlist), "PLAYLIST_LIMIT", "Playlist"),
-        (True, 'DIRECT_LIMIT', 'Direct'),
+        (True, "DIRECT_LIMIT", "Direct"),
     ]
     limit_exceeded = await recurr_limits(limits)
-    
+
     if not limit_exceeded:
         extra_limits = [
-            (listener.is_leech, 'LEECH_LIMIT', 'Leech'),
-            (listener.compress, 'ARCHIVE_LIMIT', 'Archive'),
-            (listener.extract, 'EXTRACT_LIMIT', 'Extract'),
+            (listener.is_leech, "LEECH_LIMIT", "Leech"),
+            (listener.compress, "ARCHIVE_LIMIT", "Archive"),
+            (listener.extract, "EXTRACT_LIMIT", "Extract"),
         ]
         limit_exceeded = await recurr_limits(extra_limits)
-        
+
         if Config.STORAGE_LIMIT and not listener.is_clone:
             limit = Config.STORAGE_LIMIT * 1024**3
-            if not await check_storage_threshold(size, limit, any([listener.compress, listener.extract])):
+            if not await check_storage_threshold(
+                size, limit, any([listener.compress, listener.extract])
+            ):
                 limit_exceeded = f"┠ <b>Threshold Storage Limit</b> → {get_readable_file_size(limit)}"
-    
+
     if limit_exceeded:
         return limit_exceeded + f"\n┖ <b>Task By</b> → {listener.tag}"
-    
+
+
 """
 class UsageChecks: # TODO: Dynamic Check for All Task
 
 class DailyUsageChecks:
 """
+
 
 async def user_interval_check(user_id):
     bot_cache.setdefault("time_interval", {})

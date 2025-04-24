@@ -37,11 +37,17 @@ from ..version import get_version
 commands = {
     "aria2": ([BinConfig.ARIA2_NAME, "--version"], r"aria2 version ([\d.]+)"),
     "qBittorrent": ([BinConfig.QBIT_NAME, "--version"], r"qBittorrent v([\d.]+)"),
-    "SABnzbd+": ([BinConfig.SABNZBD_NAME, "--version"], rf"{BinConfig.SABNZBD_NAME}-([\d.]+)"),
+    "SABnzbd+": (
+        [BinConfig.SABNZBD_NAME, "--version"],
+        rf"{BinConfig.SABNZBD_NAME}-([\d.]+)",
+    ),
     "python": (["python3", "--version"], r"Python ([\d.]+)"),
     "rclone": ([BinConfig.RCLONE_NAME, "--version"], r"rclone v([\d.]+)"),
     "yt-dlp": (["yt-dlp", "--version"], r"([\d.]+)"),
-    "ffmpeg": ([BinConfig.FFMPEG_NAME, "-version"], r"ffmpeg version ([\d.]+(-\w+)?).*"),
+    "ffmpeg": (
+        [BinConfig.FFMPEG_NAME, "-version"],
+        r"ffmpeg version ([\d.]+(-\w+)?).*",
+    ),
     "7z": (["7z", "i"], r"7-Zip ([\d.]+)"),
     "aiohttp": (["uv", "pip", "show", "aiohttp"], r"Version: ([\d.]+)"),
     "pyrofork": (["uv", "pip", "show", "pyrofork"], r"Version: ([\d.]+)"),

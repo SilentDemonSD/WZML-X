@@ -34,7 +34,7 @@ HELPER_TOKENS = ""
 MEGA_EMAIL = ""
 MEGA_PASSWORD = ""
 
-# Task Limits 
+# Task Limits
 DIRECT_LIMIT = 0
 MEGA_LIMIT = 0
 TORRENT_LIMIT = 0

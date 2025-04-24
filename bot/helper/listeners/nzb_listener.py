@@ -91,9 +91,8 @@ async def _nzb_listener():
                     if dl["labels"] and dl["labels"][0] == "ALTERNATIVE":
                         await _on_download_error("Duplicated Job!", nzo_id)
                         continue
-                    if (
-                        dl["status"] == "Downloading"
-                        and not dl["filename"].startswith("Trying")
+                    if dl["status"] == "Downloading" and not dl["filename"].startswith(
+                        "Trying"
                     ):
                         if not nzb_jobs[nzo_id]["stop_dup_check"]:
                             nzb_jobs[nzo_id]["stop_dup_check"] = True

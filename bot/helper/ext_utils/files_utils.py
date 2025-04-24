@@ -150,7 +150,7 @@ async def clean_unwanted(opath):
     for dirpath, _, files in await sync_to_async(walk, opath, topdown=False):
         if not await listdir(dirpath):
             await rmdir(dirpath)
-            
+
 
 async def check_storage_threshold(size, threshold, io_task=False, alloc=False):
     free = (await sync_to_async(disk_usage, DOWNLOAD_DIR)).free
