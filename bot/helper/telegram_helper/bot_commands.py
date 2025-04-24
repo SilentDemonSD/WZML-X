@@ -48,6 +48,7 @@ class BotCommands:
         "BotSet": ["bsetting", "bs"],
         "UserSet": ["usetting", "us"],
         "Select": ["select", "sel"],
+        "NzbSearch": "nzbsearch",
     }
 
     for key, cmds in commands.items():

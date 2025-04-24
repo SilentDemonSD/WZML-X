@@ -363,6 +363,13 @@ def add_handlers():
             & CustomFilters.authorized,
         )
     )
+    TgClient.bot.add_handler(
+        MessageHandler(
+            hydra_search,
+            filters=command(BotCommands.NzbSearchCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
     if Config.SET_COMMANDS:
         global BOT_COMMANDS
 
