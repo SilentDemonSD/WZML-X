@@ -47,7 +47,9 @@ async def get_download(nzo_id, old_info):
                 old_info["status"] = slot["status"]
         return old_info
     except Exception as e:
-        LOGGER.error(f"{e}: Sabnzbd, while getting job info. ID: {nzo_id}", exc_info=True)
+        LOGGER.error(
+            f"{e}: Sabnzbd, while getting job info. ID: {nzo_id}", exc_info=True
+        )
         return old_info
 
 

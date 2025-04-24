@@ -34,7 +34,7 @@ HELPER_TOKENS = ""
 MEGA_EMAIL = ""
 MEGA_PASSWORD = ""
 
-# Task Limits 
+# Task Limits
 DIRECT_LIMIT = 0
 MEGA_LIMIT = 0
 TORRENT_LIMIT = 0
@@ -52,6 +52,10 @@ STORAGE_LIMIT = 0
 
 # Insta video downloader api
 INSTADL_API = ""
+
+# Nzb search
+HYDRA_IP = ""
+HYDRA_API_KEY = ""
 
 # Media Search
 IMDB_TEMPLATE = """<b>Title: </b> {title} [{year}]
@@ -129,7 +133,7 @@ USENET_SERVERS = [
 # Update
 UPSTREAM_REPO = ""
 UPSTREAM_BRANCH = "master"
-UPDATE_PKGS = False
+UPDATE_PKGS = True
 
 # Leech
 LEECH_SPLIT_SIZE = 0

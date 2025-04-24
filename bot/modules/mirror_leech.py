@@ -370,7 +370,7 @@ class Mirror(TaskListener):
                     await self.remove_from_same_dir()
                     await delete_links(self.message)
                     return
-                
+
         await delete_links(self.message)
 
         if file_ is not None:

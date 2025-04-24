@@ -8,7 +8,11 @@ from yt_dlp import YoutubeDL, DownloadError
 from .... import task_dict_lock, task_dict
 from ....core.config_manager import BinConfig
 from ...ext_utils.bot_utils import sync_to_async, async_to_sync
-from ...ext_utils.task_manager import check_running_tasks, stop_duplicate_check, limit_checker
+from ...ext_utils.task_manager import (
+    check_running_tasks,
+    stop_duplicate_check,
+    limit_checker,
+)
 from ...mirror_leech_utils.status_utils.queue_status import QueueStatus
 from ...telegram_helper.message_utils import send_status_message
 from ..status_utils.yt_dlp_status import YtDlpStatus
@@ -319,7 +323,7 @@ class YoutubeDLHelper:
         if msg:
             await self._listener.on_download_error(msg, button)
             return
-        
+
         if limit_exceeded := await limit_checker(self._listener, self.playlist_count):
             await self._listener.on_download_error(limit_exceeded, is_limit=True)
             return

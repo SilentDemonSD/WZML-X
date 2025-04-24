@@ -57,6 +57,8 @@ class Config:
     MEDIA_GROUP = False
     HYBRID_LEECH = True
     HYPER_THREADS = 0
+    HYDRA_IP = ""
+    HYDRA_API_KEY = ""
     NAME_SWAP = ""
     OWNER_ID = 0
     QUEUE_ALL = 0
@@ -93,7 +95,7 @@ class Config:
     UPLOAD_PATHS = {}
     UPSTREAM_REPO = ""
     UPSTREAM_BRANCH = "master"
-    UPDATE_PKGS = False
+    UPDATE_PKGS = True
     USENET_SERVERS = []
     USER_SESSION_STRING = ""
     USER_TRANSMISSION = True
