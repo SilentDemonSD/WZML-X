@@ -26,7 +26,7 @@ async def get_download(nzo_id, old_info):
                 if slot["status"] == "Verifying":
                     percentage = slot["action_line"].split("Verifying: ")[-1].split("/")
                     percentage = round(
-                        (int(percentage[0]) / int(percentage[1])) * 100, 2
+                        (int(float(percentage[0])) / int(float(percentage[1]))) * 100, 2
                     )
                     old_info["percentage"] = percentage
                 elif slot["status"] == "Repairing":
@@ -36,10 +36,15 @@ async def get_download(nzo_id, old_info):
                     old_info["percentage"] = percentage
                     old_info["timeleft"] = eta
                 elif slot["status"] == "Extracting":
-                    action = slot["action_line"].split("Unpacking: ")[-1].split()
+                    if "Unpacking" in slot["action_line"]:
+                        action = slot["action_line"].split("Unpacking: ")[-1].split()
+                    else:
+                        action = (
+                            slot["action_line"].split("Direct Unpack: ")[-1].split()
+                        )
                     percentage = action[0].split("/")
                     percentage = round(
-                        (int(percentage[0]) / int(percentage[1])) * 100, 2
+                        (int(float(percentage[0])) / int(float(percentage[1]))) * 100, 2
                     )
                     eta = action[2]
                     old_info["percentage"] = percentage
@@ -47,9 +52,7 @@ async def get_download(nzo_id, old_info):
                 old_info["status"] = slot["status"]
         return old_info
     except Exception as e:
-        LOGGER.error(
-            f"{e}: Sabnzbd, while getting job info. ID: {nzo_id}", exc_info=True
-        )
+        LOGGER.error(f"{e}: Sabnzbd, while getting job info. ID: {nzo_id}")
         return old_info
 
 
@@ -74,8 +77,10 @@ class SabnzbdStatus:
         return get_readable_file_size(self.processed_raw())
 
     def speed_raw(self):
+        if self._info["mb"] == self._info["mbleft"]:
+            return 0
         try:
-            return int(float(self._info["mb"]) * 1048576) / self.eta_raw()
+            return int(float(self._info["mbleft"]) * 1048576) / self.eta_raw()
         except Exception:
             return 0
 
@@ -96,6 +101,8 @@ class SabnzbdStatus:
 
     async def status(self):
         await self.update()
+        if self._info["mb"] == self._info["mbleft"]:
+            return MirrorStatus.STATUS_QUEUEDL
         state = self._info["status"]
         if state == "Paused" and self.queued:
             return MirrorStatus.STATUS_QUEUEDL
