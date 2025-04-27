@@ -251,13 +251,13 @@ async def get_video_thumbnail(video_file, duration):
         "-i",
         video_file,
         "-vf",
-        "thumbnail",
+        "scale=640:-1",
         "-q:v",
-        "1",
-        "-frames:v",
+        "5",
+        "-vframes",
         "1",
         "-threads",
-        f"{max(1, cpu_no // 2)}",
+        "1",
         output,
     ]
     try:
