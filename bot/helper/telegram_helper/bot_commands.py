@@ -53,7 +53,14 @@ class BotCommands:
 
     for key, cmds in commands.items():
         vars()[f"{key}Command"] = (
-            [f"{cmd}{Config.CMD_SUFFIX}" if cmd not in ["restartall", "statusall"] else cmd for cmd in cmds]
+            [
+                (
+                    f"{cmd}{Config.CMD_SUFFIX}"
+                    if cmd not in ["restartall", "statusall"]
+                    else cmd
+                )
+                for cmd in cmds
+            ]
             if isinstance(cmds, list)
             else f"{cmds}{Config.CMD_SUFFIX}"
         )
