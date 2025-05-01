@@ -150,6 +150,9 @@ LEECH_CAPTION = ""
 LEECH_DUMP_CHAT = ""
 THUMBNAIL_LAYOUT = ""
 
+#Disable Torrent
+DISABLE_TORRENTS = False
+
 # qBittorrent/Aria2c
 TORRENT_TIMEOUT = 0
 BASE_URL = ""
