@@ -13,7 +13,6 @@ from tenacity import (
     wait_exponential,
 )
 
-from bot.core.config_manager import Config
 from .. import LOGGER, aria2_options
 
 
@@ -42,10 +41,6 @@ class TorrentManager:
 
     @classmethod
     async def initiate(cls):
-        if Config.DISABLE_TORRENTS:
-            LOGGER.info("Torrents are disabled in the configuration.")
-            return
-    
         cls.aria2, cls.qbittorrent = await gather(
             Aria2WebsocketClient.new("http://localhost:6800/jsonrpc"),
             create_client("http://localhost:8090/api/v2/"),

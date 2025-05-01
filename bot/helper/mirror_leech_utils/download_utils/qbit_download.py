@@ -42,9 +42,6 @@ def _get_hash_file(fpath):
 
 
 async def add_qb_torrent(listener, path, ratio, seed_time):
-    if Config.DISABLE_TORRENTS:
-        await listener.on_download_error("Torrents are disabled in the configuration.")
-        return
     try:
         form = AddFormBuilder.with_client(TorrentManager.qbittorrent)
         if await aiopath.exists(listener.link):
