@@ -14,9 +14,6 @@ from ...telegram_helper.message_utils import send_status_message, send_message
 
 
 async def add_aria2_download(listener, dpath, header, ratio, seed_time):
-    if Config.DISABLE_TORRENTS:
-        await listener.on_download_error("Torrents are disabled in the configuration.")
-        return
     a2c_opt = {"dir": dpath}
     if listener.name:
         a2c_opt["out"] = listener.name
