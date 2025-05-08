@@ -21,7 +21,7 @@ async def delete_broadcast(bc_id, message):
     """Delete broadcasted messages based on the broadcast ID."""
     if bc_id not in bc_cache:
         return await send_message(message, "Invalid Broadcast ID!")
-    
+
     temp_wait = await send_message(
         message, "<i>Deleting the Broadcasted Message! Please Wait ...</i>"
     )
@@ -46,7 +46,7 @@ async def delete_broadcast(bc_id, message):
 ┠ <b>Success:</b> <code>{success}</code>
 ┖ <b>Failed Attempts:</b> <code>{failed}</code>
 
-<b>Broadcast ID:</b> <code>{bc_id}</code>"""
+<b>Broadcast ID:</b> <code>{bc_id}</code>""",
     )
 
 
@@ -54,7 +54,7 @@ async def edit_broadcast(bc_id, message, rply):
     """Edit broadcasted messages based on the broadcast ID."""
     if bc_id not in bc_cache:
         return await send_message(message, "Invalid Broadcast ID!")
-    
+
     temp_wait = await send_message(
         message, "<i>Editing the Broadcasted Message! Please Wait ...</i>"
     )
@@ -93,7 +93,7 @@ async def edit_broadcast(bc_id, message, rply):
 ┠ <b>Success:</b> <code>{success}</code>
 ┖ <b>Failed Attempts:</b> <code>{failed}</code>
 
-<b>Broadcast ID:</b> <code>{bc_id}</code>"""
+<b>Broadcast ID:</b> <code>{bc_id}</code>""",
     )
 
 
