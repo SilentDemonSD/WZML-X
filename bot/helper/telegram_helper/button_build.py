@@ -23,8 +23,8 @@ class ButtonMaker:
 
     def build_menu(self, b_cols=1, h_cols=8, fb_cols=2, lb_cols=2, f_cols=8):
         def chunk(lst, n):
-            return [lst[i: i + n] for i in range(0, len(lst), n)]
-        
+            return [lst[i : i + n] for i in range(0, len(lst), n)]
+
         menu = chunk(self.buttons["default"], b_cols)
         menu = (
             chunk(self.buttons["header"], h_cols) if self.buttons["header"] else []
