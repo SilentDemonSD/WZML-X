@@ -14,6 +14,7 @@ from tenacity import (
 )
 
 from .. import LOGGER, aria2_options
+from .config_manager import Config
 
 
 def wrap_with_retry(obj, max_retries=3):
@@ -41,15 +42,35 @@ class TorrentManager:
 
     @classmethod
     async def initiate(cls):
-        cls.aria2, cls.qbittorrent = await gather(
-            Aria2WebsocketClient.new("http://localhost:6800/jsonrpc"),
-            create_client("http://localhost:8090/api/v2/"),
-        )
-        cls.qbittorrent = wrap_with_retry(cls.qbittorrent)
+        if cls.aria2:
+            return
+        try:
+            cls.aria2 = await Aria2WebsocketClient.new("http://localhost:6800/jsonrpc")
+            LOGGER.info("Aria2 initialized successfully.")
+
+            if Config.DISABLE_TORRENTS:
+                LOGGER.info("Torrents are disabled.")
+                return
+
+            cls.qbittorrent = await create_client("http://localhost:8090/api/v2/")
+            cls.qbittorrent = wrap_with_retry(cls.qbittorrent)
+
+        except Exception as e:
+            LOGGER.error(f"Error during initialization: {e}")
+            await cls.close_all()
+            raise
 
     @classmethod
     async def close_all(cls):
-        await gather(cls.aria2.close(), cls.qbittorrent.close())
+        close_tasks = []
+        if cls.aria2:
+            close_tasks.append(cls.aria2.close())
+            cls.aria2 = None
+        if cls.qbittorrent:
+            close_tasks.append(cls.qbittorrent.close())
+            cls.qbittorrent = None
+        if close_tasks:
+            await gather(*close_tasks)
 
     @classmethod
     async def aria2_remove(cls, download):
@@ -62,10 +83,11 @@ class TorrentManager:
     @classmethod
     async def remove_all(cls):
         await cls.pause_all()
-        await gather(
-            cls.qbittorrent.torrents.delete("all", True),
-            cls.aria2.purgeDownloadResult(),
-        )
+        tasks = [cls.aria2.purgeDownloadResult()]
+        if cls.qbittorrent:
+            tasks.append(cls.qbittorrent.torrents.delete("all", True))
+        await gather(*tasks)
+
         downloads = []
         results = await gather(cls.aria2.tellActive(), cls.aria2.tellWaiting(0, 1000))
         for res in results:
@@ -79,16 +101,23 @@ class TorrentManager:
 
     @classmethod
     async def overall_speed(cls):
-        s1, s2 = await gather(
-            cls.qbittorrent.transfer.info(), cls.aria2.getGlobalStat()
-        )
-        download_speed = s1.dl_info_speed + int(s2.get("downloadSpeed", "0"))
-        upload_speed = s1.up_info_speed + int(s2.get("uploadSpeed", "0"))
+        aria2_speed = await cls.aria2.getGlobalStat()
+        download_speed = int(aria2_speed.get("downloadSpeed", "0"))
+        upload_speed = int(aria2_speed.get("uploadSpeed", "0"))
+
+        if cls.qbittorrent:
+            qb_speed = await cls.qbittorrent.transfer.info()
+            download_speed += qb_speed.dl_info_speed
+            upload_speed += qb_speed.up_info_speed
+
         return download_speed, upload_speed
 
     @classmethod
     async def pause_all(cls):
-        await gather(cls.aria2.forcePauseAll(), cls.qbittorrent.torrents.stop("all"))
+        pause_tasks = [cls.aria2.forcePauseAll()]
+        if cls.qbittorrent:
+            pause_tasks.append(cls.qbittorrent.torrents.stop("all"))
+        await gather(*pause_tasks)
 
     @classmethod
     async def change_aria2_option(cls, key, value):
@@ -96,10 +125,11 @@ class TorrentManager:
         results = await gather(cls.aria2.tellActive(), cls.aria2.tellWaiting(0, 1000))
         for res in results:
             downloads.extend(res)
-            tasks = []
-        for download in downloads:
-            if download.get("status", "") != "complete":
-                tasks.append(cls.aria2.changeOption(download.get("gid"), {key: value}))
+        tasks = [
+            cls.aria2.changeOption(download.get("gid"), {key: value})
+            for download in downloads
+            if download.get("status", "") != "complete"
+        ]
         if tasks:
             try:
                 await gather(*tasks)

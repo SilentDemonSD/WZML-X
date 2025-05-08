@@ -17,6 +17,9 @@ TELEGRAPH_LIMIT = 300
 
 
 async def initiate_search_tools():
+    if Config.DISABLE_TORRENTS:
+        LOGGER.warning("Torrents are disabled. Skipping search plugin initialization.")
+        return
     qb_plugins = await TorrentManager.qbittorrent.search.plugins()
     if qb_plugins:
         names = [plugin.name for plugin in qb_plugins]

@@ -33,6 +33,11 @@ from .torrent_manager import TorrentManager
 
 async def update_qb_options():
     if not qbit_options:
+        if not TorrentManager.qbittorrent:
+            LOGGER.warning(
+                "qBittorrent is not initialized. Skipping qBittorrent options update."
+            )
+            return
         opt = await TorrentManager.qbittorrent.app.preferences()
         qbit_options.update(opt)
         del qbit_options["listen_port"]
@@ -131,10 +136,11 @@ async def load_settings():
         ):
             aria2_options.update(a2c_options)
 
-        if qbit_opt := await database.db.settings.qbittorrent.find_one(
-            {"_id": BOT_ID}, {"_id": 0}
-        ):
-            qbit_options.update(qbit_opt)
+        if not Config.DISABLE_TORRENTS:
+            if qbit_opt := await database.db.settings.qbittorrent.find_one(
+                {"_id": BOT_ID}, {"_id": 0}
+            ):
+                qbit_options.update(qbit_opt)
 
         if nzb_opt := await database.db.settings.nzb.find_one(
             {"_id": BOT_ID}, {"_id": 0}
@@ -316,3 +322,13 @@ async def load_configurations():
 
     if not await aiopath.exists("accounts"):
         Config.USE_SERVICE_ACCOUNTS = False
+
+    await TorrentManager.initiate()
+
+    if Config.DISABLE_TORRENTS:
+        LOGGER.info("Torrents are disabled. Skipping qBittorrent initialization.")
+    else:
+        try:
+            await TorrentManager.qbittorrent.app.set_preferences(qbit_options)
+        except Exception as e:
+            LOGGER.error(f"Failed to configure qBittorrent: {e}")
