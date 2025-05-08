@@ -350,6 +350,24 @@ $('input[type="checkbox"]').change(function(e) {
 });
 </script>
 <script>
+    let lastCheckedFile = null;
+
+    $(document).on('click', 'input[name^="filenode_"]', function(e) {
+        if (e.shiftKey && lastCheckedFile !== null) {
+            const checkboxes = $('input[name^="filenode_"]');
+            const currentCheckbox = $(this);
+            const startIndex = checkboxes.index(lastCheckedFile);
+            const endIndex = checkboxes.index(currentCheckbox);
+            const start = Math.min(startIndex, endIndex);
+            const end = Math.max(startIndex, endIndex);
+            checkboxes.slice(start, end + 1)
+                .prop('checked', currentCheckbox.prop('checked'))
+                .trigger('change');
+        }
+        lastCheckedFile = this;
+    });
+</script>
+<script>
     function docready () {
         $("label[for^='filenode_']").css("cursor", "pointer");
         $("label[for^='filenode_']").click(function () {
