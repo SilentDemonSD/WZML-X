@@ -34,6 +34,9 @@ HELPER_TOKENS = ""
 MEGA_EMAIL = ""
 MEGA_PASSWORD = ""
 
+# Disable Torrent
+DISABLE_TORRENTS = False
+
 # Task Limits
 DIRECT_LIMIT = 0
 MEGA_LIMIT = 0
