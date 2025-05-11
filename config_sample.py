@@ -37,6 +37,10 @@ MEGA_PASSWORD = ""
 # Disable Torrent
 DISABLE_TORRENTS = False
 
+# Telegraph
+AUTHOR_NAME = "WZML-X"
+AUTHOR_URL = "https://t.me/WZML_X"
+
 # Task Limits
 DIRECT_LIMIT = 0
 MEGA_LIMIT = 0

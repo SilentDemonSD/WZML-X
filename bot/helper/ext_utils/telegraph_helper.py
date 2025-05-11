@@ -4,6 +4,7 @@ from telegraph.aio import Telegraph
 from telegraph.exceptions import RetryAfterError
 
 from ... import LOGGER
+from ...core.config_manager import Config
 
 
 class TelegraphHelper:
@@ -73,12 +74,12 @@ class TelegraphHelper:
                     nxt_page += 1
             await self.edit_page(
                 path=path[prev_page],
-                title="Mirror-leech-bot Torrent Search",
+                title="WZML-X Torrent Search",
                 content=content,
             )
         return
 
 
-telegraph = TelegraphHelper("WZML-X", "https://github.com/SilentDemonSD/WZML-X")
+telegraph = TelegraphHelper(Config.AUTHOR_NAME, Config.AUTHOR_URL)
 
 print(__name__)
