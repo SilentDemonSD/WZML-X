@@ -295,7 +295,7 @@ class TelegramUploader:
 
     async def _copy_media(self):
         try:
-            if self._bot_pm and self._listener.is_super_chat:
+            if self._bot_pm:
                 await TgClient.bot.copy_message(
                     chat_id=self._listener.user_id,
                     from_chat_id=self._sent_msg.chat.id,
