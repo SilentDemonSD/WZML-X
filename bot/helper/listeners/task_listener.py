@@ -85,6 +85,7 @@ class TaskListener(TaskConfig):
                 self.same_dir[self.folder_name]["total"] -= 1
 
     async def on_download_start(self):
+        mode_name = "Leech" if self.is_leech else "Mirror"
         if self.bot_pm and self.is_super_chat:
             self.pm_msg = await send_message(
                 self.user_id,
@@ -92,6 +93,16 @@ class TaskListener(TaskConfig):
 ┃
 ┖ <b>Link:</b> <a href='{self.source_url}'>Click Here</a>
 """,
+            )
+        if Config.LINKS_LOG_ID:
+            await send_message(
+                Config.LINKS_LOG_ID,
+                f"""➲  <b><u>{mode_name} Started:</u></b>
+ ┃
+ ┠ <b>User :</b> {self.tag} ( #ID{self.user_id} )
+ ┠ <b>Message Link :</b> <a href='{self.message.link}'>Click Here</a>
+ ┗ <b>Link:</b> <a href='{self.source_url}'>Click Here</a>
+ """,
             )
         if (
             self.is_super_chat
