@@ -25,6 +25,8 @@ class Config:
     FORCE_SUB_IDS = ""
     GDRIVE_ID = ""
     GD_DESP = "Uploaded with WZ Bot"
+    AUTHOR_NAME = "WZML-X"
+    AUTHOR_URL = "https://t.me/WZML_X"
     INSTADL_API = ""
     IMDB_TEMPLATE = ""
     INCOMPLETE_TASK_NOTIFIER = False
