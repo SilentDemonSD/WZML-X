@@ -2,6 +2,7 @@ from base64 import b64encode
 from re import match as re_match
 
 from aiofiles.os import path as aiopath
+from bot.core.config_manager import Config
 
 from .. import DOWNLOAD_DIR, LOGGER, bot_loop, task_dict_lock
 from ..helper.ext_utils.bot_utils import (
@@ -419,6 +420,9 @@ async def nzb_mirror(client, message):
 
 
 async def leech(client, message):
+    if Config.DISABLE_LEECH:
+        await message.reply("The Leech command is currently disabled.")
+        return
     bot_loop.create_task(Mirror(client, message, is_leech=True).new_event())
 
 

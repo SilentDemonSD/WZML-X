@@ -17,6 +17,7 @@ class Config:
     DEFAULT_UPLOAD = "rc"
     DELETE_LINKS = False
     DISABLE_TORRENTS = False
+    DISABLE_LEECH = False
     EQUAL_SPLITS = False
     EXCLUDED_EXTENSIONS = ""
     FFMPEG_CMDS = {}
