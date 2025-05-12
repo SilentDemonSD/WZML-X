@@ -130,6 +130,10 @@ class Mirror(TaskListener):
 
         arg_parser(input_list[1:], args)
 
+        if Config.DISABLE_BULK and args.get("-b", False):
+            await send_message(self.message, "Bulk downloads are currently disabled.")
+            return
+
         self.select = args["-s"]
         self.seed = args["-d"]
         self.name = args["-n"]
