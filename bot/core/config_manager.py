@@ -18,6 +18,7 @@ class Config:
     DELETE_LINKS = False
     DISABLE_TORRENTS = False
     DISABLE_LEECH = False
+    DISABLE_BULK = False
     EQUAL_SPLITS = False
     EXCLUDED_EXTENSIONS = ""
     FFMPEG_CMDS = {}

@@ -560,6 +560,9 @@ class TaskConfig:
         ).new_event()
 
     async def init_bulk(self, input_list, bulk_start, bulk_end, obj):
+        if Config.DISABLE_BULK:
+            await send_message(self.message, "Bulk downloads are currently disabled.")
+            return
         try:
             self.bulk = await extract_bulk_links(self.message, bulk_start, bulk_end)
             if len(self.bulk) == 0:
