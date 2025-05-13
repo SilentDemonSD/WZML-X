@@ -159,6 +159,9 @@ def arg_parser(items, arg_base):
     if Config.DISABLE_BULK and "-b" in items:
         arg_base["-b"] = False
 
+    if Config.DISABLE_MULTI and "-i" in items:
+        arg_base["-i"] = 0
+
     while i < total:
         part = items[i]
 

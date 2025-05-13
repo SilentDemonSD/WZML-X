@@ -134,6 +134,13 @@ class Mirror(TaskListener):
             await send_message(self.message, "Bulk downloads are currently disabled.")
             return
 
+        if Config.DISABLE_MULTI and int(args.get("-i", 1)) > 1:
+            await send_message(
+                self.message,
+                "Multi-downloads are currently disabled. Please try without the -i flag.",
+            )
+            return
+
         self.select = args["-s"]
         self.seed = args["-d"]
         self.name = args["-n"]
