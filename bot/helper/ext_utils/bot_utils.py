@@ -162,6 +162,9 @@ def arg_parser(items, arg_base):
     if Config.DISABLE_MULTI and "-i" in items:
         arg_base["-i"] = 0
 
+    if Config.DISABLE_SEED and "-d" in items:
+        arg_base["-d"] = False
+
     while i < total:
         part = items[i]
 
