@@ -141,6 +141,13 @@ class Mirror(TaskListener):
             )
             return
 
+        if Config.DISABLE_SEED and args.get("-d", False):
+            await send_message(
+                self.message,
+                "Seeding is currently disabled. Please try without the -d flag.",
+            )
+            return
+
         self.select = args["-s"]
         self.seed = args["-d"]
         self.name = args["-n"]
