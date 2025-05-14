@@ -329,6 +329,10 @@ class YtDlp(TaskListener):
 
         arg_parser(input_list[1:], args)
 
+        if Config.DISABLE_FF_MODE and args.get("-ff"):
+            await send_message(self.message, "FFmpeg commands are currently disabled.")
+            return
+
         try:
             self.multi = int(args["-i"])
         except Exception:

@@ -148,6 +148,10 @@ class Mirror(TaskListener):
             )
             return
 
+        if Config.DISABLE_FF_MODE and args.get("-ff"):
+            await send_message(self.message, "FFmpeg commands are currently disabled.")
+            return
+
         self.select = args["-s"]
         self.seed = args["-d"]
         self.name = args["-n"]
