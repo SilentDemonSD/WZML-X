@@ -260,6 +260,12 @@ class TelegramUploader:
         ]
         for i in range(0, len(inputs), 10):
             batch = inputs[i : i + 10]
+            if Config.BOT_PM:
+                await TgClient.bot.send_media_group(
+                    chat_id=self._listener.user_id,
+                    media=batch,
+                    disable_notification=True,
+                )
             self._sent_msg = (
                 await self._sent_msg.reply_media_group(
                     media=batch,
