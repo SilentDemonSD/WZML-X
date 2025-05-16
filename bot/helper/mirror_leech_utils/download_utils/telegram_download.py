@@ -84,14 +84,32 @@ class TelegramDownloadHelper:
 
     async def _download(self, message, path):
         try:
-            # TODO : Add support for user session
+            # TODO : Add support for user session ( Huh ??)
             if self._hyper_dl:
-                download = await HyperTGDownload().download_media(
-                    message,
-                    file_name=path,
-                    progress=self._on_download_progress,
-                    dump_chat=Config.LEECH_DUMP_CHAT,
-                )
+                try:
+                    download = await HyperTGDownload().download_media(
+                        message,
+                        file_name=path,
+                        progress=self._on_download_progress,
+                        dump_chat=Config.LEECH_DUMP_CHAT,
+                    )
+                except Exception:
+                    if getattr(Config, "USER_TRANSMISSION", False):
+                        try:
+                            user_message = await TgClient.user.get_messages(
+                                chat_id=message.chat.id, message_ids=message.id
+                            )
+                            download = await user_message.download(
+                                file_name=path, progress=self._on_download_progress
+                            )
+                        except Exception:
+                            download = await message.download(
+                                file_name=path, progress=self._on_download_progress
+                            )
+                    else:
+                        download = await message.download(
+                            file_name=path, progress=self._on_download_progress
+                        )
             else:
                 download = await message.download(
                     file_name=path, progress=self._on_download_progress
