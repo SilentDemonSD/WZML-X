@@ -57,6 +57,7 @@ class Config:
     STORAGE_LIMIT = 0
     LEECH_DUMP_CHAT = ""
     LINKS_LOG_ID = ""
+    MIRROR_LOG_ID = ""
     CLEAN_LOG_MSG = False
     LEECH_PREFIX = ""
     LEECH_CAPTION = ""
