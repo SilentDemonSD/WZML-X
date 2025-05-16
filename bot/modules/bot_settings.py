@@ -323,6 +323,16 @@ async def edit_variable(_, message, pre_message, key):
                     "Invalid value! LINKS_LOG_ID must be a valid integer chat ID.",
                 )
                 return await update_buttons(pre_message, "var")
+    elif key == "MIRROR_LOG_ID":
+        if value.strip():
+            try:
+                value = int(value.strip())
+            except ValueError:
+                await send_message(
+                    message,
+                    "Invalid value! MIRROR_LOG_ID must be a valid integer chat ID.",
+                )
+                return await update_buttons(pre_message, "var")
     elif key == "AUTHORIZED_CHATS":
         aid = value.split()
         auth_chats.clear()

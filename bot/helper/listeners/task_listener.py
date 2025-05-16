@@ -429,8 +429,19 @@ class TaskListener(TaskConfig):
             else:
                 msg += f"\n┃\n┠ Path: <code>{rclone_path}</code>"
                 button = None
-            msg += f"\n┃\n┖ <b>Task By</b> → {self.tag}"
-            await send_message(self.message, msg, button)
+            msg += f"\n┃\n┖ <b>Task By</b> → {self.tag}\n\n"
+            group_msg = (
+                msg + "〶 <b><u>Action Performed :</u></b>\n"
+                "⋗ <i>Cloud link(s) have been sent to User PM</i>\n\n"
+            )
+
+            if self.bot_pm and self.is_super_chat:
+                await send_message(self.user_id, msg, button)
+
+            if hasattr(Config, "MIRROR_LOG_ID") and Config.MIRROR_LOG_ID:
+                await send_message(Config.MIRROR_LOG_ID, msg, button)
+
+            await send_message(self.message, group_msg, button)
         if self.seed:
             await clean_target(self.up_dir)
             async with queue_dict_lock:
