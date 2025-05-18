@@ -213,7 +213,7 @@ async def get_user_settings(from_user, stype="main"):
             ]
         ):
             buttons.data_button(
-                "Reset All", f"userset {user_id} reset all", position="footer"
+                "Reset All", f"userset {user_id} confirm_reset_all", position="footer"
             )
         buttons.data_button("Close", f"userset {user_id} close", position="footer")
 
@@ -912,12 +912,18 @@ async def edit_user_settings(client, query):
             update_user_ldata(user_id, data[3], "")
             await database.update_user_data(user_id)
         await get_menu(data[3], message, user_id)
-    elif data[2] == "reset":
-        await query.answer("Reset Done!", show_alert=True)
-        if data[3] in user_dict:
-            del user_dict[data[3]]
-            await get_menu(data[3], message, user_id)
-        else:
+    elif data[2] == "confirm_reset_all":
+        await query.answer()
+        buttons = ButtonMaker()
+        buttons.data_button("Yes", f"userset {user_id} do_reset_all yes")
+        buttons.data_button("No", f"userset {user_id} do_reset_all no")
+        buttons.data_button("Close", f"userset {user_id} close", "footer")
+        text = "<i>Are you sure you want to reset all your user settings?</i>"
+        await edit_message(query.message, text, buttons.build_menu(2))
+    elif data[2] == "do_reset_all":
+        if data[3] == "yes":
+            await query.answer("Reset Done!", show_alert=True)
+            user_dict = user_data.get(user_id, {})
             for k in list(user_dict.keys()):
                 if k not in ("SUDO", "AUTH", "VERIFY_TOKEN", "VERIFY_TIME"):
                     del user_dict[k]
@@ -925,7 +931,10 @@ async def edit_user_settings(client, query):
                 if await aiopath.exists(fpath):
                     await remove(fpath)
             await update_user_settings(query)
-        await database.update_user_data(user_id)
+            await database.update_user_data(user_id)
+        else:
+            await query.answer("Reset Cancelled.", show_alert=True)
+            await update_user_settings(query)
     elif data[2] == "view":
         await query.answer()
         await send_file(message, thumb_path, name)
