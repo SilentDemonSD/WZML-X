@@ -912,6 +912,13 @@ async def edit_user_settings(client, query):
             update_user_ldata(user_id, data[3], "")
             await database.update_user_data(user_id)
         await get_menu(data[3], message, user_id)
+    elif data[2] == "reset":
+        await query.answer("Reset Done!", show_alert=True)
+        if data[3] in user_dict:
+            del user_dict[data[3]]
+            await get_menu(data[3], message, user_id)
+        else:
+            pass
     elif data[2] == "confirm_reset_all":
         await query.answer()
         buttons = ButtonMaker()
