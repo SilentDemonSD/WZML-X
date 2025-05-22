@@ -149,7 +149,7 @@ async def add_jd_download(listener, path):
                     content = await dlc.read()
                 content = b64encode(content)
                 await jdownloader.device.linkgrabber.add_container(
-                    "DLC", f"data;base64,{content.decode()}"
+                    "DLC", f"data:;base64,{content.decode()}"
                 )
             else:
                 await jdownloader.device.linkgrabber.add_links(

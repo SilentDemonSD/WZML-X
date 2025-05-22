@@ -83,11 +83,10 @@ class TorrentManager:
     @classmethod
     async def remove_all(cls):
         await cls.pause_all()
-        tasks = [cls.aria2.purgeDownloadResult()]
-        if cls.qbittorrent:
-            tasks.append(cls.qbittorrent.torrents.delete("all", True))
-        await gather(*tasks)
-
+        await gather(
+            cls.qbittorrent.torrents.delete("all", False),
+            cls.aria2.purgeDownloadResult(),
+        )
         downloads = []
         results = await gather(cls.aria2.tellActive(), cls.aria2.tellWaiting(0, 1000))
         for res in results:
