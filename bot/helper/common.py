@@ -83,6 +83,7 @@ class TaskConfig:
         self.subsize = 0
         self.proceed_count = 0
         self.is_leech = False
+        self.is_yt = False
         self.is_qbit = False
         self.is_mega = False
         self.is_nzb = False

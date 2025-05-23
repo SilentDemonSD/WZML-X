@@ -113,6 +113,10 @@ class Config:
     USE_SERVICE_ACCOUNTS = False
     WEB_PINCODE = True
     YT_DLP_OPTIONS = {}
+    YT_DESP = "Uploaded with WZML-X bot"
+    YT_TAGS = ["telegram", "bot", "youtube"]
+    YT_CATEGORY_ID = 22
+    YT_PRIVACY_STATUS = "unlisted"
 
     @classmethod
     def get(cls, key):

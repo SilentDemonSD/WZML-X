@@ -41,11 +41,15 @@ from ..ext_utils.status_utils import get_readable_file_size, get_readable_time
 from ..ext_utils.task_manager import check_running_tasks, start_from_queued
 from ..mirror_leech_utils.gdrive_utils.upload import GoogleDriveUpload
 from ..mirror_leech_utils.rclone_utils.transfer import RcloneTransferHelper
-from ..mirror_leech_utils.status_utils.gdrive_status import GoogleDriveStatus
+from ..mirror_leech_utils.status_utils.gdrive_status import (
+    GoogleDriveStatus,
+)
 from ..mirror_leech_utils.status_utils.queue_status import QueueStatus
 from ..mirror_leech_utils.status_utils.rclone_status import RcloneStatus
 from ..mirror_leech_utils.status_utils.telegram_status import TelegramStatus
+from ..mirror_leech_utils.status_utils.yt_status import YtStatus
 from ..mirror_leech_utils.upload_utils.telegram_uploader import TelegramUploader
+from ..mirror_leech_utils.youtube_utils.youtube_upload import YouTubeUpload
 from ..telegram_helper.button_build import ButtonMaker
 from ..telegram_helper.message_utils import (
     delete_message,
@@ -305,7 +309,17 @@ class TaskListener(TaskConfig):
 
         self.size = await get_path_size(up_dir)
 
-        if self.is_leech:
+        if self.is_yt:
+            LOGGER.info(f"Up to yt Name: {self.name}")
+            yt = YouTubeUpload(self, up_path)
+            async with task_dict_lock:
+                task_dict[self.mid] = YtStatus(self, yt, gid, "up")
+            await gather(
+                update_status_message(self.message.chat.id),
+                sync_to_async(yt.upload),
+            )
+            del yt
+        elif self.is_leech:
             LOGGER.info(f"Leech Name: {self.name}")
             tg = TelegramUploader(self, up_dir)
             async with task_dict_lock:
@@ -354,8 +368,21 @@ class TaskListener(TaskConfig):
             f"\n┠ <b>Out Mode</b> → {self.mode[1]}"
         )
         LOGGER.info(f"Task Done: {self.name}")
-        if self.is_leech:
-            msg += f"\n┠ <b>Total Files</b> → {folders}"
+        if self.is_yt:
+            msg += "\n<b>Type: </b>Video"
+            if link:
+                msg += f"\n<b>Video Link: </b><a href='{link}'>YouTube</a>"
+            msg += f"\n\n<b>cc: </b>{self.tag}"
+
+            await send_message(self.user_id, msg)
+            if Config.LEECH_DUMP_CHAT:
+                await send_message(int(Config.LEECH_DUMP_CHAT), msg)
+            await send_message(
+                self.message,
+                f"{self.tag}\nYour video has been uploaded to YouTube successfully!",
+            )
+        elif self.is_leech:
+            msg += f"\n<b>Total Files: </b>{folders}"
             if mime_type != 0:
                 msg += f"\n┠ <b>Corrupted Files</b> → {mime_type}"
             msg += f"\n┖ <b>Task By</b> → {self.tag}\n\n"
