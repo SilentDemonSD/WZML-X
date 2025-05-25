@@ -219,26 +219,6 @@ class GoogleDriveHelper:
             estr = estr.replace(char, f"\\{char}")
         return estr.strip()
 
-    """
-    def get_recursive_list(self, file, rootId):
-        rtnlist = []
-        if not rootId:
-            rootId = file.get('teamDriveId')
-        if rootId == "root":
-            rootId = self.service.files().get(
-                fileId='root', fields='id').execute().get('id')
-        x = file.get("name")
-        y = file.get("id")
-        while (y != rootId):
-            rtnlist.append(x)
-            file = self.service.files().get(fileId=file.get("parents")[0], supportsAllDrives=True,
-                                            fields='id, name, parents').execute()
-            x = file.get("name")
-            y = file.get("id")
-        rtnlist.reverse()
-        return rtnlist
-    """
-
     async def cancel_task(self):
         self.listener.is_cancelled = True
         if self.is_downloading:

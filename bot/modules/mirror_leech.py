@@ -110,6 +110,7 @@ class Mirror(TaskListener):
             "-hl": False,
             "-bt": False,
             "-ut": False,
+            "-yt": False,
             "-i": 0,
             "-sp": 0,
             "link": "",
@@ -178,6 +179,7 @@ class Mirror(TaskListener):
         self.folder_name = f"/{args["-m"]}".rstrip("/") if len(args["-m"]) > 0 else ""
         self.bot_trans = args["-bt"]
         self.user_trans = args["-ut"]
+        self.is_yt = args["-yt"]
 
         headers = args["-h"]
         is_bulk = args["-b"]
