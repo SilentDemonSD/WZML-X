@@ -369,18 +369,28 @@ class TaskListener(TaskConfig):
         )
         LOGGER.info(f"Task Done: {self.name}")
         if self.is_yt:
-            msg += "\n<b>Type: </b>Video"
-            if link:
-                msg += f"\n<b>Video Link: </b><a href='{link}'>YouTube</a>"
-            msg += f"\n\n<b>cc: </b>{self.tag}"
+            buttons = ButtonMaker()
+            if mime_type == "Folder/Playlist":
+                msg += f"\n┠ <b>Type</b> → Playlist"
+                msg += f"\n┖ <b>Total Videos</b> → {files}"
+                if link:
+                    buttons.url_button("🔗 View Playlist", link)
+                user_message = f"{self.tag}\nYour playlist ({files} videos) has been uploaded to YouTube successfully!"
+            else:
+                msg += f"\n┖ <b>Type</b> → Video"
+                if link:
+                    buttons.url_button("🔗 View Video", link)
+                user_message = f"{self.tag}\nYour video has been uploaded to YouTube successfully!"
 
-            await send_message(self.user_id, msg)
+            msg += f"\n\n<b>Task By: </b>{self.tag}"
+
+            button = buttons.build_menu(1) if link else None
+
+            await send_message(self.user_id, msg, button)
             if Config.LEECH_DUMP_CHAT:
-                await send_message(int(Config.LEECH_DUMP_CHAT), msg)
-            await send_message(
-                self.message,
-                f"{self.tag}\nYour video has been uploaded to YouTube successfully!",
-            )
+                await send_message(int(Config.LEECH_DUMP_CHAT), msg, button)
+            await send_message(self.message, user_message, button)
+
         elif self.is_leech:
             msg += f"\n<b>Total Files: </b>{folders}"
             if mime_type != 0:
