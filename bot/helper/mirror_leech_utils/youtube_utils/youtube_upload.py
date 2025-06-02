@@ -58,6 +58,8 @@ class YouTubeUpload(YouTubeHelper):
 
         try:
             if ospath.isfile(self._path):
+                if not ospath.exists(self._path):
+                    raise FileNotFoundError(f"File not found at path: {self._path}")
                 mime_type = get_mime_type(self._path)
 
                 # Check if file is a video
@@ -135,7 +137,7 @@ class YouTubeUpload(YouTubeHelper):
         # Create media upload object
         media_body = MediaFileUpload(
             file_path,
-            mimetype=mime_type,
+            mimetype=get_mime_type(self._path) or "Video",
             resumable=True,
             chunksize=1024 * 1024 * 4,  # 4MB chunks
         )
