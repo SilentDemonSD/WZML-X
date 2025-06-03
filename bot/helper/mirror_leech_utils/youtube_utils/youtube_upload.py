@@ -126,7 +126,8 @@ class YouTubeUpload(YouTubeHelper):
                     )
 
             elif ospath.isfile(self.path):
-                video_url = self._upload_video(self.path, self.name, get_mime_type(self.path))
+                mime_type = get_mime_type(self.path) or "Video"
+                video_url = self._upload_video(self.path, self.name, mime_type)
 
                 if self.listener.is_cancelled:
                     return
@@ -193,7 +194,7 @@ class YouTubeUpload(YouTubeHelper):
                 video_url,
                 1,
                 0,
-                get_mime_type(self.path) or "Video",
+                mime_type,
             )
 
         return
