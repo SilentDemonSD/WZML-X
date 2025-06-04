@@ -36,6 +36,7 @@ class MirrorStatus:
     STATUS_CONVERT = "Convert"
     STATUS_FFMPEG = "FFmpeg"
     STATUS_YT = "YouTube"
+    STATUS_METADATA = "Metadata"
 
 
 class EngineStatus:
@@ -72,6 +73,7 @@ STATUSES = {
     "FF": MirrorStatus.STATUS_FFMPEG,
     "PA": MirrorStatus.STATUS_PAUSED,
     "CK": MirrorStatus.STATUS_CHECK,
+    "MD": MirrorStatus.STATUS_METADATA,
 }
 
 
@@ -267,6 +269,10 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
             msg += f"\n┠ <b>Speed</b> → <i>{task.seed_speed()}</i>"
             msg += f"\n┠ <b>Ratio</b> → <i>{task.ratio()}</i>"
             msg += f"\n┠ <b>Time</b> → <i>{task.seeding_time()}</i> | <b>Elapsed</b> → <i>{get_readable_time(elapsed)}</i>"
+        elif tstatus == MirrorStatus.STATUS_METADATA:
+            msg += f"\n┠ <b>Size</b> → <i>{task.size()}</i>"
+            msg += f"\n┠ <b>Status</b> → <b>{tstatus}</b>"
+            msg += f"\n┠ <b>Elapsed</b> → <i>{get_readable_time(elapsed)}</i>"
         else:
             msg += f"\n┠ <b>Size</b> → <i>{task.size()}</i>"
         msg += f"\n┠ <b>Engine</b> → <i>{task.engine}</i>"

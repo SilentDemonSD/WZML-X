@@ -10,12 +10,12 @@ from asyncio import (
 )
 from asyncio.subprocess import PIPE
 from os import path as ospath
-from re import search as re_search, escape
+from re import search as re_search, escape, findall as re_findall
 from time import time
 from aioshutil import rmtree
 from langcodes import Language
 
-from ... import LOGGER, cpu_no, DOWNLOAD_DIR
+from ... import LOGGER, cpu_no, DOWNLOAD_DIR, user_data
 from ...core.config_manager import BinConfig
 from .bot_utils import cmd_exec, sync_to_async
 from .files_utils import get_mime_type, is_archive, is_archive_split
@@ -408,6 +408,34 @@ class FFMpeg:
     async def ffmpeg_cmds(self, ffmpeg, f_path):
         self.clear()
         self._total_time = (await get_media_info(f_path))[0]
+
+        # Add metadata if available
+        metadata_args = []
+        metadata_value = None
+        if user_specific_metadata_string := user_data.get(self._listener.message.from_user.id, {}).get("METADATA_CMDS"):
+            match = re_search(r'title="([^"]*)"', user_specific_metadata_string)
+            if match:
+                metadata_value = match.group(1)
+
+        if metadata_value:
+            metadata_args = [
+                '-metadata:s:v', f'title={metadata_value}',
+                '-metadata', 'Comment=',
+                '-metadata', 'Copyright=',
+                '-metadata', 'AUTHOR=',
+                '-metadata', 'Encoded by=',
+                '-metadata', 'SYNOPSIS=',
+                '-metadata', 'ARTIST=',
+                '-metadata', 'PURL=',
+                '-metadata', 'Encoded_by=',
+                '-metadata', 'Description=',
+                '-metadata', 'description=',
+                '-metadata', 'SUMMARY=',
+                '-metadata', 'WEBSITE=',
+                '-metadata:s:a', f'title={metadata_value}',
+                '-metadata:s:s', f'title={metadata_value}',
+            ]
+
         base_name, ext = ospath.splitext(f_path)
         dir, base_name = base_name.rsplit("/", 1)
         indices = [
@@ -433,10 +461,13 @@ class FFMpeg:
             output = f"{dir}/{prefix}{output_file.replace('mltb', base_name)}{ext}"
             outputs.append(output)
             ffmpeg[index] = output
+
+        final_command = metadata_args + ffmpeg
+
         if self._listener.is_cancelled:
             return False
         self._listener.subproc = await create_subprocess_exec(
-            *ffmpeg, stdout=PIPE, stderr=PIPE
+            *final_command, stdout=PIPE, stderr=PIPE
         )
         await self._ffmpeg_progress()
         _, stderr = await self._listener.subproc.communicate()

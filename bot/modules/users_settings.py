@@ -45,7 +45,7 @@ leech_options = [
 ]
 rclone_options = ["RCLONE_CONFIG", "RCLONE_PATH", "RCLONE_FLAGS"]
 gdrive_options = ["TOKEN_PICKLE", "GDRIVE_ID", "INDEX_URL"]
-ffset_options = ["FFMPEG_CMDS"]
+ffset_options = ["FFMPEG_CMDS", "METADATA_CMDS"]
 advanced_options = [
     "EXCLUDED_EXTENSIONS",
     "NAME_SWAP",
@@ -170,12 +170,11 @@ Here I will explain how to use mltb.* which is reference to files you want to wo
 """,
     ),
     "METADATA_CMDS": (
-        "",
-        "",
-        """<i>Send your Meta data. You can according to the format title="Join @WZML_X".</i>
-<b>Full Documentation Guide</b> <a href="https://t.me/WZML_X/">Click Here</a>
-┖ <b>Time Left :</b> <code>60 sec</code>
-""",
+        "String",
+        "Custom metadata for files. Example: title=\"Join @WZML_X\" artist=\"WZML\"",
+        """<i>Send your metadata string. Format: key="value" key2="value2".</i>
+<b>Example:</b> <code>title="Awesome Movie" artist="Some Artist"</code>
+┖ <b>Time Left :</b> <code>60 sec</code>""",
     ),
     "YT_DESP": (
         "String",
@@ -567,10 +566,19 @@ async def get_user_settings(from_user, stype="main"):
         buttons.data_button("Close", f"userset {user_id} close", "footer")
         btns = buttons.build_menu(2)
 
+        buttons.data_button("Metadata Cmds", f"userset {user_id} menu METADATA_CMDS")
+        if user_dict.get("METADATA_CMDS", False):
+            mdc = user_dict["METADATA_CMDS"]
+        elif "METADATA_CMDS" not in user_dict and Config.METADATA_CMDS:
+            mdc = Config.METADATA_CMDS
+        else:
+            mdc = "<b>Not Exists</b>"
+
         text = f"""⌬ <b>FF Settings :</b>
 ┟ <b>Name</b> → {user_name}
 ┃
-┖ <b>FFmpeg Commands</b> → {ffc}"""
+┠ <b>FFmpeg Commands</b> → {ffc}
+┖ <b>Metadata Commands</b> → {mdc}"""
 
     elif stype == "advanced":
         buttons.data_button(
@@ -767,6 +775,10 @@ async def set_option(_, message, option, rfunc):
                 return
         else:
             await send_message(message, "It must be dict!")
+            return
+    elif option == "METADATA_CMDS":
+        if not isinstance(value, str):
+            await send_message(message, "METADATA_CMDS must be a string.")
             return
     update_user_ldata(user_id, option, value)
     await delete_message(message)
