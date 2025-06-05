@@ -45,7 +45,7 @@ leech_options = [
 ]
 rclone_options = ["RCLONE_CONFIG", "RCLONE_PATH", "RCLONE_FLAGS"]
 gdrive_options = ["TOKEN_PICKLE", "GDRIVE_ID", "INDEX_URL"]
-ffset_options = ["FFMPEG_CMDS"]
+ffset_options = ["FFMPEG_CMDS", "METADATA"]
 advanced_options = [
     "EXCLUDED_EXTENSIONS",
     "NAME_SWAP",
@@ -176,6 +176,11 @@ Here I will explain how to use mltb.* which is reference to files you want to wo
 <b>Full Documentation Guide</b> <a href="https://t.me/WZML_X/">Click Here</a>
 ┖ <b>Time Left :</b> <code>60 sec</code>
 """,
+    ),
+    "METADATA": (
+        "Metadata String (key=value:key=value)",
+        "Set default metadata fields (e.g., title=MyTitle:comment=DefaultComment). These will be applied to files. Leave empty to disable.",
+        "<i>Send default metadata as key=value pairs separated by colons. Example: title=My Default Title:artist=Default Artist:comment=Uploaded by Bot</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     ),
     "YT_DESP": (
         "String",
@@ -558,9 +563,22 @@ async def get_user_settings(from_user, stype="main"):
         if isinstance(ffc, dict):
             ffc = "\n" + "\n".join(
                 [
-                    f"{no}. <b>{key}</b>: <code>{value[0]}</code>"
+                    f"{no}. <b>{key}</b>: <code>{escape(str(value[0]))}</code>"
                     for no, (key, value) in enumerate(ffc.items(), start=1)
                 ]
+            )
+
+        buttons.data_button("Metadata", f"userset {user_id} menu METADATA")
+        metadata_setting = user_dict.get("METADATA")
+        display_meta_val = "<b>Not Set</b>"
+        if isinstance(metadata_setting, dict) and metadata_setting:
+            display_meta_val = ", ".join(
+                f"{k}={escape(str(v))}" for k, v in metadata_setting.items()
+            )
+            display_meta_val = f"<code>{display_meta_val}</code>"
+        elif isinstance(metadata_setting, str) and metadata_setting:  # Legacy
+            display_meta_val = (
+                f"<code>{escape(metadata_setting)}</code> [<i>Legacy, needs re-set</i>]"
             )
 
         buttons.data_button("Back", f"userset {user_id} back", "footer")
@@ -570,7 +588,8 @@ async def get_user_settings(from_user, stype="main"):
         text = f"""⌬ <b>FF Settings :</b>
 ┟ <b>Name</b> → {user_name}
 ┃
-┖ <b>FFmpeg Commands</b> → {ffc}"""
+┠ <b>FFmpeg Commands</b> → {ffc}
+┖ <b>Metadata</b> → {display_meta_val}"""
 
     elif stype == "advanced":
         buttons.data_button(
@@ -621,18 +640,40 @@ async def get_user_settings(from_user, stype="main"):
 ┖ <b>YT-DLP Options</b> → <code>{ytopt}</code>"""
     elif stype == "yttools":
         buttons.data_button("YT Description", f"userset {user_id} menu YT_DESP")
-        yt_desp_val = user_dict.get("YT_DESP", Config.YT_DESP if hasattr(Config, 'YT_DESP') else "Not Set (Uses Default)")
+        yt_desp_val = user_dict.get(
+            "YT_DESP",
+            Config.YT_DESP if hasattr(Config, "YT_DESP") else "Not Set (Uses Default)",
+        )
 
         buttons.data_button("YT Tags", f"userset {user_id} menu YT_TAGS")
-        yt_tags_val = user_dict.get("YT_TAGS", Config.YT_TAGS if hasattr(Config, 'YT_TAGS') else "Not Set (Uses Default)")
+        yt_tags_val = user_dict.get(
+            "YT_TAGS",
+            Config.YT_TAGS if hasattr(Config, "YT_TAGS") else "Not Set (Uses Default)",
+        )
         if isinstance(yt_tags_val, list):
             yt_tags_val = ",".join(yt_tags_val)
 
         buttons.data_button("YT Category ID", f"userset {user_id} menu YT_CATEGORY_ID")
-        yt_cat_id_val = user_dict.get("YT_CATEGORY_ID", Config.YT_CATEGORY_ID if hasattr(Config, 'YT_CATEGORY_ID') else "Not Set (Uses Default)")
+        yt_cat_id_val = user_dict.get(
+            "YT_CATEGORY_ID",
+            (
+                Config.YT_CATEGORY_ID
+                if hasattr(Config, "YT_CATEGORY_ID")
+                else "Not Set (Uses Default)"
+            ),
+        )
 
-        buttons.data_button("YT Privacy Status", f"userset {user_id} menu YT_PRIVACY_STATUS")
-        yt_privacy_val = user_dict.get("YT_PRIVACY_STATUS", Config.YT_PRIVACY_STATUS if hasattr(Config, 'YT_PRIVACY_STATUS') else "Not Set (Uses Default)")
+        buttons.data_button(
+            "YT Privacy Status", f"userset {user_id} menu YT_PRIVACY_STATUS"
+        )
+        yt_privacy_val = user_dict.get(
+            "YT_PRIVACY_STATUS",
+            (
+                Config.YT_PRIVACY_STATUS
+                if hasattr(Config, "YT_PRIVACY_STATUS")
+                else "Not Set (Uses Default)"
+            ),
+        )
 
         buttons.data_button("Back", f"userset {user_id} back mirror", "footer")
         buttons.data_button("Close", f"userset {user_id} close", "footer")
@@ -645,7 +686,6 @@ async def get_user_settings(from_user, stype="main"):
 ┠ <b>YT Tags</b> → <code>{escape(str(yt_tags_val))}</code>
 ┠ <b>YT Category ID</b> → <code>{escape(str(yt_cat_id_val))}</code>
 ┖ <b>YT Privacy Status</b> → <code>{escape(str(yt_privacy_val))}</code>"""
-
 
     return text, btns
 
@@ -742,7 +782,7 @@ async def set_option(_, message, option, rfunc):
             value.append(x.strip().lower())
     elif option == "YT_TAGS":
         if isinstance(value, str):
-            value = [tag.strip() for tag in value.split(',') if tag.strip()]
+            value = [tag.strip() for tag in value.split(",") if tag.strip()]
         elif not isinstance(value, list):
             await send_message(message, "YT Tags must be a comma-separated string.")
             return
@@ -755,9 +795,33 @@ async def set_option(_, message, option, rfunc):
     elif option == "YT_PRIVACY_STATUS":
         allowed_statuses = ["public", "private", "unlisted"]
         if not isinstance(value, str) or value.lower() not in allowed_statuses:
-            await send_message(message, f"YT Privacy Status must be one of: {', '.join(allowed_statuses)}.")
+            await send_message(
+                message,
+                f"YT Privacy Status must be one of: {', '.join(allowed_statuses)}.",
+            )
             return
         value = value.lower()
+    elif option == "METADATA":
+        parsed_metadata_dict = {}
+        if value and isinstance(value, str):
+            if value.strip() == "":
+                value = {}
+            else:
+                pairs = value.split(":")
+                for pair in pairs:
+                    if "=" in pair:
+                        key, val_str = pair.split("=", 1)
+                        parsed_metadata_dict[key.strip()] = val_str.strip()
+                if not parsed_metadata_dict and value.strip() != "":
+                    await send_message(
+                        message,
+                        "Malformed metadata string. Format: key1=value1:key2=value2",
+                    )
+                    return
+                value = parsed_metadata_dict
+        else:
+            value = {}
+
     elif option in ["UPLOAD_PATHS", "FFMPEG_CMDS", "YT_DLP_OPTIONS"]:
         if value.startswith("{") and value.endswith("}"):
             try:
@@ -831,6 +895,23 @@ async def get_menu(option, message, user_id):
         val = "<b>Exists</b>"
     elif option == "LEECH_SPLIT_SIZE":
         val = get_readable_file_size(val)
+    elif option == "METADATA":
+        current_meta_val = user_dict.get(option)
+        if isinstance(current_meta_val, dict) and current_meta_val:
+            val = ", ".join(
+                f"{k}={escape(str(v))}" for k, v in current_meta_val.items()
+            )
+            val = f"<code>{val}</code>"
+        elif isinstance(current_meta_val, str) and current_meta_val:
+            val = (
+                f"<code>{escape(current_meta_val)}</code> [<i>Legacy, needs re-set</i>]"
+            )
+        elif not current_meta_val:
+            val = "<b>Not Set</b>"
+
+        if val is None:
+            val = "<b>Not Exists</b>"
+
     text = f"""⌬ <b><u>Menu Settings :</u></b>
 │
 ┟ <b>Option</b> → {option}
