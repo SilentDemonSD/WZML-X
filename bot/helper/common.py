@@ -1,5 +1,6 @@
 import re
-from asyncio import gather, sleep
+from asyncio import gather, sleep, create_subprocess_exec
+from asyncio.subprocess import PIPE
 from contextlib import suppress
 from os import path as ospath, walk
 from re import sub
@@ -50,6 +51,7 @@ from .ext_utils.media_utils import (
 from .mirror_leech_utils.gdrive_utils.list import GoogleDriveList
 from .mirror_leech_utils.rclone_utils.list import RcloneList
 from .mirror_leech_utils.status_utils.ffmpeg_status import FFmpegStatus
+from .mirror_leech_utils.status_utils.metadata_status import MetadataStatus
 from .mirror_leech_utils.status_utils.sevenz_status import SevenZStatus
 from .telegram_helper.bot_commands import BotCommands
 from .telegram_helper.message_utils import (
@@ -65,6 +67,13 @@ class TaskConfig:
         self.user = self.message.from_user or self.message.sender_chat
         self.user_id = self.user.id
         self.user_dict = user_data.get(self.user_id, {})
+
+        default_metadata_from_settings = self.user_dict.get("METADATA")
+        if isinstance(default_metadata_from_settings, dict):
+            self.default_metadata_dict = default_metadata_from_settings
+        else:
+            self.default_metadata_dict = {}
+
         self.dir = f"{DOWNLOAD_DIR}{self.mid}"
         self.up_dir = ""
         self.link = ""
@@ -118,6 +127,7 @@ class TaskConfig:
         self.user_trans = False
         self.progress = True
         self.ffmpeg_cmds = None
+        self.metadata_title = None
         self.chat_thread_id = None
         self.subproc = None
         self.thumb = None
@@ -263,6 +273,8 @@ class TaskConfig:
                 ]
             else:
                 self.ffmpeg_cmds = None
+
+        self.metadata_title = self.user_dict.get("METADATA")
 
         if not self.is_leech:
             self.stop_duplicate = (

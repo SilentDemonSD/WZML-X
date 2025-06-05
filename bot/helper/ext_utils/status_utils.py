@@ -36,6 +36,7 @@ class MirrorStatus:
     STATUS_CONVERT = "Convert"
     STATUS_FFMPEG = "FFmpeg"
     STATUS_YT = "YouTube"
+    STATUS_METADATA = "Metadata"
 
 
 class EngineStatus:
@@ -54,6 +55,7 @@ class EngineStatus:
         self.STATUS_QUEUE = "QSystem v2"
         self.STATUS_JD = "JDownloader v2"
         self.STATUS_YT = "Youtube-Api"
+        self.STATUS_METADATA = "Metadata"
 
 
 STATUSES = {

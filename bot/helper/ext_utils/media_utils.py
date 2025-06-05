@@ -397,6 +397,20 @@ class FFMpeg:
                             self._progress_raw = (
                                 self._processed_time * 100
                             ) / self._total_time
+                            if (
+                                hasattr(self._listener, "subsize")
+                                and self._listener.subsize
+                                and self._progress_raw > 0
+                            ):
+                                self._processed_bytes = int(
+                                    self._listener.subsize * (self._progress_raw / 100)
+                                )
+                            if (time() - self._start_time) > 0:
+                                self._speed_raw = self._processed_bytes / (
+                                    time() - self._start_time
+                                )
+                            else:
+                                self._speed_raw = 0
                             self._eta_raw = (
                                 self._total_time - self._processed_time
                             ) / self._time_rate
