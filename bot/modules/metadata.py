@@ -76,6 +76,8 @@ async def apply_metadata_title(self, dl_path, gid, metadata_dict):
                 file_path,
                 "-map",
                 "0",
+                "-map_metadata",
+                "-1",
             ]
 
             for key, value in metadata_dict.items():
