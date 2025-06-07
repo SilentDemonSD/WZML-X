@@ -1,5 +1,6 @@
 from asyncio import create_subprocess_exec
 from asyncio.subprocess import PIPE
+import os
 from os import path as ospath, walk
 
 from aiofiles.os import path as aiopath, remove
@@ -9,7 +10,12 @@ from .. import LOGGER, cpu_eater_lock, task_dict, task_dict_lock
 from ..core.config_manager import BinConfig
 from ..helper.ext_utils.bot_utils import sync_to_async
 from ..helper.ext_utils.files_utils import get_path_size
-from ..helper.ext_utils.media_utils import FFMpeg, get_document_type, get_media_info
+from ..helper.ext_utils.media_utils import (
+    FFMpeg,
+    get_document_type,
+    get_media_info,
+    get_streams,
+)
 from ..helper.mirror_leech_utils.status_utils.metadata_status import MetadataStatus
 
 
@@ -67,39 +73,107 @@ async def apply_metadata_title(self, dl_path, gid, metadata_dict):
                 f"{ospath.splitext(file_path)[0]}.meta_temp{original_extension}"
             )
 
-            base_cmd = [
+            streams = await get_streams(file_path)
+            if streams is None:
+                LOGGER.error(f"Error getting streams for {file_path}. Skipping.")
+                if is_file_input:
+                    cpu_eater_lock.release()
+                    return dl_path
+                continue
+
+            cmd = [
                 BinConfig.FFMPEG_NAME,
                 "-hide_banner",
                 "-loglevel",
                 "error",
                 "-i",
                 file_path,
-                "-map",
-                "0",
-                "-map_metadata",
-                "-1",
             ]
 
-            for key, value in metadata_dict.items():
-                base_cmd.extend(["-metadata", f"{key}={value}"])
+            title = metadata_dict.get("title", "Untitled")
 
-            if is_video:
-                for key, value in metadata_dict.items():
-                    base_cmd.extend(
-                        [
-                            "-metadata:s:v",
-                            f"{key}={value}",
-                            "-metadata:s:a",
-                            f"{key}={value}",
-                            "-metadata:s:s",
-                            f"{key}={value}",
-                        ]
-                    )
-            elif is_audio:
-                for key, value in metadata_dict.items():
-                    base_cmd.extend(["-metadata:s:a", f"{key}={value}"])
+            maps = []
+            metadata_maps = []
+            video_stream_count = 0
+            audio_stream_count = 0
+            subtitle_stream_count = 0
 
-            cmd = base_cmd + ["-c", "copy", temp_output_name]
+            for stream in streams:
+                stream_index = stream["index"]
+                codec_type = stream["codec_type"]
+
+                maps.extend(["-map", f"0:{stream_index}"])
+
+                if codec_type == "video":
+                    maps.extend([f"-c:v:{video_stream_count}", "copy"])
+                    if "tags" in stream and "language" in stream["tags"]:
+                        metadata_maps.extend(
+                            [
+                                f"-metadata:s:v:{video_stream_count}",
+                                f"language={stream['tags']['language']}",
+                            ]
+                        )
+                    for meta_key, meta_value in metadata_dict.items():
+                        metadata_maps.extend(
+                            [
+                                f"-metadata:s:v:{video_stream_count}",
+                                f"{meta_key}={meta_value}",
+                            ]
+                        )
+                    video_stream_count += 1
+                elif codec_type == "audio":
+                    maps.extend([f"-c:a:{audio_stream_count}", "copy"])
+                    if "tags" in stream and "language" in stream["tags"]:
+                        metadata_maps.extend(
+                            [
+                                f"-metadata:s:a:{audio_stream_count}",
+                                f"language={stream['tags']['language']}",
+                            ]
+                        )
+                    for meta_key, meta_value in metadata_dict.items():
+                        metadata_maps.extend(
+                            [
+                                f"-metadata:s:a:{audio_stream_count}",
+                                f"{meta_key}={meta_value}",
+                            ]
+                        )
+                    audio_stream_count += 1
+                elif codec_type == "subtitle":
+                    maps.extend([f"-c:s:{subtitle_stream_count}", "copy"])
+                    if "tags" in stream and "language" in stream["tags"]:
+                        metadata_maps.extend(
+                            [
+                                f"-metadata:s:s:{subtitle_stream_count}",
+                                f"language={stream['tags']['language']}",
+                            ]
+                        )
+
+                    if stream.get("codec_name") not in ["webvtt", "unknown"]:
+                        for meta_key, meta_value in metadata_dict.items():
+                            metadata_maps.extend(
+                                [
+                                    f"-metadata:s:s:{subtitle_stream_count}",
+                                    f"{meta_key}={meta_value}",
+                                ]
+                            )
+                    subtitle_stream_count += 1
+                else:
+                    maps.extend([f"-c:{stream_index}", "copy"])
+
+            cmd.extend(maps)
+            cmd.extend(["-map_metadata", "-1"])
+            cmd.extend(metadata_maps)
+
+            for meta_key, meta_value in metadata_dict.items():
+                cmd.extend(["-metadata", f"{meta_key}={meta_value}"])
+
+            cmd.extend(
+                [
+                    "-threads",
+                    str(os.cpu_count() // 2 if os.cpu_count() else 1),
+                    temp_output_name,
+                ]
+            )
 
             ffmpeg.clear()
             media_info_tuple = await get_media_info(file_path)
