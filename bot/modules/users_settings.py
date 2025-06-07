@@ -31,7 +31,6 @@ from ..helper.telegram_helper.message_utils import (
     send_file,
     send_message,
 )
-from ..helper.ext_utils.bot_utils import parse_excluded_extensions
 
 handler_dict = {}
 
@@ -596,14 +595,15 @@ async def get_user_settings(from_user, stype="main"):
         buttons.data_button(
             "Excluded Extensions", f"userset {user_id} menu EXCLUDED_EXTENSIONS"
         )
-        ex_ex = user_dict.get("EXCLUDED_EXTENSIONS")
-        if ex_ex:
-            ex_ex = parse_excluded_extensions(ex_ex)
+        if user_dict.get("EXCLUDED_EXTENSIONS", False):
+            ex_ex = user_dict["EXCLUDED_EXTENSIONS"]
         elif "EXCLUDED_EXTENSIONS" not in user_dict:
             ex_ex = excluded_extensions
         else:
-            ex_ex = []
-        displayed = ", ".join(ex_ex) if ex_ex else "None"
+            ex_ex = "None"
+
+        if ex_ex != "None":
+            ex_ex = ", ".join(ex_ex)
 
         ns_msg = (
             f"<code>{swap}</code>"

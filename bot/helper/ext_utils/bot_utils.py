@@ -307,12 +307,3 @@ def loop_thread(func):
         return future.result() if wait else future
 
     return wrapper
-
-
-def parse_excluded_extensions(val):
-    """Parse EXCLUDED_EXTENSIONS from any input to a clean list of extensions."""
-    if not val:
-        return []
-    if isinstance(val, str):
-        val = val.replace(",", " ").split()
-    return [x.lstrip(".").strip().lower() for x in val if x.strip()]

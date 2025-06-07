@@ -44,7 +44,6 @@ from ..core.startup import update_qb_options, update_nzb_options, update_variabl
 from ..helper.ext_utils.db_handler import database
 from ..core.jdownloader_booter import jdownloader
 from ..helper.ext_utils.task_manager import start_from_queued
-from ..helper.ext_utils.bot_utils import parse_excluded_extensions
 from ..helper.mirror_leech_utils.rclone_utils.serve import rclone_serve_booter
 from ..helper.telegram_helper.button_build import ButtonMaker
 from ..helper.telegram_helper.message_utils import (
@@ -298,9 +297,12 @@ async def edit_variable(_, message, pre_message, key):
                 f"gunicorn -k uvicorn.workers.UvicornWorker -w 1 web.wserver:app --bind 0.0.0.0:{value}"
             )
     elif key == "EXCLUDED_EXTENSIONS":
+        fx = value.split()
         excluded_extensions.clear()
         excluded_extensions.extend(["aria2", "!qB"])
-        excluded_extensions.extend(parse_excluded_extensions(value))
+        for x in fx:
+            x = x.lstrip(".")
+            excluded_extensions.append(x.strip().lower())
     elif key == "GDRIVE_ID":
         if drives_names and drives_names[0] == "Main":
             drives_ids[0] = value

@@ -239,10 +239,10 @@ async def update_variables():
             sudo_users.append(int(id_.strip()))
 
     if Config.EXCLUDED_EXTENSIONS:
-        excluded_extensions.clear()
-        excluded_extensions.extend(
-            parse_excluded_extensions(Config.EXCLUDED_EXTENSIONS)
-        )
+        fx = Config.EXCLUDED_EXTENSIONS.split()
+        for x in fx:
+            x = x.lstrip(".")
+            excluded_extensions.append(x.strip().lower())
 
     if Config.GDRIVE_ID:
         drives_names.append("Main")
