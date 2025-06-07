@@ -31,6 +31,7 @@ from .tg_client import TgClient
 from .torrent_manager import TorrentManager
 from ..helper.ext_utils.bot_utils import parse_excluded_extensions
 
+
 async def update_qb_options():
     if not qbit_options:
         if not TorrentManager.qbittorrent:
