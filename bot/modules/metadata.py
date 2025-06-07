@@ -81,7 +81,7 @@ async def apply_metadata_title(self, dl_path, gid, metadata_dict):
                     return dl_path
                 continue
 
-            cmd = [
+            met_cmd = [
                 BinConfig.FFMPEG_NAME,
                 "-hide_banner",
                 "-loglevel",
@@ -160,14 +160,14 @@ async def apply_metadata_title(self, dl_path, gid, metadata_dict):
                 else:
                     maps.extend([f"-c:{stream_index}", "copy"])
 
-            cmd.extend(maps)
-            cmd.extend(["-map_metadata", "-1"])
-            cmd.extend(metadata_maps)
+            met_cmd.extend(maps)
+            met_cmd.extend(["-map_metadata", "-1"])
+            met_cmd.extend(metadata_maps)
 
             for meta_key, meta_value in metadata_dict.items():
-                cmd.extend(["-metadata", f"{meta_key}={meta_value}"])
+                met_cmd.extend(["-metadata", f"{meta_key}={meta_value}"])
 
-            cmd.extend(
+            met_cmd.extend(
                 [
                     "-threads",
                     str(os.cpu_count() // 2 if os.cpu_count() else 1),
@@ -180,7 +180,7 @@ async def apply_metadata_title(self, dl_path, gid, metadata_dict):
             if media_info_tuple:
                 ffmpeg._total_time = media_info_tuple[0]
 
-            self.subproc = await create_subprocess_exec(*cmd, stdout=PIPE, stderr=PIPE)
+            self.subproc = await create_subprocess_exec(*met_cmd, stdout=PIPE, stderr=PIPE)
             await ffmpeg._ffmpeg_progress()
             _, stderr = await self.subproc.communicate()
             return_code = self.subproc.returncode
