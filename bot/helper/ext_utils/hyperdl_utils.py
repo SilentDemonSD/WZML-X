@@ -470,7 +470,7 @@ class HyperTGDownload:
     ):
         try:
             LOGGER.info(f"Attempting download: dump_chat={dump_chat}, message.chat.id={message.chat.id}")
-        try:
+
             if dump_chat:
                 try:
                     await TgClient.bot.get_chat(dump_chat)
