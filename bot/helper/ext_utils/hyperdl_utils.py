@@ -20,7 +20,7 @@ from aiofiles import open as aiopen
 from aiofiles.os import makedirs, remove
 from aioshutil import move
 from pyrogram import StopTransmission, raw, utils
-from pyrogram.errors import AuthBytesInvalid, FloodWait
+from pyrogram.errors import AuthBytesInvalid, FloodWait, PeerIdInvalid
 from pyrogram.file_id import PHOTO_TYPES, FileId, FileType, ThumbnailSource
 from pyrogram.session import Auth, Session
 from pyrogram.session.internals import MsgId
@@ -472,8 +472,29 @@ class HyperTGDownload:
             LOGGER.info(f"Attempting download: dump_chat={dump_chat}, message.chat.id={message.chat.id}")
 
             if dump_chat:
+                chat_accessible = False
+                get_chat_retries = 3
+                last_get_chat_error = None
+                for attempt in range(get_chat_retries):
+                    try:
+                        await TgClient.bot.get_chat(dump_chat)
+                        chat_accessible = True
+                        break
+                    except PeerIdInvalid as e:
+                        last_get_chat_error = e
+                        LOGGER.warning(f"get_chat for {dump_chat} failed with PeerIdInvalid (Attempt {attempt + 1}/{get_chat_retries}). Retrying in 2s...")
+                        await sleep(2)
+                    except Exception as e:
+                        last_get_chat_error = e
+                        LOGGER.error(f"get_chat for {dump_chat} failed with unexpected error: {e}")
+                        break # Don't retry on other errors
+
+                if not chat_accessible:
+                    LOGGER.error(f"Failed to get_chat for dump_chat {dump_chat} after {get_chat_retries} attempts. Last error: {last_get_chat_error}")
+                    raise ValueError(f"Cannot access dump_chat {dump_chat} after multiple attempts. Last error: {last_get_chat_error}") from last_get_chat_error
+
+                # If get_chat was successful
                 try:
-                    await TgClient.bot.get_chat(dump_chat)
                     self.message = await TgClient.bot.copy_message(
                         chat_id=dump_chat,
                         from_chat_id=message.chat.id,
@@ -481,8 +502,8 @@ class HyperTGDownload:
                         disable_notification=True,
                     )
                 except Exception as e:
-                    LOGGER.error(f"[PEER CHECK] Cannot access chat {dump_chat}: {e}")
-                    raise ValueError(f"Invalid or unknown dump_chat id: {dump_chat}") from e
+                    LOGGER.error(f"Failed to copy_message to {dump_chat} from {message.chat.id} (original message ID: {message.id}): {e}")
+                    raise ValueError(f"Failed to copy message from {message.chat.id} to {dump_chat}.") from e
 
             self.dump_chat = dump_chat or message.chat.id
             self.message = self.message or message
