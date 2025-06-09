@@ -469,7 +469,7 @@ class HyperTGDownload:
         dump_chat=None,
     ):
         try:
-        LOGGER.info(f"Attempting download: dump_chat={dump_chat}, message.chat.id={message.chat.id}")
+            LOGGER.info(f"Attempting download: dump_chat={dump_chat}, message.chat.id={message.chat.id}")
         try:
             if dump_chat:
                 try:
