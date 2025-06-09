@@ -84,7 +84,7 @@ async def add_mega_download(listener, path):
         await listener.on_download_start()
         if listener.multi <= 1:
             await send_status_message(listener.message)
-        await event.wait()
+        await event.wait()        
         if listener.is_cancelled:
             await async_api.logout()
             return
@@ -99,9 +99,9 @@ async def add_mega_download(listener, path):
         await listener.on_download_start()
         if listener.multi <= 1:
             await send_status_message(listener.message)
-
+            
     await makedirs(path, exist_ok=True)
     await async_api.startDownload(
-        node, path, listener.name, None, False, None, 3, 2, False
+        node, path, listener.name, None, False, None
     )
     await async_api.logout()
