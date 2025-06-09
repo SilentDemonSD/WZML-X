@@ -196,6 +196,10 @@ class TelegramDownloadHelper:
                                 chat_id=message.chat.id, message_ids=message.id
                             )
                         except (PeerIdInvalid, ChannelInvalid):
+                            LOGGER.warning(
+                                "User session is not in this chat! Falling back to bot session."
+                            )
+                            self.session = "bot"
                             message = await self._listener.client.get_messages(
                                 chat_id=message.chat.id, message_ids=message.id
                             )
