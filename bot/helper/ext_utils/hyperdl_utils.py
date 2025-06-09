@@ -469,13 +469,20 @@ class HyperTGDownload:
         dump_chat=None,
     ):
         try:
+        LOGGER.info(f"Attempting download: dump_chat={dump_chat}, message.chat.id={message.chat.id}")
+        try:
             if dump_chat:
-                self.message = await TgClient.bot.copy_message(
-                    chat_id=dump_chat,
-                    from_chat_id=message.chat.id,
-                    message_id=message.id,
-                    disable_notification=True,
-                )
+                try:
+                    await TgClient.bot.get_chat(dump_chat)
+                    self.message = await TgClient.bot.copy_message(
+                        chat_id=dump_chat,
+                        from_chat_id=message.chat.id,
+                        message_id=message.id,
+                        disable_notification=True,
+                    )
+                except Exception as e:
+                    LOGGER.error(f"[PEER CHECK] Cannot access chat {dump_chat}: {e}")
+                    raise ValueError(f"Invalid or unknown dump_chat id: {dump_chat}") from e
 
             self.dump_chat = dump_chat or message.chat.id
             self.message = self.message or message
