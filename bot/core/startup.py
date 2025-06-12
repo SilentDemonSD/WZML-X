@@ -162,7 +162,7 @@ async def load_settings():
                     "THUMBNAIL": f"thumbnails/{uid}.jpg",
                     "RCLONE_CONFIG": f"rclone/{uid}.conf",
                     "TOKEN_PICKLE": f"tokens/{uid}.pickle",
-                    "USER_COOKIE_FILE": f"cookies/{uid}.txt",
+                    "USER_COOKIE_FILE": f"cookies/{uid}/cookies.txt",
                 }
 
                 async def save_file(file_path, content):
