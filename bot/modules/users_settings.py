@@ -204,9 +204,9 @@ Here I will explain how to use mltb.* which is reference to files you want to wo
         "<i>Send your custom YouTube privacy status (public, private, or unlisted).</i> \nTime Left : <code>60 sec</code>",
     ),
     "USER_COOKIE_FILE": (
-        "file",
-        "User Cookie File to authenticate access to websites.",
-        "<i>Send your cookie file (e.g., cookies.txt).</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
+        "File",
+        "User's YT-DLP Cookie File to authenticate access to websites and youtube.",
+        "<i>Send your cookie file (e.g., cookies.txt or abc.txt).</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     ),
 }
 
