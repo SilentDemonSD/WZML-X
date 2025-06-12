@@ -74,6 +74,9 @@ There are two methods to build and run the Docker image:
   ```bash
   sudo docker run -p 80:80 -p 8080:8080 wzmlx
   ```
+  ```bash
+  sudo docker run --network host wzmlx
+  ```
 
 - **To stop the running image:**
 
