@@ -9,6 +9,7 @@ accounts/*
 thumbnails/*
 rclone/*
 tokens/*
+cookies/*
 mediainfo/*
 sabnzbd/*
 list_drives.txt

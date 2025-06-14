@@ -204,9 +204,9 @@ Here I will explain how to use mltb.* which is reference to files you want to wo
         "<i>Send your custom YouTube privacy status (public, private, or unlisted).</i> \nTime Left : <code>60 sec</code>",
     ),
     "USER_COOKIE_FILE": (
-        "",
-        "User Cookie File to authenticate access to websites.",
-        "<i>Send your cookie file (e.g., cookies.txt).</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
+        "File",
+        "User's YT-DLP Cookie File to authenticate access to websites and youtube.",
+        "<i>Send your cookie file (e.g., cookies.txt or abc.txt).</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     ),
 }
 
@@ -227,7 +227,7 @@ async def get_user_settings(from_user, stype="main"):
         buttons.data_button("Leech Settings", f"userset {user_id} leech")
         buttons.data_button("FF Media Settings", f"userset {user_id} ffset")
         buttons.data_button(
-            "Advanced Settings", f"userset {user_id} advanced", position="l_body"
+            "Mics Settings", f"userset {user_id} advanced", position="l_body"
         )
 
         if user_dict and any(
@@ -549,7 +549,7 @@ async def get_user_settings(from_user, stype="main"):
         else:
             sd_msg = "Disabled"
 
-        buttons.data_button("YT Tools", f"userset {user_id} yttools")
+        buttons.data_button("YT Up Tools", f"userset {user_id} yttools")
         buttons.data_button("Back", f"userset {user_id} back", "footer")
         buttons.data_button("Close", f"userset {user_id} close", "footer")
         btns = buttons.build_menu(1)
@@ -641,12 +641,12 @@ async def get_user_settings(from_user, stype="main"):
             upload_paths = "None"
         buttons.data_button("Upload Paths", f"userset {user_id} menu UPLOAD_PATHS")
 
-        user_cookie_path = f"cookies/{user_id}.txt"
+        yt_cookie_path = f"cookies/{user_id}.txt"
         user_cookie_msg = (
-            "Exists" if await aiopath.exists(user_cookie_path) else "Not Exists"
+            "Exists" if await aiopath.exists(yt_cookie_path) else "Not Exists"
         )
         buttons.data_button(
-            "User Cookie File", f"userset {user_id} menu USER_COOKIE_FILE"
+            "YT Cookie File", f"userset {user_id} menu USER_COOKIE_FILE"
         )
 
         buttons.data_button("Back", f"userset {user_id} back", "footer")
@@ -660,7 +660,7 @@ async def get_user_settings(from_user, stype="main"):
 ┠ <b>Excluded Extensions</b> → <code>{ex_ex}</code>
 ┠ <b>Upload Paths</b> → <b>{upload_paths}</b>
 ┠ <b>YT-DLP Options</b> → <code>{ytopt}</code>
-┖ <b>User Cookie File</b> → <b>{user_cookie_msg}</b>"""
+┖ <b>YT User Cookie File</b> → <b>{user_cookie_msg}</b>"""
     elif stype == "yttools":
         buttons.data_button("YT Description", f"userset {user_id} menu YT_DESP")
         yt_desp_val = user_dict.get(
@@ -744,9 +744,9 @@ async def add_file(_, message, ftype, rfunc):
         des_dir = f"{tpath}{user_id}.pickle"
         await message.download(file_name=des_dir)
     elif ftype == "USER_COOKIE_FILE":
-        cpath = f"{getcwd()}/cookies/"
+        cpath = f"{getcwd()}/cookies/{user_id}"
         await makedirs(cpath, exist_ok=True)
-        des_dir = f"{cpath}{user_id}.txt"
+        des_dir = f"{cpath}/cookies.txt"
         await message.download(file_name=des_dir)
     await delete_message(message)
     update_user_ldata(user_id, ftype, des_dir)
@@ -874,7 +874,7 @@ async def get_menu(option, message, user_id):
         "THUMBNAIL": f"thumbnails/{user_id}.jpg",
         "RCLONE_CONFIG": f"rclone/{user_id}.conf",
         "TOKEN_PICKLE": f"tokens/{user_id}.pickle",
-        "USER_COOKIE_FILE": f"cookies/{user_id}.txt",
+        "USER_COOKIE_FILE": f"cookies/{user_id}/cookies.txt",
     }
 
     buttons = ButtonMaker()
@@ -1002,7 +1002,7 @@ async def edit_user_settings(client, query):
     thumb_path = f"thumbnails/{user_id}.jpg"
     rclone_conf = f"rclone/{user_id}.conf"
     token_pickle = f"tokens/{user_id}.pickle"
-    user_cookie_path = f"cookies/{user_id}.txt"
+    yt_cookie_path = f"cookies/{user_id}/cookies.txt"
 
     user_dict = user_data.get(user_id, {})
     if user_id != int(data[1]):
@@ -1091,7 +1091,7 @@ async def edit_user_settings(client, query):
             elif data[3] == "RCLONE_CONFIG":
                 fpath = rclone_conf
             elif data[3] == "USER_COOKIE_FILE":
-                fpath = user_cookie_path
+                fpath = yt_cookie_path
             else:
                 fpath = token_pickle
             if await aiopath.exists(fpath):
@@ -1122,7 +1122,7 @@ async def edit_user_settings(client, query):
             for k in list(user_dict.keys()):
                 if k not in ("SUDO", "AUTH", "VERIFY_TOKEN", "VERIFY_TIME"):
                     del user_dict[k]
-            for fpath in [thumb_path, rclone_conf, token_pickle, user_cookie_path]:
+            for fpath in [thumb_path, rclone_conf, token_pickle, yt_cookie_path]:
                 if await aiopath.exists(fpath):
                     await remove(fpath)
             await update_user_settings(query)
