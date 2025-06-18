@@ -162,14 +162,23 @@ async def load_settings():
                     "THUMBNAIL": f"thumbnails/{uid}.jpg",
                     "RCLONE_CONFIG": f"rclone/{uid}.conf",
                     "TOKEN_PICKLE": f"tokens/{uid}.pickle",
+                    "USER_COOKIE_FILE": f"cookies/{uid}/cookies.txt",
                 }
 
                 async def save_file(file_path, content):
                     dir_path = ospath.dirname(file_path)
                     if not await aiopath.exists(dir_path):
                         await makedirs(dir_path)
-                    async with aiopen(file_path, "wb+") as f:
-                        await f.write(content)
+                    if file_path.startswith("cookies/") and file_path.endswith(".txt"):
+                        async with aiopen(file_path, "wb") as f:
+                            if isinstance(content, str):
+                                content = content.encode("utf-8")
+                            await f.write(content)
+                    else:
+                        async with aiopen(file_path, "wb+") as f:
+                            if isinstance(content, str):
+                                content = content.encode("utf-8")
+                            await f.write(content)
 
                 for key, path in paths.items():
                     if row.get(key):

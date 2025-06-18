@@ -116,6 +116,7 @@ class Mirror(TaskListener):
             "link": "",
             "-n": "",
             "-m": "",
+            "-meta": "",
             "-up": "",
             "-rcf": "",
             "-au": "",
@@ -180,6 +181,23 @@ class Mirror(TaskListener):
         self.bot_trans = args["-bt"]
         self.user_trans = args["-ut"]
         self.is_yt = args["-yt"]
+
+        merged_metadata = self.default_metadata_dict.copy()
+
+        cmd_line_metadata_str = args["-meta"]
+        if cmd_line_metadata_str:
+            cmd_line_meta_dict = {}
+            pairs = cmd_line_metadata_str.split(":")
+            for pair in pairs:
+                if "=" in pair:
+                    key, value = pair.split("=", 1)
+                    cmd_line_meta_dict[key.strip()] = value.strip()
+                else:
+                    LOGGER.warning(f"Skipping malformed -meta argument pair: {pair}")
+
+            merged_metadata.update(cmd_line_meta_dict)
+
+        self.metadata_dict = merged_metadata
 
         headers = args["-h"]
         is_bulk = args["-b"]

@@ -21,6 +21,7 @@ from ... import (
     same_directory_lock,
     DOWNLOAD_DIR,
 )
+from ...modules.metadata import apply_metadata_title
 from ..common import TaskConfig
 from ...core.tg_client import TgClient
 from ...core.config_manager import Config
@@ -232,6 +233,15 @@ class TaskListener(TaskConfig):
             self.size = await get_path_size(up_dir)
             self.clear()
 
+        if hasattr(self, "metadata_dict") and self.metadata_dict:
+            up_path = await apply_metadata_title(self, up_path, gid, self.metadata_dict)
+            if self.is_cancelled:
+                return
+
+            self.name = up_path.replace(f"{up_dir.rstrip('/')}/", "").split("/", 1)[0]
+            self.size = await get_path_size(up_path)
+            self.clear()
+
         if self.is_leech and self.is_file:
             fname = ospath.basename(up_path)
             self.file_details["filename"] = fname
@@ -380,7 +390,9 @@ class TaskListener(TaskConfig):
                 msg += f"\n┖ <b>Type</b> → Video"
                 if link:
                     buttons.url_button("🔗 View Video", link)
-                user_message = f"{self.tag}\nYour video has been uploaded to YouTube successfully!"
+                user_message = (
+                    f"{self.tag}\nYour video has been uploaded to YouTube successfully!"
+                )
 
             msg += f"\n\n<b>Task By: </b>{self.tag}"
 

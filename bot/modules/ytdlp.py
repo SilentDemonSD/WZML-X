@@ -315,6 +315,7 @@ class YtDlp(TaskListener):
             "-sp": 0,
             "link": "",
             "-m": "",
+            "-meta": "",
             "-opt": {},
             "-n": "",
             "-up": "",
@@ -377,6 +378,23 @@ class YtDlp(TaskListener):
         self.folder_name = f"/{args["-m"]}".rstrip("/") if len(args["-m"]) > 0 else ""
         self.bot_trans = args["-bt"]
         self.user_trans = args["-ut"]
+
+        merged_metadata = self.default_metadata_dict.copy()
+
+        cmd_line_metadata_str = args["-meta"]
+        if cmd_line_metadata_str:
+            cmd_line_meta_dict = {}
+            pairs = cmd_line_metadata_str.split(":")
+            for pair in pairs:
+                if "=" in pair:
+                    key, value = pair.split("=", 1)
+                    cmd_line_meta_dict[key.strip()] = value.strip()
+                else:
+                    LOGGER.warning(f"Skipping malformed -meta argument pair: {pair}")
+
+            merged_metadata.update(cmd_line_meta_dict)
+
+        self.metadata_dict = merged_metadata
 
         is_bulk = args["-b"]
 
