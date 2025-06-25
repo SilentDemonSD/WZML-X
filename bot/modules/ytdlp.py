@@ -3,6 +3,7 @@ from functools import partial
 from time import time
 
 from httpx import AsyncClient
+from aiofiles.os import path as aiopath
 from pyrogram.filters import regex, user
 from pyrogram.handlers import CallbackQueryHandler
 from yt_dlp import YoutubeDL
@@ -473,8 +474,11 @@ class YtDlp(TaskListener):
             return
 
         self._set_mode_engine()
+        
+        cookie_to_use = usr_cookie if (usr_cookie := self.user_dict.get("USER_COOKIE_FILE", "")) and await aiopath.exists(usr_cookie) else "cookies.txt"
+        LOGGER.info(f"Using cookies.txt file: {cookie_to_use} | User ID : {self.user_id}")
 
-        options = {"usenetrc": True, "cookiefile": "cookies.txt"}
+        options = {"usenetrc": True, "cookiefile": cookie_to_use}
         if opt:
             for key, value in opt.items():
                 if key in ["postprocessors", "download_ranges"]:

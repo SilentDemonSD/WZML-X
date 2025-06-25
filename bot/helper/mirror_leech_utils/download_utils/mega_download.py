@@ -102,6 +102,6 @@ async def add_mega_download(listener, path):
 
     await makedirs(path, exist_ok=True)
     await async_api.startDownload(
-        node, path, listener.name, None, False, None, 3, 2, False
+        node, path, listener.name, None, False, None
     )
     await async_api.logout()

@@ -281,11 +281,11 @@ async def get_user_settings(from_user, stype="main"):
         buttons.data_button("Back", f"userset {user_id} back", "footer")
         buttons.data_button("Close", f"userset {user_id} close", "footer")
 
-        use_user_cookie = user_dict.get("USE_USER_COOKIE", False)
+        use_user_cookie = user_dict.get("USER_COOKIE_FILE", False)
         cookie_mode = "USER's" if use_user_cookie else "OWNER's"
         buttons.data_button(
             f"Swap to {'OWNER' if use_user_cookie else 'USER'}'s Cookie",
-            f"userset {user_id} tog USE_USER_COOKIE {'f' if use_user_cookie else 't'}",
+            f"userset {user_id} tog USER_COOKIE_FILE {'f' if use_user_cookie else 't'}",
         )
         btns = buttons.build_menu(1)
 
@@ -641,7 +641,7 @@ async def get_user_settings(from_user, stype="main"):
             upload_paths = "None"
         buttons.data_button("Upload Paths", f"userset {user_id} menu UPLOAD_PATHS")
 
-        yt_cookie_path = f"cookies/{user_id}.txt"
+        yt_cookie_path = f"cookies/{user_id}/cookies.txt"
         user_cookie_msg = (
             "Exists" if await aiopath.exists(yt_cookie_path) else "Not Exists"
         )
@@ -1031,7 +1031,7 @@ async def edit_user_settings(client, query):
         update_user_ldata(user_id, data[3], data[4] == "t")
         if data[3] == "STOP_DUPLICATE":
             back_to = "gdrive"
-        elif data[3] in ["USER_TOKENS", "USE_USER_COOKIE"]:
+        elif data[3] in ["USER_TOKENS", "USER_COOKIE_FILE"]:
             back_to = "general"
         else:
             back_to = "leech"
