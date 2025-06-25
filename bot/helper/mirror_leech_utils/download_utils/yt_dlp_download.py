@@ -80,16 +80,10 @@ class YoutubeDLHelper:
             },
         }
         user_id = self._listener.user_id
-        user_settings = user_data.get(user_id, {})
-        cookie_to_use = user_settings.get("USER_COOKIE_FILE") if user_settings.get("USE_USER_COOKIE") and ospath.exists(user_settings.get("USER_COOKIE_FILE", "")) else "cookies.txt"
-        
-        if cookie_to_use != "cookies.txt":
-            LOGGER.info(f"Using user cookie file: {cookie_to_use}")
-        else:
-            LOGGER.warning(f"User {user_id} opted for user cookie, but valid file not found. Falling back to default.")
+        cookie_to_use = usr_cookie if (usr_cookie := user_data.get(user_id, {}).get("USE_USER_COOKIE", "")) and ospath.exists(usr_cookie) else "cookies.txt"
         
         self.opts["cookiefile"] = cookie_to_use
-        LOGGER.info(f"Using cookie file: {cookie_to_use} for user {user_id}")
+        LOGGER.info(f"Using cookies.txt file: {cookie_to_use} | User ID : {user_id}")
 
     @property
     def download_speed(self):

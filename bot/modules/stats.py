@@ -66,7 +66,8 @@ async def get_stats(event, key="home"):
         btns.data_button("OS Stats", f"stats {user_id} stsys")
         btns.data_button("Repo Stats", f"stats {user_id} strepo")
         btns.data_button("Pkgs Stats", f"stats {user_id} stpkgs")
-        btns.data_button("Bot Task Limits", f"stats {user_id} tlimits")
+        btns.data_button("Task Limits", f"stats {user_id} tlimits")
+        btns.data_button("Sys Tasks", f"stats {user_id} systasks")
         msg = "⌬ <b><i>Bot & OS Statistics!</i></b>"
     elif key == "stbot":
         total, used, free, disk = disk_usage("/")
@@ -175,11 +176,16 @@ async def get_stats(event, key="home"):
 ┠ <b>Extract Limit :</b> {Config.EXTRACT_LIMIT or "∞"} GB
 ┞ <b>Threshold Storage :</b> {Config.STORAGE_LIMIT or "∞"} GB
 │
-┟ <b>Token Validity :</b> {Config.VERIFY_TIMEOUT or "Disabled"}
+┟ <b>Token Validity :</b> {get_readable_time(Config.VERIFY_TIMEOUT) if Config.VERIFY_TIMEOUT else "Disabled"}
 ┠ <b>User Time Limit :</b> {Config.USER_TIME_INTERVAL or "0"}s / task
 ┠ <b>User Max Tasks :</b> {Config.USER_MAX_TASKS or "∞"}
 ┖ <b>Bot Max Tasks :</b> {Config.BOT_MAX_TASKS or "∞"}
     """
+     
+    elif key == "systasks":
+        
+        msg = f"""System Tasks
+        """
 
     btns.data_button("Close", f"stats {user_id} close", "footer")
     return msg, btns.build_menu(2)

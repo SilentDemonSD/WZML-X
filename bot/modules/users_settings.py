@@ -641,7 +641,7 @@ async def get_user_settings(from_user, stype="main"):
             upload_paths = "None"
         buttons.data_button("Upload Paths", f"userset {user_id} menu UPLOAD_PATHS")
 
-        yt_cookie_path = f"cookies/{user_id}.txt"
+        yt_cookie_path = f"cookies/{user_id}/cookies.txt"
         user_cookie_msg = (
             "Exists" if await aiopath.exists(yt_cookie_path) else "Not Exists"
         )
