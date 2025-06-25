@@ -79,11 +79,9 @@ class YoutubeDLHelper:
                 "extractor": lambda n: 3,
             },
         }
-        user_id = self._listener.user_id
-        cookie_to_use = usr_cookie if (usr_cookie := user_data.get(user_id, {}).get("USE_USER_COOKIE", "")) and ospath.exists(usr_cookie) else "cookies.txt"
-        
+        cookie_to_use = usr_cookie if (usr_cookie := self._listener.user_dict.get("USE_USER_COOKIE", "")) and ospath.exists(usr_cookie) else "cookies.txt"
         self.opts["cookiefile"] = cookie_to_use
-        LOGGER.info(f"Using cookies.txt file: {cookie_to_use} | User ID : {user_id}")
+        LOGGER.info(f"Using cookies.txt file: {cookie_to_use} | User ID : {self._listener.user_id}")
 
     @property
     def download_speed(self):
