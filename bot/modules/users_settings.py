@@ -284,8 +284,8 @@ async def get_user_settings(from_user, stype="main"):
         def_cookies = user_dict.get("USE_DEFAULT_COOKIE", False)
         cookie_mode = "Owner's Cookie" if def_cookies else "User's Cookie"
         buttons.data_button(
-            f"Swap to {'OWNER' if not def_cookies else 'USER'}'s Cookie",
-            f"userset {user_id} tog USE_DEFAULT_COOKIE {'f' if not def_cookies else 't'}",
+            f"Swap to {'OWNER' if not def_cookies else 'USER'}'s Cookie File",
+            f"userset {user_id} tog USE_DEFAULT_COOKIE {'f' if def_cookies else 't'}",
         )
         btns = buttons.build_menu(1)
 
@@ -1031,7 +1031,7 @@ async def edit_user_settings(client, query):
         update_user_ldata(user_id, data[3], data[4] == "t")
         if data[3] == "STOP_DUPLICATE":
             back_to = "gdrive"
-        elif data[3] in ["USER_TOKENS", "USER_COOKIE_FILE"]:
+        elif data[3] in ["USER_TOKENS", "USE_DEFAULT_COOKIE"]:
             back_to = "general"
         else:
             back_to = "leech"
