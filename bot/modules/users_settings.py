@@ -281,11 +281,11 @@ async def get_user_settings(from_user, stype="main"):
         buttons.data_button("Back", f"userset {user_id} back", "footer")
         buttons.data_button("Close", f"userset {user_id} close", "footer")
 
-        use_user_cookie = user_dict.get("USER_COOKIE_FILE", False)
-        cookie_mode = "USER's" if use_user_cookie else "OWNER's"
+        def_cookies = user_dict.get("USE_DEFAULT_COOKIE", False)
+        cookie_mode = "Owner's Cookie" if def_cookies else "User's Cookie"
         buttons.data_button(
-            f"Swap to {'OWNER' if use_user_cookie else 'USER'}'s Cookie",
-            f"userset {user_id} tog USER_COOKIE_FILE {'f' if use_user_cookie else 't'}",
+            f"Swap to {'OWNER' if not def_cookies else 'USER'}'s Cookie",
+            f"userset {user_id} tog USE_DEFAULT_COOKIE {'f' if not def_cookies else 't'}",
         )
         btns = buttons.build_menu(1)
 
@@ -294,7 +294,7 @@ async def get_user_settings(from_user, stype="main"):
 ┃
 ┠ <b>Default Upload Package</b> → <b>{du}</b>
 ┠ <b>Default Usage Mode</b> → <b>{tr}'s</b> token/config
-┖ <b>Cookie Mode</b> → <b>{cookie_mode}</b>
+┖ <b>yt Cookies Mode</b> → <b>{cookie_mode}</b>
 """
 
     elif stype == "leech":
