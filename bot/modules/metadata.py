@@ -164,20 +164,19 @@ async def apply_metadata_title(self, dl_path, gid, metadata_dict, audio_metadata
                             ]
                         )
                     
-                    if stream.get("codec_name") not in ["webvtt", "unknown"]:
-                        subtitle_meta_for_stream = {}
-                        for subtitle_stream_meta in metadata_result['subtitle_streams']:
-                            if subtitle_stream_meta['index'] == stream_index:
-                                subtitle_meta_for_stream = subtitle_stream_meta['metadata']
-                                break
-                        
-                        for meta_key, meta_value in subtitle_meta_for_stream.items():
-                            metadata_maps.extend(
-                                [
-                                    f"-metadata:s:s:{subtitle_stream_count}",
-                                    f"{meta_key}={meta_value}",
-                                ]
-                            )
+                    subtitle_meta_for_stream = {}
+                    for subtitle_stream_meta in metadata_result['subtitle_streams']:
+                        if subtitle_stream_meta['index'] == stream_index:
+                            subtitle_meta_for_stream = subtitle_stream_meta['metadata']
+                            break
+                    
+                    for meta_key, meta_value in subtitle_meta_for_stream.items():
+                        metadata_maps.extend(
+                            [
+                                f"-metadata:s:s:{subtitle_stream_count}",
+                                f"{meta_key}={meta_value}",
+                            ]
+                        )
                     subtitle_stream_count += 1
                 else:
                     maps.extend([f"-c:{stream_index}", "copy"])

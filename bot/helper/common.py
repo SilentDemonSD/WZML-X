@@ -67,23 +67,37 @@ class TaskConfig:
         self.user_id = self.user.id
         self.user_dict = user_data.get(self.user_id, {})
         self.metadata_processor = MetadataProcessor()
-
+        
         default_metadata_from_settings = self.user_dict.get("METADATA")
         if isinstance(default_metadata_from_settings, dict):
             self.default_metadata_dict = default_metadata_from_settings
+        elif isinstance(default_metadata_from_settings, str):
+            self.default_metadata_dict = self.metadata_processor.parse_string(default_metadata_from_settings)
         else:
             self.default_metadata_dict = {}
         
-        self.audio_metadata_dict = self.user_dict.get("AUDIO_METADATA", {})
-        if not isinstance(self.audio_metadata_dict, dict):
+        audio_metadata_from_settings = self.user_dict.get("AUDIO_METADATA", {})
+        if isinstance(audio_metadata_from_settings, dict):
+            self.audio_metadata_dict = audio_metadata_from_settings
+        elif isinstance(audio_metadata_from_settings, str):
+            self.audio_metadata_dict = self.metadata_processor.parse_string(audio_metadata_from_settings)
+        else:
             self.audio_metadata_dict = {}
         
-        self.video_metadata_dict = self.user_dict.get("VIDEO_METADATA", {})
-        if not isinstance(self.video_metadata_dict, dict):
+        video_metadata_from_settings = self.user_dict.get("VIDEO_METADATA", {})
+        if isinstance(video_metadata_from_settings, dict):
+            self.video_metadata_dict = video_metadata_from_settings
+        elif isinstance(video_metadata_from_settings, str):
+            self.video_metadata_dict = self.metadata_processor.parse_string(video_metadata_from_settings)
+        else:
             self.video_metadata_dict = {}
         
-        self.subtitle_metadata_dict = self.user_dict.get("SUBTITLE_METADATA", {})
-        if not isinstance(self.subtitle_metadata_dict, dict):
+        subtitle_metadata_from_settings = self.user_dict.get("SUBTITLE_METADATA", {})
+        if isinstance(subtitle_metadata_from_settings, dict):
+            self.subtitle_metadata_dict = subtitle_metadata_from_settings
+        elif isinstance(subtitle_metadata_from_settings, str):
+            self.subtitle_metadata_dict = self.metadata_processor.parse_string(subtitle_metadata_from_settings)
+        else:
             self.subtitle_metadata_dict = {}
 
         self.dir = f"{DOWNLOAD_DIR}{self.mid}"

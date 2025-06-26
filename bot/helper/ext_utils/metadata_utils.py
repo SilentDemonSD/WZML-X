@@ -1,5 +1,6 @@
 from os import path as ospath
-from re import sub, findall
+from re import compile as re_compile
+from pycountry import languages
 from ..ext_utils.media_utils import get_streams
 
 
@@ -8,6 +9,24 @@ class MetadataProcessor:
         self.vars = {}
         self.audio_streams = []
         self.subtitle_streams = []
+        self._year_pattern = re_compile(r'\b(19|20)\d{2}\b')
+        self._sanitize_pattern = re_compile(r'[<>:"/\\?*]')
+    
+    def convert_lang_code(self, lang_code):
+        if not lang_code or lang_code in ['unknown', 'und', 'none']:
+            return lang_code
+        
+        try:
+            if len(lang_code) == 2:
+                lang = languages.get(alpha_2=lang_code.lower())
+            elif len(lang_code) == 3:
+                lang = languages.get(alpha_3=lang_code.lower())
+            else:
+                return lang_code
+            
+            return lang.name if lang else lang_code
+        except Exception:
+            return lang_code
     
     async def extract_file_vars(self, file_path):
         self.vars = {
@@ -33,21 +52,25 @@ class MetadataProcessor:
                     if codec_type == 'audio':
                         self.audio_streams.append({
                             'index': stream.get('index', 0),
-                            'language': stream_lang
+                            'language': stream_lang,
+                            'full_language': self.convert_lang_code(stream_lang)
                         })
                         if self.vars['audiolang'] == 'unknown' and stream_lang != 'und':
-                            self.vars['audiolang'] = stream_lang
+                            self.vars['audiolang'] = self.convert_lang_code(stream_lang)
                     elif codec_type == 'subtitle':
                         self.subtitle_streams.append({
                             'index': stream.get('index', 0),
-                            'language': stream_lang
+                            'language': stream_lang,
+                            'full_language': self.convert_lang_code(stream_lang)
                         })
                         if self.vars['sublang'] == 'none' and stream_lang != 'und':
-                            self.vars['sublang'] = stream_lang
+                            self.vars['sublang'] = self.convert_lang_code(stream_lang)
         except Exception:
             pass
         
-        year_match = findall(r'\b(19|20)\d{2}\b', self.vars['basename'])
+        year_match = self._year_pattern.findall(self.vars['basename'])
+        if year_match:
+            self.vars['year'] = year_match[-1]
         if year_match:
             self.vars['year'] = year_match[-1]
     
@@ -83,7 +106,7 @@ class MetadataProcessor:
             merged.update(cmd_dict)
         return merged
     
-    def apply_vars_to_stream(self, metadata_dict, stream_lang=None, stream_type='audio'):
+    def apply_vars_to_stream(self, metadata_dict, stream_lang=None, full_lang=None, stream_type='audio'):
         if not metadata_dict or not isinstance(metadata_dict, dict):
             return {}
         
@@ -91,9 +114,9 @@ class MetadataProcessor:
         vars_with_stream = self.vars.copy()
         if stream_lang and stream_lang != 'unknown':
             if stream_type == 'audio':
-                vars_with_stream['audiolang'] = stream_lang
+                vars_with_stream['audiolang'] = full_lang or self.convert_lang_code(stream_lang)
             elif stream_type == 'subtitle':
-                vars_with_stream['sublang'] = stream_lang
+                vars_with_stream['sublang'] = full_lang or self.convert_lang_code(stream_lang)
         
         for key, value in metadata_dict.items():
             if isinstance(value, str):
@@ -114,7 +137,12 @@ class MetadataProcessor:
     def get_audio_metadata(self, audio_metadata_dict):
         audio_stream_metadata = []
         for stream in self.audio_streams:
-            stream_meta = self.apply_vars_to_stream(audio_metadata_dict, stream['language'], 'audio')
+            stream_meta = self.apply_vars_to_stream(
+                audio_metadata_dict, 
+                stream['language'], 
+                stream['full_language'], 
+                'audio'
+            )
             audio_stream_metadata.append({
                 'index': stream['index'],
                 'metadata': stream_meta
@@ -124,7 +152,12 @@ class MetadataProcessor:
     def get_subtitle_metadata(self, subtitle_metadata_dict):
         subtitle_stream_metadata = []
         for stream in self.subtitle_streams:
-            stream_meta = self.apply_vars_to_stream(subtitle_metadata_dict, stream['language'], 'subtitle')
+            stream_meta = self.apply_vars_to_stream(
+                subtitle_metadata_dict, 
+                stream['language'], 
+                stream['full_language'], 
+                'subtitle'
+            )
             subtitle_stream_metadata.append({
                 'index': stream['index'],
                 'metadata': stream_meta
@@ -134,7 +167,7 @@ class MetadataProcessor:
     def sanitize(self, value):
         if not isinstance(value, str):
             value = str(value)
-        return sub(r'[<>:"/\\?*]', '_', value)[:100]
+        return self._sanitize_pattern.sub('_', value)[:100]
     
     async def process_all(self, video_metadata_dict, audio_metadata_dict, subtitle_metadata_dict, file_path):
         await self.extract_file_vars(file_path)

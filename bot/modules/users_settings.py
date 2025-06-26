@@ -179,39 +179,50 @@ Here I will explain how to use mltb.* which is reference to files you want to wo
 """,
     ),
     "METADATA": (
-        "Metadata String (key=value|key=value) with Dynamic Variables",
-        "Set default metadata fields with dynamic variables support. Use {filename}, {basename}, {extension}, {audiolang}, {sublang}, {duration}, {resolution}, {codec}, {bitrate}, {year}, {size} for dynamic values. These will be applied to files. Leave empty to disable.",
-        """<i>Send default metadata as key=value pairs separated by pipes with dynamic variables.</i>
+        "🏷 Global Metadata (key=value|key=value)",
+        "Apply metadata to all media files with dynamic variables.",
+        """<i>📝 Send metadata as</i> <code>key=value|key2=value2</code>
 
-<b>Examples:</b>
-<code>title={basename} - {year}|artist=My Channel|comment={codec} {resolution} {audiolang}</code>
+<b>🔧 Dynamic Variables:</b>
+• <code>{filename}</code> - Original filename
+• <code>{basename}</code> - Name without extension
+• <code>{audiolang}</code> - Audio language (English/Hindi etc.)
+• <code>{year}</code> - Year from filename
 
-<code>description=File: {filename} | Size: {size} | Duration: {duration}|album=My Collection</code>
+<b>📋 Example:</b>
+<code>title={basename}|artist={audiolang} Version|year={year}</code>
 
-<code>genre=Entertainment|comment=Uploaded via Bot - {basename}</code>
-
-┖ <b>Time Left :</b> <code>60 sec</code>""",
+⏱ <b>Time Left:</b> <code>60 sec</code>""",
     ),
     "AUDIO_METADATA": (
-        "Audio Metadata String (key=value|key=value) with Dynamic Variables",
-        "Set audio stream metadata fields with dynamic variables. Applied per audio stream with {audiolang} replaced by each stream's language.",
-        """<i>Send audio metadata as key=value pairs separated by pipes. Use \\| to escape pipe characters.</i>
-<b>Example:</b> <code>title={basename} - {audiolang}|artist=MyArtist</code>
-┖ <b>Time Left :</b> <code>60 sec</code>""",
+        "🎵 Audio Stream Metadata",
+        "Metadata applied to each audio track separately.",
+        """<i>🎧 Audio stream metadata with per-track language support</i>
+
+<b>📋 Example:</b>
+<code>language={audiolang}|title=Audio - {audiolang}</code>
+
+⏱ <b>Time Left:</b> <code>60 sec</code>""",
     ),
     "VIDEO_METADATA": (
-        "Video Metadata String (key=value|key=value) with Dynamic Variables",
-        "Set video stream metadata fields with dynamic variables. Applied to video streams.",
-        """<i>Send video metadata as key=value pairs separated by pipes. Use \\| to escape pipe characters.</i>
-<b>Example:</b> <code>title={basename}|description=Encoded at {resolution}</code>
-┖ <b>Time Left :</b> <code>60 sec</code>""",
+        "🎥 Video Stream Metadata", 
+        "Metadata applied to video streams.",
+        """<i>📹 Video stream metadata for visual tracks</i>
+
+<b>📋 Example:</b>
+<code>title={basename}|comment=HD Video</code>
+
+⏱ <b>Time Left:</b> <code>60 sec</code>""",
     ),
     "SUBTITLE_METADATA": (
-        "Subtitle Metadata String (key=value|key=value) with Dynamic Variables",
-        "Set subtitle stream metadata fields with dynamic variables. Applied per subtitle stream with {sublang} replaced by each stream's language.",
-        """<i>Send subtitle metadata as key=value pairs separated by pipes. Use \\| to escape pipe characters.</i>
-<b>Example:</b> <code>title={basename} - {sublang}|comment=Subtitle track</code>
-┖ <b>Time Left :</b> <code>60 sec</code>""",
+        "💬 Subtitle Stream Metadata",
+        "Metadata applied to each subtitle track separately.",
+        """<i>📄 Subtitle stream metadata with per-track language support</i>
+
+<b>📋 Example:</b>
+<code>language={sublang}|title=Subtitles - {sublang}</code>
+
+⏱ <b>Time Left:</b> <code>60 sec</code>""",
     ),
     "YT_DESP": (
         "String",
@@ -596,7 +607,7 @@ async def get_user_settings(from_user, stype="main"):
 """
 
     elif stype == "ffset":
-        buttons.data_button("FFmpeg Cmds", f"userset {user_id} menu FFMPEG_CMDS")
+        buttons.data_button("FFmpeg Cmds", f"userset {user_id} menu FFMPEG_CMDS", "header")
         if user_dict.get("FFMPEG_CMDS", False):
             ffc = user_dict["FFMPEG_CMDS"]
         elif "FFMPEG_CMDS" not in user_dict and Config.FFMPEG_CMDS:
@@ -659,8 +670,9 @@ async def get_user_settings(from_user, stype="main"):
         text = f"""⌬ <b>FF Settings :</b>
 ┟ <b>Name</b> → {user_name}
 ┃
-┠ <b>FFmpeg Commands</b> → {ffc}
-┠ <b>Metadata</b> → {display_meta_val}
+┠ <b>FFmpeg CLI Commands</b> → {ffc}
+┃
+┠ <b>Default Metadata</b> → {display_meta_val}
 ┠ <b>Audio Metadata</b> → {display_audio_meta}
 ┠ <b>Video Metadata</b> → {display_video_meta}
 ┖ <b>Subtitle Metadata</b> → {display_subtitle_meta}"""

@@ -252,6 +252,38 @@ Here I will explain how to use mltb.* which is reference to files you want to wo
 3. Third cmd: the input in mltb.m4a so this cmd will work only on m4a audios and the output is mltb.mp3 so the output extension is mp3.
 4. Fourth cmd: the input is mltb.audio so this cmd will work on all audios and the output is mltb.mp3 so the output extension is mp3."""
 
+metadata = """<b>Metadata</b>: -meta
+
+Apply custom metadata to media files using pipe (|) separator.
+
+<b>Format:</b> key=value|key2=value2|key3=value3
+
+<b>Dynamic Variables:</b>
+• <code>{filename}</code> - Original filename
+• <code>{basename}</code> - Filename without extension  
+• <code>{extension}</code> - File extension
+• <code>{audiolang}</code> - Audio language (auto-detected or English)
+• <code>{sublang}</code> - Subtitle language (auto-detected or none)
+• <code>{year}</code> - Year extracted from filename
+
+<b>Per-Stream Metadata:</b>
+Set different metadata for audio/video/subtitle streams in User Settings > FFmpeg Settings:
+• <b>Audio Metadata:</b> Applied to each audio stream
+• <b>Video Metadata:</b> Applied to video streams  
+• <b>Subtitle Metadata:</b> Applied to subtitle streams
+
+<b>Examples:</b>
+<code>/mirror link -meta title=My Movie|artist={audiolang} Version</code>
+<code>/yt link -meta album={basename}|year={year}|genre=Action</code>
+
+<b>Escape Pipes:</b> Use <code>\\|</code> to include literal pipe in values:
+<code>title=Movie \\| Director's Cut</code>
+
+<b>User Settings Example:</b>
+• Audio Metadata: <code>language={audiolang}|title=Audio Track</code>
+• Video Metadata: <code>title={basename}|year={year}</code>
+• Subtitle Metadata: <code>language={sublang}|title=Subtitles</code>"""
+
 YT_HELP_DICT = {
     "main": yt,
     "New-Name": f"{new_name}\nNote: Don't add file extension",
@@ -274,6 +306,7 @@ YT_HELP_DICT = {
     "Thumb-Layout": thumbnail_layout,
     "Leech-Type": leech_as,
     "FFmpeg-Cmds": ffmpeg_cmds,
+    "Metadata": metadata,
 }
 
 MIRROR_HELP_DICT = {
@@ -304,6 +337,7 @@ MIRROR_HELP_DICT = {
     "Thumb-Layout": thumbnail_layout,
     "Leech-Type": leech_as,
     "FFmpeg-Cmds": ffmpeg_cmds,
+    "Metadata": metadata,
 }
 
 CLONE_HELP_DICT = {
