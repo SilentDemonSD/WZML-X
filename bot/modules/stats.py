@@ -259,6 +259,9 @@ async def stats_pages(_, query):
         msg, btns = await get_stats(query, "systasks")
         await edit_message(message, msg, btns)
     else:
+        if data[2] == "systasks" and int(data[1]) != Config.OWNER_ID:
+            await query.answer("Sorry! You cannot open System Tasks!", show_alert=True)
+            return
         await query.answer()
         msg, btns = await get_stats(query, data[2])
         await edit_message(message, msg, btns)
