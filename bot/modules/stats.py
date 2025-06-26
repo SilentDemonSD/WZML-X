@@ -29,6 +29,7 @@ from ..helper.ext_utils.status_utils import (
     get_readable_file_size,
     get_readable_time,
 )
+from ..helper.telegram_helper.filters import CustomFilters
 from ..helper.telegram_helper.button_build import ButtonMaker
 from ..helper.telegram_helper.message_utils import (
     delete_message,
@@ -213,11 +214,11 @@ async def get_stats(event, key="home"):
         else:
             msg += "┖ <i>No high usage processes found</i>"
             
-        btns.data_button("🔄 Refresh", f"stats {user_id} systasks")
+        btns.data_button("🔄 Refresh", f"stats {user_id} systasks", "header")
 
-    btns.data_button("Back", f"stats {user_id} home")
+    btns.data_button("Back", f"stats {user_id} home", "footer")
     btns.data_button("Close", f"stats {user_id} close", "footer")
-    return msg, btns.build_menu(1)
+    return msg, btns.build_menu(8 if key == "systasks" else 2)
 
 
 @new_task
@@ -237,6 +238,9 @@ async def stats_pages(_, query):
         await query.answer()
         await delete_message(message, message.reply_to_message)
     elif data[2] == "killproc":
+        if data[2] == "systasks" and await CustomFilters.owner(_, query):
+            await query.answer("Sorry! You cannot Kill System Tasks!", show_alert=True)
+            return
         pid = int(data[3])
         try:
             process = Process(pid)
@@ -259,7 +263,7 @@ async def stats_pages(_, query):
         msg, btns = await get_stats(query, "systasks")
         await edit_message(message, msg, btns)
     else:
-        if data[2] == "systasks" and int(data[1]) != Config.OWNER_ID:
+        if data[2] == "systasks" and await CustomFilters.sudo(_, query):
             await query.answer("Sorry! You cannot open System Tasks!", show_alert=True)
             return
         await query.answer()
