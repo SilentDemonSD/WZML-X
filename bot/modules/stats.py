@@ -210,9 +210,9 @@ async def get_stats(event, key="home"):
                 user = proc.get('username', 'Unknown')[:10]
                 msg += f"┠ <b>{i:2d}.</b> <code>{name}</code>\n┃    🔹 <b>CPU:</b> {cpu:.1f}% | <b>MEM:</b> {mem:.1f}%\n┃    👤 <b>User:</b> {user} | <b>PID:</b> {proc['pid']}\n"
                 btns.data_button(f"{i}", f"stats {user_id} killproc {proc['pid']}")
-            msg += "┖ <i>Click serial number to terminate process</i>"
+            msg += "┃\n┖ <i>Click serial number to terminate process</i>"
         else:
-            msg += "┖ <i>No high usage processes found</i>"
+            msg += "┃\n┖ <i>No high usage processes found</i>"
             
         btns.data_button("🔄 Refresh", f"stats {user_id} systasks", "header")
 
@@ -238,7 +238,7 @@ async def stats_pages(_, query):
         await query.answer()
         await delete_message(message, message.reply_to_message)
     elif data[2] == "killproc":
-        if data[2] == "systasks" and await CustomFilters.owner(_, query):
+        if data[2] == "systasks" and not await CustomFilters.owner(_, query):
             await query.answer("Sorry! You cannot Kill System Tasks!", show_alert=True)
             return
         pid = int(data[3])
@@ -263,7 +263,7 @@ async def stats_pages(_, query):
         msg, btns = await get_stats(query, "systasks")
         await edit_message(message, msg, btns)
     else:
-        if data[2] == "systasks" and await CustomFilters.sudo(_, query):
+        if data[2] == "systasks" and not await CustomFilters.sudo(_, query):
             await query.answer("Sorry! You cannot open System Tasks!", show_alert=True)
             return
         await query.answer()
