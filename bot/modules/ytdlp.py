@@ -4,11 +4,11 @@ from time import time
 
 from httpx import AsyncClient
 from aiofiles.os import path as aiopath
+from yt_dlp import YoutubeDL
 from pyrogram.filters import regex, user
 from pyrogram.handlers import CallbackQueryHandler
-from yt_dlp import YoutubeDL
 
-from .. import LOGGER, bot_loop, task_dict_lock, DOWNLOAD_DIR
+from .. import DOWNLOAD_DIR, LOGGER, bot_loop, task_dict_lock
 from ..core.config_manager import Config
 from ..helper.ext_utils.bot_utils import (
     COMMAND_USAGE,
@@ -381,21 +381,19 @@ class YtDlp(TaskListener):
         self.user_trans = args["-ut"]
 
         merged_metadata = self.default_metadata_dict.copy()
+        merged_audio_metadata = self.audio_metadata_dict.copy()
+        merged_video_metadata = self.video_metadata_dict.copy()
+        merged_subtitle_metadata = self.subtitle_metadata_dict.copy()
 
         cmd_line_metadata_str = args["-meta"]
         if cmd_line_metadata_str:
-            cmd_line_meta_dict = {}
-            pairs = cmd_line_metadata_str.split(":")
-            for pair in pairs:
-                if "=" in pair:
-                    key, value = pair.split("=", 1)
-                    cmd_line_meta_dict[key.strip()] = value.strip()
-                else:
-                    LOGGER.warning(f"Skipping malformed -meta argument pair: {pair}")
-
-            merged_metadata.update(cmd_line_meta_dict)
+            cmd_line_meta_dict = self.parse_metadata_string(cmd_line_metadata_str)
+            merged_metadata = self.merge_metadata_dicts(merged_metadata, cmd_line_meta_dict)
 
         self.metadata_dict = merged_metadata
+        self.audio_metadata_dict = merged_audio_metadata
+        self.video_metadata_dict = merged_video_metadata
+        self.subtitle_metadata_dict = merged_subtitle_metadata
 
         is_bulk = args["-b"]
 

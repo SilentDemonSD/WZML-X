@@ -19,11 +19,11 @@ from ..helper.ext_utils.media_utils import (
 from ..helper.mirror_leech_utils.status_utils.metadata_status import MetadataStatus
 
 
-async def apply_metadata_title(self, dl_path, gid, metadata_dict):
-    if not metadata_dict:
+async def apply_metadata_title(self, dl_path, gid, metadata_dict, audio_metadata_dict=None, video_metadata_dict=None, subtitle_metadata_dict=None):
+    if not any([metadata_dict, audio_metadata_dict, video_metadata_dict, subtitle_metadata_dict]):
         return dl_path
 
-    LOGGER.info(f"Applying metadata: '{metadata_dict}' to {self.name}")
+    LOGGER.info(f"Applying metadata to {self.name}")
     ffmpeg = FFMpeg(self)
 
     is_file_input = await aiopath.isfile(dl_path)
@@ -68,6 +68,17 @@ async def apply_metadata_title(self, dl_path, gid, metadata_dict):
             self.subname = ospath.basename(file_path)
             self.subsize = await get_path_size(file_path)
 
+            metadata_result = await self.metadata_processor.process_all(
+                video_metadata_dict or {}, 
+                audio_metadata_dict or {},
+                subtitle_metadata_dict or {}, 
+                file_path
+            )
+            
+            if metadata_dict:
+                legacy_metadata = await self.metadata_processor.process(metadata_dict, file_path)
+                metadata_result['global'].update(legacy_metadata)
+
             original_extension = ospath.splitext(file_path)[1]
             temp_output_name = (
                 f"{ospath.splitext(file_path)[0]}.meta_temp{original_extension}"
@@ -90,8 +101,6 @@ async def apply_metadata_title(self, dl_path, gid, metadata_dict):
                 file_path,
             ]
 
-            title = metadata_dict.get("title", "Untitled")
-
             maps = []
             metadata_maps = []
             video_stream_count = 0
@@ -113,7 +122,7 @@ async def apply_metadata_title(self, dl_path, gid, metadata_dict):
                                 f"language={stream['tags']['language']}",
                             ]
                         )
-                    for meta_key, meta_value in metadata_dict.items():
+                    for meta_key, meta_value in metadata_result['video'].items():
                         metadata_maps.extend(
                             [
                                 f"-metadata:s:v:{video_stream_count}",
@@ -130,7 +139,14 @@ async def apply_metadata_title(self, dl_path, gid, metadata_dict):
                                 f"language={stream['tags']['language']}",
                             ]
                         )
-                    for meta_key, meta_value in metadata_dict.items():
+                    
+                    audio_meta_for_stream = {}
+                    for audio_stream_meta in metadata_result['audio_streams']:
+                        if audio_stream_meta['index'] == stream_index:
+                            audio_meta_for_stream = audio_stream_meta['metadata']
+                            break
+                    
+                    for meta_key, meta_value in audio_meta_for_stream.items():
                         metadata_maps.extend(
                             [
                                 f"-metadata:s:a:{audio_stream_count}",
@@ -147,9 +163,15 @@ async def apply_metadata_title(self, dl_path, gid, metadata_dict):
                                 f"language={stream['tags']['language']}",
                             ]
                         )
-
+                    
                     if stream.get("codec_name") not in ["webvtt", "unknown"]:
-                        for meta_key, meta_value in metadata_dict.items():
+                        subtitle_meta_for_stream = {}
+                        for subtitle_stream_meta in metadata_result['subtitle_streams']:
+                            if subtitle_stream_meta['index'] == stream_index:
+                                subtitle_meta_for_stream = subtitle_stream_meta['metadata']
+                                break
+                        
+                        for meta_key, meta_value in subtitle_meta_for_stream.items():
                             metadata_maps.extend(
                                 [
                                     f"-metadata:s:s:{subtitle_stream_count}",
@@ -164,7 +186,7 @@ async def apply_metadata_title(self, dl_path, gid, metadata_dict):
             met_cmd.extend(["-map_metadata", "-1"])
             met_cmd.extend(metadata_maps)
 
-            for meta_key, meta_value in metadata_dict.items():
+            for meta_key, meta_value in metadata_result['global'].items():
                 met_cmd.extend(["-metadata", f"{meta_key}={meta_value}"])
 
             met_cmd.extend(
