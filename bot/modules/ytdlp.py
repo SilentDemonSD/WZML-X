@@ -379,21 +379,14 @@ class YtDlp(TaskListener):
         self.folder_name = f"/{args["-m"]}".rstrip("/") if len(args["-m"]) > 0 else ""
         self.bot_trans = args["-bt"]
         self.user_trans = args["-ut"]
-
-        merged_metadata = self.default_metadata_dict.copy()
-        merged_audio_metadata = self.audio_metadata_dict.copy()
-        merged_video_metadata = self.video_metadata_dict.copy()
-        merged_subtitle_metadata = self.subtitle_metadata_dict.copy()
-
-        cmd_line_metadata_str = args["-meta"]
-        if cmd_line_metadata_str:
-            cmd_line_meta_dict = self.metadata_processor.parse_string(cmd_line_metadata_str)
-            merged_metadata = self.metadata_processor.merge_dicts(merged_metadata, cmd_line_meta_dict)
-
-        self.metadata_dict = merged_metadata
-        self.audio_metadata_dict = merged_audio_metadata
-        self.video_metadata_dict = merged_video_metadata
-        self.subtitle_metadata_dict = merged_subtitle_metadata
+        self.metadata_dict = self.default_metadata_dict.copy()
+        self.audio_metadata_dict = self.audio_metadata_dict.copy()
+        self.video_metadata_dict = self.video_metadata_dict.copy()
+        self.subtitle_metadata_dict = self.subtitle_metadata_dict.copy()
+        if meta := args["-meta"]:
+            self.metadata_dict = self.metadata_processor.merge_dicts(
+                self.default_metadata_dict, self.metadata_processor.parse_string(meta)
+            )
 
         is_bulk = args["-b"]
 

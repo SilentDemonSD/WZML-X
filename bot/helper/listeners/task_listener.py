@@ -390,13 +390,13 @@ class TaskListener(TaskConfig):
         if self.is_yt:
             buttons = ButtonMaker()
             if mime_type == "Folder/Playlist":
-                msg += f"\n┠ <b>Type</b> → Playlist"
+                msg += "\n┠ <b>Type</b> → Playlist"
                 msg += f"\n┖ <b>Total Videos</b> → {files}"
                 if link:
                     buttons.url_button("🔗 View Playlist", link)
                 user_message = f"{self.tag}\nYour playlist ({files} videos) has been uploaded to YouTube successfully!"
             else:
-                msg += f"\n┖ <b>Type</b> → Video"
+                msg += "\n┖ <b>Type</b> → Video"
                 if link:
                     buttons.url_button("🔗 View Video", link)
                 user_message = (
