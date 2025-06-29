@@ -184,36 +184,44 @@ async def get_stats(event, key="home"):
 ┠ <b>User Max Tasks :</b> {Config.USER_MAX_TASKS or "∞"}
 ┖ <b>Bot Max Tasks :</b> {Config.BOT_MAX_TASKS or "∞"}
     """
-     
+
     elif key == "systasks":
         try:
             processes = []
-            for proc in process_iter(['pid', 'name', 'cpu_percent', 'memory_percent', 'username']):
+            for proc in process_iter(
+                ["pid", "name", "cpu_percent", "memory_percent", "username"]
+            ):
                 try:
                     info = proc.info
-                    if info.get('cpu_percent', 0) > 1.0 or info.get('memory_percent', 0) > 1.0:
+                    if (
+                        info.get("cpu_percent", 0) > 1.0
+                        or info.get("memory_percent", 0) > 1.0
+                    ):
                         processes.append(info)
                 except (NoSuchProcess, AccessDenied):
                     continue
-            processes.sort(key=lambda x: x.get('cpu_percent', 0) + x.get('memory_percent', 0), reverse=True)
+            processes.sort(
+                key=lambda x: x.get("cpu_percent", 0) + x.get("memory_percent", 0),
+                reverse=True,
+            )
             processes = processes[:15]
         except Exception:
             processes = []
-        
+
         msg = "⌬ <b><i>System Tasks (High Usage)</i></b>\n│\n"
-        
+
         if processes:
             for i, proc in enumerate(processes, 1):
-                name = proc.get('name', 'Unknown')[:20]
-                cpu = proc.get('cpu_percent', 0)
-                mem = proc.get('memory_percent', 0)
-                user = proc.get('username', 'Unknown')[:10]
+                name = proc.get("name", "Unknown")[:20]
+                cpu = proc.get("cpu_percent", 0)
+                mem = proc.get("memory_percent", 0)
+                user = proc.get("username", "Unknown")[:10]
                 msg += f"┠ <b>{i:2d}.</b> <code>{name}</code>\n┃    🔹 <b>CPU:</b> {cpu:.1f}% | <b>MEM:</b> {mem:.1f}%\n┃    👤 <b>User:</b> {user} | <b>PID:</b> {proc['pid']}\n"
                 btns.data_button(f"{i}", f"stats {user_id} killproc {proc['pid']}")
             msg += "┃\n┖ <i>Click serial number to terminate process</i>"
         else:
             msg += "┃\n┖ <i>No high usage processes found</i>"
-            
+
         btns.data_button("🔄 Refresh", f"stats {user_id} systasks", "header")
 
     btns.data_button("Back", f"stats {user_id} home", "footer")
@@ -254,12 +262,16 @@ async def stats_pages(_, query):
                 status = "✅ Terminated"
             await query.answer(f"{status}: {proc_name} (PID: {pid})", show_alert=True)
         except NoSuchProcess:
-            await query.answer("❌ Process not found or already terminated!", show_alert=True)
+            await query.answer(
+                "❌ Process not found or already terminated!", show_alert=True
+            )
         except AccessDenied:
-            await query.answer("❌ Access denied! Cannot kill this process.", show_alert=True)
+            await query.answer(
+                "❌ Access denied! Cannot kill this process.", show_alert=True
+            )
         except Exception as e:
             await query.answer(f"❌ Error: {str(e)}", show_alert=True)
-        
+
         msg, btns = await get_stats(query, "systasks")
         await edit_message(message, msg, btns)
     else:

@@ -387,8 +387,12 @@ class YtDlp(TaskListener):
 
         cmd_line_metadata_str = args["-meta"]
         if cmd_line_metadata_str:
-            cmd_line_meta_dict = self.metadata_processor.parse_string(cmd_line_metadata_str)
-            merged_metadata = self.metadata_processor.merge_dicts(merged_metadata, cmd_line_meta_dict)
+            cmd_line_meta_dict = self.metadata_processor.parse_string(
+                cmd_line_metadata_str
+            )
+            merged_metadata = self.metadata_processor.merge_dicts(
+                merged_metadata, cmd_line_meta_dict
+            )
 
         self.metadata_dict = merged_metadata
         self.audio_metadata_dict = merged_audio_metadata
@@ -472,9 +476,17 @@ class YtDlp(TaskListener):
             return
 
         self._set_mode_engine()
-        
-        cookie_to_use = usr_cookie if not self.user_dict.get("USE_DEFAULT_COOKIE", False) and (usr_cookie := self.user_dict.get("USER_COOKIE_FILE", "")) and await aiopath.exists(usr_cookie) else "cookies.txt"
-        LOGGER.info(f"Using cookies.txt file: {cookie_to_use} | User ID : {self.user_id}")
+
+        cookie_to_use = (
+            usr_cookie
+            if not self.user_dict.get("USE_DEFAULT_COOKIE", False)
+            and (usr_cookie := self.user_dict.get("USER_COOKIE_FILE", ""))
+            and await aiopath.exists(usr_cookie)
+            else "cookies.txt"
+        )
+        LOGGER.info(
+            f"Using cookies.txt file: {cookie_to_use} | User ID : {self.user_id}"
+        )
 
         options = {"usenetrc": True, "cookiefile": cookie_to_use}
         if opt:
