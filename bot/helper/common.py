@@ -69,6 +69,8 @@ class TaskConfig:
         self.metadata_processor = MetadataProcessor()
         for k in ("METADATA", "AUDIO_METADATA", "VIDEO_METADATA", "SUBTITLE_METADATA"):
             v = self.user_dict.get(k, {})
+            if k == "METADATA":
+                k = "default_metadata"
             if isinstance(v, dict):
                 setattr(self, f"{k.lower()}_dict", v)
             elif isinstance(v, str):
