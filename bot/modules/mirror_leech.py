@@ -189,8 +189,12 @@ class Mirror(TaskListener):
 
         cmd_line_metadata_str = args["-meta"]
         if cmd_line_metadata_str:
-            cmd_line_meta_dict = self.metadata_processor.parse_string(cmd_line_metadata_str)
-            merged_metadata = self.metadata_processor.merge_dicts(merged_metadata, cmd_line_meta_dict)
+            cmd_line_meta_dict = self.metadata_processor.parse_string(
+                cmd_line_metadata_str
+            )
+            merged_metadata = self.metadata_processor.merge_dicts(
+                merged_metadata, cmd_line_meta_dict
+            )
 
         self.metadata_dict = merged_metadata
         self.audio_metadata_dict = merged_audio_metadata
