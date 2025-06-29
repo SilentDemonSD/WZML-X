@@ -27,15 +27,16 @@ class MetadataProcessor:
         except Exception:
             return lang_code
 
+
     async def extract_file_vars(self, file_path):
         fname = basename(file_path)
         bname, ext = splitext(fname)
         self.vars = {
-            'filename': fname,
-            'basename': bname,
-            'extension': ext.lstrip('.'),
-            'audiolang': 'unknown',
-            'sublang': 'none'
+            "filename": fname,
+            "basename": bname,
+            "extension": ext.lstrip("."),
+            "audiolang": "unknown",
+            "sublang": "none",
         }
         self.audio_streams, self.subtitle_streams = [], []
         try:
@@ -95,6 +96,7 @@ class MetadataProcessor:
     def apply_vars(self, metadata_dict):
         return self.apply_vars_to_stream(metadata_dict)
 
+
     def get_audio_metadata(self, audio_metadata_dict):
         return [{'index': s['index'],
                  'metadata': self.apply_vars_to_stream(audio_metadata_dict, s['language'], s['full_language'], 'audio')}
@@ -111,11 +113,22 @@ class MetadataProcessor:
     async def process_all(self, video_metadata_dict, audio_metadata_dict, subtitle_metadata_dict, file_path):
         await self.extract_file_vars(file_path)
         return {
-            'video': self.apply_vars(video_metadata_dict) if video_metadata_dict else {},
-            'audio_streams': self.get_audio_metadata(audio_metadata_dict) if audio_metadata_dict else [],
-            'subtitle_streams': self.get_subtitle_metadata(subtitle_metadata_dict) if subtitle_metadata_dict else [],
-            'global': {}
+            "video": (
+                self.apply_vars(video_metadata_dict) if video_metadata_dict else {}
+            ),
+            "audio_streams": (
+                self.get_audio_metadata(audio_metadata_dict)
+                if audio_metadata_dict
+                else []
+            ),
+            "subtitle_streams": (
+                self.get_subtitle_metadata(subtitle_metadata_dict)
+                if subtitle_metadata_dict
+                else []
+            ),
+            "global": {},
         }
+
 
     async def process(self, metadata_dict, file_path):
         await self.extract_file_vars(file_path)

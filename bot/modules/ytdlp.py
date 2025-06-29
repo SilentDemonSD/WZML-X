@@ -465,9 +465,17 @@ class YtDlp(TaskListener):
             return
 
         self._set_mode_engine()
-        
-        cookie_to_use = usr_cookie if not self.user_dict.get("USE_DEFAULT_COOKIE", False) and (usr_cookie := self.user_dict.get("USER_COOKIE_FILE", "")) and await aiopath.exists(usr_cookie) else "cookies.txt"
-        LOGGER.info(f"Using cookies.txt file: {cookie_to_use} | User ID : {self.user_id}")
+
+        cookie_to_use = (
+            usr_cookie
+            if not self.user_dict.get("USE_DEFAULT_COOKIE", False)
+            and (usr_cookie := self.user_dict.get("USER_COOKIE_FILE", ""))
+            and await aiopath.exists(usr_cookie)
+            else "cookies.txt"
+        )
+        LOGGER.info(
+            f"Using cookies.txt file: {cookie_to_use} | User ID : {self.user_id}"
+        )
 
         options = {"usenetrc": True, "cookiefile": cookie_to_use}
         if opt:
