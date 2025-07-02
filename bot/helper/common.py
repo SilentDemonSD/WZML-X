@@ -1,6 +1,5 @@
 import re
-from asyncio import gather, sleep, create_subprocess_exec
-from asyncio.subprocess import PIPE
+from asyncio import gather, sleep
 from contextlib import suppress
 from os import path as ospath, walk
 from re import sub
@@ -48,10 +47,10 @@ from .ext_utils.media_utils import (
     get_document_type,
     take_ss,
 )
+from .ext_utils.metadata_utils import MetadataProcessor
 from .mirror_leech_utils.gdrive_utils.list import GoogleDriveList
 from .mirror_leech_utils.rclone_utils.list import RcloneList
 from .mirror_leech_utils.status_utils.ffmpeg_status import FFmpegStatus
-from .mirror_leech_utils.status_utils.metadata_status import MetadataStatus
 from .mirror_leech_utils.status_utils.sevenz_status import SevenZStatus
 from .telegram_helper.bot_commands import BotCommands
 from .telegram_helper.message_utils import (
@@ -67,13 +66,17 @@ class TaskConfig:
         self.user = self.message.from_user or self.message.sender_chat
         self.user_id = self.user.id
         self.user_dict = user_data.get(self.user_id, {})
-
-        default_metadata_from_settings = self.user_dict.get("METADATA")
-        if isinstance(default_metadata_from_settings, dict):
-            self.default_metadata_dict = default_metadata_from_settings
-        else:
-            self.default_metadata_dict = {}
-
+        self.metadata_processor = MetadataProcessor()
+        for k in ("METADATA", "AUDIO_METADATA", "VIDEO_METADATA", "SUBTITLE_METADATA"):
+            v = self.user_dict.get(k, {})
+            if k == "METADATA":
+                k = "default_metadata"
+            if isinstance(v, dict):
+                setattr(self, f"{k.lower()}_dict", v)
+            elif isinstance(v, str):
+                setattr(self, f"{k.lower()}_dict", self.metadata_processor.parse_string(v))
+            else:
+                setattr(self, f"{k.lower()}_dict", {})
         self.dir = f"{DOWNLOAD_DIR}{self.mid}"
         self.up_dir = ""
         self.link = ""
@@ -1088,3 +1091,9 @@ class TaskConfig:
                         await remove(f_path)
                     except Exception:
                         self.is_cancelled = True
+
+    def parse_metadata_string(self, metadata_str):
+        return self.metadata_processor.parse_string(metadata_str)
+
+    def merge_metadata_dicts(self, default_dict, cmd_dict):
+        return self.metadata_processor.merge_dicts(default_dict, cmd_dict)
