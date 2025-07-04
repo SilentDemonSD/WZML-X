@@ -16,28 +16,64 @@ class MetadataStatus:
         self.engine = EngineStatus().STATUS_METADATA
 
     def speed(self):
-        return f"{get_readable_file_size(self._obj.speed_raw)}/s"
+        try:
+            return (
+                f"{get_readable_file_size(self._obj.speed_raw)}/s"
+                if hasattr(self._obj, "speed_raw") and self._obj.speed_raw
+                else "0 B/s"
+            )
+        except Exception:
+            return "0 B/s"
 
     def processed_bytes(self):
-        return get_readable_file_size(self._obj.processed_bytes)
+        try:
+            return (
+                get_readable_file_size(self._obj.processed_bytes)
+                if hasattr(self._obj, "processed_bytes") and self._obj.processed_bytes
+                else "0 B"
+            )
+        except Exception:
+            return "0 B"
 
     def progress(self):
-        return f"{round(self._obj.progress_raw, 2)}%"
+        try:
+            if (
+                hasattr(self._obj, "progress_raw")
+                and self._obj.progress_raw is not None
+            ):
+                return f"{round(self._obj.progress_raw, 2)}%"
+            elif hasattr(self._obj, "_progress") and self._obj._progress is not None:
+                return f"{round(self._obj._progress, 2)}%"
+            return "0%"
+        except Exception:
+            return "0%"
 
     def gid(self):
         return self._gid
 
     def name(self):
-        return self.listener.name
+        try:
+            return getattr(self.listener, "subname", None) or self.listener.name
+        except Exception:
+            return "Processing..."
 
     def size(self):
-        return get_readable_file_size(self.listener.size)
+        try:
+            size = getattr(self.listener, "subsize", None) or self.listener.size
+            return get_readable_file_size(size) if size else "Unknown"
+        except Exception:
+            return "Unknown"
 
     def eta(self):
         try:
-            eta_seconds = self._obj.eta_raw  # self._obj is an FFMpeg instance
-            if eta_seconds is not None and eta_seconds > 0:
-                return get_readable_time(eta_seconds)
+            if (
+                hasattr(self._obj, "eta_raw")
+                and self._obj.eta_raw is not None
+                and self._obj.eta_raw > 0
+            ):
+                return get_readable_time(self._obj.eta_raw)
+            elif hasattr(self._obj, "_eta") and self._obj._eta != "-":
+                return self._obj._eta
             return "-"
         except Exception:
             return "-"

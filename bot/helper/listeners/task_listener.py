@@ -233,8 +233,19 @@ class TaskListener(TaskConfig):
             self.size = await get_path_size(up_dir)
             self.clear()
 
-        if hasattr(self, "metadata_dict") and self.metadata_dict:
-            up_path = await apply_metadata_title(self, up_path, gid, self.metadata_dict)
+        if (
+            (hasattr(self, "metadata_dict") and self.metadata_dict)
+            or (hasattr(self, "audio_metadata_dict") and self.audio_metadata_dict)
+            or (hasattr(self, "video_metadata_dict") and self.video_metadata_dict)
+        ):
+            up_path = await apply_metadata_title(
+                self,
+                up_path,
+                gid,
+                getattr(self, "metadata_dict", {}),
+                getattr(self, "audio_metadata_dict", {}),
+                getattr(self, "video_metadata_dict", {}),
+            )
             if self.is_cancelled:
                 return
 
@@ -381,13 +392,13 @@ class TaskListener(TaskConfig):
         if self.is_yt:
             buttons = ButtonMaker()
             if mime_type == "Folder/Playlist":
-                msg += f"\n┠ <b>Type</b> → Playlist"
+                msg += "\n┠ <b>Type</b> → Playlist"
                 msg += f"\n┖ <b>Total Videos</b> → {files}"
                 if link:
                     buttons.url_button("🔗 View Playlist", link)
                 user_message = f"{self.tag}\nYour playlist ({files} videos) has been uploaded to YouTube successfully!"
             else:
-                msg += f"\n┖ <b>Type</b> → Video"
+                msg += "\n┖ <b>Type</b> → Video"
                 if link:
                     buttons.url_button("🔗 View Video", link)
                 user_message = (

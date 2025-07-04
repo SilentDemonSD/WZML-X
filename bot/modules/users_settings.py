@@ -45,7 +45,13 @@ leech_options = [
 ]
 rclone_options = ["RCLONE_CONFIG", "RCLONE_PATH", "RCLONE_FLAGS"]
 gdrive_options = ["TOKEN_PICKLE", "GDRIVE_ID", "INDEX_URL"]
-ffset_options = ["FFMPEG_CMDS", "METADATA"]
+ffset_options = [
+    "FFMPEG_CMDS",
+    "METADATA",
+    "AUDIO_METADATA",
+    "VIDEO_METADATA",
+    "SUBTITLE_METADATA",
+]
 advanced_options = [
     "EXCLUDED_EXTENSIONS",
     "NAME_SWAP",
@@ -179,9 +185,50 @@ Here I will explain how to use mltb.* which is reference to files you want to wo
 """,
     ),
     "METADATA": (
-        "Metadata String (key=value:key=value)",
-        "Set default metadata fields (e.g., title=MyTitle:comment=DefaultComment). These will be applied to files. Leave empty to disable.",
-        "<i>Send default metadata as key=value pairs separated by colons. Example: title=My Default Title:artist=Default Artist:comment=Uploaded by Bot</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
+        "🏷 Global Metadata (key=value|key=value)",
+        "Apply metadata to all media files with dynamic variables.",
+        """<i>📝 Send metadata as</i> <code>key=value|key2=value2</code>
+
+<b>🔧 Dynamic Variables:</b>
+• <code>{filename}</code> - Original filename
+• <code>{basename}</code> - Name without extension
+• <code>{audiolang}</code> - Audio language (English/Hindi etc.)
+• <code>{year}</code> - Year from filename
+
+<b>📋 Example:</b>
+<code>title={basename}|artist={audiolang} Version|year={year}</code>
+
+⏱ <b>Time Left:</b> <code>60 sec</code>""",
+    ),
+    "AUDIO_METADATA": (
+        "🎵 Audio Stream Metadata",
+        "Metadata applied to each audio track separately.",
+        """<i>🎧 Audio stream metadata with per-track language support</i>
+
+<b>📋 Example:</b>
+<code>language={audiolang}|title=Audio - {audiolang}</code>
+
+⏱ <b>Time Left:</b> <code>60 sec</code>""",
+    ),
+    "VIDEO_METADATA": (
+        "🎥 Video Stream Metadata",
+        "Metadata applied to video streams.",
+        """<i>📹 Video stream metadata for visual tracks</i>
+
+<b>📋 Example:</b>
+<code>title={basename}|comment=HD Video</code>
+
+⏱ <b>Time Left:</b> <code>60 sec</code>""",
+    ),
+    "SUBTITLE_METADATA": (
+        "💬 Subtitle Stream Metadata",
+        "Metadata applied to each subtitle track separately.",
+        """<i>📄 Subtitle stream metadata with per-track language support</i>
+
+<b>📋 Example:</b>
+<code>language={sublang}|title=Subtitles - {sublang}</code>
+
+⏱ <b>Time Left:</b> <code>60 sec</code>""",
     ),
     "YT_DESP": (
         "String",
@@ -281,11 +328,11 @@ async def get_user_settings(from_user, stype="main"):
         buttons.data_button("Back", f"userset {user_id} back", "footer")
         buttons.data_button("Close", f"userset {user_id} close", "footer")
 
-        use_user_cookie = user_dict.get("USER_COOKIE_FILE", False)
-        cookie_mode = "USER's" if use_user_cookie else "OWNER's"
+        def_cookies = user_dict.get("USE_DEFAULT_COOKIE", False)
+        cookie_mode = "Owner's Cookie" if def_cookies else "User's Cookie"
         buttons.data_button(
-            f"Swap to {'OWNER' if use_user_cookie else 'USER'}'s Cookie",
-            f"userset {user_id} tog USER_COOKIE_FILE {'f' if use_user_cookie else 't'}",
+            f"Swap to {'OWNER' if not def_cookies else 'USER'}'s Cookie File",
+            f"userset {user_id} tog USE_DEFAULT_COOKIE {'f' if def_cookies else 't'}",
         )
         btns = buttons.build_menu(1)
 
@@ -294,7 +341,7 @@ async def get_user_settings(from_user, stype="main"):
 ┃
 ┠ <b>Default Upload Package</b> → <b>{du}</b>
 ┠ <b>Default Usage Mode</b> → <b>{tr}'s</b> token/config
-┖ <b>Cookie Mode</b> → <b>{cookie_mode}</b>
+┖ <b>yt Cookies Mode</b> → <b>{cookie_mode}</b>
 """
 
     elif stype == "leech":
@@ -566,7 +613,9 @@ async def get_user_settings(from_user, stype="main"):
 """
 
     elif stype == "ffset":
-        buttons.data_button("FFmpeg Cmds", f"userset {user_id} menu FFMPEG_CMDS")
+        buttons.data_button(
+            "FFmpeg Cmds", f"userset {user_id} menu FFMPEG_CMDS", "header"
+        )
         if user_dict.get("FFMPEG_CMDS", False):
             ffc = user_dict["FFMPEG_CMDS"]
         elif "FFMPEG_CMDS" not in user_dict and Config.FFMPEG_CMDS:
@@ -595,6 +644,35 @@ async def get_user_settings(from_user, stype="main"):
                 f"<code>{escape(metadata_setting)}</code> [<i>Legacy, needs re-set</i>]"
             )
 
+        buttons.data_button("Audio Metadata", f"userset {user_id} menu AUDIO_METADATA")
+        audio_meta_setting = user_dict.get("AUDIO_METADATA")
+        display_audio_meta = "<b>Not Set</b>"
+        if isinstance(audio_meta_setting, dict) and audio_meta_setting:
+            display_audio_meta = ", ".join(
+                f"{k}={escape(str(v))}" for k, v in audio_meta_setting.items()
+            )
+            display_audio_meta = f"<code>{display_audio_meta}</code>"
+
+        buttons.data_button("Video Metadata", f"userset {user_id} menu VIDEO_METADATA")
+        video_meta_setting = user_dict.get("VIDEO_METADATA")
+        display_video_meta = "<b>Not Set</b>"
+        if isinstance(video_meta_setting, dict) and video_meta_setting:
+            display_video_meta = ", ".join(
+                f"{k}={escape(str(v))}" for k, v in video_meta_setting.items()
+            )
+            display_video_meta = f"<code>{display_video_meta}</code>"
+
+        buttons.data_button(
+            "Subtitle Metadata", f"userset {user_id} menu SUBTITLE_METADATA"
+        )
+        subtitle_meta_setting = user_dict.get("SUBTITLE_METADATA")
+        display_subtitle_meta = "<b>Not Set</b>"
+        if isinstance(subtitle_meta_setting, dict) and subtitle_meta_setting:
+            display_subtitle_meta = ", ".join(
+                f"{k}={escape(str(v))}" for k, v in subtitle_meta_setting.items()
+            )
+            display_subtitle_meta = f"<code>{display_subtitle_meta}</code>"
+
         buttons.data_button("Back", f"userset {user_id} back", "footer")
         buttons.data_button("Close", f"userset {user_id} close", "footer")
         btns = buttons.build_menu(2)
@@ -602,8 +680,12 @@ async def get_user_settings(from_user, stype="main"):
         text = f"""⌬ <b>FF Settings :</b>
 ┟ <b>Name</b> → {user_name}
 ┃
-┠ <b>FFmpeg Commands</b> → {ffc}
-┖ <b>Metadata</b> → {display_meta_val}"""
+┠ <b>FFmpeg CLI Commands</b> → {ffc}
+┃
+┠ <b>Default Metadata</b> → {display_meta_val}
+┠ <b>Audio Metadata</b> → {display_audio_meta}
+┠ <b>Video Metadata</b> → {display_video_meta}
+┖ <b>Subtitle Metadata</b> → {display_subtitle_meta}"""
 
     elif stype == "advanced":
         buttons.data_button(
@@ -829,21 +911,42 @@ async def set_option(_, message, option, rfunc):
             )
             return
         value = value.lower()
-    elif option == "METADATA":
+    elif option in [
+        "METADATA",
+        "AUDIO_METADATA",
+        "VIDEO_METADATA",
+        "SUBTITLE_METADATA",
+    ]:
         parsed_metadata_dict = {}
         if value and isinstance(value, str):
             if value.strip() == "":
                 value = {}
             else:
-                pairs = value.split(":")
-                for pair in pairs:
-                    if "=" in pair:
-                        key, val_str = pair.split("=", 1)
+                parts = []
+                current = ""
+                i = 0
+                while i < len(value):
+                    if value[i] == "\\" and i + 1 < len(value) and value[i + 1] == "|":
+                        current += "|"
+                        i += 2
+                    elif value[i] == "|":
+                        parts.append(current)
+                        current = ""
+                        i += 1
+                    else:
+                        current += value[i]
+                        i += 1
+                if current:
+                    parts.append(current)
+
+                for part in parts:
+                    if "=" in part:
+                        key, val_str = part.split("=", 1)
                         parsed_metadata_dict[key.strip()] = val_str.strip()
                 if not parsed_metadata_dict and value.strip() != "":
                     await send_message(
                         message,
-                        "Malformed metadata string. Format: key1=value1:key2=value2",
+                        "Malformed metadata string. Format: key1=value1|key2=value2. Use \\| to escape pipe characters.",
                     )
                     return
                 value = parsed_metadata_dict
@@ -941,7 +1044,26 @@ async def get_menu(option, message, user_id):
         if val is None:
             val = "<b>Not Exists</b>"
 
-    text = f"""⌬ <b><u>Menu Settings :</u></b>
+    if option == "METADATA":
+        text = f"""⌬ <b><u>Menu Settings :</u></b>
+│
+┟ <b>Option</b> → {option}
+┃
+┠ <b>Option's Value</b> → {val if val else "<b>Not Exists</b>"}
+┃
+┠ <b>Default Input Type</b> → {user_settings_text[option][0]}
+┠ <b>Description</b> → {user_settings_text[option][1]}
+┃
+┠ <b>Dynamic Variables:</b>
+┠ • <code>{{filename}}</code> - Full filename
+┠ • <code>{{basename}}</code> - Filename without extension  
+┠ • <code>{{extension}}</code> - File extension
+┃
+┠ • <code>{{audiolang}}</code> - Audio language
+┖ • <code>{{sublang}}</code> - Subtitle language
+"""
+    else:
+        text = f"""⌬ <b><u>Menu Settings :</u></b>
 │
 ┟ <b>Option</b> → {option}
 ┃
@@ -1031,7 +1153,7 @@ async def edit_user_settings(client, query):
         update_user_ldata(user_id, data[3], data[4] == "t")
         if data[3] == "STOP_DUPLICATE":
             back_to = "gdrive"
-        elif data[3] in ["USER_TOKENS", "USER_COOKIE_FILE"]:
+        elif data[3] in ["USER_TOKENS", "USE_DEFAULT_COOKIE"]:
             back_to = "general"
         else:
             back_to = "leech"

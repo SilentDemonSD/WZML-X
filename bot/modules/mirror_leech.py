@@ -181,23 +181,13 @@ class Mirror(TaskListener):
         self.bot_trans = args["-bt"]
         self.user_trans = args["-ut"]
         self.is_yt = args["-yt"]
-
-        merged_metadata = self.default_metadata_dict.copy()
-
-        cmd_line_metadata_str = args["-meta"]
-        if cmd_line_metadata_str:
-            cmd_line_meta_dict = {}
-            pairs = cmd_line_metadata_str.split(":")
-            for pair in pairs:
-                if "=" in pair:
-                    key, value = pair.split("=", 1)
-                    cmd_line_meta_dict[key.strip()] = value.strip()
-                else:
-                    LOGGER.warning(f"Skipping malformed -meta argument pair: {pair}")
-
-            merged_metadata.update(cmd_line_meta_dict)
-
-        self.metadata_dict = merged_metadata
+        self.metadata_dict = self.default_metadata_dict.copy()
+        self.audio_metadata_dict = self.audio_metadata_dict.copy()
+        self.video_metadata_dict = self.video_metadata_dict.copy()
+        self.subtitle_metadata_dict = self.subtitle_metadata_dict.copy()
+        if args["-meta"]:
+            meta = self.metadata_processor.parse_string(args["-meta"])
+            self.metadata_dict = self.metadata_processor.merge_dicts(self.metadata_dict, meta)
 
         headers = args["-h"]
         is_bulk = args["-b"]
