@@ -56,48 +56,123 @@ async def get_media_info(path, extra_info=False):
                 "-print_format",
                 "json",
                 "-show_format",
-                "-show_streams",
                 path,
             ]
         )
     except Exception as e:
         LOGGER.error(f"Get Media Info: {e}. Mostly File not found! - File: {path}")
-        return (0, "", "", "") if extra_info else (0, None, None)
+        return (0, "", "", "", "") if extra_info else (0, None, None)
+    
     if result[0] and result[2] == 0:
         ffresult = eval(result[0])
         fields = ffresult.get("format")
         if fields is None:
             LOGGER.error(f"get_media_info: {result}")
-            return (0, "", "", "") if extra_info else (0, None, None)
+            return (0, "", "", "", "") if extra_info else (0, None, None)
+        
         duration = round(float(fields.get("duration", 0)))
+        
         if extra_info:
-            lang, qual, stitles = "", "", ""
-            if (streams := ffresult.get("streams")) and streams[0].get(
-                "codec_type"
-            ) == "video":
-                qual = int(streams[0].get("height"))
-                qual = f"{480 if qual <= 480 else 540 if qual <= 540 else 720 if qual <= 720 else 1080 if qual <= 1080 else 2160 if qual <= 2160 else 4320 if qual <= 4320 else 8640}p"
+            lang, qual, stitles, esub = "", "", "", ""
+            if (streams := ffresult.get('streams')) and streams[0].get('codec_type') == 'video':
+                # Enhanced quality detection with codec information
+                height = int(streams[0].get('height', 0))
+                codec_name = streams[0].get('codec_name', '').lower()
+                profile = streams[0].get('profile', '').lower()
+                
+                # Determine quality resolution
+                if height <= 240:
+                    res = "240p"
+                elif height <= 360:
+                    res = "360p"
+                elif height <= 480:
+                    res = "480p"
+                elif height <= 540:
+                    res = "540p"
+                elif height <= 720:
+                    res = "720p"
+                elif height <= 1080:
+                    res = "1080p"
+                elif height <= 1440:
+                    res = "1440p"
+                elif height <= 2160:
+                    res = "2160p"
+                elif height <= 4320:
+                    res = "4320p"
+                else:
+                    res = "8640p"
+                
+                # Determine codec with enhanced detection
+                if codec_name in ['h264', 'avc']:
+                    codec = "H264"
+                elif codec_name in ['hevc', 'h265']:
+                    if '10' in profile or 'main10' in profile:
+                        codec = "HEVC 10bit"
+                    else:
+                        codec = "HEVC"
+                elif codec_name == 'vp9':
+                    codec = "VP9"
+                elif codec_name == 'vp8':
+                    codec = "VP8"
+                elif codec_name in ['mpeg4', 'mp4v']:
+                    codec = "MPEG4"
+                elif codec_name == 'av1':
+                    codec = "AV1"
+                else:
+                    codec = codec_name.upper() if codec_name else "Unknown"
+                
+                qual = f"🎬 {res} {codec}"
+                
+                # Process audio languages
+                audio_languages = []
                 for stream in streams:
-                    if stream.get("codec_type") == "audio" and (
-                        lc := stream.get("tags", {}).get("language")
-                    ):
-                        with suppress(Exception):
-                            lc = Language.get(lc).display_name()
-                        if lc not in lang:
-                            lang += f"{lc}, "
-                    if stream.get("codec_type") == "subtitle" and (
-                        st := stream.get("tags", {}).get("language")
-                    ):
-                        with suppress(Exception):
-                            st = Language.get(st).display_name()
-                        if st not in stitles:
-                            stitles += f"{st}, "
-            return duration, qual, lang[:-2], stitles[:-2]
+                    if stream.get('codec_type') == 'audio' and (lc := stream.get('tags', {}).get('language')):
+                        try:
+                            lang_name = Language.get(lc).display_name()
+                            if lang_name not in audio_languages:
+                                audio_languages.append(lang_name)
+                        except:
+                            if lc not in audio_languages:
+                                audio_languages.append(lc.capitalize())
+                
+                if audio_languages:
+                    lang = f"🔊 {', '.join(audio_languages)}"
+                
+                # Process subtitle languages
+                subtitle_languages = []
+                english_subs = []
+                for stream in streams:
+                    if stream.get('codec_type') == 'subtitle' and (st := stream.get('tags', {}).get('language')):
+                        try:
+                            sub_name = Language.get(st).display_name()
+                            if sub_name not in subtitle_languages:
+                                subtitle_languages.append(sub_name)
+                            # Check for English subtitles
+                            if st.lower() in ['en', 'eng', 'english'] or sub_name.lower() == 'english':
+                                english_subs.append(sub_name)
+                        except:
+                            if st not in subtitle_languages:
+                                subtitle_languages.append(st.capitalize())
+                            # Check for English subtitles
+                            if st.lower() in ['en', 'eng', 'english']:
+                                english_subs.append(st.capitalize())
+                
+                if subtitle_languages:
+                    stitles = f"💬 {', '.join(subtitle_languages)}"
+                
+                # Set ESUB if English subtitles are available
+                if english_subs:
+                    esub = "💬 ESUB"
+            
+            return duration, qual, lang, stitles, esub
+        
+        # For non-extra info (audio files)
         tags = fields.get("tags", {})
         artist = tags.get("artist") or tags.get("ARTIST") or tags.get("Artist")
         title = tags.get("title") or tags.get("TITLE") or tags.get("Title")
         return duration, artist, title
-    return (0, "", "", "") if extra_info else (0, None, None)
+    
+    return (0, "", "", "", "") if extra_info else (0, None, None)
 
 
 async def get_document_type(path):
