@@ -152,92 +152,111 @@ class TelegramUploader:
         return True
 
     async def _prepare_file(self, pre_file_, dirpath):
-        cap_file_ = file_ = pre_file_
+    cap_file_ = file_ = pre_file_
 
-        if self._lprefix:
-            cap_file_ = self._lprefix.replace(r"\s", " ") + file_
-            self._lprefix = re_sub(r"<.*?>", "", self._lprefix).replace(r"\s", " ")
-            if not file_.startswith(self._lprefix):
-                file_ = f"{self._lprefix}{file_}"
+    if self._lprefix:
+        cap_file_ = self._lprefix.replace(r"\s", " ") + file_
+        self._lprefix = re_sub(r"<.*?>", "", self._lprefix).replace(r"\s", " ")
+        if not file_.startswith(self._lprefix):
+            file_ = f"{self._lprefix}{file_}"
 
-        if self._lsuffix:
-            name, ext = ospath.splitext(cap_file_)
-            cap_file_ = name + self._lsuffix.replace(r"\s", " ") + ext
-            self._lsuffix = re_sub(r"<.*?>", "", self._lsuffix).replace(r"\s", " ")
+    if self._lsuffix:
+        name, ext = ospath.splitext(file_)
+        cap_file_ = name + self._lsuffix.replace(r"\s", " ") + ext
+        self._lsuffix = re_sub(r"<.*?>", "", self._lsuffix).replace(r"\s", " ")
 
-        cap_mono = (
-            f"<{Config.LEECH_FONT}>{cap_file_}</{Config.LEECH_FONT}>"
-            if Config.LEECH_FONT
-            else cap_file_
+    cap_mono = (
+        f"<{Config.LEECH_FONT}>{cap_file_}</{Config.LEECH_FONT}>"
+        if Config.LEECH_FONT
+        else cap_file_
+    )
+    
+    if self._lcaption:
+        self._lcaption = re_sub(r"\||\{|\}|\s", lambda m: {"|": "%%", "{": "&%&", "}": "$%$", " ": " "}[m.group()], self._lcaption)
+        parts = self._lcaption.split("|")
+        parts[0] = re_sub(
+            r"\{([^}]+)\}", lambda m: f"{{{m.group(1).lower()}}}", parts[0]
         )
-        if self._lcaption:
-            self._lcaption = re_sub(
-                r"(\\\||\\\{|\\\}|\\s)",
-                lambda m: {r"\|": "%%", r"\{": "&%&", r"\}": "$%$", r"\s": " "}[
-                    m.group(0)
-                ],
-                self._lcaption,
+        up_path = ospath.join(dirpath, pre_file_)
+        
+        # Get enhanced media info with new parameters
+        dur, qual, lang, subs, esub = await get_media_info(up_path, True)
+        
+        # Format duration as ⏳ H:MM:SS
+        def format_duration(seconds):
+            if seconds == 0:
+                return "⏳ 0:00:00"
+            hours = seconds // 3600
+            minutes = (seconds % 3600) // 60
+            secs = seconds % 60
+            return f"⏳ {hours}:{minutes:02d}:{secs:02d}"
+        
+        # Calculate MD5 hash
+        import hashlib
+        def calculate_md5(file_path):
+            try:
+                hash_md5 = hashlib.md5()
+                with open(file_path, "rb") as f:
+                    for chunk in iter(lambda: f.read(4096), b""):
+                        hash_md5.update(chunk)
+                return hash_md5.hexdigest()
+            except:
+                return "N/A"
+        
+        # Get file size
+        file_size = get_readable_file_size(await aiopath.getsize(up_path))
+        
+        # Calculate MD5 hash (async version)
+        md5_hash = await sync_to_async(calculate_md5, up_path)
+        
+        cap_mono = parts[0].format(
+            filename=cap_file_,
+            size=file_size,
+            duration=format_duration(dur),
+            quality=qual,
+            languages=lang,
+            subtitles=subs,
+            esub=esub,
+            md5_hash=md5_hash,
+        )
+
+        for part in parts[1:]:
+            args = part.split(":")
+            cap_mono = cap_mono.replace(
+                args[0],
+                args[1] if len(args) > 1 else "",
+                int(args[2]) if len(args) == 3 else -1,
             )
+        cap_mono = re_sub(r"%%|&%&|\$%$", lambda m: {"%%": "|", "&%&": "{", "$%$": "}"}[m.group()], cap_mono)
 
-            parts = self._lcaption.split("|")
-            parts[0] = re_sub(
-                r"\{([^}]+)\}", lambda m: f"{{{m.group(1).lower()}}}", parts[0]
-            )
-            up_path = ospath.join(dirpath, pre_file_)
-            dur, qual, lang, subs = await get_media_info(up_path, True)
-            cap_mono = parts[0].format(
-                filename=cap_file_,
-                size=get_readable_file_size(await aiopath.getsize(up_path)),
-                duration=get_readable_time(dur),
-                quality=qual,
-                languages=lang,
-                subtitles=subs,
-                md5_hash=await sync_to_async(get_md5_hash, up_path),
-                mime_type=self._listener.file_details.get("mime_type", "text/plain"),
-                prefilename=self._listener.file_details.get("filename", ""),
-                precaption=self._listener.file_details.get("caption", ""),
-            )
+    # Rest of the filename processing logic remains the same
+    if len(file_) > 56:
+        if is_archive(file_):
+            name = get_base_name(file_)
+            ext = file_.split(name, 1)[1]
+        elif match := re_match(r".+(?=\..+\.0*\d+$)|.+(?=\.part\d+\..+$)", file_):
+            name = match.group(0)
+            ext = file_.split(name, 1)[1]
+        elif len(fsplit := ospath.splitext(file_)) > 1:
+            name = fsplit[0]
+            ext = fsplit[1]
+        else:
+            name = file_
+            ext = ""
+        if self._lsuffix:
+            ext = f"{self._lsuffix}{ext}"
+        name = name[: 56 - len(ext)]
+        file_ = f"{name}{ext}"
+    elif self._lsuffix:
+        name, ext = ospath.splitext(file_)
+        file_ = f"{name}{self._lsuffix}{ext}"
 
-            for part in parts[1:]:
-                args = part.split(":")
-                cap_mono = cap_mono.replace(
-                    args[0],
-                    args[1] if len(args) > 1 else "",
-                    int(args[2]) if len(args) == 3 else -1,
-                )
-            cap_mono = re_sub(
-                r"%%|&%&|\$%\$",
-                lambda m: {"%%": "|", "&%&": "{", "$%$": "}"}[m.group()],
-                cap_mono,
-            )
+    if pre_file_ != file_:
+        new_path = ospath.join(dirpath, file_)
+        await rename(self._up_path, new_path)
+        self._up_path = new_path
 
-        if len(file_) > 56:
-            if is_archive(file_):
-                name = get_base_name(file_)
-                ext = file_.split(name, 1)[1]
-            elif match := re_match(r".+(?=\..+\.0*\d+$)|.+(?=\.part\d+\..+$)", file_):
-                name = match.group(0)
-                ext = file_.split(name, 1)[1]
-            elif len(fsplit := ospath.splitext(file_)) > 1:
-                name = fsplit[0]
-                ext = fsplit[1]
-            else:
-                name = file_
-                ext = ""
-            if self._lsuffix:
-                ext = f"{self._lsuffix}{ext}"
-            name = name[: 56 - len(ext)]
-            file_ = f"{name}{ext}"
-        elif self._lsuffix:
-            name, ext = ospath.splitext(file_)
-            file_ = f"{name}{self._lsuffix}{ext}"
-
-        if pre_file_ != file_:
-            new_path = ospath.join(dirpath, file_)
-            await rename(self._up_path, new_path)
-            self._up_path = new_path
-
-        return cap_mono
+    return cap_mono
 
     def _get_input_media(self, subkey, key):
         rlist = []
