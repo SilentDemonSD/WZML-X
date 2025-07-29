@@ -1,9 +1,4 @@
 # ruff: noqa: F403, F405
-
-from ..telegram_helper.bot_commands import BotCommands
-from ...core.plugin_manager import get_plugin_manager
-
-
 mirror = """<b>Send link along with command line or </b>
 
 /cmd link
@@ -385,6 +380,7 @@ PASSWORD_ERROR_MESSAGE = """
 
 
 def get_bot_commands():
+    from ...core.plugin_manager import get_plugin_manager
     static_commands = {
         "Mirror": "[link/file] Mirror to Upload Destination",
         "QbMirror": "[magnet/torrent] Mirror to Upload Destination using qbit",
@@ -430,6 +426,8 @@ BOT_COMMANDS = get_bot_commands()
 
 
 def get_help_string():
+    from ..telegram_helper.bot_commands import BotCommands
+
     help_lines = ["NOTE: Try each command without any argument to see more detalis."]
     
     commands = BotCommands.get_commands()
