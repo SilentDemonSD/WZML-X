@@ -4,7 +4,7 @@ from uuid import uuid4
 from pyrogram.enums import ChatAction
 from pyrogram.errors import ChannelInvalid, PeerIdInvalid, RPCError, UserNotParticipant
 
-from bot.helper.ext_utils.bot_utils import encode_slink
+from ..ext_utils.links_utils import encode_slink
 
 from ... import LOGGER, user_data
 from ...core.config_manager import Config
