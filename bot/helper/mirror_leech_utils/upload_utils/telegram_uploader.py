@@ -430,6 +430,16 @@ class TelegramUploader:
         retry=retry_if_exception_type(Exception),
     )
     async def _upload_file(self, cap_mono, file, o_path, force_document=False):
+        if self._sent_msg is None:
+            LOGGER.error("Cannot upload: _sent_msg is None")
+            await self._listener.on_upload_error("Upload failed: Message not initialized")
+            return
+            
+        if not hasattr(self._sent_msg, 'chat') or self._sent_msg.chat is None:
+            LOGGER.error("Cannot upload: _sent_msg.chat is None")
+            await self._listener.on_upload_error("Upload failed: Invalid message object")
+            return
+
         if (
             self._thumb is not None
             and not await aiopath.exists(self._thumb)

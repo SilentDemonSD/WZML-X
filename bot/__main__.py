@@ -78,6 +78,13 @@ add_aria2_callbacks()
 create_help_buttons()
 add_handlers()
 
+from .core.plugin_manager import get_plugin_manager
+from .modules.plugin_manager import register_plugin_commands
+
+plugin_manager = get_plugin_manager()
+plugin_manager.bot = TgClient.bot
+register_plugin_commands()
+
 from pyrogram.filters import regex
 from pyrogram.handlers import CallbackQueryHandler
 
