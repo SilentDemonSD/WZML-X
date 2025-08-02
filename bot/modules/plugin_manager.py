@@ -239,8 +239,7 @@ async def edit_plugins_menu(client: Client, query):
             await edit_message(query.message, text, buttons)
             
         elif data[2] == "close":
-            await query.answer("Closing...", show_alert=True)
-            await query.message.delete()
+            await delete_message(query.message)
             
     except Exception as e:
         LOGGER.error(f"Error in edit_plugins_menu: {e}", exc_info=True)

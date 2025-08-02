@@ -238,8 +238,8 @@ class Config:
 
 
 class BinConfig:
-    ARIA2_NAME = "speeddemon"
-    QBIT_NAME = "torrentgod"
-    FFMPEG_NAME = "vidwarlock"
-    RCLONE_NAME = "cloudphantom"
-    SABNZBD_NAME = "newsslayer"
+    ARIA2_NAME = "blitzfetcher"
+    QBIT_NAME = "stormtorrent"
+    FFMPEG_NAME = "mediaforge"
+    RCLONE_NAME = "ghostdrive"
+    SABNZBD_NAME = "newsripper"
