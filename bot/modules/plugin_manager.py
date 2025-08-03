@@ -8,7 +8,7 @@ from ..core.plugin_manager import get_plugin_manager
 from ..helper.ext_utils.bot_utils import new_task
 from ..helper.telegram_helper.button_build import ButtonMaker
 from ..helper.telegram_helper.filters import CustomFilters
-from ..helper.telegram_helper.message_utils import edit_message, send_message
+from ..helper.telegram_helper.message_utils import edit_message, send_message, delete_message
 
 
 async def get_plugins_menu(user_id: int, stype: str = "main"):
