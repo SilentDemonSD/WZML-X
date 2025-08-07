@@ -464,21 +464,40 @@ class FFMpeg:
         base_name, ext = ospath.splitext(f_path)
         dir, base_name = base_name.rsplit("/", 1)
         
+        # Check for -del flag and remove it from ffmpeg command
+        delete_originals = False
+        if "-del" in ffmpeg:
+            delete_originals = True
+            ffmpeg = [item for item in ffmpeg if item != "-del"]
+        
         # Handle wildcards in ffmpeg command before processing mltb replacements
         expanded_ffmpeg = []
-        for item in ffmpeg:
+        input_files = []  # Track input files for potential deletion
+        for i, item in enumerate(ffmpeg):
             if '*' in item and not item.startswith('mltb'):
                 # Expand wildcards relative to the video file directory
                 wildcard_pattern = ospath.join(dir, item)
                 matches = glob.glob(wildcard_pattern)
                 if matches:
                     # Use the first match
-                    expanded_ffmpeg.append(matches[0])
+                    expanded_file = matches[0]
+                    expanded_ffmpeg.append(expanded_file)
+                    # Track this as an input file if it comes after -i
+                    if i > 0 and ffmpeg[i-1] == "-i":
+                        input_files.append(expanded_file)
                 else:
                     # If no matches found, keep original
                     expanded_ffmpeg.append(item)
             else:
                 expanded_ffmpeg.append(item)
+                # Track mltb input files for potential deletion
+                if item.startswith('mltb') and i > 0 and ffmpeg[i-1] == "-i":
+                    if item == "mltb.video" or item == "mltb":
+                        input_files.append(f_path)  # Original video file
+                    elif item == "mltb.srt":
+                        # Will be replaced with actual srt filename
+                        srt_file = f"{ospath.join(dir, base_name)}.srt"
+                        input_files.append(srt_file)
         
         ffmpeg = expanded_ffmpeg
         
@@ -505,17 +524,30 @@ class FFMpeg:
             output = f"{dir}/{prefix}{output_file.replace('mltb', base_name)}{ext}"
             outputs.append(output)
             ffmpeg[index] = output
+            
         if self._listener.is_cancelled:
             return False
+            
         self._listener.subproc = await create_subprocess_exec(
             *ffmpeg, stdout=PIPE, stderr=PIPE
         )
         await self._ffmpeg_progress()
         _, stderr = await self._listener.subproc.communicate()
         code = self._listener.subproc.returncode
+        
         if self._listener.is_cancelled:
             return False
+            
         if code == 0:
+            # If successful and -del flag was used, delete original input files
+            if delete_originals:
+                for input_file in input_files:
+                    try:
+                        if await aiopath.exists(input_file):
+                            await remove(input_file)
+                            LOGGER.info(f"Deleted original file: {input_file}")
+                    except Exception as e:
+                        LOGGER.error(f"Failed to delete file {input_file}: {e}")
             return outputs
         elif code == -9:
             self._listener.is_cancelled = True
