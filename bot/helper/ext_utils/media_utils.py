@@ -364,11 +364,6 @@ async def get_multiple_frames_thumbnail(video_file, layout, keep_screenshots):
 
 
 class FFMpeg:
-    # Supported extensions
-    SUPPORTED_VIDEO_EXTENSIONS = {'mp4', 'mkv'}
-    SUPPORTED_SUBTITLE_EXTENSIONS = {'srt', 'ass'}
-    SUPPORTED_AUDIO_EXTENSIONS = {'mp3', 'aac', 'flac', 'wav', 'm4a'}  # Keep audio support
-    
     def __init__(self, listener):
         self._listener = listener
         self._processed_bytes = 0
@@ -397,33 +392,6 @@ class FFMpeg:
     @property
     def eta_raw(self):
         return self._eta_raw
-
-    def _get_file_extension(self, file_path):
-        """Extract and validate file extension"""
-        _, ext = ospath.splitext(file_path)
-        return ext.lower().lstrip('.')
-
-    def _is_supported_extension(self, file_path, media_type='video'):
-        """Check if file extension is supported"""
-        ext = self._get_file_extension(file_path)
-        
-        if media_type == 'video':
-            return ext in self.SUPPORTED_VIDEO_EXTENSIONS
-        elif media_type == 'audio':
-            return ext in self.SUPPORTED_AUDIO_EXTENSIONS
-        elif media_type == 'subtitle':
-            return ext in self.SUPPORTED_SUBTITLE_EXTENSIONS
-        
-        return False
-
-    def _get_subtitle_codec(self, ext):
-        """Get appropriate subtitle codec for extension"""
-        if ext == 'mp4':
-            return 'mov_text'
-        elif ext == 'mkv':
-            return 'ass'
-        else:
-            return 'copy'
 
     def clear(self):
         self._start_time = time()
@@ -492,71 +460,39 @@ class FFMpeg:
     async def ffmpeg_cmds(self, ffmpeg, f_path):
         self.clear()
         self._total_time = (await get_media_info(f_path))[0]
-        
-        # Check if input file has supported extension
-        input_ext = self._get_file_extension(f_path)
-        if input_ext not in (self.SUPPORTED_VIDEO_EXTENSIONS | self.SUPPORTED_AUDIO_EXTENSIONS):
-            LOGGER.error(f"Unsupported input file extension: {input_ext}. Supported: {self.SUPPORTED_VIDEO_EXTENSIONS | self.SUPPORTED_AUDIO_EXTENSIONS}")
-            return False
-        
-        # Auto-generate output filename from input file
-        base_name, _ = ospath.splitext(f_path)
-        
-        # Process ffmpeg command and replace placeholders/auto-generate outputs
-        processed_ffmpeg = []
+        base_name, ext = ospath.splitext(f_path)
+        dir, base_name = base_name.rsplit("/", 1)
+        indices = [
+            index
+            for index, item in enumerate(ffmpeg)
+            if item.startswith("mltb") or item == "mltb"
+        ]
         outputs = []
-        
-        for i, item in enumerate(ffmpeg):
-            if item == "output.mkv":
-                # Auto-generate output name: original_name.SUBBED.mkv
-                auto_output = f"{base_name}.SUBBED.mkv"
-                processed_ffmpeg.append(auto_output)
-                outputs.append(auto_output)
-            elif item == "output.mp4":
-                # Auto-generate output name: original_name.CONVERTED.mp4
-                auto_output = f"{base_name}.CONVERTED.mp4"
-                processed_ffmpeg.append(auto_output)
-                outputs.append(auto_output)
-            elif item.startswith("output.") and self._is_supported_extension(item, 'video'):
-                # Auto-generate for any output.extension pattern
-                ext = self._get_file_extension(item)
-                auto_output = f"{base_name}.PROCESSED.{ext}"
-                processed_ffmpeg.append(auto_output)
-                outputs.append(auto_output)
-            elif item.startswith("output.") and self._is_supported_extension(item, 'audio'):
-                # Auto-generate for audio output
-                ext = self._get_file_extension(item)
-                auto_output = f"{base_name}.CONVERTED.{ext}"
-                processed_ffmpeg.append(auto_output)
-                outputs.append(auto_output)
+        for index in indices:
+            output_file = ffmpeg[index]
+            if output_file != "mltb" and output_file.startswith("mltb"):
+                bo, oext = ospath.splitext(output_file)
+                if oext:
+                    if ext == oext:
+                        prefix = f"ffmpeg{index}." if bo == "mltb" else ""
+                    else:
+                        prefix = ""
+                    ext = ""
+                else:
+                    prefix = ""
             else:
-                processed_ffmpeg.append(item)
-                # Check if this is a manual output file
-                if (not item.startswith('-') and i > 0 and not ffmpeg[i-1].startswith('-') and 
-                    (self._is_supported_extension(item, 'video') or self._is_supported_extension(item, 'audio'))):
-                    outputs.append(item)
-        
-        if not outputs:
-            LOGGER.error("No valid output files found in ffmpeg command")
-            return False
-            
-        # Validate all output extensions
-        for output in outputs:
-            if not (self._is_supported_extension(output, 'video') or self._is_supported_extension(output, 'audio')):
-                output_ext = self._get_file_extension(output)
-                LOGGER.error(f"Unsupported output extension: {output_ext}. Supported: {self.SUPPORTED_VIDEO_EXTENSIONS | self.SUPPORTED_AUDIO_EXTENSIONS}")
-                return False
-            
+                prefix = f"ffmpeg{index}."
+            output = f"{dir}/{prefix}{output_file.replace('mltb', base_name)}{ext}"
+            outputs.append(output)
+            ffmpeg[index] = output
         if self._listener.is_cancelled:
             return False
-            
         self._listener.subproc = await create_subprocess_exec(
-            *processed_ffmpeg, stdout=PIPE, stderr=PIPE
+            *ffmpeg, stdout=PIPE, stderr=PIPE
         )
         await self._ffmpeg_progress()
         _, stderr = await self._listener.subproc.communicate()
         code = self._listener.subproc.returncode
-        
         if self._listener.is_cancelled:
             return False
         if code == 0:
@@ -578,21 +514,10 @@ class FFMpeg:
             return False
 
     async def convert_video(self, video_file, ext, retry=False):
-        # Check if input file is supported
-        if not self._is_supported_extension(video_file, 'video'):
-            LOGGER.error(f"Input video file {video_file} has unsupported extension. Supported: {self.SUPPORTED_VIDEO_EXTENSIONS}")
-            return False
-        
-        # Check if target extension is supported
-        if ext not in self.SUPPORTED_VIDEO_EXTENSIONS:
-            LOGGER.error(f"Target extension {ext} not supported. Supported: {self.SUPPORTED_VIDEO_EXTENSIONS}")
-            return False
-            
         self.clear()
         self._total_time = (await get_media_info(video_file))[0]
         base_name = ospath.splitext(video_file)[0]
         output = f"{base_name}.{ext}"
-        
         if retry:
             cmd = [
                 BinConfig.FFMPEG_NAME,
@@ -613,9 +538,12 @@ class FFMpeg:
                 f"{max(1, cpu_no // 2)}",
                 output,
             ]
-            # Add subtitle codec based on target extension
-            subtitle_codec = self._get_subtitle_codec(ext)
-            cmd[14:14] = ["-c:s", subtitle_codec]
+            if ext == "mp4":
+                cmd[14:14] = ["-c:s", "mov_text"]
+            elif ext == "mkv":
+                cmd[14:14] = ["-c:s", "ass"]
+            else:
+                cmd[14:14] = ["-c:s", "copy"]
         else:
             cmd = [
                 BinConfig.FFMPEG_NAME,
@@ -634,17 +562,14 @@ class FFMpeg:
                 f"{max(1, cpu_no // 2)}",
                 output,
             ]
-            
         if self._listener.is_cancelled:
             return False
-            
         self._listener.subproc = await create_subprocess_exec(
             *cmd, stdout=PIPE, stderr=PIPE
         )
         await self._ffmpeg_progress()
         _, stderr = await self._listener.subproc.communicate()
         code = self._listener.subproc.returncode
-        
         if self._listener.is_cancelled:
             return False
         if code == 0:
@@ -667,21 +592,10 @@ class FFMpeg:
         return False
 
     async def convert_audio(self, audio_file, ext):
-        # Check if input file is supported
-        if not self._is_supported_extension(audio_file, 'audio'):
-            LOGGER.error(f"Input audio file {audio_file} has unsupported extension. Supported: {self.SUPPORTED_AUDIO_EXTENSIONS}")
-            return False
-        
-        # Check if target extension is supported
-        if ext not in self.SUPPORTED_AUDIO_EXTENSIONS:
-            LOGGER.error(f"Target extension {ext} not supported. Supported: {self.SUPPORTED_AUDIO_EXTENSIONS}")
-            return False
-            
         self.clear()
         self._total_time = (await get_media_info(audio_file))[0]
         base_name = ospath.splitext(audio_file)[0]
         output = f"{base_name}.{ext}"
-        
         cmd = [
             BinConfig.FFMPEG_NAME,
             "-hide_banner",
@@ -695,17 +609,14 @@ class FFMpeg:
             f"{max(1, cpu_no // 2)}",
             output,
         ]
-        
         if self._listener.is_cancelled:
             return False
-            
         self._listener.subproc = await create_subprocess_exec(
             *cmd, stdout=PIPE, stderr=PIPE
         )
         await self._ffmpeg_progress()
         _, stderr = await self._listener.subproc.communicate()
         code = self._listener.subproc.returncode
-        
         if self._listener.is_cancelled:
             return False
         if code == 0:
@@ -726,28 +637,16 @@ class FFMpeg:
         return False
 
     async def sample_video(self, video_file, sample_duration, part_duration):
-        # Check if input file is supported
-        if not self._is_supported_extension(video_file, 'video'):
-            LOGGER.error(f"Input video file {video_file} has unsupported extension. Supported: {self.SUPPORTED_VIDEO_EXTENSIONS}")
-            return False
-            
         self.clear()
         self._total_time = sample_duration
         dir, name = video_file.rsplit("/", 1)
         output_file = f"{dir}/SAMPLE.{name}"
-        
-        # Ensure output file also has supported extension
-        if not self._is_supported_extension(output_file, 'video'):
-            LOGGER.error(f"Output sample file {output_file} would have unsupported extension")
-            return False
-        
         segments = [(0, part_duration)]
         duration = (await get_media_info(video_file))[0]
         remaining_duration = duration - (part_duration * 2)
         parts = (sample_duration - (part_duration * 2)) // part_duration
         time_interval = remaining_duration // parts
         next_segment = time_interval
-        
         for _ in range(parts):
             segments.append((next_segment, next_segment + part_duration))
             next_segment += time_interval
@@ -793,14 +692,12 @@ class FFMpeg:
 
         if self._listener.is_cancelled:
             return False
-            
         self._listener.subproc = await create_subprocess_exec(
             *cmd, stdout=PIPE, stderr=PIPE
         )
         await self._ffmpeg_progress()
         _, stderr = await self._listener.subproc.communicate()
         code = self._listener.subproc.returncode
-        
         if self._listener.is_cancelled:
             return False
         if code == -9:
@@ -821,25 +718,13 @@ class FFMpeg:
             return False
 
     async def split(self, f_path, file_, parts, split_size):
-        # Check if input file is supported
-        if not self._is_supported_extension(f_path, 'video'):
-            LOGGER.error(f"Input file {f_path} has unsupported extension. Supported: {self.SUPPORTED_VIDEO_EXTENSIONS}")
-            return False
-            
         self.clear()
         multi_streams = True
         self._total_time = duration = (await get_media_info(f_path))[0]
         base_name, extension = ospath.splitext(file_)
-        
-        # Ensure split files will have supported extensions
-        if extension.lstrip('.').lower() not in self.SUPPORTED_VIDEO_EXTENSIONS:
-            LOGGER.error(f"Split output extension {extension} not supported. Supported: {self.SUPPORTED_VIDEO_EXTENSIONS}")
-            return False
-        
         split_size -= 3000000
         start_time = 0
         i = 1
-        
         while i <= parts or start_time < duration - 4:
             out_path = f_path.replace(file_, f"{base_name}.part{i:03}{extension}")
             cmd = [
@@ -872,17 +757,14 @@ class FFMpeg:
             if not multi_streams:
                 del cmd[12]
                 del cmd[12]
-                
             if self._listener.is_cancelled:
                 return False
-                
             self._listener.subproc = await create_subprocess_exec(
                 *cmd, stdout=PIPE, stderr=PIPE
             )
             await self._ffmpeg_progress()
             _, stderr = await self._listener.subproc.communicate()
             code = self._listener.subproc.returncode
-            
             if self._listener.is_cancelled:
                 return False
             if code == -9:
@@ -906,7 +788,6 @@ class FFMpeg:
                         f"{stderr}. Unable to split this video, if it's size less than {self._listener.max_split_size} will be uploaded as it is. Path: {f_path}"
                     )
                 return False
-                
             out_size = await aiopath.getsize(out_path)
             if out_size > self._listener.max_split_size:
                 split_size -= (out_size - self._listener.max_split_size) + 5000000
@@ -915,7 +796,6 @@ class FFMpeg:
                 )
                 await remove(out_path)
                 continue
-                
             lpd = (await get_media_info(out_path))[0]
             if lpd == 0:
                 LOGGER.error(
@@ -930,7 +810,6 @@ class FFMpeg:
             elif lpd <= 3:
                 await remove(out_path)
                 break
-                
             self._last_processed_time += lpd
             self._last_processed_bytes += out_size
             start_time += lpd - 3
