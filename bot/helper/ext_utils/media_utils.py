@@ -490,38 +490,35 @@ class FFMpeg:
                     expanded_ffmpeg.append(item)
             else:
                 expanded_ffmpeg.append(item)
-                # Track mltb input files for potential deletion
-                if item.startswith('mltb') and i > 0 and ffmpeg[i-1] == "-i":
-                    if item == "mltb.video" or item == "mltb":
-                        input_files.append(f_path)  # Original video file
-                    elif item == "mltb.srt":
-                        # Will be replaced with actual srt filename
-                        srt_file = f"{ospath.join(dir, base_name)}.srt"
-                        input_files.append(srt_file)
         
         ffmpeg = expanded_ffmpeg
         
-        indices = [
-            index
-            for index, item in enumerate(ffmpeg)
-            if item.startswith("mltb") or item == "mltb"
-        ]
+        # Find mltb placeholders for output files only
+        indices = []
+        for index, item in enumerate(ffmpeg):
+            if item.startswith("mltb") or item == "mltb":
+                # Check if this is likely an output file (not preceded by -i)
+                is_output = True
+                if index > 0 and ffmpeg[index-1] == "-i":
+                    is_output = False
+                if is_output:
+                    indices.append(index)
+        
         outputs = []
         for index in indices:
             output_file = ffmpeg[index]
             if output_file != "mltb" and output_file.startswith("mltb"):
-                bo, oext = ospath.splitext(output_file)
-                if oext:
-                    if ext == oext:
-                        prefix = f"ffmpeg{index}." if bo == "mltb" else ""
-                    else:
-                        prefix = ""
-                    ext = ""
+                # Handle extensions properly
+                if "." in output_file:
+                    # If mltb has an extension like mltb.mkv, use it directly
+                    output = f"{dir}/{output_file.replace('mltb', base_name)}"
                 else:
-                    prefix = ""
+                    # If no extension, add the original extension
+                    output = f"{dir}/{output_file.replace('mltb', base_name)}{ext}"
             else:
-                prefix = f"ffmpeg{index}."
-            output = f"{dir}/{prefix}{output_file.replace('mltb', base_name)}{ext}"
+                # For simple "mltb", just use base name with original extension
+                output = f"{dir}/{base_name}{ext}"
+            
             outputs.append(output)
             ffmpeg[index] = output
             
