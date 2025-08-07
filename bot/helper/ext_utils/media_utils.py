@@ -9,6 +9,7 @@ from asyncio import (
     wait_for,
     sleep,
 )
+import glob
 from asyncio.subprocess import PIPE
 from os import path as ospath
 from re import search as re_search, escape
@@ -462,6 +463,25 @@ class FFMpeg:
         self._total_time = (await get_media_info(f_path))[0]
         base_name, ext = ospath.splitext(f_path)
         dir, base_name = base_name.rsplit("/", 1)
+        
+        # Handle wildcards in ffmpeg command before processing mltb replacements
+        expanded_ffmpeg = []
+        for item in ffmpeg:
+            if '*' in item and not item.startswith('mltb'):
+                # Expand wildcards relative to the video file directory
+                wildcard_pattern = ospath.join(dir, item)
+                matches = glob.glob(wildcard_pattern)
+                if matches:
+                    # Use the first match
+                    expanded_ffmpeg.append(matches[0])
+                else:
+                    # If no matches found, keep original
+                    expanded_ffmpeg.append(item)
+            else:
+                expanded_ffmpeg.append(item)
+        
+        ffmpeg = expanded_ffmpeg
+        
         indices = [
             index
             for index, item in enumerate(ffmpeg)
@@ -512,7 +532,7 @@ class FFMpeg:
                 if await aiopath.exists(op):
                     await remove(op)
             return False
-
+  
     async def convert_video(self, video_file, ext, retry=False):
         self.clear()
         self._total_time = (await get_media_info(video_file))[0]
