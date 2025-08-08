@@ -512,8 +512,13 @@ class FFMpeg:
             LOGGER.error("No matching MKV-SRT pairs found!")
             return False
         
+        # Create a new subdirectory for processed files
+        processed_dir = f"{dir}/Processed_SubMKV"
+        await makedirs(processed_dir, exist_ok=True)
+        LOGGER.info(f"Created directory for processed files: {processed_dir}")
+        
         # Process each pair
-        all_outputs = []
+        sub_mkv_outputs = []  # Only store .Sub.mkv files
         files_to_delete = []
         
         for mkv_file, srt_file, base_name in file_pairs:
@@ -524,6 +529,8 @@ class FFMpeg:
             
             # Create FFmpeg command for this specific pair
             current_ffmpeg = []
+            output_file = None
+            
             for item in ffmpeg:
                 if item == "*.mkv":
                     current_ffmpeg.append(mkv_file)
@@ -531,18 +538,21 @@ class FFMpeg:
                     current_ffmpeg.append(srt_file)
                 elif item.startswith("mltb"):
                     if item == "mltb.Sub.mkv":
-                        output_file = f"{dir}/{base_name}.Sub.mkv"
+                        # Save .Sub.mkv files to the new processed directory
+                        output_file = f"{processed_dir}/{base_name}.Sub.mkv"
                         current_ffmpeg.append(output_file)
-                        all_outputs.append(output_file)
+                        sub_mkv_outputs.append(output_file)
                     elif item == "mltb.mkv":
-                        output_file = f"{dir}/{base_name}.mkv"
-                        current_ffmpeg.append(output_file)
-                        all_outputs.append(output_file)
+                        # Regular mkv files go to processed directory too but won't be returned
+                        temp_output = f"{processed_dir}/{base_name}.mkv"
+                        current_ffmpeg.append(temp_output)
                     else:
                         # Handle other mltb variations
-                        output_file = f"{dir}/{item.replace('mltb', base_name)}"
-                        current_ffmpeg.append(output_file)
-                        all_outputs.append(output_file)
+                        temp_output = f"{processed_dir}/{item.replace('mltb', base_name)}"
+                        current_ffmpeg.append(temp_output)
+                        # Only add .Sub.mkv to outputs for upload
+                        if temp_output.endswith('.Sub.mkv'):
+                            sub_mkv_outputs.append(temp_output)
                 else:
                     current_ffmpeg.append(item)
             
@@ -571,12 +581,12 @@ class FFMpeg:
                     stderr = "Unable to decode the error!"
                 LOGGER.error(f"Failed to process {ospath.basename(mkv_file)}: {stderr}")
                 # Clean up any partial outputs
-                for output in all_outputs:
+                for output in sub_mkv_outputs:
                     if await aiopath.exists(output):
                         await remove(output)
                 return False
             
-            LOGGER.info(f"Successfully processed: {ospath.basename(mkv_file)}")
+            LOGGER.info(f"Successfully processed: {ospath.basename(mkv_file)} -> {ospath.basename(output_file)}")
         
         # Delete original files if requested and all processing succeeded
         if delete_originals:
@@ -589,7 +599,79 @@ class FFMpeg:
                     LOGGER.error(f"Failed to delete file {file_to_delete}: {e}")
         
         LOGGER.info(f"Successfully processed {len(file_pairs)} video-subtitle pairs")
-        return all_outputs
+        LOGGER.info(f"Created {len(sub_mkv_outputs)} .Sub.mkv files in: {processed_dir}")
+        
+        # Return the processed directory path instead of individual files
+        # This tells the upload handler to upload the entire folder
+        return processed_dir
+    
+    # Modify your upload handler to handle folder uploads
+    async def handle_ffmpeg_folder_upload(self, result, command_name):
+        """
+        Handle upload after FFmpeg processing
+        For srt command with folder result, upload only .Sub.mkv files from the folder
+        """
+        if isinstance(result, str) and await aiopath.isdir(result):
+            # It's a directory, find only .Sub.mkv files to upload
+            if command_name == 'srt':
+                # Find all .Sub.mkv files in the directory
+                sub_mkv_pattern = ospath.join(result, "*.Sub.mkv")
+                sub_mkv_files = glob.glob(sub_mkv_pattern)
+                
+                if sub_mkv_files:
+                    LOGGER.info(f"Found {len(sub_mkv_files)} .Sub.mkv files to upload from: {result}")
+                    
+                    # Create the folder structure in Google Drive
+                    folder_name = ospath.basename(result)  # e.g., "Processed_SubMKV"
+                    
+                    # Upload each .Sub.mkv file to the created folder
+                    for file_path in sub_mkv_files:
+                        if await aiopath.exists(file_path):
+                            LOGGER.info(f"Uploading: {ospath.basename(file_path)}")
+                            await self.upload_file(file_path, folder_name)  # Pass folder_name for Drive organization
+                        else:
+                            LOGGER.warning(f"File not found for upload: {file_path}")
+                    
+                    return True
+                else:
+                    LOGGER.warning(f"No .Sub.mkv files found in: {result}")
+                    return False
+            else:
+                # For other commands, upload all files in the directory
+                all_files = glob.glob(ospath.join(result, "*"))
+                for file_path in all_files:
+                    if ospath.isfile(file_path):
+                        await self.upload_file(file_path)
+                return True
+        
+        elif isinstance(result, list):
+            # It's a list of files, filter for .Sub.mkv if srt command
+            if command_name == 'srt':
+                sub_mkv_files = [f for f in result if f.endswith('.Sub.mkv')]
+                files_to_upload = sub_mkv_files if sub_mkv_files else result
+            else:
+                files_to_upload = result
+                
+            for file_path in files_to_upload:
+                if await aiopath.exists(file_path):
+                    await self.upload_file(file_path)
+            return True
+        
+        return False
+    
+    # Alternative: If you want to create folder with custom name based on original folder
+    async def create_custom_processed_folder(self, original_dir, file_pairs):
+        """
+        Create a processed folder with a name based on the original directory
+        """
+        original_folder_name = ospath.basename(original_dir)
+        processed_folder_name = f"{original_folder_name}_Subtitled"
+        processed_dir = f"{original_dir}/{processed_folder_name}"
+        
+        await makedirs(processed_dir, exist_ok=True)
+        LOGGER.info(f"Created processed folder: {processed_folder_name}")
+        
+        return processed_dir
     
     async def _process_single_file(self, ffmpeg, f_path, dir, base_name, ext, delete_originals):
         """Original single file processing logic"""
