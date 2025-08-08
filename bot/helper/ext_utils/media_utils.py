@@ -481,115 +481,169 @@ class FFMpeg:
             return await self._process_single_file(ffmpeg, f_path, dir, base_name, ext, delete_originals)
     
     async def _process_multiple_files(self, ffmpeg, f_path, dir, delete_originals):
-        """Process multiple video-subtitle pairs in the directory"""
-        
-        # Find all MKV and SRT files in the directory
-        mkv_pattern = ospath.join(dir, "*.mkv")
-        srt_pattern = ospath.join(dir, "*.srt")
-        
-        mkv_files = glob.glob(mkv_pattern)
-        srt_files = glob.glob(srt_pattern)
-        
-        # Create pairs based on matching base names
-        file_pairs = []
-        for mkv_file in mkv_files:
-            mkv_base = ospath.splitext(ospath.basename(mkv_file))[0]
-            # Look for matching SRT file
-            matching_srt = None
-            for srt_file in srt_files:
-                srt_base = ospath.splitext(ospath.basename(srt_file))[0]
-                if mkv_base == srt_base:
-                    matching_srt = srt_file
-                    break
+      """Process multiple video-subtitle pairs in the directory with English subtitle filtering"""
+      
+      # Find all MKV and SRT files in the directory
+      mkv_pattern = ospath.join(dir, "*.mkv")
+      srt_pattern = ospath.join(dir, "*.srt")
+      
+      mkv_files = glob.glob(mkv_pattern)
+      srt_files = glob.glob(srt_pattern)
+      
+      # Create pairs based on matching base names
+      file_pairs = []
+      for mkv_file in mkv_files:
+          mkv_base = ospath.splitext(ospath.basename(mkv_file))[0]
+          # Look for matching SRT file
+          matching_srt = None
+          for srt_file in srt_files:
+              srt_base = ospath.splitext(ospath.basename(srt_file))[0]
+              if mkv_base == srt_base:
+                  matching_srt = srt_file
+                  break
+          
+          if matching_srt:
+              file_pairs.append((mkv_file, matching_srt, mkv_base))
+              LOGGER.info(f"Found pair: {ospath.basename(mkv_file)} + {ospath.basename(matching_srt)}")
+          else:
+              LOGGER.warning(f"No matching SRT found for: {ospath.basename(mkv_file)}")
+      
+      if not file_pairs:
+          LOGGER.error("No matching MKV-SRT pairs found!")
+          return False
+      
+      # Process each pair
+      all_outputs = []
+      files_to_delete = []
+      
+      for mkv_file, srt_file, base_name in file_pairs:
+          LOGGER.info(f"Processing: {ospath.basename(mkv_file)}")
+          
+          # Get duration for this specific video
+          self._total_time = (await get_media_info(mkv_file))[0]
+          
+          # Check if video has English subtitles
+          has_english_subs = await self._check_english_subtitles(mkv_file)
+          
+          # Build FFmpeg command based on whether English subs exist
+          current_ffmpeg = [
+              BinConfig.FFMPEG_NAME,
+              "-hide_banner",
+              "-loglevel", "error",
+              "-progress", "pipe:1",
+              "-i", mkv_file,
+              "-i", srt_file,
+              "-map", "0:v",
+              "-map", "0:a"
+          ]
+          
+          # Add English subtitle mapping if exists
+          if has_english_subs:
+              current_ffmpeg.extend(["-map", "0:s:m:language:eng?"])
+          
+          # Add external subtitle (your FLIXORA subtitle)
+          current_ffmpeg.extend(["-map", "1:0"])
+          
+          # Set codecs
+          current_ffmpeg.extend([
+              "-c:v", "copy",
+              "-c:a", "copy",
+              "-c:s", "srt"
+          ])
+          
+          # Set metadata for your subtitle
+          if has_english_subs:
+              # If English subs exist, your subtitle becomes s:1
+              current_ffmpeg.extend([
+                  "-metadata:s:s:1", "language=sin",
+                  "-metadata:s:s:1", "title=FLIXORA",
+                  "-disposition:s:1", "default",
+                  "-disposition:s:1", "forced",
+                  "-disposition:s:0", "0"  # Remove default from English sub
+              ])
+          else:
+              # If no English subs, your subtitle becomes s:0
+              current_ffmpeg.extend([
+                  "-metadata:s:s:0", "language=sin",
+                  "-metadata:s:s:0", "title=FLIXORA",
+                  "-disposition:s:0", "default",
+                  "-disposition:s:0", "forced"
+              ])
+          
+          # Add threads
+          current_ffmpeg.extend(["-threads", f"{max(1, cpu_no // 2)}"])
+          
+          # Determine output file
+          output_file = f"{dir}/{base_name}.Sub.mkv"
+          current_ffmpeg.append(output_file)
+          all_outputs.append(output_file)
+          
+          # Track files for deletion
+          if delete_originals:
+              files_to_delete.extend([mkv_file, srt_file])
+          
+          # Execute FFmpeg for this pair
+          if self._listener.is_cancelled:
+              return False
+              
+          self._listener.subproc = await create_subprocess_exec(
+              *current_ffmpeg, stdout=PIPE, stderr=PIPE
+          )
+          await self._ffmpeg_progress()
+          _, stderr = await self._listener.subproc.communicate()
+          code = self._listener.subproc.returncode
+          
+          if self._listener.is_cancelled:
+              return False
+              
+          if code != 0:
+              try:
+                  stderr = stderr.decode().strip()
+              except Exception:
+                  stderr = "Unable to decode the error!"
+              LOGGER.error(f"Failed to process {ospath.basename(mkv_file)}: {stderr}")
+              # Clean up any partial outputs
+              for output in all_outputs:
+                  if await aiopath.exists(output):
+                      await remove(output)
+              return False
+          
+          LOGGER.info(f"Successfully processed: {ospath.basename(mkv_file)}")
+      
+      # Delete original files if requested and all processing succeeded
+      if delete_originals:
+          for file_to_delete in files_to_delete:
+              try:
+                  if await aiopath.exists(file_to_delete):
+                      await remove(file_to_delete)
+                      LOGGER.info(f"Deleted original file: {ospath.basename(file_to_delete)}")
+              except Exception as e:
+                  LOGGER.error(f"Failed to delete file {file_to_delete}: {e}")
+      
+      LOGGER.info(f"Successfully processed {len(file_pairs)} video-subtitle pairs with English + FLIXORA subtitles")
+      return all_outputs
+
+    async def _check_english_subtitles(self, video_file):
+        """Check if video file has English subtitle streams"""
+        try:
+            streams = await get_streams(video_file)
+            if not streams:
+                return False
             
-            if matching_srt:
-                file_pairs.append((mkv_file, matching_srt, mkv_base))
-                LOGGER.info(f"Found pair: {ospath.basename(mkv_file)} + {ospath.basename(matching_srt)}")
-            else:
-                LOGGER.warning(f"No matching SRT found for: {ospath.basename(mkv_file)}")
-        
-        if not file_pairs:
-            LOGGER.error("No matching MKV-SRT pairs found!")
+            for stream in streams:
+                if stream.get("codec_type") == "subtitle":
+                    language = stream.get("tags", {}).get("language", "").lower()
+                    title = stream.get("tags", {}).get("title", "").lower()
+                    
+                    # Check for English language codes and titles
+                    if (language in ["en", "eng", "english"] or 
+                        "english" in title or "eng" in title):
+                        return True
+            
             return False
-        
-        # Process each pair
-        all_outputs = []
-        files_to_delete = []
-        
-        for mkv_file, srt_file, base_name in file_pairs:
-            LOGGER.info(f"Processing: {ospath.basename(mkv_file)}")
-            
-            # Get duration for this specific video
-            self._total_time = (await get_media_info(mkv_file))[0]
-            
-            # Create FFmpeg command for this specific pair
-            current_ffmpeg = []
-            for item in ffmpeg:
-                if item == "*.mkv":
-                    current_ffmpeg.append(mkv_file)
-                elif item == "*.srt":
-                    current_ffmpeg.append(srt_file)
-                elif item.startswith("mltb"):
-                    if item == "mltb.Sub.mkv":
-                        output_file = f"{dir}/{base_name}.Sub.mkv"
-                        current_ffmpeg.append(output_file)
-                        all_outputs.append(output_file)
-                    elif item == "mltb.mkv":
-                        output_file = f"{dir}/{base_name}.mkv"
-                        current_ffmpeg.append(output_file)
-                        all_outputs.append(output_file)
-                    else:
-                        # Handle other mltb variations
-                        output_file = f"{dir}/{item.replace('mltb', base_name)}"
-                        current_ffmpeg.append(output_file)
-                        all_outputs.append(output_file)
-                else:
-                    current_ffmpeg.append(item)
-            
-            # Track files for deletion
-            if delete_originals:
-                files_to_delete.extend([mkv_file, srt_file])
-            
-            # Execute FFmpeg for this pair
-            if self._listener.is_cancelled:
-                return False
-                
-            self._listener.subproc = await create_subprocess_exec(
-                *current_ffmpeg, stdout=PIPE, stderr=PIPE
-            )
-            await self._ffmpeg_progress()
-            _, stderr = await self._listener.subproc.communicate()
-            code = self._listener.subproc.returncode
-            
-            if self._listener.is_cancelled:
-                return False
-                
-            if code != 0:
-                try:
-                    stderr = stderr.decode().strip()
-                except Exception:
-                    stderr = "Unable to decode the error!"
-                LOGGER.error(f"Failed to process {ospath.basename(mkv_file)}: {stderr}")
-                # Clean up any partial outputs
-                for output in all_outputs:
-                    if await aiopath.exists(output):
-                        await remove(output)
-                return False
-            
-            LOGGER.info(f"Successfully processed: {ospath.basename(mkv_file)}")
-        
-        # Delete original files if requested and all processing succeeded
-        if delete_originals:
-            for file_to_delete in files_to_delete:
-                try:
-                    if await aiopath.exists(file_to_delete):
-                        await remove(file_to_delete)
-                        LOGGER.info(f"Deleted original file: {ospath.basename(file_to_delete)}")
-                except Exception as e:
-                    LOGGER.error(f"Failed to delete file {file_to_delete}: {e}")
-        
-        LOGGER.info(f"Successfully processed {len(file_pairs)} video-subtitle pairs")
-        return all_outputs
+        except Exception as e:
+            LOGGER.error(f"Error checking English subtitles: {e}")
+            return False
     
     async def _process_single_file(self, ffmpeg, f_path, dir, base_name, ext, delete_originals):
         """Original single file processing logic"""
