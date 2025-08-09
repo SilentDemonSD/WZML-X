@@ -9,7 +9,7 @@ from asyncio import (
     wait_for,
     sleep,
 )
-import re
+
 import glob
 from asyncio.subprocess import PIPE
 from os import path as ospath
@@ -484,7 +484,7 @@ class FFMpeg:
     async def _process_multiple_files(self, ffmpeg, f_path, dir, delete_originals):
         """Process multiple video-subtitle pairs in the directory with TV episode matching."""
     
-        
+        import re
         def extract_episode_id(filename):
             """Extracts season/episode code like S01E02 from filename."""
             match = re.search(r'(S\d{2}E\d{2})', filename, re.IGNORECASE)
