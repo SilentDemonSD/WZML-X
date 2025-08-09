@@ -12,7 +12,7 @@ from asyncio import (
 import glob
 from asyncio.subprocess import PIPE
 from os import path as ospath
-from re import search as re_search, escape
+from re import search as re_search, escape, findall
 from time import time
 from aioshutil import rmtree
 from langcodes import Language
@@ -187,6 +187,200 @@ async def get_streams(file):
             f"No streams found in the ffprobe output: {stdout.decode().strip()}",
         )
         return None
+
+
+def extract_episode_info(filename):
+    """
+    Extract season and episode information from filename using multiple patterns.
+    
+    Returns:
+        tuple: (season, episode, title_part) or (None, None, None) if no match
+    """
+    # Remove file extension for matching
+    name_without_ext = ospath.splitext(filename)[0]
+    
+    # Pattern 1: S##E## format (most common)
+    pattern1 = r'[Ss](\d{1,2})[Ee](\d{1,2})'
+    match = re_search(pattern1, name_without_ext)
+    if match:
+        season = int(match.group(1))
+        episode = int(match.group(2))
+        # Extract title part (everything before season info)
+        title_part = name_without_ext[:match.start()].strip(' -_')
+        return season, episode, title_part
+    
+    # Pattern 2: Season ## Episode ## format
+    pattern2 = r'[Ss]eason\s*(\d{1,2})\s*[Ee]pisode\s*(\d{1,2})'
+    match = re_search(pattern2, name_without_ext, re.IGNORECASE)
+    if match:
+        season = int(match.group(1))
+        episode = int(match.group(2))
+        title_part = name_without_ext[:match.start()].strip(' -_')
+        return season, episode, title_part
+    
+    # Pattern 3: Episode number at the end (assumes season 1)
+    pattern3 = r'[Ee]pisode?\s*(\d{1,2})(?:\s|$)'
+    match = re_search(pattern3, name_without_ext)
+    if match:
+        season = 1
+        episode = int(match.group(1))
+        title_part = name_without_ext[:match.start()].strip(' -_')
+        return season, episode, title_part
+    
+    # Pattern 4: Just numbers like "- 01", "- 02" etc.
+    pattern4 = r'[- _](\d{1,2})(?:[- _]|$)'
+    matches = findall(pattern4, name_without_ext)
+    if matches:
+        # Take the last number as episode
+        episode = int(matches[-1])
+        season = 1
+        # Remove the episode number part
+        title_part = re_search(r'^(.+?)[- _]\d{1,2}(?:[- _]|$)', name_without_ext)
+        if title_part:
+            title_part = title_part.group(1).strip(' -_')
+        else:
+            title_part = name_without_ext
+        return season, episode, title_part
+    
+    return None, None, None
+
+
+def normalize_title(title):
+    """
+    Normalize title for better matching by removing special characters and extra spaces.
+    """
+    import re
+    # Remove brackets and their contents
+    title = re.sub(r'\[.*?\]', '', title)
+    title = re.sub(r'\(.*?\)', '', title)
+    # Remove special characters and normalize spaces
+    title = re.sub(r'[^\w\s]', ' ', title)
+    title = re.sub(r'\s+', ' ', title)
+    return title.strip().lower()
+
+
+def find_episode_pairs_method1(mkv_files, srt_files):
+    """
+    Method 1: Exact base name matching (original method)
+    """
+    file_pairs = []
+    for mkv_file in mkv_files:
+        mkv_base = ospath.splitext(ospath.basename(mkv_file))[0]
+        for srt_file in srt_files:
+            srt_base = ospath.splitext(ospath.basename(srt_file))[0]
+            if mkv_base == srt_base:
+                file_pairs.append((mkv_file, srt_file, mkv_base))
+                break
+    return file_pairs
+
+
+def find_episode_pairs_method2(mkv_files, srt_files):
+    """
+    Method 2: Season/Episode matching with title similarity
+    """
+    file_pairs = []
+    mkv_episodes = []
+    srt_episodes = []
+    
+    # Extract episode info for all files
+    for mkv_file in mkv_files:
+        filename = ospath.basename(mkv_file)
+        season, episode, title = extract_episode_info(filename)
+        if season is not None and episode is not None:
+            mkv_episodes.append((mkv_file, season, episode, title, filename))
+    
+    for srt_file in srt_files:
+        filename = ospath.basename(srt_file)
+        season, episode, title = extract_episode_info(filename)
+        if season is not None and episode is not None:
+            srt_episodes.append((srt_file, season, episode, title, filename))
+    
+    # Match by season/episode and title similarity
+    for mkv_file, mkv_season, mkv_episode, mkv_title, mkv_filename in mkv_episodes:
+        best_match = None
+        best_score = 0
+        
+        for srt_file, srt_season, srt_episode, srt_title, srt_filename in srt_episodes:
+            # Must match season and episode
+            if mkv_season == srt_season and mkv_episode == srt_episode:
+                # Calculate title similarity
+                mkv_norm = normalize_title(mkv_title)
+                srt_norm = normalize_title(srt_title)
+                
+                # Simple similarity score based on common words
+                mkv_words = set(mkv_norm.split())
+                srt_words = set(srt_norm.split())
+                
+                if mkv_words and srt_words:
+                    common_words = mkv_words.intersection(srt_words)
+                    total_words = mkv_words.union(srt_words)
+                    score = len(common_words) / len(total_words) if total_words else 0
+                else:
+                    score = 1.0 if mkv_norm == srt_norm else 0.0
+                
+                if score > best_score:
+                    best_score = score
+                    best_match = (srt_file, srt_filename)
+        
+        if best_match and best_score > 0.3:  # Minimum 30% similarity
+            base_name = f"S{mkv_season:02d}E{mkv_episode:02d}"
+            file_pairs.append((mkv_file, best_match[0], base_name))
+    
+    return file_pairs
+
+
+def find_episode_pairs_method3(mkv_files, srt_files):
+    """
+    Method 3: Fuzzy matching based on filename similarity
+    """
+    def similarity_score(str1, str2):
+        """Calculate similarity between two strings"""
+        str1_norm = normalize_title(str1)
+        str2_norm = normalize_title(str2)
+        
+        words1 = set(str1_norm.split())
+        words2 = set(str2_norm.split())
+        
+        if not words1 and not words2:
+            return 1.0
+        if not words1 or not words2:
+            return 0.0
+        
+        intersection = words1.intersection(words2)
+        union = words1.union(words2)
+        
+        return len(intersection) / len(union)
+    
+    file_pairs = []
+    used_srt = set()
+    
+    for mkv_file in mkv_files:
+        mkv_name = ospath.splitext(ospath.basename(mkv_file))[0]
+        best_match = None
+        best_score = 0
+        
+        for srt_file in srt_files:
+            if srt_file in used_srt:
+                continue
+                
+            srt_name = ospath.splitext(ospath.basename(srt_file))[0]
+            score = similarity_score(mkv_name, srt_name)
+            
+            if score > best_score and score > 0.5:  # Minimum 50% similarity
+                best_score = score
+                best_match = srt_file
+        
+        if best_match:
+            used_srt.add(best_match)
+            # Try to extract episode info for better naming
+            season, episode, title = extract_episode_info(mkv_name)
+            if season and episode:
+                base_name = f"S{season:02d}E{episode:02d}"
+            else:
+                base_name = ospath.splitext(ospath.basename(mkv_file))[0]
+            file_pairs.append((mkv_file, best_match, base_name))
+    
+    return file_pairs
 
 
 async def take_ss(video_file, ss_nb) -> bool:
@@ -481,7 +675,7 @@ class FFMpeg:
             return await self._process_single_file(ffmpeg, f_path, dir, base_name, ext, delete_originals)
     
     async def _process_multiple_files(self, ffmpeg, f_path, dir, delete_originals):
-        """Process multiple video-subtitle pairs in the directory"""
+        """Process multiple video-subtitle pairs in the directory with enhanced matching"""
         
         # Find all MKV and SRT files in the directory
         mkv_pattern = ospath.join(dir, "*.mkv")
@@ -490,27 +684,44 @@ class FFMpeg:
         mkv_files = glob.glob(mkv_pattern)
         srt_files = glob.glob(srt_pattern)
         
-        # Create pairs based on matching base names
+        if not mkv_files:
+            LOGGER.error("No MKV files found in directory!")
+            return False
+        
+        if not srt_files:
+            LOGGER.error("No SRT files found in directory!")
+            return False
+        
+        # Try different matching methods
         file_pairs = []
-        for mkv_file in mkv_files:
-            mkv_base = ospath.splitext(ospath.basename(mkv_file))[0]
-            # Look for matching SRT file
-            matching_srt = None
-            for srt_file in srt_files:
-                srt_base = ospath.splitext(ospath.basename(srt_file))[0]
-                if mkv_base == srt_base:
-                    matching_srt = srt_file
-                    break
-            
-            if matching_srt:
-                file_pairs.append((mkv_file, matching_srt, mkv_base))
-                LOGGER.info(f"Found pair: {ospath.basename(mkv_file)} + {ospath.basename(matching_srt)}")
-            else:
-                LOGGER.warning(f"No matching SRT found for: {ospath.basename(mkv_file)}")
+        
+        # Method 1: Exact base name matching
+        LOGGER.info("Trying Method 1: Exact base name matching...")
+        file_pairs = find_episode_pairs_method1(mkv_files, srt_files)
+        
+        # Method 2: Season/Episode matching if Method 1 fails
+        if not file_pairs:
+            LOGGER.info("Method 1 failed. Trying Method 2: Season/Episode matching...")
+            file_pairs = find_episode_pairs_method2(mkv_files, srt_files)
+        
+        # Method 3: Fuzzy matching if Method 2 fails
+        if not file_pairs:
+            LOGGER.info("Method 2 failed. Trying Method 3: Fuzzy filename matching...")
+            file_pairs = find_episode_pairs_method3(mkv_files, srt_files)
         
         if not file_pairs:
-            LOGGER.error("No matching MKV-SRT pairs found!")
+            LOGGER.error("All matching methods failed! No matching MKV-SRT pairs found!")
+            LOGGER.info("Available MKV files:")
+            for mkv in mkv_files:
+                LOGGER.info(f"  - {ospath.basename(mkv)}")
+            LOGGER.info("Available SRT files:")
+            for srt in srt_files:
+                LOGGER.info(f"  - {ospath.basename(srt)}")
             return False
+        
+        LOGGER.info(f"Found {len(file_pairs)} matching pairs using one of the methods")
+        for mkv_file, srt_file, base_name in file_pairs:
+            LOGGER.info(f"Pair: {ospath.basename(mkv_file)} + {ospath.basename(srt_file)} -> {base_name}")
         
         # Process each pair
         all_outputs = []
