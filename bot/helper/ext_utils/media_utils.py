@@ -563,7 +563,7 @@ class FFMpeg:
             LOGGER.info("Using single file processing mode")
             return await self._process_single_file(ffmpeg, f_path, dir, base_name, ext, delete_originals)
     
-      async def _process_multiple_files_improved(self, ffmpeg, f_path, dir, delete_originals):
+        async def _process_multiple_files_improved(self, ffmpeg, f_path, dir, delete_originals):
           """Process multiple video-subtitle pairs with improved matching logic and auto-format detection"""
           
           LOGGER.info(f"Processing multiple files in directory: {dir}")
