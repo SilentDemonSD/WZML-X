@@ -580,20 +580,20 @@ class FFMpeg:
         LOGGER.info(f"Found video wildcards: {video_wildcards}")
         LOGGER.info(f"Found subtitle wildcards: {subtitle_wildcards}")
         
-        # If specific format wildcards found, use them, otherwise auto-detect
+          # If specific format wildcards found, use them, otherwise auto-detect
           if video_wildcards and subtitle_wildcards:
-                # Use the formats specified in the command
-                video_files = []
-                subtitle_files = []
-                
-                for video_wildcard in video_wildcards:
-                    pattern = os.path.join(dir, video_wildcard.replace("*.", "*."))
-                    video_files.extend(sorted(glob.glob(pattern)))
-                
-                for subtitle_wildcard in subtitle_wildcards:
-                    pattern = os.path.join(dir, subtitle_wildcard.replace("*.", "*."))
-                    subtitle_files.extend(sorted(glob.glob(pattern)))
-                    
+              # Use the formats specified in the command
+              video_files = []
+              subtitle_files = []
+              
+              for video_wildcard in video_wildcards:
+                  pattern = os.path.join(dir, video_wildcard.replace("*.", "*."))
+                  video_files.extend(sorted(glob.glob(pattern)))
+              
+              for subtitle_wildcard in subtitle_wildcards:
+                  pattern = os.path.join(dir, subtitle_wildcard.replace("*.", "*."))
+                  subtitle_files.extend(sorted(glob.glob(pattern)))
+                  
           else:
               # Auto-detect all video and subtitle files
               video_files = []
@@ -607,21 +607,21 @@ class FFMpeg:
                   pattern = os.path.join(dir, ext)
                   subtitle_files.extend(sorted(glob.glob(pattern)))
           
-        LOGGER.info(f"Found {len(video_files)} video files and {len(subtitle_files)} subtitle files")
-        for video in video_files:
+          LOGGER.info(f"Found {len(video_files)} video files and {len(subtitle_files)} subtitle files")
+          for video in video_files:
               LOGGER.info(f"  Video: {os.path.basename(video)}")
-        for subtitle in subtitle_files:
+          for subtitle in subtitle_files:
               LOGGER.info(f"  Subtitle: {os.path.basename(subtitle)}")
           
-        if not video_files or not subtitle_files:
+          if not video_files or not subtitle_files:
               LOGGER.error("No matching video or subtitle files found in directory!")
               return False
           
           # Create pairs using improved matching logic
-        file_pairs = []
-        used_subtitle_files = set()
+          file_pairs = []
+          used_subtitle_files = set()
           
-        for video_file in video_files:
+          for video_file in video_files:
               matching_subtitle = find_best_subtitle_match(video_file, [sub for sub in subtitle_files if sub not in used_subtitle_files])
               
               if matching_subtitle:
@@ -632,18 +632,18 @@ class FFMpeg:
               else:
                   LOGGER.warning(f"❌ No matching subtitle found for: {os.path.basename(video_file)}")
           
-        if not file_pairs:
+          if not file_pairs:
               LOGGER.error("No matching video-subtitle pairs found!")
               return False
           
-        LOGGER.info(f"Created {len(file_pairs)} file pairs for processing")
+          LOGGER.info(f"Created {len(file_pairs)} file pairs for processing")
           
-        # Process each pair
-        all_outputs = []
-        files_to_delete = []
-        successful_pairs = 0
+          # Process each pair
+          all_outputs = []
+          files_to_delete = []
+          successful_pairs = 0
           
-        for pair_index, (video_file, subtitle_file, base_name) in enumerate(file_pairs):
+          for pair_index, (video_file, subtitle_file, base_name) in enumerate(file_pairs):
               LOGGER.info(f"🎬 Processing pair {pair_index + 1}/{len(file_pairs)}: {os.path.basename(video_file)}")
               
               # Get duration for this specific video
@@ -742,7 +742,7 @@ class FFMpeg:
                   continue
           
           # Only delete original files if at least some processing succeeded
-        if delete_originals and successful_pairs > 0:
+          if delete_originals and successful_pairs > 0:
               LOGGER.info("Deleting original files...")
               # Only delete files that were successfully processed
               successfully_processed_files = []
@@ -758,10 +758,10 @@ class FFMpeg:
                   except Exception as e:
                       LOGGER.error(f"Failed to delete file {file_to_delete}: {e}")
           
-        if successful_pairs > 0:
+          if successful_pairs > 0:
               LOGGER.info(f"🎉 Successfully processed {successful_pairs} out of {len(file_pairs)} video-subtitle pairs")
               return all_outputs if all_outputs else True
-        else:
+          else:
               LOGGER.error("❌ Failed to process any video-subtitle pairs")
               return False
 
