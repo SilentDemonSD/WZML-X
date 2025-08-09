@@ -9,6 +9,7 @@ from asyncio import (
     wait_for,
     sleep,
 )
+import re
 import glob
 from asyncio.subprocess import PIPE
 from os import path as ospath
@@ -481,48 +482,55 @@ class FFMpeg:
             return await self._process_single_file(ffmpeg, f_path, dir, base_name, ext, delete_originals)
     
     async def _process_multiple_files(self, ffmpeg, f_path, dir, delete_originals):
-        """Process multiple video-subtitle pairs in the directory"""
-        
+        """Process multiple video-subtitle pairs in the directory with episode matching."""
+    
+        def extract_episode_id(filename):
+            """Extracts season/episode code like S01E02 from filename."""
+            match = re.search(r'(S\d{2}E\d{2})', filename, re.IGNORECASE)
+            return match.group(1).upper() if match else None
+    
         # Find all MKV and SRT files in the directory
         mkv_pattern = ospath.join(dir, "*.mkv")
         srt_pattern = ospath.join(dir, "*.srt")
-        
-        mkv_files = glob.glob(mkv_pattern)
-        srt_files = glob.glob(srt_pattern)
-        
-        # Create pairs based on matching base names
+        mkv_files = sorted(glob.glob(mkv_pattern))
+        srt_files = sorted(glob.glob(srt_pattern))
+    
         file_pairs = []
         for mkv_file in mkv_files:
+            mkv_id = extract_episode_id(ospath.basename(mkv_file))
             mkv_base = ospath.splitext(ospath.basename(mkv_file))[0]
-            # Look for matching SRT file
+    
+            if not mkv_id:
+                LOGGER.warning(f"No episode ID found in: {ospath.basename(mkv_file)}")
+                continue
+    
+            # Find matching SRT by episode ID
             matching_srt = None
             for srt_file in srt_files:
-                srt_base = ospath.splitext(ospath.basename(srt_file))[0]
-                if mkv_base == srt_base:
+                srt_id = extract_episode_id(ospath.basename(srt_file))
+                if srt_id == mkv_id:
                     matching_srt = srt_file
                     break
-            
+    
             if matching_srt:
                 file_pairs.append((mkv_file, matching_srt, mkv_base))
-                LOGGER.info(f"Found pair: {ospath.basename(mkv_file)} + {ospath.basename(matching_srt)}")
+                LOGGER.info(f"Matched {ospath.basename(mkv_file)} with {ospath.basename(matching_srt)}")
             else:
                 LOGGER.warning(f"No matching SRT found for: {ospath.basename(mkv_file)}")
-        
+    
         if not file_pairs:
             LOGGER.error("No matching MKV-SRT pairs found!")
             return False
-        
+    
         # Process each pair
         all_outputs = []
         files_to_delete = []
-        
+    
         for mkv_file, srt_file, base_name in file_pairs:
             LOGGER.info(f"Processing: {ospath.basename(mkv_file)}")
-            
-            # Get duration for this specific video
             self._total_time = (await get_media_info(mkv_file))[0]
-            
-            # Create FFmpeg command for this specific pair
+    
+            # Build FFmpeg command for this pair
             current_ffmpeg = []
             for item in ffmpeg:
                 if item == "*.mkv":
@@ -532,53 +540,45 @@ class FFMpeg:
                 elif item.startswith("mltb"):
                     if item == "mltb.Sub.mkv":
                         output_file = f"{dir}/{base_name}.Sub.mkv"
-                        current_ffmpeg.append(output_file)
-                        all_outputs.append(output_file)
                     elif item == "mltb.mkv":
                         output_file = f"{dir}/{base_name}.mkv"
-                        current_ffmpeg.append(output_file)
-                        all_outputs.append(output_file)
                     else:
-                        # Handle other mltb variations
                         output_file = f"{dir}/{item.replace('mltb', base_name)}"
-                        current_ffmpeg.append(output_file)
-                        all_outputs.append(output_file)
+                    current_ffmpeg.append(output_file)
+                    all_outputs.append(output_file)
                 else:
                     current_ffmpeg.append(item)
-            
-            # Track files for deletion
+    
             if delete_originals:
                 files_to_delete.extend([mkv_file, srt_file])
-            
-            # Execute FFmpeg for this pair
+    
             if self._listener.is_cancelled:
                 return False
-                
+    
             self._listener.subproc = await create_subprocess_exec(
                 *current_ffmpeg, stdout=PIPE, stderr=PIPE
             )
             await self._ffmpeg_progress()
             _, stderr = await self._listener.subproc.communicate()
             code = self._listener.subproc.returncode
-            
+    
             if self._listener.is_cancelled:
                 return False
-                
+    
             if code != 0:
                 try:
                     stderr = stderr.decode().strip()
                 except Exception:
                     stderr = "Unable to decode the error!"
                 LOGGER.error(f"Failed to process {ospath.basename(mkv_file)}: {stderr}")
-                # Clean up any partial outputs
                 for output in all_outputs:
                     if await aiopath.exists(output):
                         await remove(output)
                 return False
-            
+    
             LOGGER.info(f"Successfully processed: {ospath.basename(mkv_file)}")
-        
-        # Delete original files if requested and all processing succeeded
+    
+        # Delete originals if needed
         if delete_originals:
             for file_to_delete in files_to_delete:
                 try:
@@ -587,7 +587,7 @@ class FFMpeg:
                         LOGGER.info(f"Deleted original file: {ospath.basename(file_to_delete)}")
                 except Exception as e:
                     LOGGER.error(f"Failed to delete file {file_to_delete}: {e}")
-        
+    
         LOGGER.info(f"Successfully processed {len(file_pairs)} video-subtitle pairs")
         return all_outputs
     
