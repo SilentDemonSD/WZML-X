@@ -594,28 +594,28 @@ class FFMpeg:
                   pattern = os.path.join(dir, subtitle_wildcard.replace("*.", "*."))
                   subtitle_files.extend(sorted(glob.glob(pattern)))
                   
-          else:
+              else:
               # Auto-detect all video and subtitle files
-              video_files = []
-              subtitle_files = []
-              
-              for ext in video_extensions:
-                  pattern = os.path.join(dir, ext)
-                  video_files.extend(sorted(glob.glob(pattern)))
-              
-              for ext in subtitle_extensions:
-                  pattern = os.path.join(dir, ext)
-                  subtitle_files.extend(sorted(glob.glob(pattern)))
-          
-          LOGGER.info(f"Found {len(video_files)} video files and {len(subtitle_files)} subtitle files")
-          for video in video_files:
-              LOGGER.info(f"  Video: {os.path.basename(video)}")
-          for subtitle in subtitle_files:
-              LOGGER.info(f"  Subtitle: {os.path.basename(subtitle)}")
-          
-          if not video_files or not subtitle_files:
-              LOGGER.error("No matching video or subtitle files found in directory!")
-              return False
+                video_files = []
+                subtitle_files = []
+                
+                for ext in video_extensions:
+                    pattern = os.path.join(dir, ext)
+                    video_files.extend(sorted(glob.glob(pattern)))
+                
+                for ext in subtitle_extensions:
+                    pattern = os.path.join(dir, ext)
+                    subtitle_files.extend(sorted(glob.glob(pattern)))
+            
+            LOGGER.info(f"Found {len(video_files)} video files and {len(subtitle_files)} subtitle files")
+            for video in video_files:
+                LOGGER.info(f"  Video: {os.path.basename(video)}")
+            for subtitle in subtitle_files:
+                LOGGER.info(f"  Subtitle: {os.path.basename(subtitle)}")
+            
+            if not video_files or not subtitle_files:
+                LOGGER.error("No matching video or subtitle files found in directory!")
+                return False
           
           # Create pairs using improved matching logic
           file_pairs = []
