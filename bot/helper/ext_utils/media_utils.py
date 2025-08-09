@@ -784,6 +784,7 @@ class FFMpeg:
         
         expanded_ffmpeg = []
         input_files = []
+        auto_matched_subtitle = None
         
         def get_episode_number(filename):
             """Extract episode number from filename - simple version"""
