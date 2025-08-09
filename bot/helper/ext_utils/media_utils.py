@@ -764,7 +764,7 @@ class FFMpeg:
         else:
               LOGGER.error("❌ Failed to process any video-subtitle pairs")
               return False
-      
+
     async def _process_single_file(self, ffmpeg, f_path, dir, base_name, ext, delete_originals):
           """Original single file processing logic"""
           self._total_time = (await get_media_info(f_path))[0]
