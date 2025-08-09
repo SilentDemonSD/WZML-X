@@ -11,6 +11,7 @@ from asyncio import (
 )
 import re
 import glob
+import string
 from asyncio.subprocess import PIPE
 from os import path as ospath
 from re import search as re_search, escape
@@ -25,6 +26,7 @@ from .files_utils import get_mime_type, is_archive, is_archive_split
 from .status_utils import time_to_seconds
 
 EPISODE_REGEX = re.compile(r'(S\d{2}E\d{2})', re.IGNORECASE)
+
 
 def get_md5_hash(up_path):
     md5_hash = md5()
@@ -474,124 +476,136 @@ class FFMpeg:
                                                    base_name, ext,
                                                    delete_originals)
 
-    async def _process_multiple_files(self, ffmpeg, f_path, dir,
-                                      delete_originals):
-        """Process multiple video-subtitle pairs in the directory using episode detection."""
 
-        mkv_pattern = ospath.join(dir, "*.mkv")
-        srt_pattern = ospath.join(dir, "*.srt")
+def normalize_title(name: str) -> str:
+    # Remove punctuation and spaces, lowercase
+    exclude = set(string.punctuation + " ")
+    return ''.join(ch.lower() for ch in name if ch not in exclude)
 
-        mkv_files = glob.glob(mkv_pattern)
-        srt_files = glob.glob(srt_pattern)
+def extract_title_and_episode(filename: str):
+    # Example filename:
+    # "[KawaSubs] The Fragrant Flower Blooms With Dignity - S01E01 [NF 1080p AVC EAC3] [Eng-Sub].mkv"
+    # Goal: Extract show title and episode code
+    base = ospath.splitext(ospath.basename(filename))[0]
 
-        # Map subtitles by episode code
-        srt_map = {}
-        for srt_file in srt_files:
-            srt_basename = ospath.basename(srt_file)
-            match = EPISODE_REGEX.search(srt_basename)
-            if match:
-                ep_code = match.group(1).upper()
-                srt_map[ep_code] = srt_file
+    ep_match = EPISODE_REGEX.search(base)
+    ep_code = ep_match.group(1).upper() if ep_match else None
 
-        file_pairs = []
-        for mkv_file in mkv_files:
-            mkv_basename = ospath.basename(mkv_file)
-            base_name = ospath.splitext(mkv_basename)[0]
-            match = EPISODE_REGEX.search(base_name)
-            if match:
-                ep_code = match.group(1).upper()
-                matching_srt = srt_map.get(ep_code)
-                if matching_srt:
-                    file_pairs.append((mkv_file, matching_srt, base_name))
-                    LOGGER.info(
-                        f"Found pair by episode: {mkv_basename} + {ospath.basename(matching_srt)}"
-                    )
-                else:
-                    LOGGER.warning(
-                        f"No matching SRT found for episode {ep_code} in file {mkv_basename}"
-                    )
+    # Extract show title: take string before episode code or dash before ep code
+    if ep_match:
+        idx = ep_match.start()
+        # Look backwards from episode code to find last dash or bracket before ep code
+        # We'll try splitting by '-' and use the first part as title
+        parts = base[:idx].split('-')
+        title_part = parts[0].strip()
+    else:
+        title_part = base
+
+    norm_title = normalize_title(title_part)
+    return norm_title, ep_code
+
+async def _process_multiple_files(self, ffmpeg, f_path, dir, delete_originals):
+    mkv_files = glob.glob(ospath.join(dir, "*.mkv"))
+    srt_files = glob.glob(ospath.join(dir, "*.srt"))
+
+    # Build map of subtitles by (title, episode)
+    srt_map = {}
+    for srt_file in srt_files:
+        norm_title, ep_code = extract_title_and_episode(srt_file)
+        if ep_code:
+            srt_map[(norm_title, ep_code)] = srt_file
+
+    file_pairs = []
+    for mkv_file in mkv_files:
+        norm_title, ep_code = extract_title_and_episode(mkv_file)
+        if ep_code:
+            matching_srt = srt_map.get((norm_title, ep_code))
+            if matching_srt:
+                base_name = ospath.splitext(ospath.basename(mkv_file))[0]
+                file_pairs.append((mkv_file, matching_srt, base_name))
+                LOGGER.info(f"Found pair: {ospath.basename(mkv_file)} + {ospath.basename(matching_srt)}")
             else:
-                LOGGER.warning(
-                    f"No episode code found in video file: {mkv_basename}")
+                LOGGER.warning(f"No matching SRT for episode {ep_code} and title {norm_title} in file {ospath.basename(mkv_file)}")
+        else:
+            LOGGER.warning(f"No episode code found in video file: {ospath.basename(mkv_file)}")
 
-        if not file_pairs:
-            LOGGER.error("No matching MKV-SRT episode pairs found!")
-            return False
+    if not file_pairs:
+        LOGGER.error("No matching MKV-SRT pairs found!")
+        return False
 
-        all_outputs = []
-        files_to_delete = []
+    # Rest of your processing code here (same as before)...
 
-        for mkv_file, srt_file, base_name in file_pairs:
-            LOGGER.info(f"Processing: {ospath.basename(mkv_file)}")
+    all_outputs = []
+    files_to_delete = []
 
-            self._total_time = (await get_media_info(mkv_file))[0]
+    for mkv_file, srt_file, base_name in file_pairs:
+        LOGGER.info(f"Processing: {ospath.basename(mkv_file)}")
 
-            current_ffmpeg = []
-            for item in ffmpeg:
-                if item == "*.mkv":
-                    current_ffmpeg.append(mkv_file)
-                elif item == "*.srt":
-                    current_ffmpeg.append(srt_file)
-                elif item.startswith("mltb"):
-                    if item == "mltb.Sub.mkv":
-                        output_file = f"{dir}/{base_name}.Sub.mkv"
-                        current_ffmpeg.append(output_file)
-                        all_outputs.append(output_file)
-                    elif item == "mltb.mkv":
-                        output_file = f"{dir}/{base_name}.mkv"
-                        current_ffmpeg.append(output_file)
-                        all_outputs.append(output_file)
-                    else:
-                        output_file = f"{dir}/{item.replace('mltb', base_name)}"
-                        current_ffmpeg.append(output_file)
-                        all_outputs.append(output_file)
+        self._total_time = (await get_media_info(mkv_file))[0]
+
+        current_ffmpeg = []
+        for item in ffmpeg:
+            if item == "*.mkv":
+                current_ffmpeg.append(mkv_file)
+            elif item == "*.srt":
+                current_ffmpeg.append(srt_file)
+            elif item.startswith("mltb"):
+                if item == "mltb.Sub.mkv":
+                    output_file = f"{dir}/{base_name}.Sub.mkv"
+                    current_ffmpeg.append(output_file)
+                    all_outputs.append(output_file)
+                elif item == "mltb.mkv":
+                    output_file = f"{dir}/{base_name}.mkv"
+                    current_ffmpeg.append(output_file)
+                    all_outputs.append(output_file)
                 else:
-                    current_ffmpeg.append(item)
-
-            if delete_originals:
-                files_to_delete.extend([mkv_file, srt_file])
-
-            if self._listener.is_cancelled:
-                return False
-
-            self._listener.subproc = await create_subprocess_exec(
-                *current_ffmpeg, stdout=PIPE, stderr=PIPE)
-            await self._ffmpeg_progress()
-            _, stderr = await self._listener.subproc.communicate()
-            code = self._listener.subproc.returncode
-
-            if self._listener.is_cancelled:
-                return False
-
-            if code != 0:
-                try:
-                    stderr = stderr.decode().strip()
-                except Exception:
-                    stderr = "Unable to decode the error!"
-                LOGGER.error(
-                    f"Failed to process {ospath.basename(mkv_file)}: {stderr}")
-                for output in all_outputs:
-                    if await aiopath.exists(output):
-                        await remove(output)
-                return False
-
-            LOGGER.info(f"Successfully processed: {ospath.basename(mkv_file)}")
+                    output_file = f"{dir}/{item.replace('mltb', base_name)}"
+                    current_ffmpeg.append(output_file)
+                    all_outputs.append(output_file)
+            else:
+                current_ffmpeg.append(item)
 
         if delete_originals:
-            for file_to_delete in files_to_delete:
-                try:
-                    if await aiopath.exists(file_to_delete):
-                        await remove(file_to_delete)
-                        LOGGER.info(
-                            f"Deleted original file: {ospath.basename(file_to_delete)}"
-                        )
-                except Exception as e:
-                    LOGGER.error(
-                        f"Failed to delete file {file_to_delete}: {e}")
+            files_to_delete.extend([mkv_file, srt_file])
 
-        LOGGER.info(
-            f"Successfully processed {len(file_pairs)} video-subtitle pairs")
-        return all_outputs
+        if self._listener.is_cancelled:
+            return False
+
+        self._listener.subproc = await create_subprocess_exec(
+            *current_ffmpeg, stdout=PIPE, stderr=PIPE
+        )
+        await self._ffmpeg_progress()
+        _, stderr = await self._listener.subproc.communicate()
+        code = self._listener.subproc.returncode
+
+        if self._listener.is_cancelled:
+            return False
+
+        if code != 0:
+            try:
+                stderr = stderr.decode().strip()
+            except Exception:
+                stderr = "Unable to decode the error!"
+            LOGGER.error(f"Failed to process {ospath.basename(mkv_file)}: {stderr}")
+            for output in all_outputs:
+                if await aiopath.exists(output):
+                    await remove(output)
+            return False
+
+        LOGGER.info(f"Successfully processed: {ospath.basename(mkv_file)}")
+
+    if delete_originals:
+        for file_to_delete in files_to_delete:
+            try:
+                if await aiopath.exists(file_to_delete):
+                    await remove(file_to_delete)
+                    LOGGER.info(f"Deleted original file: {ospath.basename(file_to_delete)}")
+            except Exception as e:
+                LOGGER.error(f"Failed to delete file {file_to_delete}: {e}")
+
+    LOGGER.info(f"Successfully processed {len(file_pairs)} video-subtitle pairs")
+    return all_outputs
+
 
     async def _process_single_file(self, ffmpeg, f_path, dir, base_name, ext,
                                    delete_originals):
