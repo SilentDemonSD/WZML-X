@@ -193,21 +193,26 @@ async def get_streams(file):
 def extract_episode_info(filename):
     """
     Extract season and episode information from filename using multiple patterns.
+    Enhanced version with better pattern matching.
     
     Returns:
         tuple: (season, episode, title_part) or (None, None, None) if no match
     """
     # Remove file extension for matching
     name_without_ext = ospath.splitext(filename)[0]
+    original_name = name_without_ext
     
-    # Pattern 1: S##E## format (most common)
+    LOGGER.debug(f"Analyzing filename: {filename}")
+    
+    # Pattern 1: S##E## format (most common) - more flexible
     pattern1 = r'[Ss](\d{1,2})[Ee](\d{1,2})'
     match = re_search(pattern1, name_without_ext)
     if match:
         season = int(match.group(1))
         episode = int(match.group(2))
         # Extract title part (everything before season info)
-        title_part = name_without_ext[:match.start()].strip(' -_')
+        title_part = name_without_ext[:match.start()].strip(' -_[]')
+        LOGGER.debug(f"Pattern 1 matched: S{season}E{episode}, title: '{title_part}'")
         return season, episode, title_part
     
     # Pattern 2: Season ## Episode ## format
@@ -216,33 +221,51 @@ def extract_episode_info(filename):
     if match:
         season = int(match.group(1))
         episode = int(match.group(2))
-        title_part = name_without_ext[:match.start()].strip(' -_')
+        title_part = name_without_ext[:match.start()].strip(' -_[]')
+        LOGGER.debug(f"Pattern 2 matched: Season {season} Episode {episode}, title: '{title_part}'")
         return season, episode, title_part
     
     # Pattern 3: Episode number at the end (assumes season 1)
-    pattern3 = r'[Ee]pisode?\s*(\d{1,2})(?:\s|$)'
+    pattern3 = r'[Ee]pisode?\s*(\d{1,2})(?:\s|$|[^\w])'
     match = re_search(pattern3, name_without_ext)
     if match:
         season = 1
         episode = int(match.group(1))
-        title_part = name_without_ext[:match.start()].strip(' -_')
+        title_part = name_without_ext[:match.start()].strip(' -_[]')
+        LOGGER.debug(f"Pattern 3 matched: Episode {episode}, title: '{title_part}'")
         return season, episode, title_part
     
-    # Pattern 4: Just numbers like "- 01", "- 02" etc.
-    pattern4 = r'[- _](\d{1,2})(?:[- _]|$)'
+    # Pattern 4: Just numbers like "- 01", "- 02" etc. (more precise)
+    pattern4 = r'[- _](\d{2})(?:[- _]|[\[\(]|$)'
     matches = findall(pattern4, name_without_ext)
     if matches:
         # Take the last number as episode
         episode = int(matches[-1])
         season = 1
         # Remove the episode number part
-        title_part = re_search(r'^(.+?)[- _]\d{1,2}(?:[- _]|$)', name_without_ext)
-        if title_part:
-            title_part = title_part.group(1).strip(' -_')
+        title_match = re_search(r'^(.+?)[- _]\d{2}(?:[- _]|[\[\(]|$)', name_without_ext)
+        if title_match:
+            title_part = title_match.group(1).strip(' -_[]')
         else:
             title_part = name_without_ext
+        LOGGER.debug(f"Pattern 4 matched: Episode {episode}, title: '{title_part}'")
         return season, episode, title_part
     
+    # Pattern 5: Single digit episodes like "- 1", "- 2"
+    pattern5 = r'[- _](\d{1})(?:[- _]|[\[\(]|$)'
+    matches = findall(pattern5, name_without_ext)
+    if matches:
+        episode = int(matches[-1])
+        season = 1
+        title_match = re_search(r'^(.+?)[- _]\d{1}(?:[- _]|[\[\(]|$)', name_without_ext)
+        if title_match:
+            title_part = title_match.group(1).strip(' -_[]')
+        else:
+            title_part = name_without_ext
+        LOGGER.debug(f"Pattern 5 matched: Episode {episode}, title: '{title_part}'")
+        return season, episode, title_part
+    
+    LOGGER.debug(f"No pattern matched for: {filename}")
     return None, None, None
 
 
@@ -277,32 +300,48 @@ def find_episode_pairs_method1(mkv_files, srt_files):
 
 def find_episode_pairs_method2(mkv_files, srt_files):
     """
-    Method 2: Season/Episode matching with title similarity
+    Method 2: Season/Episode matching with title similarity - Enhanced
     """
     file_pairs = []
     mkv_episodes = []
     srt_episodes = []
     
-    # Extract episode info for all files
+    # Extract episode info for all files with better logging
+    LOGGER.info("Extracting episode info from MKV files:")
     for mkv_file in mkv_files:
         filename = ospath.basename(mkv_file)
         season, episode, title = extract_episode_info(filename)
+        LOGGER.info(f"  {filename} -> S{season}E{episode} | Title: '{title}'")
         if season is not None and episode is not None:
             mkv_episodes.append((mkv_file, season, episode, title, filename))
     
+    LOGGER.info("Extracting episode info from SRT files:")
     for srt_file in srt_files:
         filename = ospath.basename(srt_file)
         season, episode, title = extract_episode_info(filename)
+        LOGGER.info(f"  {filename} -> S{season}E{episode} | Title: '{title}'")
         if season is not None and episode is not None:
             srt_episodes.append((srt_file, season, episode, title, filename))
+    
+    # Sort episodes by season and episode number for proper matching
+    mkv_episodes.sort(key=lambda x: (x[1], x[2]))  # Sort by season, episode
+    srt_episodes.sort(key=lambda x: (x[1], x[2]))  # Sort by season, episode
+    
+    used_srt = set()
     
     # Match by season/episode and title similarity
     for mkv_file, mkv_season, mkv_episode, mkv_title, mkv_filename in mkv_episodes:
         best_match = None
         best_score = 0
+        best_srt_info = None
+        
+        LOGGER.info(f"Looking for match for MKV: S{mkv_season:02d}E{mkv_episode:02d} - {mkv_title}")
         
         for srt_file, srt_season, srt_episode, srt_title, srt_filename in srt_episodes:
-            # Must match season and episode
+            if srt_file in used_srt:
+                continue
+                
+            # Must match season and episode exactly
             if mkv_season == srt_season and mkv_episode == srt_episode:
                 # Calculate title similarity
                 mkv_norm = normalize_title(mkv_title)
@@ -319,13 +358,20 @@ def find_episode_pairs_method2(mkv_files, srt_files):
                 else:
                     score = 1.0 if mkv_norm == srt_norm else 0.0
                 
+                LOGGER.info(f"    Checking SRT: S{srt_season:02d}E{srt_episode:02d} - {srt_title} | Similarity: {score:.2f}")
+                
                 if score > best_score:
                     best_score = score
-                    best_match = (srt_file, srt_filename)
+                    best_match = srt_file
+                    best_srt_info = (srt_season, srt_episode, srt_title)
         
-        if best_match and best_score > 0.3:  # Minimum 30% similarity
+        if best_match and best_score > 0.1:  # Lower threshold for better matching
             base_name = f"S{mkv_season:02d}E{mkv_episode:02d}"
-            file_pairs.append((mkv_file, best_match[0], base_name))
+            file_pairs.append((mkv_file, best_match, base_name))
+            used_srt.add(best_match)
+            LOGGER.info(f"    ✅ MATCHED: {base_name} | Score: {best_score:.2f}")
+        else:
+            LOGGER.warning(f"    ❌ NO MATCH FOUND for S{mkv_season:02d}E{mkv_episode:02d}")
     
     return file_pairs
 
@@ -676,7 +722,7 @@ class FFMpeg:
             return await self._process_single_file(ffmpeg, f_path, dir, base_name, ext, delete_originals)
     
     async def _process_multiple_files(self, ffmpeg, f_path, dir, delete_originals):
-        """Process multiple video-subtitle pairs in the directory with enhanced matching"""
+        """Process multiple video-subtitle pairs in the directory with enhanced matching and detailed logging"""
         
         # Find all MKV and SRT files in the directory
         mkv_pattern = ospath.join(dir, "*.mkv")
@@ -693,46 +739,71 @@ class FFMpeg:
             LOGGER.error("No SRT files found in directory!")
             return False
         
+        LOGGER.info(f"Found {len(mkv_files)} MKV files and {len(srt_files)} SRT files")
+        
+        # Log all files for debugging
+        LOGGER.info("Available MKV files:")
+        for i, mkv in enumerate(mkv_files, 1):
+            LOGGER.info(f"  {i}. {ospath.basename(mkv)}")
+        
+        LOGGER.info("Available SRT files:")
+        for i, srt in enumerate(srt_files, 1):
+            LOGGER.info(f"  {i}. {ospath.basename(srt)}")
+        
         # Try different matching methods
         file_pairs = []
+        matching_method = ""
         
         # Method 1: Exact base name matching
-        LOGGER.info("Trying Method 1: Exact base name matching...")
+        LOGGER.info("\n=== TRYING METHOD 1: Exact base name matching ===")
         file_pairs = find_episode_pairs_method1(mkv_files, srt_files)
+        if file_pairs:
+            matching_method = "Method 1 (Exact base name)"
+            LOGGER.info(f"✅ Method 1 succeeded! Found {len(file_pairs)} pairs")
         
         # Method 2: Season/Episode matching if Method 1 fails
         if not file_pairs:
-            LOGGER.info("Method 1 failed. Trying Method 2: Season/Episode matching...")
+            LOGGER.info("\n=== METHOD 1 FAILED - TRYING METHOD 2: Season/Episode matching ===")
             file_pairs = find_episode_pairs_method2(mkv_files, srt_files)
+            if file_pairs:
+                matching_method = "Method 2 (Season/Episode)"
+                LOGGER.info(f"✅ Method 2 succeeded! Found {len(file_pairs)} pairs")
         
         # Method 3: Fuzzy matching if Method 2 fails
         if not file_pairs:
-            LOGGER.info("Method 2 failed. Trying Method 3: Fuzzy filename matching...")
+            LOGGER.info("\n=== METHOD 2 FAILED - TRYING METHOD 3: Fuzzy filename matching ===")
             file_pairs = find_episode_pairs_method3(mkv_files, srt_files)
+            if file_pairs:
+                matching_method = "Method 3 (Fuzzy matching)"
+                LOGGER.info(f"✅ Method 3 succeeded! Found {len(file_pairs)} pairs")
         
         if not file_pairs:
-            LOGGER.error("All matching methods failed! No matching MKV-SRT pairs found!")
-            LOGGER.info("Available MKV files:")
-            for mkv in mkv_files:
-                LOGGER.info(f"  - {ospath.basename(mkv)}")
-            LOGGER.info("Available SRT files:")
-            for srt in srt_files:
-                LOGGER.info(f"  - {ospath.basename(srt)}")
+            LOGGER.error("\n❌ ALL MATCHING METHODS FAILED!")
+            LOGGER.error("Please check that your MKV and SRT files have matching episode information")
+            LOGGER.error("Supported formats: S01E01, Season 1 Episode 1, Episode 01, - 01, etc.")
             return False
         
-        LOGGER.info(f"Found {len(file_pairs)} matching pairs using one of the methods")
-        for mkv_file, srt_file, base_name in file_pairs:
-            LOGGER.info(f"Pair: {ospath.basename(mkv_file)} + {ospath.basename(srt_file)} -> {base_name}")
+        LOGGER.info(f"\n🎉 SUCCESS: Using {matching_method}")
+        LOGGER.info("Final matched pairs:")
+        for i, (mkv_file, srt_file, base_name) in enumerate(file_pairs, 1):
+            LOGGER.info(f"  {i}. {base_name}")
+            LOGGER.info(f"     Video: {ospath.basename(mkv_file)}")
+            LOGGER.info(f"     Sub:   {ospath.basename(srt_file)}")
         
         # Process each pair
         all_outputs = []
         files_to_delete = []
         
-        for mkv_file, srt_file, base_name in file_pairs:
-            LOGGER.info(f"Processing: {ospath.basename(mkv_file)}")
+        LOGGER.info(f"\n🔄 Starting processing of {len(file_pairs)} pairs...")
+        
+        for pair_num, (mkv_file, srt_file, base_name) in enumerate(file_pairs, 1):
+            LOGGER.info(f"\n--- Processing pair {pair_num}/{len(file_pairs)}: {base_name} ---")
+            LOGGER.info(f"Video: {ospath.basename(mkv_file)}")
+            LOGGER.info(f"Sub:   {ospath.basename(srt_file)}")
             
             # Get duration for this specific video
             self._total_time = (await get_media_info(mkv_file))[0]
+            LOGGER.info(f"Duration: {self._total_time} seconds")
             
             # Create FFmpeg command for this specific pair
             current_ffmpeg = []
@@ -762,8 +833,11 @@ class FFMpeg:
             if delete_originals:
                 files_to_delete.extend([mkv_file, srt_file])
             
+            LOGGER.info(f"FFmpeg command: {' '.join(current_ffmpeg)}")
+            
             # Execute FFmpeg for this pair
             if self._listener.is_cancelled:
+                LOGGER.warning("Processing cancelled by user")
                 return False
                 
             self._listener.subproc = await create_subprocess_exec(
@@ -774,6 +848,7 @@ class FFMpeg:
             code = self._listener.subproc.returncode
             
             if self._listener.is_cancelled:
+                LOGGER.warning("Processing cancelled by user")
                 return False
                 
             if code != 0:
@@ -781,26 +856,27 @@ class FFMpeg:
                     stderr = stderr.decode().strip()
                 except Exception:
                     stderr = "Unable to decode the error!"
-                LOGGER.error(f"Failed to process {ospath.basename(mkv_file)}: {stderr}")
+                LOGGER.error(f"❌ Failed to process {ospath.basename(mkv_file)}: {stderr}")
                 # Clean up any partial outputs
                 for output in all_outputs:
                     if await aiopath.exists(output):
                         await remove(output)
                 return False
             
-            LOGGER.info(f"Successfully processed: {ospath.basename(mkv_file)}")
+            LOGGER.info(f"✅ Successfully processed: {base_name}")
         
         # Delete original files if requested and all processing succeeded
         if delete_originals:
+            LOGGER.info(f"\n🗑️  Deleting {len(files_to_delete)} original files...")
             for file_to_delete in files_to_delete:
                 try:
                     if await aiopath.exists(file_to_delete):
                         await remove(file_to_delete)
-                        LOGGER.info(f"Deleted original file: {ospath.basename(file_to_delete)}")
+                        LOGGER.info(f"Deleted: {ospath.basename(file_to_delete)}")
                 except Exception as e:
                     LOGGER.error(f"Failed to delete file {file_to_delete}: {e}")
         
-        LOGGER.info(f"Successfully processed {len(file_pairs)} video-subtitle pairs")
+        LOGGER.info(f"\n🎉 COMPLETE: Successfully processed {len(file_pairs)} video-subtitle pairs using {matching_method}")
         return all_outputs
     
     async def _process_single_file(self, ffmpeg, f_path, dir, base_name, ext, delete_originals):
