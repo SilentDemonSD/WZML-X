@@ -545,24 +545,24 @@ class FFMpeg:
             delete_originals = True
             ffmpeg = [item for item in ffmpeg if item != "-del"]
         
-        # Improved wildcard detection for multiple video and subtitle formats
-        video_wildcards = ["*.mkv", "*.mp4", "*.avi", "*.mov", "*.m4v", "*.webm"]
-        subtitle_wildcards = ["*.srt", "*.ass", "*.sub", "*.vtt"]
+        # Enhanced wildcard detection for any video/subtitle format
+        video_extensions = ["*.mkv", "*.mp4", "*.avi", "*.mov", "*.m4v", "*.webm"]
+        subtitle_extensions = ["*.srt", "*.ass", "*.sub", "*.vtt"]
         
-        has_video_wildcard = any(item in ffmpeg for item in video_wildcards)
-        has_subtitle_wildcard = any(item in ffmpeg for item in subtitle_wildcards)
+        # Find video and subtitle wildcards in command
+        video_wildcards = [item for item in ffmpeg if any(item == ext for ext in video_extensions)]
+        subtitle_wildcards = [item for item in ffmpeg if any(item == ext for ext in subtitle_extensions)]
         
-        # Legacy detection for backward compatibility
-        has_mkv_wildcard = "*.mkv" in ffmpeg
-        has_srt_wildcard = "*.srt" in ffmpeg
+        has_video_wildcard = len(video_wildcards) > 0
+        has_subtitle_wildcard = len(subtitle_wildcards) > 0
         
-        LOGGER.info(f"Wildcard detection - Video: {has_video_wildcard}, Subtitle: {has_subtitle_wildcard}")
-        LOGGER.info(f"Legacy detection - MKV: {has_mkv_wildcard}, SRT: {has_srt_wildcard}")
+        LOGGER.info(f"Video wildcards found: {video_wildcards}")
+        LOGGER.info(f"Subtitle wildcards found: {subtitle_wildcards}")
         LOGGER.info(f"FFmpeg command: {' '.join(ffmpeg)}")
         
-        if (has_mkv_wildcard and has_srt_wildcard) or (has_video_wildcard and has_subtitle_wildcard):
-            # Multiple file processing mode with improved pairing
-            LOGGER.info("Using multiple file processing mode")
+        if has_video_wildcard and has_subtitle_wildcard:
+            # Multiple file processing mode with enhanced format detection
+            LOGGER.info("Using enhanced multiple file processing mode")
             return await self._process_multiple_files_improved(ffmpeg, f_path, dir, delete_originals)
         else:
             # Single file processing mode (original logic)
@@ -570,27 +570,48 @@ class FFMpeg:
             return await self._process_single_file(ffmpeg, f_path, dir, base_name, ext, delete_originals)
     
     async def _process_multiple_files_improved(self, ffmpeg, f_path, dir, delete_originals):
-        """Process multiple video-subtitle pairs with improved matching logic for all video formats"""
+        """Process multiple video-subtitle pairs with improved matching logic and auto-format detection"""
         
         LOGGER.info(f"Processing multiple files in directory: {dir}")
         LOGGER.info(f"Original FFmpeg command: {' '.join(ffmpeg)}")
         
-        # Find all supported video and subtitle files in the directory
+        # Enhanced wildcard detection for any video/subtitle format
         video_extensions = ["*.mkv", "*.mp4", "*.avi", "*.mov", "*.m4v", "*.webm"]
         subtitle_extensions = ["*.srt", "*.ass", "*.sub", "*.vtt"]
         
-        video_files = []
-        subtitle_files = []
+        # Find video and subtitle wildcards in command
+        video_wildcards = [item for item in ffmpeg if any(item == ext for ext in video_extensions)]
+        subtitle_wildcards = [item for item in ffmpeg if any(item == ext for ext in subtitle_extensions)]
         
-        # Collect all video files
-        for ext in video_extensions:
-            pattern = ospath.join(dir, ext)
-            video_files.extend(sorted(glob.glob(pattern)))
+        LOGGER.info(f"Found video wildcards: {video_wildcards}")
+        LOGGER.info(f"Found subtitle wildcards: {subtitle_wildcards}")
         
-        # Collect all subtitle files  
-        for ext in subtitle_extensions:
-            pattern = ospath.join(dir, ext)
-            subtitle_files.extend(sorted(glob.glob(pattern)))
+        # If specific format wildcards found, use them, otherwise auto-detect
+        if video_wildcards and subtitle_wildcards:
+            # Use the formats specified in the command
+            video_files = []
+            subtitle_files = []
+            
+            for video_wildcard in video_wildcards:
+                pattern = ospath.join(dir, video_wildcard.replace("*.", "*."))
+                video_files.extend(sorted(glob.glob(pattern)))
+            
+            for subtitle_wildcard in subtitle_wildcards:
+                pattern = ospath.join(dir, subtitle_wildcard.replace("*.", "*."))
+                subtitle_files.extend(sorted(glob.glob(pattern)))
+                
+        else:
+            # Auto-detect all video and subtitle files
+            video_files = []
+            subtitle_files = []
+            
+            for ext in video_extensions:
+                pattern = ospath.join(dir, ext)
+                video_files.extend(sorted(glob.glob(pattern)))
+            
+            for ext in subtitle_extensions:
+                pattern = ospath.join(dir, ext)
+                subtitle_files.extend(sorted(glob.glob(pattern)))
         
         LOGGER.info(f"Found {len(video_files)} video files and {len(subtitle_files)} subtitle files")
         for video in video_files:
@@ -599,7 +620,7 @@ class FFMpeg:
             LOGGER.info(f"  Subtitle: {ospath.basename(subtitle)}")
         
         if not video_files or not subtitle_files:
-            LOGGER.error("No video or subtitle files found in directory!")
+            LOGGER.error("No matching video or subtitle files found in directory!")
             return False
         
         # Create pairs using improved matching logic
@@ -607,8 +628,7 @@ class FFMpeg:
         used_subtitle_files = set()
         
         for video_file in video_files:
-            available_subtitles = [sub for sub in subtitle_files if sub not in used_subtitle_files]
-            matching_subtitle = find_best_subtitle_match(video_file, available_subtitles)
+            matching_subtitle = find_best_subtitle_match(video_file, [sub for sub in subtitle_files if sub not in used_subtitle_files])
             
             if matching_subtitle:
                 video_base = ospath.splitext(ospath.basename(video_file))[0]
@@ -636,48 +656,42 @@ class FFMpeg:
             self._total_time = (await get_media_info(video_file))[0]
             LOGGER.info(f"Video duration: {self._total_time} seconds")
             
-            # Create FFmpeg command for this specific pair
+            # Create FFmpeg command for this specific pair with format auto-detection
             current_ffmpeg = []
             output_file = None
-            video_ext = ospath.splitext(video_file)[1]
             
             i = 0
             while i < len(ffmpeg):
                 item = ffmpeg[i]
                 
-                # Handle video wildcards
-                if item in ["*.mkv", "*.mp4", "*.avi", "*.mov", "*.m4v", "*.webm"]:
+                # Replace video wildcards with actual file
+                if any(item == ext for ext in video_extensions):
                     current_ffmpeg.append(video_file)
                     LOGGER.info(f"Replaced {item} with: {video_file}")
                 
-                # Handle subtitle wildcards
-                elif item in ["*.srt", "*.ass", "*.sub", "*.vtt"]:
+                # Replace subtitle wildcards with actual file  
+                elif any(item == ext for ext in subtitle_extensions):
                     current_ffmpeg.append(subtitle_file)
                     LOGGER.info(f"Replaced {item} with: {subtitle_file}")
                 
-                # Handle output file placeholders
+                # Handle output file with format preservation
                 elif item.startswith("mltb"):
+                    video_ext = ospath.splitext(video_file)[1]  # Get original video extension
+                    
                     if item == "mltb.Sub.mkv":
-                        output_file = f"{dir}/{base_name}.Sub.mkv"
-                    elif item == "mltb.Sub.mp4":
-                        output_file = f"{dir}/{base_name}.Sub.mp4"
+                        output_file = f"{dir}/{base_name}.Sub{video_ext}"
                     elif item == "mltb.mkv":
-                        output_file = f"{dir}/{base_name}.mkv"
-                    elif item == "mltb.mp4":
-                        output_file = f"{dir}/{base_name}.mp4"
-                    elif item == "mltb":
-                        # Use original video extension
                         output_file = f"{dir}/{base_name}{video_ext}"
-                    elif "." in item:
-                        # Handle other mltb variations with extensions
-                        output_file = f"{dir}/{item.replace('mltb', base_name)}"
+                    elif item == "mltb":
+                        output_file = f"{dir}/{base_name}{video_ext}"
                     else:
-                        # Fallback: use original video extension
-                        output_file = f"{dir}/{item.replace('mltb', base_name)}{video_ext}"
+                        # Handle other mltb variations, preserve original extension
+                        output_file = f"{dir}/{item.replace('mltb', base_name).replace('.mkv', video_ext).replace('.mp4', video_ext).replace('.avi', video_ext)}"
                     
                     current_ffmpeg.append(output_file)
                     all_outputs.append(output_file)
                     LOGGER.info(f"Output file: {output_file}")
+                
                 else:
                     current_ffmpeg.append(item)
                 i += 1
