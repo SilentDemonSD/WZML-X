@@ -563,65 +563,65 @@ class FFMpeg:
             LOGGER.info("Using single file processing mode")
             return await self._process_single_file(ffmpeg, f_path, dir, base_name, ext, delete_originals)
     
-        async def _process_multiple_files_improved(self, ffmpeg, f_path, dir, delete_originals):
-          """Process multiple video-subtitle pairs with improved matching logic and auto-format detection"""
-          
-          LOGGER.info(f"Processing multiple files in directory: {dir}")
-          LOGGER.info(f"Original FFmpeg command: {' '.join(ffmpeg)}")
-          
-          # Enhanced wildcard detection for any video/subtitle format
-          video_extensions = ["*.mkv", "*.mp4", "*.avi", "*.mov", "*.m4v", "*.webm"]
-          subtitle_extensions = ["*.srt", "*.ass", "*.sub", "*.vtt"]
-          
-          # Find video and subtitle wildcards in command
-          video_wildcards = [item for item in ffmpeg if any(item == ext for ext in video_extensions)]
-          subtitle_wildcards = [item for item in ffmpeg if any(item == ext for ext in subtitle_extensions)]
-          
-          LOGGER.info(f"Found video wildcards: {video_wildcards}")
-          LOGGER.info(f"Found subtitle wildcards: {subtitle_wildcards}")
-          
-          # If specific format wildcards found, use them, otherwise auto-detect
+    async def _process_multiple_files_improved(self, ffmpeg, f_path, dir, delete_originals):
+        """Process multiple video-subtitle pairs with improved matching logic and auto-format detection"""
+        
+        LOGGER.info(f"Processing multiple files in directory: {dir}")
+        LOGGER.info(f"Original FFmpeg command: {' '.join(ffmpeg)}")
+        
+        # Enhanced wildcard detection for any video/subtitle format
+        video_extensions = ["*.mkv", "*.mp4", "*.avi", "*.mov", "*.m4v", "*.webm"]
+        subtitle_extensions = ["*.srt", "*.ass", "*.sub", "*.vtt"]
+        
+        # Find video and subtitle wildcards in command
+        video_wildcards = [item for item in ffmpeg if any(item == ext for ext in video_extensions)]
+        subtitle_wildcards = [item for item in ffmpeg if any(item == ext for ext in subtitle_extensions)]
+        
+        LOGGER.info(f"Found video wildcards: {video_wildcards}")
+        LOGGER.info(f"Found subtitle wildcards: {subtitle_wildcards}")
+        
+        # If specific format wildcards found, use them, otherwise auto-detect
           if video_wildcards and subtitle_wildcards:
-              # Use the formats specified in the command
-              video_files = []
-              subtitle_files = []
-              
-              for video_wildcard in video_wildcards:
-                  pattern = os.path.join(dir, video_wildcard.replace("*.", "*."))
-                  video_files.extend(sorted(glob.glob(pattern)))
-              
-              for subtitle_wildcard in subtitle_wildcards:
-                  pattern = os.path.join(dir, subtitle_wildcard.replace("*.", "*."))
-                  subtitle_files.extend(sorted(glob.glob(pattern)))
-                  
-              else:
-              # Auto-detect all video and subtitle files
+                # Use the formats specified in the command
                 video_files = []
                 subtitle_files = []
                 
-                for ext in video_extensions:
-                    pattern = os.path.join(dir, ext)
+                for video_wildcard in video_wildcards:
+                    pattern = os.path.join(dir, video_wildcard.replace("*.", "*."))
                     video_files.extend(sorted(glob.glob(pattern)))
                 
-                for ext in subtitle_extensions:
-                    pattern = os.path.join(dir, ext)
+                for subtitle_wildcard in subtitle_wildcards:
+                    pattern = os.path.join(dir, subtitle_wildcard.replace("*.", "*."))
                     subtitle_files.extend(sorted(glob.glob(pattern)))
-            
-            LOGGER.info(f"Found {len(video_files)} video files and {len(subtitle_files)} subtitle files")
-            for video in video_files:
-                LOGGER.info(f"  Video: {os.path.basename(video)}")
-            for subtitle in subtitle_files:
-                LOGGER.info(f"  Subtitle: {os.path.basename(subtitle)}")
-            
-            if not video_files or not subtitle_files:
-                LOGGER.error("No matching video or subtitle files found in directory!")
-                return False
+                    
+          else:
+              # Auto-detect all video and subtitle files
+              video_files = []
+              subtitle_files = []
+              
+              for ext in video_extensions:
+                  pattern = os.path.join(dir, ext)
+                  video_files.extend(sorted(glob.glob(pattern)))
+              
+              for ext in subtitle_extensions:
+                  pattern = os.path.join(dir, ext)
+                  subtitle_files.extend(sorted(glob.glob(pattern)))
+          
+        LOGGER.info(f"Found {len(video_files)} video files and {len(subtitle_files)} subtitle files")
+        for video in video_files:
+              LOGGER.info(f"  Video: {os.path.basename(video)}")
+        for subtitle in subtitle_files:
+              LOGGER.info(f"  Subtitle: {os.path.basename(subtitle)}")
+          
+        if not video_files or not subtitle_files:
+              LOGGER.error("No matching video or subtitle files found in directory!")
+              return False
           
           # Create pairs using improved matching logic
-          file_pairs = []
-          used_subtitle_files = set()
+        file_pairs = []
+        used_subtitle_files = set()
           
-          for video_file in video_files:
+        for video_file in video_files:
               matching_subtitle = find_best_subtitle_match(video_file, [sub for sub in subtitle_files if sub not in used_subtitle_files])
               
               if matching_subtitle:
@@ -632,18 +632,18 @@ class FFMpeg:
               else:
                   LOGGER.warning(f"❌ No matching subtitle found for: {os.path.basename(video_file)}")
           
-          if not file_pairs:
+        if not file_pairs:
               LOGGER.error("No matching video-subtitle pairs found!")
               return False
           
-          LOGGER.info(f"Created {len(file_pairs)} file pairs for processing")
+        LOGGER.info(f"Created {len(file_pairs)} file pairs for processing")
           
-          # Process each pair
-          all_outputs = []
-          files_to_delete = []
-          successful_pairs = 0
+        # Process each pair
+        all_outputs = []
+        files_to_delete = []
+        successful_pairs = 0
           
-          for pair_index, (video_file, subtitle_file, base_name) in enumerate(file_pairs):
+        for pair_index, (video_file, subtitle_file, base_name) in enumerate(file_pairs):
               LOGGER.info(f"🎬 Processing pair {pair_index + 1}/{len(file_pairs)}: {os.path.basename(video_file)}")
               
               # Get duration for this specific video
@@ -742,7 +742,7 @@ class FFMpeg:
                   continue
           
           # Only delete original files if at least some processing succeeded
-          if delete_originals and successful_pairs > 0:
+        if delete_originals and successful_pairs > 0:
               LOGGER.info("Deleting original files...")
               # Only delete files that were successfully processed
               successfully_processed_files = []
@@ -758,96 +758,96 @@ class FFMpeg:
                   except Exception as e:
                       LOGGER.error(f"Failed to delete file {file_to_delete}: {e}")
           
-          if successful_pairs > 0:
+        if successful_pairs > 0:
               LOGGER.info(f"🎉 Successfully processed {successful_pairs} out of {len(file_pairs)} video-subtitle pairs")
               return all_outputs if all_outputs else True
-          else:
+        else:
               LOGGER.error("❌ Failed to process any video-subtitle pairs")
               return False
-    
+      
     async def _process_single_file(self, ffmpeg, f_path, dir, base_name, ext, delete_originals):
-        """Original single file processing logic"""
-        self._total_time = (await get_media_info(f_path))[0]
-        
-        # Handle wildcards in ffmpeg command before processing mltb replacements
-        expanded_ffmpeg = []
-        input_files = []
-        for i, item in enumerate(ffmpeg):
-            if '*' in item and not item.startswith('mltb'):
-                wildcard_pattern = ospath.join(dir, item)
-                matches = glob.glob(wildcard_pattern)
-                if matches:
-                    expanded_file = matches[0]
-                    expanded_ffmpeg.append(expanded_file)
-                    if i > 0 and ffmpeg[i-1] == "-i":
-                        input_files.append(expanded_file)
-                else:
-                    expanded_ffmpeg.append(item)
-            else:
-                expanded_ffmpeg.append(item)
-        
-        ffmpeg = expanded_ffmpeg
-        
-        # Find mltb placeholders for output files only
-        indices = []
-        for index, item in enumerate(ffmpeg):
-            if item.startswith("mltb") or item == "mltb":
-                is_output = True
-                if index > 0 and ffmpeg[index-1] == "-i":
-                    is_output = False
-                if is_output:
-                    indices.append(index)
-        
-        outputs = []
-        for index in indices:
-            output_file = ffmpeg[index]
-            if output_file != "mltb" and output_file.startswith("mltb"):
-                if "." in output_file:
-                    output = f"{dir}/{output_file.replace('mltb', base_name)}"
-                else:
-                    output = f"{dir}/{output_file.replace('mltb', base_name)}{ext}"
-            else:
-                output = f"{dir}/{base_name}{ext}"
-            
-            outputs.append(output)
-            ffmpeg[index] = output
-        
-        if self._listener.is_cancelled:
-            return False
-            
-        self._listener.subproc = await create_subprocess_exec(
-            *ffmpeg, stdout=PIPE, stderr=PIPE
-        )
-        await self._ffmpeg_progress()
-        _, stderr = await self._listener.subproc.communicate()
-        code = self._listener.subproc.returncode
-        
-        if self._listener.is_cancelled:
-            return False
-            
-        if code == 0:
-            if delete_originals:
-                for input_file in input_files:
-                    try:
-                        if await aiopath.exists(input_file):
-                            await remove(input_file)
-                            LOGGER.info(f"Deleted original file: {input_file}")
-                    except Exception as e:
-                        LOGGER.error(f"Failed to delete file {input_file}: {e}")
-            return outputs
-        elif code == -9:
-            self._listener.is_cancelled = True
-            return False
-        else:
-            try:
-                stderr = stderr.decode().strip()
-            except Exception:
-                stderr = "Unable to decode the error!"
-            LOGGER.error(f"{stderr}. Something went wrong while running ffmpeg cmd, mostly file requires different/specific arguments. Path: {f_path}")
-            for op in outputs:
-                if await aiopath.exists(op):
-                    await remove(op)
-            return False
+          """Original single file processing logic"""
+          self._total_time = (await get_media_info(f_path))[0]
+          
+          # Handle wildcards in ffmpeg command before processing mltb replacements
+          expanded_ffmpeg = []
+          input_files = []
+          for i, item in enumerate(ffmpeg):
+              if '*' in item and not item.startswith('mltb'):
+                  wildcard_pattern = ospath.join(dir, item)
+                  matches = glob.glob(wildcard_pattern)
+                  if matches:
+                      expanded_file = matches[0]
+                      expanded_ffmpeg.append(expanded_file)
+                      if i > 0 and ffmpeg[i-1] == "-i":
+                          input_files.append(expanded_file)
+                  else:
+                      expanded_ffmpeg.append(item)
+              else:
+                  expanded_ffmpeg.append(item)
+          
+          ffmpeg = expanded_ffmpeg
+          
+          # Find mltb placeholders for output files only
+          indices = []
+          for index, item in enumerate(ffmpeg):
+              if item.startswith("mltb") or item == "mltb":
+                  is_output = True
+                  if index > 0 and ffmpeg[index-1] == "-i":
+                      is_output = False
+                  if is_output:
+                      indices.append(index)
+          
+          outputs = []
+          for index in indices:
+              output_file = ffmpeg[index]
+              if output_file != "mltb" and output_file.startswith("mltb"):
+                  if "." in output_file:
+                      output = f"{dir}/{output_file.replace('mltb', base_name)}"
+                  else:
+                      output = f"{dir}/{output_file.replace('mltb', base_name)}{ext}"
+              else:
+                  output = f"{dir}/{base_name}{ext}"
+              
+              outputs.append(output)
+              ffmpeg[index] = output
+          
+          if self._listener.is_cancelled:
+              return False
+              
+          self._listener.subproc = await create_subprocess_exec(
+              *ffmpeg, stdout=PIPE, stderr=PIPE
+          )
+          await self._ffmpeg_progress()
+          _, stderr = await self._listener.subproc.communicate()
+          code = self._listener.subproc.returncode
+          
+          if self._listener.is_cancelled:
+              return False
+              
+          if code == 0:
+              if delete_originals:
+                  for input_file in input_files:
+                      try:
+                          if await aiopath.exists(input_file):
+                              await remove(input_file)
+                              LOGGER.info(f"Deleted original file: {input_file}")
+                      except Exception as e:
+                          LOGGER.error(f"Failed to delete file {input_file}: {e}")
+              return outputs
+          elif code == -9:
+              self._listener.is_cancelled = True
+              return False
+          else:
+              try:
+                  stderr = stderr.decode().strip()
+              except Exception:
+                  stderr = "Unable to decode the error!"
+              LOGGER.error(f"{stderr}. Something went wrong while running ffmpeg cmd, mostly file requires different/specific arguments. Path: {f_path}")
+              for op in outputs:
+                  if await aiopath.exists(op):
+                      await remove(op)
+              return False
   
     async def convert_video(self, video_file, ext, retry=False):
         self.clear()
