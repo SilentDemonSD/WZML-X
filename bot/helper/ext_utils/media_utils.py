@@ -9,6 +9,7 @@ from asyncio import (
     wait_for,
     sleep,
 )
+import re
 import glob
 from asyncio.subprocess import PIPE
 from os import path as ospath
