@@ -482,35 +482,34 @@ class FFMpeg:
             return await self._process_single_file(ffmpeg, f_path, dir, base_name, ext, delete_originals)
     
     async def _process_multiple_files(self, ffmpeg, f_path, dir, delete_originals):
-        """Process multiple video-subtitle pairs in the directory with episode matching."""
+        """Process multiple video-subtitle pairs in the directory with TV episode matching."""
     
+        
         def extract_episode_id(filename):
             """Extracts season/episode code like S01E02 from filename."""
             match = re.search(r'(S\d{2}E\d{2})', filename, re.IGNORECASE)
             return match.group(1).upper() if match else None
     
-        # Find all MKV and SRT files in the directory
-        mkv_pattern = ospath.join(dir, "*.mkv")
-        srt_pattern = ospath.join(dir, "*.srt")
-        mkv_files = sorted(glob.glob(mkv_pattern))
-        srt_files = sorted(glob.glob(srt_pattern))
+        # Get file lists (sorted for consistent order)
+        mkv_files = sorted(glob.glob(ospath.join(dir, "*.mkv")))
+        srt_files = sorted(glob.glob(ospath.join(dir, "*.srt")))
     
         file_pairs = []
         for mkv_file in mkv_files:
             mkv_id = extract_episode_id(ospath.basename(mkv_file))
             mkv_base = ospath.splitext(ospath.basename(mkv_file))[0]
     
-            if not mkv_id:
-                LOGGER.warning(f"No episode ID found in: {ospath.basename(mkv_file)}")
-                continue
-    
-            # Find matching SRT by episode ID
             matching_srt = None
-            for srt_file in srt_files:
-                srt_id = extract_episode_id(ospath.basename(srt_file))
-                if srt_id == mkv_id:
-                    matching_srt = srt_file
-                    break
+            if mkv_id:  # Prefer episode-code matching
+                for srt_file in srt_files:
+                    if extract_episode_id(ospath.basename(srt_file)) == mkv_id:
+                        matching_srt = srt_file
+                        break
+            else:  # Fallback: match exact base name if no SxxExx found
+                for srt_file in srt_files:
+                    if ospath.splitext(ospath.basename(srt_file))[0] == mkv_base:
+                        matching_srt = srt_file
+                        break
     
             if matching_srt:
                 file_pairs.append((mkv_file, matching_srt, mkv_base))
@@ -522,7 +521,7 @@ class FFMpeg:
             LOGGER.error("No matching MKV-SRT pairs found!")
             return False
     
-        # Process each pair
+        # Process each MKV+SRT pair
         all_outputs = []
         files_to_delete = []
     
@@ -530,7 +529,6 @@ class FFMpeg:
             LOGGER.info(f"Processing: {ospath.basename(mkv_file)}")
             self._total_time = (await get_media_info(mkv_file))[0]
     
-            # Build FFmpeg command for this pair
             current_ffmpeg = []
             for item in ffmpeg:
                 if item == "*.mkv":
@@ -578,7 +576,7 @@ class FFMpeg:
     
             LOGGER.info(f"Successfully processed: {ospath.basename(mkv_file)}")
     
-        # Delete originals if needed
+        # Delete originals if requested
         if delete_originals:
             for file_to_delete in files_to_delete:
                 try:
@@ -590,6 +588,7 @@ class FFMpeg:
     
         LOGGER.info(f"Successfully processed {len(file_pairs)} video-subtitle pairs")
         return all_outputs
+
     
     async def _process_single_file(self, ffmpeg, f_path, dir, base_name, ext, delete_originals):
         """Original single file processing logic"""
