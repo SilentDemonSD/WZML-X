@@ -818,53 +818,53 @@ class FFMpeg:
         
         # Process each item in ffmpeg command
         for i, item in enumerate(ffmpeg):
-                        # Quick fix to add to the wildcard processing section in _process_single_file
-            
-            # Replace this section in the wildcard handling:
-            if '*' in item and not item.startswith('mltb'):
-                wildcard_pattern = ospath.join(dir, item)
-                matches = glob.glob(wildcard_pattern)
-                
-                if item == "*.srt":
-                    # CRITICAL FIX: Don't use glob.glob for SRT matching!
-                    # Instead, use intelligent matching based on current video file
-                    
-                    video_basename = ospath.splitext(ospath.basename(f_path))[0]
-                    video_episode = extract_episode_id(video_basename)
-                    
-                    LOGGER.info(f"FIXING: Looking for SRT match for {ospath.basename(f_path)}")
-                    LOGGER.info(f"FIXING: Video episode ID: {video_episode}")
-                    
-                    # Find the correct SRT file
-                    best_srt = None
-                    if video_episode:
-                        for srt_candidate in matches:
-                            srt_basename = ospath.splitext(ospath.basename(srt_candidate))[0]
-                            srt_episode = extract_episode_id(srt_basename)
-                            
-                            LOGGER.info(f"FIXING: Checking {ospath.basename(srt_candidate)} -> {srt_episode}")
-                            
-                            if srt_episode == video_episode:
-                                best_srt = srt_candidate
-                                LOGGER.info(f"FIXING: ✓ FOUND MATCH: {ospath.basename(srt_candidate)}")
-                                break
-                    
-                    if best_srt:
-                        expanded_ffmpeg.append(best_srt)
-                    else:
-                        # Fallback to first match (old behavior)
-                        expanded_ffmpeg.append(matches[0] if matches else item)
-                        LOGGER.warning(f"FIXING: Using fallback SRT: {ospath.basename(matches[0]) if matches else 'NONE'}")
-                
-                elif matches:
-                    expanded_file = matches[0]
-                    expanded_ffmpeg.append(expanded_file)
-                    if i > 0 and ffmpeg[i-1] == "-i":
-                        input_files.append(expanded_file)
-                else:
-                    expanded_ffmpeg.append(item)
-            else:
-                expanded_ffmpeg.append(item)
+                      # Quick fix to add to the wildcard processing section in _process_single_file
+          
+          # Replace this section in the wildcard handling:
+          if '*' in item and not item.startswith('mltb'):
+              wildcard_pattern = ospath.join(dir, item)
+              matches = glob.glob(wildcard_pattern)
+              
+              if item == "*.srt":
+                  # CRITICAL FIX: Don't use glob.glob for SRT matching!
+                  # Instead, use intelligent matching based on current video file
+                  
+                  video_basename = ospath.splitext(ospath.basename(f_path))[0]
+                  video_episode = extract_episode_id(video_basename)
+                  
+                  LOGGER.info(f"FIXING: Looking for SRT match for {ospath.basename(f_path)}")
+                  LOGGER.info(f"FIXING: Video episode ID: {video_episode}")
+                  
+                  # Find the correct SRT file
+                  best_srt = None
+                  if video_episode:
+                      for srt_candidate in matches:
+                          srt_basename = ospath.splitext(ospath.basename(srt_candidate))[0]
+                          srt_episode = extract_episode_id(srt_basename)
+                          
+                          LOGGER.info(f"FIXING: Checking {ospath.basename(srt_candidate)} -> {srt_episode}")
+                          
+                          if srt_episode == video_episode:
+                              best_srt = srt_candidate
+                              LOGGER.info(f"FIXING: ✓ FOUND MATCH: {ospath.basename(srt_candidate)}")
+                              break
+                  
+                  if best_srt:
+                      expanded_ffmpeg.append(best_srt)
+                  else:
+                      # Fallback to first match (old behavior)
+                      expanded_ffmpeg.append(matches[0] if matches else item)
+                      LOGGER.warning(f"FIXING: Using fallback SRT: {ospath.basename(matches[0]) if matches else 'NONE'}")
+              
+              elif matches:
+                  expanded_file = matches[0]
+                  expanded_ffmpeg.append(expanded_file)
+                  if i > 0 and ffmpeg[i-1] == "-i":
+                      input_files.append(expanded_file)
+              else:
+                  expanded_ffmpeg.append(item)
+          else:
+              expanded_ffmpeg.append(item)
         
         ffmpeg = expanded_ffmpeg
         LOGGER.info(f"Final command with matched SRT: {' '.join([ospath.basename(x) if '/' in x else x for x in ffmpeg])}")
