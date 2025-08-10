@@ -482,117 +482,144 @@ class FFMpeg:
             return await self._process_single_file(ffmpeg, f_path, dir, base_name, ext, delete_originals)
     
     async def _process_multiple_files(self, ffmpeg, f_path, dir, delete_originals):
-        """Process multiple video-subtitle pairs with improved TV episode matching."""
-    
+        """Process multiple video-subtitle pairs with improved TV episode matching for mixed seasons."""
+        
         import re
+        import os
         
         def extract_episode_id(filename):
             """Extracts season/episode code like S01E02 from filename with multiple format support."""
             patterns = [
-                r'(S\d{1,2}E\d{1,2})',  # S01E01, S1E1
-                r'(Season\s*\d+.*Episode\s*\d+)',  # Season 1 Episode 1
-                r'(\d{1,2}x\d{1,2})',  # 1x01
+                r'S(\d{1,2})E(\d{1,2})',  # S01E01, S1E1 - capture groups for season and episode
+                r'Season\s*(\d+).*Episode\s*(\d+)',  # Season 1 Episode 1
+                r'(\d{1,2})x(\d{1,2})',  # 1x01
             ]
             
             for pattern in patterns:
                 match = re.search(pattern, filename, re.IGNORECASE)
                 if match:
-                    episode_str = match.group(1).upper()
-                    # Normalize to S##E## format
-                    if 'S' in episode_str and 'E' in episode_str:
-                        # Ensure zero-padding
-                        s_match = re.search(r'S(\d{1,2})', episode_str)
-                        e_match = re.search(r'E(\d{1,2})', episode_str)
-                        if s_match and e_match:
-                            return f"S{int(s_match.group(1)):02d}E{int(e_match.group(1)):02d}"
-                    elif 'SEASON' in episode_str.upper():
-                        season_match = re.search(r'SEASON\s*(\d+)', episode_str, re.IGNORECASE)
-                        episode_match = re.search(r'EPISODE\s*(\d+)', episode_str, re.IGNORECASE)
-                        if season_match and episode_match:
-                            return f"S{int(season_match.group(1)):02d}E{int(episode_match.group(1)):02d}"
-                    elif 'X' in episode_str:
-                        parts = episode_str.split('X')
-                        if len(parts) == 2:
-                            return f"S{int(parts[0]):02d}E{int(parts[1]):02d}"
+                    season = int(match.group(1))
+                    episode = int(match.group(2))
+                    return f"S{season:02d}E{episode:02d}"
             return None
+        
+        def extract_base_series_name(filename):
+            """Extract the base series name without episode info and quality tags."""
+            # Remove file extension
+            name = os.path.splitext(filename)[0]
+            
+            # Remove episode patterns
+            patterns_to_remove = [
+                r'\s*-\s*S\d{1,2}E\d{1,2}.*$',  # Remove from " - S01E01" onwards
+                r'\s*S\d{1,2}E\d{1,2}.*$',      # Remove from "S01E01" onwards  
+                r'\s*Season\s*\d+.*$',           # Remove from "Season 1" onwards
+                r'\s*\d{1,2}x\d{1,2}.*$',       # Remove from "1x01" onwards
+            ]
+            
+            for pattern in patterns_to_remove:
+                name = re.sub(pattern, '', name, flags=re.IGNORECASE)
+            
+            # Clean up extra spaces and common separators
+            name = re.sub(r'\s*[-_]\s*$', '', name).strip()
+            
+            return name.lower()
     
         def find_best_subtitle_match(mkv_file, srt_files):
-            """Find the best matching subtitle for a video file."""
-            mkv_base = ospath.splitext(ospath.basename(mkv_file))[0]
+            """Find the best matching subtitle for a video file with improved logic."""
+            mkv_base = os.path.basename(mkv_file)
             mkv_episode_id = extract_episode_id(mkv_base)
+            mkv_series = extract_base_series_name(mkv_base)
             
-            LOGGER.info(f"Finding subtitle for: {ospath.basename(mkv_file)}")
-            LOGGER.info(f"Video episode ID: {mkv_episode_id}")
+            LOGGER.info(f"Finding subtitle for: {mkv_base}")
+            LOGGER.info(f"  Video episode ID: {mkv_episode_id}")
+            LOGGER.info(f"  Video series name: '{mkv_series}'")
             
             best_match = None
             match_type = ""
+            match_score = 0
             
-            # Priority 1: Exact episode ID match
-            if mkv_episode_id:
-                for srt_file in srt_files:
-                    srt_base = ospath.splitext(ospath.basename(srt_file))[0]
-                    srt_episode_id = extract_episode_id(srt_base)
-                    LOGGER.debug(f"  Checking {ospath.basename(srt_file)} -> {srt_episode_id}")
+            for srt_file in srt_files:
+                srt_base = os.path.basename(srt_file)
+                srt_episode_id = extract_episode_id(srt_base)
+                srt_series = extract_base_series_name(srt_base)
+                
+                LOGGER.debug(f"  Checking: {srt_base}")
+                LOGGER.debug(f"    SRT episode ID: {srt_episode_id}")
+                LOGGER.debug(f"    SRT series name: '{srt_series}'")
+                
+                current_score = 0
+                current_match_type = ""
+                
+                # Priority 1: Exact episode ID match with same series (highest priority)
+                if (mkv_episode_id and srt_episode_id == mkv_episode_id and 
+                    mkv_series == srt_series):
+                    current_score = 100
+                    current_match_type = "Perfect match (Series + Episode)"
+                
+                # Priority 2: Exact episode ID match (even if series name slightly differs)
+                elif mkv_episode_id and srt_episode_id == mkv_episode_id:
+                    current_score = 90
+                    current_match_type = "Episode ID match"
+                
+                # Priority 3: Exact filename match (without extension)
+                elif os.path.splitext(mkv_base)[0].lower() == os.path.splitext(srt_base)[0].lower():
+                    current_score = 80
+                    current_match_type = "Exact filename match"
+                
+                # Priority 4: Same series with similar episode (fallback for corrupted episode IDs)
+                elif mkv_series == srt_series and mkv_episode_id and srt_episode_id:
+                    # Extract episode numbers for proximity check
+                    mkv_ep_num = int(re.search(r'E(\d+)', mkv_episode_id).group(1))
+                    srt_ep_num = int(re.search(r'E(\d+)', srt_episode_id).group(1))
+                    if abs(mkv_ep_num - srt_ep_num) <= 1:  # Allow 1 episode difference
+                        current_score = 70
+                        current_match_type = f"Series match with close episode (±{abs(mkv_ep_num - srt_ep_num)})"
+                
+                # Priority 5: Partial name matching (remove quality indicators and match)
+                else:
+                    mkv_clean = re.sub(r'\s*(1080p|720p|480p|x264|x265|BluRay|WEB-?DL|HDTV|WEBrip).*', 
+                                     '', os.path.splitext(mkv_base)[0], flags=re.IGNORECASE).strip().lower()
+                    srt_clean = re.sub(r'\s*(1080p|720p|480p|x264|x265|BluRay|WEB-?DL|HDTV|WEBrip).*', 
+                                     '', os.path.splitext(srt_base)[0], flags=re.IGNORECASE).strip().lower()
                     
-                    if srt_episode_id == mkv_episode_id:
-                        best_match = srt_file
-                        match_type = "Episode ID"
-                        break
-            
-            # Priority 2: Exact base name match
-            if not best_match:
-                for srt_file in srt_files:
-                    srt_base = ospath.splitext(ospath.basename(srt_file))[0]
-                    if mkv_base == srt_base:
-                        best_match = srt_file
-                        match_type = "Exact name"
-                        break
-            
-            # Priority 3: Normalized name matching (remove quality indicators)
-            if not best_match:
-                mkv_normalized = re.sub(r'\s*(1080p|720p|480p|x264|x265|BluRay|WEB-DL|HDTV).*', '', mkv_base, flags=re.IGNORECASE)
-                for srt_file in srt_files:
-                    srt_base = ospath.splitext(ospath.basename(srt_file))[0]
-                    srt_normalized = re.sub(r'\s*(1080p|720p|480p|x264|x265|BluRay|WEB-DL|HDTV).*', '', srt_base, flags=re.IGNORECASE)
-                    
-                    if mkv_normalized.strip() == srt_normalized.strip():
-                        best_match = srt_file
-                        match_type = "Normalized name"
-                        break
-            
-            # Priority 4: Series name + episode validation
-            if not best_match and mkv_episode_id:
-                mkv_series = re.sub(r'\s*-\s*S\d+E\d+.*', '', mkv_base, flags=re.IGNORECASE)
-                for srt_file in srt_files:
-                    srt_base = ospath.splitext(ospath.basename(srt_file))[0]
-                    srt_series = re.sub(r'\s*-\s*S\d+E\d+.*', '', srt_base, flags=re.IGNORECASE)
-                    srt_episode_id = extract_episode_id(srt_base)
-                    
-                    if (mkv_series.lower().strip() == srt_series.lower().strip() and 
-                        srt_episode_id == mkv_episode_id):
-                        best_match = srt_file
-                        match_type = "Series + Episode"
-                        break
+                    if mkv_clean == srt_clean:
+                        current_score = 60
+                        current_match_type = "Normalized name match"
+                
+                # Update best match if this one is better
+                if current_score > match_score:
+                    best_match = srt_file
+                    match_type = current_match_type
+                    match_score = current_score
+                    LOGGER.debug(f"    ✓ New best match! Score: {current_score}")
+                elif current_score > 0:
+                    LOGGER.debug(f"    + Good match but not best. Score: {current_score}")
             
             if best_match:
-                LOGGER.info(f"✓ {match_type} match: {ospath.basename(mkv_file)} <-> {ospath.basename(best_match)}")
+                LOGGER.info(f"✓ {match_type}: {mkv_base} <-> {os.path.basename(best_match)} (Score: {match_score})")
                 return best_match
             else:
-                LOGGER.warning(f"✗ No match found for: {ospath.basename(mkv_file)}")
+                LOGGER.warning(f"✗ No suitable match found for: {mkv_base}")
                 return None
     
         # Get file lists (sorted for consistent order)
-        mkv_files = sorted(glob.glob(ospath.join(dir, "*.mkv")))
-        srt_files = sorted(glob.glob(ospath.join(dir, "*.srt")))
+        mkv_files = sorted(glob.glob(os.path.join(dir, "*.mkv")))
+        srt_files = sorted(glob.glob(os.path.join(dir, "*.srt")))
     
         LOGGER.info(f"Found {len(mkv_files)} MKV files and {len(srt_files)} SRT files")
+        
+        # Filter out files that already have subtitles embedded (*.Sub.mkv)
+        original_mkv_count = len(mkv_files)
+        mkv_files = [f for f in mkv_files if not f.endswith('.Sub.mkv')]
+        if len(mkv_files) < original_mkv_count:
+            LOGGER.info(f"Filtered out {original_mkv_count - len(mkv_files)} files that already have embedded subtitles")
     
         # Create matched pairs using improved logic
         file_pairs = []
         used_srt_files = set()
         
         for mkv_file in mkv_files:
-            mkv_base = ospath.splitext(ospath.basename(mkv_file))[0]
+            mkv_base = os.path.splitext(os.path.basename(mkv_file))[0]
             
             # Find best matching SRT from unused files
             available_srts = [srt for srt in srt_files if srt not in used_srt_files]
@@ -602,20 +629,32 @@ class FFMpeg:
                 file_pairs.append((mkv_file, matching_srt, mkv_base))
                 used_srt_files.add(matching_srt)
             else:
-                LOGGER.warning(f"No matching SRT found for: {ospath.basename(mkv_file)}")
+                LOGGER.warning(f"No matching SRT found for: {os.path.basename(mkv_file)}")
+                # Still process the video without subtitles if needed
+                # file_pairs.append((mkv_file, None, mkv_base))
     
         if not file_pairs:
             LOGGER.error("No matching MKV-SRT pairs found!")
             return False
     
         LOGGER.info(f"Successfully created {len(file_pairs)} MKV-SRT pairs")
+        
+        # Show summary of matches
+        LOGGER.info("=== MATCHING SUMMARY ===")
+        for i, (mkv_file, srt_file, base_name) in enumerate(file_pairs, 1):
+            mkv_name = os.path.basename(mkv_file)
+            srt_name = os.path.basename(srt_file) if srt_file else "NO SUBTITLE"
+            LOGGER.info(f"{i:2d}. {mkv_name} -> {srt_name}")
     
         # Process each MKV+SRT pair
         all_outputs = []
         files_to_delete = []
     
-        for mkv_file, srt_file, base_name in file_pairs:
-            LOGGER.info(f"Processing pair: {ospath.basename(mkv_file)} + {ospath.basename(srt_file)}")
+        for i, (mkv_file, srt_file, base_name) in enumerate(file_pairs, 1):
+            LOGGER.info(f"Processing pair {i}/{len(file_pairs)}: {os.path.basename(mkv_file)}")
+            if srt_file:
+                LOGGER.info(f"  + Subtitle: {os.path.basename(srt_file)}")
+            
             self._total_time = (await get_media_info(mkv_file))[0]
     
             current_ffmpeg = []
@@ -623,7 +662,11 @@ class FFMpeg:
                 if item == "*.mkv":
                     current_ffmpeg.append(mkv_file)
                 elif item == "*.srt":
-                    current_ffmpeg.append(srt_file)
+                    if srt_file:
+                        current_ffmpeg.append(srt_file)
+                    else:
+                        LOGGER.warning("No subtitle file available, skipping subtitle input")
+                        continue
                 elif item.startswith("mltb"):
                     if item == "mltb.Sub.mkv":
                         output_file = f"{dir}/{base_name}.Sub.mkv"
@@ -637,13 +680,18 @@ class FFMpeg:
                     current_ffmpeg.append(item)
     
             if delete_originals:
-                files_to_delete.extend([mkv_file, srt_file])
+                files_to_delete.append(mkv_file)
+                if srt_file:
+                    files_to_delete.append(srt_file)
     
             if self._listener.is_cancelled:
                 return False
     
-            # Log the command being executed
-            LOGGER.info(f"Executing: {' '.join(current_ffmpeg[:5])} ... (truncated)")
+            # Log the command being executed (truncated for readability)
+            cmd_preview = ' '.join([os.path.basename(x) if os.path.exists(x) else x for x in current_ffmpeg[:10]])
+            if len(current_ffmpeg) > 10:
+                cmd_preview += " ..."
+            LOGGER.info(f"Executing: {cmd_preview}")
             
             self._listener.subproc = await create_subprocess_exec(
                 *current_ffmpeg, stdout=PIPE, stderr=PIPE
@@ -660,209 +708,176 @@ class FFMpeg:
                     stderr = stderr.decode().strip()
                 except Exception:
                     stderr = "Unable to decode the error!"
-                LOGGER.error(f"Failed to process {ospath.basename(mkv_file)}: {stderr}")
+                LOGGER.error(f"Failed to process {os.path.basename(mkv_file)}: {stderr}")
                 # Clean up partial outputs
                 for output in all_outputs:
                     if await aiopath.exists(output):
                         await remove(output)
                 return False
     
-            LOGGER.info(f"✓ Successfully processed: {ospath.basename(mkv_file)}")
+            LOGGER.info(f"✓ Successfully processed: {os.path.basename(mkv_file)}")
     
         # Delete originals if requested
         if delete_originals:
+            LOGGER.info("Cleaning up original files...")
             for file_to_delete in files_to_delete:
                 try:
                     if await aiopath.exists(file_to_delete):
                         await remove(file_to_delete)
-                        LOGGER.info(f"Deleted original: {ospath.basename(file_to_delete)}")
+                        LOGGER.info(f"Deleted: {os.path.basename(file_to_delete)}")
                 except Exception as e:
                     LOGGER.error(f"Failed to delete {file_to_delete}: {e}")
     
         LOGGER.info(f"✅ Successfully processed {len(file_pairs)} video-subtitle pairs")
         return all_outputs
-
+    
     
     async def _process_single_file(self, ffmpeg, f_path, dir, base_name, ext, delete_originals):
-        """Enhanced single file processing logic with episode matching support"""
+        """Enhanced single file processing logic with improved episode matching support"""
         import re
+        import os
         
         def extract_episode_id(filename):
             """Extracts season/episode code like S01E02 from filename."""
-            # More comprehensive regex to handle various formats
             patterns = [
-                r'(S\d{1,2}E\d{1,2})',  # S01E01, S1E1
-                r'(Season\s*\d+.*Episode\s*\d+)',  # Season 1 Episode 1
-                r'(\d{1,2}x\d{1,2})',  # 1x01
+                r'S(\d{1,2})E(\d{1,2})',  # S01E01, S1E1
+                r'Season\s*(\d+).*Episode\s*(\d+)',  # Season 1 Episode 1
+                r'(\d{1,2})x(\d{1,2})',  # 1x01
             ]
             
             for pattern in patterns:
                 match = re.search(pattern, filename, re.IGNORECASE)
                 if match:
-                    episode_str = match.group(1).upper()
-                    # Normalize to S##E## format
-                    if 'S' in episode_str and 'E' in episode_str:
-                        return episode_str
-                    elif 'SEASON' in episode_str.upper():
-                        # Extract season and episode numbers
-                        season_match = re.search(r'SEASON\s*(\d+)', episode_str, re.IGNORECASE)
-                        episode_match = re.search(r'EPISODE\s*(\d+)', episode_str, re.IGNORECASE)
-                        if season_match and episode_match:
-                            return f"S{int(season_match.group(1)):02d}E{int(episode_match.group(1)):02d}"
-                    elif 'X' in episode_str:
-                        # Convert 1x01 to S01E01
-                        parts = episode_str.split('X')
-                        if len(parts) == 2:
-                            return f"S{int(parts[0]):02d}E{int(parts[1]):02d}"
+                    season = int(match.group(1))
+                    episode = int(match.group(2))
+                    return f"S{season:02d}E{episode:02d}"
             return None
         
-        def find_matching_subtitle(video_file, dir):
-            """Find matching subtitle file for a video using episode matching logic"""
-            video_base = ospath.splitext(ospath.basename(video_file))[0]
-            video_episode_id = extract_episode_id(video_base)
+        def extract_base_series_name(filename):
+            """Extract the base series name without episode info and quality tags."""
+            name = os.path.splitext(filename)[0]
             
-            LOGGER.info(f"Looking for subtitle match for: {ospath.basename(video_file)}")
-            LOGGER.info(f"Extracted episode ID: {video_episode_id}")
+            # Remove episode patterns
+            patterns_to_remove = [
+                r'\s*-\s*S\d{1,2}E\d{1,2}.*,
+                r'\s*S\d{1,2}E\d{1,2}.*,
+                r'\s*Season\s*\d+.*,
+                r'\s*\d{1,2}x\d{1,2}.*,
+            ]
+            
+            for pattern in patterns_to_remove:
+                name = re.sub(pattern, '', name, flags=re.IGNORECASE)
+            
+            name = re.sub(r'\s*[-_]\s*, '', name).strip()
+            return name.lower()
+    
+        def find_matching_subtitle(video_file, dir):
+            """Find matching subtitle file for a video using improved episode matching logic"""
+            video_base = os.path.basename(video_file)
+            video_episode_id = extract_episode_id(video_base)
+            video_series = extract_base_series_name(video_base)
+            
+            LOGGER.info(f"Looking for subtitle match for: {video_base}")
+            LOGGER.info(f"  Video episode ID: {video_episode_id}")
+            LOGGER.info(f"  Video series: '{video_series}'")
             
             # Get all SRT files in directory (sorted for consistency)
-            srt_files = sorted(glob.glob(ospath.join(dir, "*.srt")))
+            srt_files = sorted(glob.glob(os.path.join(dir, "*.srt")))
             LOGGER.info(f"Found {len(srt_files)} SRT files in directory")
             
-            # Try episode ID matching first (most reliable)
-            if video_episode_id:
-                for srt_file in srt_files:
-                    srt_base = ospath.splitext(ospath.basename(srt_file))[0]
-                    srt_episode_id = extract_episode_id(srt_base)
-                    LOGGER.info(f"Checking SRT: {ospath.basename(srt_file)} -> Episode ID: {srt_episode_id}")
-                    
-                    if srt_episode_id == video_episode_id:
-                        LOGGER.info(f"✓ Episode matched: {ospath.basename(video_file)} with {ospath.basename(srt_file)}")
-                        return srt_file
+            best_match = None
+            match_score = 0
+            match_type = ""
             
-            # Fallback to exact base name matching (without extension)
-            video_clean_base = video_base.replace('.mkv', '').replace('.mp4', '').replace('.avi', '')
             for srt_file in srt_files:
-                srt_base = ospath.splitext(ospath.basename(srt_file))[0]
-                srt_clean_base = srt_base.replace('.srt', '')
+                srt_base = os.path.basename(srt_file)
+                srt_episode_id = extract_episode_id(srt_base)
+                srt_series = extract_base_series_name(srt_base)
                 
-                if video_clean_base == srt_clean_base:
-                    LOGGER.info(f"✓ Exact name matched: {ospath.basename(video_file)} with {ospath.basename(srt_file)}")
-                    return srt_file
-            
-            # More aggressive exact matching - remove common suffixes/prefixes
-            video_normalized = re.sub(r'\s*(1080p|720p|480p|x264|x265|BluRay|WEB-DL|HDTV).*', '', video_base, flags=re.IGNORECASE)
-            for srt_file in srt_files:
-                srt_base = ospath.splitext(ospath.basename(srt_file))[0]
-                srt_normalized = re.sub(r'\s*(1080p|720p|480p|x264|x265|BluRay|WEB-DL|HDTV).*', '', srt_base, flags=re.IGNORECASE)
+                LOGGER.debug(f"Checking: {srt_base} -> Episode: {srt_episode_id}, Series: '{srt_series}'")
                 
-                if video_normalized.strip() == srt_normalized.strip():
-                    LOGGER.info(f"✓ Normalized name matched: {ospath.basename(video_file)} with {ospath.basename(srt_file)}")
-                    return srt_file
+                current_score = 0
+                current_match_type = ""
+                
+                # Perfect match: same series and episode
+                if (video_episode_id and srt_episode_id == video_episode_id and 
+                    video_series == srt_series):
+                    current_score = 100
+                    current_match_type = "Perfect match"
+                
+                # Good match: same episode ID
+                elif video_episode_id and srt_episode_id == video_episode_id:
+                    current_score = 90
+                    current_match_type = "Episode ID match"
+                
+                # Exact filename match
+                elif os.path.splitext(video_base)[0].lower() == os.path.splitext(srt_base)[0].lower():
+                    current_score = 80
+                    current_match_type = "Exact filename match"
+                
+                # Series match with close episode number
+                elif video_series == srt_series and video_episode_id and srt_episode_id:
+                    video_ep_num = int(re.search(r'E(\d+)', video_episode_id).group(1))
+                    srt_ep_num = int(re.search(r'E(\d+)', srt_episode_id).group(1))
+                    if abs(video_ep_num - srt_ep_num) <= 1:
+                        current_score = 70
+                        current_match_type = f"Series match, close episode (±{abs(video_ep_num - srt_ep_num)})"
+                
+                if current_score > match_score:
+                    best_match = srt_file
+                    match_score = current_score
+                    match_type = current_match_type
             
-            # Last resort: partial matching with episode validation
-            if video_episode_id:
-                for srt_file in srt_files:
-                    srt_base = ospath.splitext(ospath.basename(srt_file))[0]
-                    # Check if both have the same base series name and episode
-                    video_series = re.sub(r'\s*-\s*S\d+E\d+.*', '', video_base, flags=re.IGNORECASE)
-                    srt_series = re.sub(r'\s*-\s*S\d+E\d+.*', '', srt_base, flags=re.IGNORECASE)
-                    
-                    if (video_series.lower().strip() == srt_series.lower().strip() and 
-                        extract_episode_id(srt_base) == video_episode_id):
-                        LOGGER.info(f"✓ Series + episode matched: {ospath.basename(video_file)} with {ospath.basename(srt_file)}")
-                        return srt_file
-            
-            LOGGER.warning(f"✗ No matching subtitle found for: {ospath.basename(video_file)}")
-            return None
+            if best_match:
+                LOGGER.info(f"✓ {match_type}: {video_base} <-> {os.path.basename(best_match)} (Score: {match_score})")
+                return best_match
+            else:
+                LOGGER.warning(f"✗ No matching subtitle found for: {video_base}")
+                return None
         
         self._total_time = (await get_media_info(f_path))[0]
         
         # Handle wildcards and smart subtitle matching in ffmpeg command
-                # Simple fix to replace the wildcard processing section in _process_single_file method
-        
-        # Replace the entire wildcard processing loop with this:
-        
         expanded_ffmpeg = []
         input_files = []
         auto_matched_subtitle = None
         
-        def get_episode_number(filename):
-            """Extract episode number from filename - simple version"""
-            import re
-            match = re.search(r'S\d{1,2}E(\d{1,2})', filename, re.IGNORECASE)
-            if match:
-                return int(match.group(1))
-            return None
-        
-        def find_matching_srt(video_file, dir):
-            """Find SRT file that matches the video episode"""
-            video_episode = get_episode_number(ospath.basename(video_file))
-            if not video_episode:
-                LOGGER.warning(f"No episode number found in: {ospath.basename(video_file)}")
-                return None
-            
-            LOGGER.info(f"Looking for SRT matching episode {video_episode}")
-            
-            # Get all SRT files
-            srt_files = glob.glob(ospath.join(dir, "*.srt"))
-            
-            for srt_file in srt_files:
-                srt_episode = get_episode_number(ospath.basename(srt_file))
-                LOGGER.info(f"Checking {ospath.basename(srt_file)} - Episode: {srt_episode}")
-                
-                if srt_episode == video_episode:
-                    LOGGER.info(f"✓ MATCH FOUND: Episode {video_episode}")
-                    return srt_file
-            
-            LOGGER.error(f"✗ No matching SRT found for episode {video_episode}")
-            return None
-        
         # Process each item in ffmpeg command
         for i, item in enumerate(ffmpeg):
-          if '*' in item and not item.startswith('mltb'):
-              wildcard_pattern = ospath.join(dir, item)
-              matches = glob.glob(wildcard_pattern)
-              
-              if item == "*.srt" and matches:
-                  # FIXED: Smart SRT matching based on episode
-                  import re
-                  def get_episode_num(filename):
-                      match = re.search(r'S\d{1,2}E(\d{1,2})', filename, re.IGNORECASE)
-                      return int(match.group(1)) if match else None
-                  
-                  # Get episode number from main video file
-                  video_episode = get_episode_num(ospath.basename(f_path))
-                  matched_srt = None
-                  
-                  if video_episode:
-                      LOGGER.info(f"Looking for SRT matching episode {video_episode}")
-                      for srt_file in matches:
-                          srt_episode = get_episode_num(ospath.basename(srt_file))
-                          if srt_episode == video_episode:
-                              matched_srt = srt_file
-                              LOGGER.info(f"✓ Found matching SRT: {ospath.basename(srt_file)}")
-                              break
-                  
-                  # Use matched SRT or fall back to first one
-                  expanded_file = matched_srt if matched_srt else matches[0]
-                  if not matched_srt:
-                      LOGGER.warning(f"No episode match found, using: {ospath.basename(matches[0])}")
-              
-              elif matches:
-                  # For other wildcards, use first match (original behavior)
-                  expanded_file = matches[0]
-              else:
-                  expanded_ffmpeg.append(item)
-                  continue
-              
-              expanded_ffmpeg.append(expanded_file)
-              if i > 0 and ffmpeg[i-1] == "-i":
-                  input_files.append(expanded_file)
-          else:
-              expanded_ffmpeg.append(item)
+            if '*' in item and not item.startswith('mltb'):
+                wildcard_pattern = os.path.join(dir, item)
+                matches = glob.glob(wildcard_pattern)
+                
+                if item == "*.srt" and matches:
+                    # Smart SRT matching based on improved episode logic
+                    matched_srt = find_matching_subtitle(f_path, dir)
+                    expanded_file = matched_srt if matched_srt else matches[0]
+                    
+                    if not matched_srt:
+                        LOGGER.warning(f"No episode match found, using first available: {os.path.basename(matches[0])}")
+                    else:
+                        auto_matched_subtitle = matched_srt
+                
+                elif matches:
+                    # For other wildcards, use first match
+                    expanded_file = matches[0]
+                else:
+                    expanded_ffmpeg.append(item)
+                    continue
+                
+                expanded_ffmpeg.append(expanded_file)
+                if i > 0 and ffmpeg[i-1] == "-i":
+                    input_files.append(expanded_file)
+            else:
+                expanded_ffmpeg.append(item)
         
         ffmpeg = expanded_ffmpeg
-        LOGGER.info(f"Final command with matched SRT: {' '.join([ospath.basename(x) if '/' in x else x for x in ffmpeg])}")
+        
+        # Log the final command for debugging
+        cmd_preview = ' '.join([os.path.basename(x) if os.path.exists(x) else x for x in ffmpeg])
+        LOGGER.info(f"Final command: {cmd_preview}")
+        if auto_matched_subtitle:
+            LOGGER.info(f"Auto-matched subtitle: {os.path.basename(auto_matched_subtitle)}")
         
         # Find mltb placeholders for output files only
         indices = []
@@ -888,11 +903,6 @@ class FFMpeg:
             outputs.append(output)
             ffmpeg[index] = output
         
-        # Log the final command for debugging
-        LOGGER.info(f"FFmpeg command: {' '.join(ffmpeg)}")
-        if auto_matched_subtitle:
-            LOGGER.info(f"Auto-matched subtitle: {ospath.basename(auto_matched_subtitle)}")
-        
         if self._listener.is_cancelled:
             return False
             
@@ -916,11 +926,11 @@ class FFMpeg:
                     try:
                         if await aiopath.exists(input_file):
                             await remove(input_file)
-                            LOGGER.info(f"Deleted original file: {ospath.basename(input_file)}")
+                            LOGGER.info(f"Deleted original file: {os.path.basename(input_file)}")
                     except Exception as e:
                         LOGGER.error(f"Failed to delete file {input_file}: {e}")
             
-            LOGGER.info(f"Successfully processed: {ospath.basename(f_path)}")
+            LOGGER.info(f"Successfully processed: {os.path.basename(f_path)}")
             return outputs
         elif code == -9:
             self._listener.is_cancelled = True
@@ -934,8 +944,7 @@ class FFMpeg:
             for op in outputs:
                 if await aiopath.exists(op):
                     await remove(op)
-            return False
-  
+            return False  
     async def convert_video(self, video_file, ext, retry=False):
         self.clear()
         self._total_time = (await get_media_info(video_file))[0]
