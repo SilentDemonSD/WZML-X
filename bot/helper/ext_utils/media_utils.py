@@ -24,53 +24,6 @@ from .bot_utils import cmd_exec, sync_to_async
 from .files_utils import get_mime_type, is_archive, is_archive_split
 from .status_utils import time_to_seconds
 
-async def clean_original_files(dir_path):
-    """Clean up original MKV and SRT files if processed .Sub.mkv files exist"""
-    try:
-        import glob
-        
-        # Find all .Sub.mkv files (processed files)
-        sub_mkv_files = glob.glob(ospath.join(dir_path, "*.Sub.mkv"))
-        
-        if not sub_mkv_files:
-            LOGGER.info("No .Sub.mkv files found, skipping cleanup")
-            return
-        
-        processed_basenames = set()
-        for sub_file in sub_mkv_files:
-            # Extract base name: "Episode.Sub.mkv" -> "Episode"
-            basename = ospath.basename(sub_file).replace('.Sub.mkv', '')
-            processed_basenames.add(basename)
-            LOGGER.info(f"Found processed file: {ospath.basename(sub_file)}")
-        
-        files_deleted = 0
-        
-        # Delete original MKV files
-        mkv_files = glob.glob(ospath.join(dir_path, "*.mkv"))
-        for mkv_file in mkv_files:
-            if mkv_file.endswith('.Sub.mkv'):
-                continue  # Keep processed files
-            
-            mkv_basename = ospath.splitext(ospath.basename(mkv_file))[0]
-            if mkv_basename in processed_basenames:
-                await remove(mkv_file)
-                LOGGER.info(f"🗑️ Deleted original MKV: {ospath.basename(mkv_file)}")
-                files_deleted += 1
-        
-        # Delete original SRT files
-        srt_files = glob.glob(ospath.join(dir_path, "*.srt"))
-        for srt_file in srt_files:
-            srt_basename = ospath.splitext(ospath.basename(srt_file))[0]
-            if srt_basename in processed_basenames:
-                await remove(srt_file)
-                LOGGER.info(f"🗑️ Deleted original SRT: {ospath.basename(srt_file)}")
-                files_deleted += 1
-        
-        LOGGER.info(f"✅ Auto-cleanup completed: {files_deleted} original files deleted")
-        
-    except Exception as e:
-        LOGGER.error(f"Auto-cleanup error: {e}")
-
 
 def get_md5_hash(up_path):
     md5_hash = md5()
@@ -521,24 +474,12 @@ class FFMpeg:
         has_mkv_wildcard = "*.mkv" in ffmpeg
         has_srt_wildcard = "*.srt" in ffmpeg
         
-        # Process files
         if has_mkv_wildcard and has_srt_wildcard:
             # Multiple file processing mode
-            result = await self._process_multiple_files(ffmpeg, f_path, dir, delete_originals)
+            return await self._process_multiple_files(ffmpeg, f_path, dir, delete_originals)
         else:
             # Single file processing mode (original logic)
-            result = await self._process_single_file(ffmpeg, f_path, dir, base_name, ext, delete_originals)
-        
-        # AUTO-CLEANUP: Remove original files after successful processing
-        # This happens regardless of -del flag
-        if result:  # If processing was successful
-            try:
-                await clean_original_files(dir)
-                LOGGER.info("🧹 Auto-cleanup: Removed original files, keeping only processed .Sub.mkv files")
-            except Exception as e:
-                LOGGER.error(f"Auto-cleanup failed: {e}")
-        
-        return result
+            return await self._process_single_file(ffmpeg, f_path, dir, base_name, ext, delete_originals)
     
     async def _process_multiple_files(self, ffmpeg, f_path, dir, delete_originals):
         """Process multiple video-subtitle pairs with improved TV episode matching."""
@@ -837,6 +778,7 @@ class FFMpeg:
         self._total_time = (await get_media_info(f_path))[0]
         
         # Handle wildcards and smart subtitle matching in ffmpeg command
+                # Simple fix to replace the wildcard processing section in _process_single_file method
         
         # Replace the entire wildcard processing loop with this:
         
@@ -883,7 +825,7 @@ class FFMpeg:
               
               if item == "*.srt" and matches:
                   # FIXED: Smart SRT matching based on episode
-                  # import re
+                  import re
                   def get_episode_num(filename):
                       match = re.search(r'S\d{1,2}E(\d{1,2})', filename, re.IGNORECASE)
                       return int(match.group(1)) if match else None
