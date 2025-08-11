@@ -650,11 +650,15 @@ class FFMpeg:
             self._total_time = (await get_media_info(mkv_file))[0]
 
             current_ffmpeg = []
+            current_input_files = []  # Track input files for this specific pair
+            
             for item in ffmpeg:
                 if item == "*.mkv":
                     current_ffmpeg.append(mkv_file)
+                    current_input_files.append(mkv_file)  # Add to input files
                 elif item == "*.srt":
                     current_ffmpeg.append(srt_file)
+                    current_input_files.append(srt_file)  # Add to input files
                 elif item.startswith("mltb"):
                     if item == "mltb.Sub.mkv":
                         output_file = f"{dir}/{base_name}.Sub.mkv"
@@ -667,8 +671,9 @@ class FFMpeg:
                 else:
                     current_ffmpeg.append(item)
 
+            # Store files to delete for this pair if delete flag is set
             if delete_originals:
-                files_to_delete.extend([mkv_file, srt_file])
+                files_to_delete.extend(current_input_files)
 
             if self._listener.is_cancelled:
                 return False
