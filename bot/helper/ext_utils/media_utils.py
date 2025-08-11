@@ -574,7 +574,7 @@ class FFMpeg:
         
         # Process each pair
         all_outputs = []
-        files_to_delete = []
+        files_to_delete = []  # Original files to delete
         
         for i, (mkv_file, srt_file, base_name) in enumerate(file_pairs, 1):
             LOGGER.info(f"🎯 Processing pair {i}/{len(file_pairs)}: {ospath.basename(mkv_file)}")
@@ -584,6 +584,8 @@ class FFMpeg:
             
             # Build FFmpeg command for this specific pair
             current_ffmpeg = []
+            current_output = None
+            
             for item in ffmpeg:
                 if item == "*.mkv":
                     current_ffmpeg.append(mkv_file)
@@ -599,13 +601,20 @@ class FFMpeg:
                         output_file = f"{dir}/{item.replace('mltb', base_name)}"
                     
                     current_ffmpeg.append(output_file)
+                    current_output = output_file
                     all_outputs.append(output_file)
                 else:
                     current_ffmpeg.append(item)
             
-            # Track files for deletion if requested
+            # FIXED: Only add to deletion list if delete_originals is True 
+            # AND the file is not an output file
             if delete_originals:
-                files_to_delete.extend([mkv_file, srt_file])
+                # Only delete the original MKV if it's different from the output
+                if current_output != mkv_file:
+                    files_to_delete.append(mkv_file)
+                
+                # Always safe to delete the SRT file since we're embedding it
+                files_to_delete.append(srt_file)
             
             # Check for cancellation
             if self._listener.is_cancelled:
@@ -645,8 +654,8 @@ class FFMpeg:
             
             LOGGER.info(f"   ✅ Successfully processed: {ospath.basename(mkv_file)}")
         
-        # Delete original files if requested
-        if delete_originals:
+        # Delete original files if requested (after all processing is complete)
+        if delete_originals and files_to_delete:
             LOGGER.info("🗑️  Deleting original files...")
             for file_to_delete in files_to_delete:
                 try:
@@ -658,7 +667,7 @@ class FFMpeg:
         
         LOGGER.info(f"🎉 Successfully processed {len(file_pairs)} video-subtitle pairs!")
         return all_outputs
-
+        
     async def _process_single_file(self, ffmpeg, f_path, dir, base_name, ext, delete_originals):
         """Enhanced single file processing with smart subtitle matching."""
         
@@ -666,7 +675,7 @@ class FFMpeg:
         
         # Handle wildcards and smart subtitle matching
         expanded_ffmpeg = []
-        input_files = []
+        input_files = [f_path]  # Always include the main input file
         
         for i, item in enumerate(ffmpeg):
             if '*' in item and not item.startswith('mltb'):
@@ -743,12 +752,24 @@ class FFMpeg:
             return False
         
         if code == 0:
-            # Delete original files if requested
+            # FIXED: Delete original files if requested, but be smart about it
             if delete_originals:
-                if f_path not in input_files:
-                    input_files.append(f_path)
+                files_to_delete = []
                 
                 for input_file in input_files:
+                    # Only delete input files that are NOT output files
+                    should_delete = True
+                    for output_file in outputs:
+                        if input_file == output_file:
+                            should_delete = False
+                            LOGGER.info(f"⚠️  Skipping deletion of {ospath.basename(input_file)} (same as output)")
+                            break
+                    
+                    if should_delete:
+                        files_to_delete.append(input_file)
+                
+                # Delete the safe-to-delete files
+                for input_file in files_to_delete:
                     try:
                         if await aiopath.exists(input_file):
                             await remove(input_file)
@@ -771,7 +792,7 @@ class FFMpeg:
                 if await aiopath.exists(op):
                     await remove(op)
             return False
-
+            
     async def ffmpeg_cmds(self, ffmpeg, f_path):
         """Main entry point for FFmpeg processing with improved episode matching."""
         self.clear()
