@@ -713,6 +713,7 @@ class FFMpeg:
                 expanded_ffmpeg.append(expanded_file)
                 if i > 0 and ffmpeg[i-1] == "-i":
                     input_files.append(expanded_file)
+                    LOGGER.info(f"📥 Added input file: {ospath.basename(expanded_file)}")
             else:
                 expanded_ffmpeg.append(item)
         
@@ -757,25 +758,30 @@ class FFMpeg:
                 files_to_delete = []
                 
                 for input_file in input_files:
-                    # Only delete input files that are NOT output files
-                    should_delete = True
+                    # Check if this input file is the same as any output file
+                    is_output_file = False
                     for output_file in outputs:
-                        if input_file == output_file:
-                            should_delete = False
+                        if ospath.abspath(input_file) == ospath.abspath(output_file):
+                            is_output_file = True
                             LOGGER.info(f"⚠️  Skipping deletion of {ospath.basename(input_file)} (same as output)")
                             break
                     
-                    if should_delete:
+                    # Only delete if it's not an output file
+                    if not is_output_file:
                         files_to_delete.append(input_file)
+                        LOGGER.info(f"📋 Marked for deletion: {ospath.basename(input_file)}")
                 
                 # Delete the safe-to-delete files
+                LOGGER.info(f"🗑️  Deleting {len(files_to_delete)} original files...")
                 for input_file in files_to_delete:
                     try:
                         if await aiopath.exists(input_file):
                             await remove(input_file)
-                            LOGGER.info(f"🗑️  Deleted original: {ospath.basename(input_file)}")
+                            LOGGER.info(f"   ✅ Deleted: {ospath.basename(input_file)}")
+                        else:
+                            LOGGER.warning(f"   ⚠️  File not found: {ospath.basename(input_file)}")
                     except Exception as e:
-                        LOGGER.error(f"❌ Failed to delete {ospath.basename(input_file)}: {e}")
+                        LOGGER.error(f"   ❌ Failed to delete {ospath.basename(input_file)}: {e}")
             
             LOGGER.info(f"✅ Successfully processed: {ospath.basename(f_path)}")
             return outputs
