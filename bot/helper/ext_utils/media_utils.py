@@ -9,7 +9,7 @@ from asyncio import (
     wait_for,
     sleep,
 )
-
+import os
 import glob
 from asyncio.subprocess import PIPE
 from os import path as ospath
@@ -540,89 +540,52 @@ class FFMpeg:
         
         return best_match
 
+    
+  
     async def _organize_encoded_files(self, dir_path, encoded_outputs, delete_originals=True):
-        """Organize encoded files into a new folder and clean up originals."""
+        """Organize only `.Sub.mkv` encoded files into a new folder and clean up originals."""
+        import os
         try:
-            # Create encoded folder
             encoded_folder = ospath.join(dir_path, "Encoded")
             await makedirs(encoded_folder, exist_ok=True)
             LOGGER.info(f"📁 Created encoded folder: {encoded_folder}")
-            
+    
             moved_files = []
-            
-            # Move encoded files to new folder
+    
+            # Only move .Sub.mkv files
             for output_file in encoded_outputs:
-                if await aiopath.exists(output_file):
+                if await aiopath.exists(output_file) and output_file.endswith(".Sub.mkv"):
                     filename = ospath.basename(output_file)
                     new_path = ospath.join(encoded_folder, filename)
-                    
-                    # Use move operation (rename if on same filesystem, copy+delete otherwise)
                     try:
-                        await sync_to_async(ospath.rename, output_file, new_path)
+                        await sync_to_async(os.rename, output_file, new_path)
                         moved_files.append(new_path)
                         LOGGER.info(f"   📄 Moved: {filename}")
                     except Exception as e:
-                        # Fallback to copy and delete
                         LOGGER.warning(f"   ⚠️  Rename failed, using copy+delete: {e}")
                         import shutil
                         await sync_to_async(shutil.copy2, output_file, new_path)
                         await remove(output_file)
                         moved_files.append(new_path)
                         LOGGER.info(f"   📄 Copied and deleted: {filename}")
-            
+    
             if delete_originals:
-                # Clean up ALL original files (more comprehensive approach)
-                LOGGER.info("🗑️  Cleaning up ALL original files...")
-                
-                # Get all files in the directory - use glob for better file detection
-                original_patterns = [
-                    ospath.join(dir_path, "*.mkv"),
-                    ospath.join(dir_path, "*.srt"),
-                    ospath.join(dir_path, "*.mp4"),
-                    ospath.join(dir_path, "*.avi"),
-                    ospath.join(dir_path, "*.ass"),
-                    ospath.join(dir_path, "*.vtt"),
-                ]
-                
-                deleted_count = 0
-                for pattern in original_patterns:
-                    files_to_delete = glob.glob(pattern)
-                    for file_path in files_to_delete:
-                        try:
-                            if await aiopath.exists(file_path):
-                                # Double check - don't delete files in Encoded folder
-                                if "Encoded" not in file_path:
-                                    await remove(file_path)
-                                    deleted_count += 1
-                                    LOGGER.info(f"   🗑️  Deleted: {ospath.basename(file_path)}")
-                        except Exception as e:
-                            LOGGER.error(f"   ❌ Failed to delete {ospath.basename(file_path)}: {e}")
-                
-                # Also clean up any remaining files not caught by patterns
+                LOGGER.info("🗑️  Cleaning up ALL original files except Encoded folder...")
                 try:
-                    remaining_files = [f for f in await sync_to_async(ospath.listdir, dir_path) 
-                                     if ospath.isfile(ospath.join(dir_path, f)) and f != "Encoded"]
-                    
-                    for file in remaining_files:
-                        file_path = ospath.join(dir_path, file)
-                        try:
-                            await remove(file_path)
-                            deleted_count += 1
-                            LOGGER.info(f"   🗑️  Deleted remaining file: {file}")
-                        except Exception as e:
-                            LOGGER.error(f"   ❌ Failed to delete remaining file {file}: {e}")
-                            
+                    for item in await sync_to_async(os.listdir, dir_path):
+                        item_path = ospath.join(dir_path, item)
+                        if await aiopath.isfile(item_path) and "Encoded" not in item_path:
+                            await remove(item_path)
+                            LOGGER.info(f"   🗑️  Deleted: {item}")
                 except Exception as e:
                     LOGGER.warning(f"   ⚠️  Could not scan for remaining files: {e}")
-                
-                LOGGER.info(f"🧹 Cleanup complete: {deleted_count} original files deleted")
-            
-            LOGGER.info(f"✅ Organization complete: {len(moved_files)} files in Encoded folder")
+    
+            LOGGER.info(f"✅ Organization complete: {len(moved_files)} `.Sub.mkv` files in Encoded folder")
             return moved_files
-            
+    
         except Exception as e:
             LOGGER.error(f"❌ Failed to organize encoded files: {e}")
-            return encoded_outputs  # Return original outputs if organization fails
+            return encoded_outputs
 
     async def _process_multiple_files(self, ffmpeg, f_path, dir, delete_originals):
         """Enhanced multiple file processing with better episode matching and auto-organization."""
@@ -897,35 +860,16 @@ class FFMpeg:
         return result
     
     async def _final_cleanup_check(self, dir_path):
-        """Final safety check to ensure only encoded files remain."""
         try:
             LOGGER.info("🔍 Performing final cleanup check...")
-            
-            # Check what's still in the main directory
-            remaining_files = []
             if await aiopath.exists(dir_path):
-                for item in await sync_to_async(ospath.listdir, dir_path):
+                for item in await sync_to_async(os.listdir, dir_path):
                     item_path = ospath.join(dir_path, item)
-                    if await aiopath.isfile(item_path):
-                        # If it's not in the Encoded folder and not a .Sub.mkv file in root, it should be deleted
-                        if not item.endswith('.Sub.mkv'):
-                            remaining_files.append(item_path)
-            
-            # Delete any remaining unwanted files
-            if remaining_files:
-                LOGGER.info(f"🧹 Found {len(remaining_files)} remaining files to clean up:")
-                for file_path in remaining_files:
-                    try:
-                        filename = ospath.basename(file_path)
-                        # Extra safety - don't delete .Sub.mkv files or directories
-                        if not filename.endswith('.Sub.mkv') and await aiopath.isfile(file_path):
-                            await remove(file_path)
-                            LOGGER.info(f"   🗑️  Final cleanup: {filename}")
-                    except Exception as e:
-                        LOGGER.error(f"   ❌ Failed final cleanup of {ospath.basename(file_path)}: {e}")
+                    if await aiopath.isfile(item_path) and not item.endswith('.Sub.mkv'):
+                        await remove(item_path)
+                        LOGGER.info(f"   🗑️  Final cleanup: {item}")
             else:
-                LOGGER.info("✅ Directory is clean - no remaining files found")
-                
+                LOGGER.info("Directory does not exist for cleanup")
         except Exception as e:
             LOGGER.error(f"❌ Final cleanup check failed: {e}")
 
