@@ -571,30 +571,49 @@ class FFMpeg:
                         LOGGER.info(f"   📄 Copied and deleted: {filename}")
             
             if delete_originals:
-                # Clean up original files
-                LOGGER.info("🗑️  Cleaning up original files...")
+                # Clean up ALL original files (more comprehensive approach)
+                LOGGER.info("🗑️  Cleaning up ALL original files...")
                 
-                # Get all files in the directory (excluding the Encoded folder)
-                all_files = []
-                for root, dirs, files in ospath.walk(dir_path):
-                    # Skip the Encoded folder
-                    if "Encoded" in dirs:
-                        dirs.remove("Encoded")
-                    
-                    for file in files:
-                        file_path = ospath.join(root, file)
-                        all_files.append(file_path)
+                # Get all files in the directory - use glob for better file detection
+                original_patterns = [
+                    ospath.join(dir_path, "*.mkv"),
+                    ospath.join(dir_path, "*.srt"),
+                    ospath.join(dir_path, "*.mp4"),
+                    ospath.join(dir_path, "*.avi"),
+                    ospath.join(dir_path, "*.ass"),
+                    ospath.join(dir_path, "*.vtt"),
+                ]
                 
-                # Delete original files
                 deleted_count = 0
-                for file_path in all_files:
-                    try:
-                        if await aiopath.exists(file_path):
+                for pattern in original_patterns:
+                    files_to_delete = glob.glob(pattern)
+                    for file_path in files_to_delete:
+                        try:
+                            if await aiopath.exists(file_path):
+                                # Double check - don't delete files in Encoded folder
+                                if "Encoded" not in file_path:
+                                    await remove(file_path)
+                                    deleted_count += 1
+                                    LOGGER.info(f"   🗑️  Deleted: {ospath.basename(file_path)}")
+                        except Exception as e:
+                            LOGGER.error(f"   ❌ Failed to delete {ospath.basename(file_path)}: {e}")
+                
+                # Also clean up any remaining files not caught by patterns
+                try:
+                    remaining_files = [f for f in await sync_to_async(ospath.listdir, dir_path) 
+                                     if ospath.isfile(ospath.join(dir_path, f)) and f != "Encoded"]
+                    
+                    for file in remaining_files:
+                        file_path = ospath.join(dir_path, file)
+                        try:
                             await remove(file_path)
                             deleted_count += 1
-                            LOGGER.info(f"   🗑️  Deleted: {ospath.basename(file_path)}")
-                    except Exception as e:
-                        LOGGER.error(f"   ❌ Failed to delete {ospath.basename(file_path)}: {e}")
+                            LOGGER.info(f"   🗑️  Deleted remaining file: {file}")
+                        except Exception as e:
+                            LOGGER.error(f"   ❌ Failed to delete remaining file {file}: {e}")
+                            
+                except Exception as e:
+                    LOGGER.warning(f"   ⚠️  Could not scan for remaining files: {e}")
                 
                 LOGGER.info(f"🧹 Cleanup complete: {deleted_count} original files deleted")
             
@@ -613,6 +632,10 @@ class FFMpeg:
         srt_files = sorted(glob.glob(ospath.join(dir, "*.srt")))
         
         LOGGER.info(f"📁 Found {len(mkv_files)} MKV files and {len(srt_files)} SRT files")
+        
+        # Store original files for cleanup tracking
+        all_original_files = mkv_files + srt_files
+        LOGGER.info(f"📝 Tracking {len(all_original_files)} original files for cleanup")
         
         # Create episode pairs with enhanced matching
         file_pairs = []
@@ -705,7 +728,21 @@ class FFMpeg:
             
             LOGGER.info(f"   ✅ Successfully processed: {ospath.basename(mkv_file)}")
         
-        # Organize encoded files and clean up
+        # Manual cleanup first - delete original files explicitly
+        if delete_originals:
+            LOGGER.info("🗑️  Pre-organizing cleanup of original files...")
+            deleted_count = 0
+            for original_file in all_original_files:
+                try:
+                    if await aiopath.exists(original_file):
+                        await remove(original_file)
+                        deleted_count += 1
+                        LOGGER.info(f"   🗑️  Deleted original: {ospath.basename(original_file)}")
+                except Exception as e:
+                    LOGGER.error(f"   ❌ Failed to delete {ospath.basename(original_file)}: {e}")
+            LOGGER.info(f"🧹 Pre-cleanup complete: {deleted_count} original files deleted")
+        
+        # Organize encoded files and clean up any remaining files
         LOGGER.info("📦 Organizing encoded files...")
         organized_files = await self._organize_encoded_files(dir, all_outputs, delete_originals)
         
@@ -845,12 +882,52 @@ class FFMpeg:
         has_mkv_wildcard = "*.mkv" in ffmpeg
         has_srt_wildcard = "*.srt" in ffmpeg
         
+        result = None
         if has_mkv_wildcard and has_srt_wildcard:
             LOGGER.info("🎬 Multiple file processing mode detected")
-            return await self._process_multiple_files(ffmpeg, f_path, dir, delete_originals or organize_files)
+            result = await self._process_multiple_files(ffmpeg, f_path, dir, delete_originals or organize_files)
         else:
             LOGGER.info("🎯 Single file processing mode")
-            return await self._process_single_file(ffmpeg, f_path, dir, base_name, ext, delete_originals or organize_files)
+            result = await self._process_single_file(ffmpeg, f_path, dir, base_name, ext, delete_originals or organize_files)
+        
+        # Final safety check - ensure only encoded files remain if organizing
+        if (organize_files or delete_originals) and result:
+            await self._final_cleanup_check(dir)
+        
+        return result
+    
+    async def _final_cleanup_check(self, dir_path):
+        """Final safety check to ensure only encoded files remain."""
+        try:
+            LOGGER.info("🔍 Performing final cleanup check...")
+            
+            # Check what's still in the main directory
+            remaining_files = []
+            if await aiopath.exists(dir_path):
+                for item in await sync_to_async(ospath.listdir, dir_path):
+                    item_path = ospath.join(dir_path, item)
+                    if await aiopath.isfile(item_path):
+                        # If it's not in the Encoded folder and not a .Sub.mkv file in root, it should be deleted
+                        if not item.endswith('.Sub.mkv'):
+                            remaining_files.append(item_path)
+            
+            # Delete any remaining unwanted files
+            if remaining_files:
+                LOGGER.info(f"🧹 Found {len(remaining_files)} remaining files to clean up:")
+                for file_path in remaining_files:
+                    try:
+                        filename = ospath.basename(file_path)
+                        # Extra safety - don't delete .Sub.mkv files or directories
+                        if not filename.endswith('.Sub.mkv') and await aiopath.isfile(file_path):
+                            await remove(file_path)
+                            LOGGER.info(f"   🗑️  Final cleanup: {filename}")
+                    except Exception as e:
+                        LOGGER.error(f"   ❌ Failed final cleanup of {ospath.basename(file_path)}: {e}")
+            else:
+                LOGGER.info("✅ Directory is clean - no remaining files found")
+                
+        except Exception as e:
+            LOGGER.error(f"❌ Final cleanup check failed: {e}")
 
     # ... rest of the methods (convert_video, convert_audio, sample_video, split) remain the same ...
     async def convert_video(self, video_file, ext, retry=False):
