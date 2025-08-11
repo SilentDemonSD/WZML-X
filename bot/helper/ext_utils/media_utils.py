@@ -9,7 +9,7 @@ from asyncio import (
     wait_for,
     sleep,
 )
-import os
+
 import glob
 from asyncio.subprocess import PIPE
 from os import path as ospath
@@ -540,65 +540,14 @@ class FFMpeg:
         
         return best_match
 
-    
-  
-    async def _organize_encoded_files(self, dir_path, encoded_outputs, delete_originals=True):
-        """Organize only `.Sub.mkv` encoded files into a new folder and clean up originals."""
-        import os
-        try:
-            encoded_folder = ospath.join(dir_path, "Encoded")
-            await makedirs(encoded_folder, exist_ok=True)
-            LOGGER.info(f"📁 Created encoded folder: {encoded_folder}")
-    
-            moved_files = []
-    
-            # Only move .Sub.mkv files
-            for output_file in encoded_outputs:
-                if await aiopath.exists(output_file) and output_file.endswith(".Sub.mkv"):
-                    filename = ospath.basename(output_file)
-                    new_path = ospath.join(encoded_folder, filename)
-                    try:
-                        await sync_to_async(os.rename, output_file, new_path)
-                        moved_files.append(new_path)
-                        LOGGER.info(f"   📄 Moved: {filename}")
-                    except Exception as e:
-                        LOGGER.warning(f"   ⚠️  Rename failed, using copy+delete: {e}")
-                        import shutil
-                        await sync_to_async(shutil.copy2, output_file, new_path)
-                        await remove(output_file)
-                        moved_files.append(new_path)
-                        LOGGER.info(f"   📄 Copied and deleted: {filename}")
-    
-            if delete_originals:
-                LOGGER.info("🗑️  Cleaning up ALL original files except Encoded folder...")
-                try:
-                    for item in await sync_to_async(os.listdir, dir_path):
-                        item_path = ospath.join(dir_path, item)
-                        if await aiopath.isfile(item_path) and "Encoded" not in item_path:
-                            await remove(item_path)
-                            LOGGER.info(f"   🗑️  Deleted: {item}")
-                except Exception as e:
-                    LOGGER.warning(f"   ⚠️  Could not scan for remaining files: {e}")
-    
-            LOGGER.info(f"✅ Organization complete: {len(moved_files)} `.Sub.mkv` files in Encoded folder")
-            return moved_files
-    
-        except Exception as e:
-            LOGGER.error(f"❌ Failed to organize encoded files: {e}")
-            return encoded_outputs
-
     async def _process_multiple_files(self, ffmpeg, f_path, dir, delete_originals):
-        """Enhanced multiple file processing with better episode matching and auto-organization."""
+        """Enhanced multiple file processing with better episode matching."""
         
         # Get all MKV and SRT files (sorted for consistent ordering)
         mkv_files = sorted(glob.glob(ospath.join(dir, "*.mkv")))
         srt_files = sorted(glob.glob(ospath.join(dir, "*.srt")))
         
         LOGGER.info(f"📁 Found {len(mkv_files)} MKV files and {len(srt_files)} SRT files")
-        
-        # Store original files for cleanup tracking
-        all_original_files = mkv_files + srt_files
-        LOGGER.info(f"📝 Tracking {len(all_original_files)} original files for cleanup")
         
         # Create episode pairs with enhanced matching
         file_pairs = []
@@ -625,6 +574,7 @@ class FFMpeg:
         
         # Process each pair
         all_outputs = []
+        files_to_delete = []
         
         for i, (mkv_file, srt_file, base_name) in enumerate(file_pairs, 1):
             LOGGER.info(f"🎯 Processing pair {i}/{len(file_pairs)}: {ospath.basename(mkv_file)}")
@@ -652,6 +602,10 @@ class FFMpeg:
                     all_outputs.append(output_file)
                 else:
                     current_ffmpeg.append(item)
+            
+            # Track files for deletion if requested
+            if delete_originals:
+                files_to_delete.extend([mkv_file, srt_file])
             
             # Check for cancellation
             if self._listener.is_cancelled:
@@ -691,35 +645,28 @@ class FFMpeg:
             
             LOGGER.info(f"   ✅ Successfully processed: {ospath.basename(mkv_file)}")
         
-        # Manual cleanup first - delete original files explicitly
+        # Delete original files if requested
         if delete_originals:
-            LOGGER.info("🗑️  Pre-organizing cleanup of original files...")
-            deleted_count = 0
-            for original_file in all_original_files:
+            LOGGER.info("🗑️  Deleting original files...")
+            for file_to_delete in files_to_delete:
                 try:
-                    if await aiopath.exists(original_file):
-                        await remove(original_file)
-                        deleted_count += 1
-                        LOGGER.info(f"   🗑️  Deleted original: {ospath.basename(original_file)}")
+                    if await aiopath.exists(file_to_delete):
+                        await remove(file_to_delete)
+                        LOGGER.info(f"   ✅ Deleted: {ospath.basename(file_to_delete)}")
                 except Exception as e:
-                    LOGGER.error(f"   ❌ Failed to delete {ospath.basename(original_file)}: {e}")
-            LOGGER.info(f"🧹 Pre-cleanup complete: {deleted_count} original files deleted")
-        
-        # Organize encoded files and clean up any remaining files
-        LOGGER.info("📦 Organizing encoded files...")
-        organized_files = await self._organize_encoded_files(dir, all_outputs, delete_originals)
+                    LOGGER.error(f"   ❌ Failed to delete {ospath.basename(file_to_delete)}: {e}")
         
         LOGGER.info(f"🎉 Successfully processed {len(file_pairs)} video-subtitle pairs!")
-        return organized_files
+        return all_outputs
 
     async def _process_single_file(self, ffmpeg, f_path, dir, base_name, ext, delete_originals):
-        """Enhanced single file processing with smart subtitle matching and auto-organization."""
+        """Enhanced single file processing with smart subtitle matching."""
         
         self._total_time = (await get_media_info(f_path))[0]
         
         # Handle wildcards and smart subtitle matching
         expanded_ffmpeg = []
-        input_files = [f_path]  # Track input files for deletion
+        input_files = []
         
         for i, item in enumerate(ffmpeg):
             if '*' in item and not item.startswith('mltb'):
@@ -746,19 +693,17 @@ class FFMpeg:
                     expanded_file = matched_srt if matched_srt else matches[0]
                     if not matched_srt:
                         LOGGER.warning(f"⚠️  No episode match found, using: {ospath.basename(matches[0])}")
-                    
-                    # Add to input files for potential deletion
-                    input_files.append(expanded_file)
                 
                 elif matches:
                     # For other wildcards, use first match
                     expanded_file = matches[0]
-                    input_files.append(expanded_file)
                 else:
                     expanded_ffmpeg.append(item)
                     continue
                 
                 expanded_ffmpeg.append(expanded_file)
+                if i > 0 and ffmpeg[i-1] == "-i":
+                    input_files.append(expanded_file)
             else:
                 expanded_ffmpeg.append(item)
         
@@ -798,16 +743,21 @@ class FFMpeg:
             return False
         
         if code == 0:
-            LOGGER.info(f"✅ Successfully processed: {ospath.basename(f_path)}")
-            
-            # Organize encoded files and clean up
+            # Delete original files if requested
             if delete_originals:
-                LOGGER.info("📦 Organizing encoded files and cleaning up...")
-                organized_files = await self._organize_encoded_files(dir, outputs, delete_originals)
-                return organized_files
-            else:
-                return outputs
+                if f_path not in input_files:
+                    input_files.append(f_path)
+                
+                for input_file in input_files:
+                    try:
+                        if await aiopath.exists(input_file):
+                            await remove(input_file)
+                            LOGGER.info(f"🗑️  Deleted original: {ospath.basename(input_file)}")
+                    except Exception as e:
+                        LOGGER.error(f"❌ Failed to delete {ospath.basename(input_file)}: {e}")
             
+            LOGGER.info(f"✅ Successfully processed: {ospath.basename(f_path)}")
+            return outputs
         elif code == -9:
             self._listener.is_cancelled = True
             return False
@@ -823,57 +773,28 @@ class FFMpeg:
             return False
 
     async def ffmpeg_cmds(self, ffmpeg, f_path):
-        """Main entry point for FFmpeg processing with improved episode matching and auto-organization."""
+        """Main entry point for FFmpeg processing with improved episode matching."""
         self.clear()
         base_name, ext = ospath.splitext(f_path)
         dir, base_name = base_name.rsplit("/", 1)
         
-        # Check for -del flag (auto-cleanup enabled)
+        # Check for -del flag
         delete_originals = False
         if "-del" in ffmpeg:
             delete_originals = True
             ffmpeg = [item for item in ffmpeg if item != "-del"]
         
-        # Check for -org flag (organize encoded files)
-        organize_files = False  
-        if "-org" in ffmpeg:
-            organize_files = True
-            delete_originals = True  # Auto-enable cleanup when organizing
-            ffmpeg = [item for item in ffmpeg if item != "-org"]
-        
         # Check if we're using wildcards for multiple file processing
         has_mkv_wildcard = "*.mkv" in ffmpeg
         has_srt_wildcard = "*.srt" in ffmpeg
         
-        result = None
         if has_mkv_wildcard and has_srt_wildcard:
             LOGGER.info("🎬 Multiple file processing mode detected")
-            result = await self._process_multiple_files(ffmpeg, f_path, dir, delete_originals or organize_files)
+            return await self._process_multiple_files(ffmpeg, f_path, dir, delete_originals)
         else:
             LOGGER.info("🎯 Single file processing mode")
-            result = await self._process_single_file(ffmpeg, f_path, dir, base_name, ext, delete_originals or organize_files)
-        
-        # Final safety check - ensure only encoded files remain if organizing
-        if (organize_files or delete_originals) and result:
-            await self._final_cleanup_check(dir)
-        
-        return result
-    
-    async def _final_cleanup_check(self, dir_path):
-        try:
-            LOGGER.info("🔍 Performing final cleanup check...")
-            if await aiopath.exists(dir_path):
-                for item in await sync_to_async(os.listdir, dir_path):
-                    item_path = ospath.join(dir_path, item)
-                    if await aiopath.isfile(item_path) and not item.endswith('.Sub.mkv'):
-                        await remove(item_path)
-                        LOGGER.info(f"   🗑️  Final cleanup: {item}")
-            else:
-                LOGGER.info("Directory does not exist for cleanup")
-        except Exception as e:
-            LOGGER.error(f"❌ Final cleanup check failed: {e}")
+            return await self._process_single_file(ffmpeg, f_path, dir, base_name, ext, delete_originals)
 
-    # ... rest of the methods (convert_video, convert_audio, sample_video, split) remain the same ...
     async def convert_video(self, video_file, ext, retry=False):
         self.clear()
         self._total_time = (await get_media_info(video_file))[0]
