@@ -366,8 +366,8 @@ async def get_multiple_frames_thumbnail(video_file, layout, keep_screenshots):
 
 
 class FFMpeg:
-    VIDEO_EXTS = (".mkv", ".mp4", ".avi", ".mov", ".webm", ".flv", ".ts", ".m4v")
-    SUB_EXTS = (".srt", ".ass", ".ssa", ".vtt", ".sub", ".idx")
+    VIDEO_EXTS = {".mkv", ".mp4", ".mov", ".avi", ".webm", ".flv", ".ts", ".m4v"}
+    SUB_EXTS = {".srt", ".ass", ".ssa", ".vtt", ".sub", ".idx"}
 
     def __init__(self, listener):
         self._listener = listener
@@ -383,20 +383,13 @@ class FFMpeg:
         self._start_time = 0
 
     @property
-    def processed_bytes(self):
-        return self._processed_bytes
-
+    def processed_bytes(self): return self._processed_bytes
     @property
-    def speed_raw(self):
-        return self._speed_raw
-
+    def speed_raw(self): return self._speed_raw
     @property
-    def progress_raw(self):
-        return self._progress_raw
-
+    def progress_raw(self): return self._progress_raw
     @property
-    def eta_raw(self):
-        return self._eta_raw
+    def eta_raw(self): return self._eta_raw
 
     def clear(self):
         self._start_time = time()
@@ -427,13 +420,19 @@ class FFMpeg:
                 if value != "N/A":
                     if key == "total_size":
                         self._processed_bytes = int(value) + self._last_processed_bytes
-                        self._speed_raw = self._processed_bytes / (time() - self._start_time)
+                        self._speed_raw = self._processed_bytes / (
+                            time() - self._start_time
+                        )
                     elif key == "speed":
                         self._time_rate = max(0.1, float(value.strip("x")))
                     elif key == "out_time":
-                        self._processed_time = time_to_seconds(value) + self._last_processed_time
+                        self._processed_time = (
+                            time_to_seconds(value) + self._last_processed_time
+                        )
                         try:
-                            self._progress_raw = (self._processed_time * 100) / self._total_time
+                            self._progress_raw = (
+                                self._processed_time * 100
+                            ) / self._total_time
                             if (
                                 hasattr(self._listener, "subsize")
                                 and self._listener.subsize
@@ -443,10 +442,14 @@ class FFMpeg:
                                     self._listener.subsize * (self._progress_raw / 100)
                                 )
                             if (time() - self._start_time) > 0:
-                                self._speed_raw = self._processed_bytes / (time() - self._start_time)
+                                self._speed_raw = self._processed_bytes / (
+                                    time() - self._start_time
+                                )
                             else:
                                 self._speed_raw = 0
-                            self._eta_raw = (self._total_time - self._processed_time) / self._time_rate
+                            self._eta_raw = (
+                                self._total_time - self._processed_time
+                            ) / self._time_rate
                         except ZeroDivisionError:
                             self._progress_raw = 0
                             self._eta_raw = 0
@@ -455,98 +458,117 @@ class FFMpeg:
     def _extract_episode_info(self, filename):
         import re
         base_name = ospath.splitext(ospath.basename(filename))[0]
-        pattern = r'S(\d{1,2})E(\d{1,2})'
-        match = re.search(pattern, base_name, re.IGNORECASE)
+        match = re.search(r'S(\d{1,2})E(\d{1,2})', base_name, re.IGNORECASE)
         if match:
-            season = int(match.group(1))
-            episode = int(match.group(2))
-            return season, episode, f"S{season:02d}E{episode:02d}"
+            return int(match.group(1)), int(match.group(2)), f"S{int(match.group(1)):02d}E{int(match.group(2)):02d}"
         return None, None, None
 
-    async def _process_single_file(self, ffmpeg, f_path, dir, base_name, ext, delete_originals):
-        self._total_time = (await get_media_info(f_path))[0]
-        expanded_ffmpeg = []
-        input_files = []
+    def _find_all_matching_subtitles(self, video_file, srt_files):
+        matches = []
+        v_season, v_episode, v_code = self._extract_episode_info(video_file)
+        v_base = ospath.splitext(ospath.basename(video_file))[0]
 
-        for i, item in enumerate(ffmpeg):
-            if item == "*.vid":
-                matches = []
-                for extn in self.VIDEO_EXTS:
-                    matches.extend(glob.glob(ospath.join(dir, f"*{extn}")))
-                matches = sorted(matches)
-                expanded_file = matches[0] if matches else item
+        # 1. Season/Episode match
+        for srt in srt_files:
+            s_season, s_episode, _ = self._extract_episode_info(srt)
+            if v_season == s_season and v_episode == s_episode:
+                matches.append(srt)
 
-            elif item == "*.sub":
-                matches = []
-                for extn in self.SUB_EXTS:
-                    matches.extend(glob.glob(ospath.join(dir, f"*{extn}")))
-                matches = sorted(matches)
+        # 2. Exact base name match
+        if not matches:
+            for srt in srt_files:
+                if ospath.splitext(ospath.basename(srt))[0] == v_base:
+                    matches.append(srt)
 
-                matched_srt = None
-                if matches:
-                    video_season, video_episode, video_code = self._extract_episode_info(f_path)
-                    if video_season and video_episode:
-                        for sfile in matches:
-                            s_season, s_episode, _ = self._extract_episode_info(sfile)
-                            if s_season == video_season and s_episode == video_episode:
-                                matched_srt = sfile
-                                break
-                    expanded_file = matched_srt if matched_srt else matches[0]
-                else:
-                    expanded_file = item
+        # 3. Normalized match
+        if not matches:
+            import re
+            v_norm = re.sub(r'\s*(1080p|720p|480p|x264|x265|HEVC|BluRay|WEBRip|WEB-DL|HDTV|10bit|PSA).*', '', v_base, flags=re.IGNORECASE)
+            for srt in srt_files:
+                s_norm = re.sub(r'\s*(1080p|720p|480p|x264|x265|HEVC|BluRay|WEBRip|WEB-DL|HDTV|10bit|PSA).*', '', ospath.splitext(ospath.basename(srt))[0], flags=re.IGNORECASE)
+                if v_norm == s_norm:
+                    matches.append(srt)
 
-            else:
-                expanded_file = item
+        return matches
 
-            expanded_ffmpeg.append(expanded_file)
-            if i > 0 and ffmpeg[i-1] == "-i":
-                input_files.append(expanded_file)
+    async def _build_ffmpeg_cmd(self, video, subs, output_file):
+        cmd = [BinConfig.FFMPEG_NAME, "-hide_banner", "-loglevel", "error", "-progress", "pipe:1", "-i", video]
+        for sub in subs:
+            cmd.extend(["-i", sub])
 
+        cmd.extend(["-map", "0:v", "-map", "0:a"])
+        for i in range(len(subs)):
+            cmd.extend(["-map", f"{i+1}"])
+
+        cmd.extend(["-c", "copy", "-c:s", "srt"])
+        for i, sub in enumerate(subs):
+            lang = "und"
+            try:
+                streams = await get_streams(sub)
+                if streams and "tags" in streams[0] and "language" in streams[0]["tags"]:
+                    lang = streams[0]["tags"]["language"]
+            except:
+                pass
+            cmd.extend([f"-metadata:s:s:{i}", f"language={lang}", f"-metadata:s:s:{i}", f"title=Subtitle {i+1}"])
+            if i == 0:
+                cmd.extend([f"-disposition:s:{i}", "default"])
+        cmd.append(output_file)
+        return cmd
+
+    async def _process_multiple_files(self, dir, delete_originals):
+        video_files = sorted([f for f in glob.glob(ospath.join(dir, "*")) if ospath.splitext(f)[1].lower() in self.VIDEO_EXTS])
+        sub_files = sorted([f for f in glob.glob(ospath.join(dir, "*")) if ospath.splitext(f)[1].lower() in self.SUB_EXTS])
         outputs = []
-        for index, item in enumerate(expanded_ffmpeg):
-            if item.startswith("mltb") and (index == 0 or expanded_ffmpeg[index-1] != "-i"):
-                if "." in item:
-                    output = f"{dir}/{item.replace('mltb', base_name)}"
-                else:
-                    output = f"{dir}/{item.replace('mltb', base_name)}{ext}"
-                outputs.append(output)
-                expanded_ffmpeg[index] = output
+        for video in video_files:
+            subs = self._find_all_matching_subtitles(video, sub_files)
+            output_file = ospath.join(dir, f"{ospath.splitext(ospath.basename(video))[0]}.Sub.mkv")
+            cmd = await self._build_ffmpeg_cmd(video, subs, output_file)
 
-        self._listener.subproc = await create_subprocess_exec(
-            *expanded_ffmpeg, stdout=PIPE, stderr=PIPE
-        )
+            self._total_time = (await get_media_info(video))[0]
+            self._listener.subproc = await create_subprocess_exec(*cmd, stdout=PIPE, stderr=PIPE)
+            await self._ffmpeg_progress()
+            _, stderr = await self._listener.subproc.communicate()
+            if self._listener.subproc.returncode != 0:
+                LOGGER.error(f"FFmpeg failed for {video}: {stderr.decode(errors='ignore')}")
+                return False
+            outputs.append(output_file)
+            if delete_originals:
+                await remove(video)
+                for sub in subs:
+                    await remove(sub)
+        return outputs
+
+    async def _process_single_file(self, video_file, delete_originals):
+        dir = ospath.dirname(video_file)
+        sub_files = sorted([f for f in glob.glob(ospath.join(dir, "*")) if ospath.splitext(f)[1].lower() in self.SUB_EXTS])
+        subs = self._find_all_matching_subtitles(video_file, sub_files)
+        output_file = ospath.join(dir, f"{ospath.splitext(ospath.basename(video_file))[0]}.Sub.mkv")
+        cmd = await self._build_ffmpeg_cmd(video_file, subs, output_file)
+
+        self._total_time = (await get_media_info(video_file))[0]
+        self._listener.subproc = await create_subprocess_exec(*cmd, stdout=PIPE, stderr=PIPE)
         await self._ffmpeg_progress()
         _, stderr = await self._listener.subproc.communicate()
-        code = self._listener.subproc.returncode
-
-        if code == 0:
-            if delete_originals:
-                if f_path not in input_files:
-                    input_files.append(f_path)
-                for file_path in input_files:
-                    try:
-                        if await aiopath.exists(file_path):
-                            await remove(file_path)
-                    except:
-                        pass
-            return outputs
-        else:
-            for op in outputs:
-                if await aiopath.exists(op):
-                    await remove(op)
+        if self._listener.subproc.returncode != 0:
+            LOGGER.error(f"FFmpeg failed: {stderr.decode(errors='ignore')}")
             return False
+        if delete_originals:
+            await remove(video_file)
+            for sub in subs:
+                await remove(sub)
+        return [output_file]
 
     async def ffmpeg_cmds(self, ffmpeg, f_path):
         self.clear()
-        base_name, ext = ospath.splitext(f_path)
-        dir, base_name = base_name.rsplit("/", 1)
+        dir = ospath.dirname(f_path)
+        delete_originals = "-del" in ffmpeg
+        if delete_originals:
+            ffmpeg = [x for x in ffmpeg if x != "-del"]
 
-        delete_originals = False
-        if "-del" in ffmpeg:
-            delete_originals = True
-            ffmpeg = [item for item in ffmpeg if item != "-del"]
-
-        return await self._process_single_file(ffmpeg, f_path, dir, base_name, ext, delete_originals)
+        if "*.vid" in ffmpeg and "*.sub" in ffmpeg:
+            return await self._process_multiple_files(dir, delete_originals)
+        else:
+            return await self._process_single_file(f_path, delete_originals)
 
 
     async def convert_video(self, video_file, ext, retry=False):
