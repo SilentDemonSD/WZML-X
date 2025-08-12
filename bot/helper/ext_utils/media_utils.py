@@ -540,170 +540,105 @@ class FFMpeg:
         
         return best_match
 
-    async def _adjust_subtitle_codec(self, ffmpeg_cmd, output_ext, subtitle_input):
-        """Adjust subtitle codec based on container type and subtitle file format."""
-        sub_codec = "copy"
-        sub_ext = ospath.splitext(subtitle_input)[1].lower()
+    def _detect_sub_codec(self, container_ext, sub_ext):
+        """Choose the correct subtitle codec based on container and subtitle extension."""
+        container_ext = container_ext.lower()
+        sub_ext = sub_ext.lower()
+        if container_ext in [".mp4", ".m4v", ".mov"]:
+            return "mov_text"
+        elif container_ext == ".mkv":
+            return "ass" if sub_ext in [".ass", ".ssa"] else "srt"
+        elif container_ext == ".webm":
+            return "webvtt"
+        return "srt"
 
-        if output_ext in [".mp4", ".m4v", ".mov"]:
-            sub_codec = "mov_text"
-        elif output_ext == ".mkv":
-            sub_codec = "ass" if sub_ext in [".ass", ".ssa"] else "srt"
-        elif output_ext == ".webm":
-            sub_codec = "webvtt"
-        else:
-            sub_codec = "ass" if sub_ext in [".ass", ".ssa"] else "srt"
+    def _guess_language_from_name(self, filename):
+        """Guess subtitle language from filename."""
+        name = filename.lower()
+        if "sin" in name or "sinhala" in name:
+            return "sin"
+        elif "eng" in name or "english" in name:
+            return "eng"
+        elif "tam" in name or "tamil" in name:
+            return "tam"
+        return "und"
 
-        if "-c:s:0" in ffmpeg_cmd:
-            idx = ffmpeg_cmd.index("-c:s:0") + 1
-            ffmpeg_cmd[idx] = sub_codec
-        else:
-            try:
-                map_idx = ffmpeg_cmd.index("-map", ffmpeg_cmd.index("-map 1"))
-                ffmpeg_cmd.insert(map_idx + 2, sub_codec)
-                ffmpeg_cmd.insert(map_idx + 2, "-c:s:0")
-            except ValueError:
-                pass
+    def _find_all_matching_subs(self, video_file, sub_files):
+        """Return all subtitles matching video episode or basename."""
+        matches = []
+        vid_season, vid_episode, vid_code = self._extract_episode_info(video_file)
+        vid_base = ospath.splitext(ospath.basename(video_file))[0]
+        for sub in sub_files:
+            sub_season, sub_episode, _ = self._extract_episode_info(sub)
+            sub_base = ospath.splitext(ospath.basename(sub))[0]
+            if (vid_season and vid_episode and sub_season == vid_season and sub_episode == vid_episode) or vid_base == sub_base:
+                matches.append(sub)
+        return matches
 
-        return ffmpeg_cmd
+    async def _process_file(self, ffmpeg_base, video_file, dir, base_name, ext, delete_originals):
+        """Process one video file with all matching subtitles."""
+        self._total_time = (await get_media_info(video_file))[0]
+        container_ext = ext.lower()
 
-    async def _process_multiple_files(self, ffmpeg, f_path, dir, delete_originals):
-        video_files = sorted(glob.glob(ospath.join(dir, "*.*")))
+        # Find all subs
         sub_files = sorted(glob.glob(ospath.join(dir, "*.srt")) +
                            glob.glob(ospath.join(dir, "*.ass")) +
                            glob.glob(ospath.join(dir, "*.ssa")) +
                            glob.glob(ospath.join(dir, "*.vtt")))
+        matched_subs = self._find_all_matching_subs(video_file, sub_files)
 
-        file_pairs = []
-        used_subs = set()
+        # Build ffmpeg command
+        cmd = []
+        cmd.extend(["-i", video_file])
+        map_args = ["-map", "0:v", "-map", "0:a"]
 
-        for vid in video_files:
-            if not re_search(r"\.(mp4|mkv|avi|mov|webm|m4v)$", vid, re.IGNORECASE):
-                continue
-            available_srts = [s for s in sub_files if s not in used_subs]
-            matched_sub = self._find_best_subtitle_match(vid, available_srts)
-            if matched_sub:
-                base_name = ospath.splitext(ospath.basename(vid))[0]
-                file_pairs.append((vid, matched_sub, base_name))
-                used_subs.add(matched_sub)
+        for idx, sub in enumerate(matched_subs):
+            cmd.extend(["-i", sub])
+            map_args.extend(["-map", f"{idx+1}:0"])  # +1 because video is input 0
+            sub_codec = self._detect_sub_codec(container_ext, ospath.splitext(sub)[1])
+            cmd.extend([f"-c:s:{idx}", sub_codec])
+            lang = self._guess_language_from_name(sub)
+            cmd.extend([f"-metadata:s:s:{idx}", f"language={lang}"])
+            cmd.extend([f"-metadata:s:s:{idx}", f"title=FLIXORA-{lang.upper()}"])
+            if idx == 0:
+                cmd.extend([f"-disposition:s:{idx}", "default", f"-disposition:s:{idx}", "forced"])
 
-        all_outputs = []
-        files_to_delete = []
+        cmd.extend(["-c:v", "copy", "-c:a", "copy"])
+        cmd.extend(map_args)
 
-        for vid, sub, base in file_pairs:
-            self._total_time = (await get_media_info(vid))[0]
-            current_cmd = []
-            output_ext = None
-            for item in ffmpeg:
-                if item.startswith("*."):
-                    current_cmd.append(vid if not item.endswith(".srt") else sub)
-                elif item.startswith("mltb"):
-                    output_file = f"{dir}/{base}{ospath.splitext(item.replace('mltb', base))[1]}"
-                    output_ext = ospath.splitext(output_file)[1].lower()
-                    current_cmd.append(output_file)
-                    all_outputs.append(output_file)
-                    current_cmd = await self._adjust_subtitle_codec(current_cmd, output_ext, sub)
-                else:
-                    current_cmd.append(item)
-
-            if delete_originals:
-                files_to_delete.extend([vid, sub])
-
-            self._listener.subproc = await create_subprocess_exec(
-                *current_cmd, stdout=PIPE, stderr=PIPE
-            )
-            await self._ffmpeg_progress()
-            _, stderr = await self._listener.subproc.communicate()
-            if self._listener.subproc.returncode != 0:
-                for op in all_outputs:
-                    if await aiopath.exists(op):
-                        await remove(op)
-                return False
+        output_file = f"{dir}/{base_name}.Sub{container_ext}"
+        cmd.append(output_file)
 
         if delete_originals:
-            for f in files_to_delete:
+            for f in [video_file] + matched_subs:
                 if await aiopath.exists(f):
                     await remove(f)
 
-        return all_outputs
-
-    async def _process_single_file(self, ffmpeg, f_path, dir, base_name, ext, delete_originals):
-        self._total_time = (await get_media_info(f_path))[0]
-        expanded_cmd = []
-        input_files = []
-        sub_file = None
-        output_ext = None
-
-        for i, item in enumerate(ffmpeg):
-            if '*' in item and not item.startswith('mltb'):
-                matches = glob.glob(ospath.join(dir, item))
-                if item.endswith((".srt", ".ass", ".ssa", ".vtt")) and matches:
-                    video_season, video_episode, _ = self._extract_episode_info(f_path)
-                    matched_sub = None
-                    if video_season and video_episode:
-                        for sub in matches:
-                            s_season, s_episode, _ = self._extract_episode_info(sub)
-                            if s_season == video_season and s_episode == video_episode:
-                                matched_sub = sub
-                                break
-                    sub_file = matched_sub if matched_sub else matches[0]
-                    expanded_file = sub_file
-                elif matches:
-                    expanded_file = matches[0]
-                else:
-                    expanded_cmd.append(item)
-                    continue
-                expanded_cmd.append(expanded_file)
-                if i > 0 and ffmpeg[i-1] == "-i":
-                    input_files.append(expanded_file)
-            else:
-                expanded_cmd.append(item)
-
-        outputs = []
-        for idx, item in enumerate(expanded_cmd):
-            if item.startswith("mltb") and (idx == 0 or expanded_cmd[idx-1] != "-i"):
-                output_file = f"{dir}/{item.replace('mltb', base_name)}" if "." in item else f"{dir}/{item.replace('mltb', base_name)}{ext}"
-                outputs.append(output_file)
-                expanded_cmd[idx] = output_file
-                output_ext = ospath.splitext(output_file)[1].lower()
-
-        if sub_file and output_ext:
-            expanded_cmd = await self._adjust_subtitle_codec(expanded_cmd, output_ext, sub_file)
-
-        self._listener.subproc = await create_subprocess_exec(
-            *expanded_cmd, stdout=PIPE, stderr=PIPE
-        )
+        self._listener.subproc = await create_subprocess_exec(*cmd, stdout=PIPE, stderr=PIPE)
         await self._ffmpeg_progress()
         _, stderr = await self._listener.subproc.communicate()
-
-        if self._listener.subproc.returncode == 0:
-            if delete_originals:
-                if f_path not in input_files:
-                    input_files.append(f_path)
-                for file_to_delete in input_files:
-                    if await aiopath.exists(file_to_delete):
-                        await remove(file_to_delete)
-            return outputs
-        else:
-            for op in outputs:
-                if await aiopath.exists(op):
-                    await remove(op)
-            return False
+        return output_file if self._listener.subproc.returncode == 0 else False
 
     async def ffmpeg_cmds(self, ffmpeg, f_path):
         self.clear()
         base_name, ext = ospath.splitext(f_path)
         dir, base_name = base_name.rsplit("/", 1)
-
-        delete_originals = False
-        if "-del" in ffmpeg:
-            delete_originals = True
+        delete_originals = "-del" in ffmpeg
+        if delete_originals:
             ffmpeg = [x for x in ffmpeg if x != "-del"]
 
-        if any(x in ffmpeg for x in ["*.mkv", "*.mp4", "*.avi", "*.mov", "*.webm", "*.m4v"]) and any(x in ffmpeg for x in ["*.srt", "*.ass", "*.ssa", "*.vtt"]):
-            return await self._process_multiple_files(ffmpeg, f_path, dir, delete_originals)
+        # Multi-file detection
+        if any(x.startswith("*.") for x in ffmpeg):
+            video_files = sorted(glob.glob(ospath.join(dir, "*.*")))
+            outputs = []
+            for vid in video_files:
+                if re_search(r"\.(mp4|mkv|avi|mov|webm|m4v)$", vid, re.IGNORECASE):
+                    out = await self._process_file(ffmpeg, vid, dir, ospath.splitext(ospath.basename(vid))[0], ospath.splitext(vid)[1], delete_originals)
+                    if out:
+                        outputs.append(out)
+            return outputs
         else:
-            return await self._process_single_file(ffmpeg, f_path, dir, base_name, ext, delete_originals)
+            return await self._process_file(ffmpeg, f_path, dir, base_name, ext, delete_originals)
 
     async def convert_video(self, video_file, ext, retry=False):
         self.clear()
