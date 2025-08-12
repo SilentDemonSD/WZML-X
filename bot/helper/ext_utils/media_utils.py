@@ -565,19 +565,17 @@ class FFMpeg:
 
     async def ffmpeg_cmds(self, ffmpeg, f_path):
         self.clear()
+    
+        # NEW: allow space-separated string instead of list
+        if isinstance(ffmpeg, str):
+            ffmpeg = ffmpeg.split()
+    
         base_name, ext = ospath.splitext(f_path)
         dir, base_name = base_name.rsplit("/", 1)
         delete_originals = "-del" in ffmpeg
         if delete_originals:
             ffmpeg = [x for x in ffmpeg if x != "-del"]
 
-        if "*." in ffmpeg:
-            return await self._process_multiple_files(ffmpeg, f_path, dir, delete_originals) \
-                if ffmpeg.count("*.") > 1 else \
-                await self._process_single_file(ffmpeg, f_path, dir, base_name, ext, delete_originals)
-        else:
-            LOGGER.error("Wildcard *.` not found in command.")
-            return False
 
 
     async def convert_video(self, video_file, ext, retry=False):
