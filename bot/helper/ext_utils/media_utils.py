@@ -420,36 +420,20 @@ class FFMpeg:
                 if value != "N/A":
                     if key == "total_size":
                         self._processed_bytes = int(value) + self._last_processed_bytes
-                        self._speed_raw = self._processed_bytes / (
-                            time() - self._start_time
-                        )
+                        self._speed_raw = self._processed_bytes / (time() - self._start_time)
                     elif key == "speed":
                         self._time_rate = max(0.1, float(value.strip("x")))
                     elif key == "out_time":
-                        self._processed_time = (
-                            time_to_seconds(value) + self._last_processed_time
-                        )
+                        self._processed_time = time_to_seconds(value) + self._last_processed_time
                         try:
-                            self._progress_raw = (
-                                self._processed_time * 100
-                            ) / self._total_time
-                            if (
-                                hasattr(self._listener, "subsize")
-                                and self._listener.subsize
-                                and self._progress_raw > 0
-                            ):
-                                self._processed_bytes = int(
-                                    self._listener.subsize * (self._progress_raw / 100)
-                                )
+                            self._progress_raw = (self._processed_time * 100) / self._total_time
+                            if hasattr(self._listener, "subsize") and self._listener.subsize and self._progress_raw > 0:
+                                self._processed_bytes = int(self._listener.subsize * (self._progress_raw / 100))
                             if (time() - self._start_time) > 0:
-                                self._speed_raw = self._processed_bytes / (
-                                    time() - self._start_time
-                                )
+                                self._speed_raw = self._processed_bytes / (time() - self._start_time)
                             else:
                                 self._speed_raw = 0
-                            self._eta_raw = (
-                                self._total_time - self._processed_time
-                            ) / self._time_rate
+                            self._eta_raw = (self._total_time - self._processed_time) / self._time_rate
                         except ZeroDivisionError:
                             self._progress_raw = 0
                             self._eta_raw = 0
@@ -501,26 +485,45 @@ class FFMpeg:
             cmd.extend(["-map", f"{i+1}"])
 
         cmd.extend(["-c", "copy", "-c:s", "srt"])
+
         for i, sub in enumerate(subs):
-            lang = "und"
-            try:
-                streams = await get_streams(sub)
-                if streams and "tags" in streams[0] and "language" in streams[0]["tags"]:
-                    lang = streams[0]["tags"]["language"]
-            except:
-                pass
-            cmd.extend([f"-metadata:s:s:{i}", f"language={lang}", f"-metadata:s:s:{i}", f"title=Subtitle {i+1}"])
             if i == 0:
-                cmd.extend([f"-disposition:s:{i}", "default"])
+                cmd.extend([
+                    f"-metadata:s:s:{i}", "language=sin",
+                    f"-metadata:s:s:{i}", "title=FLIXORA",
+                    f"-disposition:s:{i}", "default",
+                    f"-disposition:s:{i}", "forced"
+                ])
+            else:
+                lang = "und"
+                try:
+                    streams = await get_streams(sub)
+                    if streams and "tags" in streams[0] and "language" in streams[0]["tags"]:
+                        lang = streams[0]["tags"]["language"]
+                except:
+                    pass
+                cmd.extend([
+                    f"-metadata:s:s:{i}", f"language={lang}",
+                    f"-metadata:s:s:{i}", f"title=Subtitle {i+1}"
+                ])
         cmd.append(output_file)
         return cmd
 
     async def _process_multiple_files(self, dir, delete_originals):
         video_files = sorted([f for f in glob.glob(ospath.join(dir, "*")) if ospath.splitext(f)[1].lower() in self.VIDEO_EXTS])
         sub_files = sorted([f for f in glob.glob(ospath.join(dir, "*")) if ospath.splitext(f)[1].lower() in self.SUB_EXTS])
+
+        LOGGER.info(f"📂 Found {len(video_files)} videos & {len(sub_files)} subs")
         outputs = []
+
         for video in video_files:
+            LOGGER.info(f"🎯 Processing: {ospath.basename(video)}")
             subs = self._find_all_matching_subtitles(video, sub_files)
+            if not subs:
+                LOGGER.warning(f"⚠️ No subtitles found for {ospath.basename(video)}")
+            else:
+                LOGGER.info(f"📜 Matched subs: {', '.join(ospath.basename(s) for s in subs)}")
+
             output_file = ospath.join(dir, f"{ospath.splitext(ospath.basename(video))[0]}.Sub.mkv")
             cmd = await self._build_ffmpeg_cmd(video, subs, output_file)
 
@@ -529,19 +532,30 @@ class FFMpeg:
             await self._ffmpeg_progress()
             _, stderr = await self._listener.subproc.communicate()
             if self._listener.subproc.returncode != 0:
-                LOGGER.error(f"FFmpeg failed for {video}: {stderr.decode(errors='ignore')}")
+                LOGGER.error(f"❌ FFmpeg failed for {video}: {stderr.decode(errors='ignore')}")
                 return False
+            LOGGER.info(f"✅ Output created: {ospath.basename(output_file)}")
             outputs.append(output_file)
+
             if delete_originals:
                 await remove(video)
                 for sub in subs:
                     await remove(sub)
+                LOGGER.info(f"🗑️ Deleted original {ospath.basename(video)} & subs")
+
         return outputs
 
     async def _process_single_file(self, video_file, delete_originals):
         dir = ospath.dirname(video_file)
         sub_files = sorted([f for f in glob.glob(ospath.join(dir, "*")) if ospath.splitext(f)[1].lower() in self.SUB_EXTS])
         subs = self._find_all_matching_subtitles(video_file, sub_files)
+
+        LOGGER.info(f"🎯 Single file mode: {ospath.basename(video_file)}")
+        if subs:
+            LOGGER.info(f"📜 Matched subs: {', '.join(ospath.basename(s) for s in subs)}")
+        else:
+            LOGGER.warning(f"⚠️ No subtitles found for {ospath.basename(video_file)}")
+
         output_file = ospath.join(dir, f"{ospath.splitext(ospath.basename(video_file))[0]}.Sub.mkv")
         cmd = await self._build_ffmpeg_cmd(video_file, subs, output_file)
 
@@ -550,12 +564,16 @@ class FFMpeg:
         await self._ffmpeg_progress()
         _, stderr = await self._listener.subproc.communicate()
         if self._listener.subproc.returncode != 0:
-            LOGGER.error(f"FFmpeg failed: {stderr.decode(errors='ignore')}")
+            LOGGER.error(f"❌ FFmpeg failed: {stderr.decode(errors='ignore')}")
             return False
+
+        LOGGER.info(f"✅ Output created: {ospath.basename(output_file)}")
         if delete_originals:
             await remove(video_file)
             for sub in subs:
                 await remove(sub)
+            LOGGER.info(f"🗑️ Deleted original {ospath.basename(video_file)} & subs")
+
         return [output_file]
 
     async def ffmpeg_cmds(self, ffmpeg, f_path):
