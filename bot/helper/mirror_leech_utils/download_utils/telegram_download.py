@@ -29,13 +29,66 @@ from ...telegram_helper.message_utils import send_status_message
 global_lock = Lock()
 GLOBAL_GID = dict()
 
-# Persistent storage for message data
+# Enhanced persistent storage
 MESSAGE_CACHE_DIR = Path("./message_cache")
+QUEUE_CACHE_DIR = Path("./queue_cache") 
 MESSAGE_CACHE_DIR.mkdir(exist_ok=True)
+QUEUE_CACHE_DIR.mkdir(exist_ok=True)
+
+
+class QueueMessageCache:
+    """Specialized cache for queued downloads"""
+    
+    @staticmethod
+    def save_queue_data(listener_mid, message_data, download_path):
+        """Save complete download context for queued items"""
+        try:
+            queue_data = {
+                'listener_mid': listener_mid,
+                'message_data': message_data,
+                'download_path': download_path,
+                'queued_at': time(),
+                'file_unique_id': message_data.get('file_unique_id'),
+                'original_message_available': True
+            }
+            
+            cache_path = QUEUE_CACHE_DIR / f"queue_{listener_mid}.pkl"
+            with open(cache_path, 'wb') as f:
+                pickle.dump(queue_data, f)
+            
+            LOGGER.info(f"Saved queue cache for: {listener_mid}")
+            return True
+            
+        except Exception as e:
+            LOGGER.error(f"Failed to save queue cache: {str(e)}")
+            return False
+    
+    @staticmethod
+    def load_queue_data(listener_mid):
+        """Load queued download context"""
+        try:
+            cache_path = QUEUE_CACHE_DIR / f"queue_{listener_mid}.pkl"
+            if cache_path.exists():
+                with open(cache_path, 'rb') as f:
+                    return pickle.load(f)
+        except Exception as e:
+            LOGGER.error(f"Failed to load queue cache: {str(e)}")
+        return None
+    
+    @staticmethod
+    def remove_queue_data(listener_mid):
+        """Remove queue cache after download completion"""
+        try:
+            cache_path = QUEUE_CACHE_DIR / f"queue_{listener_mid}.pkl"
+            if cache_path.exists():
+                cache_path.unlink()
+                LOGGER.info(f"Removed queue cache for: {listener_mid}")
+        except Exception as e:
+            LOGGER.error(f"Failed to remove queue cache: {str(e)}")
 
 
 class MessageCache:
-    """Handles caching of message data for persistent downloads"""
+    """Enhanced message caching with queue support"""
     
     @staticmethod
     def _get_cache_path(file_unique_id):
@@ -43,12 +96,14 @@ class MessageCache:
     
     @staticmethod
     def save_message_data(message):
-        """Save essential message data for later retrieval"""
+        """Save comprehensive message data"""
         try:
             if not message.media:
                 return None
                 
             media = getattr(message, message.media.value)
+            
+            # Enhanced cache with more metadata
             cache_data = {
                 'chat_id': message.chat.id,
                 'message_id': message.id,
@@ -60,21 +115,27 @@ class MessageCache:
                 'media_type': message.media.value,
                 'date': message.date.timestamp() if message.date else None,
                 'cached_at': time(),
-                # Store the complete media object for reconstruction
+                'chat_title': getattr(message.chat, 'title', 'Unknown'),
+                'chat_type': message.chat.type.value if hasattr(message.chat, 'type') else 'unknown',
                 'media_data': {
                     'file_id': media.file_id,
                     'file_unique_id': media.file_unique_id,
                     'file_size': media.file_size,
                     'file_name': getattr(media, 'file_name', None),
                     'mime_type': getattr(media, 'mime_type', None),
-                }
+                    'width': getattr(media, 'width', None),
+                    'height': getattr(media, 'height', None),
+                    'duration': getattr(media, 'duration', None),
+                },
+                # Store alternative file IDs if available
+                'alternative_files': []
             }
             
             cache_path = MessageCache._get_cache_path(media.file_unique_id)
             with open(cache_path, 'wb') as f:
                 pickle.dump(cache_data, f)
             
-            LOGGER.info(f"Cached message data for: {media.file_unique_id}")
+            LOGGER.info(f"Enhanced cache saved for: {cache_data['file_name']} ({media.file_unique_id})")
             return cache_data
             
         except Exception as e:
@@ -83,37 +144,21 @@ class MessageCache:
     
     @staticmethod
     def load_message_data(file_unique_id):
-        """Load cached message data"""
+        """Load cached message data with validation"""
         try:
             cache_path = MessageCache._get_cache_path(file_unique_id)
             if cache_path.exists():
                 with open(cache_path, 'rb') as f:
-                    return pickle.load(f)
+                    data = pickle.load(f)
+                
+                # Check cache age (files older than 30 days are considered stale)
+                if time() - data.get('cached_at', 0) > (30 * 24 * 60 * 60):
+                    LOGGER.warning(f"Cache is old for {file_unique_id}, may be unreliable")
+                
+                return data
         except Exception as e:
             LOGGER.error(f"Failed to load cached message data: {str(e)}")
         return None
-    
-    @staticmethod
-    def cleanup_old_cache(max_age_days=7):
-        """Clean up old cached files"""
-        try:
-            max_age = max_age_days * 24 * 60 * 60  # Convert to seconds
-            current_time = time()
-            
-            for cache_file in MESSAGE_CACHE_DIR.glob("*.pkl"):
-                try:
-                    with open(cache_file, 'rb') as f:
-                        cache_data = pickle.load(f)
-                    
-                    if current_time - cache_data.get('cached_at', 0) > max_age:
-                        cache_file.unlink()
-                        LOGGER.info(f"Cleaned up old cache file: {cache_file.name}")
-                        
-                except Exception as e:
-                    LOGGER.error(f"Error cleaning cache file {cache_file}: {str(e)}")
-                    
-        except Exception as e:
-            LOGGER.error(f"Failed to cleanup cache: {str(e)}")
 
 
 class TelegramDownloadHelper:
@@ -125,6 +170,7 @@ class TelegramDownloadHelper:
         self.session = ""
         self._hyper_dl = len(TgClient.helper_bots) != 0 and Config.LEECH_DUMP_CHAT
         self._cached_data = None
+        self._queue_cache = None
 
     @property
     def speed(self):
@@ -136,7 +182,7 @@ class TelegramDownloadHelper:
 
     def _is_downloadable_media(self, message):
         """Check if message contains downloadable media"""
-        if not message.media:
+        if not message or not message.media:
             return False
         
         downloadable_types = [
@@ -152,83 +198,242 @@ class TelegramDownloadHelper:
         
         return message.media in downloadable_types
 
-    async def _get_message_by_file_id(self, file_id, chat_id=None, message_id=None):
-        """Try to retrieve message using file_id or cached data"""
+    async def _find_alternative_message(self, file_unique_id, chat_id, original_file_id):
+        """Advanced message recovery using multiple strategies"""
+        recovery_methods = []
+        
+        # Method 1: Search recent chat history
         try:
-            # First try to get the original message if we have the details
-            if chat_id and message_id:
-                try:
-                    if self.session == "user":
-                        message = await TgClient.user.get_messages(chat_id, message_id)
-                    else:
-                        message = await TgClient.bot.get_messages(chat_id, message_id)
+            client = TgClient.user if self.session == "user" else TgClient.bot
+            LOGGER.info(f"Searching chat history for file: {file_unique_id}")
+            
+            # Search more extensively (last 500 messages)
+            found_count = 0
+            async for message in client.get_chat_history(chat_id, limit=500):
+                if found_count >= 5:  # Limit to prevent excessive searching
+                    break
                     
-                    if message and self._is_downloadable_media(message):
-                        return message
-                except (MessageIdInvalid, Exception) as e:
-                    LOGGER.warning(f"Original message not found: {str(e)}")
+                if (message.media and 
+                    hasattr(getattr(message, message.media.value, None), 'file_unique_id')):
+                    
+                    media = getattr(message, message.media.value)
+                    
+                    # Check for exact match first
+                    if media.file_unique_id == file_unique_id:
+                        LOGGER.info(f"Found exact match in chat history: message_id {message.id}")
+                        return message, "exact_match"
+                    
+                    # Check for same file_id (alternative message with same file)
+                    if media.file_id == original_file_id:
+                        LOGGER.info(f"Found same file_id in chat history: message_id {message.id}")
+                        recovery_methods.append((message, "same_file_id"))
+                        found_count += 1
+                        
+        except Exception as e:
+            LOGGER.warning(f"Chat history search failed: {str(e)}")
+        
+        # Method 2: Try forwarded/copied messages (if any were found)
+        if recovery_methods:
+            return recovery_methods[0]  # Return the first alternative found
+        
+        # Method 3: Check if file exists in bot's dump chat (if configured)
+        if hasattr(Config, 'LEECH_DUMP_CHAT') and Config.LEECH_DUMP_CHAT:
+            try:
+                LOGGER.info("Checking dump chat for file")
+                async for message in client.get_chat_history(Config.LEECH_DUMP_CHAT, limit=200):
+                    if (message.media and 
+                        hasattr(getattr(message, message.media.value, None), 'file_unique_id')):
+                        
+                        media = getattr(message, message.media.value)
+                        if media.file_unique_id == file_unique_id:
+                            LOGGER.info(f"Found file in dump chat: message_id {message.id}")
+                            return message, "dump_chat"
+                            
+            except Exception as e:
+                LOGGER.warning(f"Dump chat search failed: {str(e)}")
+        
+        return None, "not_found"
+
+    async def _validate_message_for_download(self, message):
+        """Comprehensive validation before download attempt"""
+        if not message:
+            return False, "Message is None"
+        
+        if not self._is_downloadable_media(message):
+            return False, "No downloadable media"
+        
+        try:
+            media = getattr(message, message.media.value)
+            if not hasattr(media, 'file_id') or not media.file_id:
+                return False, "Invalid file_id"
             
-            # If original message is not available, try to find it in recent messages
-            # This is a fallback method - search recent messages for the same file
-            if chat_id:
-                try:
-                    client = TgClient.user if self.session == "user" else TgClient.bot
-                    async for message in client.get_chat_history(chat_id, limit=100):
-                        if (message.media and 
-                            hasattr(getattr(message, message.media.value, None), 'file_id') and
-                            getattr(message, message.media.value).file_id == file_id):
-                            LOGGER.info(f"Found message with same file_id in recent history")
-                            return message
-                except Exception as e:
-                    LOGGER.warning(f"Failed to search chat history: {str(e)}")
+            if not hasattr(media, 'file_size') or media.file_size <= 0:
+                return False, "Invalid file_size"
             
-            return None
+            return True, "Valid"
             
         except Exception as e:
-            LOGGER.error(f"Failed to retrieve message: {str(e)}")
-            return None
+            return False, f"Validation error: {str(e)}"
 
-    async def _download_from_cache(self, cached_data, path):
-        """Attempt to download using cached message data"""
+    async def _queue_aware_message_recovery(self, original_message, path):
+        """Enhanced message recovery specifically for queued downloads"""
+        recovery_log = []
+        
+        # Step 1: Try to refresh original message
         try:
-            LOGGER.info(f"Attempting download from cached data: {cached_data['file_name']}")
+            if self.session == "user":
+                fresh_message = await TgClient.user.get_messages(
+                    chat_id=original_message.chat.id, 
+                    message_ids=original_message.id
+                )
+            else:
+                fresh_message = await self._listener.client.get_messages(
+                    chat_id=original_message.chat.id, 
+                    message_ids=original_message.id
+                )
             
-            # Try to reconstruct the message or find alternative download method
-            message = await self._get_message_by_file_id(
-                cached_data['media_data']['file_id'],
-                cached_data['chat_id'],
-                cached_data['message_id']
+            is_valid, reason = await self._validate_message_for_download(fresh_message)
+            if is_valid:
+                recovery_log.append(f"✅ Original message refreshed successfully")
+                LOGGER.info("Queue download: Original message is still valid")
+                return fresh_message, recovery_log
+            else:
+                recovery_log.append(f"❌ Original message invalid: {reason}")
+                
+        except MessageIdInvalid:
+            recovery_log.append("❌ Original message deleted")
+            LOGGER.warning("Queue download: Original message has been deleted")
+        except Exception as e:
+            recovery_log.append(f"❌ Original message refresh failed: {str(e)}")
+            LOGGER.warning(f"Queue download: Failed to refresh message: {str(e)}")
+        
+        # Step 2: Load cached data
+        if self._cached_data:
+            recovery_log.append("📋 Using cached message data")
+            
+            # Step 3: Search for alternative messages
+            alternative_msg, method = await self._find_alternative_message(
+                self._cached_data['file_unique_id'],
+                self._cached_data['chat_id'],
+                self._cached_data['file_id']
             )
             
-            if message:
-                LOGGER.info("Found message from cache data, proceeding with download")
-                return await self._download_message(message, path)
+            if alternative_msg:
+                is_valid, reason = await self._validate_message_for_download(alternative_msg)
+                if is_valid:
+                    recovery_log.append(f"✅ Alternative message found via {method}")
+                    LOGGER.info(f"Queue download: Found alternative message via {method}")
+                    return alternative_msg, recovery_log
+                else:
+                    recovery_log.append(f"❌ Alternative message invalid: {reason}")
+            else:
+                recovery_log.append("❌ No alternative messages found")
+        
+        # Step 4: Load from queue cache if available
+        queue_data = QueueMessageCache.load_queue_data(self._listener.mid)
+        if queue_data:
+            recovery_log.append("📋 Queue cache data available")
+            # Try to reconstruct download from queue cache
+            # This is a last resort method
             
-            # If we can't find the message, try direct file_id download (if supported)
+        recovery_log.append("❌ All recovery methods exhausted")
+        LOGGER.error("Queue download: All message recovery methods failed")
+        return None, recovery_log
+
+    async def _download_with_recovery(self, message, path):
+        """Enhanced download with full recovery capabilities"""
+        recovery_attempts = 0
+        max_recovery_attempts = 3
+        
+        while recovery_attempts < max_recovery_attempts:
             try:
-                # Some bots/clients support downloading directly by file_id
-                # This is implementation-specific and may not work in all cases
-                from pyrogram.types import Message
-                from pyrogram.types.messages_and_media.document import Document
+                # Pre-download validation
+                is_valid, reason = await self._validate_message_for_download(message)
+                if not is_valid:
+                    if recovery_attempts == 0:
+                        LOGGER.warning(f"Initial validation failed: {reason}, attempting recovery")
+                        recovery_attempts += 1
+                        
+                        # Attempt message recovery
+                        recovered_message, recovery_log = await self._queue_aware_message_recovery(message, path)
+                        if recovered_message:
+                            message = recovered_message
+                            LOGGER.info("Message recovered successfully, retrying download")
+                            continue
+                        else:
+                            LOGGER.error("Message recovery failed, aborting download")
+                            for log_entry in recovery_log:
+                                LOGGER.info(f"Recovery: {log_entry}")
+                            await self._on_download_error("File unavailable and recovery failed")
+                            return
+                    else:
+                        await self._on_download_error(f"Download validation failed: {reason}")
+                        return
                 
-                # Create a mock message object with the cached data
-                # Note: This is experimental and may not work in all cases
-                LOGGER.warning("Attempting direct file_id download (experimental)")
+                # Attempt actual download
+                download = await self._download_message(message, path)
                 
-                # This approach may not work as Pyrogram typically requires
-                # a full message object for downloads
-                return None
+                if self._listener.is_cancelled:
+                    return
                 
+                if download is not None:
+                    await self._on_download_complete()
+                    # Clean up queue cache on successful completion
+                    QueueMessageCache.remove_queue_data(self._listener.mid)
+                    return
+                else:
+                    if not self._listener.is_cancelled:
+                        await self._on_download_error("Download returned None")
+                    return
+                    
+            except (FloodWait, FloodPremiumWait) as f:
+                LOGGER.warning(f"Rate limit hit: {str(f)}")
+                await sleep(f.value)
+                continue  # Retry without incrementing recovery attempts
+                
+            except ValueError as ve:
+                if "doesn't contain any downloadable media" in str(ve):
+                    LOGGER.error(f"Media unavailable: {self._listener.name}")
+                    
+                    if recovery_attempts == 0:
+                        LOGGER.info("Attempting message recovery due to media unavailability")
+                        recovery_attempts += 1
+                        
+                        recovered_message, recovery_log = await self._queue_aware_message_recovery(message, path)
+                        if recovered_message:
+                            message = recovered_message
+                            LOGGER.info("Message recovered, retrying download")
+                            continue
+                        else:
+                            LOGGER.error("Recovery failed for media unavailability")
+                            for log_entry in recovery_log:
+                                LOGGER.info(f"Recovery: {log_entry}")
+                    
+                    await self._on_download_error(f"Media unavailable and recovery exhausted: {self._listener.name}")
+                    return
+                else:
+                    LOGGER.error(f"Download error: {str(ve)}", exc_info=True)
+                    await self._on_download_error(f"Download failed: {str(ve)}")
+                    return
+                    
             except Exception as e:
-                LOGGER.error(f"Direct file_id download failed: {str(e)}")
-                return None
+                LOGGER.error(f"Unexpected download error: {str(e)}", exc_info=True)
+                recovery_attempts += 1
                 
-        except Exception as e:
-            LOGGER.error(f"Failed to download from cache: {str(e)}")
-            return None
+                if recovery_attempts < max_recovery_attempts:
+                    LOGGER.info(f"Attempting recovery (attempt {recovery_attempts}/{max_recovery_attempts})")
+                    recovered_message, recovery_log = await self._queue_aware_message_recovery(message, path)
+                    if recovered_message:
+                        message = recovered_message
+                        continue
+                
+                await self._on_download_error(f"Download failed after {recovery_attempts} recovery attempts: {str(e)}")
+                return
+        
+        await self._on_download_error(f"Download failed after {max_recovery_attempts} recovery attempts")
 
     async def _download_message(self, message, path):
-        """Download from a message object"""
+        """Core download logic"""
         if self._hyper_dl:
             try:
                 return await HyperTGDownload().download_media(
@@ -237,23 +442,23 @@ class TelegramDownloadHelper:
                     progress=self._on_download_progress,
                     dump_chat=Config.LEECH_DUMP_CHAT,
                 )
-            except Exception:
+            except Exception as hyper_error:
+                LOGGER.warning(f"HyperTGDownload failed: {hyper_error}")
                 if getattr(Config, "USER_TRANSMISSION", False):
                     try:
                         user_message = await TgClient.user.get_messages(
                             chat_id=message.chat.id, message_ids=message.id
                         )
-                        return await user_message.download(
-                            file_name=path, progress=self._on_download_progress
-                        )
+                        if self._is_downloadable_media(user_message):
+                            return await user_message.download(
+                                file_name=path, progress=self._on_download_progress
+                            )
                     except Exception:
-                        return await message.download(
-                            file_name=path, progress=self._on_download_progress
-                        )
-                else:
-                    return await message.download(
-                        file_name=path, progress=self._on_download_progress
-                    )
+                        pass
+                
+                return await message.download(
+                    file_name=path, progress=self._on_download_progress
+                )
         else:
             return await message.download(
                 file_name=path, progress=self._on_download_progress
@@ -290,73 +495,22 @@ class TelegramDownloadHelper:
         async with global_lock:
             if self._id in GLOBAL_GID:
                 GLOBAL_GID.pop(self._id)
+        
+        # Clean up queue cache on error
+        QueueMessageCache.remove_queue_data(self._listener.mid)
         await self._listener.on_download_error(error)
 
     async def _on_download_complete(self):
         await self._listener.on_download_complete()
         async with global_lock:
-            GLOBAL_GID.pop(self._id)
-        return
-
-    async def _download(self, message, path):
-        try:
-            # Pre-download validation
-            if not self._is_downloadable_media(message):
-                # Try to use cached data if original message doesn't have media
-                if self._cached_data:
-                    LOGGER.info("Original message unavailable, trying cached data")
-                    download = await self._download_from_cache(self._cached_data, path)
-                    if download is not None:
-                        if not self._listener.is_cancelled:
-                            await self._on_download_complete()
-                        return
-                
-                await self._on_download_error("Message doesn't contain downloadable media and no valid cache found")
-                return
-            
-            download = await self._download_message(message, path)
-            
-            if self._listener.is_cancelled:
-                return
-                
-        except (FloodWait, FloodPremiumWait) as f:
-            LOGGER.warning(str(f))
-            await sleep(f.value)
-            await self._download(message, path)
-            return
-        except ValueError as ve:
-            if "doesn't contain any downloadable media" in str(ve):
-                LOGGER.error(f"No downloadable media in message: {self._listener.name}")
-                
-                # Try cached download as fallback
-                if self._cached_data:
-                    LOGGER.info("Attempting download from cached data due to media unavailability")
-                    download = await self._download_from_cache(self._cached_data, path)
-                    if download is not None:
-                        if not self._listener.is_cancelled:
-                            await self._on_download_complete()
-                        return
-                
-                await self._on_download_error(f"Message doesn't contain downloadable media and cache unavailable: {self._listener.name}")
-            else:
-                LOGGER.error(f"Download error: {str(ve)}", exc_info=True)
-                await self._on_download_error(f"Download failed: {str(ve)}")
-            return
-        except Exception as e:
-            LOGGER.error(str(e), exc_info=True)
-            await self._on_download_error(str(e))
-            return
-            
-        if download is not None:
-            await self._on_download_complete()
-        elif not self._listener.is_cancelled:
-            await self._on_download_error("Internal error occurred")
+            if self._id in GLOBAL_GID:
+                GLOBAL_GID.pop(self._id)
         return
 
     async def add_download(self, message, path, session):
         self.session = session
         
-        # Cache the message data immediately when download is requested
+        # Enhanced caching - cache immediately when download is requested
         self._cached_data = MessageCache.save_message_data(message)
         
         if not self.session:
@@ -365,55 +519,38 @@ class TelegramDownloadHelper:
             elif self._listener.user_transmission and self._listener.is_super_chat:
                 self.session = "user"
                 try:
-                    message = await TgClient.user.get_messages(
+                    user_message = await TgClient.user.get_messages(
                         chat_id=message.chat.id, message_ids=message.id
                     )
-                    # Update cache with user session message if different
-                    if message and self._is_downloadable_media(message):
-                        self._cached_data = MessageCache.save_message_data(message)
+                    if user_message and self._is_downloadable_media(user_message):
+                        self._cached_data = MessageCache.save_message_data(user_message)
+                        message = user_message
                 except (PeerIdInvalid, ChannelInvalid):
-                    LOGGER.warning(
-                        "User session is not in this chat!, Downloading with bot session"
-                    )
+                    LOGGER.warning("User session not in chat, using bot session")
                     self.session = "bot"
             else:
                 self.session = "bot"
         
-        # Enhanced media validation with cache fallback
-        if not self._is_downloadable_media(message):
-            if self._cached_data:
-                LOGGER.info(f"Message media unavailable but cache exists for: {self._listener.name}")
-                # We'll proceed with cached data
-            else:
-                error_msg = (
-                    f"No downloadable media found and no cache available for: {self._listener.name}. "
-                    f"Message type: {message.media if message.media else 'None'}. "
-                    f"Use SuperGroup in case you are trying to download with User session!"
-                )
-                LOGGER.error(error_msg)
-                await self._on_download_error(error_msg)
-                return
-        
-        # Use cached data if original media is unavailable
-        if self._cached_data and not self._is_downloadable_media(message):
-            media_info = self._cached_data['media_data']
-            file_unique_id = media_info['file_unique_id']
-            file_size = media_info['file_size']
-            file_name = media_info['file_name']
+        # Determine media info (from cache or message)
+        if self._cached_data:
+            file_unique_id = self._cached_data['file_unique_id']
+            file_size = self._cached_data['file_size']
+            file_name = self._cached_data['file_name']
         else:
-            media = getattr(message, message.media.value) if message.media else None
-            if media is None:
-                await self._on_download_error(f"No media object available for: {self._listener.name}")
+            if not self._is_downloadable_media(message):
+                await self._on_download_error(f"No downloadable media and no cache for: {self._listener.name}")
                 return
-            
+                
+            media = getattr(message, message.media.value)
             file_unique_id = media.file_unique_id
             file_size = media.file_size
             file_name = getattr(media, 'file_name', None)
 
         async with global_lock:
-            download = file_unique_id not in GLOBAL_GID
+            download_allowed = file_unique_id not in GLOBAL_GID
 
-        if download:
+        if download_allowed:
+            # Set listener name and path
             if not self._listener.name:
                 if file_name:
                     if "/" in file_name:
@@ -429,14 +566,24 @@ class TelegramDownloadHelper:
             self._listener.size = file_size
             gid = token_hex(5)
 
+            # Duplicate check
             msg, button = await stop_duplicate_check(self._listener)
             if msg:
                 await self._listener.on_download_error(msg, button)
                 return
 
+            # Queue management
             add_to_queue, event = await check_running_tasks(self._listener)
             if add_to_queue:
                 LOGGER.info(f"Added to Queue/Download: {self._listener.name}")
+                
+                # 🔥 ENHANCED QUEUE CACHING - Save complete context
+                QueueMessageCache.save_queue_data(
+                    self._listener.mid,
+                    self._cached_data,
+                    path
+                )
+                
                 async with task_dict_lock:
                     task_dict[self._listener.mid] = QueueStatus(
                         self._listener, gid, "dl"
@@ -444,53 +591,80 @@ class TelegramDownloadHelper:
                 await self._listener.on_download_start()
                 if self._listener.multi <= 1:
                     await send_status_message(self._listener.message)
+                
+                # 🔥 CRITICAL: Wait for queue and then perform recovery
                 await event.wait()
                 
-                # Try to refresh message after queue wait
-                try:
-                    if self.session == "bot":
-                        fresh_message = await self._listener.client.get_messages(
-                            chat_id=message.chat.id, message_ids=message.id
-                        )
-                    else:
-                        try:
-                            fresh_message = await TgClient.user.get_messages(
-                                chat_id=message.chat.id, message_ids=message.id
-                            )
-                        except (PeerIdInvalid, ChannelInvalid):
-                            fresh_message = await self._listener.client.get_messages(
-                                chat_id=message.chat.id, message_ids=message.id
-                            )
-                    
-                    # Use fresh message if available, otherwise keep the original
-                    if fresh_message and self._is_downloadable_media(fresh_message):
-                        message = fresh_message
-                    else:
-                        LOGGER.warning("Fresh message unavailable, using cached data")
-                        
-                except Exception as e:
-                    LOGGER.warning(f"Failed to refresh message: {str(e)}, using cached data")
+                LOGGER.info(f"Queue wait finished for: {self._listener.name}")
                 
                 if self._listener.is_cancelled:
                     async with global_lock:
                         if self._id in GLOBAL_GID:
                             GLOBAL_GID.pop(self._id)
+                    QueueMessageCache.remove_queue_data(self._listener.mid)
                     return
+                
+                # 🔥 ENHANCED: Queue-aware message recovery
+                recovered_message, recovery_log = await self._queue_aware_message_recovery(message, path)
+                
+                if recovered_message:
+                    message = recovered_message
+                    LOGGER.info("Queue download: Message successfully recovered")
+                    for log_entry in recovery_log:
+                        LOGGER.info(f"Queue Recovery: {log_entry}")
+                else:
+                    LOGGER.warning("Queue download: Message recovery failed, using cached data")
+                    for log_entry in recovery_log:
+                        LOGGER.warning(f"Queue Recovery: {log_entry}")
                         
             self._start_time = time()
             await self._on_download_start(file_unique_id, gid, add_to_queue)
-            await self._download(message, path)
+            
+            # 🔥 ENHANCED: Use recovery-aware download
+            await self._download_with_recovery(message, path)
         else:
             await self._on_download_error("File already being downloaded!")
 
     async def cancel_task(self):
         self._listener.is_cancelled = True
-        LOGGER.info(
-            f"Cancelling download on user request: name: {self._listener.name} id: {self._id}"
-        )
+        LOGGER.info(f"Cancelling download: {self._listener.name} id: {self._id}")
+        
+        # Clean up caches
+        QueueMessageCache.remove_queue_data(self._listener.mid)
         await self._on_download_error("Stopped by user!")
 
-# Utility function to clean up old cache periodically
-async def cleanup_message_cache():
-    """Clean up old cached message data"""
-    MessageCache.cleanup_old_cache(max_age_days=7)
+
+# Utility functions
+async def cleanup_all_caches():
+    """Clean up all cache directories"""
+    try:
+        # Clean message cache
+        MessageCache.cleanup_old_cache(max_age_days=7)
+        
+        # Clean queue cache
+        current_time = time()
+        for cache_file in QUEUE_CACHE_DIR.glob("queue_*.pkl"):
+            try:
+                with open(cache_file, 'rb') as f:
+                    queue_data = pickle.load(f)
+                
+                # Remove queue cache older than 24 hours
+                if current_time - queue_data.get('queued_at', 0) > (24 * 60 * 60):
+                    cache_file.unlink()
+                    LOGGER.info(f"Cleaned up old queue cache: {cache_file.name}")
+                    
+            except Exception as e:
+                LOGGER.error(f"Error cleaning queue cache {cache_file}: {str(e)}")
+                
+        LOGGER.info("Cache cleanup completed")
+        
+    except Exception as e:
+        LOGGER.error(f"Failed to cleanup caches: {str(e)}")
+
+# Add this to your main bot loop
+async def periodic_cache_cleanup():
+    """Run this periodically in your main bot loop"""
+    import asyncio
+    while True:
+        await asyncio.sleep(3600)  # Run every hour
+        await cleanup_all_caches()
