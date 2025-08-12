@@ -511,29 +511,42 @@ class FFMpeg:
         return best_match
 
     async def _process_files(self, ffmpeg, f_path, dir, base_name, ext, delete_originals):
-        """Unified processing method for single/multiple videos with beautiful logging."""
+        """Unified processing method with skip and smart subtitle codec detection."""
         video_exts = (".mkv", ".mp4", ".mov", ".avi", ".flv", ".wmv", ".ts", ".webm")
         subtitle_exts = (".srt", ".ass", ".sub", ".ssa", ".vtt")
-        video_files = sorted([f for f in glob.glob(ospath.join(dir, "*")) if f.lower().endswith(video_exts)])
-        subtitle_files = sorted([f for f in glob.glob(ospath.join(dir, "*")) if f.lower().endswith(subtitle_exts)])
+
+        video_files = sorted([
+            f for f in glob.glob(ospath.join(dir, "*"))
+            if f.lower().endswith(video_exts) and ".sub" not in ospath.basename(f).lower()
+        ])
+        subtitle_files = sorted([
+            f for f in glob.glob(ospath.join(dir, "*"))
+            if f.lower().endswith(subtitle_exts)
+        ])
+
         if len(video_files) <= 1:
             video_files = [f_path]
+
         LOGGER.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         LOGGER.info("📂 Media Processing Started")
         LOGGER.info(f"📹 Videos found   : {len(video_files)}")
         LOGGER.info(f"💬 Subtitles found: {len(subtitle_files)}")
         LOGGER.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
         all_outputs = []
         files_to_delete = []
+
         for index, video_file in enumerate(video_files, 1):
             base_video_name = ospath.splitext(ospath.basename(video_file))[0]
             self._total_time = (await get_media_info(video_file))[0]
+
             LOGGER.info(f"\n🎯 Processing [{index}/{len(video_files)}] → {ospath.basename(video_file)}")
             matching_subtitle = self._find_best_subtitle_match(video_file, subtitle_files)
             if matching_subtitle:
                 LOGGER.info(f"   📄 Subtitle matched : {ospath.basename(matching_subtitle)}")
             else:
                 LOGGER.warning(f"   ⚠ No matching subtitle found")
+
             current_ffmpeg = []
             for item in ffmpeg:
                 if item == "*.mkv" or any(item == f"*{ext}" for ext in video_exts):
@@ -543,17 +556,35 @@ class FFMpeg:
                         current_ffmpeg.append(matching_subtitle)
                 elif item.startswith("mltb"):
                     output_file = f"{dir}/{item.replace('mltb', base_video_name)}"
+
+                    # Auto subtitle codec
+                    if output_file.lower().endswith(".mp4"):
+                        try:
+                            idx = current_ffmpeg.index("-c:s:0")
+                            current_ffmpeg[idx + 1] = "mov_text"
+                        except ValueError:
+                            current_ffmpeg.extend(["-c:s:0", "mov_text"])
+                    elif output_file.lower().endswith(".mkv"):
+                        try:
+                            idx = current_ffmpeg.index("-c:s:0")
+                            current_ffmpeg[idx + 1] = "srt"
+                        except ValueError:
+                            current_ffmpeg.extend(["-c:s:0", "srt"])
+
                     current_ffmpeg.append(output_file)
                     all_outputs.append(output_file)
                 else:
                     current_ffmpeg.append(item)
+
             if delete_originals:
                 files_to_delete.append(video_file)
                 if matching_subtitle:
                     files_to_delete.append(matching_subtitle)
+
             if self._listener.is_cancelled:
                 LOGGER.info("❌ Processing cancelled by user")
                 return False
+
             LOGGER.info(f"   🚀 Executing FFmpeg command...")
             self._listener.subproc = await create_subprocess_exec(
                 *current_ffmpeg, stdout=PIPE, stderr=PIPE
@@ -561,6 +592,7 @@ class FFMpeg:
             await self._ffmpeg_progress()
             _, stderr = await self._listener.subproc.communicate()
             code = self._listener.subproc.returncode
+
             if code != 0:
                 err_msg = stderr.decode(errors="ignore").strip()
                 LOGGER.error(f"   ❌ Failed: {ospath.basename(video_file)} → {err_msg}")
@@ -568,19 +600,21 @@ class FFMpeg:
                     if await aiopath.exists(op):
                         await remove(op)
                 return False
+
             LOGGER.info(f"   ✅ Completed: {ospath.basename(video_file)}")
+
         if delete_originals:
             LOGGER.info("\n🗑 Deleting original files...")
             for f in files_to_delete:
                 if await aiopath.exists(f):
                     await remove(f)
                     LOGGER.info(f"   ✔ Deleted: {ospath.basename(f)}")
+
         LOGGER.info("\n🎉 All processing completed successfully!")
         LOGGER.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         return all_outputs
 
     async def ffmpeg_cmds(self, ffmpeg, f_path):
-        """Main entry point for FFmpeg processing with unified logic."""
         self.clear()
         base_name, ext = ospath.splitext(f_path)
         dir, base_name = base_name.rsplit("/", 1)
@@ -590,7 +624,7 @@ class FFMpeg:
             ffmpeg = [item for item in ffmpeg if item != "-del"]
         return await self._process_files(ffmpeg, f_path, dir, base_name, ext, delete_originals)
 
-    # 🔹 All your existing convert_video, convert_audio, sample_video, split methods remain here unchanged
+    # Your existing convert_video, convert_audio, sample_video, split methods remain here
 
 
     async def convert_video(self, video_file, ext, retry=False):
