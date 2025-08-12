@@ -541,94 +541,123 @@ class FFMpeg:
         return best_match
 
     async def _process_multiple_files(self, ffmpeg, f_path, dir, delete_originals):
-        """Enhanced multiple file processing with MKV+MP4 support and auto subtitle codec for MP4."""
+        """Enhanced multiple file processing with better episode matching."""
         
-        # ✅ Get all MKV and MP4 files
-        video_files = sorted(
-            glob.glob(ospath.join(dir, "*.mkv")) +
-            glob.glob(ospath.join(dir, "*.mp4"))
-        )
+        # Get all MKV and SRT files (sorted for consistent ordering)
+        mkv_files = sorted(glob.glob(ospath.join(dir, "*.mkv")))
         srt_files = sorted(glob.glob(ospath.join(dir, "*.srt")))
         
-        LOGGER.info(f"📁 Found {len(video_files)} video files and {len(srt_files)} SRT files")
+        LOGGER.info(f"📁 Found {len(mkv_files)} MKV files and {len(srt_files)} SRT files")
         
+        # Create episode pairs with enhanced matching
         file_pairs = []
         used_srt_files = set()
         
-        for video_file in video_files:
+        for mkv_file in mkv_files:
+            # Find best matching SRT from unused files
             available_srts = [srt for srt in srt_files if srt not in used_srt_files]
-            matching_srt = self._find_best_subtitle_match(video_file, available_srts)
+            matching_srt = self._find_best_subtitle_match(mkv_file, available_srts)
             
             if matching_srt:
-                video_base = ospath.splitext(ospath.basename(video_file))[0]
-                file_pairs.append((video_file, matching_srt, video_base))
+                mkv_base = ospath.splitext(ospath.basename(mkv_file))[0]
+                file_pairs.append((mkv_file, matching_srt, mkv_base))
                 used_srt_files.add(matching_srt)
-                LOGGER.info(f"   ✅ Paired: {ospath.basename(video_file)} ↔ {ospath.basename(matching_srt)}")
+                LOGGER.info(f"   ✅ Paired: {ospath.basename(mkv_file)} ↔ {ospath.basename(matching_srt)}")
             else:
-                LOGGER.warning(f"   ⚠️  No subtitle match for: {ospath.basename(video_file)}")
+                LOGGER.warning(f"   ⚠️  No subtitle match for: {ospath.basename(mkv_file)}")
         
         if not file_pairs:
-            LOGGER.error("❌ No matching video-SRT pairs found!")
+            LOGGER.error("❌ No matching MKV-SRT pairs found!")
             return False
         
+        LOGGER.info(f"🎬 Processing {len(file_pairs)} video-subtitle pairs...")
+        
+        # Process each pair
         all_outputs = []
         files_to_delete = []
         
-        for i, (video_file, srt_file, base_name) in enumerate(file_pairs, 1):
-            LOGGER.info(f"🎯 Processing pair {i}/{len(file_pairs)}: {ospath.basename(video_file)}")
-            self._total_time = (await get_media_info(video_file))[0]
+        for i, (mkv_file, srt_file, base_name) in enumerate(file_pairs, 1):
+            LOGGER.info(f"🎯 Processing pair {i}/{len(file_pairs)}: {ospath.basename(mkv_file)}")
             
+            # Get video duration for progress tracking
+            self._total_time = (await get_media_info(mkv_file))[0]
+            
+            # Build FFmpeg command for this specific pair
             current_ffmpeg = []
             for item in ffmpeg:
-                if item in ("*.mkv", "*.mp4"):
-                    current_ffmpeg.append(video_file)
+                if item == "*.mkv":
+                    current_ffmpeg.append(mkv_file)
                 elif item == "*.srt":
                     current_ffmpeg.append(srt_file)
                 elif item.startswith("mltb"):
-                    ext = ospath.splitext(video_file)[1]
-                    if item.startswith("mltb.Sub"):
-                        output_file = f"{dir}/{base_name}.Sub{ext}"
+                    # Generate output filename
+                    if item == "mltb.Sub.mkv":
+                        output_file = f"{dir}/{base_name}.Sub.mkv"
+                    elif item == "mltb.mkv":
+                        output_file = f"{dir}/{base_name}.mkv"
                     else:
                         output_file = f"{dir}/{item.replace('mltb', base_name)}"
-                        if not output_file.endswith(ext):
-                            output_file += ext
+                    
                     current_ffmpeg.append(output_file)
                     all_outputs.append(output_file)
                 else:
                     current_ffmpeg.append(item)
             
-            # ✅ Auto subtitle codec switch for MP4
-            if video_file.lower().endswith(".mp4"):
-                for idx, val in enumerate(current_ffmpeg):
-                    if val == "copy" and idx > 0 and current_ffmpeg[idx-1] == "-c:s":
-                        current_ffmpeg[idx] = "mov_text"
-            
+            # Track files for deletion if requested
             if delete_originals:
-                files_to_delete.extend([video_file, srt_file])
+                files_to_delete.extend([mkv_file, srt_file])
             
+            # Check for cancellation
+            if self._listener.is_cancelled:
+                LOGGER.info("❌ Processing cancelled by user")
+                return False
+            
+            # Execute FFmpeg command
+            LOGGER.info(f"   🔄 Executing FFmpeg command...")
             self._listener.subproc = await create_subprocess_exec(
                 *current_ffmpeg, stdout=PIPE, stderr=PIPE
             )
+            
+            # Monitor progress
             await self._ffmpeg_progress()
             _, stderr = await self._listener.subproc.communicate()
             code = self._listener.subproc.returncode
             
+            if self._listener.is_cancelled:
+                LOGGER.info("❌ Processing cancelled during execution")
+                return False
+            
             if code != 0:
-                LOGGER.error(f"❌ Failed to process {ospath.basename(video_file)}: {stderr.decode(errors='ignore')}")
+                try:
+                    stderr = stderr.decode().strip()
+                except Exception:
+                    stderr = "Unable to decode the error!"
+                
+                LOGGER.error(f"   ❌ Failed to process {ospath.basename(mkv_file)}: {stderr}")
+                
+                # Clean up any partial outputs
                 for output in all_outputs:
                     if await aiopath.exists(output):
                         await remove(output)
+                        LOGGER.info(f"   🗑️  Cleaned up partial output: {ospath.basename(output)}")
+                
                 return False
             
-            LOGGER.info(f"✅ Successfully processed: {ospath.basename(video_file)}")
+            LOGGER.info(f"   ✅ Successfully processed: {ospath.basename(mkv_file)}")
         
+        # Delete original files if requested
         if delete_originals:
+            LOGGER.info("🗑️  Deleting original files...")
             for file_to_delete in files_to_delete:
-                if await aiopath.exists(file_to_delete):
-                    await remove(file_to_delete)
+                try:
+                    if await aiopath.exists(file_to_delete):
+                        await remove(file_to_delete)
+                        LOGGER.info(f"   ✅ Deleted: {ospath.basename(file_to_delete)}")
+                except Exception as e:
+                    LOGGER.error(f"   ❌ Failed to delete {ospath.basename(file_to_delete)}: {e}")
         
+        LOGGER.info(f"🎉 Successfully processed {len(file_pairs)} video-subtitle pairs!")
         return all_outputs
-
 
     async def _process_single_file(self, ffmpeg, f_path, dir, base_name, ext, delete_originals):
         """Enhanced single file processing with smart subtitle matching."""
@@ -755,17 +784,16 @@ class FFMpeg:
             delete_originals = True
             ffmpeg = [item for item in ffmpeg if item != "-del"]
         
-        # ✅ Now detect MKV or MP4 wildcard
-        has_video_wildcard = ("*.mkv" in ffmpeg) or ("*.mp4" in ffmpeg)
+        # Check if we're using wildcards for multiple file processing
+        has_mkv_wildcard = "*.mkv" in ffmpeg
         has_srt_wildcard = "*.srt" in ffmpeg
         
-        if has_video_wildcard and has_srt_wildcard:
+        if has_mkv_wildcard and has_srt_wildcard:
             LOGGER.info("🎬 Multiple file processing mode detected")
             return await self._process_multiple_files(ffmpeg, f_path, dir, delete_originals)
         else:
             LOGGER.info("🎯 Single file processing mode")
             return await self._process_single_file(ffmpeg, f_path, dir, base_name, ext, delete_originals)
-
 
     async def convert_video(self, video_file, ext, retry=False):
         self.clear()
