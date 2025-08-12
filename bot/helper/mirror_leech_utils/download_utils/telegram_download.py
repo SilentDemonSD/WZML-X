@@ -26,15 +26,31 @@ from ...telegram_helper.message_utils import send_status_message
 global_lock = Lock()
 GLOBAL_GID = dict()
 
+# Helper function to create downloader with delete option
+def create_telegram_downloader(listener, delete_after_download=False):
+    """
+    Factory function to create TelegramDownloadHelper with delete option
+    
+    Args:
+        listener: The download listener
+        delete_after_download (bool): Whether to delete source message after successful download
+    
+    Returns:
+        TelegramDownloadHelper: Configured download helper
+    """
+    return TelegramDownloadHelper(listener, delete_after_download)
+
 
 class TelegramDownloadHelper:
-    def __init__(self, listener):
+    def __init__(self, listener, delete_after_download=False):
         self._processed_bytes = 0
         self._start_time = 1
         self._listener = listener
         self._id = ""
         self.session = ""
         self._hyper_dl = len(TgClient.helper_bots) != 0 and Config.LEECH_DUMP_CHAT
+        self._delete_after_download = delete_after_download
+        self._source_message = None
 
     @property
     def speed(self):
@@ -62,6 +78,39 @@ class TelegramDownloadHelper:
         ]
         
         return message.media in downloadable_types
+
+    async def _can_delete_message(self, message):
+        """Check if we have permission to delete the message"""
+        try:
+            # Check if message is from a private chat (we can always delete our own messages there)
+            if message.chat.type in ['private', 'bot']:
+                return True
+                
+            # For groups and channels, check if we're admin
+            if self.session == "user":
+                try:
+                    chat_member = await TgClient.user.get_chat_member(
+                        chat_id=message.chat.id,
+                        user_id="me"
+                    )
+                    return chat_member.status in ['administrator', 'creator'] and chat_member.privileges.can_delete_messages
+                except:
+                    pass
+            
+            # Check bot permissions
+            try:
+                chat_member = await TgClient.bot.get_chat_member(
+                    chat_id=message.chat.id,
+                    user_id="me"
+                )
+                return chat_member.status in ['administrator', 'creator'] and chat_member.privileges.can_delete_messages
+            except:
+                pass
+                
+            return False
+        except Exception as e:
+            LOGGER.warning(f"Error checking delete permissions: {e}")
+            return False
 
     async def _on_download_start(self, file_id, gid, from_queue):
         async with global_lock:
@@ -98,9 +147,61 @@ class TelegramDownloadHelper:
 
     async def _on_download_complete(self):
         await self._listener.on_download_complete()
+        
+        # Delete source message if requested
+        if self._delete_after_download and self._source_message:
+            try:
+                await self._delete_source_message()
+            except Exception as e:
+                LOGGER.warning(f"Failed to delete source message after download: {e}")
+        
         async with global_lock:
             GLOBAL_GID.pop(self._id)
         return
+
+    async def _delete_source_message(self):
+        """Delete the source message after successful download"""
+        if not self._source_message:
+            LOGGER.warning("No source message to delete")
+            return
+            
+        # Check permissions first
+        if not await self._can_delete_message(self._source_message):
+            LOGGER.warning(f"No permission to delete message {self._source_message.id} in chat {self._source_message.chat.id}")
+            return
+            
+        try:
+            # Check if we have permission to delete
+            if self.session == "user":
+                # Try with user session first
+                try:
+                    await TgClient.user.delete_messages(
+                        chat_id=self._source_message.chat.id,
+                        message_ids=self._source_message.id
+                    )
+                    LOGGER.info(f"Successfully deleted source message {self._source_message.id} using user session")
+                except Exception as user_error:
+                    LOGGER.warning(f"User session delete failed: {user_error}, trying bot session")
+                    # Fallback to bot session
+                    await TgClient.bot.delete_messages(
+                        chat_id=self._source_message.chat.id,
+                        message_ids=self._source_message.id
+                    )
+                    LOGGER.info(f"Successfully deleted source message {self._source_message.id} using bot session")
+            else:
+                # Use bot session
+                await TgClient.bot.delete_messages(
+                    chat_id=self._source_message.chat.id,
+                    message_ids=self._source_message.id
+                )
+                LOGGER.info(f"Successfully deleted source message {self._source_message.id} using bot session")
+                
+        except Exception as e:
+            error_msg = f"Failed to delete source message {self._source_message.id}: {e}"
+            LOGGER.error(error_msg)
+            # Don't fail the entire download process just because deletion failed
+            # Just log the error and continue
+            raise Exception(error_msg)
 
     async def _download(self, message, path):
         try:
@@ -169,8 +270,11 @@ class TelegramDownloadHelper:
             await self._on_download_error("Internal error occurred")
         return
 
-    async def add_download(self, message, path, session):
+    async def add_download(self, message, path, session, delete_after_download=False):
         self.session = session
+        self._delete_after_download = delete_after_download
+        self._source_message = message  # Store reference for potential deletion
+        
         if not self.session:
             if self._hyper_dl:
                 self.session == "hbots"
@@ -259,6 +363,9 @@ class TelegramDownloadHelper:
                             if self._id in GLOBAL_GID:
                                 GLOBAL_GID.pop(self._id)
                         return
+                        
+                    # Update source message reference after getting from queue
+                    self._source_message = message if self._delete_after_download else None
                         
                     # Re-validate message after queue wait
                     if not self._is_downloadable_media(message):
