@@ -603,6 +603,8 @@ class FFMpeg:
         subtitle_files = self._get_subtitle_files(dir)
         
         LOGGER.info(f"📁 Found {len(video_files)} video files and {len(subtitle_files)} subtitle files")
+        LOGGER.info(f"📁 Video files: {[ospath.basename(f) for f in video_files]}")
+        LOGGER.info(f"📁 Subtitle files: {[ospath.basename(f) for f in subtitle_files]}")
         
         if not video_files:
             LOGGER.error("❌ No video files found!")
@@ -659,33 +661,45 @@ class FFMpeg:
             
             # Build FFmpeg command for this specific pair
             current_ffmpeg = []
-            for item in ffmpeg:
-                if item == "*.*" and current_ffmpeg and current_ffmpeg[-1] == "-i":
-                    # This is a video input
-                    current_ffmpeg.append(video_file)
-                elif item == "*.*" and current_ffmpeg and current_ffmpeg[-2:] == ["-i", video_file]:
-                    # This is a subtitle input (second *.*)
-                    current_ffmpeg.append(subtitle_file)
-                elif "*.srt" in item or "*.ass" in item or "*.vtt" in item or "*.sub" in item:
-                    # Replace subtitle wildcard with actual subtitle file
-                    current_ffmpeg.append(subtitle_file)
-                elif item == "-c:s" and current_ffmpeg:
+            video_input_added = False
+            subtitle_input_added = False
+            
+            for j, item in enumerate(ffmpeg):
+                if item == "*.*" and j > 0 and ffmpeg[j-1] == "-i":
+                    if not video_input_added:
+                        # First *.* is video input
+                        current_ffmpeg.append(video_file)
+                        video_input_added = True
+                    elif not subtitle_input_added:
+                        # Second *.* is subtitle input
+                        current_ffmpeg.append(subtitle_file)
+                        subtitle_input_added = True
+                    else:
+                        current_ffmpeg.append(item)
+                elif item == "-c:s":
                     current_ffmpeg.extend(["-c:s", subtitle_codec])
+                    # Skip the next item (original codec) since we added our own
                     continue
                 elif item.startswith("mltb"):
                     # Generate output filename
-                    if item == "mltb.Sub.mkv":
-                        output_file = f"{dir}/{base_name}.Sub.mkv"
-                    elif item == "mltb.mkv":
-                        output_file = f"{dir}/{base_name}.mkv"
+                    if item == "mltb.sub":
+                        output_file = f"{dir}/{base_name}.sub{ospath.splitext(video_file)[1]}"
+                    elif item == "mltb.Sub":
+                        output_file = f"{dir}/{base_name}.Sub{ospath.splitext(video_file)[1]}"
+                    elif item == "mltb":
+                        output_file = f"{dir}/{base_name}{ospath.splitext(video_file)[1]}"
                     else:
                         # Handle other mltb patterns
                         output_file = f"{dir}/{item.replace('mltb', base_name)}"
+                        if not ospath.splitext(output_file)[1]:
+                            output_file += ospath.splitext(video_file)[1]
                     
                     current_ffmpeg.append(output_file)
                     all_outputs.append(output_file)
                 else:
                     current_ffmpeg.append(item)
+            
+            LOGGER.info(f"🔧 FFmpeg command: {' '.join([ospath.basename(x) if ospath.sep in x else x for x in current_ffmpeg])}")
             
             # Track files for deletion if requested
             if delete_originals:
