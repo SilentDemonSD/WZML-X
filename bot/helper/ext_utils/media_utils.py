@@ -462,154 +462,105 @@ class FFMpeg:
     def _extract_episode_info(self, filename):
         """Extract season and episode numbers from various filename patterns."""
         import re
-        
-        # Remove file extension
         base_name = ospath.splitext(ospath.basename(filename))[0]
-        
-        # Pattern for S##E## format (most reliable)
         pattern = r'S(\d{1,2})E(\d{1,2})'
         match = re.search(pattern, base_name, re.IGNORECASE)
-        
         if match:
             season = int(match.group(1))
             episode = int(match.group(2))
             return season, episode, f"S{season:02d}E{episode:02d}"
-        
         return None, None, None
 
     def _find_best_subtitle_match(self, mkv_file, srt_files):
-        """Find the best matching subtitle for a video file using robust episode matching."""
         mkv_season, mkv_episode, mkv_code = self._extract_episode_info(mkv_file)
         mkv_base = ospath.splitext(ospath.basename(mkv_file))[0]
-        
         LOGGER.info(f"🔍 Finding subtitle for: {ospath.basename(mkv_file)}")
         LOGGER.info(f"   Video info: Season {mkv_season}, Episode {mkv_episode} ({mkv_code})")
-        
         best_match = None
-        match_type = ""
-        
-        # Priority 1: Exact season/episode match
         if mkv_season and mkv_episode:
             for srt_file in srt_files:
-                srt_season, srt_episode, srt_code = self._extract_episode_info(srt_file)
-                
+                srt_season, srt_episode, _ = self._extract_episode_info(srt_file)
                 if srt_season == mkv_season and srt_episode == mkv_episode:
                     best_match = srt_file
-                    match_type = "Season/Episode Match"
-                    LOGGER.info(f"   ✅ {match_type}: {ospath.basename(srt_file)} (S{srt_season}E{srt_episode})")
+                    LOGGER.info(f"   ✅ Season/Episode Match: {ospath.basename(srt_file)}")
                     break
-        
-        # Priority 2: Exact filename match (without extension)
         if not best_match:
             for srt_file in srt_files:
-                srt_base = ospath.splitext(ospath.basename(srt_file))[0]
-                if mkv_base == srt_base:
+                if mkv_base == ospath.splitext(ospath.basename(srt_file))[0]:
                     best_match = srt_file
-                    match_type = "Exact Filename Match"
-                    LOGGER.info(f"   ✅ {match_type}: {ospath.basename(srt_file)}")
+                    LOGGER.info(f"   ✅ Exact Filename Match: {ospath.basename(srt_file)}")
                     break
-        
-        # Priority 3: Normalized name matching (remove quality/encoding info)
         if not best_match:
             import re
-            # Remove common video quality/encoding patterns
             mkv_normalized = re.sub(
-                r'\s*(1080p|720p|480p|x264|x265|HEVC|BluRay|WEBRip|WEB-DL|HDTV|10bit|2CH|PSA|JAPANESE).*', 
-                '', 
-                mkv_base, 
-                flags=re.IGNORECASE
+                r'\s*(1080p|720p|480p|x264|x265|HEVC|BluRay|WEBRip|WEB-DL|HDTV|10bit|2CH|PSA|JAPANESE).*',
+                '', mkv_base, flags=re.IGNORECASE
             ).strip()
-            
             for srt_file in srt_files:
                 srt_base = ospath.splitext(ospath.basename(srt_file))[0]
                 srt_normalized = re.sub(
-                    r'\s*(1080p|720p|480p|x264|x265|HEVC|BluRay|WEBRip|WEB-DL|HDTV|10bit|2CH|PSA|JAPANESE).*', 
-                    '', 
-                    srt_base, 
-                    flags=re.IGNORECASE
+                    r'\s*(1080p|720p|480p|x264|x265|HEVC|BluRay|WEBRip|WEB-DL|HDTV|10bit|2CH|PSA|JAPANESE).*',
+                    '', srt_base, flags=re.IGNORECASE
                 ).strip()
-                
                 if mkv_normalized and srt_normalized and mkv_normalized == srt_normalized:
                     best_match = srt_file
-                    match_type = "Normalized Name Match"
-                    LOGGER.info(f"   ✅ {match_type}: {ospath.basename(srt_file)}")
+                    LOGGER.info(f"   ✅ Normalized Name Match: {ospath.basename(srt_file)}")
                     break
-        
         if not best_match:
             LOGGER.warning(f"   ❌ No matching subtitle found for: {ospath.basename(mkv_file)}")
-        
         return best_match
 
     async def _process_files(self, ffmpeg, f_path, dir, base_name, ext, delete_originals):
-        """
-        Unified file processing method for both single and multiple files.
-        Supports all video and subtitle formats.
-        """
-    
-        # Detect all video and subtitle files in directory
+        """Unified processing method for single/multiple videos with beautiful logging."""
         video_exts = (".mkv", ".mp4", ".mov", ".avi", ".flv", ".wmv", ".ts", ".webm")
         subtitle_exts = (".srt", ".ass", ".sub", ".ssa", ".vtt")
-    
         video_files = sorted([f for f in glob.glob(ospath.join(dir, "*")) if f.lower().endswith(video_exts)])
         subtitle_files = sorted([f for f in glob.glob(ospath.join(dir, "*")) if f.lower().endswith(subtitle_exts)])
-    
-        # If no other videos found, just use the provided file
         if len(video_files) <= 1:
             video_files = [f_path]
-    
-        LOGGER.info(f"📁 Found {len(video_files)} videos and {len(subtitle_files)} subtitles")
-    
+        LOGGER.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        LOGGER.info("📂 Media Processing Started")
+        LOGGER.info(f"📹 Videos found   : {len(video_files)}")
+        LOGGER.info(f"💬 Subtitles found: {len(subtitle_files)}")
+        LOGGER.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         all_outputs = []
         files_to_delete = []
-    
-        # Loop over each video file
-        for video_file in video_files:
+        for index, video_file in enumerate(video_files, 1):
             base_video_name = ospath.splitext(ospath.basename(video_file))[0]
             self._total_time = (await get_media_info(video_file))[0]
-    
-            # Find matching subtitle
+            LOGGER.info(f"\n🎯 Processing [{index}/{len(video_files)}] → {ospath.basename(video_file)}")
             matching_subtitle = self._find_best_subtitle_match(video_file, subtitle_files)
             if matching_subtitle:
-                LOGGER.info(f"   ✅ Subtitle matched: {ospath.basename(matching_subtitle)}")
+                LOGGER.info(f"   📄 Subtitle matched : {ospath.basename(matching_subtitle)}")
             else:
-                LOGGER.warning(f"   ⚠ No matching subtitle for {ospath.basename(video_file)}")
-    
-            # Build ffmpeg command dynamically
+                LOGGER.warning(f"   ⚠ No matching subtitle found")
             current_ffmpeg = []
             for item in ffmpeg:
-                if item == "*.mkv" or item in [f"*.{ext.lstrip('.')}" for ext in video_exts]:
+                if item == "*.mkv" or any(item == f"*{ext}" for ext in video_exts):
                     current_ffmpeg.append(video_file)
                 elif item == "*.srt" or any(item == f"*{ext}" for ext in subtitle_exts):
                     if matching_subtitle:
                         current_ffmpeg.append(matching_subtitle)
-                    else:
-                        continue
                 elif item.startswith("mltb"):
                     output_file = f"{dir}/{item.replace('mltb', base_video_name)}"
                     current_ffmpeg.append(output_file)
                     all_outputs.append(output_file)
                 else:
                     current_ffmpeg.append(item)
-    
-            # Track files for deletion
             if delete_originals:
                 files_to_delete.append(video_file)
                 if matching_subtitle:
                     files_to_delete.append(matching_subtitle)
-    
             if self._listener.is_cancelled:
-                LOGGER.info("❌ Processing cancelled")
+                LOGGER.info("❌ Processing cancelled by user")
                 return False
-    
-            # Run FFmpeg
-            LOGGER.info(f"🎬 Running FFmpeg for {ospath.basename(video_file)}")
+            LOGGER.info(f"   🚀 Executing FFmpeg command...")
             self._listener.subproc = await create_subprocess_exec(
                 *current_ffmpeg, stdout=PIPE, stderr=PIPE
             )
             await self._ffmpeg_progress()
             _, stderr = await self._listener.subproc.communicate()
             code = self._listener.subproc.returncode
-    
             if code != 0:
                 err_msg = stderr.decode(errors="ignore").strip()
                 LOGGER.error(f"   ❌ Failed: {ospath.basename(video_file)} → {err_msg}")
@@ -617,31 +568,29 @@ class FFMpeg:
                     if await aiopath.exists(op):
                         await remove(op)
                 return False
-    
-            LOGGER.info(f"   ✅ Done: {ospath.basename(video_file)}")
-    
-        # Delete originals
+            LOGGER.info(f"   ✅ Completed: {ospath.basename(video_file)}")
         if delete_originals:
+            LOGGER.info("\n🗑 Deleting original files...")
             for f in files_to_delete:
                 if await aiopath.exists(f):
                     await remove(f)
-                    LOGGER.info(f"🗑 Deleted: {ospath.basename(f)}")
-    
+                    LOGGER.info(f"   ✔ Deleted: {ospath.basename(f)}")
+        LOGGER.info("\n🎉 All processing completed successfully!")
+        LOGGER.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         return all_outputs
-    
-    
+
     async def ffmpeg_cmds(self, ffmpeg, f_path):
         """Main entry point for FFmpeg processing with unified logic."""
         self.clear()
         base_name, ext = ospath.splitext(f_path)
         dir, base_name = base_name.rsplit("/", 1)
-    
         delete_originals = False
         if "-del" in ffmpeg:
             delete_originals = True
             ffmpeg = [item for item in ffmpeg if item != "-del"]
-    
         return await self._process_files(ffmpeg, f_path, dir, base_name, ext, delete_originals)
+
+    # 🔹 All your existing convert_video, convert_audio, sample_video, split methods remain here unchanged
 
 
     async def convert_video(self, video_file, ext, retry=False):
