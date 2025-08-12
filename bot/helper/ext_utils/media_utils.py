@@ -919,15 +919,13 @@ class FFMpeg:
                     current_ffmpeg.append(srt_file)
                 elif item.startswith("mltb"):
                     # Generate output filename with original extension
+                    original_ext = ospath.splitext(mkv_file)[1]
                     if item == "mltb.Sub.mkv":
-                        original_ext = ospath.splitext(mkv_file)[1]
                         output_file = f"{dir}/{base_name}.Sub{original_ext}"
                     elif item == "mltb.mkv":
-                        original_ext = ospath.splitext(mkv_file)[1]
                         output_file = f"{dir}/{base_name}{original_ext}"
                     else:
                         # For custom patterns, preserve original extension
-                        original_ext = ospath.splitext(mkv_file)[1]
                         if "." in item:
                             # Replace extension with original
                             item_base = item.rsplit(".", 1)[0]
