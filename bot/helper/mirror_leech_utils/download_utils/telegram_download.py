@@ -2,6 +2,7 @@ from asyncio import Lock, sleep
 from time import time
 from secrets import token_hex
 from pyrogram.errors import FloodWait, PeerIdInvalid, ChannelInvalid
+from pyrogram.enums import MessageMediaType
 
 from bot.helper.ext_utils.hyperdl_utils import HyperTGDownload
 
@@ -42,6 +43,25 @@ class TelegramDownloadHelper:
     @property
     def processed_bytes(self):
         return self._processed_bytes
+
+    def _is_downloadable_media(self, message):
+        """Check if message contains downloadable media"""
+        if not message.media:
+            return False
+        
+        # List of downloadable media types
+        downloadable_types = [
+            MessageMediaType.DOCUMENT,
+            MessageMediaType.VIDEO,
+            MessageMediaType.AUDIO,
+            MessageMediaType.VOICE,
+            MessageMediaType.VIDEO_NOTE,
+            MessageMediaType.ANIMATION,
+            MessageMediaType.PHOTO,
+            MessageMediaType.STICKER
+        ]
+        
+        return message.media in downloadable_types
 
     async def _on_download_start(self, file_id, gid, from_queue):
         async with global_lock:
@@ -84,6 +104,11 @@ class TelegramDownloadHelper:
 
     async def _download(self, message, path):
         try:
+            # Pre-download validation
+            if not self._is_downloadable_media(message):
+                await self._on_download_error("Message doesn't contain downloadable media")
+                return
+                
             # TODO : Add support for user session ( Huh ??)
             if self._hyper_dl:
                 try:
@@ -93,16 +118,21 @@ class TelegramDownloadHelper:
                         progress=self._on_download_progress,
                         dump_chat=Config.LEECH_DUMP_CHAT,
                     )
-                except Exception:
+                except Exception as hyper_error:
+                    LOGGER.warning(f"HyperTGDownload failed: {hyper_error}")
                     if getattr(Config, "USER_TRANSMISSION", False):
                         try:
                             user_message = await TgClient.user.get_messages(
                                 chat_id=message.chat.id, message_ids=message.id
                             )
+                            if not self._is_downloadable_media(user_message):
+                                await self._on_download_error("User message doesn't contain downloadable media")
+                                return
                             download = await user_message.download(
                                 file_name=path, progress=self._on_download_progress
                             )
-                        except Exception:
+                        except Exception as user_error:
+                            LOGGER.warning(f"User download failed: {user_error}")
                             download = await message.download(
                                 file_name=path, progress=self._on_download_progress
                             )
@@ -120,6 +150,14 @@ class TelegramDownloadHelper:
             LOGGER.warning(str(f))
             await sleep(f.value)
             await self._download(message, path)
+            return
+        except ValueError as ve:
+            if "doesn't contain any downloadable media" in str(ve):
+                LOGGER.error(f"No downloadable media in message: {self._listener.name}")
+                await self._on_download_error(f"Message doesn't contain downloadable media: {self._listener.name}")
+            else:
+                LOGGER.error(f"Download error: {str(ve)}", exc_info=True)
+                await self._on_download_error(f"Download failed: {str(ve)}")
             return
         except Exception as e:
             LOGGER.error(str(e), exc_info=True)
@@ -149,9 +187,26 @@ class TelegramDownloadHelper:
                     self.session = "bot"
             else:
                 self.session = "bot"
+        
+        # Enhanced media validation
+        if not self._is_downloadable_media(message):
+            error_msg = (
+                f"No downloadable media found in message for: {self._listener.name}. "
+                f"Message type: {message.media if message.media else 'None'}. "
+                f"Use SuperGroup in case you are trying to download with User session!"
+            )
+            LOGGER.error(error_msg)
+            await self._on_download_error(error_msg)
+            return
+            
         media = getattr(message, message.media.value) if message.media else None
 
         if media is not None:
+            # Additional validation for media object
+            if not hasattr(media, 'file_unique_id') or not hasattr(media, 'file_size'):
+                await self._on_download_error(f"Invalid media object for: {self._listener.name}")
+                return
+                
             async with global_lock:
                 download = media.file_unique_id not in GLOBAL_GID
 
@@ -204,6 +259,12 @@ class TelegramDownloadHelper:
                             if self._id in GLOBAL_GID:
                                 GLOBAL_GID.pop(self._id)
                         return
+                        
+                    # Re-validate message after queue wait
+                    if not self._is_downloadable_media(message):
+                        await self._on_download_error(f"Media no longer available for: {self._listener.name}")
+                        return
+                        
                 self._start_time = time()
                 await self._on_download_start(media.file_unique_id, gid, add_to_queue)
                 await self._download(message, path)
