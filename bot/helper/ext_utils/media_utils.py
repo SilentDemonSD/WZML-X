@@ -879,6 +879,9 @@ class FFMpeg:
             return False
 
     async def ffmpeg_cmds(self, ffmpeg, f_path):
+        LOGGER.info(f"🔧 DEBUG: Starting FFmpeg with command: {ffmpeg}")
+        LOGGER.info(f"🔧 DEBUG: Input file path: {f_path}")
+        # ... rest of existing code
         """Main entry point for FFmpeg processing with improved episode matching."""
         self.clear()
         base_name, ext = ospath.splitext(f_path)
