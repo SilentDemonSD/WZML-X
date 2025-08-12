@@ -1054,7 +1054,9 @@ class FFMpeg:
             self._last_processed_bytes += out_size
             start_time += lpd - 3
             i += 1
-        return True_multiple_files(self, ffmpeg, f_path, dir, delete_originals):
+        return True
+        
+    async def _multiple_files(self, ffmpeg, f_path, dir, delete_originals):
         """Enhanced multiple file processing with universal format support."""
         
         # Get all video and subtitle files
