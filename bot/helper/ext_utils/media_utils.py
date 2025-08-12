@@ -382,22 +382,6 @@ class FFMpeg:
         self._time_rate = 0.1
         self._start_time = 0
 
-    @property
-    def processed_bytes(self):
-        return self._processed_bytes
-
-    @property
-    def speed_raw(self):
-        return self._speed_raw
-
-    @property
-    def progress_raw(self):
-        return self._progress_raw
-
-    @property
-    def eta_raw(self):
-        return self._eta_raw
-
     def clear(self):
         self._start_time = time()
         self._processed_bytes = 0
@@ -431,9 +415,7 @@ class FFMpeg:
                     elif key == "speed":
                         self._time_rate = max(0.1, float(value.strip("x")))
                     elif key == "out_time":
-                        self._processed_time = (
-                            time_to_seconds(value) + self._last_processed_time
-                        )
+                        self._processed_time = time_to_seconds(value) + self._last_processed_time
                         try:
                             self._progress_raw = (self._processed_time * 100) / self._total_time
                             if (
@@ -444,15 +426,8 @@ class FFMpeg:
                                 self._processed_bytes = int(
                                     self._listener.subsize * (self._progress_raw / 100)
                                 )
-                            if (time() - self._start_time) > 0:
-                                self._speed_raw = self._processed_bytes / (
-                                    time() - self._start_time
-                                )
-                            else:
-                                self._speed_raw = 0
-                            self._eta_raw = (
-                                self._total_time - self._processed_time
-                            ) / self._time_rate
+                            self._speed_raw = self._processed_bytes / max(1, (time() - self._start_time))
+                            self._eta_raw = (self._total_time - self._processed_time) / self._time_rate
                         except ZeroDivisionError:
                             self._progress_raw = 0
                             self._eta_raw = 0
@@ -463,119 +438,104 @@ class FFMpeg:
         base_name = ospath.splitext(ospath.basename(filename))[0]
         match = re.search(r"S(\d{1,2})E(\d{1,2})", base_name, re.IGNORECASE)
         if match:
-            season = int(match.group(1))
-            episode = int(match.group(2))
-            return season, episode, f"S{season:02d}E{episode:02d}"
+            return int(match.group(1)), int(match.group(2)), f"S{int(match.group(1)):02d}E{int(match.group(2)):02d}"
         return None, None, None
 
     def _find_best_subtitle_match(self, video_file, sub_files):
         v_season, v_episode, _ = self._extract_episode_info(video_file)
         v_base = ospath.splitext(ospath.basename(video_file))[0]
 
-        # Priority 1: Exact season/episode match
         if v_season and v_episode:
             for sub in sub_files:
                 s_season, s_episode, _ = self._extract_episode_info(sub)
                 if s_season == v_season and s_episode == v_episode:
+                    LOGGER.info(f"✅ Matched subtitle by season/episode: {ospath.basename(sub)}")
                     return sub
 
-        # Priority 2: Exact base name
         for sub in sub_files:
             if v_base == ospath.splitext(ospath.basename(sub))[0]:
+                LOGGER.info(f"✅ Matched subtitle by filename: {ospath.basename(sub)}")
                 return sub
 
-        # Priority 3: Normalized name match
         import re
         v_norm = re.sub(r"(1080p|720p|480p|x264|x265|HEVC|BluRay|WEBRip|WEB-DL).*", "", v_base, flags=re.I).strip()
         for sub in sub_files:
             s_norm = re.sub(r"(1080p|720p|480p|x264|x265|HEVC|BluRay|WEBRip|WEB-DL).*", "", ospath.splitext(ospath.basename(sub))[0], flags=re.I).strip()
             if v_norm and s_norm and v_norm == s_norm:
+                LOGGER.info(f"✅ Matched subtitle by normalized name: {ospath.basename(sub)}")
                 return sub
+
+        LOGGER.warning("⚠️ No exact subtitle match found.")
         return None
-
-    async def _process_multiple_files(self, ffmpeg, f_path, dir, delete_originals):
-        all_files = sorted(glob.glob(ospath.join(dir, "*")))
-        video_files = [f for f in all_files if f.lower().endswith(self.VIDEO_EXTS)]
-        subtitle_files = [f for f in all_files if f.lower().endswith(self.SUB_EXTS)]
-
-        file_pairs, used_subs = [], set()
-        for video in video_files:
-            available_subs = [s for s in subtitle_files if s not in used_subs]
-            match = self._find_best_subtitle_match(video, available_subs)
-            if match:
-                used_subs.add(match)
-                file_pairs.append((video, match, ospath.splitext(ospath.basename(video))[0]))
-
-        if not file_pairs:
-            LOGGER.error("No matching video-subtitle pairs found!")
-            return False
-
-        all_outputs = []
-        for video, sub, base in file_pairs:
-            current_cmd = []
-            for item in ffmpeg:
-                if item == "*.":
-                    if not current_cmd or current_cmd[-1] != "-i":
-                        current_cmd.append(video)
-                    else:
-                        current_cmd.append(sub)
-                elif item.startswith("mltb"):
-                    output = f"{dir}/{item.replace('mltb', base)}"
-                    current_cmd.append(output)
-                    all_outputs.append(output)
-                else:
-                    current_cmd.append(item)
-
-            self._total_time = (await get_media_info(video))[0]
-            self._listener.subproc = await create_subprocess_exec(*current_cmd, stdout=PIPE, stderr=PIPE)
-            await self._ffmpeg_progress()
-            _, stderr = await self._listener.subproc.communicate()
-            if self._listener.subproc.returncode != 0:
-                LOGGER.error(stderr.decode(errors="ignore"))
-                return False
-        return all_outputs
 
     async def _process_single_file(self, ffmpeg, f_path, dir, base_name, ext, delete_originals):
         all_files = sorted(glob.glob(ospath.join(dir, "*")))
-        video_files = [f for f in all_files if f.lower().endswith(self.VIDEO_EXTS)]
         subtitle_files = [f for f in all_files if f.lower().endswith(self.SUB_EXTS)]
         matched_srt = self._find_best_subtitle_match(f_path, subtitle_files)
 
+        LOGGER.info(f"🎬 Found video: {ospath.basename(f_path)}")
+        if matched_srt:
+            LOGGER.info(f"💬 Using subtitle: {ospath.basename(matched_srt)}")
+        elif subtitle_files:
+            matched_srt = subtitle_files[0]
+            LOGGER.warning(f"⚠️ Using first available subtitle: {ospath.basename(matched_srt)}")
+        else:
+            LOGGER.warning("⚠️ No subtitles found — proceeding without them.")
+
         expanded_cmd = []
+        input_files = [f_path]
         for i, item in enumerate(ffmpeg):
             if item == "*.":
-                if i > 0 and ffmpeg[i-1] == "-i":
-                    expanded_cmd.append(matched_srt if matched_srt else subtitle_files[0])
-                else:
-                    expanded_cmd.append(f_path)
+                file_to_add = f_path if i == 0 or ffmpeg[i-1] != "-i" else (matched_srt or "")
+                expanded_cmd.append(file_to_add)
+                if file_to_add:
+                    input_files.append(file_to_add)
             elif item.startswith("mltb"):
                 output = f"{dir}/{item.replace('mltb', base_name)}{ext if '.' not in item else ''}"
                 expanded_cmd.append(output)
+                LOGGER.info(f"📄 Output file will be: {ospath.basename(output)}")
             else:
                 expanded_cmd.append(item)
 
+        cmd_preview = " ".join([ospath.basename(x) if ospath.exists(x) else x for x in expanded_cmd])
+        LOGGER.info(f"🔄 Running command: {cmd_preview}")
+
         self._total_time = (await get_media_info(f_path))[0]
-        self._listener.subproc = await create_subprocess_exec(*expanded_cmd, stdout=PIPE, stderr=PIPE)
+        self._listener.subproc = await create_subprocess_exec(*[x for x in expanded_cmd if x], stdout=PIPE, stderr=PIPE)
         await self._ffmpeg_progress()
         _, stderr = await self._listener.subproc.communicate()
+
         if self._listener.subproc.returncode != 0:
-            LOGGER.error(stderr.decode(errors="ignore"))
+            LOGGER.error(f"❌ FFmpeg failed: {stderr.decode(errors='ignore')}")
             return False
+
+        LOGGER.info(f"🎉 Success: {ospath.basename(f_path)} processed with subtitles.")
+
+        # Auto-delete originals if requested
+        if delete_originals:
+            for file in set(input_files):
+                if file and await aiopath.exists(file):
+                    try:
+                        await remove(file)
+                        LOGGER.info(f"🗑️ Deleted original: {ospath.basename(file)}")
+                    except Exception as e:
+                        LOGGER.error(f"❌ Failed to delete {ospath.basename(file)}: {e}")
+
         return True
 
     async def ffmpeg_cmds(self, ffmpeg, f_path):
         self.clear()
-    
-        # NEW: allow space-separated string instead of list
+
         if isinstance(ffmpeg, str):
             ffmpeg = ffmpeg.split()
-    
+
         base_name, ext = ospath.splitext(f_path)
         dir, base_name = base_name.rsplit("/", 1)
         delete_originals = "-del" in ffmpeg
         if delete_originals:
             ffmpeg = [x for x in ffmpeg if x != "-del"]
 
+        return await self._process_single_file(ffmpeg, f_path, dir, base_name, ext, delete_originals)
 
 
     async def convert_video(self, video_file, ext, retry=False):
