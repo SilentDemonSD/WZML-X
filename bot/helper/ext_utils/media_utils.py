@@ -477,16 +477,32 @@ class FFMpeg:
         
         return None, None, None
 
-    def _get_all_files_by_extension(self, dir_path, extensions):
-        """Get all files with specified extensions."""
-        files = []
-        for ext in extensions:
+    def _get_all_video_files(self, dir_path):
+        """Get all video files from directory (all supported formats)."""
+        video_extensions = ['mkv', 'mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'm4v', '3gp', 'ogv']
+        video_files = []
+        
+        for ext in video_extensions:
             pattern = f"*.{ext}"
-            files.extend(glob.glob(ospath.join(dir_path, pattern)))
-        return sorted(files)
+            found_files = glob.glob(ospath.join(dir_path, pattern))
+            video_files.extend(found_files)
+        
+        return sorted(video_files)
 
-    def _find_matching_subtitles(self, video_file, subtitle_files):
-        """Find all matching subtitles for a video file."""
+    def _get_all_subtitle_files(self, dir_path):
+        """Get all subtitle files from directory (all supported formats)."""
+        subtitle_extensions = ['srt', 'ass', 'ssa', 'idx', 'sub', 'vtt', 'sbv', 'ttml', 'dfxp']
+        subtitle_files = []
+        
+        for ext in subtitle_extensions:
+            pattern = f"*.{ext}"
+            found_files = glob.glob(ospath.join(dir_path, pattern))
+            subtitle_files.extend(found_files)
+        
+        return sorted(subtitle_files)
+
+    def _find_matching_subtitles(self, video_file, all_subtitle_files):
+        """Find all matching subtitles for a video file with enhanced matching."""
         video_season, video_episode, video_code = self._extract_episode_info(video_file)
         video_base = ospath.splitext(ospath.basename(video_file))[0]
         
@@ -497,56 +513,102 @@ class FFMpeg:
         matched_subtitles = []
         used_subtitles = set()
         
-        for sub_file in subtitle_files:
+        # Group subtitle files by type for better organization
+        subtitle_groups = {}
+        for sub_file in all_subtitle_files:
             if sub_file in used_subtitles:
                 continue
-                
-            sub_season, sub_episode, sub_code = self._extract_episode_info(sub_file)
-            sub_base = ospath.splitext(ospath.basename(sub_file))[0]
             sub_ext = ospath.splitext(sub_file)[1][1:].lower()
-            
-            match_found = False
+            if sub_ext not in subtitle_groups:
+                subtitle_groups[sub_ext] = []
+            subtitle_groups[sub_ext].append(sub_file)
+        
+        # Process each subtitle type
+        for sub_type, sub_files in subtitle_groups.items():
+            best_match = None
             match_type = ""
             
             # Priority 1: Exact season/episode match
-            if video_season and video_episode and sub_season == video_season and sub_episode == video_episode:
-                match_found = True
-                match_type = "Season/Episode Match"
+            if video_season and video_episode:
+                for sub_file in sub_files:
+                    if sub_file in used_subtitles:
+                        continue
+                    sub_season, sub_episode, sub_code = self._extract_episode_info(sub_file)
+                    if sub_season == video_season and sub_episode == video_episode:
+                        best_match = sub_file
+                        match_type = "Season/Episode Match"
+                        break
             
             # Priority 2: Exact filename match (without extension)
-            elif video_base == sub_base:
-                match_found = True
-                match_type = "Exact Filename Match"
+            if not best_match:
+                for sub_file in sub_files:
+                    if sub_file in used_subtitles:
+                        continue
+                    sub_base = ospath.splitext(ospath.basename(sub_file))[0]
+                    if video_base == sub_base:
+                        best_match = sub_file
+                        match_type = "Exact Filename Match"
+                        break
             
-            # Priority 3: Normalized name matching
-            elif not match_found:
+            # Priority 3: Normalized name matching (remove quality tags)
+            if not best_match:
                 import re
                 video_normalized = re.sub(
-                    r'\s*(1080p|720p|480p|x264|x265|HEVC|BluRay|WEBRip|WEB-DL|HDTV|10bit|2CH|PSA|JAPANESE).*', 
+                    r'\s*(1080p|720p|480p|x264|x265|HEVC|BluRay|WEBRip|WEB-DL|HDTV|10bit|2CH|PSA|JAPANESE|DUAL|AUDIO).*', 
                     '', 
                     video_base, 
                     flags=re.IGNORECASE
                 ).strip()
                 
-                sub_normalized = re.sub(
-                    r'\s*(1080p|720p|480p|x264|x265|HEVC|BluRay|WEBRip|WEB-DL|HDTV|10bit|2CH|PSA|JAPANESE).*', 
-                    '', 
-                    sub_base, 
-                    flags=re.IGNORECASE
-                ).strip()
-                
-                if video_normalized and sub_normalized and video_normalized == sub_normalized:
-                    match_found = True
-                    match_type = "Normalized Name Match"
+                for sub_file in sub_files:
+                    if sub_file in used_subtitles:
+                        continue
+                    sub_base = ospath.splitext(ospath.basename(sub_file))[0]
+                    sub_normalized = re.sub(
+                        r'\s*(1080p|720p|480p|x264|x265|HEVC|BluRay|WEBRip|WEB-DL|HDTV|10bit|2CH|PSA|JAPANESE|DUAL|AUDIO).*', 
+                        '', 
+                        sub_base, 
+                        flags=re.IGNORECASE
+                    ).strip()
+                    
+                    if video_normalized and sub_normalized and video_normalized == sub_normalized:
+                        best_match = sub_file
+                        match_type = "Normalized Name Match"
+                        break
             
-            if match_found:
+            # Priority 4: Partial name matching (for series)
+            if not best_match:
+                import re
+                # Extract series name (everything before season/episode info)
+                video_series = re.sub(r'[.\s]*(S\d+E\d+|Season\s*\d+|Episode\s*\d+).*', '', video_base, flags=re.IGNORECASE).strip()
+                
+                for sub_file in sub_files:
+                    if sub_file in used_subtitles:
+                        continue
+                    sub_base = ospath.splitext(ospath.basename(sub_file))[0]
+                    sub_series = re.sub(r'[.\s]*(S\d+E\d+|Season\s*\d+|Episode\s*\d+).*', '', sub_base, flags=re.IGNORECASE).strip()
+                    
+                    if video_series and sub_series and video_series.lower() == sub_series.lower():
+                        # Additional check for episode numbers if present
+                        if video_episode and video_season:
+                            sub_season, sub_episode, _ = self._extract_episode_info(sub_file)
+                            if sub_season == video_season and sub_episode == video_episode:
+                                best_match = sub_file
+                                match_type = "Series + Episode Match"
+                                break
+                        else:
+                            best_match = sub_file
+                            match_type = "Series Name Match"
+                            break
+            
+            if best_match:
                 matched_subtitles.append({
-                    'file': sub_file,
-                    'type': sub_ext,
+                    'file': best_match,
+                    'type': sub_type,
                     'match_type': match_type
                 })
-                used_subtitles.add(sub_file)
-                LOGGER.info(f"   ✅ {match_type} ({sub_ext.upper()}): {ospath.basename(sub_file)}")
+                used_subtitles.add(best_match)
+                LOGGER.info(f"   ✅ {match_type} ({sub_type.upper()}): {ospath.basename(best_match)}")
         
         return matched_subtitles
 
@@ -556,15 +618,15 @@ class FFMpeg:
         subtitle_type = subtitle_type.lower()
         
         if container_format == 'mp4':
-            # MP4 container - most subtitles need to be converted to mov_text
-            if subtitle_type in ['srt', 'vtt', 'ass', 'ssa']:
+            # MP4 container - convert most subtitles to mov_text
+            if subtitle_type in ['srt', 'vtt', 'ass', 'ssa', 'sbv', 'ttml', 'dfxp']:
                 return 'mov_text'
             elif subtitle_type in ['idx', 'sub']:
                 return 'copy'  # VobSub can be copied to MP4
             else:
                 return 'mov_text'  # Default for MP4
         else:
-            # MKV container (or others) - can handle most subtitle formats natively
+            # MKV, AVI and other containers - can handle most subtitle formats natively
             if subtitle_type == 'srt':
                 return 'srt'
             elif subtitle_type in ['ass', 'ssa']:
@@ -573,192 +635,142 @@ class FFMpeg:
                 return 'webvtt'
             elif subtitle_type in ['idx', 'sub']:
                 return 'copy'  # VobSub format
+            elif subtitle_type in ['sbv', 'ttml', 'dfxp']:
+                return 'srt'  # Convert to SRT for better compatibility
             else:
                 return 'copy'  # Default copy
 
-    def _parse_ffmpeg_command_string(self, cmd_string):
-        """Parse the FFmpeg command string into components."""
-        import shlex
-        
-        # Remove -del flag and store it separately
-        delete_originals = '-del' in cmd_string
-        if delete_originals:
-            cmd_string = cmd_string.replace(' -del', '').replace('-del ', '').replace('-del', '')
-        
-        # Split the command string properly handling quotes
-        try:
-            parts = shlex.split(cmd_string)
-        except:
-            # Fallback to simple split if shlex fails
-            parts = cmd_string.split()
-        
-        return parts, delete_originals
-
-    async def _process_video_with_command_template(self, cmd_parts, video_file, dir_path, delete_originals):
-        """Process a single video file using the command template."""
-        
-        # Get video duration for progress tracking
-        self._total_time = (await get_media_info(video_file))[0]
-        
-        # Determine video extension and base name
-        video_base_with_ext = ospath.basename(video_file)
-        video_base, video_ext = ospath.splitext(video_base_with_ext)
-        video_ext = video_ext[1:]  # Remove the dot
-        
-        # Find subtitle files based on command wildcards
-        subtitle_extensions = []
-        for part in cmd_parts:
-            if part.startswith('*.'):
-                ext = part[2:]
-                if ext not in ['mkv', 'mp4', 'avi', 'mov', 'wmv', 'flv', 'webm']:  # Not video extensions
-                    subtitle_extensions.append(ext)
-        
-        if not subtitle_extensions:
-            subtitle_extensions = ['srt', 'ass', 'ssa', 'idx', 'sub', 'vtt']  # Default subtitle extensions
-        
-        # Get all subtitle files
-        subtitle_files = self._get_all_files_by_extension(dir_path, subtitle_extensions)
-        
-        # Find matching subtitles
-        matched_subtitles = self._find_matching_subtitles(video_file, subtitle_files)
-        
-        if not matched_subtitles:
-            LOGGER.warning(f"⚠️ No matching subtitles found for: {ospath.basename(video_file)}")
-            return False
-        
-        # Build FFmpeg command
-        cmd = [BinConfig.FFMPEG_NAME, "-hide_banner", "-loglevel", "error", "-progress", "pipe:1"]
-        
-        # Add video input
-        cmd.extend(["-i", video_file])
-        input_files = [video_file]
-        
-        # Add subtitle inputs
-        for sub_info in matched_subtitles:
-            cmd.extend(["-i", sub_info['file']])
-            input_files.append(sub_info['file'])
-        
-        # Add mapping and codec options
-        cmd.extend(["-map", "0:v", "-map", "0:a"])
-        
-        # Map subtitle streams and set codecs
-        for i, sub_info in enumerate(matched_subtitles):
-            cmd.extend(["-map", f"{i+1}"])
-        
-        # Copy video and audio codecs
-        cmd.extend(["-c", "copy"])
-        
-        # Set subtitle codecs and metadata
-        for i, sub_info in enumerate(matched_subtitles):
-            sub_codec = self._get_subtitle_codec(video_ext, sub_info['type'])
-            cmd.extend([f"-c:s:{i}", sub_codec])
-            
-            # Set metadata
-            cmd.extend([f"-metadata:s:s:{i}", "language=sin"])
-            cmd.extend([f"-metadata:s:s:{i}", f"title=FLIXORA"])
-            
-            # Set first subtitle as default and forced
-            if i == 0:
-                cmd.extend([f"-disposition:s:{i}", "default"])
-                cmd.extend([f"-disposition:s:{i}", "forced"])
-            else:
-                cmd.extend([f"-disposition:s:{i}", "0"])
-        
-        # Add threads
-        cmd.extend(["-threads", f"{max(1, cpu_no // 2)}"])
-        
-        # Set output file - maintain original extension with .Sub
-        output_file = f"{dir_path}/{video_base}.Sub.{video_ext}"
-        cmd.append(output_file)
-        
-        # Log command preview
-        cmd_preview = ' '.join([ospath.basename(x) if '/' in x else x for x in cmd[:15]])
-        LOGGER.info(f"🎬 Executing: {cmd_preview}...")
-        LOGGER.info(f"   📹 Input: {video_base_with_ext}")
-        LOGGER.info(f"   📁 Output: {video_base}.Sub.{video_ext}")
-        LOGGER.info(f"   📝 Subtitles: {len(matched_subtitles)} file(s)")
-        
-        if self._listener.is_cancelled:
-            return False
-        
-        # Execute FFmpeg
-        self._listener.subproc = await create_subprocess_exec(*cmd, stdout=PIPE, stderr=PIPE)
-        await self._ffmpeg_progress()
-        _, stderr = await self._listener.subproc.communicate()
-        code = self._listener.subproc.returncode
-        
-        if self._listener.is_cancelled:
-            return False
-        
-        if code == 0:
-            # Delete original files if requested
-            if delete_originals:
-                for input_file in input_files:
-                    try:
-                        if await aiopath.exists(input_file):
-                            await remove(input_file)
-                            LOGGER.info(f"🗑️ Deleted original: {ospath.basename(input_file)}")
-                    except Exception as e:
-                        LOGGER.error(f"❌ Failed to delete {ospath.basename(input_file)}: {e}")
-            
-            LOGGER.info(f"✅ Successfully processed: {ospath.basename(video_file)}")
-            return [output_file]
-        elif code == -9:
-            self._listener.is_cancelled = True
-            return False
-        else:
-            try:
-                stderr = stderr.decode().strip()
-            except Exception:
-                stderr = "Unable to decode the error!"
-            
-            LOGGER.error(f"❌ Failed to process {ospath.basename(video_file)}: {stderr}")
-            
-            # Clean up output file
-            if await aiopath.exists(output_file):
-                await remove(output_file)
-                LOGGER.info(f"🗑️ Cleaned up partial output: {ospath.basename(output_file)}")
-            
-            return False
-
-    async def _process_all_videos_with_template(self, cmd_parts, f_path, delete_originals):
-        """Process all video files in directory using the command template."""
+    async def _process_universal_command(self, f_path, delete_originals):
+        """Process using the universal command template - automatically detects all formats."""
         
         dir_path = ospath.dirname(f_path)
         
-        # Get video extensions from command or use defaults
-        video_extensions = []
-        for part in cmd_parts:
-            if part.startswith('*.'):
-                ext = part[2:]
-                if ext in ['mkv', 'mp4', 'avi', 'mov', 'wmv', 'flv', 'webm']:
-                    video_extensions.append(ext)
-        
-        if not video_extensions:
-            video_extensions = ['mkv', 'mp4', 'avi', 'mov', 'wmv', 'flv', 'webm']  # Default video extensions
-        
-        # Get all video files
-        video_files = self._get_all_files_by_extension(dir_path, video_extensions)
+        # Get ALL video files (any supported format)
+        video_files = self._get_all_video_files(dir_path)
         
         if not video_files:
             LOGGER.error("❌ No video files found in directory!")
             return False
         
-        LOGGER.info(f"🎬 Found {len(video_files)} video file(s) to process")
+        # Get ALL subtitle files (any supported format)
+        all_subtitle_files = self._get_all_subtitle_files(dir_path)
+        
+        if not all_subtitle_files:
+            LOGGER.error("❌ No subtitle files found in directory!")
+            return False
+        
+        LOGGER.info(f"🎬 Found {len(video_files)} video file(s) and {len(all_subtitle_files)} subtitle file(s)")
         
         all_outputs = []
         
         for i, video_file in enumerate(video_files, 1):
             LOGGER.info(f"🎯 Processing video {i}/{len(video_files)}: {ospath.basename(video_file)}")
             
-            result = await self._process_video_with_command_template(cmd_parts, video_file, dir_path, delete_originals)
+            # Get video info
+            self._total_time = (await get_media_info(video_file))[0]
+            video_base_with_ext = ospath.basename(video_file)
+            video_base, video_ext = ospath.splitext(video_base_with_ext)
+            video_ext = video_ext[1:]  # Remove the dot
             
-            if result:
-                all_outputs.extend(result if isinstance(result, list) else [result])
+            # Find matching subtitles for this video
+            matched_subtitles = self._find_matching_subtitles(video_file, all_subtitle_files)
+            
+            if not matched_subtitles:
+                LOGGER.warning(f"⚠️ No matching subtitles found for: {ospath.basename(video_file)}")
+                continue
+            
+            # Build FFmpeg command
+            cmd = [BinConfig.FFMPEG_NAME, "-hide_banner", "-loglevel", "error", "-progress", "pipe:1"]
+            
+            # Add video input
+            cmd.extend(["-i", video_file])
+            input_files = [video_file]
+            
+            # Add subtitle inputs
+            for sub_info in matched_subtitles:
+                cmd.extend(["-i", sub_info['file']])
+                input_files.append(sub_info['file'])
+            
+            # Add mapping
+            cmd.extend(["-map", "0:v", "-map", "0:a"])
+            
+            # Map subtitle streams
+            for i_sub, _ in enumerate(matched_subtitles, 1):
+                cmd.extend(["-map", f"{i_sub}"])
+            
+            # Copy video and audio codecs
+            cmd.extend(["-c", "copy"])
+            
+            # Set subtitle codecs and metadata
+            for i_sub, sub_info in enumerate(matched_subtitles):
+                sub_codec = self._get_subtitle_codec(video_ext, sub_info['type'])
+                cmd.extend([f"-c:s:{i_sub}", sub_codec])
+                
+                # Set metadata (language and title)
+                cmd.extend([f"-metadata:s:s:{i_sub}", "language=sin"])
+                cmd.extend([f"-metadata:s:s:{i_sub}", "title=FLIXORA"])
+                
+                # Set first subtitle as default and forced
+                if i_sub == 0:
+                    cmd.extend([f"-disposition:s:{i_sub}", "default"])
+                    cmd.extend([f"-disposition:s:{i_sub}", "forced"])
+                else:
+                    cmd.extend([f"-disposition:s:{i_sub}", "0"])
+            
+            # Add threads
+            cmd.extend(["-threads", f"{max(1, cpu_no // 2)}"])
+            
+            # Set output file - maintain original extension with .Sub
+            output_file = f"{dir_path}/{video_base}.Sub.{video_ext}"
+            cmd.append(output_file)
+            
+            # Log processing info
+            LOGGER.info(f"   📹 Input: {video_base_with_ext}")
+            LOGGER.info(f"   📁 Output: {video_base}.Sub.{video_ext}")
+            LOGGER.info(f"   📝 Subtitles: {len(matched_subtitles)} file(s)")
+            
+            if self._listener.is_cancelled:
+                return False
+            
+            # Execute FFmpeg
+            self._listener.subproc = await create_subprocess_exec(*cmd, stdout=PIPE, stderr=PIPE)
+            await self._ffmpeg_progress()
+            _, stderr = await self._listener.subproc.communicate()
+            code = self._listener.subproc.returncode
+            
+            if self._listener.is_cancelled:
+                return False
+            
+            if code == 0:
+                # Delete original files if requested
+                if delete_originals:
+                    for input_file in input_files:
+                        try:
+                            if await aiopath.exists(input_file):
+                                await remove(input_file)
+                                LOGGER.info(f"🗑️ Deleted original: {ospath.basename(input_file)}")
+                        except Exception as e:
+                            LOGGER.error(f"❌ Failed to delete {ospath.basename(input_file)}: {e}")
+                
+                LOGGER.info(f"✅ Successfully processed: {ospath.basename(video_file)}")
+                all_outputs.append(output_file)
+            elif code == -9:
+                self._listener.is_cancelled = True
+                return False
             else:
-                LOGGER.warning(f"⚠️ Failed to process: {ospath.basename(video_file)}")
+                try:
+                    stderr = stderr.decode().strip()
+                except Exception:
+                    stderr = "Unable to decode the error!"
+                
+                LOGGER.error(f"❌ Failed to process {ospath.basename(video_file)}: {stderr}")
+                
+                # Clean up output file
+                if await aiopath.exists(output_file):
+                    await remove(output_file)
+                    LOGGER.info(f"🗑️ Cleaned up partial output: {ospath.basename(output_file)}")
             
-            # Check for cancellation
+            # Check for cancellation between files
             if self._listener.is_cancelled:
                 LOGGER.info("❌ Processing cancelled by user")
                 return False
@@ -771,27 +783,33 @@ class FFMpeg:
             return False
 
     async def ffmpeg_cmds(self, ffmpeg, f_path):
-        """Main entry point for FFmpeg processing with command string support."""
+        """Main entry point - only accepts the universal command format."""
         self.clear()
         
-        # Handle both list format and string format
-        if isinstance(ffmpeg, list) and len(ffmpeg) == 1:
-            # Single string command format
-            cmd_string = ffmpeg[0]
-            cmd_parts, delete_originals = self._parse_ffmpeg_command_string(cmd_string)
-        elif isinstance(ffmpeg, list):
-            # Legacy list format
-            delete_originals = "-del" in ffmpeg
-            cmd_parts = [item for item in ffmpeg if item != "-del"]
-        else:
-            LOGGER.error("❌ Invalid ffmpeg command format!")
+        # Validate command format
+        if not isinstance(ffmpeg, list) or len(ffmpeg) != 1:
+            LOGGER.error("❌ Invalid command format! Only accepts single command string format.")
             return False
         
-        LOGGER.info("🎬 Universal video-subtitle processing mode")
+        cmd_string = ffmpeg[0]
+        
+        # Check for required components in the command
+        required_components = ["-i *.mkv", "-i *.srt", "-map 0:v", "-map 0:a", "-map 1", "-c copy"]
+        for component in required_components:
+            if component not in cmd_string:
+                LOGGER.error(f"❌ Missing required component: {component}")
+                return False
+        
+        # Check for -del flag
+        delete_originals = '-del' in cmd_string
+        
+        LOGGER.info("🎬 Universal Auto-Detection Mode Active")
+        LOGGER.info("   🔍 Auto-detecting all video formats: MKV, MP4, AVI, MOV, WMV, FLV, WEBM, M4V, 3GP, OGV")
+        LOGGER.info("   🔍 Auto-detecting all subtitle formats: SRT, ASS, SSA, IDX+SUB, VTT, SBV, TTML, DFXP")
         LOGGER.info(f"   🗑️ Delete originals: {'Yes' if delete_originals else 'No'}")
         
-        # Process all videos in directory
-        return await self._process_all_videos_with_template(cmd_parts, f_path, delete_originals)
+        # Process with universal auto-detection
+        return await self._process_universal_command(f_path, delete_originals)
 
     async def convert_video(self, video_file, ext, retry=False):
         self.clear()
