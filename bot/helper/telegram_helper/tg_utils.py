@@ -4,7 +4,7 @@ from uuid import uuid4
 from pyrogram.enums import ChatAction
 from pyrogram.errors import ChannelInvalid, PeerIdInvalid, RPCError, UserNotParticipant
 
-from ..ext_utils.links_utils import encode_slink
+from bot.helper.ext_utils.bot_utils import encode_slink
 
 from ... import LOGGER, user_data
 from ...core.config_manager import Config
@@ -49,7 +49,7 @@ async def forcesub(message, ids, button=None):
     if join_button:
         if button is None:
             button = ButtonMaker()
-        _msg = "┠ Channel(s) pending to be joined, Join Now!"
+        _msg = "┊ Channel(s) pending to be joined, Join Now!"
         for key, value in join_button.items():
             button.url_button(f"Join {key}", value, "footer")
     return _msg, button
@@ -69,7 +69,7 @@ async def check_botpm(message, button=None):
     except Exception:
         if button is None:
             button = ButtonMaker()
-        _msg = "┠ <i>Bot isn't Started in PM or Inbox (Private)</i>"
+        _msg = "┊ <i>Bot isn't Started in PM or Inbox (Private)</i>"
         button.url_button(
             "Start Bot Now", f"https://t.me/{TgClient.BNAME}?start=start", "header"
         )
@@ -111,7 +111,7 @@ async def verify_token(user_id, button=None):
             await short_url(f"https://t.me/{TgClient.BNAME}?start={encrypt_url}"),
         )
         return (
-            f"┠ <i>Verify Access Token has been expired,</i> Kindly validate a new access token to start using bot again.\n┃\n┖ <b>Validity :</b> <code>{get_readable_time(Config.VERIFY_TIMEOUT)}</code>",
+            f"┊ <i>Verify Access Token has been expired,</i> Kindly validate a new access token to start using bot again.\n┃\n╰ <b>Validity :</b> <code>{get_readable_time(Config.VERIFY_TIMEOUT)}</code>",
             button,
         )
     return None, button

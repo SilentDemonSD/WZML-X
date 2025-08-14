@@ -114,8 +114,8 @@ class TelegramUploader:
             )
             msg = f"""➲ <b><u>Leech Started :</u></b>
 ┃
-┠ <b>User :</b> {self._listener.user.mention} ( #ID{self._listener.user_id} ){f"\n┠ <b>Message Link :</b> <a href='{msg_link}'>Click Here</a>" if msg_link else ""}
-┖ <b>Source :</b> <a href='{self._listener.source_url}'>Click Here</a>"""
+┊ <b>User :</b> {self._listener.user.mention} ( #ID{self._listener.user_id} ){f"\n┊ <b>Message Link :</b> <a href='{msg_link}'>Click Here</a>" if msg_link else ""}
+╰ <b>Source :</b> <a href='{self._listener.source_url}'>Click Here</a>"""
             try:
                 self._log_msg = await TgClient.bot.send_message(
                     chat_id=self._listener.up_dest,
@@ -430,16 +430,6 @@ class TelegramUploader:
         retry=retry_if_exception_type(Exception),
     )
     async def _upload_file(self, cap_mono, file, o_path, force_document=False):
-        if self._sent_msg is None:
-            LOGGER.error("Cannot upload: _sent_msg is None")
-            await self._listener.on_upload_error("Upload failed: Message not initialized")
-            return
-            
-        if not hasattr(self._sent_msg, 'chat') or self._sent_msg.chat is None:
-            LOGGER.error("Cannot upload: _sent_msg.chat is None")
-            await self._listener.on_upload_error("Upload failed: Invalid message object")
-            return
-
         if (
             self._thumb is not None
             and not await aiopath.exists(self._thumb)

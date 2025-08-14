@@ -82,10 +82,10 @@ async def restart_notification():
         if notifier_dict := await database.get_incomplete_tasks():
             for cid, data in notifier_dict.items():
                 msg = f"""⌬ <b><i>{"Restarted Successfully!" if cid == chat_id else "Bot Restarted!"}</i></b>
-┟ <b>Date:</b> {now.strftime("%d/%m/%y")}
-┠ <b>Time:</b> {now.strftime("%I:%M:%S %p")}
-┠ <b>TimeZone:</b> Asia/Kolkata
-┖ <b>Version:</b> {get_version()}"""
+╭ <b>Date:</b> {now.strftime("%d/%m/%y")}
+┊ <b>Time:</b> {now.strftime("%I:%M:%S %p")}
+┊ <b>TimeZone:</b> Asia/Kolkata
+╰ <b>Version:</b> {get_version()}"""
                 for tag, links in data.items():
                     msg += f"\n\n{tag}: "
                     for index, link in enumerate(links, start=1):
@@ -102,10 +102,10 @@ async def restart_notification():
                 chat_id=chat_id,
                 message_id=msg_id,
                 text=f"""⌬ <b><i>Restarted Successfully!</i></b>
-┟ <b>Date:</b> {now.strftime("%d/%m/%y")}
-┠ <b>Time:</b> {now.strftime("%I:%M:%S %p")}
-┠ <b>TimeZone:</b> Asia/Kolkata
-┖ <b>Version:</b> {get_version()}""",
+╭ <b>Date:</b> {now.strftime("%d/%m/%y")}
+┊ <b>Time:</b> {now.strftime("%I:%M:%S %p")}
+┊ <b>TimeZone:</b> Asia/Kolkata
+╰ <b>Version:</b> {get_version()}""",
             )
         except Exception as e:
             LOGGER.error(e)

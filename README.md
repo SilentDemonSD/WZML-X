@@ -1,189 +1,158 @@
 <p align="center">
-    <a href="https://github.com/SilentDemonSD/WZML-X">
-        <kbd>
-            <img width="250" src="https://graph.org/file/639fe4239b78e5862b302.jpg" alt="WZML-X Logo">
-        </kbd>
-    </a>
-
-<i>This repository is a feature-enhanced version of the [mirror-leech-telegram-bot](https://github.com/anasty17/mirror-leech-telegram-bot). It integrates various improvements from multiple sources, expanding functionality while maintaining efficiency. Unlike the base repository, this version is fully deployable on Heroku.</i>
-
+  <img width="220" src="https://i.postimg.cc/XvdvXTkS/photo-2024-12-27-11-46-15.jpg" alt="Downloader Zone Logo">
 </p>
 
-<div align=center>
+<p align="center">
+  <b>Modern Telegram Mirror/Leech Bot</b><br>
+  <i>Wzml-X is a powerful, modern Telegram bot for mirroring, leeching, and managing downloads to Google Drive, Telegram, or any RClone-supported cloud. Built for speed, reliability, and a beautiful user experience.</i>
+</p>
 
-[![](https://img.shields.io/github/repo-size/weebzone/WZML-X?color=green&label=Repo%20Size&labelColor=292c3b)](#) [![](https://img.shields.io/github/commit-activity/m/weebzone/WZML-X?logo=github&labelColor=292c3b&label=Github%20Commits)](#) [![](https://img.shields.io/github/license/weebzone/WZML-X?style=flat&label=License&labelColor=292c3b)](#)|[![](https://img.shields.io/github/issues-raw/weebzone/WZML-X?style=flat&label=Open%20Issues&labelColor=292c3b)](#) [![](https://img.shields.io/github/issues-closed-raw/weebzone/WZML-X?style=flat&label=Closed%20Issues&labelColor=292c3b)](#) [![](https://img.shields.io/github/issues-pr-raw/weebzone/WZML-X?style=flat&label=Open%20Pull%20Requests&labelColor=292c3b)](#) [![](https://img.shields.io/github/issues-pr-closed-raw/weebzone/WZML-X?style=flat&label=Closed%20Pull%20Requests&labelColor=292c3b)](#)
-:---:|:---:|
-[![](https://img.shields.io/github/languages/count/weebzone/WZML-X?style=flat&label=Total%20Languages&labelColor=292c3b&color=blueviolet)](#) [![](https://img.shields.io/github/languages/top/weebzone/WZML-X?style=flat&logo=python&labelColor=292c3b)](#) [![](https://img.shields.io/github/last-commit/weebzone/WZML-X?style=flat&label=Last%20Commit&labelColor=292c3b&color=important)](#) [![](https://badgen.net/github/branches/weebzone/WZML-X?label=Total%20Branches&labelColor=292c3b)](#)|[![](https://img.shields.io/github/forks/weebzone/WZML-X?style=flat&logo=github&label=Forks&labelColor=292c3b&color=critical)](#) [![](https://img.shields.io/github/stars/weebzone/WZML-X?style=flat&logo=github&label=Stars&labelColor=292c3b&color=yellow)](#) [![](https://badgen.net/docker/pulls/codewithweeb/weebzone?icon=docker&label=Pulls&labelColor=292c3b&color=blue)](#)
-[![](https://img.shields.io/badge/Telegram%20Channel-Join-9cf?style=for-the-badge&logo=telegram&logoColor=blue&style=flat&labelColor=292c3b)](https://t.me/WZML_X) |[![](https://img.shields.io/badge/Support%20Group-Join-9cf?style=for-the-badge&logo=telegram&logoColor=blue&style=flat&labelColor=292c3b)](https://t.me/WZML_Support) |
-
-</div>
+<p align="center">
+  <a href="https://github.com/DownloaderZone/WZML-X"><img src="https://img.shields.io/github/stars/DownloaderZone/WZML-X?style=flat-square&color=yellow&logo=github"/></a>
+  <a href="https://github.com/DownloaderZone/WZML-X"><img src="https://img.shields.io/github/forks/DownloaderZone/WZML-X?style=flat-square&color=blue&logo=github"/></a>
+  <a href="https://t.me/DOWNLOADERZONEUPDATES"><img src="https://img.shields.io/badge/Telegram-Channel-blue?style=flat-square&logo=telegram"/></a>
+  <a href="https://t.me/DZONEDISCUSSION"><img src="https://img.shields.io/badge/Support-Group-blueviolet?style=flat-square&logo=telegram"/></a>
+  <a href="https://github.com/DownloaderZone/WZML-X/blob/main/LICENSE"><img src="https://img.shields.io/github/license/DownloaderZone/WZML-X?style=flat-square&color=success"/></a>
+</p>
 
 ---
-Below is a refined version that preserves all the important details while enhancing readability and design :
 
----
-
-# Deployment Guide (VPS)
+## 🚀 Features
 
 <details>
-  <summary><strong>View All Steps <kbd>Click Here</kbd></strong></summary>
+  <summary><b>View all features</b></summary>
 
----
-
-## 1. Prerequisites
-
-- **Tutorial Video from A to Z (Latest Video)**
-- Special thanks to [Wiszky](https://github.com/vishnoe115)
-
-[![See Video](https://img.shields.io/badge/See%20Video-black?style=for-the-badge&logo=YouTube)](https://youtu.be/xzLOLyKYl54)
-
----
-
-## 2. Installing Requirements
-
-Clone this repository:
-
-```bash
-git clone https://github.com/SilentDemonSD/WZML-X mirrorbot/ && cd mirrorbot
-```
-
----
-
-## 3. Build and Run the Docker Image
-
-*Make sure you mount the app folder and install Docker following the official documentation.*
-
-There are two methods to build and run the Docker image:
-
-### 3.1 Using Official Docker Commands
-
-- **Start Docker daemon** (skip if already running):
-
-  ```bash
-  sudo dockerd
-  ```
-
-- **Build the Docker image:**
-
-  ```bash
-  sudo docker build . -t wzmlx
-  ```
-
-- **Run the image:**
-
-  ```bash
-  sudo docker run -p 80:80 -p 8080:8080 wzmlx
-  ```
-
-- **To stop the running image:**
-
-  First, list running containers:
-
-  ```bash
-  sudo docker ps
-  ```
-
-  Then, stop the container using its ID:
-
-  ```bash
-  sudo docker stop <container_id>
-  ```
-
----
-
-### 3.2 Using docker-compose (Recommended)
-
-**Note:** If you want to use ports other than 80 and 8080 for torrent file selection and rclone serve respectively, update them in [docker-compose.yml](https://github.com/weebzone/WZML-X/blob/master/docker-compose.yml).
-
-- **Install docker-compose:**
-
-  ```bash
-  sudo apt install docker-compose
-  ```
-
-- **Build and run the Docker image (or view the current running image):**
-
-  ```bash
-  sudo docker-compose up
-  ```
-
-- **After editing files (e.g., using nano to edit start.sh), rebuild:**
-
-  ```bash
-  sudo docker-compose up --build
-  ```
-
-- **To stop the running image:**
-
-  ```bash
-  sudo docker-compose stop
-  ```
-
-- **To restart the image:**
-
-  ```bash
-  sudo docker-compose start
-  ```
-
-- **To view the latest logs from the running container (after mounting the folder):**
-
-  ```bash
-  sudo docker-compose up
-  ```
-
-- **Tutorial Video for docker-compose and checking ports:**
-
-  [![See Video](https://img.shields.io/badge/See%20Video-black?style=for-the-badge&logo=YouTube)](https://youtu.be/c8_TU1sPK08)
-
-
-------
-
-#### Docker Notes
-
-**IMPORTANT NOTES**:
-
-1. Set `BASE_URL_PORT` and `RCLONE_SERVE_PORT` variables to any port you want to use. Default is `80` and `8080` respectively.
-2. You should stop the running image before deleting the container and you should delete the container before the image.
-3. To delete the container (this will not affect on the image):
-
-```
-sudo docker container prune
-```
-
-4. To delete te images:
-
-```
-sudo docker image prune -a
-```
-
-5. Check the number of processing units of your machine with `nproc` cmd and times it by 4, then edit `AsyncIOThreadsCount` in qBittorrent.conf.
-    
-  </details></li></ol>
+- Multi-source Download: Supports torrents (qBittorrent, Aria2c), direct links, Mega.nz, YouTube (yt-dlp), devuploads, and more
+- Flexible Uploads: Upload to Google Drive, Telegram, RClone remotes, or supported DDL sites
+- Advanced File Management: Archive/extract (zip, rar, 7z), split/join files, rename, and more
+- User & Sudo Controls: Per-user settings, limits, and admin controls
+- Status & Queue System: Real-time status, unlimited tasks, and queue management
+- RSS Automation: Auto-download and filter RSS feeds
+- Database Support: MongoDB for persistent settings, tasks, and user data
+- Docker Ready: Easy deployment with Docker & docker-compose
+- Extensive Configurability: All features and limits are configurable via environment or config file
+- Multi-cloud: RClone integration for any supported cloud (GDrive, OneDrive, Dropbox, etc)
+- Multi-bot & Multi-user: Designed for groups, channels, and private use
+- Token/Multi-Shortener Support: Support for token based usage and multi-shortener services
+- **Actively Maintained**: By Downloader Zone & Team.
 </details>
-    
-------
 
-# Deployment Guide (Heroku)
+---
+
+## 🖥️ Live Demo & Public Mirror/Leech Group
+
+- Channel: [DOWNLOADER ZONE UPDATES](https://t.me/DOWNLOADERZONEUPDATES)
+- Group: [DOWNLOADER ZONE FREE MIRROR LEECH GROUP](https://t.me/downloaderzonefreemirrorleech)
+
+---
+
+## 📦 Deploy Methods
+
+- [Google Collab Deploy](https://colab.research.google.com/drive/1A9h93Qtyrk1Rf2902CXHOM0mTMah1AQ9?authuser=2)
+
+---
+
+## ⚙️ Configuration
+
+All configuration is done via `config.env` (or environment variables). See `config_sample.py` for all options and detailed comments.
 
 <details>
-  <summary><strong>View All Steps <kbd>Click Here</kbd></strong></summary>
+  <summary><b>Click to view all config variables</b></summary>
 
----
+### Required
+- `BOT_TOKEN`: Telegram Bot Token from @BotFather
+- `OWNER_ID`: Telegram User ID of the bot owner
+- `TELEGRAM_API`: Telegram API ID from https://my.telegram.org
+- `TELEGRAM_HASH`: Telegram API Hash from https://my.telegram.org
 
-**Check the Docs Here :** [Click Here](https://github.com/SilentDemonSD/WZ-Deploy/tree/main?tab=readme-ov-file#2%EF%B8%8F⃣-method-2-github-workflow-guide)
+### Optional (most common)
+- `DATABASE_URL`: MongoDB connection string
+- `DOWNLOAD_DIR`: Local download directory
+- `AUTHORIZED_CHATS`: Space-separated list of allowed user/group IDs
+- `SUDO_USERS`: Space-separated list of sudo user IDs
+- `DEFAULT_UPLOAD`: `gd` (Google Drive), `rc` (RClone), or `ddl` (DDL sites)
+- `GDRIVE_ID`: Google Drive folder/TeamDrive ID or `root`
+- `RCLONE_PATH`: Default rclone path (e.g. `remote:path`)
+- `RCLONE_FLAGS`: RClone flags (see [RClone Flags](https://rclone.org/flags/))
+- `RCLONE_SERVE_URL`: URL for rclone serve (e.g. `http://myip:port`)
+- `RCLONE_SERVE_PORT`: Port for rclone serve (default: 8080)
+- `RCLONE_SERVE_USER`/`RCLONE_SERVE_PASS`: Auth for rclone serve
+- `LEECH_LOG_ID`/`MIRROR_LOG_ID`: Chat IDs for logs
+- `QUEUE_ALL`/`QUEUE_DOWNLOAD`/`QUEUE_UPLOAD`: Task queue limits
+- `DAILY_TASK_LIMIT`, `DAILY_MIRROR_LIMIT`, `DAILY_LEECH_LIMIT`: User limits
+- `YT_DLP_OPTIONS`: Default yt-dlp options (see [yt-dlp options](https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L184))
+- `EXTENSION_FILTER`: Space-separated list of file extensions to block
+- `SAFE_MODE`: Hide links/files in group, send to PM
+- `TIMEZONE`: Timezone (default: Asia/Kolkata)
 
----
+...and many more! See `config_sample.py`.
 
 </details>
 
-## 🏅 **Bot Authors**
-<details>
-    <summary><b>Click Here For Description</b></summary>
+---
 
-|<img width="80" src="https://avatars.githubusercontent.com/u/105407900?v=4">|<img width="80" src="https://avatars.githubusercontent.com/u/93116400?v=4">|<img width="80" src="https://avatars.githubusercontent.com/u/113664541?v=4">|<img width="80" src="https://avatars.githubusercontent.com/u/84721324?v=4">|
-|:---:|:---:|:---:|:---:|
-|[`SilentDemonSD`](https://github.com/SilentDemonSD)|[`RjRiajul`](https://github.com/rjriajul)|[`CodeWithWeeb`](https://github.com/weebzone)|[`Maverick`](https://github.com/MajnuRangeela)|
-|Author and DDL, UI Design, More Customs..|Co-Author & Maintainer|Author and Wraps Up Features|Co-Author & Bug Tester|
+## 📝 Usage
+
+- Start the bot on Telegram and use `/help` for all commands.
+- All commands can be set automatically with the `SET_COMMANDS` variable.
+- For advanced usage, see the Bot Commands below.
+
+---
+## 🤖 Bot Commands
+
+<details>
+  <summary>Click to view all bot commands</summary>
+
+```
+mirror - or /m Mirror
+leech - or /l Leech
+qbmirror - or /qm Mirror torrent using qBittorrent
+qbleech - or /ql Leech torrent using qBittorrent
+jdmirror - or /jm Mirror files using JDownloader
+jdleech - or /jl Leech files using JDownloader
+ytdl - or /y Mirror yt-dlp supported link
+ytdlleech - or /yl Leech through yt-dlp supported link
+clone - Copy file/folder to Drive
+count - Count file/folder from Drive
+select - Select files from torrent
+list - Search files in Drive
+search - Search for torrents with API
+mediainfo - Get Mediainfo of the Target Media
+rss - Rss menu
+usetting - User settings
+status - Get Mirror Status message
+forcestart - Force start from queued task
+cancel - Cancel a task
+cancelall - Cancel all tasks
+login - Login to Bot
+ping - Ping the Bot
+stats - Bot Usage Stats
+speedtest - Check Internet Speed
+help - All cmds with description
+bsetting - Bot settings
+del - Delete file/folder from Drive
+restart - Restart the Bot
+restartses - Restart User Sessions
+```
 
 </details>
+
+---
+
+## 🏷️ Credits & Authors
+- **Downloader Zone** ([Telegram](https://t.me/DOWNLOADERZONEUPDATES), [GitHub](https://github.com/DOWNLOADER-ZONE))
+- **BeastBots Team** ([Telegram](https://t.me/MirrorBeast), [GitHub](https://github.com/BeastBots))
+- Base Repo is [WZML-X](https://github.com/SilentDemonSD/WZML-X)
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
+
+---
+
+<p align="center">
+  <b>Made with ❤️ by Downloader Zone</b>
+</p>
 

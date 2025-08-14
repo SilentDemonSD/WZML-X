@@ -25,19 +25,19 @@ async def authorize(_, message):
             and thread_id in user_data[chat_id].get("thread_ids", [])
             or thread_id is None
         ):
-            msg = "Already Authorized!"
+            msg = "Already Done 👍"
         else:
             if "thread_ids" in user_data[chat_id]:
                 user_data[chat_id]["thread_ids"].append(thread_id)
             else:
                 user_data[chat_id]["thread_ids"] = [thread_id]
-            msg = "Authorized"
+            msg = "Done 👍"
     else:
         update_user_ldata(chat_id, "AUTH", True)
         if thread_id is not None:
             update_user_ldata(chat_id, "thread_ids", [thread_id])
         await database.update_user_data(chat_id)
-        msg = "Authorized"
+        msg = "Done 👍"
     await send_message(message, msg)
 
 

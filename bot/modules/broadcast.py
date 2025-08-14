@@ -42,9 +42,9 @@ async def delete_broadcast(bc_id, message):
     return await edit_message(
         temp_wait,
         f"""⌬  <b><i>Broadcast Deleted Stats :</i></b>
-┠ <b>Total Users:</b> <code>{total}</code>
-┠ <b>Success:</b> <code>{success}</code>
-┖ <b>Failed Attempts:</b> <code>{failed}</code>
+┊ <b>Total Users:</b> <code>{total}</code>
+┊ <b>Success:</b> <code>{success}</code>
+╰ <b>Failed Attempts:</b> <code>{failed}</code>
 
 <b>Broadcast ID:</b> <code>{bc_id}</code>""",
     )
@@ -89,9 +89,9 @@ async def edit_broadcast(bc_id, message, rply):
     return await edit_message(
         temp_wait,
         f"""⌬  <b><i>Broadcast Edited Stats :</i></b>
-┠ <b>Total Users:</b> <code>{total}</code>
-┠ <b>Success:</b> <code>{success}</code>
-┖ <b>Failed Attempts:</b> <code>{failed}</code>
+┊ <b>Total Users:</b> <code>{total}</code>
+┊ <b>Success:</b> <code>{success}</code>
+╰ <b>Failed Attempts:</b> <code>{failed}</code>
 
 <b>Broadcast ID:</b> <code>{bc_id}</code>""",
     )
@@ -155,11 +155,11 @@ async def broadcast(_, message):
     # Broadcasting logic
     start_time = time()
     status = """⌬  <b><i>Broadcast Stats :</i></b>
-┠ <b>Total Users:</b> <code>{t}</code>
-┠ <b>Success:</b> <code>{s}</code>
-┠ <b>Blocked Users:</b> <code>{b}</code>
-┠ <b>Deleted Accounts:</b> <code>{d}</code>
-┖ <b>Unsuccess Attempt:</b> <code>{u}</code>"""
+┊ <b>Total Users:</b> <code>{t}</code>
+┊ <b>Success:</b> <code>{s}</code>
+┊ <b>Blocked Users:</b> <code>{b}</code>
+┊ <b>Deleted Accounts:</b> <code>{d}</code>
+╰ <b>Unsuccess Attempt:</b> <code>{u}</code>"""
     updater = time()
     bc_hash, bc_msgs = token_hex(5), []
     pls_wait = await send_message(message, status.format(t=0, s=0, b=0, d=0, u=0))

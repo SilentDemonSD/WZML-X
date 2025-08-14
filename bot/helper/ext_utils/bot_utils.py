@@ -5,6 +5,7 @@ from asyncio import (
     sleep,
 )
 from asyncio.subprocess import PIPE
+from base64 import urlsafe_b64decode, urlsafe_b64encode
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial, wraps
 
@@ -154,7 +155,6 @@ def arg_parser(items, arg_base):
         "-med",
         "-ut",
         "-bt",
-        "-yt",
     }
     if Config.DISABLE_BULK and "-b" in items:
         arg_base["-b"] = False
@@ -188,7 +188,6 @@ def arg_parser(items, arg_base):
                     "-med",
                     "-ut",
                     "-bt",
-                    "-yt",
                 ]
             ):
                 arg_base[part] = True
@@ -250,6 +249,16 @@ async def get_content_type(url):
 def update_user_ldata(id_, key, value):
     user_data.setdefault(id_, {})
     user_data[id_][key] = value
+
+
+def encode_slink(string):
+    return (urlsafe_b64encode(string.encode("ascii")).decode("ascii")).strip("=")
+
+
+def decode_slink(b64_str):
+    return urlsafe_b64decode(
+        (b64_str.strip("=") + "=" * (-len(b64_str.strip("=")) % 4)).encode("ascii")
+    ).decode("ascii")
 
 
 async def cmd_exec(cmd, shell=False):

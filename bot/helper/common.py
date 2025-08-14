@@ -47,7 +47,6 @@ from .ext_utils.media_utils import (
     get_document_type,
     take_ss,
 )
-from .ext_utils.metadata_utils import MetadataProcessor
 from .mirror_leech_utils.gdrive_utils.list import GoogleDriveList
 from .mirror_leech_utils.rclone_utils.list import RcloneList
 from .mirror_leech_utils.status_utils.ffmpeg_status import FFmpegStatus
@@ -66,17 +65,6 @@ class TaskConfig:
         self.user = self.message.from_user or self.message.sender_chat
         self.user_id = self.user.id
         self.user_dict = user_data.get(self.user_id, {})
-        self.metadata_processor = MetadataProcessor()
-        for k in ("METADATA", "AUDIO_METADATA", "VIDEO_METADATA", "SUBTITLE_METADATA"):
-            v = self.user_dict.get(k, {})
-            if k == "METADATA":
-                k = "default_metadata"
-            if isinstance(v, dict):
-                setattr(self, f"{k.lower()}_dict", v)
-            elif isinstance(v, str):
-                setattr(self, f"{k.lower()}_dict", self.metadata_processor.parse_string(v))
-            else:
-                setattr(self, f"{k.lower()}_dict", {})
         self.dir = f"{DOWNLOAD_DIR}{self.mid}"
         self.up_dir = ""
         self.link = ""
@@ -95,7 +83,6 @@ class TaskConfig:
         self.subsize = 0
         self.proceed_count = 0
         self.is_leech = False
-        self.is_yt = False
         self.is_qbit = False
         self.is_mega = False
         self.is_nzb = False
@@ -130,7 +117,6 @@ class TaskConfig:
         self.user_trans = False
         self.progress = True
         self.ffmpeg_cmds = None
-        self.metadata_title = None
         self.chat_thread_id = None
         self.subproc = None
         self.thumb = None
@@ -276,8 +262,6 @@ class TaskConfig:
                 ]
             else:
                 self.ffmpeg_cmds = None
-
-        self.metadata_title = self.user_dict.get("METADATA")
 
         if not self.is_leech:
             self.stop_duplicate = (
@@ -1091,9 +1075,3 @@ class TaskConfig:
                         await remove(f_path)
                     except Exception:
                         self.is_cancelled = True
-
-    def parse_metadata_string(self, metadata_str):
-        return self.metadata_processor.parse_string(metadata_str)
-
-    def merge_metadata_dicts(self, default_dict, cmd_dict):
-        return self.metadata_processor.merge_dicts(default_dict, cmd_dict)

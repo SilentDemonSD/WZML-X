@@ -27,6 +27,10 @@ NAME_SWAP = ""
 FFMPEG_CMDS = {}
 UPLOAD_PATHS = {}
 
+# Custom Bot Header
+CUSTOM_BOT_HEADER = "Beast"
+CUSTOM_BOT_HEADER_LINK = "https://t.me/MirrorBeast"
+
 # Hyper Tg Downloader
 HELPER_TOKENS = ""
 
@@ -43,8 +47,8 @@ DISABLE_SEED = False
 DISABLE_FF_MODE = False
 
 # Telegraph
-AUTHOR_NAME = "WZML-X"
-AUTHOR_URL = "https://t.me/WZML_X"
+AUTHOR_NAME = "Beast"
+AUTHOR_URL = "https://t.me/MirrorBeast"
 
 # Task Limits
 DIRECT_LIMIT = 0
@@ -70,18 +74,18 @@ HYDRA_IP = ""
 HYDRA_API_KEY = ""
 
 # Media Search
-IMDB_TEMPLATE = """<b>Title: </b> {title} [{year}]
-<b>Also Known As:</b> {aka}
-<b>Rating ⭐️:</b> <i>{rating}</i>
-<b>Release Info: </b> <a href="{url_releaseinfo}">{release_date}</a>
-<b>Genre: </b>{genres}
-<b>IMDb URL:</b> {url}
-<b>Language: </b>{languages}
-<b>Country of Origin : </b> {countries}
+IMDB_TEMPLATE = """<b>🎬 Title:</b> <a href="{url}">{title}</a> <b>({year})</b>
+<b>🎭 Also Known As:</b> <i>{aka}</i>
+<b>⭐ Rating:</b> <i>{rating}/10</i>
+<b>📅 Release Date:</b> <a href="{url_releaseinfo}">{release_date}</a>
+<b>📚 Genre:</b> {genres}
+<b>🗣️ Language:</b> {languages}
+<b>🌍 Country:</b> {countries}
 
-<b>Story Line: </b><code>{plot}</code>
+<b>📖 Storyline:</b>
+<code>{plot}</code>
 
-<a href="{url_cast}">Read More ...</a>"""
+<b>🔗 Explore More:</b> <a href="{url_cast}">Full Cast & Details</a> | <a href="{url}">IMDb Page</a>"""
 
 # Task Tools
 FORCE_SUB_IDS = ""
@@ -103,25 +107,19 @@ TIMEZONE = "Asia/Kolkata"
 
 # GDrive Tools
 GDRIVE_ID = ""
-GD_DESP = "Uploaded with WZ Bot"
+GD_DESP = "Uploaded by Beast"
 IS_TEAM_DRIVE = False
 STOP_DUPLICATE = False
 INDEX_URL = ""
-
-# YT Tools
-YT_DESP = "Uploaded to YouTube by WZML-X bot"
-YT_TAGS = ["telegram", "bot", "youtube"]  # or as a comma-separated string
-YT_CATEGORY_ID = 22
-YT_PRIVACY_STATUS = "unlisted"
 
 # Rclone
 RCLONE_PATH = ""
 RCLONE_FLAGS = ""
 RCLONE_SERVE_URL = ""
-SHOW_CLOUD_LINK = True
 RCLONE_SERVE_PORT = 0
 RCLONE_SERVE_USER = ""
 RCLONE_SERVE_PASS = ""
+SHOW_CLOUD_LINK = False
 
 # JDownloader
 JD_EMAIL = ""

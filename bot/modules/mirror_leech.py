@@ -110,13 +110,11 @@ class Mirror(TaskListener):
             "-hl": False,
             "-bt": False,
             "-ut": False,
-            "-yt": False,
             "-i": 0,
             "-sp": 0,
             "link": "",
             "-n": "",
             "-m": "",
-            "-meta": "",
             "-up": "",
             "-rcf": "",
             "-au": "",
@@ -180,14 +178,6 @@ class Mirror(TaskListener):
         self.folder_name = f"/{args["-m"]}".rstrip("/") if len(args["-m"]) > 0 else ""
         self.bot_trans = args["-bt"]
         self.user_trans = args["-ut"]
-        self.is_yt = args["-yt"]
-        self.metadata_dict = self.default_metadata_dict.copy()
-        self.audio_metadata_dict = self.audio_metadata_dict.copy()
-        self.video_metadata_dict = self.video_metadata_dict.copy()
-        self.subtitle_metadata_dict = self.subtitle_metadata_dict.copy()
-        if args["-meta"]:
-            meta = self.metadata_processor.parse_string(args["-meta"])
-            self.metadata_dict = self.metadata_processor.merge_dicts(self.metadata_dict, meta)
 
         headers = args["-h"]
         is_bulk = args["-b"]

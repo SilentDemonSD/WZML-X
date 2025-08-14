@@ -62,6 +62,7 @@ class YoutubeDLHelper:
             "progress_hooks": [self._on_download_progress],
             "logger": MyLogger(self, self._listener),
             "usenetrc": True,
+            # "cookiefile": "cookies.txt", # Will be set dynamically
             "allow_multiple_video_streams": True,
             "allow_multiple_audio_streams": True,
             "noprogress": True,
@@ -79,17 +80,18 @@ class YoutubeDLHelper:
                 "extractor": lambda n: 3,
             },
         }
-        cookie_to_use = (
-            usr_cookie
-            if not self._listener.user_dict.get("USE_DEFAULT_COOKIE", False)
-            and (usr_cookie := self._listener.user_dict.get("USER_COOKIE_FILE", ""))
-            and ospath.exists(usr_cookie)
-            else "cookies.txt"
-        )
+
+        user_id = self._listener.user_id
+        user_settings = user_data.get(user_id, {})
+        cookie_to_use = user_settings.get("USER_COOKIE_FILE") if user_settings.get("USE_USER_COOKIE") and ospath.exists(user_settings.get("USER_COOKIE_FILE", "")) else "cookies.txt"
+        
+        if cookie_to_use != "cookies.txt":
+            LOGGER.info(f"Using user cookie file: {cookie_to_use}")
+        else:
+            LOGGER.warning(f"User {user_id} opted for user cookie, but valid file not found. Falling back to default.")
+
         self.opts["cookiefile"] = cookie_to_use
-        LOGGER.info(
-            f"Using cookies.txt file: {cookie_to_use} | User ID : {self._listener.user_id}"
-        )
+        LOGGER.info(f"Using cookie file: {cookie_to_use} for user {user_id}")
 
     @property
     def download_speed(self):

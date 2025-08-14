@@ -10,8 +10,7 @@ from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from .. import LOGGER, user_data
 from ..core.config_manager import Config
 from ..core.tg_client import TgClient
-from ..helper.ext_utils.bot_utils import new_task, update_user_ldata
-from ..helper.ext_utils.links_utils import decode_slink
+from ..helper.ext_utils.bot_utils import decode_slink, new_task, update_user_ldata
 from ..helper.ext_utils.status_utils import get_readable_time
 from ..helper.ext_utils.db_handler import database
 from ..helper.languages import Language
@@ -32,13 +31,11 @@ async def start(_, message):
     userid = message.from_user.id
     lang = Language()
     buttons = ButtonMaker()
-    buttons.url_button(
-        lang.START_BUTTON1, "https://www.github.com/SilentDemonSD/WZML-X"
-    )
-    buttons.url_button(lang.START_BUTTON2, "https://t.me/WZML_X")
+    buttons.url_button(lang.START_BUTTON1, "https://t.me/DownloaderZoneGateway")
+    buttons.url_button(lang.START_BUTTON2, "https://t.me/DOWNLOADERZONEUPDATES")
     reply_markup = buttons.build_menu(2)
 
-    if len(message.command) > 1 and message.command[1] == "wzmlx":
+    if len(message.command) > 1 and message.command[1] == "beast":
         await delete_message(message)
     elif len(message.command) > 1 and message.command[1] != "start":
         decrypted_url = decode_slink(message.command[1])
@@ -78,11 +75,10 @@ async def start(_, message):
             )
             reply_markup = buttons.build_menu(2)
             msg = f"""⌬ Access Login Token : 
-    │
-    ┟ <b>Status</b> → <code>Generated Successfully</code>
-    ┟ <b>Access Token</b> → <code>{input_token}</code>
-    ┃
-    ┖ <b>Validity:</b> {get_readable_time(int(Config.VERIFY_TIMEOUT))}"""
+    ╭ <b>Status</b> → <code>Generated Successfully</code>
+    ┊ <b>Access Token</b> → <code>{input_token}</code>
+    |
+    ╰ <b>Validity:</b> {get_readable_time(int(Config.VERIFY_TIMEOUT))}"""
             return await send_message(message, msg, reply_markup)
 
     if await CustomFilters.authorized(_, message):
@@ -99,7 +95,7 @@ async def start(_, message):
     else:
         await send_message(
             message,
-            "<i>Bot can mirror/leech from links|tgfiles|torrents|nzb|rclone-cloud to any rclone cloud, Google Drive or to telegram.\n\n⚠️ You Are not authorized user! Deploy your own WZML-X bot</i>",
+            "<i>Bot can mirror/leech from links|tgfiles|torrents|nzb|rclone-cloud to any rclone cloud, Google Drive or to telegram.\n\n⚠️ You Are not authorized user!</i>",
             reply_markup,
         )
     await database.set_pm_users(userid)
@@ -125,7 +121,7 @@ async def start_cb(_, query):
     kb = query.message.reply_markup.inline_keyboard[1:]
     kb.insert(
         0,
-        [InlineKeyboardButton("✅️ Activated ✅", callback_data="start pass activated")],
+        [InlineKeyboardButton("✅️ Activated", callback_data="start pass activated")],
     )
     await edit_reply_markup(query.message, InlineKeyboardMarkup(kb))
 
@@ -166,7 +162,8 @@ async def ping(_, message):
     reply = await send_message(message, "<i>Starting Ping..</i>")
     end_time = monotonic()
     await edit_message(
-        reply, f"<i>Pong!</i>\n <code>{int((end_time - start_time) * 1000)} ms</code>"
+        reply,
+        f"<i>Get a life!, ping is 👇</i>\n <code>{int((end_time - start_time) * 1000)} ms</code>",
     )
 
 

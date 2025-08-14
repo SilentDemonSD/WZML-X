@@ -72,7 +72,7 @@ BOT_ID = BOT_TOKEN.split(":", 1)[0]
 if DATABASE_URL := config_file.get("DATABASE_URL", "").strip():
     try:
         conn = MongoClient(DATABASE_URL, server_api=ServerApi("1"))
-        db = conn.wzmlx
+        db = conn.beast
         old_config = db.settings.deployConfig.find_one({"_id": BOT_ID}, {"_id": 0})
         config_dict = db.settings.config.find_one({"_id": BOT_ID})
         if (
@@ -95,8 +95,8 @@ if UPSTREAM_REPO:
     update = srun(
         [
             f"git init -q \
-                     && git config --global user.email 105407900+SilentDemonSD@users.noreply.github.com \
-                     && git config --global user.name SilentDemonSD \
+                     && git config --global user.email 131198906+ThePrateekBhatia@users.noreply.github.com \
+                     && git config --global user.name Prateek Bhatia \
                      && git add . \
                      && git commit -sm update -q \
                      && git remote add origin {UPSTREAM_REPO} \

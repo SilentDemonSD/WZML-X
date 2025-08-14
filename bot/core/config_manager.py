@@ -12,11 +12,12 @@ class Config:
     BOT_MAX_TASKS = 0
     BOT_PM = False
     CMD_SUFFIX = ""
+    CUSTOM_BOT_HEADER = "Downloader Zone"
+    CUSTOM_BOT_HEADER_LINK = "https://t.me/DownloaderZoneGateway"
     DEFAULT_LANG = "en"
     DATABASE_URL = ""
     DEFAULT_UPLOAD = "rc"
     DELETE_LINKS = False
-    DEBRID_LINK_API = ""
     DISABLE_TORRENTS = False
     DISABLE_LEECH = False
     DISABLE_BULK = False
@@ -30,9 +31,10 @@ class Config:
     MEDIA_STORE = True
     FORCE_SUB_IDS = ""
     GDRIVE_ID = ""
-    GD_DESP = "Uploaded with WZ Bot"
-    AUTHOR_NAME = "WZML-X"
-    AUTHOR_URL = "https://t.me/WZML_X"
+    GD_DESP = "Uploaded by Dzone"
+    AUTHOR_NAME = "Dzone"
+    AUTHOR_URL = "https://t.me/DownloaderZoneGateway"
+    DEBRID_LINK_API = ""
     INSTADL_API = ""
     IMDB_TEMPLATE = ""
     INCOMPLETE_TASK_NOTIFIER = False
@@ -78,7 +80,6 @@ class Config:
     RCLONE_FLAGS = ""
     RCLONE_PATH = ""
     RCLONE_SERVE_URL = ""
-    SHOW_CLOUD_LINK = True
     RCLONE_SERVE_USER = ""
     RCLONE_SERVE_PASS = ""
     RCLONE_SERVE_PORT = 8080
@@ -89,6 +90,7 @@ class Config:
     SEARCH_LIMIT = 0
     SEARCH_PLUGINS = []
     SET_COMMANDS = True
+    SHOW_CLOUD_LINK = False
     STATUS_LIMIT = 10
     STATUS_UPDATE_INTERVAL = 15
     STOP_DUPLICATE = False
@@ -114,10 +116,6 @@ class Config:
     USE_SERVICE_ACCOUNTS = False
     WEB_PINCODE = True
     YT_DLP_OPTIONS = {}
-    YT_DESP = "Uploaded with WZML-X bot"
-    YT_TAGS = ["telegram", "bot", "youtube"]
-    YT_CATEGORY_ID = 22
-    YT_PRIVACY_STATUS = "unlisted"
 
     @classmethod
     def get(cls, key):
@@ -238,8 +236,8 @@ class Config:
 
 
 class BinConfig:
-    ARIA2_NAME = "blitzfetcher"
-    QBIT_NAME = "stormtorrent"
-    FFMPEG_NAME = "mediaforge"
-    RCLONE_NAME = "ghostdrive"
-    SABNZBD_NAME = "newsripper"
+    ARIA2_NAME = "speeddemon"
+    QBIT_NAME = "torrentgod"
+    FFMPEG_NAME = "vidwarlock"
+    RCLONE_NAME = "cloudphantom"
+    SABNZBD_NAME = "newsslayer"
