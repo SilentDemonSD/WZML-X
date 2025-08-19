@@ -77,6 +77,15 @@ async def short_url(longurl, attempt=0):
                 return longurl
             else:
                 return result["shortenedUrl"]
+        elif "vplink.in" in _shortener:
+            long_url = quote(longurl)
+            api_url = f"https://vplink.in/api?api={_shortener_api}&url={long_url}&alias=CustomAlias"
+            result = cget("GET", api_url).json()
+            if result["status"] == 'error':
+                LOGGER.error(result["message"])
+                return longurl
+            else:
+                return result["shortenedUrl"]
         elif "papajiurl.com" in _shortener:
             long_url = quote(longurl)
             api_url = f"https://papajiurl.com/api?api={_shortener_api}&url={long_url}"
