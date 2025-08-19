@@ -10,7 +10,8 @@ from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from .. import LOGGER, user_data
 from ..core.config_manager import Config
 from ..core.tg_client import TgClient
-from ..helper.ext_utils.bot_utils import decode_slink, new_task, update_user_ldata
+from ..helper.ext_utils.bot_utils import new_task, update_user_ldata
+from ..helper.ext_utils.links_utils import decode_slink
 from ..helper.ext_utils.status_utils import get_readable_time
 from ..helper.ext_utils.db_handler import database
 from ..helper.languages import Language
