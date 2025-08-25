@@ -66,4 +66,3 @@ def decode_slink(b64_str):
     return urlsafe_b64decode(
         (b64_str.strip("=") + "=" * (-len(b64_str.strip("=")) % 4)).encode("ascii")
     ).decode("ascii")
-

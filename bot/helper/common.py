@@ -74,7 +74,9 @@ class TaskConfig:
             if isinstance(v, dict):
                 setattr(self, f"{k.lower()}_dict", v)
             elif isinstance(v, str):
-                setattr(self, f"{k.lower()}_dict", self.metadata_processor.parse_string(v))
+                setattr(
+                    self, f"{k.lower()}_dict", self.metadata_processor.parse_string(v)
+                )
             else:
                 setattr(self, f"{k.lower()}_dict", {})
         self.dir = f"{DOWNLOAD_DIR}{self.mid}"
