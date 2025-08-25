@@ -25,26 +25,30 @@ class SpeedtestPlugin(PluginBase):
         enabled=True,
         handlers=[],
         commands=["speedtest"],
-        dependencies=[]
+        dependencies=[],
     )
 
     async def on_load(self) -> bool:
         from bot import LOGGER
+
         LOGGER.info("Speedtest plugin loaded")
         return True
 
     async def on_unload(self) -> bool:
         from bot import LOGGER
+
         LOGGER.info("Speedtest plugin unloaded")
         return True
 
     async def on_enable(self) -> bool:
         from bot import LOGGER
+
         LOGGER.info("Speedtest plugin enabled")
         return True
 
     async def on_disable(self) -> bool:
         from bot import LOGGER
+
         LOGGER.info("Speedtest plugin disabled")
         return True
 
@@ -87,5 +91,6 @@ async def speedtest_command(client: Client, message: Message):
         await delete_message(speed)
     except Exception as e:
         from bot import LOGGER
+
         LOGGER.error(str(e))
-        await edit_message(speed, string_speed) 
+        await edit_message(speed, string_speed)

@@ -69,16 +69,20 @@ class PluginManager:
     def _refresh_commands(self):
         try:
             from ..helper.telegram_helper.bot_commands import BotCommands
-            from ..helper.ext_utils.help_messages import get_bot_commands, get_help_string
+            from ..helper.ext_utils.help_messages import (
+                get_bot_commands,
+                get_help_string,
+            )
             import importlib
-            
+
             BotCommands.refresh_commands()
-            
-            importlib.reload(sys.modules['bot.helper.ext_utils.help_messages'])
+
+            importlib.reload(sys.modules["bot.helper.ext_utils.help_messages"])
             from ..helper.ext_utils.help_messages import BOT_COMMANDS, help_string
-            globals()['BOT_COMMANDS'] = get_bot_commands()
-            globals()['help_string'] = get_help_string()
-            
+
+            globals()["BOT_COMMANDS"] = get_bot_commands()
+            globals()["help_string"] = get_help_string()
+
             LOGGER.info("Bot commands and help refreshed")
         except Exception as e:
             LOGGER.error(f"Error refreshing commands: {e}", exc_info=True)
@@ -102,9 +106,11 @@ class PluginManager:
             plugin_class = None
             for attr_name in dir(module):
                 attr = getattr(module, attr_name)
-                if (isinstance(attr, type) and 
-                    issubclass(attr, PluginBase) and 
-                    attr != PluginBase):
+                if (
+                    isinstance(attr, type)
+                    and issubclass(attr, PluginBase)
+                    and attr != PluginBase
+                ):
                     plugin_class = attr
                     break
 
@@ -113,7 +119,7 @@ class PluginManager:
                 return False
 
             plugin_instance = plugin_class()
-            if not hasattr(plugin_instance, 'PLUGIN_INFO'):
+            if not hasattr(plugin_instance, "PLUGIN_INFO"):
                 LOGGER.error(f"Plugin {plugin_name} missing PLUGIN_INFO")
                 return False
 
@@ -217,24 +223,27 @@ class PluginManager:
         from ..helper.telegram_helper.filters import CustomFilters
         from pyrogram.filters import command
         from pyrogram.handlers import MessageHandler
-        
+
         for handler in plugin_info.handlers:
             self.bot.add_handler(handler)
-        
+
         module = sys.modules.get(plugin_info.name)
         if module:
             for attr_name in dir(module):
                 attr = getattr(module, attr_name)
-                if callable(attr) and attr_name.endswith('_command'):
-                    cmd_name = attr_name.replace('_command', '')
+                if callable(attr) and attr_name.endswith("_command"):
+                    cmd_name = attr_name.replace("_command", "")
                     if cmd_name in plugin_info.commands:
                         handler = MessageHandler(
                             attr,
-                            filters=command(cmd_name, case_sensitive=True) & CustomFilters.authorized
+                            filters=command(cmd_name, case_sensitive=True)
+                            & CustomFilters.authorized,
                         )
                         plugin_info.handlers.append(handler)
                         self.bot.add_handler(handler)
-                        LOGGER.info(f"Registered command /{cmd_name} for plugin {plugin_info.name}")
+                        LOGGER.info(
+                            f"Registered command /{cmd_name} for plugin {plugin_info.name}"
+                        )
 
     def _unregister_handlers(self, plugin_info: PluginInfo):
         for handler in plugin_info.handlers:
@@ -245,6 +254,7 @@ class PluginManager:
 
 
 plugin_manager = PluginManager(None)
+
 
 def get_plugin_manager() -> PluginManager:
     return plugin_manager
