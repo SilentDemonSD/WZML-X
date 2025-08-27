@@ -187,7 +187,9 @@ class Mirror(TaskListener):
         self.subtitle_metadata_dict = self.subtitle_metadata_dict.copy()
         if args["-meta"]:
             meta = self.metadata_processor.parse_string(args["-meta"])
-            self.metadata_dict = self.metadata_processor.merge_dicts(self.metadata_dict, meta)
+            self.metadata_dict = self.metadata_processor.merge_dicts(
+                self.metadata_dict, meta
+            )
 
         headers = args["-h"]
         is_bulk = args["-b"]

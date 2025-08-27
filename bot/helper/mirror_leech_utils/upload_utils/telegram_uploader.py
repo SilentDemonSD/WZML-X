@@ -36,6 +36,7 @@ from ....core.tg_client import TgClient
 from ...ext_utils.bot_utils import sync_to_async
 from ...ext_utils.files_utils import get_base_name, is_archive
 from ...ext_utils.status_utils import get_readable_file_size, get_readable_time
+from ...telegram_helper.message_utils import send_message
 from ...ext_utils.media_utils import (
     get_audio_thumbnail,
     get_document_type,
@@ -132,6 +133,24 @@ class TelegramUploader:
                     )
                 else:
                     self._is_private = self._sent_msg.chat.type.name == "PRIVATE"
+                if self._listener.leech_dest:
+                    try:
+                        leech_dest = self._listener.leech_dest
+                        if not isinstance(leech_dest, int):
+                            if "|" in str(leech_dest):
+                                leech_dest, _ = str(leech_dest).split("|", 1)
+                            if leech_dest.lstrip("-").isdigit():
+                                leech_dest = int(leech_dest)
+                        await self._log_msg.copy(chat_id=leech_dest)
+                    except Exception as e:
+                        if not self._listener.is_cancelled:
+                            LOGGER.error(
+                                f"Failed to copy 'Leech Started' message to {self._listener.leech_dest}: {e}"
+                            )
+                            await send_message(
+                                self._listener.user_id,
+                                f"Failed to send 'Leech Started' message to {self._listener.leech_dest}\n{e}",
+                            )
             except Exception as e:
                 await self._listener.on_upload_error(str(e))
                 return False
@@ -432,12 +451,16 @@ class TelegramUploader:
     async def _upload_file(self, cap_mono, file, o_path, force_document=False):
         if self._sent_msg is None:
             LOGGER.error("Cannot upload: _sent_msg is None")
-            await self._listener.on_upload_error("Upload failed: Message not initialized")
+            await self._listener.on_upload_error(
+                "Upload failed: Message not initialized"
+            )
             return
-            
-        if not hasattr(self._sent_msg, 'chat') or self._sent_msg.chat is None:
+
+        if not hasattr(self._sent_msg, "chat") or self._sent_msg.chat is None:
             LOGGER.error("Cannot upload: _sent_msg.chat is None")
-            await self._listener.on_upload_error("Upload failed: Invalid message object")
+            await self._listener.on_upload_error(
+                "Upload failed: Invalid message object"
+            )
             return
 
         if (
@@ -568,6 +591,28 @@ class TelegramUploader:
 
             if self._sent_msg:
                 await self._copy_media()
+                if self._listener.leech_dest:
+                    try:
+                        leech_dest = self._listener.leech_dest
+                        if not isinstance(leech_dest, int):
+                            if "|" in str(leech_dest):
+                                leech_dest, _ = str(leech_dest).split("|", 1)
+                            if leech_dest.lstrip("-").isdigit():
+                                leech_dest = int(leech_dest)
+                        await TgClient.bot.copy_message(
+                            chat_id=leech_dest,
+                            from_chat_id=self._sent_msg.chat.id,
+                            message_id=self._sent_msg.id,
+                        )
+                    except Exception as e:
+                        if not self._listener.is_cancelled:
+                            LOGGER.error(
+                                f"Failed to forward to {self._listener.leech_dest}: {e}"
+                            )
+                            await send_message(
+                                self._listener.user_id,
+                                f"Failed to forward to {self._listener.leech_dest}\n{e}",
+                            )
 
             if (
                 self._thumb is None

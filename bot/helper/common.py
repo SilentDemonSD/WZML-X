@@ -74,13 +74,16 @@ class TaskConfig:
             if isinstance(v, dict):
                 setattr(self, f"{k.lower()}_dict", v)
             elif isinstance(v, str):
-                setattr(self, f"{k.lower()}_dict", self.metadata_processor.parse_string(v))
+                setattr(
+                    self, f"{k.lower()}_dict", self.metadata_processor.parse_string(v)
+                )
             else:
                 setattr(self, f"{k.lower()}_dict", {})
         self.dir = f"{DOWNLOAD_DIR}{self.mid}"
         self.up_dir = ""
         self.link = ""
         self.up_dest = ""
+        self.leech_dest = ""
         self.rc_flags = ""
         self.tag = ""
         self.name = ""
@@ -349,11 +352,8 @@ class TaskConfig:
                 ) != self.get_config_path(self.up_dest):
                     raise ValueError("You must use the same config to clone!")
         else:
-            self.up_dest = (
-                self.up_dest
-                or self.user_dict.get("LEECH_DUMP_CHAT")
-                or Config.LEECH_DUMP_CHAT
-            )
+            self.leech_dest = self.up_dest or self.user_dict.get("LEECH_DUMP_CHAT")
+            self.up_dest = Config.LEECH_DUMP_CHAT
             self.hybrid_leech = TgClient.IS_PREMIUM_USER and (
                 self.user_dict.get("HYBRID_LEECH")
                 or Config.HYBRID_LEECH

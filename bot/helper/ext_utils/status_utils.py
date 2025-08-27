@@ -275,6 +275,7 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
         msg += f"\n┠ <b>Out Mode</b> → <i>{task.listener.mode[1]}</i>"
         # TODO: Add Bt Sel
         from ..telegram_helper.bot_commands import BotCommands
+
         msg += f"\n<b>┖ Stop</b> → <i>/{BotCommands.CancelTaskCommand[1]}_{task.gid()}</i>\n\n"
 
     if len(msg) == 0:

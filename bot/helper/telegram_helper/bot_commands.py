@@ -55,7 +55,7 @@ class BotCommands:
     @classmethod
     def get_commands(cls):
         commands = cls._static_commands.copy()
-        
+
         plugin_manager = get_plugin_manager()
         if plugin_manager:
             for plugin_info in plugin_manager.list_plugins():
@@ -68,26 +68,30 @@ class BotCommands:
                                 commands["SpeedTest"] = ["speedtest", "stest"]
                             elif "stest" not in commands["SpeedTest"]:
                                 commands["SpeedTest"].append("stest")
-        
+
         return commands
 
     @classmethod
     def _build_command_vars(cls):
         commands = cls.get_commands()
-        
+
         for key, cmds in commands.items():
-            setattr(cls, f"{key}Command", (
-                [
-                    (
-                        f"{cmd}{Config.CMD_SUFFIX}"
-                        if cmd not in ["restartall", "statusall"]
-                        else cmd
-                    )
-                    for cmd in cmds
-                ]
-                if isinstance(cmds, list)
-                else f"{cmds}{Config.CMD_SUFFIX}"
-            ))
+            setattr(
+                cls,
+                f"{key}Command",
+                (
+                    [
+                        (
+                            f"{cmd}{Config.CMD_SUFFIX}"
+                            if cmd not in ["restartall", "statusall"]
+                            else cmd
+                        )
+                        for cmd in cmds
+                    ]
+                    if isinstance(cmds, list)
+                    else f"{cmds}{Config.CMD_SUFFIX}"
+                ),
+            )
 
     @classmethod
     def refresh_commands(cls):
