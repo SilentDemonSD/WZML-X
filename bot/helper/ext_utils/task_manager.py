@@ -60,9 +60,11 @@ async def stop_duplicate_check(listener):
 
 
 async def check_running_tasks(listener, state="dl"):
-    all_limit = Config.QUEUE_ALL or 0
+    all_limit = int(Config.QUEUE_ALL or 0)
     state_limit = (
-        Config.QUEUE_DOWNLOAD or 0 if state == "dl" else Config.QUEUE_UPLOAD or 0
+        int(Config.QUEUE_DOWNLOAD or 0)
+        if state == "dl"
+        else int(Config.QUEUE_UPLOAD or 0)
     )
     event = None
     is_over_limit = False
@@ -111,9 +113,9 @@ async def start_up_from_queued(mid: int):
 
 
 async def start_from_queued():
-    if all_limit := Config.QUEUE_ALL:
-        dl_limit = Config.QUEUE_DOWNLOAD
-        up_limit = Config.QUEUE_UPLOAD
+    if all_limit := int(Config.QUEUE_ALL or 0):
+        dl_limit = int(Config.QUEUE_DOWNLOAD or 0)
+        up_limit = int(Config.QUEUE_UPLOAD or 0)
         async with queue_dict_lock:
             dl = len(non_queued_dl)
             up = len(non_queued_up)
