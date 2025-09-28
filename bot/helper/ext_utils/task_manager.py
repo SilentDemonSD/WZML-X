@@ -268,15 +268,14 @@ async def pre_task_check(message):
         msg.append(
             f"┠ <b>Waiting Time</b> → {get_readable_time(ut)}\n┠ <i>User's Time Interval Restrictions</i> → {get_readable_time(uti)}"
         )
-    if (bmax_tasks := Config.BOT_MAX_TASKS) and len(
-        await get_specific_tasks("All", False)
-    ) >= int(bmax_tasks):
+    bmax_tasks = int(Config.BOT_MAX_TASKS)
+    if bmax_tasks > 0 and len(await get_specific_tasks("All", False)) >= bmax_tasks:
         msg.append(
             f"┠ Max Concurrent Bot's Tasks Limit exceeded.\n┠ Bot Tasks Limit : {bmax_tasks} task"
         )
-    if (maxtask := Config.USER_MAX_TASKS) and len(
-        await get_specific_tasks("All", user_id)
-    ) >= int(maxtask):
+
+    maxtask = int(Config.USER_MAX_TASKS)
+    if maxtask > 0 and len(await get_specific_tasks("All", user_id)) >= maxtask:
         msg.append(
             f"┠ Max Concurrent User's Task(s) Limit exceeded! \n┠ User Task Limit : {maxtask} tasks"
         )
