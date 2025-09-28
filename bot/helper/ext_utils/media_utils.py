@@ -1,3 +1,4 @@
+import re
 from contextlib import suppress
 from PIL import Image
 from hashlib import md5
@@ -316,7 +317,7 @@ async def get_video_thumbnail(video_file, duration):
 
 
 async def get_multiple_frames_thumbnail(video_file, layout, keep_screenshots):
-    layout = layout.replace("×", "x")
+    layout = re.sub(r'(\d+)\D+(\d+)', r'\1x\2', layout)
     ss_nb = layout.split("x")
     ss_nb = int(ss_nb[0]) * int(ss_nb[1])
     dirpath = await take_ss(video_file, ss_nb)
