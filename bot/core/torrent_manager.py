@@ -85,12 +85,12 @@ class TorrentManager:
         await cls.pause_all()
         if cls.qbittorrent:
             await gather(
-            cls.qbittorrent.torrents.delete("all", False),
-            cls.aria2.purgeDownloadResult(),
+                cls.qbittorrent.torrents.delete("all", False),
+                cls.aria2.purgeDownloadResult(),
             )
         else:
             await gather(
-            cls.aria2.purgeDownloadResult(),
+                cls.aria2.purgeDownloadResult(),
             )
         downloads = []
         results = await gather(cls.aria2.tellActive(), cls.aria2.tellWaiting(0, 1000))

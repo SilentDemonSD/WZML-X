@@ -466,17 +466,25 @@ def get_help_string():
         elif key == "YtdlLeech":
             help_lines.append(f"{cmd_str}: Leech yt-dlp supported link.")
         elif key == "Clone":
-            help_lines.append(f"{cmd_str} [drive_url]: Copy file/folder to Google Drive.")
+            help_lines.append(
+                f"{cmd_str} [drive_url]: Copy file/folder to Google Drive."
+            )
         elif key == "Count":
-            help_lines.append(f"{cmd_str} [drive_url]: Count file/folder of Google Drive.")
+            help_lines.append(
+                f"{cmd_str} [drive_url]: Count file/folder of Google Drive."
+            )
         elif key == "Delete":
-            help_lines.append(f"{cmd_str} [drive_url]: Delete file/folder from Google Drive (Only Owner & Sudo).")
+            help_lines.append(
+                f"{cmd_str} [drive_url]: Delete file/folder from Google Drive (Only Owner & Sudo)."
+            )
         elif key == "UserSet":
             help_lines.append(f"{cmd_str} [query]: Users settings.")
         elif key == "BotSet":
             help_lines.append(f"{cmd_str} [query]: Bot settings.")
         elif key == "Select":
-            help_lines.append(f"{cmd_str}: Select files from torrents or nzb by gid or reply.")
+            help_lines.append(
+                f"{cmd_str}: Select files from torrents or nzb by gid or reply."
+            )
         elif key == "CancelTask":
             help_lines.append(f"{cmd_str} [gid]: Cancel task by gid or reply.")
         elif key == "ForceStart":
@@ -492,13 +500,21 @@ def get_help_string():
         elif key == "Status":
             help_lines.append(f"{cmd_str}: Shows a status of all the downloads.")
         elif key == "Stats":
-            help_lines.append(f"{cmd_str}: Show stats of the machine where the bot is hosted in.")
+            help_lines.append(
+                f"{cmd_str}: Show stats of the machine where the bot is hosted in."
+            )
         elif key == "Ping":
-            help_lines.append(f"{cmd_str}: Check how long it takes to Ping the Bot (Only Owner & Sudo).")
+            help_lines.append(
+                f"{cmd_str}: Check how long it takes to Ping the Bot (Only Owner & Sudo)."
+            )
         elif key == "Authorize":
-            help_lines.append(f"{cmd_str}: Authorize a chat or a user to use the bot (Only Owner & Sudo).")
+            help_lines.append(
+                f"{cmd_str}: Authorize a chat or a user to use the bot (Only Owner & Sudo)."
+            )
         elif key == "UnAuthorize":
-            help_lines.append(f"{cmd_str}: Unauthorize a chat or a user to use the bot (Only Owner & Sudo).")
+            help_lines.append(
+                f"{cmd_str}: Unauthorize a chat or a user to use the bot (Only Owner & Sudo)."
+            )
         elif key == "Users":
             help_lines.append(f"{cmd_str}: show users settings (Only Owner & Sudo).")
         elif key == "AddSudo":
@@ -506,9 +522,13 @@ def get_help_string():
         elif key == "RmSudo":
             help_lines.append(f"{cmd_str}: Remove sudo users (Only Owner).")
         elif key == "Restart":
-            help_lines.append(f"{cmd_str}: Restart and update the bot (Only Owner & Sudo).")
+            help_lines.append(
+                f"{cmd_str}: Restart and update the bot (Only Owner & Sudo)."
+            )
         elif key == "Log":
-            help_lines.append(f"{cmd_str}: Get a log file of the bot. Handy for getting crash reports (Only Owner & Sudo).")
+            help_lines.append(
+                f"{cmd_str}: Get a log file of the bot. Handy for getting crash reports (Only Owner & Sudo)."
+            )
         elif key == "Shell":
             help_lines.append(f"{cmd_str}: Run shell commands (Only Owner).")
         elif key == "AExec":
@@ -516,10 +536,13 @@ def get_help_string():
         elif key == "Exec":
             help_lines.append(f"{cmd_str}: Exec sync functions (Only Owner).")
         elif key == "ClearLocals":
-            help_lines.append(f"/{BotCommands.ClearLocalsCommand}: Clear {BotCommands.AExecCommand} or {BotCommands.ExecCommand} locals (Only Owner).")
+            help_lines.append(
+                f"/{BotCommands.ClearLocalsCommand}: Clear {BotCommands.AExecCommand} or {BotCommands.ExecCommand} locals (Only Owner)."
+            )
         elif key == "Rss":
             help_lines.append(f"/{BotCommands.RssCommand}: RSS Menu.")
 
     return "\n".join(help_lines)
+
 
 help_string = get_help_string()
