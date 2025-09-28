@@ -316,7 +316,7 @@ async def get_video_thumbnail(video_file, duration):
 
 
 async def get_multiple_frames_thumbnail(video_file, layout, keep_screenshots):
-    ss_nb = layout.split("x")
+    ss_nb = layout.replace("×", "x").split("x")
     ss_nb = int(ss_nb[0]) * int(ss_nb[1])
     dirpath = await take_ss(video_file, ss_nb)
     if not dirpath:
