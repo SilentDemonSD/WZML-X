@@ -66,7 +66,13 @@ DEFAULT_VALUES = {
     "SEARCH_LIMIT": 0,
     "UPSTREAM_BRANCH": "master",
     "DEFAULT_UPLOAD": "rc",
+    "BOT_MAX_TASKS": 0,
+    "QUEUE_ALL": 0,
+    "QUEUE_DOWNLOAD": 0,
+    "QUEUE_UPLOAD": 0,
+    "USER_MAX_TASKS": 0,
 }
+
 
 
 async def get_buttons(key=None, edit_type=None, edit_mode=False):
