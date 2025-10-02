@@ -15,7 +15,7 @@ from ...core.config_manager import Config
 from ..mirror_leech_utils.gdrive_utils.search import GoogleDriveSearch
 from ..telegram_helper.filters import CustomFilters
 from ..telegram_helper.tg_utils import check_botpm, forcesub, verify_token
-from .bot_utils import get_telegraph_list, sync_to_async
+from .bot_utils import get_telegraph_list, sync_to_async, safe_int
 from .files_utils import get_base_name, check_storage_threshold
 from .links_utils import is_gdrive_id
 from .status_utils import get_readable_time, get_readable_file_size, get_specific_tasks
@@ -60,11 +60,11 @@ async def stop_duplicate_check(listener):
 
 
 async def check_running_tasks(listener, state="dl"):
-    all_limit = int(Config.QUEUE_ALL or 0)
+    all_limit = safe_int(Config.QUEUE_ALL)
     state_limit = (
-        int(Config.QUEUE_DOWNLOAD or 0)
+        safe_int(Config.QUEUE_DOWNLOAD)
         if state == "dl"
-        else int(Config.QUEUE_UPLOAD or 0)
+        else safe_int(Config.QUEUE_UPLOAD)
     )
     event = None
     is_over_limit = False
@@ -113,9 +113,9 @@ async def start_up_from_queued(mid: int):
 
 
 async def start_from_queued():
-    if all_limit := int(Config.QUEUE_ALL or 0):
-        dl_limit = int(Config.QUEUE_DOWNLOAD or 0)
-        up_limit = int(Config.QUEUE_UPLOAD or 0)
+    if all_limit := safe_int(Config.QUEUE_ALL):
+        dl_limit = safe_int(Config.QUEUE_DOWNLOAD)
+        up_limit = safe_int(Config.QUEUE_UPLOAD)
         async with queue_dict_lock:
             dl = len(non_queued_dl)
             up = len(non_queued_up)
@@ -268,13 +268,13 @@ async def pre_task_check(message):
         msg.append(
             f"┠ <b>Waiting Time</b> → {get_readable_time(ut)}\n┠ <i>User's Time Interval Restrictions</i> → {get_readable_time(uti)}"
         )
-    bmax_tasks = int(Config.BOT_MAX_TASKS or 0)
+    bmax_tasks = safe_int(Config.BOT_MAX_TASKS)
     if bmax_tasks > 0 and len(await get_specific_tasks("All", False)) >= bmax_tasks:
         msg.append(
             f"┠ Max Concurrent Bot's Tasks Limit exceeded.\n┠ Bot Tasks Limit : {bmax_tasks} task"
         )
 
-    maxtask = int(Config.USER_MAX_TASKS or 0)
+    maxtask = safe_int(Config.USER_MAX_TASKS)
     if maxtask > 0 and len(await get_specific_tasks("All", user_id)) >= maxtask:
         msg.append(
             f"┠ Max Concurrent User's Task(s) Limit exceeded! \n┠ User Task Limit : {maxtask} tasks"
