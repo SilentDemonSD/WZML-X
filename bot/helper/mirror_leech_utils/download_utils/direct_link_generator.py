@@ -1002,10 +1002,10 @@ def pixeldrain(url, api_key=None):
     Handle both single file URLs and folder URLs from Pixeldrain
     Returns enhanced download data with progressive fallback URLs
     """
-    if api_key:
-        LOGGER.info(f"Using API key for Pixeldrain request: {url[:50]}...")
-    else:
-        LOGGER.info(f"No API key provided for Pixeldrain request: {url[:50]}...")
+    # if api_key:
+    #     LOGGER.info(f"Using API key for Pixeldrain request: {url[:50]}...")
+    # else:
+    #     LOGGER.info(f"No API key provided for Pixeldrain request: {url[:50]}...")
 
     try:
         url = url.rstrip("/")
@@ -1051,7 +1051,7 @@ def make_authenticated_request(url, api_key=None, **kwargs):
     """
     headers = kwargs.get('headers', {})
     if api_key:
-        LOGGER.info(f"Making authenticated request to: {url}")
+        #LOGGER.info(f"Making authenticated request to: {url}")
         auth_headers = create_auth_headers(api_key)
         headers.update(auth_headers)
         kwargs['headers'] = headers
