@@ -93,6 +93,7 @@ class Config:
     STATUS_UPDATE_INTERVAL = 15
     STOP_DUPLICATE = False
     STREAMWISH_API = ""
+    PIXELDRAIN_API = ""
     SUDO_USERS = ""
     TELEGRAM_API = 0
     TELEGRAM_HASH = ""

@@ -450,7 +450,7 @@ def direct_link_generator(link):
     elif "1drv.ms" in domain:
         return onedrive(link)
     elif "pixeldrain.com" in domain:
-        return pixeldrain(link)
+        return pixeldrain(link,Config.PIXELDRAIN_API)
     elif "racaty" in domain:
         return racaty(link)
     elif "1fichier.com" in domain:
@@ -987,14 +987,220 @@ def onedrive(link):
     return resp["@content.downloadUrl"]
 
 
-def pixeldrain(url):
+# def pixeldrain(url):
+#     try:
+#         url = url.rstrip("/")
+#         code = url.split("/")[-1].split("?", 1)[0]
+#         response = get("https://pd.cybar.xyz/", allow_redirects=True)
+#         return response.url + code
+#     except Exception as e:
+#         raise DirectDownloadLinkException("ERROR: Direct link not found")
+
+
+def pixeldrain(url, api_key=None):
+    """
+    Handle both single file URLs and folder URLs from Pixeldrain
+    Returns enhanced download data with progressive fallback URLs
+    """
+    if api_key:
+        LOGGER.info(f"Using API key for Pixeldrain request: {url[:50]}...")
+    else:
+        LOGGER.info(f"No API key provided for Pixeldrain request: {url[:50]}...")
+
     try:
         url = url.rstrip("/")
         code = url.split("/")[-1].split("?", 1)[0]
-        response = get("https://pd.cybar.xyz/", allow_redirects=True)
-        return response.url + code
+
+        # Check if it's a folder URL (contains '/l/')
+        if '/l/' in url:
+            return pixeldrain_folder_enhanced(code, api_key)
+        else:
+            return pixeldrain_single_file_enhanced(code, api_key)
+
     except Exception as e:
-        raise DirectDownloadLinkException("ERROR: Direct link not found")
+        # Fallback to original simple download mode
+        try:
+            return pixeldrain_fallback_mode(url, api_key)
+        except Exception as fallback_error:
+            raise DirectDownloadLinkException(
+                f"ERROR: Both methods failed.\n"
+                f"New method: {str(e)}\n"
+                f"Fallback method: {str(fallback_error)}"
+            )
+
+def create_auth_headers(api_key):
+    """
+    Create authentication headers for Pixeldrain API
+    Uses HTTP Basic Auth with empty username and API key as password
+    """
+    if not api_key:
+        return {}
+
+    # Create base64 encoded auth string (username:password format, username is empty)
+    auth_string = f":{api_key}"
+    encoded_auth = base64.b64encode(auth_string.encode()).decode()
+
+    return {
+        "Authorization": f"Basic {encoded_auth}"
+    }
+
+
+def make_authenticated_request(url, api_key=None, **kwargs):
+    """
+    Make a request with optional authentication
+    """
+    headers = kwargs.get('headers', {})
+    if api_key:
+        LOGGER.info(f"Making authenticated request to: {url}")
+        auth_headers = create_auth_headers(api_key)
+        headers.update(auth_headers)
+        kwargs['headers'] = headers
+
+    return requests.get(url, **kwargs)
+
+def pixeldrain_fallback_mode(url, api_key=None):
+    """
+    Original/fallback implementation - returns simple direct download link
+    """
+    url = url.strip("/ ")
+    file_id = url.split("/")[-1]
+
+    if url.split("/")[-2] == "l":
+        info_link = f"https://pixeldrain.com/api/list/{file_id}"
+        dl_link = f"https://pixeldrain.com/api/list/{file_id}/zip?download"
+    else:
+        info_link = f"https://pixeldrain.com/api/file/{file_id}/info"
+        dl_link = f"https://pixeldrain.com/api/file/{file_id}?download"
+
+    try:
+        resp = make_authenticated_request(info_link, api_key)
+        resp.raise_for_status()
+        resp_json = resp.json()
+    except Exception as e:
+        raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
+
+    if resp_json.get("success", True):  # Some endpoints don't return success field
+        return dl_link
+    else:
+        raise DirectDownloadLinkException(
+            f"ERROR: Can't download due {resp_json.get('message', 'Unknown error')}."
+        )
+
+def create_download_url_variants(file_id, api_key=None):
+    """
+    Create different download URL variants for progressive fallback
+    Returns a list of (url, headers, method_name) tuples
+    """
+    variants = []
+
+    # 1. Proxy method (first attempt)
+    try:
+        base_response = requests.get("https://pd.cybar.xyz/", allow_redirects=True, timeout=10)
+        proxy_url = base_response.url + file_id
+        variants.append((proxy_url, {}, "proxy"))
+    except:
+        pass
+
+    # 2. Direct Pixeldrain method (second attempt)
+    direct_url = f"https://pixeldrain.com/api/file/{file_id}?download"
+    variants.append((direct_url, {}, "direct"))
+
+    # 3. Authenticated method (third attempt, if API key available)
+    if api_key:
+        auth_headers = create_auth_headers(api_key)
+        variants.append((direct_url, auth_headers, "authenticated"))
+
+    return variants
+
+
+def pixeldrain_single_file_enhanced(file_id, api_key=None):
+    """Enhanced single file handler with progressive fallback URLs"""
+    try:
+        # Get file info from Pixeldrain API
+        api_url = f"https://pixeldrain.com/api/file/{file_id}/info"
+        response = make_authenticated_request(api_url, api_key)
+        response.raise_for_status()
+
+        file_data = response.json()
+
+        if not file_data.get('success', True):
+            raise DirectDownloadLinkException("ERROR: Failed to retrieve file information")
+
+        file_name = file_data.get('name', f'file_{file_id}')
+        file_size = file_data.get('size', 0)
+
+        # Create download URL variants for progressive fallback
+        url_variants = create_download_url_variants(file_id, api_key)
+
+        # Return enhanced data with fallback URLs
+        return {
+            'title': file_name,
+            'total_size': file_size,
+            'contents': [{
+                'filename': file_name,
+                'url_variants': url_variants,  # Multiple URLs to try
+                'size': file_size,
+                'path': '',
+                'file_id': file_id,  # Keep file_id for potential retries
+                'api_key': api_key  # Keep API key for potential retries
+            }],
+            'header': None,  # Headers will be handled per variant
+            'has_api_key': bool(api_key)
+        }
+
+    except requests.RequestException as e:
+        raise DirectDownloadLinkException(f"ERROR: API request failed - {str(e)}")
+    except Exception as e:
+        raise DirectDownloadLinkException(f"ERROR: Single file processing failed - {str(e)}")
+
+
+def pixeldrain_folder_enhanced(folder_id, api_key=None):
+    """Enhanced folder handler with progressive fallback URLs"""
+    try:
+        # Get folder information from Pixeldrain API
+        api_url = f"https://pixeldrain.com/api/list/{folder_id}"
+        response = make_authenticated_request(api_url, api_key)
+        response.raise_for_status()
+
+        folder_data = response.json()
+
+        if not folder_data.get('success', False):
+            raise DirectDownloadLinkException("ERROR: Failed to retrieve folder information")
+
+        contents = []
+        total_size = 0
+
+        for file_info in folder_data.get('files', []):
+            file_id = file_info.get('id')
+            file_name = file_info.get('name', 'unknown')
+            file_size = file_info.get('size', 0)
+
+            if file_id:
+                # Create download URL variants for this file
+                url_variants = create_download_url_variants(file_id, api_key)
+
+                contents.append({
+                    'filename': file_name,
+                    'url_variants': url_variants,  # Multiple URLs to try
+                    'size': file_size,
+                    'path': '',
+                    'file_id': file_id,  # Keep file_id for potential retries
+                    'api_key': api_key  # Keep API key for potential retries
+                })
+                total_size += file_size
+
+        return {
+            'title': folder_data.get('title', 'Unknown Folder'),
+            'total_size': total_size,
+            'contents': contents,
+            'header': None,  # Headers will be handled per variant
+            'has_api_key': bool(api_key)
+        }
+
+    except requests.RequestException as e:
+        raise DirectDownloadLinkException(f"ERROR: API request failed - {str(e)}")
+    except Exception as e:
+        raise DirectDownloadLinkException(f"ERROR: Folder processing failed - {str(e)}")
 
 
 def streamtape(url):
