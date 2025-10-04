@@ -19,7 +19,7 @@ from ...ext_utils.exceptions import DirectDownloadLinkException
 from ...ext_utils.help_messages import PASSWORD_ERROR_MESSAGE
 from ...ext_utils.links_utils import is_share_link
 from ...ext_utils.status_utils import speed_string_to_bytes
-
+from bot import LOGGER
 user_agent = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/122.0"
 )
@@ -1003,10 +1003,10 @@ def pixeldrain(url, api_key=None):
     Handle both single file URLs and folder URLs from Pixeldrain
     Returns enhanced download data with progressive fallback URLs
     """
-    # if api_key:
-    #     LOGGER.info(f"Using API key for Pixeldrain request: {url[:50]}...")
-    # else:
-    #     LOGGER.info(f"No API key provided for Pixeldrain request: {url[:50]}...")
+    if api_key:
+        LOGGER.info(f"Using API key for Pixeldrain request: {url[:50]}...")
+    else:
+        LOGGER.info(f"No API key provided for Pixeldrain request: {url[:50]}...")
 
     try:
         url = url.rstrip("/")
@@ -1052,7 +1052,7 @@ def make_authenticated_request(url, api_key=None, **kwargs):
     """
     headers = kwargs.get('headers', {})
     if api_key:
-        #LOGGER.info(f"Making authenticated request to: {url}")
+        LOGGER.info(f"Making authenticated request to: {url}")
         auth_headers = create_auth_headers(api_key)
         headers.update(auth_headers)
         kwargs['headers'] = headers
@@ -1078,6 +1078,7 @@ def pixeldrain_fallback_mode(url, api_key=None):
         resp.raise_for_status()
         resp_json = resp.json()
     except Exception as e:
+        LOGGER.error(f"ERROR: Failed to make request to Pixeldrain API: {e}")
         raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
 
     if resp_json.get("success", True):  # Some endpoints don't return success field
