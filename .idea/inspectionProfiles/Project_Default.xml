@@ -1,0 +1,35 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyArgumentEqualDefaultInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
+    <inspection_tool class="PyAugmentAssignmentInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
+    <inspection_tool class="PyClassicStyleClassInspection" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="PyMandatoryEncodingInspection" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="PyMissingOrEmptyDocstringInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
+    <inspection_tool class="PyMissingTypeHintsInspection" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <list>
+          <option value="redis" />
+          <option value="httpx" />
+          <option value="tenacity" />
+          <option value="circuit-breaker" />
+          <option value="pydantic" />
+          <option value="pydantic-settings" />
+          <option value="structlog" />
+          <option value="prometheus-client" />
+          <option value="aiofiles" />
+          <option value="aiocache" />
+          <option value="slowapi" />
+          <option value="asyncio-throttle" />
+          <option value="backoff" />
+          <option value="cryptography" />
+          <option value="motor" />
+          <option value="imdbinfo" />
+          <option value="aiohttp" />
+          <option value="aioredis" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>

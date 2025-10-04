@@ -669,34 +669,60 @@ def buzzheavier(url):
     @param link: URL from buzzheavier
     @return: Direct download link
     """
-    session = Session()
-    if "/download" not in url:
-        url += "/download"
+    pattern = r'^https?://buzzheavier\.com/[a-zA-Z0-9]+$'
+    if not match(pattern, url):
+        return url
 
-    # Normalize URL
-    url = url.strip()
-    session.headers.update(
-        {
-            "referer": url.split("/download")[0],
-            "hx-current-url": url.split("/download")[0],
-            "hx-request": "true",
-            "priority": "u=1, i",
-        }
-    )
+    def _bhscraper(url, folder=False):
+        session = Session()
+        if "/download" not in url:
+            url += "/download"
+        url = url.strip()
+        session.headers.update(
+            {
+                "referer": url.split("/download")[0],
+                "hx-current-url": url.split("/download")[0],
+                "hx-request": "true",
+                "priority": "u=1, i",
+            }
+        )
+        try:
+            response = session.get(url)
+            d_url = response.headers.get("Hx-Redirect")
+            if not d_url:
+                if not folder:
+                    raise DirectDownloadLinkException(f"ERROR: Gagal mendapatkan data")
+                return
+            return d_url
+        except Exception as e:
+            raise DirectDownloadLinkException(f"ERROR: {str(e)}") from e
 
-    try:
-        response = session.get(url)
-        d_url = response.headers.get("Hx-Redirect")
-
-        if not d_url:
-            raise DirectDownloadLinkException("ERROR: Failed to fetch direct link.")
-
-        parsed_url = urlparse(url)
-        return f"{parsed_url.scheme}://{parsed_url.netloc}{d_url}"
-    except Exception as e:
-        raise DirectDownloadLinkException(f"ERROR: {str(e)}") from e
-    finally:
-        session.close()
+    with Session() as session:
+        tree = HTML(session.get(url).text)
+        if link := tree.xpath("//a[contains(@class, 'link-button') and contains(@class, 'gay-button')]/@hx-get"):
+            return _bhscraper("https://buzzheavier.com" + link[0])
+        elif folders := tree.xpath("//tbody[@id='tbody']/tr"):
+            details = {"contents": [], "title": "", "total_size": 0}
+            for data in folders:
+                try:
+                    filename = data.xpath(".//a")[0].text.strip()
+                    _id = data.xpath(".//a")[0].attrib.get("href", "").strip()
+                    size = data.xpath(".//td[@class='text-center']/text()")[0].strip()
+                    url = _bhscraper(f"https://buzzheavier.com{_id}", True)
+                    item = {
+                        "path": "",
+                        "filename": filename,
+                        "url": url,
+                    }
+                    details["contents"].append(item)
+                    size = speed_string_to_bytes(size)
+                    details["total_size"] += size
+                except:
+                    continue
+            details["title"] = tree.xpath("//span/text()")[0].strip()
+            return details
+        else:
+            raise DirectDownloadLinkException("ERROR: No download link found")
 
 
 def fuckingfast_dl(url):
