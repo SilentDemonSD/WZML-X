@@ -519,6 +519,12 @@
                 const checkboxWrapper = document.createElement('div');
                 checkboxWrapper.className = 'checkbox-wrapper';
 
+                // const checkbox = document.createElement('input');
+                // checkbox.type = 'checkbox';
+                // checkbox.id = node.id;
+                // checkbox.checked = node.selected;
+                // checkbox.addEventListener('change', () => toggleFile(node));
+
                 // NEW CODE:
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
@@ -653,17 +659,9 @@
             updateStats();
             renderFileTree(currentFolder ? currentFolder.children : files);
         }
-
-        // Shift-selection functionality
-// NEW CODE:
+        // NEW CODE:
         // Shift-selection functionality
 let lastCheckedNodeId = null;
-    
-    // Update last checked node
-    if (e.target.type === 'checkbox') {
-        lastCheckedNode = e.target;
-    }
-});
 
 // Helper function to find node by ID
 function findNodeById(nodes, id) {
