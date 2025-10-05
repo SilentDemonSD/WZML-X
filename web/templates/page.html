@@ -547,29 +547,28 @@
                 // Handle both shift-click and normal click in one event
                 checkbox.addEventListener('click', (e) => {
                     e.stopPropagation(); // Prevent event bubbling
-                    
+
                     // Check if shift key is held and we have a last checked node
                     if (e.shiftKey && lastCheckedNodeId !== null) {
                         e.preventDefault(); // Prevent default checkbox toggle
-                        
+
                         // Get all visible checkboxes in current view
                         const visibleCheckboxes = Array.from(fileTree.querySelectorAll('input[type="checkbox"]'));
                         const currentIndex = visibleCheckboxes.findIndex(cb => cb.id === node.id);
                         const lastIndex = visibleCheckboxes.findIndex(cb => cb.id === lastCheckedNodeId);
-                        
+
                         if (currentIndex !== -1 && lastIndex !== -1) {
                             const start = Math.min(currentIndex, lastIndex);
                             const end = Math.max(currentIndex, lastIndex);
-                            
-                            // Determine the target state based on the last clicked checkbox's NEW state
-                            const lastNode = findNodeInCurrentView(lastCheckedNodeId);
-                            const targetState = lastNode ? lastNode.selected : true;
-                            
+
+                            // Determine the target state - use the opposite of current node's state
+                            const targetState = !node.selected;
+
                             // Select/deselect all nodes in range
                             for (let i = start; i <= end; i++) {
                                 const checkboxEl = visibleCheckboxes[i];
                                 const targetNode = findNodeInCurrentView(checkboxEl.id);
-                                
+
                                 if (targetNode) {
                                     if (targetNode.type === 'folder') {
                                         toggleFolder(targetNode, targetState);
@@ -579,7 +578,10 @@
                                     checkboxEl.checked = targetState;
                                 }
                             }
-                            
+
+                            // Update lastCheckedNodeId to current node after shift-selection
+                            lastCheckedNodeId = node.id;
+
                             updateStats();
                             renderFileTree(currentFolder ? currentFolder.children : files);
                         }
@@ -624,7 +626,48 @@
                 }
                 div.addEventListener('click', (event) => {
                     if (event.target.className === 'file-name cursor-pointer') {
-                        toggleFile(node)
+                        // Check if shift key is held for shift-selection
+                        if (event.shiftKey && lastCheckedNodeId !== null) {
+                            event.preventDefault();
+
+                            // Get all visible checkboxes in current view
+                            const visibleCheckboxes = Array.from(fileTree.querySelectorAll('input[type="checkbox"]'));
+                            const currentIndex = visibleCheckboxes.findIndex(cb => cb.id === node.id);
+                            const lastIndex = visibleCheckboxes.findIndex(cb => cb.id === lastCheckedNodeId);
+
+                            if (currentIndex !== -1 && lastIndex !== -1) {
+                                const start = Math.min(currentIndex, lastIndex);
+                                const end = Math.max(currentIndex, lastIndex);
+
+                                // Determine the target state - use the opposite of current node's state
+                                const targetState = !node.selected;
+
+                                // Select/deselect all nodes in range
+                                for (let i = start; i <= end; i++) {
+                                    const checkboxEl = visibleCheckboxes[i];
+                                    const targetNode = findNodeInCurrentView(checkboxEl.id);
+
+                                    if (targetNode) {
+                                        if (targetNode.type === 'folder') {
+                                            toggleFolder(targetNode, targetState);
+                                        } else {
+                                            targetNode.selected = targetState;
+                                        }
+                                        checkboxEl.checked = targetState;
+                                    }
+                                }
+
+                                // Update lastCheckedNodeId to current node after shift-selection
+                                lastCheckedNodeId = node.id;
+
+                                updateStats();
+                                renderFileTree(currentFolder ? currentFolder.children : files);
+                            }
+                        } else {
+                            // Normal click - toggle the file
+                            toggleFile(node);
+                            lastCheckedNodeId = node.id;
+                        }
                     } else if (event.target.className === 'edit-btn') {
                         openEditFileNameModal(node)
                     }
