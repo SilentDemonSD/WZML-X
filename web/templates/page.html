@@ -519,11 +519,48 @@
                 const checkboxWrapper = document.createElement('div');
                 checkboxWrapper.className = 'checkbox-wrapper';
 
+                // NEW CODE:
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.id = node.id;
                 checkbox.checked = node.selected;
-                checkbox.addEventListener('change', () => toggleFile(node));
+                checkbox.addEventListener('click', (e) => {
+                    // Handle shift-click for range selection
+                    if (e.shiftKey && lastCheckedNodeId !== null) {
+                        e.preventDefault();
+                        const checkboxes = Array.from(fileTree.querySelectorAll('input[type="checkbox"]'));
+                        const currentIndex = checkboxes.findIndex(cb => cb.id === node.id);
+                        const lastIndex = checkboxes.findIndex(cb => cb.id === lastCheckedNodeId);
+                        
+                        if (currentIndex !== -1 && lastIndex !== -1) {
+                            const start = Math.min(currentIndex, lastIndex);
+                            const end = Math.max(currentIndex, lastIndex);
+                            const isChecked = !node.selected; // What we want to set it to
+                            
+                            // Select/deselect all nodes in range
+                            for (let i = start; i <= end; i++) {
+                                const cb = checkboxes[i];
+                                const targetNode = findNodeById(files, cb.id);
+                                if (targetNode && targetNode.selected !== isChecked) {
+                                    if (targetNode.type === 'folder') {
+                                        toggleFolder(targetNode, isChecked);
+                                    } else {
+                                        targetNode.selected = isChecked;
+                                    }
+                                    cb.checked = isChecked;
+                                }
+                            }
+                            updateStats();
+                            renderFileTree(currentFolder ? currentFolder.children : files);
+                        }
+                    } else {
+                        // Normal click behavior
+                        toggleFile(node);
+                    }
+                    
+                    // Update last checked node ID
+                    lastCheckedNodeId = node.id;
+                });
 
                 checkboxWrapper.appendChild(checkbox);
 
@@ -618,35 +655,9 @@
         }
 
         // Shift-selection functionality
-let lastCheckedNode = null;
-
-// Add event listener for checkbox clicks with shift key
-fileTree.addEventListener('click', (e) => {
-    if (e.target.type === 'checkbox' && e.shiftKey && lastCheckedNode !== null) {
-        const checkboxes = Array.from(fileTree.querySelectorAll('input[type="checkbox"]'));
-        const currentIndex = checkboxes.indexOf(e.target);
-        const lastIndex = checkboxes.indexOf(lastCheckedNode);
-        
-        if (currentIndex !== -1 && lastIndex !== -1) {
-            const start = Math.min(currentIndex, lastIndex);
-            const end = Math.max(currentIndex, lastIndex);
-            const isChecked = e.target.checked;
-            
-            // Select/deselect all checkboxes in range
-            for (let i = start; i <= end; i++) {
-                const checkbox = checkboxes[i];
-                if (checkbox.checked !== isChecked) {
-                    checkbox.checked = isChecked;
-                    // Trigger the change event to update the file state
-                    const nodeId = checkbox.id;
-                    const node = findNodeById(files, nodeId);
-                    if (node) {
-                        toggleFile(node);
-                    }
-                }
-            }
-        }
-    }
+// NEW CODE:
+        // Shift-selection functionality
+let lastCheckedNodeId = null;
     
     // Update last checked node
     if (e.target.type === 'checkbox') {
