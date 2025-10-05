@@ -360,6 +360,18 @@
         .dark .shift-selection-hint {
             color: hsl(213 31% 80%);
         }
+
+        /* Prevent text selection during shift-click */
+        body.shift-selecting {
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+
+        body.shift-selecting .file-name {
+            user-select: none;
+        }
     </style>
 </head>
 
@@ -561,7 +573,7 @@
                             const start = Math.min(currentIndex, lastIndex);
                             const end = Math.max(currentIndex, lastIndex);
 
-                            // Determine the target state - use the opposite of current node's state
+                            // Determine the target state - if the current click would check the box, check all in range
                             const targetState = !node.selected;
 
                             // Select/deselect all nodes in range
@@ -575,15 +587,14 @@
                                     } else {
                                         targetNode.selected = targetState;
                                     }
-                                    checkboxEl.checked = targetState;
+                                    // Don't update checkbox here, let renderFileTree do it
                                 }
                             }
 
-                            // Update lastCheckedNodeId to current node after shift-selection
-                            lastCheckedNodeId = node.id;
-
                             updateStats();
+                            // Don't update lastCheckedNodeId here, do it after render
                             renderFileTree(currentFolder ? currentFolder.children : files);
+                            lastCheckedNodeId = node.id; // Update after render
                         }
                     } else {
                         // Normal click - handle the toggle
@@ -604,6 +615,13 @@
                 const nameElement = document.createElement('div');
                 nameElement.className = 'file-name cursor-pointer';
                 nameElement.textContent = node.name;
+
+                // Prevent text selection on shift+mousedown
+                nameElement.addEventListener('mousedown', (e) => {
+                    if (e.shiftKey) {
+                        e.preventDefault();
+                    }
+                });
 
                 const sizeInfo = document.createElement('div');
                 sizeInfo.className = 'size-info';
@@ -629,6 +647,10 @@
                         // Check if shift key is held for shift-selection
                         if (event.shiftKey && lastCheckedNodeId !== null) {
                             event.preventDefault();
+                            event.stopPropagation();
+
+                            // Prevent text selection
+                            window.getSelection().removeAllRanges();
 
                             // Get all visible checkboxes in current view
                             const visibleCheckboxes = Array.from(fileTree.querySelectorAll('input[type="checkbox"]'));
@@ -639,7 +661,7 @@
                                 const start = Math.min(currentIndex, lastIndex);
                                 const end = Math.max(currentIndex, lastIndex);
 
-                                // Determine the target state - use the opposite of current node's state
+                                // Determine the target state - if the current click would check the box, check all in range
                                 const targetState = !node.selected;
 
                                 // Select/deselect all nodes in range
@@ -653,15 +675,12 @@
                                         } else {
                                             targetNode.selected = targetState;
                                         }
-                                        checkboxEl.checked = targetState;
                                     }
                                 }
 
-                                // Update lastCheckedNodeId to current node after shift-selection
-                                lastCheckedNodeId = node.id;
-
                                 updateStats();
                                 renderFileTree(currentFolder ? currentFolder.children : files);
+                                lastCheckedNodeId = node.id; // Update after render
                             }
                         } else {
                             // Normal click - toggle the file
@@ -1084,6 +1103,24 @@
         }
 
         loadThemePreference();
+
+        // Track shift key state to prevent text selection
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Shift') {
+                body.classList.add('shift-selecting');
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'Shift') {
+                body.classList.remove('shift-selecting');
+            }
+        });
+
+        // Remove shift-selecting class on window blur to handle edge cases
+        window.addEventListener('blur', () => {
+            body.classList.remove('shift-selecting');
+        });
     </script>
 </body>
 
