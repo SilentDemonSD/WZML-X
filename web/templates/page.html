@@ -617,6 +617,58 @@
             renderFileTree(currentFolder ? currentFolder.children : files);
         }
 
+        // Shift-selection functionality
+let lastCheckedNode = null;
+
+// Add event listener for checkbox clicks with shift key
+fileTree.addEventListener('click', (e) => {
+    if (e.target.type === 'checkbox' && e.shiftKey && lastCheckedNode !== null) {
+        const checkboxes = Array.from(fileTree.querySelectorAll('input[type="checkbox"]'));
+        const currentIndex = checkboxes.indexOf(e.target);
+        const lastIndex = checkboxes.indexOf(lastCheckedNode);
+        
+        if (currentIndex !== -1 && lastIndex !== -1) {
+            const start = Math.min(currentIndex, lastIndex);
+            const end = Math.max(currentIndex, lastIndex);
+            const isChecked = e.target.checked;
+            
+            // Select/deselect all checkboxes in range
+            for (let i = start; i <= end; i++) {
+                const checkbox = checkboxes[i];
+                if (checkbox.checked !== isChecked) {
+                    checkbox.checked = isChecked;
+                    // Trigger the change event to update the file state
+                    const nodeId = checkbox.id;
+                    const node = findNodeById(files, nodeId);
+                    if (node) {
+                        toggleFile(node);
+                    }
+                }
+            }
+        }
+    }
+    
+    // Update last checked node
+    if (e.target.type === 'checkbox') {
+        lastCheckedNode = e.target;
+    }
+});
+
+// Helper function to find node by ID
+function findNodeById(nodes, id) {
+    const queue = [...nodes];
+    while (queue.length > 0) {
+        const node = queue.shift();
+        if (node.id === id) {
+            return node;
+        }
+        if (node.children) {
+            queue.push(...node.children);
+        }
+    }
+    return null;
+}
+
         function toggleFolder(folder, isSelected) {
             folder.selected = isSelected;
             const queue = [folder];
