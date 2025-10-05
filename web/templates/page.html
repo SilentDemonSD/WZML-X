@@ -544,14 +544,13 @@
                 checkbox.id = node.id;
                 checkbox.checked = node.selected;
 
-                // Add both regular change handler and shift-click handler
-                checkbox.addEventListener('change', () => toggleFile(node));
+                // Handle both shift-click and normal click in one event
                 checkbox.addEventListener('click', (e) => {
-                    e.stopPropagation(); // Important: prevent event bubbling
+                    e.stopPropagation(); // Prevent event bubbling
                     
                     // Check if shift key is held and we have a last checked node
                     if (e.shiftKey && lastCheckedNodeId !== null) {
-                        e.preventDefault(); // Prevent default checkbox behavior for shift-click
+                        e.preventDefault(); // Prevent default checkbox toggle
                         
                         // Get all visible checkboxes in current view
                         const visibleCheckboxes = Array.from(fileTree.querySelectorAll('input[type="checkbox"]'));
@@ -562,8 +561,9 @@
                             const start = Math.min(currentIndex, lastIndex);
                             const end = Math.max(currentIndex, lastIndex);
                             
-                            // Determine the target state based on the clicked checkbox
-                            const targetState = !node.selected;
+                            // Determine the target state based on the last clicked checkbox's NEW state
+                            const lastNode = findNodeInCurrentView(lastCheckedNodeId);
+                            const targetState = lastNode ? lastNode.selected : true;
                             
                             // Select/deselect all nodes in range
                             for (let i = start; i <= end; i++) {
@@ -580,19 +580,13 @@
                                 }
                             }
                             
-                            // Update the current node's state
-                            node.selected = targetState;
-                            checkbox.checked = targetState;
-                            
                             updateStats();
                             renderFileTree(currentFolder ? currentFolder.children : files);
-                            
-                            // Set the last checked node to current
-                            lastCheckedNodeId = node.id;
                         }
                     } else {
-                        // Normal click behavior (no shift key)
-                        lastCheckedNodeId = node.id; // Always update last checked node
+                        // Normal click - handle the toggle
+                        toggleFile(node);
+                        lastCheckedNodeId = node.id; // Update last checked node
                     }
                 });
 
