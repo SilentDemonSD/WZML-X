@@ -51,6 +51,7 @@ class EngineStatus:
         self.STATUS_7Z = f"7z v{bot_cache['eng_versions']['7z']}"
         self.STATUS_RCLONE = f"RClone v{bot_cache['eng_versions']['rclone']}"
         self.STATUS_SABNZBD = f"SABnzbd+ v{bot_cache['eng_versions']['SABnzbd+']}"
+        self.STATUS_GOFILE = f"GoFile {bot_cache['eng_versions']['gofile']}"
         self.STATUS_QUEUE = "QSystem v2"
         self.STATUS_JD = "JDownloader v2"
         self.STATUS_YT = "Youtube-Api"

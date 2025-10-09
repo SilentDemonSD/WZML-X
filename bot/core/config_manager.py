@@ -31,6 +31,8 @@ class Config:
     FORCE_SUB_IDS = ""
     GDRIVE_ID = ""
     GD_DESP = "Uploaded with WZ Bot"
+    GOFILE_API = ""
+    GOFILE_FOLDER_ID = ""
     AUTHOR_NAME = "WZML-X"
     AUTHOR_URL = "https://t.me/WZML_X"
     INSTADL_API = ""
@@ -157,7 +159,7 @@ class Config:
                     continue
                 if isinstance(value, str):
                     value = value.strip()
-                if attr == "DEFAULT_UPLOAD" and value != "gd":
+                if attr == "DEFAULT_UPLOAD" and value not in ["gd", "gofile"]:
                     value = "rc"
                 elif attr in [
                     "BASE_URL",
@@ -219,7 +221,7 @@ class Config:
     def load_dict(cls, config_dict):
         for key, value in config_dict.items():
             if hasattr(cls, key):
-                if key == "DEFAULT_UPLOAD" and value != "gd":
+                if key == "DEFAULT_UPLOAD" and value not in ["gd", "gofile"]:
                     value = "rc"
                 elif key in [
                     "BASE_URL",

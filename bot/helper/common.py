@@ -295,6 +295,8 @@ class TaskConfig:
                 self.up_dest = self.user_dict.get("RCLONE_PATH") or Config.RCLONE_PATH
             elif (not self.up_dest and default_upload == "gd") or self.up_dest == "gd":
                 self.up_dest = self.user_dict.get("GDRIVE_ID") or Config.GDRIVE_ID
+            elif (not self.up_dest and default_upload == "gofile") or self.up_dest in ["gofile", "gf"]:
+                self.up_dest = "gofile"
             if not self.up_dest:
                 raise ValueError("No Upload Destination!")
             if is_gdrive_id(self.up_dest):
@@ -308,10 +310,14 @@ class TaskConfig:
                 ):
                     self.up_dest = f"mrcc:{self.up_dest}"
                 self.up_dest = self.up_dest.strip("/")
+            elif self.up_dest == "gofile":
+                user_token = self.user_dict.get("GOFILE_TOKEN")
+                if not user_token and not Config.GOFILE_API:
+                    raise ValueError("GoFile API token not configured! Please set your GoFile token in user settings or configure a global token.")
             else:
                 raise ValueError("Wrong Upload Destination!")
 
-            if self.up_dest not in ["rcl", "gdl"]:
+            if self.up_dest not in ["rcl", "gdl", "gofile"]:
                 await self.is_token_exists(self.up_dest, "up")
 
             if self.up_dest == "rcl":

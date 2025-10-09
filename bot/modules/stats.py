@@ -57,6 +57,7 @@ commands = {
     "pyrofork": (["uv", "pip", "show", "pyrofork"], r"Version: ([\d.]+)"),
     "gapi": (["uv", "pip", "show", "google-api-python-client"], r"Version: ([\d.]+)"),
     "mega": (["pip", "show", "megasdk"], r"Version: ([\d.]+)"),
+    "gofile": (["echo", "API"], r"(.*)"),
 }
 
 

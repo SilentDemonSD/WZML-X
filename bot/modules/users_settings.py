@@ -45,6 +45,7 @@ leech_options = [
 ]
 rclone_options = ["RCLONE_CONFIG", "RCLONE_PATH", "RCLONE_FLAGS"]
 gdrive_options = ["TOKEN_PICKLE", "GDRIVE_ID", "INDEX_URL"]
+gofile_options = ["GOFILE_TOKEN", "GOFILE_FOLDER_ID"]
 ffset_options = [
     "FFMPEG_CMDS",
     "METADATA",
@@ -131,6 +132,16 @@ user_settings_text = {
         "",
         "",
         "Send Index URL for your gdrive option. </i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
+    ),
+    "GOFILE_TOKEN": (
+        "",
+        "",
+        "Send your GoFile API token. Get it from <a href='https://gofile.io/myProfile'>GoFile Profile</a>. </i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
+    ),
+    "GOFILE_FOLDER_ID": (
+        "",
+        "",
+        "Send GoFile Folder ID to upload files to a specific folder. Leave empty to upload to root. </i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     ),
     "UPLOAD_PATHS": (
         "",
@@ -311,10 +322,22 @@ async def get_user_settings(from_user, stype="main"):
             default_upload = user_dict["DEFAULT_UPLOAD"]
         elif "DEFAULT_UPLOAD" not in user_dict:
             default_upload = Config.DEFAULT_UPLOAD
-        du = "GDRIVE API" if default_upload == "gd" else "RCLONE"
-        dur = "GDRIVE API" if default_upload != "gd" else "RCLONE"
+        
+        if default_upload == "gd":
+            du = "GDRIVE API"
+            next_option = "rc"
+            dur = "RCLONE"
+        elif default_upload == "gofile":
+            du = "GOFILE"
+            next_option = "gd"
+            dur = "GDRIVE API"
+        else:  # default_upload == "rc"
+            du = "RCLONE"
+            next_option = "gofile"
+            dur = "GOFILE"
+            
         buttons.data_button(
-            f"Swap to {dur} Mode", f"userset {user_id} {default_upload}"
+            f"Swap to {dur} Mode", f"userset {user_id} {next_option}"
         )
 
         user_tokens = user_dict.get("USER_TOKENS", False)
@@ -567,6 +590,24 @@ async def get_user_settings(from_user, stype="main"):
 ┠ <b>Gdrive ID</b> → <code>{gdrive_id}</code>
 ┠ <b>Index URL</b> → <code>{index}</code>
 ┖ <b>Stop Duplicate</b> → <b>{sd_msg}</b>"""
+    elif stype == "gofile":
+        buttons.data_button("GoFile Token", f"userset {user_id} menu GOFILE_TOKEN")
+        buttons.data_button("GoFile Folder ID", f"userset {user_id} menu GOFILE_FOLDER_ID")
+        
+        gofile_token = user_dict.get("GOFILE_TOKEN") or Config.GOFILE_API
+        gofile_token_msg = "Set" if gofile_token else "Not Set"
+        
+        gofile_folder_id = user_dict.get("GOFILE_FOLDER_ID", "None")
+        if not gofile_folder_id:
+            gofile_folder_id = "None"
+        
+        btns = buttons.build_menu(2)
+
+        text = f"""⌬ <b>GoFile Tools Settings :</b>
+┟ <b>Name</b> → {user_name}
+┃
+┠ <b>GoFile Token</b> → <b>{gofile_token_msg}</b>
+┖ <b>GoFile Folder ID</b> → <code>{gofile_folder_id}</code>"""
     elif stype == "mirror":
         buttons.data_button("RClone Tools", f"userset {user_id} rclone")
         rccmsg = "Exists" if await aiopath.exists(rclone_conf) else "Not Exists"
@@ -578,6 +619,7 @@ async def get_user_settings(from_user, stype="main"):
             rccpath = "None"
 
         buttons.data_button("GDrive Tools", f"userset {user_id} gdrive")
+        buttons.data_button("GoFile Tools", f"userset {user_id} gofile")
         tokenmsg = "Exists" if await aiopath.exists(token_pickle) else "Not Exists"
         if user_dict.get("GDRIVE_ID", False):
             gdrive_id = user_dict["GDRIVE_ID"]
@@ -587,6 +629,13 @@ async def get_user_settings(from_user, stype="main"):
             gdrive_id = "None"
 
         index = user_dict["INDEX_URL"] if user_dict.get("INDEX_URL", False) else "None"
+        
+        gofile_token = user_dict.get("GOFILE_TOKEN") or Config.GOFILE_API
+        gofile_token_msg = "Set" if gofile_token else "Not Set"
+        gofile_folder_id = user_dict.get("GOFILE_FOLDER_ID", "None")
+        if not gofile_folder_id:
+            gofile_folder_id = "None"
+            
         if (
             user_dict.get("STOP_DUPLICATE", False)
             or "STOP_DUPLICATE" not in user_dict
@@ -609,6 +658,8 @@ async def get_user_settings(from_user, stype="main"):
 ┠ <b>Gdrive Token</b> → <b>{tokenmsg}</b>
 ┠ <b>Gdrive ID</b> → <code>{gdrive_id}</code>
 ┠ <b>Index Link</b> → <code>{index}</code>
+┠ <b>GoFile Token</b> → <b>{gofile_token_msg}</b>
+┠ <b>GoFile Folder ID</b> → <code>{gofile_folder_id}</code>
 ┖ <b>Stop Duplicate</b> → <b>{sd_msg}</b>
 """
 
@@ -1255,9 +1306,14 @@ async def edit_user_settings(client, query):
     elif data[2] == "view":
         await query.answer()
         await send_file(message, thumb_path, name)
-    elif data[2] in ["gd", "rc"]:
+    elif data[2] in ["gd", "rc", "gofile"]:
         await query.answer()
-        du = "rc" if data[2] == "gd" else "gd"
+        if data[2] == "gd":
+            du = "rc"
+        elif data[2] == "rc":
+            du = "gofile"
+        else:  # data[2] == "gofile"
+            du = "gd"
         update_user_ldata(user_id, "DEFAULT_UPLOAD", du)
         await update_user_settings(query, stype="general")
         await database.update_user_data(user_id)

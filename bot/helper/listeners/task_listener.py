@@ -42,10 +42,12 @@ from ..ext_utils.links_utils import is_gdrive_id
 from ..ext_utils.status_utils import get_readable_file_size, get_readable_time
 from ..ext_utils.task_manager import check_running_tasks, start_from_queued
 from ..mirror_leech_utils.gdrive_utils.upload import GoogleDriveUpload
+from ..mirror_leech_utils.gofile_utils.upload import GoFileUpload
 from ..mirror_leech_utils.rclone_utils.transfer import RcloneTransferHelper
 from ..mirror_leech_utils.status_utils.gdrive_status import (
     GoogleDriveStatus,
 )
+from ..mirror_leech_utils.status_utils.gofile_status import GoFileStatus
 from ..mirror_leech_utils.status_utils.queue_status import QueueStatus
 from ..mirror_leech_utils.status_utils.rclone_status import RcloneStatus
 from ..mirror_leech_utils.status_utils.telegram_status import TelegramStatus
@@ -361,6 +363,16 @@ class TaskListener(TaskConfig):
                 sync_to_async(drive.upload),
             )
             del drive
+        elif self.up_dest == "gofile":
+            LOGGER.info(f"GoFile Upload Name: {self.name}")
+            gofile = GoFileUpload(self, up_path)
+            async with task_dict_lock:
+                task_dict[self.mid] = GoFileStatus(self, gofile, gid, "up")
+            await gather(
+                update_status_message(self.message.chat.id),
+                gofile.upload(),
+            )
+            del gofile
         else:
             LOGGER.info(f"Rclone Upload Name: {self.name}")
             RCTransfer = RcloneTransferHelper(self)
