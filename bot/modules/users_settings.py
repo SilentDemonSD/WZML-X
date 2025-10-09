@@ -1189,6 +1189,7 @@ async def edit_user_settings(client, query):
         "ffset",
         "advanced",
         "gdrive",
+        "gofile",
         "rclone",
     ]:
         await query.answer()
