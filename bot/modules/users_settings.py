@@ -325,15 +325,15 @@ async def get_user_settings(from_user, stype="main"):
         
         if default_upload == "gd":
             du = "GDRIVE API"
-            next_option = "rc"
+            next_option = "swap_rc"
             dur = "RCLONE"
         elif default_upload == "gofile":
             du = "GOFILE"
-            next_option = "gd"
+            next_option = "swap_gd"
             dur = "GDRIVE API"
         else:  # default_upload == "rc"
             du = "RCLONE"
-            next_option = "gofile"
+            next_option = "swap_gofile"
             dur = "GOFILE"
             
         buttons.data_button(
@@ -593,6 +593,8 @@ async def get_user_settings(from_user, stype="main"):
     elif stype == "gofile":
         buttons.data_button("GoFile Token", f"userset {user_id} menu GOFILE_TOKEN")
         buttons.data_button("GoFile Folder ID", f"userset {user_id} menu GOFILE_FOLDER_ID")
+        buttons.data_button("Back", f"userset {user_id} mirror", "footer")
+        buttons.data_button("Close", f"userset {user_id} close", "footer")
         
         gofile_token = user_dict.get("GOFILE_TOKEN") or Config.GOFILE_API
         gofile_token_msg = "Set" if gofile_token else "Not Set"
@@ -1063,6 +1065,8 @@ async def get_menu(option, message, user_id):
         back_to = "rclone"
     elif option in gdrive_options:
         back_to = "gdrive"
+    elif option in gofile_options:
+        back_to = "gofile"
     elif option in yt_options:
         back_to = "yttools"
     elif option in ffset_options:
@@ -1307,14 +1311,14 @@ async def edit_user_settings(client, query):
     elif data[2] == "view":
         await query.answer()
         await send_file(message, thumb_path, name)
-    elif data[2] in ["gd", "rc", "gofile"]:
+    elif data[2] in ["swap_gd", "swap_rc", "swap_gofile"]:
         await query.answer()
-        if data[2] == "gd":
-            du = "rc"
-        elif data[2] == "rc":
-            du = "gofile"
-        else:  # data[2] == "gofile"
+        if data[2] == "swap_gd":
             du = "gd"
+        elif data[2] == "swap_rc":
+            du = "rc"
+        else:  # data[2] == "swap_gofile"
+            du = "gofile"
         update_user_ldata(user_id, "DEFAULT_UPLOAD", du)
         await update_user_settings(query, stype="general")
         await database.update_user_data(user_id)
