@@ -738,9 +738,10 @@ class TaskConfig:
                         await cpu_eater_lock.acquire()
                         self.progress = True
                     LOGGER.info(f"Running ffmpeg cmd for: {file_path}")
-                    cmd[index + 1] = file_path
+                    var_cmd = cmd.copy()
+                    var_cmd[index + 1] = file_path
                     self.subsize = self.size
-                    res = await ffmpeg.ffmpeg_cmds(cmd, file_path)
+                    res = await ffmpeg.ffmpeg_cmds(var_cmd, file_path)
                     if res:
                         if delete_files:
                             await remove(file_path)
