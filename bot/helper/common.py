@@ -722,6 +722,8 @@ class TaskConfig:
                     ] and not dl_path.strip().lower().endswith(ext):
                         break
                     new_folder = ospath.splitext(dl_path)[0]
+                    if await aiopath.isfile(new_folder):
+                        new_folder = f"{new_folder}_temp"
                     name = ospath.basename(dl_path)
                     await makedirs(new_folder, exist_ok=True)
                     file_path = f"{new_folder}/{name}"
@@ -858,6 +860,8 @@ class TaskConfig:
                 res = await take_ss(dl_path, ss_nb)
                 if res:
                     new_folder = ospath.splitext(dl_path)[0]
+                    if await aiopath.isfile(new_folder):
+                        new_folder = f"{new_folder}_temp"
                     name = ospath.basename(dl_path)
                     await makedirs(new_folder, exist_ok=True)
                     await gather(
@@ -1022,6 +1026,8 @@ class TaskConfig:
                     )
                     if res and self.is_file:
                         new_folder = ospath.splitext(f_path)[0]
+                        if await aiopath.isfile(new_folder):
+                            new_folder = f"{new_folder}_temp"
                         await makedirs(new_folder, exist_ok=True)
                         await gather(
                             move(f_path, f"{new_folder}/{file_}"),
@@ -1034,6 +1040,8 @@ class TaskConfig:
         pswd = self.compress if isinstance(self.compress, str) else ""
         if self.is_leech and self.is_file:
             new_folder = ospath.splitext(dl_path)[0]
+            if await aiopath.isfile(new_folder):
+                new_folder = f"{new_folder}_temp"
             name = ospath.basename(dl_path)
             await makedirs(new_folder, exist_ok=True)
             new_dl_path = f"{new_folder}/{name}"
