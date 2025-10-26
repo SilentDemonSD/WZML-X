@@ -252,12 +252,12 @@ async def pre_task_check(message):
     user_id = (message.from_user or message.sender_chat).id
     if Config.RSS_CHAT and user_id == int(Config.RSS_CHAT):
         return msg, button
+    user_dict = user_data.get(user_id, {})
     if message.chat.type != message.chat.type.BOT:
         if ids := Config.FORCE_SUB_IDS:
             _msg, button = await forcesub(message, ids, button)
             if _msg:
                 msg.append(_msg)
-        user_dict = user_data.get(user_id, {})
         if Config.BOT_PM or user_dict.get("BOT_PM"):  # or config_dict['SAFE_MODE']:
             _msg, button = await check_botpm(message, button)
             if _msg:
@@ -268,13 +268,13 @@ async def pre_task_check(message):
         msg.append(
             f"┠ <b>Waiting Time</b> → {get_readable_time(ut)}\n┠ <i>User's Time Interval Restrictions</i> → {get_readable_time(uti)}"
         )
-    bmax_tasks = safe_int(Config.BOT_MAX_TASKS)
+    bmax_tasks = safe_int(user_dict.get("bmax_tasks", Config.BOT_MAX_TASKS))
     if bmax_tasks > 0 and len(await get_specific_tasks("All", False)) >= bmax_tasks:
         msg.append(
             f"┠ Max Concurrent Bot's Tasks Limit exceeded.\n┠ Bot Tasks Limit : {bmax_tasks} task"
         )
 
-    maxtask = safe_int(Config.USER_MAX_TASKS)
+    maxtask = safe_int(user_dict.get("maxtask", Config.USER_MAX_TASKS))
     if maxtask > 0 and len(await get_specific_tasks("All", user_id)) >= maxtask:
         msg.append(
             f"┠ Max Concurrent User's Task(s) Limit exceeded! \n┠ User Task Limit : {maxtask} tasks"
