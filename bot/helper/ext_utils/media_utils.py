@@ -1,3 +1,4 @@
+import re
 from contextlib import suppress
 from PIL import Image
 from hashlib import md5
@@ -316,8 +317,15 @@ async def get_video_thumbnail(video_file, duration):
 
 
 async def get_multiple_frames_thumbnail(video_file, layout, keep_screenshots):
+    layout = re.sub(r"(\d+)\D+(\d+)", r"\1x\2", layout)
     ss_nb = layout.split("x")
+    if len(ss_nb) != 2 or not ss_nb[0].isdigit() or not ss_nb[1].isdigit():
+        LOGGER.error(f"Invalid layout value: {layout}")
+        return None
     ss_nb = int(ss_nb[0]) * int(ss_nb[1])
+    if ss_nb == 0:
+        LOGGER.error(f"Invalid layout value: {layout}")
+        return None
     dirpath = await take_ss(video_file, ss_nb)
     if not dirpath:
         return None

@@ -434,150 +434,107 @@ def get_help_string():
     commands = BotCommands.get_commands()
 
     for key, cmds in commands.items():
+        cmd_attr = getattr(BotCommands, f"{key}Command", None)
+        if not cmd_attr:
+            continue
+
+        if isinstance(cmd_attr, list):
+            cmd_str = f"/{' or /'.join(cmd_attr)}"
+        else:
+            cmd_str = f"/{cmd_attr}"
+
         if key == "SpeedTest" and key in BOT_COMMANDS:
-            help_lines.append(
-                f"/{BotCommands.SpeedTestCommand[0]} or /{BotCommands.SpeedTestCommand[1]}: Check Bot Speed using Speedtest.com"
-            )
+            help_lines.append(f"{cmd_str}: Check Bot Speed using Speedtest.com")
         elif key == "Mirror":
-            help_lines.append(
-                f"/{BotCommands.MirrorCommand[0]} or /{BotCommands.MirrorCommand[1]}: Start mirroring to cloud."
-            )
+            help_lines.append(f"{cmd_str}: Start mirroring to cloud.")
         elif key == "QbMirror":
-            help_lines.append(
-                f"/{BotCommands.QbMirrorCommand[0]} or /{BotCommands.QbMirrorCommand[1]}: Start Mirroring to cloud using qBittorrent."
-            )
+            help_lines.append(f"{cmd_str}: Start Mirroring to cloud using qBittorrent.")
         elif key == "JdMirror":
-            help_lines.append(
-                f"/{BotCommands.JdMirrorCommand[0]} or /{BotCommands.JdMirrorCommand[1]}: Start Mirroring to cloud using JDownloader."
-            )
+            help_lines.append(f"{cmd_str}: Start Mirroring to cloud using JDownloader.")
         elif key == "NzbMirror":
-            help_lines.append(
-                f"/{BotCommands.NzbMirrorCommand[0]} or /{BotCommands.NzbMirrorCommand[1]}: Start Mirroring to cloud using Sabnzbd."
-            )
+            help_lines.append(f"{cmd_str}: Start Mirroring to cloud using Sabnzbd.")
         elif key == "Ytdl":
-            help_lines.append(
-                f"/{BotCommands.YtdlCommand[0]} or /{BotCommands.YtdlCommand[1]}: Mirror yt-dlp supported link."
-            )
+            help_lines.append(f"{cmd_str}: Mirror yt-dlp supported link.")
         elif key == "Leech":
-            help_lines.append(
-                f"/{BotCommands.LeechCommand[0]} or /{BotCommands.LeechCommand[1]}: Start leeching to Telegram."
-            )
+            help_lines.append(f"{cmd_str}: Start leeching to Telegram.")
         elif key == "QbLeech":
-            help_lines.append(
-                f"/{BotCommands.QbLeechCommand[0]} or /{BotCommands.QbLeechCommand[1]}: Start leeching using qBittorrent."
-            )
+            help_lines.append(f"{cmd_str}: Start leeching using qBittorrent.")
         elif key == "JdLeech":
-            help_lines.append(
-                f"/{BotCommands.JdLeechCommand[0]} or /{BotCommands.JdLeechCommand[1]}: Start leeching using JDownloader."
-            )
+            help_lines.append(f"{cmd_str}: Start leeching using JDownloader.")
         elif key == "NzbLeech":
-            help_lines.append(
-                f"/{BotCommands.NzbLeechCommand[0]} or /{BotCommands.NzbLeechCommand[1]}: Start leeching using Sabnzbd."
-            )
+            help_lines.append(f"{cmd_str}: Start leeching using Sabnzbd.")
         elif key == "YtdlLeech":
-            help_lines.append(
-                f"/{BotCommands.YtdlLeechCommand[0]} or /{BotCommands.YtdlLeechCommand[1]}: Leech yt-dlp supported link."
-            )
+            help_lines.append(f"{cmd_str}: Leech yt-dlp supported link.")
         elif key == "Clone":
             help_lines.append(
-                f"/{BotCommands.CloneCommand} [drive_url]: Copy file/folder to Google Drive."
+                f"{cmd_str} [drive_url]: Copy file/folder to Google Drive."
             )
         elif key == "Count":
             help_lines.append(
-                f"/{BotCommands.CountCommand} [drive_url]: Count file/folder of Google Drive."
+                f"{cmd_str} [drive_url]: Count file/folder of Google Drive."
             )
         elif key == "Delete":
             help_lines.append(
-                f"/{BotCommands.DeleteCommand} [drive_url]: Delete file/folder from Google Drive (Only Owner & Sudo)."
+                f"{cmd_str} [drive_url]: Delete file/folder from Google Drive (Only Owner & Sudo)."
             )
         elif key == "UserSet":
-            help_lines.append(
-                f"/{BotCommands.UserSetCommand[0]} or /{BotCommands.UserSetCommand[1]} [query]: Users settings."
-            )
+            help_lines.append(f"{cmd_str} [query]: Users settings.")
         elif key == "BotSet":
-            help_lines.append(
-                f"/{BotCommands.BotSetCommand[0]} or /{BotCommands.BotSetCommand[1]} [query]: Bot settings."
-            )
+            help_lines.append(f"{cmd_str} [query]: Bot settings.")
         elif key == "Select":
             help_lines.append(
-                f"/{BotCommands.SelectCommand}: Select files from torrents or nzb by gid or reply."
+                f"{cmd_str}: Select files from torrents or nzb by gid or reply."
             )
         elif key == "CancelTask":
-            help_lines.append(
-                f"/{BotCommands.CancelTaskCommand[0]} or /{BotCommands.CancelTaskCommand[1]} [gid]: Cancel task by gid or reply."
-            )
+            help_lines.append(f"{cmd_str} [gid]: Cancel task by gid or reply.")
         elif key == "ForceStart":
-            help_lines.append(
-                f"/{BotCommands.ForceStartCommand[0]} or /{BotCommands.ForceStartCommand[1]} [gid]: Force start task by gid or reply."
-            )
+            help_lines.append(f"{cmd_str} [gid]: Force start task by gid or reply.")
         elif key == "CancelAll":
-            help_lines.append(
-                f"/{BotCommands.CancelAllCommand} [query]: Cancel all [status] tasks."
-            )
+            help_lines.append(f"{cmd_str} [query]: Cancel all [status] tasks.")
         elif key == "List":
-            help_lines.append(
-                f"/{BotCommands.ListCommand} [query]: Search in Google Drive(s)."
-            )
+            help_lines.append(f"{cmd_str} [query]: Search in Google Drive(s).")
         elif key == "Search":
-            help_lines.append(
-                f"/{BotCommands.SearchCommand} [query]: Search for torrents with API."
-            )
+            help_lines.append(f"{cmd_str} [query]: Search for torrents with API.")
         elif key == "MediaInfo":
-            help_lines.append(
-                f"/{BotCommands.MediaInfoCommand[0]} or /{BotCommands.MediaInfoCommand[1]} [query]: Get media info."
-            )
+            help_lines.append(f"{cmd_str} [query]: Get media info.")
         elif key == "Status":
-            help_lines.append(
-                f"/{BotCommands.StatusCommand}: Shows a status of all the downloads."
-            )
+            help_lines.append(f"{cmd_str}: Shows a status of all the downloads.")
         elif key == "Stats":
             help_lines.append(
-                f"/{BotCommands.StatsCommand}: Show stats of the machine where the bot is hosted in."
+                f"{cmd_str}: Show stats of the machine where the bot is hosted in."
             )
         elif key == "Ping":
             help_lines.append(
-                f"/{BotCommands.PingCommand}: Check how long it takes to Ping the Bot (Only Owner & Sudo)."
+                f"{cmd_str}: Check how long it takes to Ping the Bot (Only Owner & Sudo)."
             )
         elif key == "Authorize":
             help_lines.append(
-                f"/{BotCommands.AuthorizeCommand}: Authorize a chat or a user to use the bot (Only Owner & Sudo)."
+                f"{cmd_str}: Authorize a chat or a user to use the bot (Only Owner & Sudo)."
             )
         elif key == "UnAuthorize":
             help_lines.append(
-                f"/{BotCommands.UnAuthorizeCommand}: Unauthorize a chat or a user to use the bot (Only Owner & Sudo)."
+                f"{cmd_str}: Unauthorize a chat or a user to use the bot (Only Owner & Sudo)."
             )
         elif key == "Users":
-            help_lines.append(
-                f"/{BotCommands.UsersCommand}: show users settings (Only Owner & Sudo)."
-            )
+            help_lines.append(f"{cmd_str}: show users settings (Only Owner & Sudo).")
         elif key == "AddSudo":
-            help_lines.append(
-                f"/{BotCommands.AddSudoCommand}: Add sudo user (Only Owner)."
-            )
+            help_lines.append(f"{cmd_str}: Add sudo user (Only Owner).")
         elif key == "RmSudo":
-            help_lines.append(
-                f"/{BotCommands.RmSudoCommand}: Remove sudo users (Only Owner)."
-            )
+            help_lines.append(f"{cmd_str}: Remove sudo users (Only Owner).")
         elif key == "Restart":
             help_lines.append(
-                f"/{BotCommands.RestartCommand}: Restart and update the bot (Only Owner & Sudo)."
+                f"{cmd_str}: Restart and update the bot (Only Owner & Sudo)."
             )
         elif key == "Log":
             help_lines.append(
-                f"/{BotCommands.LogCommand}: Get a log file of the bot. Handy for getting crash reports (Only Owner & Sudo)."
+                f"{cmd_str}: Get a log file of the bot. Handy for getting crash reports (Only Owner & Sudo)."
             )
         elif key == "Shell":
-            help_lines.append(
-                f"/{BotCommands.ShellCommand}: Run shell commands (Only Owner)."
-            )
+            help_lines.append(f"{cmd_str}: Run shell commands (Only Owner).")
         elif key == "AExec":
-            help_lines.append(
-                f"/{BotCommands.AExecCommand}: Exec async functions (Only Owner)."
-            )
+            help_lines.append(f"{cmd_str}: Exec async functions (Only Owner).")
         elif key == "Exec":
-            help_lines.append(
-                f"/{BotCommands.ExecCommand}: Exec sync functions (Only Owner)."
-            )
+            help_lines.append(f"{cmd_str}: Exec sync functions (Only Owner).")
         elif key == "ClearLocals":
             help_lines.append(
                 f"/{BotCommands.ClearLocalsCommand}: Clear {BotCommands.AExecCommand} or {BotCommands.ExecCommand} locals (Only Owner)."

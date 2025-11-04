@@ -502,7 +502,7 @@ class TaskConfig:
                 self.tag = " ".join(user_info[:-1])
             else:
                 self.tag, id_ = text[1].split("Tag: ")[1].split()
-            self.user = self.message.from_user = await self.client.get_users(id_)
+            self.user = self.message.from_user = await self.client.get_users(int(id_))
             self.user_id = self.user.id
             self.user_dict = user_data.get(self.user_id, {})
             with suppress(Exception):
@@ -722,6 +722,8 @@ class TaskConfig:
                     ] and not dl_path.strip().lower().endswith(ext):
                         break
                     new_folder = ospath.splitext(dl_path)[0]
+                    if await aiopath.isfile(new_folder):
+                        new_folder = f"{new_folder}_temp"
                     name = ospath.basename(dl_path)
                     await makedirs(new_folder, exist_ok=True)
                     file_path = f"{new_folder}/{name}"
@@ -736,9 +738,10 @@ class TaskConfig:
                         await cpu_eater_lock.acquire()
                         self.progress = True
                     LOGGER.info(f"Running ffmpeg cmd for: {file_path}")
-                    cmd[index + 1] = file_path
+                    var_cmd = cmd.copy()
+                    var_cmd[index + 1] = file_path
                     self.subsize = self.size
-                    res = await ffmpeg.ffmpeg_cmds(cmd, file_path)
+                    res = await ffmpeg.ffmpeg_cmds(var_cmd, file_path)
                     if res:
                         if delete_files:
                             await remove(file_path)
@@ -858,6 +861,8 @@ class TaskConfig:
                 res = await take_ss(dl_path, ss_nb)
                 if res:
                     new_folder = ospath.splitext(dl_path)[0]
+                    if await aiopath.isfile(new_folder):
+                        new_folder = f"{new_folder}_temp"
                     name = ospath.basename(dl_path)
                     await makedirs(new_folder, exist_ok=True)
                     await gather(
@@ -1022,6 +1027,8 @@ class TaskConfig:
                     )
                     if res and self.is_file:
                         new_folder = ospath.splitext(f_path)[0]
+                        if await aiopath.isfile(new_folder):
+                            new_folder = f"{new_folder}_temp"
                         await makedirs(new_folder, exist_ok=True)
                         await gather(
                             move(f_path, f"{new_folder}/{file_}"),
@@ -1034,6 +1041,8 @@ class TaskConfig:
         pswd = self.compress if isinstance(self.compress, str) else ""
         if self.is_leech and self.is_file:
             new_folder = ospath.splitext(dl_path)[0]
+            if await aiopath.isfile(new_folder):
+                new_folder = f"{new_folder}_temp"
             name = ospath.basename(dl_path)
             await makedirs(new_folder, exist_ok=True)
             new_dl_path = f"{new_folder}/{name}"
