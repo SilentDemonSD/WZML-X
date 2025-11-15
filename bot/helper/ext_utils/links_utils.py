@@ -3,8 +3,11 @@ from base64 import urlsafe_b64decode, urlsafe_b64encode
 
 
 def is_magnet(url: str):
-    return bool(re_match(r"^magnet:\?.*xt=urn:(btih|btmh):([a-zA-Z0-9]{32,40}|[a-z2-7]{32}).*", url))
-
+    return bool(
+        re_match(
+            r"^magnet:\?.*xt=urn:(btih|btmh):([a-zA-Z0-9]{32,40}|[a-z2-7]{32}).*", url
+        )
+    )
 
 
 def is_url(url: str):
