@@ -976,7 +976,7 @@ def pixeldrain(url: str) -> str:
         dl_url = f"https://pixeldrain.dev/api/file/{code}?download={random_5_string}"
         return dl_url
     except Exception as e:
-        raise DirectDownloadLinkException("ERROR: Direct link not found")
+        raise DirectDownloadLinkException(f"ERROR: Direct link not found. Original error: {str(e)}")
 
 
 def streamtape(url):
