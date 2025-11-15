@@ -74,7 +74,6 @@ DEFAULT_VALUES = {
 }
 
 
-
 async def get_buttons(key=None, edit_type=None, edit_mode=False):
     buttons = ButtonMaker()
     if key is None:
