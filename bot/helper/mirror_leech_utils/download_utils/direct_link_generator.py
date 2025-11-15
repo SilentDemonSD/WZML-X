@@ -12,7 +12,6 @@ from urllib.parse import parse_qs, urlparse, quote
 from urllib3.util.retry import Retry
 from uuid import uuid4
 from base64 import b64decode, b64encode
-import random
 
 from ....core.config_manager import Config
 from ...ext_utils.exceptions import DirectDownloadLinkException
@@ -450,6 +449,8 @@ def direct_link_generator(link):
         return hxfile(link)
     elif "1drv.ms" in domain:
         return onedrive(link)
+    elif "pixeldrain.com" in domain:
+        return pixeldrain(link)
     elif "racaty" in domain:
         return racaty(link)
     elif "1fichier.com" in domain:
@@ -484,8 +485,6 @@ def direct_link_generator(link):
         return swisstransfer(link)
     elif "instagram.com" in domain:
         return instagram(link)
-    elif any(x in domain for x in ["pixeldrain.com", "pixeldrain.dev"]):
-        return pixeldrain(link)
     elif any(x in domain for x in ["akmfiles.com", "akmfls.xyz"]):
         return akmfiles(link)
     elif any(
@@ -962,21 +961,14 @@ def onedrive(link):
     return resp["@content.downloadUrl"]
 
 
-def pixeldrain(url: str) -> str:
+def pixeldrain(url):
     try:
-        m = search(r"https?://pixeldrain\.(?:dev|com)/(?:api/file|u)/([^?]+)", url)
-        if not m:
-            raise DirectDownloadLinkException("No pixeldrain links found")
-        code = m.group(1)
-        random_5_string = "".join(
-            random.choices(
-                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", k=5
-            )
-        )
-        dl_url = f"https://pixeldrain.dev/api/file/{code}?download={random_5_string}"
-        return dl_url
+        url = url.rstrip("/")
+        code = url.split("/")[-1].split("?", 1)[0]
+        response = get("https://pd.cybar.xyz/", allow_redirects=True)
+        return response.url + code
     except Exception as e:
-        raise DirectDownloadLinkException(f"ERROR: Direct link not found. Original error: {str(e)}")
+        raise DirectDownloadLinkException("ERROR: Direct link not found")
 
 
 def streamtape(url):
