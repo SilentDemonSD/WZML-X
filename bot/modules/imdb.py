@@ -1,7 +1,9 @@
 from contextlib import suppress
 from re import IGNORECASE, findall, search
 
+import cloudscraper
 from imdb import Cinemagoer
+from imdb.parser.http import IMDbHTTPAccessSystem
 from pycountry import countries as conn
 from pyrogram.errors import MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty
 
@@ -14,6 +16,19 @@ from ..helper.telegram_helper.message_utils import (
     edit_message,
     delete_message,
 )
+
+# Monkeypatch IMDbHTTPAccessSystem._retrieve to use cloudscraper
+scraper = cloudscraper.create_scraper()
+
+def _retrieve_patched(self, url, size=-1, _noCookies=False):
+    try:
+        response = scraper.get(url)
+        response.raise_for_status()
+        return response.text
+    except Exception as e:
+        raise e
+
+IMDbHTTPAccessSystem._retrieve = _retrieve_patched
 
 imdb = Cinemagoer()
 
