@@ -26,7 +26,7 @@ def _retrieve_patched(self, url, size=-1, _noCookies=False):
         response.raise_for_status()
         return response.text
     except Exception as e:
-        raise e
+        raise
 
 IMDbHTTPAccessSystem._retrieve = _retrieve_patched
 
