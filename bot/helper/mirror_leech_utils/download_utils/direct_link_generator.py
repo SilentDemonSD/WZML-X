@@ -573,6 +573,8 @@ def direct_link_generator(link):
         return filelions_and_streamwish(link)
     elif any(x in domain for x in ["streamhub.ink", "streamhub.to"]):
         return streamhub(link)
+    elif any(x in domain for x in ["hubcloud.one", "hubcloud.foo"]):
+        return hubcloud(link)
     elif any(
         x in domain
         for x in [
@@ -661,6 +663,22 @@ def debrid_link(url):
                 details["total_size"] += dl["size"]
             details["contents"].append(item)
         return details
+
+
+def hubcloud(url):
+    try:
+        response = get(f"http://hubcloud.cfd/bypass?url={url}").json()
+    except Exception as e:
+        raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
+
+    if "links" not in response or not response["links"]:
+        raise DirectDownloadLinkException("ERROR: No links found")
+
+    # Sort links by priority in descending order
+    links = sorted(response["links"], key=lambda x: x.get("priority", 0), reverse=True)
+
+    # Return the url of the highest priority link
+    return links[0]["url"]
 
 
 def buzzheavier(url):
