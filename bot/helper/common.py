@@ -104,6 +104,7 @@ class TaskConfig:
         self.is_nzb = False
         self.is_jd = False
         self.is_clone = False
+        self.is_ddl = False
         self.is_gdrive = False
         self.is_rclone = False
         self.is_ytdlp = False
@@ -157,7 +158,7 @@ class TaskConfig:
             )
         )
 
-        out_mode = f"#{'Leech' if self.is_leech else 'Clone' if self.is_clone else 'RClone' if self.up_dest.startswith('mrcc:') or is_rclone_path(self.up_dest) else 'GDrive' if self.up_dest.startswith(('mtp:', 'tp:', 'sa:')) or is_gdrive_id(self.up_dest) else 'UpHosters'}"
+        out_mode = f"#{'Leech' if self.is_leech else 'DDLUpload' if self.is_ddl else 'Clone' if self.is_clone else 'RClone' if self.up_dest.startswith('mrcc:') or is_rclone_path(self.up_dest) else 'GDrive' if self.up_dest.startswith(('mtp:', 'tp:', 'sa:')) or is_gdrive_id(self.up_dest) else 'UpHosters'}"
         out_mode += " (Zip)" if self.compress else " (Unzip)" if self.extract else ""
 
         self.is_rclone = is_rclone_path(self.link)

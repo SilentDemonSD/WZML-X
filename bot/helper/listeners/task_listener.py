@@ -41,8 +41,10 @@ from ..ext_utils.files_utils import (
 from ..ext_utils.links_utils import is_gdrive_id
 from ..ext_utils.status_utils import get_readable_file_size, get_readable_time
 from ..ext_utils.task_manager import check_running_tasks, start_from_queued
+from ..mirror_leech_utils.ddl_utils.gofile_utils.upload import GoFileUpload
 from ..mirror_leech_utils.gdrive_utils.upload import GoogleDriveUpload
 from ..mirror_leech_utils.rclone_utils.transfer import RcloneTransferHelper
+from ..mirror_leech_utils.status_utils.ddl_status import DDLStatus
 from ..mirror_leech_utils.status_utils.gdrive_status import (
     GoogleDriveStatus,
 )
@@ -351,6 +353,16 @@ class TaskListener(TaskConfig):
                 tg.upload(),
             )
             del tg
+        elif self.is_ddl:
+            LOGGER.info(f"DDL Upload Name: {self.name}")
+            ddl = GoFileUpload(self, up_path)
+            async with task_dict_lock:
+                task_dict[self.mid] = DDLStatus(self, ddl, gid, "up")
+            await gather(
+                update_status_message(self.message.chat.id),
+                ddl.upload(),
+            )
+            del ddl
         elif is_gdrive_id(self.up_dest):
             LOGGER.info(f"Gdrive Upload Name: {self.name}")
             drive = GoogleDriveUpload(self, up_path)

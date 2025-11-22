@@ -43,6 +43,7 @@ leech_options = [
     "LEECH_CAPTION",
     "THUMBNAIL_LAYOUT",
 ]
+ddl_options = ["GOFILE_TOKEN", "GOFILE_FOLDER_ID"]
 rclone_options = ["RCLONE_CONFIG", "RCLONE_PATH", "RCLONE_FLAGS"]
 gdrive_options = ["TOKEN_PICKLE", "GDRIVE_ID", "INDEX_URL"]
 ffset_options = [
@@ -255,6 +256,16 @@ Here I will explain how to use mltb.* which is reference to files you want to wo
         "User's YT-DLP Cookie File to authenticate access to websites and youtube.",
         "<i>Send your cookie file (e.g., cookies.txt or abc.txt).</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     ),
+    "GOFILE_TOKEN": (
+        "String",
+        "Gofile API Token",
+        "<i>Send your Gofile API Token.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
+    ),
+    "GOFILE_FOLDER_ID": (
+        "String",
+        "Gofile Folder ID",
+        "<i>Send your Gofile Folder ID.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
+    ),
 }
 
 
@@ -272,6 +283,7 @@ async def get_user_settings(from_user, stype="main"):
         )
         buttons.data_button("Mirror Settings", f"userset {user_id} mirror")
         buttons.data_button("Leech Settings", f"userset {user_id} leech")
+        buttons.data_button("DDL Settings", f"userset {user_id} ddl")
         buttons.data_button("FF Media Settings", f"userset {user_id} ffset")
         buttons.data_button(
             "Mics Settings", f"userset {user_id} advanced", position="l_body"
@@ -493,6 +505,46 @@ async def get_user_settings(from_user, stype="main"):
 ┠ Mixed Leech → <b>{hybrid_leech}</b>
 ┖ Thumbnail Layout → <b>{thumb_layout}</b>
 """
+
+    elif stype == "ddl":
+        buttons.data_button("Gofile Tools", f"userset {user_id} gofile")
+        buttons.data_button("Back", f"userset {user_id} back", "footer")
+        buttons.data_button("Close", f"userset {user_id} close", "footer")
+        btns = buttons.build_menu(1)
+
+        text = f"""⌬ <b>DDL Settings :</b>
+┟ <b>Name</b> → {user_name}
+┃
+┖ <b>Current</b> → Gofile"""
+
+    elif stype == "gofile":
+        buttons.data_button("Gofile Token", f"userset {user_id} menu GOFILE_TOKEN")
+        buttons.data_button(
+            "Gofile Folder ID", f"userset {user_id} menu GOFILE_FOLDER_ID"
+        )
+        buttons.data_button("Back", f"userset {user_id} back ddl", "footer")
+        buttons.data_button("Close", f"userset {user_id} close", "footer")
+        btns = buttons.build_menu(1)
+
+        if user_dict.get("GOFILE_TOKEN", False):
+            gftoken = user_dict["GOFILE_TOKEN"]
+        elif Config.GOFILE_API:
+            gftoken = Config.GOFILE_API
+        else:
+            gftoken = "None"
+
+        if user_dict.get("GOFILE_FOLDER_ID", False):
+            gffolder = user_dict["GOFILE_FOLDER_ID"]
+        elif Config.GOFILE_FOLDER_ID:
+            gffolder = Config.GOFILE_FOLDER_ID
+        else:
+            gffolder = "None"
+
+        text = f"""⌬ <b>Gofile Settings :</b>
+┟ <b>Name</b> → {user_name}
+┃
+┠ <b>Gofile Token</b> → <code>{gftoken}</code>
+┖ <b>Gofile Folder ID</b> → <code>{gffolder}</code>"""
 
     elif stype == "rclone":
         buttons.data_button("Rclone Config", f"userset {user_id} menu RCLONE_CONFIG")
@@ -1135,6 +1187,8 @@ async def edit_user_settings(client, query):
         "general",
         "mirror",
         "leech",
+        "ddl",
+        "gofile",
         "ffset",
         "advanced",
         "gdrive",

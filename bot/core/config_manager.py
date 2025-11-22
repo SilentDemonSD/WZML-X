@@ -29,6 +29,8 @@ class Config:
     FILELION_API = ""
     MEDIA_STORE = True
     FORCE_SUB_IDS = ""
+    GOFILE_API = ""
+    GOFILE_FOLDER_ID = ""
     GDRIVE_ID = ""
     GD_DESP = "Uploaded with WZ Bot"
     AUTHOR_NAME = "WZML-X"
