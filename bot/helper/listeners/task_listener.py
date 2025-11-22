@@ -45,6 +45,9 @@ from ..mirror_leech_utils.uphoster_utils.gofile_utils.upload import GoFileUpload
 from ..mirror_leech_utils.uphoster_utils.buzzheavier_utils.upload import (
     BuzzHeavierUpload,
 )
+from ..mirror_leech_utils.uphoster_utils.pixeldrain_utils.upload import (
+    PixelDrainUpload,
+)
 from ..mirror_leech_utils.gdrive_utils.upload import GoogleDriveUpload
 from ..mirror_leech_utils.rclone_utils.transfer import RcloneTransferHelper
 from ..mirror_leech_utils.status_utils.uphoster_status import UphosterStatus
@@ -361,6 +364,8 @@ class TaskListener(TaskConfig):
             uphoster_service = self.user_dict.get("UPHOSTER_SERVICE", "gofile")
             if uphoster_service == "buzzheavier":
                 ddl = BuzzHeavierUpload(self, up_path)
+            elif uphoster_service == "pixeldrain":
+                ddl = PixelDrainUpload(self, up_path)
             else:
                 ddl = GoFileUpload(self, up_path)
             async with task_dict_lock:
