@@ -208,8 +208,8 @@ def add_handlers():
     )
     TgClient.bot.add_handler(
         MessageHandler(
-            ddl,
-            filters=command(BotCommands.DDLCommand, case_sensitive=True)
+            uphoster,
+            filters=command(BotCommands.UpHosterCommand, case_sensitive=True)
             & CustomFilters.authorized,
         )
     )

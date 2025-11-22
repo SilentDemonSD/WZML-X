@@ -43,7 +43,7 @@ leech_options = [
     "LEECH_CAPTION",
     "THUMBNAIL_LAYOUT",
 ]
-ddl_options = ["GOFILE_TOKEN", "GOFILE_FOLDER_ID"]
+uphoster_options = ["GOFILE_TOKEN", "GOFILE_FOLDER_ID"]
 rclone_options = ["RCLONE_CONFIG", "RCLONE_PATH", "RCLONE_FLAGS"]
 gdrive_options = ["TOKEN_PICKLE", "GDRIVE_ID", "INDEX_URL"]
 ffset_options = [
@@ -283,7 +283,7 @@ async def get_user_settings(from_user, stype="main"):
         )
         buttons.data_button("Mirror Settings", f"userset {user_id} mirror")
         buttons.data_button("Leech Settings", f"userset {user_id} leech")
-        buttons.data_button("DDL Settings", f"userset {user_id} ddl")
+        buttons.data_button("Uphoster Settings", f"userset {user_id} uphoster")
         buttons.data_button("FF Media Settings", f"userset {user_id} ffset")
         buttons.data_button(
             "Mics Settings", f"userset {user_id} advanced", position="l_body"
@@ -506,13 +506,13 @@ async def get_user_settings(from_user, stype="main"):
 ┖ Thumbnail Layout → <b>{thumb_layout}</b>
 """
 
-    elif stype == "ddl":
+    elif stype == "uphoster":
         buttons.data_button("Gofile Tools", f"userset {user_id} gofile")
         buttons.data_button("Back", f"userset {user_id} back", "footer")
         buttons.data_button("Close", f"userset {user_id} close", "footer")
         btns = buttons.build_menu(1)
 
-        text = f"""⌬ <b>DDL Settings :</b>
+        text = f"""⌬ <b>Uphoster Settings :</b>
 ┟ <b>Name</b> → {user_name}
 ┃
 ┖ <b>Current</b> → Gofile"""
@@ -522,7 +522,7 @@ async def get_user_settings(from_user, stype="main"):
         buttons.data_button(
             "Gofile Folder ID", f"userset {user_id} menu GOFILE_FOLDER_ID"
         )
-        buttons.data_button("Back", f"userset {user_id} back ddl", "footer")
+        buttons.data_button("Back", f"userset {user_id} back uphoster", "footer")
         buttons.data_button("Close", f"userset {user_id} close", "footer")
         btns = buttons.build_menu(1)
 
@@ -1187,7 +1187,7 @@ async def edit_user_settings(client, query):
         "general",
         "mirror",
         "leech",
-        "ddl",
+        "uphoster",
         "gofile",
         "ffset",
         "advanced",

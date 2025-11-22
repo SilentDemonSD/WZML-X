@@ -6,14 +6,14 @@ from ....helper.ext_utils.status_utils import (
 )
 
 
-class DDLStatus:
+class UphosterStatus:
     def __init__(self, listener, obj, gid, status):
         self.listener = listener
         self._obj = obj
         self._size = self.listener.size
         self._gid = gid
         self._status = status
-        self.engine = EngineStatus().STATUS_DDL
+        self.engine = EngineStatus().STATUS_UPHOSTER
 
     def processed_bytes(self):
         return get_readable_file_size(self._obj.processed_bytes)
