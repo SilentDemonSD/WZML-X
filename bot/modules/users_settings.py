@@ -48,6 +48,7 @@ uphoster_options = [
     "GOFILE_FOLDER_ID",
     "BUZZHEAVIER_TOKEN",
     "BUZZHEAVIER_FOLDER_ID",
+    "PIXELDRAIN_KEY",
 ]
 rclone_options = ["RCLONE_CONFIG", "RCLONE_PATH", "RCLONE_FLAGS"]
 gdrive_options = ["TOKEN_PICKLE", "GDRIVE_ID", "INDEX_URL"]
@@ -280,6 +281,11 @@ Here I will explain how to use mltb.* which is reference to files you want to wo
         "String",
         "BuzzHeavier Folder ID",
         "<i>Send your BuzzHeavier Folder ID.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
+    ),
+    "PIXELDRAIN_KEY": (
+        "String",
+        "PixelDrain API Key",
+        "<i>Send your PixelDrain API Key.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     ),
 }
 
@@ -524,10 +530,17 @@ async def get_user_settings(from_user, stype="main"):
     elif stype == "uphoster":
         buttons.data_button("Gofile Tools", f"userset {user_id} gofile")
         buttons.data_button("BuzzHeavier Tools", f"userset {user_id} buzzheavier")
+        buttons.data_button("PixelDrain Tools", f"userset {user_id} pixeldrain")
         uphoster_service = user_dict.get("UPHOSTER_SERVICE", "gofile")
+        if uphoster_service == "gofile":
+            next_service = "buzzheavier"
+        elif uphoster_service == "buzzheavier":
+            next_service = "pixeldrain"
+        else:
+            next_service = "gofile"
         buttons.data_button(
             f"Active: {uphoster_service.capitalize()}",
-            f"userset {user_id} uphoster_service {'buzzheavier' if uphoster_service == 'gofile' else 'gofile'}",
+            f"userset {user_id} uphoster_service {next_service}",
         )
         buttons.data_button("Back", f"userset {user_id} back", "footer")
         buttons.data_button("Close", f"userset {user_id} close", "footer")
@@ -537,6 +550,26 @@ async def get_user_settings(from_user, stype="main"):
 ┟ <b>Name</b> → {user_name}
 ┃
 ┖ <b>Current</b> → {uphoster_service.capitalize()}"""
+
+    elif stype == "pixeldrain":
+        buttons.data_button(
+            "PixelDrain Key", f"userset {user_id} menu PIXELDRAIN_KEY"
+        )
+        buttons.data_button("Back", f"userset {user_id} back uphoster", "footer")
+        buttons.data_button("Close", f"userset {user_id} close", "footer")
+        btns = buttons.build_menu(1)
+
+        if user_dict.get("PIXELDRAIN_KEY", False):
+            pdtoken = user_dict["PIXELDRAIN_KEY"]
+        elif Config.PIXELDRAIN_KEY:
+            pdtoken = Config.PIXELDRAIN_KEY
+        else:
+            pdtoken = "None"
+
+        text = f"""⌬ <b>PixelDrain Settings :</b>
+┟ <b>Name</b> → {user_name}
+┃
+┖ <b>PixelDrain Key</b> → <code>{pdtoken}</code>"""
 
     elif stype == "buzzheavier":
         buttons.data_button(
@@ -1240,6 +1273,7 @@ async def edit_user_settings(client, query):
         "uphoster",
         "gofile",
         "buzzheavier",
+        "pixeldrain",
         "ffset",
         "advanced",
         "gdrive",
