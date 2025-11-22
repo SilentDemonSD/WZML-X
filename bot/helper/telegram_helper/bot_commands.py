@@ -11,7 +11,7 @@ class BotCommands:
         "QbMirror": ["qbmirror", "qm"],
         "JdMirror": ["jdmirror", "jm"],
         "Ytdl": ["ytdl", "y"],
-        "DDL": "ddl",
+        "UpHoster": ["uphoster", "up"],
         "NzbMirror": ["nzbmirror", "nm"],
         "Leech": ["leech", "l"],
         "QbLeech": ["qbleech", "ql"],
