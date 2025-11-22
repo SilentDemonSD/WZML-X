@@ -89,7 +89,7 @@ class PixelDrainUpload:
         retry=retry_if_exception_type(Exception),
     )
     async def upload_aiohttp(self, url, file_path, file_name):
-        auth = BasicAuth(self.token, "") if self.token else None
+        auth = BasicAuth("", self.token) if self.token else None
         with ProgressFileReader(
             filename=file_path, read_callback=self.__progress_callback
         ) as file:
@@ -111,8 +111,7 @@ class PixelDrainUpload:
             "files": files,
             "anonymous": False
         }
-
-        auth = BasicAuth(self.token, "")
+        auth = BasicAuth("", self.token)
         async with ClientSession(auth=auth) as session:
             async with session.post(f"{self.api_url}list", json=data) as resp:
                 if resp.status == 200:
