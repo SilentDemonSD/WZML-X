@@ -31,6 +31,7 @@ class Config:
     FORCE_SUB_IDS = ""
     GOFILE_API = ""
     GOFILE_FOLDER_ID = ""
+    PIXELDRAIN_KEY = ""
     BUZZHEAVIER_API = ""
     GDRIVE_ID = ""
     GD_DESP = "Uploaded with WZ Bot"
