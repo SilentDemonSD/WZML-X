@@ -43,7 +43,12 @@ leech_options = [
     "LEECH_CAPTION",
     "THUMBNAIL_LAYOUT",
 ]
-uphoster_options = ["GOFILE_TOKEN", "GOFILE_FOLDER_ID"]
+uphoster_options = [
+    "GOFILE_TOKEN",
+    "GOFILE_FOLDER_ID",
+    "BUZZHEAVIER_TOKEN",
+    "BUZZHEAVIER_FOLDER_ID",
+]
 rclone_options = ["RCLONE_CONFIG", "RCLONE_PATH", "RCLONE_FLAGS"]
 gdrive_options = ["TOKEN_PICKLE", "GDRIVE_ID", "INDEX_URL"]
 ffset_options = [
@@ -265,6 +270,16 @@ Here I will explain how to use mltb.* which is reference to files you want to wo
         "String",
         "Gofile Folder ID",
         "<i>Send your Gofile Folder ID.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
+    ),
+    "BUZZHEAVIER_TOKEN": (
+        "String",
+        "BuzzHeavier API Token",
+        "<i>Send your BuzzHeavier API Token (Account ID).</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
+    ),
+    "BUZZHEAVIER_FOLDER_ID": (
+        "String",
+        "BuzzHeavier Folder ID",
+        "<i>Send your BuzzHeavier Folder ID.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     ),
 }
 
@@ -508,6 +523,12 @@ async def get_user_settings(from_user, stype="main"):
 
     elif stype == "uphoster":
         buttons.data_button("Gofile Tools", f"userset {user_id} gofile")
+        buttons.data_button("BuzzHeavier Tools", f"userset {user_id} buzzheavier")
+        uphoster_service = user_dict.get("UPHOSTER_SERVICE", "gofile")
+        buttons.data_button(
+            f"Active: {uphoster_service.capitalize()}",
+            f"userset {user_id} uphoster_service {'buzzheavier' if uphoster_service == 'gofile' else 'gofile'}",
+        )
         buttons.data_button("Back", f"userset {user_id} back", "footer")
         buttons.data_button("Close", f"userset {user_id} close", "footer")
         btns = buttons.build_menu(1)
@@ -515,7 +536,36 @@ async def get_user_settings(from_user, stype="main"):
         text = f"""⌬ <b>Uphoster Settings :</b>
 ┟ <b>Name</b> → {user_name}
 ┃
-┖ <b>Current</b> → Gofile"""
+┖ <b>Current</b> → {uphoster_service.capitalize()}"""
+
+    elif stype == "buzzheavier":
+        buttons.data_button(
+            "BuzzHeavier Token", f"userset {user_id} menu BUZZHEAVIER_TOKEN"
+        )
+        buttons.data_button(
+            "BuzzHeavier Folder ID", f"userset {user_id} menu BUZZHEAVIER_FOLDER_ID"
+        )
+        buttons.data_button("Back", f"userset {user_id} back uphoster", "footer")
+        buttons.data_button("Close", f"userset {user_id} close", "footer")
+        btns = buttons.build_menu(1)
+
+        if user_dict.get("BUZZHEAVIER_TOKEN", False):
+            bztoken = user_dict["BUZZHEAVIER_TOKEN"]
+        elif Config.BUZZHEAVIER_API:
+            bztoken = Config.BUZZHEAVIER_API
+        else:
+            bztoken = "None"
+
+        if user_dict.get("BUZZHEAVIER_FOLDER_ID", False):
+            bzfolder = user_dict["BUZZHEAVIER_FOLDER_ID"]
+        else:
+            bzfolder = "None"
+
+        text = f"""⌬ <b>BuzzHeavier Settings :</b>
+┟ <b>Name</b> → {user_name}
+┃
+┠ <b>BuzzHeavier Token</b> → <code>{bztoken}</code>
+┖ <b>BuzzHeavier Folder ID</b> → <code>{bzfolder}</code>"""
 
     elif stype == "gofile":
         buttons.data_button("Gofile Token", f"userset {user_id} menu GOFILE_TOKEN")
@@ -1189,6 +1239,7 @@ async def edit_user_settings(client, query):
         "leech",
         "uphoster",
         "gofile",
+        "buzzheavier",
         "ffset",
         "advanced",
         "gdrive",
@@ -1199,6 +1250,11 @@ async def edit_user_settings(client, query):
     elif data[2] == "yttools":
         await query.answer()
         await update_user_settings(query, data[2])
+    elif data[2] == "uphoster_service":
+        await query.answer()
+        update_user_ldata(user_id, "UPHOSTER_SERVICE", data[3])
+        await update_user_settings(query, stype="uphoster")
+        await database.update_user_data(user_id)
     elif data[2] == "menu":
         await query.answer()
         await get_menu(data[3], message, user_id)
