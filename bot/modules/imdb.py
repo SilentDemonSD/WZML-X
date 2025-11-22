@@ -20,6 +20,7 @@ from ..helper.telegram_helper.message_utils import (
 # Monkeypatch IMDbHTTPAccessSystem._retrieve to use cloudscraper
 scraper = cloudscraper.create_scraper()
 
+
 def _retrieve_patched(self, url, size=-1, _noCookies=False):
     try:
         response = scraper.get(url)
@@ -27,6 +28,7 @@ def _retrieve_patched(self, url, size=-1, _noCookies=False):
         return response.text
     except Exception as e:
         raise
+
 
 IMDbHTTPAccessSystem._retrieve = _retrieve_patched
 
