@@ -28,6 +28,12 @@ from ...listeners.mega_listener import (
 
 
 async def add_mega_download(listener, path):
+    mega_link = listener.link
+    sub_path = None
+    if "|" in mega_link:
+        mega_link, sub_path = mega_link.split("|", 1)
+        mega_link, sub_path = mega_link.strip(), sub_path.strip().strip("/")
+
     async_api = AsyncMega()
     async_api.api = api = MegaApi(None, None, None, "WZML-X")
     folder_api = None
@@ -38,14 +44,14 @@ async def add_mega_download(listener, path):
     if (MEGA_EMAIL := Config.MEGA_EMAIL) and (MEGA_PASSWORD := Config.MEGA_PASSWORD):
         await async_api.login(MEGA_EMAIL, MEGA_PASSWORD)
 
-    if get_mega_link_type(listener.link) == "file":
-        await async_api.getPublicNode(listener.link)
+    if get_mega_link_type(mega_link) == "file":
+        await async_api.getPublicNode(mega_link)
         node = mega_listener.public_node
     else:
         async_api.folder_api = folder_api = MegaApi(None, None, None, "WZML-X")
         folder_api.addListener(mega_listener)
 
-        await async_api.run(folder_api.loginToFolder, listener.link)
+        await async_api.run(folder_api.loginToFolder, mega_link)
         LOGGER.info(
             f"Folder login node: {mega_listener.node.getName()}, Type: {mega_listener.node.getType()}"
         )
@@ -55,6 +61,29 @@ async def add_mega_download(listener, path):
         children = api.getChildren(node)
         child_nodes = [children.get(i) for i in range(children.size())]
         LOGGER.info(f"Found children: {[child.getName() for child in child_nodes]}")
+
+    if sub_path and get_mega_link_type(mega_link) == "folder":
+        def resolve_subnode(api_obj, base_node, rel_path):
+            current = base_node
+            for part in [p for p in rel_path.split("/") if p]:
+                kids = api_obj.getChildren(current)
+                match = None
+                for i in range(kids.size()):
+                    child = kids.get(i)
+                    if child.getName() == part:
+                        match = child
+                        break
+                if not match:
+                    return None
+                current = match
+            return current
+
+        node = await sync_to_async(resolve_subnode, api, node, sub_path)
+        if node is None:
+            await listener.on_download_error(f"Subfolder not found: {sub_path}")
+            await async_api.logout()
+            return
+        LOGGER.info(f"Selected sub path '{sub_path}' resolved to node: {node.getName()}")
 
     if mega_listener.error:
         await listener.on_download_error(mega_listener.error)
