@@ -303,20 +303,25 @@ class TaskConfig:
 
             if self.is_uphoster and not self.up_dest:
                 uphoster_service = self.user_dict.get("UPHOSTER_SERVICE", "gofile")
-                if uphoster_service == "gofile":
-                    if not (self.user_dict.get("GOFILE_TOKEN") or Config.GOFILE_API):
-                        raise ValueError("No Uphoster Destination Found!")
-                elif uphoster_service == "buzzheavier":
-                    if not (
-                        self.user_dict.get("BUZZHEAVIER_TOKEN")
-                        or Config.BUZZHEAVIER_API
-                    ):
-                        raise ValueError("No Uphoster Destination Found!")
-                elif uphoster_service == "pixeldrain":
-                    if not (
-                        self.user_dict.get("PIXELDRAIN_KEY") or Config.PIXELDRAIN_KEY
-                    ):
-                        raise ValueError("No Uphoster Destination Found!")
+                services = uphoster_service.split(",")
+                for service in services:
+                    if service == "gofile":
+                        if not (
+                            self.user_dict.get("GOFILE_TOKEN") or Config.GOFILE_API
+                        ):
+                            raise ValueError("No Gofile Token Found!")
+                    elif service == "buzzheavier":
+                        if not (
+                            self.user_dict.get("BUZZHEAVIER_TOKEN")
+                            or Config.BUZZHEAVIER_API
+                        ):
+                            raise ValueError("No BuzzHeavier Token Found!")
+                    elif service == "pixeldrain":
+                        if not (
+                            self.user_dict.get("PIXELDRAIN_KEY")
+                            or Config.PIXELDRAIN_KEY
+                        ):
+                            raise ValueError("No PixelDrain Key Found!")
                 self.up_dest = "Uphoster"
 
             if not self.up_dest:
