@@ -130,5 +130,8 @@ async def add_mega_download(listener, path):
             await send_status_message(listener.message)
 
     await makedirs(path, exist_ok=True)
-    await async_api.startDownload(node, path, listener.name, None, False, None)
+    if folder_api:
+        await async_api.run(folder_api.startDownload, node, path, listener.name, None, False, None)
+    else:
+        await async_api.startDownload(node, path, listener.name, None, False, None)
     await async_api.logout()
