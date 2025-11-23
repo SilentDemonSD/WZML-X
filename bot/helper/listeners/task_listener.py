@@ -41,8 +41,17 @@ from ..ext_utils.files_utils import (
 from ..ext_utils.links_utils import is_gdrive_id
 from ..ext_utils.status_utils import get_readable_file_size, get_readable_time
 from ..ext_utils.task_manager import check_running_tasks, start_from_queued
+from ..mirror_leech_utils.uphoster_utils.gofile_utils.upload import GoFileUpload
+from ..mirror_leech_utils.uphoster_utils.buzzheavier_utils.upload import (
+    BuzzHeavierUpload,
+)
+from ..mirror_leech_utils.uphoster_utils.pixeldrain_utils.upload import (
+    PixelDrainUpload,
+)
+from ..mirror_leech_utils.uphoster_utils.multi_upload import MultiUphosterUpload
 from ..mirror_leech_utils.gdrive_utils.upload import GoogleDriveUpload
 from ..mirror_leech_utils.rclone_utils.transfer import RcloneTransferHelper
+from ..mirror_leech_utils.status_utils.uphoster_status import UphosterStatus
 from ..mirror_leech_utils.status_utils.gdrive_status import (
     GoogleDriveStatus,
 )
@@ -351,6 +360,18 @@ class TaskListener(TaskConfig):
                 tg.upload(),
             )
             del tg
+        elif self.is_uphoster:
+            LOGGER.info(f"Uphoster Upload Name: {self.name}")
+            uphoster_service = self.user_dict.get("UPHOSTER_SERVICE", "gofile")
+            services = uphoster_service.split(",")
+            ddl = MultiUphosterUpload(self, up_path, services)
+            async with task_dict_lock:
+                task_dict[self.mid] = UphosterStatus(self, ddl, gid, "up")
+            await gather(
+                update_status_message(self.message.chat.id),
+                ddl.upload(),
+            )
+            del ddl
         elif is_gdrive_id(self.up_dest):
             LOGGER.info(f"Gdrive Upload Name: {self.name}")
             drive = GoogleDriveUpload(self, up_path)
@@ -456,15 +477,36 @@ class TaskListener(TaskConfig):
             if mime_type == "Folder":
                 msg += f"\n┠ <b>SubFolders</b> → {folders}"
                 msg += f"\n┠ <b>Files</b> → {files}"
+
+            multi_link_msg = ""
+            multi_links = []
+            if isinstance(link, dict) and not self.is_yt:
+                # MultiUphoster result
+                for service, result in link.items():
+                    if "error" in result:
+                        multi_link_msg += (
+                            f"{service.capitalize()}: Error - {result['error']}\n"
+                        )
+                    elif result.get("link"):
+                        multi_links.append(
+                            (f"{service.capitalize()} Link", result["link"])
+                        )
+                multi_link_msg = multi_link_msg.strip()
+                link = None  # Disable single link button logic
+
             if (
                 link
                 or rclone_path
                 and Config.RCLONE_SERVE_URL
                 and not self.private_link
+                or multi_links
             ):
                 buttons = ButtonMaker()
                 if link and Config.SHOW_CLOUD_LINK:
                     buttons.url_button("☁️ Cloud Link", link)
+                elif multi_links:
+                    for name, url in multi_links:
+                        buttons.url_button(name, url)
                 else:
                     msg += f"\n\nPath: <code>{rclone_path}</code>"
                 if rclone_path and Config.RCLONE_SERVE_URL and not self.private_link:
@@ -488,13 +530,18 @@ class TaskListener(TaskConfig):
                             buttons.url_button("🌐 View Link", share_urls)
                 button = buttons.build_menu(2)
             else:
-                msg += f"\n┃\n┠ Path: <code>{rclone_path}</code>"
+                if not multi_link_msg:
+                    msg += f"\n┃\n┠ Path: <code>{rclone_path}</code>"
                 button = None
             msg += f"\n┃\n┖ <b>Task By</b> → {self.tag}\n\n"
             group_msg = (
                 msg + "〶 <b><u>Action Performed :</u></b>\n"
                 "⋗ <i>Cloud link(s) have been sent to User PM</i>\n\n"
             )
+
+            if multi_link_msg:
+                group_msg += multi_link_msg + "\n"
+                msg += multi_link_msg + "\n"
 
             if self.bot_pm and self.is_super_chat:
                 await send_message(self.user_id, msg, button)

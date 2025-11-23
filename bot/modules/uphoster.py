@@ -51,16 +51,11 @@ from ..helper.telegram_helper.message_utils import (
 )
 
 
-class Mirror(TaskListener):
+class Uphoster(TaskListener):
     def __init__(
         self,
         client,
         message,
-        is_qbit=False,
-        is_leech=False,
-        is_jd=False,
-        is_nzb=False,
-        is_uphoster=False,
         same_dir=None,
         bulk=None,
         multi_tag=None,
@@ -77,11 +72,7 @@ class Mirror(TaskListener):
         self.same_dir = same_dir
         self.bulk = bulk
         super().__init__()
-        self.is_qbit = is_qbit
-        self.is_leech = is_leech
-        self.is_jd = is_jd
-        self.is_nzb = is_nzb
-        self.is_uphoster = is_uphoster
+        self.is_uphoster = True
 
     async def new_event(self):
         text = self.message.text.split("\n")
@@ -179,7 +170,7 @@ class Mirror(TaskListener):
         self.thumbnail_layout = args["-tl"]
         self.as_doc = args["-doc"]
         self.as_med = args["-med"]
-        self.folder_name = f"/{args["-m"]}".rstrip("/") if len(args["-m"]) > 0 else ""
+        self.folder_name = f"/{args['-m']}".rstrip("/") if len(args["-m"]) > 0 else ""
         self.bot_trans = args["-bt"]
         self.user_trans = args["-ut"]
         self.is_yt = args["-yt"]
@@ -262,13 +253,13 @@ class Mirror(TaskListener):
                         for fd_name in self.same_dir:
                             self.same_dir[fd_name]["total"] -= 1
         else:
-            await self.init_bulk(input_list, bulk_start, bulk_end, Mirror)
+            await self.init_bulk(input_list, bulk_start, bulk_end, Uphoster)
             return
 
         if len(self.bulk) != 0:
             del self.bulk[0]
 
-        await self.run_multi(input_list, Mirror)
+        await self.run_multi(input_list, Uphoster)
 
         await self.get_tag(text)
 
@@ -299,14 +290,9 @@ class Mirror(TaskListener):
                 nextmsg.from_user = self.user
             else:
                 nextmsg.sender_chat = self.user
-            await Mirror(
+            await Uphoster(
                 self.client,
                 nextmsg,
-                self.is_qbit,
-                self.is_leech,
-                self.is_jd,
-                self.is_nzb,
-                self.is_uphoster,
                 self.same_dir,
                 self.bulk,
                 self.multi_tag,
@@ -440,40 +426,5 @@ class Mirror(TaskListener):
             await add_aria2_download(self, path, headers, ratio, seed_time)
 
 
-async def mirror(client, message):
-    bot_loop.create_task(Mirror(client, message).new_event())
-
-
-async def qb_mirror(client, message):
-    bot_loop.create_task(Mirror(client, message, is_qbit=True).new_event())
-
-
-async def jd_mirror(client, message):
-    bot_loop.create_task(Mirror(client, message, is_jd=True).new_event())
-
-
-async def nzb_mirror(client, message):
-    bot_loop.create_task(Mirror(client, message, is_nzb=True).new_event())
-
-
-async def leech(client, message):
-    if Config.DISABLE_LEECH:
-        await message.reply("The Leech command is currently disabled.")
-        return
-    bot_loop.create_task(Mirror(client, message, is_leech=True).new_event())
-
-
-async def qb_leech(client, message):
-    bot_loop.create_task(
-        Mirror(client, message, is_qbit=True, is_leech=True).new_event()
-    )
-
-
-async def jd_leech(client, message):
-    bot_loop.create_task(Mirror(client, message, is_leech=True, is_jd=True).new_event())
-
-
-async def nzb_leech(client, message):
-    bot_loop.create_task(
-        Mirror(client, message, is_leech=True, is_nzb=True).new_event()
-    )
+async def uphoster(client, message):
+    bot_loop.create_task(Uphoster(client, message).new_event())

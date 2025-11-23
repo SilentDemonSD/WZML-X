@@ -43,6 +43,13 @@ leech_options = [
     "LEECH_CAPTION",
     "THUMBNAIL_LAYOUT",
 ]
+uphoster_options = [
+    "GOFILE_TOKEN",
+    "GOFILE_FOLDER_ID",
+    "BUZZHEAVIER_TOKEN",
+    "BUZZHEAVIER_FOLDER_ID",
+    "PIXELDRAIN_KEY",
+]
 rclone_options = ["RCLONE_CONFIG", "RCLONE_PATH", "RCLONE_FLAGS"]
 gdrive_options = ["TOKEN_PICKLE", "GDRIVE_ID", "INDEX_URL"]
 ffset_options = [
@@ -255,6 +262,31 @@ Here I will explain how to use mltb.* which is reference to files you want to wo
         "User's YT-DLP Cookie File to authenticate access to websites and youtube.",
         "<i>Send your cookie file (e.g., cookies.txt or abc.txt).</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     ),
+    "GOFILE_TOKEN": (
+        "String",
+        "Gofile API Token",
+        "<i>Send your Gofile API Token.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
+    ),
+    "GOFILE_FOLDER_ID": (
+        "String",
+        "Gofile Folder ID",
+        "<i>Send your Gofile Folder ID.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
+    ),
+    "BUZZHEAVIER_TOKEN": (
+        "String",
+        "BuzzHeavier API Token",
+        "<i>Send your BuzzHeavier API Token (Account ID).</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
+    ),
+    "BUZZHEAVIER_FOLDER_ID": (
+        "String",
+        "BuzzHeavier Folder ID",
+        "<i>Send your BuzzHeavier Folder ID.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
+    ),
+    "PIXELDRAIN_KEY": (
+        "String",
+        "PixelDrain API Key",
+        "<i>Send your PixelDrain API Key.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
+    ),
 }
 
 
@@ -272,6 +304,7 @@ async def get_user_settings(from_user, stype="main"):
         )
         buttons.data_button("Mirror Settings", f"userset {user_id} mirror")
         buttons.data_button("Leech Settings", f"userset {user_id} leech")
+        buttons.data_button("Uphoster Settings", f"userset {user_id} uphoster")
         buttons.data_button("FF Media Settings", f"userset {user_id} ffset")
         buttons.data_button(
             "Mics Settings", f"userset {user_id} advanced", position="l_body"
@@ -493,6 +526,101 @@ async def get_user_settings(from_user, stype="main"):
 ┠ Mixed Leech → <b>{hybrid_leech}</b>
 ┖ Thumbnail Layout → <b>{thumb_layout}</b>
 """
+
+    elif stype == "uphoster":
+        uphoster_service = user_dict.get("UPHOSTER_SERVICE", "gofile")
+        buttons.data_button(
+            "Change Destination ⇋",
+            f"userset {user_id} uphoster_destinations",
+        )
+        buttons.data_button("Gofile Tools", f"userset {user_id} gofile")
+        buttons.data_button("BuzzHeavier Tools", f"userset {user_id} buzzheavier")
+        buttons.data_button("PixelDrain Tools", f"userset {user_id} pixeldrain")
+        buttons.data_button("Back", f"userset {user_id} back", "footer")
+        buttons.data_button("Close", f"userset {user_id} close", "footer")
+        btns = buttons.build_menu(1)
+
+        destinations = [s.capitalize() for s in uphoster_service.split(",")]
+        text = f"""⌬ <b>Uphoster Settings :</b>
+┟ <b>Name</b> → {user_name}
+┃
+┖ <b>Current Destination</b> → {', '.join(destinations)}"""
+
+    elif stype == "pixeldrain":
+        buttons.data_button("PixelDrain Key", f"userset {user_id} menu PIXELDRAIN_KEY")
+        buttons.data_button("Back", f"userset {user_id} back uphoster", "footer")
+        buttons.data_button("Close", f"userset {user_id} close", "footer")
+        btns = buttons.build_menu(1)
+
+        if user_dict.get("PIXELDRAIN_KEY", False):
+            pdtoken = user_dict["PIXELDRAIN_KEY"]
+        elif Config.PIXELDRAIN_KEY:
+            pdtoken = Config.PIXELDRAIN_KEY
+        else:
+            pdtoken = "None"
+
+        text = f"""⌬ <b>PixelDrain Settings :</b>
+┟ <b>Name</b> → {user_name}
+┃
+┖ <b>PixelDrain Key</b> → <code>{pdtoken}</code>"""
+
+    elif stype == "buzzheavier":
+        buttons.data_button(
+            "BuzzHeavier Token", f"userset {user_id} menu BUZZHEAVIER_TOKEN"
+        )
+        buttons.data_button(
+            "BuzzHeavier Folder ID", f"userset {user_id} menu BUZZHEAVIER_FOLDER_ID"
+        )
+        buttons.data_button("Back", f"userset {user_id} back uphoster", "footer")
+        buttons.data_button("Close", f"userset {user_id} close", "footer")
+        btns = buttons.build_menu(1)
+
+        if user_dict.get("BUZZHEAVIER_TOKEN", False):
+            bztoken = user_dict["BUZZHEAVIER_TOKEN"]
+        elif Config.BUZZHEAVIER_API:
+            bztoken = Config.BUZZHEAVIER_API
+        else:
+            bztoken = "None"
+
+        if user_dict.get("BUZZHEAVIER_FOLDER_ID", False):
+            bzfolder = user_dict["BUZZHEAVIER_FOLDER_ID"]
+        else:
+            bzfolder = "None"
+
+        text = f"""⌬ <b>BuzzHeavier Settings :</b>
+┟ <b>Name</b> → {user_name}
+┃
+┠ <b>BuzzHeavier Token</b> → <code>{bztoken}</code>
+┖ <b>BuzzHeavier Folder ID</b> → <code>{bzfolder}</code>"""
+
+    elif stype == "gofile":
+        buttons.data_button("Gofile Token", f"userset {user_id} menu GOFILE_TOKEN")
+        buttons.data_button(
+            "Gofile Folder ID", f"userset {user_id} menu GOFILE_FOLDER_ID"
+        )
+        buttons.data_button("Back", f"userset {user_id} back uphoster", "footer")
+        buttons.data_button("Close", f"userset {user_id} close", "footer")
+        btns = buttons.build_menu(1)
+
+        if user_dict.get("GOFILE_TOKEN", False):
+            gftoken = user_dict["GOFILE_TOKEN"]
+        elif Config.GOFILE_API:
+            gftoken = Config.GOFILE_API
+        else:
+            gftoken = "None"
+
+        if user_dict.get("GOFILE_FOLDER_ID", False):
+            gffolder = user_dict["GOFILE_FOLDER_ID"]
+        elif Config.GOFILE_FOLDER_ID:
+            gffolder = Config.GOFILE_FOLDER_ID
+        else:
+            gffolder = "None"
+
+        text = f"""⌬ <b>Gofile Settings :</b>
+┟ <b>Name</b> → {user_name}
+┃
+┠ <b>Gofile Token</b> → <code>{gftoken}</code>
+┖ <b>Gofile Folder ID</b> → <code>{gffolder}</code>"""
 
     elif stype == "rclone":
         buttons.data_button("Rclone Config", f"userset {user_id} menu RCLONE_CONFIG")
@@ -1135,6 +1263,10 @@ async def edit_user_settings(client, query):
         "general",
         "mirror",
         "leech",
+        "uphoster",
+        "gofile",
+        "buzzheavier",
+        "pixeldrain",
         "ffset",
         "advanced",
         "gdrive",
@@ -1145,6 +1277,45 @@ async def edit_user_settings(client, query):
     elif data[2] == "yttools":
         await query.answer()
         await update_user_settings(query, data[2])
+    elif data[2] == "uphoster_destinations":
+        await query.answer()
+        user_dict = user_data.get(user_id, {})
+        uphoster_service = user_dict.get("UPHOSTER_SERVICE", "gofile")
+        selected_services = uphoster_service.split(",") if uphoster_service else []
+
+        if len(data) > 3:
+            service = data[3]
+            if service in selected_services:
+                if len(selected_services) > 1:
+                    selected_services.remove(service)
+                else:
+                    await query.answer(
+                        "At least one destination must be selected!", show_alert=True
+                    )
+            else:
+                selected_services.append(service)
+            new_services = ",".join(selected_services)
+            update_user_ldata(user_id, "UPHOSTER_SERVICE", new_services)
+            await database.update_user_data(user_id)
+            selected_services = new_services.split(",")
+        else:
+            selected_services = (
+                uphoster_service.split(",") if uphoster_service else ["gofile"]
+            )
+
+        buttons = ButtonMaker()
+        for service in ["gofile", "buzzheavier", "pixeldrain"]:
+            state = "✓" if service in selected_services else ""
+            buttons.data_button(
+                f"{service.capitalize()} {state}",
+                f"userset {user_id} uphoster_destinations {service}",
+            )
+
+        buttons.data_button("Back", f"userset {user_id} back uphoster", "footer")
+        buttons.data_button("Close", f"userset {user_id} close", "footer")
+
+        text = f"""⌬ <b>Select Uphoster Destinations :</b>"""
+        await edit_message(message, text, buttons.build_menu(1))
     elif data[2] == "menu":
         await query.answer()
         await get_menu(data[3], message, user_id)

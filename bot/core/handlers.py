@@ -208,6 +208,13 @@ def add_handlers():
     )
     TgClient.bot.add_handler(
         MessageHandler(
+            uphoster,
+            filters=command(BotCommands.UpHosterCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
             get_rss_menu,
             filters=command(BotCommands.RssCommand, case_sensitive=True)
             & CustomFilters.authorized,

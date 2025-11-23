@@ -11,6 +11,7 @@ from .gd_search import gdrive_search, select_type
 from .help import arg_usage, bot_help
 from .mediainfo import mediainfo
 from .broadcast import broadcast
+from .uphoster import uphoster
 from .mirror_leech import (
     mirror,
     leech,
@@ -62,6 +63,7 @@ __all__ = [
     "gdrive_search",
     "select_type",
     "arg_usage",
+    "uphoster",
     "mirror",
     "leech",
     "qb_leech",

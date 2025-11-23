@@ -55,6 +55,7 @@ class EngineStatus:
         self.STATUS_JD = "JDownloader v2"
         self.STATUS_YT = "Youtube-Api"
         self.STATUS_METADATA = "Metadata"
+        self.STATUS_UPHOSTER = "Uphoster"
 
 
 STATUSES = {

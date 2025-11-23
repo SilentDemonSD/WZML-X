@@ -6,7 +6,7 @@ anytree
 apscheduler
 aioaria2
 aioqbt
-cinemagoer
+git+https://github.com/cinemagoer/cinemagoer
 cloudscraper
 dnspython
 fastapi
@@ -40,3 +40,4 @@ uvicorn
 uvloop==0.21.0
 xattr
 yt-dlp[default,curl-cffi]
+yt-dlp-ejs
