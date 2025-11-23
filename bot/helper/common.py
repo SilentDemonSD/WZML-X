@@ -292,12 +292,36 @@ class TaskConfig:
             default_upload = (
                 self.user_dict.get("DEFAULT_UPLOAD", "") or Config.DEFAULT_UPLOAD
             )
-            if (not self.up_dest and default_upload == "rc") or self.up_dest == "rc":
+            if not self.is_uphoster and (
+                (not self.up_dest and default_upload == "rc") or self.up_dest == "rc"
+            ):
                 self.up_dest = self.user_dict.get("RCLONE_PATH") or Config.RCLONE_PATH
-            elif (not self.up_dest and default_upload == "gd") or self.up_dest == "gd":
+            elif not self.is_uphoster and (
+                (not self.up_dest and default_upload == "gd") or self.up_dest == "gd"
+            ):
                 self.up_dest = self.user_dict.get("GDRIVE_ID") or Config.GDRIVE_ID
+
+            if self.is_uphoster and not self.up_dest:
+                uphoster_service = self.user_dict.get("UPHOSTER_SERVICE", "gofile")
+                if uphoster_service == "gofile":
+                    if not (self.user_dict.get("GOFILE_TOKEN") or Config.GOFILE_API):
+                        raise ValueError("No Uphoster Destination Found!")
+                elif uphoster_service == "buzzheavier":
+                    if not (
+                        self.user_dict.get("BUZZHEAVIER_TOKEN")
+                        or Config.BUZZHEAVIER_API
+                    ):
+                        raise ValueError("No Uphoster Destination Found!")
+                elif uphoster_service == "pixeldrain":
+                    if not (
+                        self.user_dict.get("PIXELDRAIN_KEY") or Config.PIXELDRAIN_KEY
+                    ):
+                        raise ValueError("No Uphoster Destination Found!")
+                self.up_dest = "Uphoster"
+
             if not self.up_dest:
                 raise ValueError("No Upload Destination!")
+
             if is_gdrive_id(self.up_dest):
                 if not self.up_dest.startswith(
                     ("mtp:", "tp:", "sa:")
@@ -309,10 +333,12 @@ class TaskConfig:
                 ):
                     self.up_dest = f"mrcc:{self.up_dest}"
                 self.up_dest = self.up_dest.strip("/")
+            elif self.is_uphoster:
+                pass
             else:
                 raise ValueError("Wrong Upload Destination!")
 
-            if self.up_dest not in ["rcl", "gdl"]:
+            if self.up_dest not in ["rcl", "gdl"] and not self.is_uphoster:
                 await self.is_token_exists(self.up_dest, "up")
 
             if self.up_dest == "rcl":
