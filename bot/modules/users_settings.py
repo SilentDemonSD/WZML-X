@@ -529,15 +529,9 @@ async def get_user_settings(from_user, stype="main"):
 
     elif stype == "uphoster":
         uphoster_service = user_dict.get("UPHOSTER_SERVICE", "gofile")
-        if uphoster_service == "gofile":
-            next_service = "buzzheavier"
-        elif uphoster_service == "buzzheavier":
-            next_service = "pixeldrain"
-        else:
-            next_service = "gofile"
         buttons.data_button(
             "Change Destination ⇋",
-            f"userset {user_id} uphoster_service {next_service}",
+            f"userset {user_id} uphoster_destinations",
         )
         buttons.data_button("Gofile Tools", f"userset {user_id} gofile")
         buttons.data_button("BuzzHeavier Tools", f"userset {user_id} buzzheavier")
@@ -546,10 +540,11 @@ async def get_user_settings(from_user, stype="main"):
         buttons.data_button("Close", f"userset {user_id} close", "footer")
         btns = buttons.build_menu(1)
 
+        destinations = [s.capitalize() for s in uphoster_service.split(",")]
         text = f"""⌬ <b>Uphoster Settings :</b>
 ┟ <b>Name</b> → {user_name}
 ┃
-┖ <b>Current Destination</b> → {uphoster_service.capitalize()}"""
+┖ <b>Current Destination</b> → {', '.join(destinations)}"""
 
     elif stype == "pixeldrain":
         buttons.data_button("PixelDrain Key", f"userset {user_id} menu PIXELDRAIN_KEY")
@@ -1282,11 +1277,45 @@ async def edit_user_settings(client, query):
     elif data[2] == "yttools":
         await query.answer()
         await update_user_settings(query, data[2])
-    elif data[2] == "uphoster_service":
+    elif data[2] == "uphoster_destinations":
         await query.answer()
-        update_user_ldata(user_id, "UPHOSTER_SERVICE", data[3])
-        await update_user_settings(query, stype="uphoster")
-        await database.update_user_data(user_id)
+        user_dict = user_data.get(user_id, {})
+        uphoster_service = user_dict.get("UPHOSTER_SERVICE", "gofile")
+        selected_services = uphoster_service.split(",") if uphoster_service else []
+
+        if len(data) > 3:
+            service = data[3]
+            if service in selected_services:
+                if len(selected_services) > 1:
+                    selected_services.remove(service)
+                else:
+                    await query.answer(
+                        "At least one destination must be selected!", show_alert=True
+                    )
+            else:
+                selected_services.append(service)
+            new_services = ",".join(selected_services)
+            update_user_ldata(user_id, "UPHOSTER_SERVICE", new_services)
+            await database.update_user_data(user_id)
+            selected_services = new_services.split(",")
+        else:
+            selected_services = (
+                uphoster_service.split(",") if uphoster_service else ["gofile"]
+            )
+
+        buttons = ButtonMaker()
+        for service in ["gofile", "buzzheavier", "pixeldrain"]:
+            state = "✓" if service in selected_services else ""
+            buttons.data_button(
+                f"{service.capitalize()} {state}",
+                f"userset {user_id} uphoster_destinations {service}",
+            )
+
+        buttons.data_button("Back", f"userset {user_id} back uphoster", "footer")
+        buttons.data_button("Close", f"userset {user_id} close", "footer")
+
+        text = f"""⌬ <b>Select Uphoster Destinations :</b>"""
+        await edit_message(message, text, buttons.build_menu(1))
     elif data[2] == "menu":
         await query.answer()
         await get_menu(data[3], message, user_id)
