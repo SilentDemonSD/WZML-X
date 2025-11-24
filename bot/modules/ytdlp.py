@@ -262,14 +262,12 @@ class YtDlp(TaskListener):
         self,
         client,
         message,
-        _=None,
         is_leech=False,
-        __=None,
-        ___=None,
         same_dir=None,
         bulk=None,
         multi_tag=None,
         options="",
+        **kwargs,
     ):
         if same_dir is None:
             same_dir = {}
