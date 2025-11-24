@@ -48,14 +48,10 @@ class Clone(TaskListener):
         self,
         client,
         message,
-        _=None,
-        __=None,
-        ___=None,
-        ____=None,
-        _____=None,
         bulk=None,
         multi_tag=None,
         options="",
+        **kwargs,
     ):
         if bulk is None:
             bulk = []
