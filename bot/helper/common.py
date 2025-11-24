@@ -594,17 +594,19 @@ class TaskConfig:
             nextmsg.sender_chat = self.user
         if intervals["stopAll"]:
             return
+
         await obj(
-            self.client,
-            nextmsg,
-            self.is_qbit,
-            self.is_leech,
-            self.is_jd,
-            self.is_nzb,
-            self.same_dir,
-            self.bulk,
-            self.multi_tag,
-            self.options,
+            client=self.client,
+            message=nextmsg,
+            is_qbit=self.is_qbit,
+            is_leech=self.is_leech,
+            is_jd=self.is_jd,
+            is_nzb=self.is_nzb,
+            is_uphoster=self.is_uphoster,
+            same_dir=self.same_dir,
+            bulk=self.bulk,
+            multi_tag=self.multi_tag,
+            options=self.options,
         ).new_event()
 
     async def init_bulk(self, input_list, bulk_start, bulk_end, obj):
@@ -636,17 +638,19 @@ class TaskConfig:
                 nextmsg.from_user = self.user
             else:
                 nextmsg.sender_chat = self.user
+
             await obj(
-                self.client,
-                nextmsg,
-                self.is_qbit,
-                self.is_leech,
-                self.is_jd,
-                self.is_nzb,
-                self.same_dir,
-                self.bulk,
-                self.multi_tag,
-                self.options,
+                client=self.client,
+                message=nextmsg,
+                is_qbit=self.is_qbit,
+                is_leech=self.is_leech,
+                is_jd=self.is_jd,
+                is_nzb=self.is_nzb,
+                is_uphoster=self.is_uphoster,
+                same_dir=self.same_dir,
+                bulk=self.bulk,
+                multi_tag=self.multi_tag,
+                options=self.options,
             ).new_event()
         except Exception:
             await send_message(
