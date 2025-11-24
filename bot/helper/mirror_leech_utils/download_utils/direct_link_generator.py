@@ -681,40 +681,30 @@ def hubcloud(url):
     return links[0]["url"]
 
 
-def buzzheavier(url):
+def buzzheavier(link):
     """
     Generate a direct download link for buzzheavier URLs.
     @param link: URL from buzzheavier
     @return: Direct download link
     """
-    session = Session()
-    if "/download" not in url:
-        url += "/download"
-
-    # Normalize URL
-    url = url.strip()
-    session.headers.update(
-        {
-            "referer": url.split("/download")[0],
-            "hx-current-url": url.split("/download")[0],
-            "hx-request": "true",
-            "priority": "u=1, i",
-        }
-    )
-
+    link = link if link.endswith("/") else link + "/"
+    client = create_scraper()
     try:
-        response = session.get(url)
-        d_url = response.headers.get("Hx-Redirect")
-
-        if not d_url:
-            raise DirectDownloadLinkException("ERROR: Failed to fetch direct link.")
-
-        parsed_url = urlparse(url)
-        return f"{parsed_url.scheme}://{parsed_url.netloc}{d_url}"
+        res = client.get(
+            link + "download", headers={"hx-current-url": link, "referer": link}
+        )
     except Exception as e:
-        raise DirectDownloadLinkException(f"ERROR: {str(e)}") from e
-    finally:
-        session.close()
+        raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
+
+    domain = urlparse(link).netloc
+    redirect_url = res.headers.get("Hx-Redirect", "None")
+
+    if redirect_url == "None":
+        raise DirectDownloadLinkException("ERROR: Direct link not found")
+
+    if not redirect_url.startswith("http"):
+        return f"https://{domain}{redirect_url}"
+    return redirect_url
 
 
 def fuckingfast_dl(url):
