@@ -60,6 +60,7 @@ class Uphoster(TaskListener):
         bulk=None,
         multi_tag=None,
         options="",
+        **kwargs,
     ):
         if same_dir is None:
             same_dir = {}
