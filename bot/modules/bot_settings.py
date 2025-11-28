@@ -247,6 +247,8 @@ async def get_buttons(key=None, edit_type=None, edit_mode=False):
     elif key.startswith("nzbser"):
         index = int(key.replace("nzbser", ""))
         LOGGER.info(f"Data: {key}, {index}")
+        if index >= len(Config.USENET_SERVERS):
+            return await get_buttons("nzbserver")
         for k in list(Config.USENET_SERVERS[index].keys())[start : 10 + start]:
             buttons.data_button(k, f"botset nzbsevar{index} {k}")
         if state == "view":
