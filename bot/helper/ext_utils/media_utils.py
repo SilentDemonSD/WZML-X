@@ -214,8 +214,6 @@ async def take_ss(video_file, ss_nb) -> bool:
                 "1",
                 "-frames:v",
                 "1",
-                "-threads",
-                f"{max(1, cpu_no // 2)}",
                 output,
             ]
             cap_time += interval
@@ -254,8 +252,6 @@ async def get_audio_thumbnail(audio_file):
         "-an",
         "-vcodec",
         "copy",
-        "-threads",
-        f"{max(1, cpu_no // 2)}",
         output,
     ]
     try:
@@ -296,8 +292,6 @@ async def get_video_thumbnail(video_file, duration):
         "-q:v",
         "5",
         "-vframes",
-        "1",
-        "-threads",
         "1",
         output,
     ]
@@ -349,8 +343,6 @@ async def get_multiple_frames_thumbnail(video_file, layout, keep_screenshots):
         "1",
         "-f",
         "mjpeg",
-        "-threads",
-        f"{max(1, cpu_no // 2)}",
         output,
     ]
     try:
@@ -542,8 +534,6 @@ class FFMpeg:
                 "libx264",
                 "-c:a",
                 "aac",
-                "-threads",
-                f"{max(1, cpu_no // 2)}",
                 output,
             ]
             if ext == "mp4":
@@ -566,8 +556,6 @@ class FFMpeg:
                 "0",
                 "-c",
                 "copy",
-                "-threads",
-                f"{max(1, cpu_no // 2)}",
                 output,
             ]
         if self._listener.is_cancelled:
@@ -613,8 +601,6 @@ class FFMpeg:
             "pipe:1",
             "-i",
             audio_file,
-            "-threads",
-            f"{max(1, cpu_no // 2)}",
             output,
         ]
         if self._listener.is_cancelled:
@@ -693,8 +679,6 @@ class FFMpeg:
             "libx264",
             "-c:a",
             "aac",
-            "-threads",
-            f"{max(1, cpu_no // 2)}",
             output_file,
         ]
 
@@ -758,8 +742,6 @@ class FFMpeg:
                 "-2",
                 "-c",
                 "copy",
-                "-threads",
-                f"{max(1, cpu_no // 2)}",
                 out_path,
             ]
             if not multi_streams:
