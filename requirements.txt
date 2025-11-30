@@ -6,7 +6,7 @@ anytree
 apscheduler
 aioaria2
 aioqbt
-git+https://github.com/cinemagoer/cinemagoer
+git+https://github.com/tveronesi/imdbinfo.git
 cloudscraper
 dnspython
 fastapi
