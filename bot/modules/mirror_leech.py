@@ -251,10 +251,11 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     # SOURCEFORGE MIRROR SELECTION
     if "sourceforge.net" in link:
         from bot.modules.sourceforge import handle_sourceforge
-        sf_key, sf_url = await handle_sourceforge(link, message)
-        if sf_key is None:
+        result = await handle_sourceforge(link, message)
+        if result is None or result[0] is None:
             await delete_links(message)
             return
+        # Wait for user to select mirror via button callback
         await delete_links(message)
         return
 
