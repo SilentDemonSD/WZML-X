@@ -1,4 +1,3 @@
-from uuid import uuid4
 from pyrogram.handlers import MessageHandler, CallbackQueryHandler
 
 from pyrogram.filters import command, regex
@@ -18,8 +17,6 @@ from aiofiles import open as aiopen
 from aiofiles.os import path as aiopath
 
 from cloudscraper import create_scraper
-
-
 
 from bot import (
 
@@ -129,8 +126,6 @@ from bot.helper.telegram_helper.message_utils import (
 
 )
 
-
-
 from bot.modules.sourceforge import handle_sourceforge
 
 from bot.helper.listeners.tasks_listener import MirrorLeechListener
@@ -151,14 +146,6 @@ from bot.helper.ext_utils.bulk_links import extract_bulk_links
 
 from bot.modules.gen_pyro_sess import get_decrypt_key
 
-
-
-
-
-
-# Dictionary lÆ°u táº¡m SourceForge URLs
-sourceforge_urls = {}
-
 @new_task
 
 async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=None, bulk=[]):
@@ -166,8 +153,6 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     text = message.text.split("\n")
 
     input_list = text[0].split(" ")
-
-
 
     arg_base = {
 
@@ -253,44 +238,31 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
 
     }
 
-
-
     args = arg_parser(input_list[1:], arg_base)
 
     cmd = input_list[0].split("@")[0]
-
-
 
     multi = int(args["-i"]) if args["-i"].isdigit() else 0
 
     link = args["link"]
 
-
-
     # MIRROR SOURCEFORGE
 
+    # SOURCEFORGE MIRROR SELECTION
     if "sourceforge.net" in link:
-        sf_url = await handle_sourceforge(link, message)
-
-        # Táº¡o ID ngáº¯n cho URL
-        sf_id = str(uuid4())[:8]
-        sourceforge_urls[sf_id] = sf_url
-
-        btn = ButtonMaker()
-        btn.ibutton("Mirror ngay", f"sfmirror {sf_id}")
-        await sendMessage(message, f"đŸ“¦ Mirror link SourceForge:\n`{sf_url}`", btn.build_menu(1))
+        from bot.modules.sourceforge import handle_sourceforge
+        sf_key, sf_url = await handle_sourceforge(link, message)
+        if sf_key is None:
+            await delete_links(message)
+            return
+        await delete_links(message)
         return
-
-
-
 
     # pháº§n cĂ²n láº¡i giá»¯ nguyĂªn logic mirror/leech gá»‘c...
 
     # (nguyĂªn file ráº¥t dĂ i nĂªn giá»¯ nguyĂªn toĂ n bá»™ code gá»‘c cá»§a báº¡n)
 
     # táº¥t cáº£ logic download váº«n hoáº¡t Ä‘á»™ng nhÆ° bĂ¬nh thÆ°á»ng
-
-
 
     folder_name = args["-m"] or args["-sd"] or args["-samedir"]
 
@@ -362,8 +334,6 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
 
     session = ""
 
-
-
     if not isinstance(seed, bool):
 
         dargs = seed.split(":")
@@ -375,8 +345,6 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             seed_time = dargs[1] or None
 
         seed = True
-
-
 
     if not isinstance(isBulk, bool):
 
@@ -390,13 +358,9 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
 
         isBulk = True
 
-
-
     if drive_id and is_gdrive_link(drive_id):
 
         drive_id = GoogleDriveHelper.getIdFromUrl(drive_id)
-
-
 
     if folder_name and not isBulk:
 
@@ -413,8 +377,6 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             sameDir = {"total": multi, "tasks": set(), "name": folder_name}
 
         sameDir["tasks"].add(message.id)
-
-
 
     if isBulk:
 
@@ -456,13 +418,9 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
 
         return
 
-
-
     if len(bulk) != 0:
 
         del bulk[0]
-
-
 
     @new_task
 
@@ -514,15 +472,9 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
 
         _mirror_leech(client, nextmsg, isQbit, isLeech, sameDir, bulk)
 
-
-
     __run_multi()
 
-
-
     path = f"{DOWNLOAD_DIR}{message.id}{folder_name}"
-
-
 
     if len(text) > 1 and text[1].startswith("Tag: "):
 
@@ -549,8 +501,6 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     else:
 
         tag = message.from_user.mention
-
-
 
     decrypter = None
 
@@ -594,8 +544,6 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
 
             return
 
-
-
     if reply_to:
 
         file_ = getattr(reply_to, reply_to.media.value) if reply_to.media else None
@@ -619,8 +567,6 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             link = await reply_to.download()
 
             file_ = None
-
-
 
     if (
 
@@ -650,8 +596,6 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
 
         return
 
-
-
     error_msg = []
 
     error_button = None
@@ -661,8 +605,6 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     if task_utilis_msg:
 
         error_msg.extend(task_utilis_msg)
-
-
 
     if error_msg:
 
@@ -682,8 +624,6 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
 
         return
 
-
-
     org_link = None
 
     if link:
@@ -691,8 +631,6 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         LOGGER.info(link)
 
         org_link = link
-
-
 
     if (
 
@@ -781,8 +719,6 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
                     return
 
             await deleteMessage(process_msg)
-
-
 
     if not isLeech:
 
@@ -940,8 +876,6 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
 
                     return
 
-
-
     if link == "rcl":
 
         link = await RcloneList(client, message).get_rclone_path("rcd")
@@ -954,8 +888,6 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
 
             return
 
-
-
     if up == "rcl" and not isLeech:
 
         up = await RcloneList(client, message).get_rclone_path("rcu")
@@ -967,8 +899,6 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
             await delete_links(message)
 
             return
-
-
 
     listener = MirrorLeechListener(
 
@@ -1005,8 +935,6 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
         leech_utils={"screenshots": sshots, "thumb": thumb},
 
     )
-
-
 
     if file_ is not None:
 
@@ -1080,10 +1008,6 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
 
     await delete_links(message)
 
-
-
-
-
 @new_task
 
 async def wzmlxcb(_, query):
@@ -1106,8 +1030,6 @@ async def wzmlxcb(_, query):
 
             logFileLines = (await f.read()).splitlines()
 
-
-
         def parseline(line):
 
             try:
@@ -1117,8 +1039,6 @@ async def wzmlxcb(_, query):
             except IndexError:
 
                 return line
-
-
 
         ind, Loglines = 1, ""
 
@@ -1300,39 +1220,21 @@ async def wzmlxcb(_, query):
 
                 await deleteMessage(message.reply_to_message.reply_to_message)
 
-
-
 async def mirror(client, message):
 
     _mirror_leech(client, message)
-
-
-
-
 
 async def qb_mirror(client, message):
 
     _mirror_leech(client, message, isQbit=True)
 
-
-
-
-
 async def leech(client, message):
 
     _mirror_leech(client, message, isLeech=True)
 
-
-
-
-
 async def qb_leech(client, message):
 
     _mirror_leech(client, message, isQbit=True, isLeech=True)
-
-
-
-
 
 bot.add_handler(
 
@@ -1350,8 +1252,6 @@ bot.add_handler(
 
 )
 
-
-
 bot.add_handler(
 
     MessageHandler(
@@ -1367,8 +1267,6 @@ bot.add_handler(
     )
 
 )
-
-
 
 bot.add_handler(
 
@@ -1386,8 +1284,6 @@ bot.add_handler(
 
 )
 
-
-
 bot.add_handler(
 
     MessageHandler(
@@ -1404,38 +1300,31 @@ bot.add_handler(
 
 )
 
-
-
 bot.add_handler(CallbackQueryHandler(lambda c, q: None, filters=regex(r"^wzmlx")))
-
-
-
-
 
 # âœ… CALLBACK SOURCEFORGE CHUáº¨N
 
 @bot.on_callback_query(regex(r"^sfmirror"))
 async def sfmirror_cb(client, query):
-    data = query.data.split(" ")
+    """SourceForge mirror selection callback"""
+    from bot.modules.sourceforge import SF_URL_CACHE
+
+    data = query.data.split("|")
     if len(data) < 2:
-        return await query.answer("âŒ Dá»¯ liá»‡u khĂ´ng há»£p lá»‡!", show_alert=True)
+        return await query.answer("Invalid data!", show_alert=True)
 
-    sf_id = data[1]
+    sf_key = data[1]
 
-    # Láº¥y URL tá»« dictionary
-    if sf_id not in sourceforge_urls:
-        return await query.answer("âŒ Link Ä‘Ă£ háº¿t háº¡n hoáº·c khĂ´ng tá»“n táº¡i!", show_alert=True)
+    if sf_key not in SF_URL_CACHE:
+        return await query.answer("Link expired!", show_alert=True)
 
-    mirror_url = sourceforge_urls[sf_id]
-    await query.answer("đŸ€ Äang báº¯t Ä‘áº§u mirror...")
+    mirror_url = SF_URL_CACHE[sf_key]
+    await query.answer("Starting mirror...")
 
-    # XĂ³a URL khá»i dict sau khi dĂ¹ng
-    del sourceforge_urls[sf_id]
+    del SF_URL_CACHE[sf_key]
 
-    # Táº¡o fake message Ä‘á»ƒ cháº¡y mirror
-    fakemsg = query.message
-    fakemsg.from_user = query.from_user
-    fakemsg.text = f"/mirror {mirror_url}"
+    fake_msg = query.message
+    fake_msg.from_user = query.from_user
+    fake_msg.text = f"/mirror {mirror_url}"
 
-    await mirror_leech(client, fakemsg)
-
+    await _mirror_leech(client, fake_msg)
