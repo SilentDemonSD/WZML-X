@@ -305,7 +305,7 @@ async def _mirror_leech(
     ):
         btn = ButtonMaker()
         btn.ibutton(
-            "CÊŸÉªá´„á´‹ Há´‡Ê€á´‡ Tá´ Rá´‡á´€á´… Má´Ê€á´‡ ...", f"wzmlx {message.from_user.id} help MIRROR"
+            "Cʟɪᴄᴋ Hᴇʀᴇ Tᴏ Rᴇᴀᴅ Mᴏʀᴇ ...", f"wzmlx {message.from_user.id} help MIRROR"
         )
         await sendMessage(message, MIRROR_HELP_MESSAGE[0], btn.build_menu(1))
         await delete_links(message)
@@ -331,8 +331,9 @@ async def _mirror_leech(
     if link:
         LOGGER.info(link)
         org_link = link
+
     # ======== NEW FEATURE: SourceForge Mirror Selection ========
-    if "sourceforge.net" in link:
+    if isinstance(link, str) and "sourceforge.net" in link.lower():
         await handle_sourceforge(link, message)
         await delete_links(message)
         return
@@ -560,7 +561,7 @@ async def wzmlxcb(_, query):
             startLine = f"<b>Showing Last {ind} Lines from log.txt:</b> \n\n----------<b>START LOG</b>----------\n\n"
             endLine = "\n----------<b>END LOG</b>----------"
             btn = ButtonMaker()
-            btn.ibutton("CÊŸá´sá´‡", f"wzmlx {user_id} close")
+            btn.ibutton("Cʟᴏsᴇ", f"wzmlx {user_id} close")
             await sendMessage(
                 message, startLine + escape(Loglines) + endLine, btn.build_menu(1)
             )
@@ -580,7 +581,7 @@ async def wzmlxcb(_, query):
         if resp["status"] == 201:
             btn = ButtonMaker()
             btn.ubutton(
-                "đŸ“¨ Web Paste (SB)", f"https://spaceb.in/{resp['payload']['id']}"
+                "📨 Web Paste (SB)", f"https://spaceb.in/{resp['payload']['id']}"
             )
             await editReplyMarkup(message, btn.build_menu(1))
         else:
@@ -590,23 +591,23 @@ async def wzmlxcb(_, query):
     elif data[2] == "help":
         await query.answer()
         btn = ButtonMaker()
-        btn.ibutton("CÊŸá´sá´‡", f"wzmlx {user_id} close")
+        btn.ibutton("Cʟᴏsᴇ", f"wzmlx {user_id} close")
         if data[3] == "CLONE":
             await editMessage(message, CLONE_HELP_MESSAGE[1], btn.build_menu(1))
         elif data[3] == "MIRROR":
             if len(data) == 4:
                 msg = MIRROR_HELP_MESSAGE[1][:4000]
-                btn.ibutton("Ná´‡xá´› Pá´€É¢á´‡", f"wzmlx {user_id} help MIRROR readmore")
+                btn.ibutton("Nᴇxᴛ Pᴀɢᴇ", f"wzmlx {user_id} help MIRROR readmore")
             else:
                 msg = MIRROR_HELP_MESSAGE[1][4000:]
-                btn.ibutton("PÊ€á´‡ Pá´€É¢á´‡", f"wzmlx {user_id} help MIRROR")
+                btn.ibutton("Pʀᴇ Pᴀɢᴇ", f"wzmlx {user_id} help MIRROR")
             await editMessage(message, msg, btn.build_menu(2))
         if data[3] == "YT":
             await editMessage(message, YT_HELP_MESSAGE[1], btn.build_menu(1))
     elif data[2] == "guide":
         btn = ButtonMaker()
-        btn.ibutton("Bá´€á´„á´‹", f"wzmlx {user_id} guide home")
-        btn.ibutton("CÊŸá´sá´‡", f"wzmlx {user_id} close")
+        btn.ibutton("Bᴀᴄᴋ", f"wzmlx {user_id} guide home")
+        btn.ibutton("Cʟᴏsᴇ", f"wzmlx {user_id} close")
         if data[3] == "basic":
             await editMessage(message, help_string[0], btn.build_menu(2))
         elif data[3] == "users":
@@ -626,7 +627,7 @@ async def wzmlxcb(_, query):
             buttons.ibutton("Close", f"wzmlx {user_id} close")
             await editMessage(
                 message,
-                "ă‚ <b><i>Help Guide Menu!</i></b>\n\n<b>NOTE: <i>Click on any CMD to see more minor detalis.</i></b>",
+                "㊂ <b><i>Help Guide Menu!</i></b>\n\n<b>NOTE: <i>Click on any CMD to see more minor detalis.</i></b>",
                 buttons.build_menu(2),
             )
         await query.answer()
@@ -690,17 +691,10 @@ bot.add_handler(
         & ~CustomFilters.blacklisted,
     )
 )
-
-async def sfmirror_cb(client, query):
-    data = query.data.split("|", 1)
-    mirror_url = data[1]
-    await query.answer()
-    await sendMessage(query.message, f"📥 Bắt đầu tải từ mirror:\n{mirror_url}")
-    fake_msg = query.message
-    fake_msg.text = f"/mirror {mirror_url}"
-    await _mirror_leech(client, fake_msg)
-
 bot.add_handler(CallbackQueryHandler(wzmlxcb, filters=regex(r"^wzmlx")))
+bot.add_handler(
+    CallbackQueryHandler(sfmirror_cb, filters=regex(r"^sfmirror"))
+)
 @bot.on_callback_query(regex(r"^sfmirror"))
 async def sfmirror_cb(client, query):
     data = query.data.split("|", 1)
@@ -708,12 +702,9 @@ async def sfmirror_cb(client, query):
 
     await query.answer()
 
-    # BĂ¡o user
     await sendMessage(query.message, f"📥 Bắt đầu tải từ mirror:\n{mirror_url}")
 
-    # Fake message Ä‘á»ƒ tĂ¡i sá»­ dá»¥ng há»‡ thá»‘ng download hiá»‡n cĂ³
     fake_msg = query.message
     fake_msg.text = f"/mirror {mirror_url}"
 
-    from bot.modules.mirror_leech import _mirror_leech
     await _mirror_leech(client, fake_msg)

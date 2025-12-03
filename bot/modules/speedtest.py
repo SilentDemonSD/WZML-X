@@ -1,70 +1,96 @@
-#!/usr/bin/env python3
-from speedtest import Speedtest, ConfigRetrievalError
-from pyrogram.handlers import MessageHandler
-from pyrogram.filters import command
-
-from bot import bot, LOGGER
-from bot.helper.telegram_helper.filters import CustomFilters
-from bot.helper.telegram_helper.bot_commands import BotCommands
-from bot.helper.telegram_helper.message_utils import (
-    sendMessage,
-    deleteMessage,
-    editMessage,
-)
-from bot.helper.ext_utils.bot_utils import get_readable_file_size, new_task
+import httpx
+from bs4 import BeautifulSoup
+from bot.helper.telegram_helper.message_utils import sendMessage
+from bot.helper.telegram_helper.button_build import ButtonMaker
+from bot import LOGGER
 
 
-@new_task
-async def speedtest(_, message):
-    speed = await sendMessage(message, "<i>Initiating Speedtest...</i>")
-    try:
-        test = Speedtest()
-    except ConfigRetrievalError:
-        await editMessage(
-            speed,
-            "<b>ERROR:</b> <i>Can't connect to Server at the Moment, Try Again Later !</i>",
+# Try JSON API first
+async def get_sf_mirrors_json(url: str):
+    if "/download" in url:
+        json_url = url.replace("/download", "/json")
+    else:
+        if not url.endswith("/"):
+            url += "/"
+        json_url = url + "json"
+
+    async with httpx.AsyncClient(follow_redirects=True, timeout=15) as client:
+        try:
+            r = await client.get(json_url)
+            data = r.json()
+        except Exception as e:
+            LOGGER.warning(f"[SF] JSON failed: {e}")
+            return []
+
+    mirrors = []
+    for m in data.get("mirrors", []):
+        mirrors.append({
+            "name": m["name"],
+            "location": m["location"],
+            "url": m["url"]
+        })
+    return mirrors
+
+
+# Fallback: parse HTML mirror selection page
+async def get_sf_mirrors_html(url: str):
+    html_url = url.replace("/download", "/choose_mirror")
+
+    async with httpx.AsyncClient(follow_redirects=True, timeout=15) as client:
+        try:
+            r = await client.get(html_url)
+        except Exception as e:
+            LOGGER.warning(f"[SF] HTML fetch failed: {e}")
+            return []
+
+    soup = BeautifulSoup(r.text, "html.parser")
+    buttons = soup.select("a.mirror_link")
+
+    mirrors = []
+    for b in buttons:
+        name = b.get("data-mirror-name")
+        href = b.get("href")
+
+        if name and href:
+            mirrors.append({
+                "name": name,
+                "location": "Unknown",
+                "url": href
+            })
+
+    return mirrors
+
+
+async def get_sf_mirrors(url: str):
+    # 1. Try JSON first
+    mirrors = await get_sf_mirrors_json(url)
+    if mirrors:
+        return mirrors
+
+    # 2. If JSON failed → parse HTML
+    mirrors = await get_sf_mirrors_html(url)
+    if mirrors:
+        return mirrors
+
+    return []
+
+
+async def handle_sourceforge(link, message):
+    mirrors = await get_sf_mirrors(link)
+
+    if not mirrors:
+        return await sendMessage(message, "❌ Không tìm thấy server mirror nào cho SourceForge.")
+
+    btn = ButtonMaker()
+
+    for m in mirrors:
+        btn.ibutton(
+            f"{m['name']} ({m['location']})",
+            f"sfmirror|{m['url']}"
         )
-        return
 
-    test.get_best_server()
-    test.download()
-    test.upload()
-    test.results.share()
-
-    result = test.results.dict()
-    path = result["share"]
-
-    string_speed = f"""
-<b><i>⚡ SPEEDTEST RESULT</i></b>
-
-<b>📤 Upload:</b> <code>{get_readable_file_size(result['upload'] / 8)}/s</code>
-<b>📥 Download:</b> <code>{get_readable_file_size(result['download'] / 8)}/s</code>
-<b>🏓 Ping:</b> <code>{result['ping']} ms</code>
-<b>⏱ Time:</b> <code>{result['timestamp']}</code>
-<b>📊 Data Sent:</b> <code>{get_readable_file_size(int(result['bytes_sent']))}</code>
-<b>📊 Data Received:</b> <code>{get_readable_file_size(int(result['bytes_received']))}</code>
-
-<b><i>🌐 SPEEDTEST SERVER</i></b>
-<b>🏠 Name:</b> <code>{result['server']['name']}</code>
-<b>🇨🇺 Country:</b> <code>{result['server']['country']} ({result['server']['cc']})</code>
-<b>🎯 Sponsor:</b> <code>{result['server']['sponsor']}</code>
-<b>⚡ Latency:</b> <code>{result['server']['latency']}</code>
-<b>📌 Coordinates:</b> <code>{result['server']['lat']}, {result['server']['lon']}</code>
-"""
-
-    try:
-        pho = await sendMessage(message, string_speed, photo=path)
-        await deleteMessage(speed)
-    except Exception as e:
-        LOGGER.error(str(e))
-        await editMessage(speed, string_speed)
-
-
-bot.add_handler(
-    MessageHandler(
-        speedtest,
-        filters=command(BotCommands.SpeedCommand)
-        & CustomFilters.authorized
-        & ~CustomFilters.blacklisted,
+    await sendMessage(
+        message,
+        "🔽 <b>Chọn server SourceForge để tải:</b>",
+        btn.build_menu(1)
     )
-)
