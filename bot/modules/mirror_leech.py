@@ -63,8 +63,6 @@ from bot.helper.telegram_helper.message_utils import (
     open_category_btns,
     open_dump_btns,
 )
-
-from bot.modules.sourceforge import handle_sourceforge
 from bot.helper.listeners.tasks_listener import MirrorLeechListener
 from bot.helper.ext_utils.help_messages import (
     MIRROR_HELP_MESSAGE,
@@ -77,7 +75,9 @@ from bot.modules.gen_pyro_sess import get_decrypt_key
 
 
 @new_task
-async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=None, bulk=[]):
+async def _mirror_leech(
+    client, message, isQbit=False, isLeech=False, sameDir=None, bulk=[]
+):
     text = message.text.split("\n")
     input_list = text[0].split(" ")
 
@@ -128,20 +128,8 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     cmd = input_list[0].split("@")[0]
 
     multi = int(args["-i"]) if args["-i"].isdigit() else 0
+
     link = args["link"]
-
-    # MIRROR SOURCEFORGE
-    if "sourceforge.net" in link:
-        sf_url = await handle_sourceforge(link, message)
-        btn = ButtonMaker()
-        btn.ibutton("Mirror ngay", f"sfmirror|{sf_url}")
-        await sendMessage(message, f"➡️ Mirror link SourceForge:\n{sf_url}", btn.build_menu(1))
-        return
-
-    # phần còn lại giữ nguyên logic mirror/leech gốc...
-    # (nguyên file rất dài nên giữ nguyên toàn bộ code gốc của bạn)
-    # tất cả logic download vẫn hoạt động như bình thường
-
     folder_name = args["-m"] or args["-sd"] or args["-samedir"]
     seed = args["-d"] or args["-seed"]
     join = args["-j"] or args["-join"]
@@ -342,6 +330,11 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
     if link:
         LOGGER.info(link)
         org_link = link
+
+        if "sourceforge.net" in link:
+            await handle_sourceforge(link, message)
+            await delete_links(message)
+            return
 
     if (
         (
@@ -647,6 +640,7 @@ async def wzmlxcb(_, query):
             if message.reply_to_message.reply_to_message:
                 await deleteMessage(message.reply_to_message.reply_to_message)
 
+
 async def mirror(client, message):
     _mirror_leech(client, message)
 
@@ -671,7 +665,6 @@ bot.add_handler(
         & ~CustomFilters.blacklisted,
     )
 )
-
 bot.add_handler(
     MessageHandler(
         qb_mirror,
@@ -680,7 +673,6 @@ bot.add_handler(
         & ~CustomFilters.blacklisted,
     )
 )
-
 bot.add_handler(
     MessageHandler(
         leech,
@@ -689,7 +681,6 @@ bot.add_handler(
         & ~CustomFilters.blacklisted,
     )
 )
-
 bot.add_handler(
     MessageHandler(
         qb_leech,
@@ -698,20 +689,21 @@ bot.add_handler(
         & ~CustomFilters.blacklisted,
     )
 )
+bot.add_handler(CallbackQueryHandler(wzmlxcb, filters=regex(r"^wzmlx")))
 
-bot.add_handler(CallbackQueryHandler(lambda c, q: None, filters=regex(r"^wzmlx")))
 
-
-# ✅ CALLBACK SOURCEFORGE CHUẨN
-@bot.on_callback_query(regex(r"^sfmirror"))
 async def sfmirror_cb(client, query):
-    data = query.data.split("|", 1)
-    mirror_url = data[1]
+    try:
+        _, key = query.data.split("|", 1)
+        url = SF_URL_CACHE.get(key)
+        if not url:
+            return await query.answer("Mirror đã hết hạn!", show_alert=True)
+        await query.answer("Đang xử lý mirror…")
+        fake_msg = query.message
+        fake_msg.text = f"/mirror {url}"
+        await _mirror_leech(client, fake_msg)
+    except Exception as e:
+        LOGGER.error(f"[SF CALLBACK ERROR] {e}")
+        await sendMessage(query.message, f"❌ Lỗi mirror: {e}")
 
-    await query.answer()
-    await sendMessage(query.message, f"📥 Bắt đầu tải từ mirror:\n{mirror_url}")
-
-    fake_msg = query.message
-    fake_msg.text = f"/mirror {mirror_url}"
-
-    await _mirror_leech(client, fake_msg)
+bot.add_handler(CallbackQueryHandler(sfmirror_cb, filters=regex(r"^sfmirror")))
