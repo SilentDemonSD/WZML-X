@@ -17,6 +17,7 @@ google-auth-oauthlib
 gunicorn
 httpx
 langcodes
+language-data
 jinja2
 lxml
 motor
