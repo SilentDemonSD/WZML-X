@@ -1,85 +1,120 @@
 import httpx
+import re
 from uuid import uuid4
-from bs4 import BeautifulSoup
+from urllib.parse import urlparse, unquote
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.telegram_helper.message_utils import sendMessage
 from bot import LOGGER
 
 SF_URL_CACHE = {}
 
-async def fetch_json_mirrors(url):
-    """Try JSON API."""
-    if "/download" in url:
-        new_url = url.replace("/download", "/json")
-    else:
-        new_url = url.rstrip("/") + "/json"
+def parse_sourceforge_url(url):
+    """
+    Parse SourceForge URL to extract project and filename.
+    Example: https://sourceforge.net/projects/PROJECT/files/path/to/file.ext/download
+    """
+    # Pattern 1: /projects/PROJECT/files/...FILENAME.../download
+    pattern1 = r'sourceforge\.net/projects/([^/]+)/files/(.*?)/download'
+    match = re.search(pattern1, url)
+    if match:
+        project = match.group(1)
+        filepath = match.group(2)
+        # Get filename from path
+        filename = filepath.split('/')[-1] if '/' in filepath else filepath
+        return project, filename, filepath
+
+    # Pattern 2: downloads.sourceforge.net/PROJECT/FILENAME
+    pattern2 = r'downloads\.sourceforge\.net/([^/]+)/(.+)$'
+    match = re.search(pattern2, url)
+    if match:
+        project = match.group(1)
+        filepath = match.group(2)
+        filename = filepath.split('/')[-1] if '/' in filepath else filepath
+        return project, filename, filepath
+
+    return None, None, None
+
+async def fetch_mirror_list(project, filename):
+    """
+    Fetch mirror list from SourceForge API.
+    API: https://sourceforge.net/settings/mirror_choices?projectname=PROJECT&filename=FILENAME
+    """
+    api_url = f"https://sourceforge.net/settings/mirror_choices?projectname={project}&filename={unquote(filename)}"
+
+    LOGGER.info(f"[SF] Fetching mirrors from: {api_url}")
+
     try:
-        async with httpx.AsyncClient(timeout=10, follow_redirects=True) as c:
-            r = await c.get(new_url)
-            data = r.json()
-    except Exception:
+        async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
+            response = await client.get(api_url)
+            if response.status_code != 200:
+                LOGGER.error(f"[SF] API returned status {response.status_code}")
+                return []
+
+            data = response.json()
+            LOGGER.info(f"[SF] API response: {data}")
+            return data
+    except Exception as e:
+        LOGGER.error(f"[SF] Error fetching mirrors: {e}")
         return []
-
-    mirrors = []
-    for m in data.get("mirrors", []):
-        mirrors.append({
-            "name": m["name"],
-            "location": m.get("location", "Unknown"),
-            "url": m["url"]
-        })
-    return mirrors
-
-async def fetch_html_mirrors(url):
-    """Parse HTML mirror page."""
-    url = url.replace("/download", "/choose_mirror")
-    try:
-        async with httpx.AsyncClient(timeout=10, follow_redirects=True) as c:
-            r = await c.get(url)
-    except:
-        return []
-
-    soup = BeautifulSoup(r.text, "html.parser")
-    items = soup.select("a.mirror_link")
-    mirrors = []
-    for a in items:
-        name = a.get("data-mirror-name")
-        href = a.get("href")
-        if name and href:
-            mirrors.append({"name": name, "location": "Unknown", "url": href})
-    return mirrors
-
-async def get_mirrors(url):
-    """Get all available mirrors."""
-    mirrors = await fetch_json_mirrors(url)
-    if mirrors:
-        return mirrors
-    return await fetch_html_mirrors(url)
 
 async def handle_sourceforge(link, message):
-    """Show all available mirrors for user to select."""
-    mirrors = await get_mirrors(link)
+    """
+    Main handler to show SourceForge mirror selection.
+    """
+    # Parse URL
+    project, filename, filepath = parse_sourceforge_url(link)
 
-    if not mirrors:
+    if not project or not filename:
+        LOGGER.error(f"[SF] Could not parse URL: {link}")
+        await sendMessage(message, "âŒ Invalid SourceForge URL format.")
+        return None, None
+
+    LOGGER.info(f"[SF] Project: {project}, File: {filename}")
+
+    # Fetch mirrors
+    mirror_data = await fetch_mirror_list(project, filename)
+
+    if not mirror_data or 'mirrors' not in mirror_data:
+        LOGGER.error(f"[SF] No mirrors found in response")
         await sendMessage(message, "âŒ Could not fetch SourceForge mirrors.")
         return None, None
 
-    LOGGER.info(f"[SF] Found {len(mirrors)} mirrors for {link}")
+    mirrors = mirror_data['mirrors']
 
+    if not mirrors:
+        await sendMessage(message, "âŒ No mirrors available for this file.")
+        return None, None
+
+    LOGGER.info(f"[SF] Found {len(mirrors)} mirrors")
+
+    # Build buttons
     btn = ButtonMaker()
 
-    # Add all mirrors to buttons
-    for m in mirrors:
-        key = str(uuid4())[:7]
-        SF_URL_CACHE[key] = m["url"]
-        location = f" ({m['location']})" if m['location'] != "Unknown" else ""
-        btn.ibutton(f"{m['name']}{location}", f"sfmirror|{key}")
+    for mirror in mirrors:
+        mirror_name = mirror.get('name', 'Unknown')
+        mirror_id = mirror.get('id', mirror_name.lower())
+
+        # Build mirror URL: use_mirror parameter
+        mirror_url = link.replace('/download', f'/download?use_mirror={mirror_id}')
+        if '/download' not in link:
+            mirror_url = link + f'?use_mirror={mirror_id}'
+
+        # Store in cache
+        cache_key = str(uuid4())[:8]
+        SF_URL_CACHE[cache_key] = mirror_url
+
+        # Add button
+        btn.ibutton(f"đŸŒ {mirror_name}", f"sfmirror|{cache_key}")
 
     await sendMessage(
         message,
-        f"đŸŒ SourceForge Mirrors ({len(mirrors)} servers)\nSelect a server to start download:",
+        f"đŸ“¦ **SourceForge Mirrors** ({len(mirrors)} available)\n"
+        f"Project: `{project}`\n"
+        f"File: `{filename}`\n\n"
+        f"Select a mirror to start download:",
         btn.build_menu(1)
     )
 
-    # Return first mirror info (not used, just for compatibility)
-    first_key = str(uuid4())[:7]
-    return first_key, mirrors[0]["url"]
+    # Return first mirror for compatibility
+    first_cache_key = list(SF_URL_CACHE.keys())[-len(mirrors)]
+    return first_cache_key, SF_URL_CACHE[first_cache_key]
