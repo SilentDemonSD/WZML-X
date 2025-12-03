@@ -132,7 +132,7 @@ async def _mirror_leech(client, message, isQbit=False, isLeech=False, sameDir=No
 
     # MIRROR SOURCEFORGE
     if "sourceforge.net" in link:
-        sf_url = await handle_sourceforge(link)
+        sf_url = await handle_sourceforge(link, message)
         btn = ButtonMaker()
         btn.ibutton("Mirror ngay", f"sfmirror|{sf_url}")
         await sendMessage(message, f"➡️ Mirror link SourceForge:\n{sf_url}", btn.build_menu(1))
