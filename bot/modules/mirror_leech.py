@@ -63,7 +63,7 @@ from bot.helper.telegram_helper.message_utils import (
     open_category_btns,
     open_dump_btns,
 )
-from bot.modules.sourceforge import handle_sourceforge, SF_URL_CACHE
+from bot.modules.sourceforge import handle_sourceforge
 from bot.helper.listeners.tasks_listener import MirrorLeechListener
 from bot.helper.ext_utils.help_messages import (
     MIRROR_HELP_MESSAGE,
@@ -131,6 +131,13 @@ async def _mirror_leech(
     multi = int(args["-i"]) if args["-i"].isdigit() else 0
 
     link = args["link"]
+
+    # ==== SourceForge: show mirror choices instead of direct mirror ====
+    if "sourceforge.net" in link:
+        await handle_sourceforge(link, message)
+        return
+    # ===================================================================
+
     folder_name = args["-m"] or args["-sd"] or args["-samedir"]
     seed = args["-d"] or args["-seed"]
     join = args["-j"] or args["-join"]
@@ -331,8 +338,9 @@ async def _mirror_leech(
     if link:
         LOGGER.info(link)
         org_link = link
+
     # ======== NEW FEATURE: SourceForge Mirror Selection ========
-    if "sourceforge.net" in link:
+    if isinstance(link, str) and "sourceforge.net" in link.lower():
         await handle_sourceforge(link, message)
         await delete_links(message)
         return
@@ -691,23 +699,19 @@ bot.add_handler(
     )
 )
 bot.add_handler(CallbackQueryHandler(wzmlxcb, filters=regex(r"^wzmlx")))
-
-
+bot.add_handler(
+    CallbackQueryHandler(sfmirror_cb, filters=regex(r"^sfmirror"))
+)
+@bot.on_callback_query(regex(r"^sfmirror"))
 async def sfmirror_cb(client, query):
-    try:
-        _, key = query.data.split("|", 1)
-        url = SF_URL_CACHE.get(key)
-        if not url:
-            return await query.answer("Mirror đã hết hạn!", show_alert=True)
+    data = query.data.split("|", 1)
+    mirror_url = data[1]
 
-        await query.answer("⏳ Đang xử lý mirror…")
+    await query.answer()
 
-        fake_msg = query.message
-        fake_msg.text = f"/mirror {url}"
+    await sendMessage(query.message, f"📥 Bắt đầu tải từ mirror:\n{mirror_url}")
 
-        await _mirror_leech(client, fake_msg)
-    except Exception as e:
-        LOGGER.error(f"[SF CALLBACK ERROR] {e}")
-        await sendMessage(query.message, f"❌ Lỗi mirror: {e}")
+    fake_msg = query.message
+    fake_msg.text = f"/mirror {mirror_url}"
 
-bot.add_handler(CallbackQueryHandler(sfmirror_cb, filters=regex(r"^sfmirror")))
+    await _mirror_leech(client, fake_msg)
