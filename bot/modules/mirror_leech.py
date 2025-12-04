@@ -698,20 +698,20 @@ bot.add_handler(
         & ~CustomFilters.blacklisted,
     )
 )
+
 bot.add_handler(CallbackQueryHandler(wzmlxcb, filters=regex(r"^wzmlx")))
-bot.add_handler(
-    CallbackQueryHandler(sfmirror_cb, filters=regex(r"^sfmirror"))
-)
-@bot.on_callback_query(regex(r"^sfmirror"))
+
 async def sfmirror_cb(client, query):
     data = query.data.split("|", 1)
     mirror_url = data[1]
 
     await query.answer()
-
-    await sendMessage(query.message, f"📥 Bắt đầu tải từ mirror:\n{mirror_url}")
+    await sendMessage(query.message, f"📥 Bắt đầu tải từ mirror:
+{mirror_url}")
 
     fake_msg = query.message
     fake_msg.text = f"/mirror {mirror_url}"
 
     await _mirror_leech(client, fake_msg)
+
+bot.add_handler(CallbackQueryHandler(sfmirror_cb, filters=regex(r"^sfmirror")))
