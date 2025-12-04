@@ -63,6 +63,7 @@ from bot.helper.telegram_helper.message_utils import (
     open_category_btns,
     open_dump_btns,
 )
+from bot.modules.sourceforge import handle_sourceforge, SF_URL_CACHE
 from bot.helper.listeners.tasks_listener import MirrorLeechListener
 from bot.helper.ext_utils.help_messages import (
     MIRROR_HELP_MESSAGE,
@@ -72,7 +73,7 @@ from bot.helper.ext_utils.help_messages import (
 )
 from bot.helper.ext_utils.bulk_links import extract_bulk_links
 from bot.modules.gen_pyro_sess import get_decrypt_key
-from bot.modules.sourceforge import handle_sourceforge, SF_URL_CACHE
+
 
 @new_task
 async def _mirror_leech(
@@ -330,13 +331,12 @@ async def _mirror_leech(
     if link:
         LOGGER.info(link)
         org_link = link
-
-        # Nếu là link SourceForge thì mở menu chọn server rồi dừng tại đây
-        if "sourceforge.net" in link:
-            await handle_sourceforge(link, message)
-            await delete_links(message)
-            return
-
+    # ======== NEW FEATURE: SourceForge Mirror Selection ========
+    if "sourceforge.net" in link:
+        await handle_sourceforge(link, message)
+        await delete_links(message)
+        return
+    # ============================================================
     if (
         (
             not is_mega_link(link)
@@ -657,23 +657,6 @@ async def leech(client, message):
 async def qb_leech(client, message):
     _mirror_leech(client, message, isQbit=True, isLeech=True)
 
-async def sfmirror_cb(client, query):
-    try:
-        _, key = query.data.split("|", 1)
-        url = SF_URL_CACHE.get(key)
-
-        if not url:
-            return await query.answer("Mirror đã hết hạn!", show_alert=True)
-
-        await query.answer("⏳ Đang xử lý mirror…")
-
-        fake_msg = query.message
-        fake_msg.text = f"/mirror {url}"
-
-        await _mirror_leech(client, fake_msg)
-    except Exception as e:
-        LOGGER.error(f"[SF CALLBACK ERROR] {e}")
-        await sendMessage(query.message, f"❌ Lỗi mirror: {e}")
 
 bot.add_handler(
     MessageHandler(
@@ -708,4 +691,23 @@ bot.add_handler(
     )
 )
 bot.add_handler(CallbackQueryHandler(wzmlxcb, filters=regex(r"^wzmlx")))
+
+
+async def sfmirror_cb(client, query):
+    try:
+        _, key = query.data.split("|", 1)
+        url = SF_URL_CACHE.get(key)
+        if not url:
+            return await query.answer("Mirror đã hết hạn!", show_alert=True)
+
+        await query.answer("⏳ Đang xử lý mirror…")
+
+        fake_msg = query.message
+        fake_msg.text = f"/mirror {url}"
+
+        await _mirror_leech(client, fake_msg)
+    except Exception as e:
+        LOGGER.error(f"[SF CALLBACK ERROR] {e}")
+        await sendMessage(query.message, f"❌ Lỗi mirror: {e}")
+
 bot.add_handler(CallbackQueryHandler(sfmirror_cb, filters=regex(r"^sfmirror")))
