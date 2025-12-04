@@ -1,120 +1,125 @@
 import httpx
-import re
+import time
 from uuid import uuid4
-from urllib.parse import urlparse, unquote
+from urllib.parse import urlparse, parse_qs, urljoin, urlencode
+
+from bs4 import BeautifulSoup
+
+from bot import LOGGER
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.telegram_helper.message_utils import sendMessage
-from bot import LOGGER
 
+# key ngắn -> URL mirror đầy đủ
 SF_URL_CACHE = {}
 
-def parse_sourceforge_url(url):
-    """
-    Parse SourceForge URL to extract project and filename.
-    Example: https://sourceforge.net/projects/PROJECT/files/path/to/file.ext/download
-    """
-    # Pattern 1: /projects/PROJECT/files/...FILENAME.../download
-    pattern1 = r'sourceforge\.net/projects/([^/]+)/files/(.*?)/download'
-    match = re.search(pattern1, url)
-    if match:
-        project = match.group(1)
-        filepath = match.group(2)
-        # Get filename from path
-        filename = filepath.split('/')[-1] if '/' in filepath else filepath
-        return project, filename, filepath
 
-    # Pattern 2: downloads.sourceforge.net/PROJECT/FILENAME
-    pattern2 = r'downloads\.sourceforge\.net/([^/]+)/(.+)$'
-    match = re.search(pattern2, url)
-    if match:
-        project = match.group(1)
-        filepath = match.group(2)
-        filename = filepath.split('/')[-1] if '/' in filepath else filepath
-        return project, filename, filepath
-
-    return None, None, None
-
-async def fetch_mirror_list(project, filename):
+def _parse_sf_link(link: str):
     """
-    Fetch mirror list from SourceForge API.
-    API: https://sourceforge.net/settings/mirror_choices?projectname=PROJECT&filename=FILENAME
+    Tách projectname + filename từ link /projects/.../files/.../download
     """
-    api_url = f"https://sourceforge.net/settings/mirror_choices?projectname={project}&filename={unquote(filename)}"
+    p = urlparse(link)
+    parts = p.path.split("/")  # ['', 'projects', '{project}', 'files', ... 'download']
 
-    LOGGER.info(f"[SF] Fetching mirrors from: {api_url}")
+    try:
+        proj_idx = parts.index("projects")
+        project = parts[proj_idx + 1]
+    except ValueError:
+        return None, None
+
+    try:
+        files_idx = parts.index("files")
+    except ValueError:
+        return project, None
+
+    filename_parts = parts[files_idx + 1 :]
+    if filename_parts and filename_parts[-1] == "download":
+        filename_parts = filename_parts[:-1]
+
+    filename = "/".join(filename_parts)
+    return project, filename
+
+
+async def _fetch_mirror_choices(project: str, filename: str):
+    """
+    Gọi settings/mirror_choices và parse HTML lấy danh sách mirrors.
+    """
+    params = urlencode({"projectname": project, "filename": filename})
+    url = f"https://sourceforge.net/settings/mirror_choices?{params}"
+
+    LOGGER.info(f"[SF] Fetching mirror choices: {url}")
 
     try:
         async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
-            response = await client.get(api_url)
-            if response.status_code != 200:
-                LOGGER.error(f"[SF] API returned status {response.status_code}")
-                return []
-
-            data = response.json()
-            LOGGER.info(f"[SF] API response: {data}")
-            return data
+            r = await client.get(url)
     except Exception as e:
-        LOGGER.error(f"[SF] Error fetching mirrors: {e}")
+        LOGGER.error(f"[SF] HTTP error getting mirror_choices: {e}")
         return []
 
-async def handle_sourceforge(link, message):
-    """
-    Main handler to show SourceForge mirror selection.
-    """
-    # Parse URL
-    project, filename, filepath = parse_sourceforge_url(link)
+    if r.status_code != 200:
+        LOGGER.error(f"[SF] mirror_choices HTTP {r.status_code} for {url}")
+        return []
 
-    if not project or not filename:
-        LOGGER.error(f"[SF] Could not parse URL: {link}")
-        await sendMessage(message, "âŒ Invalid SourceForge URL format.")
-        return None, None
+    soup = BeautifulSoup(r.text, "lxml")
+    mirrors = []
 
-    LOGGER.info(f"[SF] Project: {project}, File: {filename}")
+    # Tìm tất cả các link chứa downloads.sourceforge.net và use_mirror=
+    for a in soup.find_all("a", href=True):
+        href = a["href"]
+        text = a.get_text(strip=True)
+        if "downloads.sourceforge.net" not in href:
+            continue
+        if "use_mirror=" not in href:
+            continue
 
-    # Fetch mirrors
-    mirror_data = await fetch_mirror_list(project, filename)
+        full_url = href if href.startswith("http") else urljoin("https://sourceforge.net/", href)
+        q = parse_qs(urlparse(full_url).query)
+        code = q.get("use_mirror", [""])[0]
+        if not code:
+            continue
 
-    if not mirror_data or 'mirrors' not in mirror_data:
-        LOGGER.error(f"[SF] No mirrors found in response")
-        await sendMessage(message, "âŒ Could not fetch SourceForge mirrors.")
-        return None, None
+        name = text or code
+        mirrors.append({"name": name, "code": code, "url": full_url})
 
-    mirrors = mirror_data['mirrors']
-
-    if not mirrors:
-        await sendMessage(message, "âŒ No mirrors available for this file.")
-        return None, None
+    # Loại mirror trùng theo code
+    dedup = {}
+    for m in mirrors:
+        dedup[m["code"]] = m
+    mirrors = list(dedup.values())
 
     LOGGER.info(f"[SF] Found {len(mirrors)} mirrors")
+    return mirrors
 
-    # Build buttons
+
+async def handle_sourceforge(link: str, message):
+    """
+    - Parse link SourceForge
+    - Lấy danh sách mirrors
+    - Gửi inline keyboard cho user chọn server
+    - Lưu URL vào SF_URL_CACHE với key ngắn để callback dùng
+    """
+    project, filename = _parse_sf_link(link)
+    if not project or not filename:
+        await sendMessage(
+            message,
+            "❌ Link SourceForge không đúng dạng /projects/.../files/.../download",
+        )
+        return
+
+    mirrors = await _fetch_mirror_choices(project, filename)
+    if not mirrors:
+        await sendMessage(
+            message, "❌ Không lấy được danh sách mirror SourceForge."
+        )
+        return
+
     btn = ButtonMaker()
-
-    for mirror in mirrors:
-        mirror_name = mirror.get('name', 'Unknown')
-        mirror_id = mirror.get('id', mirror_name.lower())
-
-        # Build mirror URL: use_mirror parameter
-        mirror_url = link.replace('/download', f'/download?use_mirror={mirror_id}')
-        if '/download' not in link:
-            mirror_url = link + f'?use_mirror={mirror_id}'
-
-        # Store in cache
-        cache_key = str(uuid4())[:8]
-        SF_URL_CACHE[cache_key] = mirror_url
-
-        # Add button
-        btn.ibutton(f"đŸŒ {mirror_name}", f"sfmirror|{cache_key}")
+    for m in mirrors:
+        key = str(uuid4())[:8]
+        SF_URL_CACHE[key] = m["url"]
+        btn.ibutton(m["name"], f"sfmirror|{key}")
 
     await sendMessage(
         message,
-        f"đŸ“¦ **SourceForge Mirrors** ({len(mirrors)} available)\n"
-        f"Project: `{project}`\n"
-        f"File: `{filename}`\n\n"
-        f"Select a mirror to start download:",
-        btn.build_menu(1)
+        "🌐 <b>SourceForge Mirrors</b>\nChọn server để bắt đầu mirror:",
+        btn.build_menu(1),
     )
-
-    # Return first mirror for compatibility
-    first_cache_key = list(SF_URL_CACHE.keys())[-len(mirrors)]
-    return first_cache_key, SF_URL_CACHE[first_cache_key]
