@@ -15,34 +15,26 @@ SF_URL_CACHE = {}
 # Danh sách mirror phổ biến trên SourceForge
 SF_MIRRORS = [
     # Europe
+    {"label": "🇺🇸 GigeNET (IL)", "host": "gigenet.dl.sourceforge.net"},
+    {"label": "🇺🇸 Psychz (NY)", "host": "psychz.dl.sourceforge.net"},
     {"label": "🇫🇷 Free.fr (FR)", "host": "freefr.dl.sourceforge.net"},
+    {"label": "🇺🇸 VersaWeb (NV)", "host": "versaweb.dl.sourceforge.net"},
     {"label": "🇩🇪 NetCologne (DE)", "host": "netcologne.dl.sourceforge.net"},
-    {"label": "🇸🇪 AltusHost (SE)", "host": "altushost-swe.dl.sourceforge.net"},
     {"label": "🇧🇬 NetIX (BG)", "host": "netix.dl.sourceforge.net"},
     {"label": "🇷🇸 UNLIMITED (RS)", "host": "unlimited.dl.sourceforge.net"},
+    {"label": "🇸🇪 AltusHost (SE)", "host": "altushost-swe.dl.sourceforge.net"},
     {"label": "🇱🇻 DEAC (LV)", "host": "deac-riga.dl.sourceforge.net"},
-
-    # Asia
+    {"label": "🌍 Auto-Select", "host": "downloads.sourceforge.net"},
+    {"label": "🇦🇿 YER (AZ)", "host": "yer.dl.sourceforge.net"},
+    {"label": "🇺🇸 Cytranet (TX)", "host": "cytranet.dl.sourceforge.net"},
     {"label": "🇭🇰 Zenlayer (HK)", "host": "zenlayer.dl.sourceforge.net"},
     {"label": "🇸🇬 OnboardCloud (SG)", "host": "onboardcloud.dl.sourceforge.net"},
     {"label": "🇮🇳 Web Werks (IN)", "host": "webwerks.dl.sourceforge.net"},
-    {"label": "🇮🇳 Excell Media (IN)", "host": "excellmedia.dl.sourceforge.net"},
     {"label": "🇮🇳 Cyfuture (IN)", "host": "cyfuture.dl.sourceforge.net"},
-    {"label": "🇯🇵 JAIST (JP)", "host": "jaist.dl.sourceforge.net"},
     {"label": "🇹🇼 NCHC (TW)", "host": "nchc.dl.sourceforge.net"},
-    {"label": "🇦🇿 YER (AZ)", "host": "yer.dl.sourceforge.net"},
-
-    # North America
-    {"label": "🇺🇸 VersaWeb (NV)", "host": "versaweb.dl.sourceforge.net"},
-    {"label": "🇺🇸 Cytranet (TX)", "host": "cytranet.dl.sourceforge.net"},
-    {"label": "🇺🇸 Psychz (NY)", "host": "psychz.dl.sourceforge.net"},
-    {"label": "🇺🇸 GigeNET (IL)", "host": "gigenet.dl.sourceforge.net"},
-
-    # Africa
+    {"label": "🇯🇵 JAIST (JP)", "host": "jaist.dl.sourceforge.net"},
+    {"label": "🇮🇳 Excell Media (IN)", "host": "excellmedia.dl.sourceforge.net"},
     {"label": "🇰🇪 Liquid (KE)", "host": "liquidtelecom.dl.sourceforge.net"},
-
-    # Auto / Global
-    {"label": "🌍 Auto-Select", "host": "downloads.sourceforge.net"},
 ]
 
 

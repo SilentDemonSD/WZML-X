@@ -8,8 +8,6 @@ from asyncio import sleep, wrap_future
 from aiofiles import open as aiopen
 from aiofiles.os import path as aiopath
 from cloudscraper import create_scraper
-from .sourceforge import handle_sourceforge, SF_URL_CACHE
-
 
 from bot import (
     bot,
@@ -65,7 +63,7 @@ from bot.helper.telegram_helper.message_utils import (
     open_category_btns,
     open_dump_btns,
 )
-from bot.modules.sourceforge import handle_sourceforge
+from .sourceforge import handle_sourceforge, SF_URL_CACHE
 from bot.helper.listeners.tasks_listener import MirrorLeechListener
 from bot.helper.ext_utils.help_messages import (
     MIRROR_HELP_MESSAGE,
@@ -134,19 +132,17 @@ async def _mirror_leech(
 
     link = args["link"]
 
-     # ==== SourceForge: chỉ bắt ở lần đầu với link dạng /projects/.../files/.../download ====
+    # ==== SourceForge: only handle project/file download links on first pass ====
     if (
         not skip_sf
         and "sourceforge.net" in link
         and "/projects/" in link
         and "/files/" in link
-        and link.endswith("/download")
+        and link.rstrip().endswith("/download")
     ):
         await handle_sourceforge(link, message)
         return
-    # ===================================================================
-
-    folder_name = args["-m"] or args["-sd"] or args["-samedir"]
+    # ===========================================================================
 
     folder_name = args["-m"] or args["-sd"] or args["-samedir"]
     seed = args["-d"] or args["-seed"]
@@ -349,12 +345,6 @@ async def _mirror_leech(
         LOGGER.info(link)
         org_link = link
 
-    # ======== NEW FEATURE: SourceForge Mirror Selection ========
-    if isinstance(link, str) and "sourceforge.net" in link.lower():
-        await handle_sourceforge(link, message)
-        await delete_links(message)
-        return
-    # ============================================================
     if (
         (
             not is_mega_link(link)
@@ -709,28 +699,22 @@ bot.add_handler(
     )
 )
 
-bot.add_handler(CallbackQueryHandler(wzmlxcb, filters=regex(r"^wzmlx")))
-
 async def sfmirror_cb(client, query):
     try:
-        # callback_data dạng: "sfmirror|<key>"
         _, key = query.data.split("|", 1)
-
         url = SF_URL_CACHE.get(key)
         if not url:
             return await query.answer("Mirror đã hết hạn!", show_alert=True)
 
-        # Không gửi thêm message mới, chỉ tắt popup
         await query.answer()
 
-        # Giả lập user gõ /mirror <url>, nhưng skip_sf=True
         fake_msg = query.message
         fake_msg.text = f"/mirror {url}"
 
         await _mirror_leech(client, fake_msg, skip_sf=True)
-
     except Exception as e:
         LOGGER.error(f"[SF CALLBACK ERROR] {e}")
         await sendMessage(query.message, f"❌ Lỗi mirror: {e}")
 
+bot.add_handler(CallbackQueryHandler(wzmlxcb, filters=regex(r"^wzmlx")))
 bot.add_handler(CallbackQueryHandler(sfmirror_cb, filters=regex(r"^sfmirror")))
