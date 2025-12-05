@@ -707,18 +707,32 @@ async def sfmirror_cb(client, query):
     try:
         # callback_data dạng: "sfmirror|<key>"
         _, key = query.data.split("|", 1)
+
         url = SF_URL_CACHE.get(key)
         if not url:
             return await query.answer("Mirror đã hết hạn!", show_alert=True)
 
-        # không gửi thêm message mới, chỉ đóng popup
+        # đóng vòng xoay loading, không gửi thêm message rác
         await query.answer()
 
-        # giả lập user gõ /mirror <url>, nhưng bỏ qua bước chọn server SourceForge
+        # Giả lập user gõ /mirror <url>, nhưng báo cho _mirror_leech biết
+        # đây là lần thứ 2 (đã xử lý SourceForge rồi) -> không gọi handle_sourceforge nữa
         fake_msg = query.message
         fake_msg.text = f"/mirror {url}"
 
+        # Tùy code của m đang dùng tham số tên gì:
+        # nếu trước đó t đã build bản dùng sf_handled, dùng dòng dưới:
         await _mirror_leech(client, fake_msg, sf_handled=True)
+
+        # nếu code m dùng skip_sf thì đổi thành:
+        # await _mirror_leech(client, fake_msg, skip_sf=True)
+
+        # Xoá message chọn server sau khi đã bắt đầu mirror
+        try:
+            await query.message.delete()
+        except Exception as e:
+            LOGGER.error(f"[SF DELETE MESSAGE ERROR] {e}")
+
     except Exception as e:
         LOGGER.error(f"[SF CALLBACK ERROR] {e}")
         await sendMessage(query.message, f"❌ Lỗi mirror: {e}")
