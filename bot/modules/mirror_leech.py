@@ -79,7 +79,7 @@ from bot.modules.gen_pyro_sess import get_decrypt_key
 
 @new_task
 async def _mirror_leech(
-    client, message, isQbit=False, isLeech=False, sameDir=None, bulk=[]
+    client, message, isQbit=False, isLeech=False, sameDir=None, bulk=[], skip_sf=False
 ):
     text = message.text.split("\n")
     input_list = text[0].split(" ")
@@ -134,11 +134,19 @@ async def _mirror_leech(
 
     link = args["link"]
 
-    # ==== SourceForge: chỉ xử lý link dạng /projects/.../files/.../download ====
-    if "sourceforge.net" in link and "/projects/" in link:
+     # ==== SourceForge: chỉ bắt ở lần đầu với link dạng /projects/.../files/.../download ====
+    if (
+        not skip_sf
+        and "sourceforge.net" in link
+        and "/projects/" in link
+        and "/files/" in link
+        and link.endswith("/download")
+    ):
         await handle_sourceforge(link, message)
         return
     # ===================================================================
+
+    folder_name = args["-m"] or args["-sd"] or args["-samedir"]
 
     folder_name = args["-m"] or args["-sd"] or args["-samedir"]
     seed = args["-d"] or args["-seed"]
@@ -220,7 +228,7 @@ async def _mirror_leech(
             chat_id=message.chat.id, message_ids=nextmsg.id
         )
         nextmsg.from_user = message.from_user
-        _mirror_leech(client, nextmsg, isQbit, isLeech, sameDir, bulk)
+        _mirror_leech(client, nextmsg, isQbit, isLeech, sameDir, bulk, skip_sf=skip_sf)
         return
 
     if len(bulk) != 0:
@@ -250,7 +258,7 @@ async def _mirror_leech(
             sameDir["tasks"].add(nextmsg.id)
         nextmsg.from_user = message.from_user
         await sleep(5)
-        _mirror_leech(client, nextmsg, isQbit, isLeech, sameDir, bulk)
+        _mirror_leech(client, nextmsg, isQbit, isLeech, sameDir, bulk, skip_sf=skip_sf)
 
     __run_multi()
 
@@ -712,13 +720,14 @@ async def sfmirror_cb(client, query):
         if not url:
             return await query.answer("Mirror đã hết hạn!", show_alert=True)
 
-        await query.answer("⏳ Đang mirror với server đã chọn…")
+        # Không gửi thêm message mới, chỉ tắt popup
+        await query.answer()
 
-        # fake lại lệnh /mirror <url> như user gõ
+        # Giả lập user gõ /mirror <url>, nhưng skip_sf=True
         fake_msg = query.message
         fake_msg.text = f"/mirror {url}"
 
-        await _mirror_leech(client, fake_msg)
+        await _mirror_leech(client, fake_msg, skip_sf=True)
 
     except Exception as e:
         LOGGER.error(f"[SF CALLBACK ERROR] {e}")
