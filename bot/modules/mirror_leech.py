@@ -9,6 +9,10 @@ from aiofiles import open as aiopen
 from aiofiles.os import path as aiopath
 from cloudscraper import create_scraper
 
+from urllib.parse import urlparse
+
+from .sourceforge import handle_sourceforge, SF_URL_CACHE
+
 from bot import (
     bot,
     DOWNLOAD_DIR,
@@ -63,7 +67,6 @@ from bot.helper.telegram_helper.message_utils import (
     open_category_btns,
     open_dump_btns,
 )
-from .sourceforge import handle_sourceforge, SF_URL_CACHE
 from bot.helper.listeners.tasks_listener import MirrorLeechListener
 from bot.helper.ext_utils.help_messages import (
     MIRROR_HELP_MESSAGE,
@@ -77,7 +80,7 @@ from bot.modules.gen_pyro_sess import get_decrypt_key
 
 @new_task
 async def _mirror_leech(
-    client, message, isQbit=False, isLeech=False, sameDir=None, bulk=[], skip_sf=False
+    client, message, isQbit=False, isLeech=False, sameDir=None, bulk=[], sf_handled=False
 ):
     text = message.text.split("\n")
     input_list = text[0].split(" ")
@@ -132,17 +135,17 @@ async def _mirror_leech(
 
     link = args["link"]
 
-    # ==== SourceForge: only handle project/file download links on first pass ====
-    if (
-        not skip_sf
-        and "sourceforge.net" in link
-        and "/projects/" in link
-        and "/files/" in link
-        and link.rstrip().endswith("/download")
-    ):
-        await handle_sourceforge(link, message)
-        return
-    # ===========================================================================
+    # SourceForge: nếu đây là link trang SourceForge gốc (host == "sourceforge.net")
+    # thì chuyển sang bước chọn server trước, chỉ làm 1 lần (sf_handled=False).
+    try:
+        parsed = urlparse(link)
+        host = parsed.netloc.lower()
+    except Exception:
+        host = ""
+    if (not sf_handled) and host == "sourceforge.net":
+        handled = await handle_sourceforge(link, message)
+        if handled:
+            return
 
     folder_name = args["-m"] or args["-sd"] or args["-samedir"]
     seed = args["-d"] or args["-seed"]
@@ -224,7 +227,7 @@ async def _mirror_leech(
             chat_id=message.chat.id, message_ids=nextmsg.id
         )
         nextmsg.from_user = message.from_user
-        _mirror_leech(client, nextmsg, isQbit, isLeech, sameDir, bulk, skip_sf=skip_sf)
+        _mirror_leech(client, nextmsg, isQbit, isLeech, sameDir, bulk, sf_handled)
         return
 
     if len(bulk) != 0:
@@ -254,7 +257,7 @@ async def _mirror_leech(
             sameDir["tasks"].add(nextmsg.id)
         nextmsg.from_user = message.from_user
         await sleep(5)
-        _mirror_leech(client, nextmsg, isQbit, isLeech, sameDir, bulk, skip_sf=skip_sf)
+        _mirror_leech(client, nextmsg, isQbit, isLeech, sameDir, bulk, sf_handled)
 
     __run_multi()
 
@@ -699,22 +702,27 @@ bot.add_handler(
     )
 )
 
+
 async def sfmirror_cb(client, query):
     try:
+        # callback_data dạng: "sfmirror|<key>"
         _, key = query.data.split("|", 1)
         url = SF_URL_CACHE.get(key)
         if not url:
             return await query.answer("Mirror đã hết hạn!", show_alert=True)
 
+        # không gửi thêm message mới, chỉ đóng popup
         await query.answer()
 
+        # giả lập user gõ /mirror <url>, nhưng bỏ qua bước chọn server SourceForge
         fake_msg = query.message
         fake_msg.text = f"/mirror {url}"
 
-        await _mirror_leech(client, fake_msg, skip_sf=True)
+        await _mirror_leech(client, fake_msg, sf_handled=True)
     except Exception as e:
         LOGGER.error(f"[SF CALLBACK ERROR] {e}")
         await sendMessage(query.message, f"❌ Lỗi mirror: {e}")
+
 
 bot.add_handler(CallbackQueryHandler(wzmlxcb, filters=regex(r"^wzmlx")))
 bot.add_handler(CallbackQueryHandler(sfmirror_cb, filters=regex(r"^sfmirror")))
