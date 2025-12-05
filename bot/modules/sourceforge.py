@@ -1,9 +1,5 @@
-import html
-import re
 from uuid import uuid4
 from urllib.parse import urlparse
-
-import httpx
 
 from bot import LOGGER
 from bot.helper.telegram_helper.message_utils import sendMessage
@@ -12,19 +8,63 @@ from bot.helper.telegram_helper.button_build import ButtonMaker
 # key -> final direct URL (mirror đã chọn)
 SF_URL_CACHE = {}
 
+# Danh sách mirror SourceForge (ưu tiên US trước, rồi tới các khu vực khác)
+# Host pattern chuẩn: https://<host>/project/<project>/<rel_path>
+SF_MIRRORS = [
+    # --- North America / US (ưu tiên vì VPS ở US) ---
+    {"label": "🇺🇸 GigeNET (IL, US)", "host": "gigenet.dl.sourceforge.net"},
+    {"label": "🇺🇸 Psychz (NY, US)", "host": "psychz.dl.sourceforge.net"},
+    {"label": "🇺🇸 Cytranet (TX, US)", "host": "cytranet.dl.sourceforge.net"},
+    {"label": "🇺🇸 VersaWeb (NV, US)", "host": "versaweb.dl.sourceforge.net"},
+    {"label": "🇺🇸 PhoenixNAP (AZ, US)", "host": "phoenixnap.dl.sourceforge.net"},
+    {"label": "🇺🇸 Pilotfiber (NY, US)", "host": "pilotfiber.dl.sourceforge.net"},
+    {"label": "🇺🇸 NetActuate (NC, US)", "host": "netactuate.dl.sourceforge.net"},
+    {"label": "🇺🇸 Cfhcable (FL, US)", "host": "cfhcable.dl.sourceforge.net"},
+    {"label": "🇺🇸 SourceForge (US Auto)", "host": "downloads.sourceforge.net"},
 
-def _extract_project_and_filename(url: str):
+    # --- Europe ---
+    {"label": "🇩🇪 NetCologne (DE)", "host": "netcologne.dl.sourceforge.net"},
+    {"label": "🇫🇷 Free.fr (FR)", "host": "freefr.dl.sourceforge.net"},
+    {"label": "🇸🇪 AltusHost (SE)", "host": "altushost-swe.dl.sourceforge.net"},
+    {"label": "🇧🇬 NetIX (BG)", "host": "netix.dl.sourceforge.net"},
+    {"label": "🇧🇬 AltusHost (BG)", "host": "altushost-sofia.dl.sourceforge.net"},
+    {"label": "🇱🇻 DEAC (LV)", "host": "deac-riga.dl.sourceforge.net"},
+    {"label": "🇷🇸 UNLIMITED.RS (RS)", "host": "unlimited.dl.sourceforge.net"},
+    {"label": "🇩🇪 Delska (Frankfurt, DE)", "host": "delsa-frankfurt.dl.sourceforge.net"},
+
+    # --- Asia ---
+    {"label": "🇭🇰 Zenlayer (HK)", "host": "zenlayer.dl.sourceforge.net"},
+    {"label": "🇸🇬 OnboardCloud (SG)", "host": "onboardcloud.dl.sourceforge.net"},
+    {"label": "🇹🇼 TWDS (TW)", "host": "twds.dl.sourceforge.net"},
+    {"label": "🇮🇳 Web Werks (IN)", "host": "webwerks.dl.sourceforge.net"},
+    {"label": "🇮🇳 Excell Media (IN)", "host": "excellmedia.dl.sourceforge.net"},
+    {"label": "🇮🇳 Cyfuture (IN)", "host": "cyfuture.dl.sourceforge.net"},
+    {"label": "🇹🇼 NCHC (TW)", "host": "nchc.dl.sourceforge.net"},
+    {"label": "🇯🇵 JAIST (JP)", "host": "jaist.dl.sourceforge.net"},
+    {"label": "🇦🇿 YER (AZ)", "host": "yer.dl.sourceforge.net"},
+
+    # --- Africa / South America / Oceania ---
+    {"label": "🇰🇪 Liquid Telecom (KE)", "host": "liquidtelecom.dl.sourceforge.net"},
+    {"label": "🇰🇪 Icolo (KE)", "host": "icolo.dl.sourceforge.net"},
+    {"label": "🇦🇷 SiTSA (AR)", "host": "sitsa.dl.sourceforge.net"},
+    {"label": "🇧🇷 SinalBR (BR)", "host": "sinalbr.dl.sourceforge.net"},
+    {"label": "🇪🇨 Fly Life (EC)", "host": "flylife-ec.dl.sourceforge.net"},
+    {"label": "🇦🇺 IX Australia (AU)", "host": "ix.dl.sourceforge.net"},
+]
+
+
+def _extract_project_and_relpath(url: str):
     """
-    Cố gắng suy ra projectname và filename (path tương đối) từ mọi dạng link SourceForge.
+    Tách projectname và rel_path từ các dạng link SourceForge thường gặp.
 
     Hỗ trợ:
-    - https://sourceforge.net/projects/<proj>/files/<path>/download
-    - https://downloads.sourceforge.net/project/<proj>/<path>
-    - https://sourceforge.net/projects/<proj>/files/latest/download  (tạm, nếu parse được)
+    - https://sourceforge.net/projects/<proj>/files/<path>/file.zip/download
+    - https://downloads.sourceforge.net/project/<proj>/<path>/file.zip
     """
     try:
         p = urlparse(url)
-    except Exception:
+    except Exception as e:
+        LOGGER.error(f"[SF] urlparse lỗi cho {url}: {e}")
         return None, None
 
     path = p.path or ""
@@ -32,9 +72,10 @@ def _extract_project_and_filename(url: str):
     # Dạng: /projects/<proj>/files/.../download
     if path.startswith("/projects/"):
         parts = path.split("/")
-        # ['', 'projects', proj, 'files', ... 'download']
+        # ['', 'projects', proj, 'files', ... 'download?']
         if len(parts) < 4:
             return None, None
+
         project = parts[2]
 
         try:
@@ -43,129 +84,66 @@ def _extract_project_and_filename(url: str):
             return None, None
 
         rel_parts = parts[files_idx + 1 :]
+        # Bỏ "download" ở cuối nếu có
         if rel_parts and rel_parts[-1] == "download":
             rel_parts = rel_parts[:-1]
 
         if not rel_parts:
             return None, None
 
-        filename = "/".join(rel_parts)
-        return project, filename
+        rel_path = "/".join(rel_parts)
+        return project, rel_path
 
-    # Dạng: /project/<proj>/<path>  (downloads.sourceforge.net)
+    # Dạng: /project/<proj>/<path>/file.zip (downloads.sourceforge.net)
     if path.startswith("/project/"):
         parts = path.split("/")
         # ['', 'project', proj, ...]
-        if len(parts) < 3:
+        if len(parts) < 4:
             return None, None
         project = parts[2]
         rel_parts = parts[3:]
-        if not rel_parts:
-            return None, None
-        filename = "/".join(rel_parts)
-        return project, filename
+        rel_path = "/".join(rel_parts)
+        return project, rel_path
 
     return None, None
-
-
-def _parse_mirror_choices(html_text: str):
-    """
-    Parse HTML mirror_choices để lấy danh sách:
-    [{'label': 'OnboardCloud (Singapore, Singapore)', 'url': 'https://...'}, ...]
-    Chỉ giữ những link mirror thực sự (dl.sourceforge.net / downloads.sourceforge.net).
-    """
-    mirrors = []
-    seen_urls = set()
-
-    for m in re.finditer(r'<a[^>]+href="([^"]+)"[^>]*>([^<]+)</a>', html_text):
-        url = m.group(1)
-        label = html.unescape(m.group(2)).strip()
-
-        # Chỉ giữ các link tải thực sự
-        if not (
-            ".dl.sourceforge.net" in url
-            or "downloads.sourceforge.net" in url
-        ):
-            continue
-
-        if url in seen_urls:
-            continue
-        seen_urls.add(url)
-
-        mirrors.append({"label": label, "url": url})
-
-    return mirrors
-
-
-def _sort_mirrors_for_us(mirrors):
-    """
-    Ưu tiên:
-    0: Auto-select
-    1: United States
-    2: Others
-    """
-    def prio(m):
-        label = m["label"]
-        lower = label.lower()
-        if "auto-select" in lower or "auto select" in lower or "auto" == lower:
-            return (0, label)
-        if "united states" in lower or "(us" in lower:
-            return (1, label)
-        return (2, label)
-
-    return sorted(mirrors, key=prio)
 
 
 async def handle_sourceforge(url: str, message):
     """
     Được gọi từ mirror_leech khi phát hiện link SourceForge.
-    - Tìm projectname + filename
-    - Gọi /settings/mirror_choices để lấy danh sách mirror thực
-    - Sắp xếp theo ưu tiên US
-    - Gửi 1 message với button; mỗi button dùng callback sfmirror|<key>
-    Trả về True nếu đã xử lý, False nếu không parse được để mirror_leech xử lý bình thường.
+
+    Flow:
+      1. Tách project + rel_path từ link gốc.
+      2. Với mỗi mirror trong SF_MIRRORS, build URL:
+           https://<host>/project/<project>/<rel_path>
+      3. Gửi 1 message có inline buttons cho user chọn server.
+      4. Mỗi button callback dạng: sfmirror|<key>
+         Key dùng để tra URL thật trong SF_URL_CACHE.
+
+    Trả về:
+      - True  -> đã xử lý (mirror_leech không mirror tiếp link gốc nữa)
+      - False -> không parse được, mirror_leech cứ xử lý như link thường.
     """
-    project, filename = _extract_project_and_filename(url)
-    if not project or not filename:
-        LOGGER.warning(f"[SF] Không parse được project/filename từ: {url}")
+    project, rel_path = _extract_project_and_relpath(url)
+    if not project or not rel_path:
+        LOGGER.warning(f"[SF] Không parse được project/rel_path từ: {url}")
         return False
 
-    mirror_url = "https://sourceforge.net/settings/mirror_choices"
-    params = {"projectname": project, "filename": filename}
+    LOGGER.info(f"[SF] project={project} rel_path={rel_path}")
 
-    try:
-        async with httpx.AsyncClient(timeout=15) as client:
-            r = await client.get(mirror_url, params=params)
-    except Exception as e:
-        LOGGER.error(f"[SF] Lỗi gọi mirror_choices: {e}")
-        return False
-
-    if r.status_code != 200:
-        LOGGER.error(f"[SF] mirror_choices trả mã {r.status_code}")
-        return False
-
-    mirrors = _parse_mirror_choices(r.text)
-    if not mirrors:
-        LOGGER.warning(f"[SF] Không tìm được mirror nào trong mirror_choices cho {project}/{filename}")
-        return False
-
-    mirrors = _sort_mirrors_for_us(mirrors)
-
-    # Build button: mỗi server 1 nút, không test ping
     btn = ButtonMaker()
-    for m in mirrors:
+
+    for m in SF_MIRRORS:
+        direct_url = f"https://{m['host']}/project/{project}/{rel_path}"
         key = uuid4().hex[:8]
-        SF_URL_CACHE[key] = m["url"]
+        SF_URL_CACHE[key] = direct_url
         btn.ibutton(m["label"], f"sfmirror|{key}")
 
     text = (
-        f"📦 <b>File:</b> <code>{filename}</code>\n"
+        f"📦 <b>File:</b> <code>{rel_path}</code>\n"
         "⚡ <b>Chọn server SourceForge để mirror:</b>"
     )
 
-    await sendMessage(
-        message,
-        text,
-        btn.build_menu(2),  # 2 cột cho gọn
-    )
+    # 2 cột cho gọn, giữ nguyên hành vi cũ
+    await sendMessage(message, text, btn.build_menu(2))
     return True
