@@ -160,5 +160,5 @@ async def handle_sourceforge(url: str, message):
         message,
         f"📦 <b>File:</b> <code>{filename}</code>\n"
         "⚡ <b>Chọn server SourceForge để mirror:</b>",
-        btn.build_menu(1),
+        btn.build_menu(2),
     )

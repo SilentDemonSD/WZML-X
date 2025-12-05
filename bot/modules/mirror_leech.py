@@ -8,6 +8,8 @@ from asyncio import sleep, wrap_future
 from aiofiles import open as aiopen
 from aiofiles.os import path as aiopath
 from cloudscraper import create_scraper
+from .sourceforge import handle_sourceforge, SF_URL_CACHE
+
 
 from bot import (
     bot,
@@ -702,15 +704,24 @@ bot.add_handler(
 bot.add_handler(CallbackQueryHandler(wzmlxcb, filters=regex(r"^wzmlx")))
 
 async def sfmirror_cb(client, query):
-    data = query.data.split("|", 1)
-    mirror_url = data[1]
+    try:
+        # callback_data dạng: "sfmirror|<key>"
+        _, key = query.data.split("|", 1)
 
-    await query.answer()
-    await sendMessage(query.message, f"📥 Bắt đầu tải từ mirror:{mirror_url}")
+        url = SF_URL_CACHE.get(key)
+        if not url:
+            return await query.answer("Mirror đã hết hạn!", show_alert=True)
 
-    fake_msg = query.message
-    fake_msg.text = f"/mirror {mirror_url}"
+        await query.answer("⏳ Đang mirror với server đã chọn…")
 
-    await _mirror_leech(client, fake_msg)
+        # fake lại lệnh /mirror <url> như user gõ
+        fake_msg = query.message
+        fake_msg.text = f"/mirror {url}"
+
+        await _mirror_leech(client, fake_msg)
+
+    except Exception as e:
+        LOGGER.error(f"[SF CALLBACK ERROR] {e}")
+        await sendMessage(query.message, f"❌ Lỗi mirror: {e}")
 
 bot.add_handler(CallbackQueryHandler(sfmirror_cb, filters=regex(r"^sfmirror")))
