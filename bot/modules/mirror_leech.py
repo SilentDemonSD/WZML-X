@@ -706,7 +706,8 @@ async def sfmirror_cb(client, query):
     mirror_url = data[1]
 
     await query.answer()
-    await sendMessage(query.message, f"📥 Bắt đầu tải từ mirror:{mirror_url}")
+    await sendMessage(query.message, f"📥 Bắt đầu tải từ mirror:
+{mirror_url}")
 
     fake_msg = query.message
     fake_msg.text = f"/mirror {mirror_url}"
