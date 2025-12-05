@@ -134,8 +134,8 @@ async def _mirror_leech(
 
     link = args["link"]
 
-    # ==== SourceForge: show mirror choices instead of direct mirror ====
-    if "sourceforge.net" in link:
+    # ==== SourceForge: chỉ xử lý link dạng /projects/.../files/.../download ====
+    if "sourceforge.net" in link and "/projects/" in link:
         await handle_sourceforge(link, message)
         return
     # ===================================================================
