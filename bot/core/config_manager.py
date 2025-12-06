@@ -1,5 +1,6 @@
 from importlib import import_module
 from os import getenv
+from shutil import which
 
 
 class Config:
@@ -250,8 +251,8 @@ class Config:
 
 
 class BinConfig:
-    ARIA2_NAME = "blitzfetcher"
-    QBIT_NAME = "stormtorrent"
-    FFMPEG_NAME = "mediaforge"
-    RCLONE_NAME = "ghostdrive"
-    SABNZBD_NAME = "newsripper"
+    ARIA2_NAME = "blitzfetcher" if which("blitzfetcher") else "aria2c"
+    QBIT_NAME = "stormtorrent" if which("stormtorrent") else "qbittorrent-nox"
+    FFMPEG_NAME = "mediaforge" if which("mediaforge") else "ffmpeg"
+    RCLONE_NAME = "ghostdrive" if which("ghostdrive") else "rclone"
+    SABNZBD_NAME = "newsripper" if which("newsripper") else "sabnzbdplus"
