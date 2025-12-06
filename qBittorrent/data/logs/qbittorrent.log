@@ -29,3 +29,63 @@
 (I) 2025-12-06T17:51:03 - Detected external IP. IP: "34.46.237.233"
 (I) 2025-12-06T17:51:03 - IP geolocation database loaded. Type: DBIP-Country-Lite. Build time: Mon Dec 1 02:28:10 2025.
 (I) 2025-12-06T17:51:03 - Successfully updated IP geolocation database.
+(N) 2025-12-06T18:43:52 - qBittorrent v4.6.3 started
+(N) 2025-12-06T18:43:52 - Using config directory: /app/qBittorrent/config
+(N) 2025-12-06T18:43:52 - qBittorrent termination initiated
+(N) 2025-12-06T18:43:52 - qBittorrent is now ready to exit
+(N) 2025-12-06T18:43:52 - qBittorrent v4.6.3 started
+(N) 2025-12-06T18:43:52 - Using config directory: /app/qBittorrent/config
+(N) 2025-12-06T18:43:52 - Trying to listen on the following list of IP addresses: "0.0.0.0:31791,[::]:31791"
+(I) 2025-12-06T18:43:52 - Peer ID: "-qB4630-"
+(I) 2025-12-06T18:43:52 - HTTP User-Agent: "qBittorrent/4.6.3"
+(I) 2025-12-06T18:43:52 - Distributed Hash Table (DHT) support: ON
+(I) 2025-12-06T18:43:52 - Local Peer Discovery support: ON
+(I) 2025-12-06T18:43:52 - Peer Exchange (PeX) support: ON
+(I) 2025-12-06T18:43:52 - Anonymous mode: OFF
+(I) 2025-12-06T18:43:52 - Encryption support: ON
+(W) 2025-12-06T18:43:52 - Embedded Tracker: Unable to bind to IP: 0.0.0.0, port: 9000. Reason: The bound address is already in use
+(I) 2025-12-06T18:43:52 - UPnP/NAT-PMP support: ON
+(I) 2025-12-06T18:43:52 - Successfully listening on IP. IP: "127.0.0.1". Port: "TCP/31791"
+(I) 2025-12-06T18:43:52 - Successfully listening on IP. IP: "127.0.0.1". Port: "UTP/31791"
+(I) 2025-12-06T18:43:52 - Successfully listening on IP. IP: "192.168.0.2". Port: "TCP/31791"
+(I) 2025-12-06T18:43:52 - Successfully listening on IP. IP: "192.168.0.2". Port: "UTP/31791"
+(I) 2025-12-06T18:43:52 - Successfully listening on IP. IP: "::1". Port: "TCP/31791"
+(I) 2025-12-06T18:43:52 - Successfully listening on IP. IP: "::1". Port: "UTP/31791"
+(I) 2025-12-06T18:43:52 - Successfully listening on IP. IP: "fe80::400:c0ff:fea8:2%eth0". Port: "TCP/31791"
+(I) 2025-12-06T18:43:52 - Successfully listening on IP. IP: "fe80::400:c0ff:fea8:2%eth0". Port: "UTP/31791"
+(I) 2025-12-06T18:43:52 - IP geolocation database loaded. Type: DBIP-Country-Lite. Build time: Mon Dec 1 02:28:10 2025.
+(N) 2025-12-06T18:43:52 - Using built-in WebUI.
+(W) 2025-12-06T18:43:52 - Couldn't load WebUI translation for selected locale (C).
+(C) 2025-12-06T18:43:52 - WebUI: Unable to bind to IP: *, port: 8090. Reason: The bound address is already in use
+(N) 2025-12-06T18:43:52 - qBittorrent termination initiated
+(N) 2025-12-06T18:43:53 - qBittorrent is now ready to exit
+(N) 2025-12-06T18:45:36 - qBittorrent v4.6.3 started
+(N) 2025-12-06T18:45:36 - Using config directory: /app/qBittorrent/config
+(N) 2025-12-06T18:45:36 - qBittorrent termination initiated
+(N) 2025-12-06T18:45:36 - qBittorrent is now ready to exit
+(N) 2025-12-06T18:45:36 - qBittorrent v4.6.3 started
+(N) 2025-12-06T18:45:36 - Using config directory: /app/qBittorrent/config
+(N) 2025-12-06T18:45:36 - Trying to listen on the following list of IP addresses: "0.0.0.0:31791,[::]:31791"
+(I) 2025-12-06T18:45:36 - Peer ID: "-qB4630-"
+(I) 2025-12-06T18:45:36 - HTTP User-Agent: "qBittorrent/4.6.3"
+(I) 2025-12-06T18:45:36 - Distributed Hash Table (DHT) support: ON
+(I) 2025-12-06T18:45:36 - Local Peer Discovery support: ON
+(I) 2025-12-06T18:45:36 - Peer Exchange (PeX) support: ON
+(I) 2025-12-06T18:45:36 - Anonymous mode: OFF
+(I) 2025-12-06T18:45:36 - Encryption support: ON
+(W) 2025-12-06T18:45:36 - Embedded Tracker: Unable to bind to IP: 0.0.0.0, port: 9000. Reason: The bound address is already in use
+(I) 2025-12-06T18:45:36 - UPnP/NAT-PMP support: ON
+(I) 2025-12-06T18:45:36 - Successfully listening on IP. IP: "127.0.0.1". Port: "TCP/31791"
+(I) 2025-12-06T18:45:36 - Successfully listening on IP. IP: "127.0.0.1". Port: "UTP/31791"
+(I) 2025-12-06T18:45:36 - Successfully listening on IP. IP: "192.168.0.2". Port: "TCP/31791"
+(I) 2025-12-06T18:45:36 - Successfully listening on IP. IP: "192.168.0.2". Port: "UTP/31791"
+(I) 2025-12-06T18:45:36 - Successfully listening on IP. IP: "::1". Port: "TCP/31791"
+(I) 2025-12-06T18:45:36 - Successfully listening on IP. IP: "::1". Port: "UTP/31791"
+(I) 2025-12-06T18:45:36 - Successfully listening on IP. IP: "fe80::400:c0ff:fea8:2%eth0". Port: "TCP/31791"
+(I) 2025-12-06T18:45:36 - Successfully listening on IP. IP: "fe80::400:c0ff:fea8:2%eth0". Port: "UTP/31791"
+(I) 2025-12-06T18:45:36 - IP geolocation database loaded. Type: DBIP-Country-Lite. Build time: Mon Dec 1 02:28:10 2025.
+(N) 2025-12-06T18:45:36 - Using built-in WebUI.
+(W) 2025-12-06T18:45:36 - Couldn't load WebUI translation for selected locale (C).
+(C) 2025-12-06T18:45:36 - WebUI: Unable to bind to IP: *, port: 8090. Reason: The bound address is already in use
+(N) 2025-12-06T18:45:36 - qBittorrent termination initiated
+(N) 2025-12-06T18:45:36 - qBittorrent is now ready to exit

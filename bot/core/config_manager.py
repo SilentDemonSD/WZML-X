@@ -251,8 +251,8 @@ class Config:
 
 
 class BinConfig:
-    ARIA2_NAME = "blitzfetcher" if which("blitzfetcher") else "aria2c"
-    QBIT_NAME = "stormtorrent" if which("stormtorrent") else "qbittorrent-nox"
-    FFMPEG_NAME = "mediaforge" if which("mediaforge") else "ffmpeg"
-    RCLONE_NAME = "ghostdrive" if which("ghostdrive") else "rclone"
-    SABNZBD_NAME = "newsripper" if which("newsripper") else "sabnzbdplus"
+    ARIA2_NAME = which("blitzfetcher") or which("aria2c") or "aria2c"
+    QBIT_NAME = which("stormtorrent") or which("qbittorrent-nox") or "qbittorrent-nox"
+    FFMPEG_NAME = which("mediaforge") or which("ffmpeg") or "ffmpeg"
+    RCLONE_NAME = which("ghostdrive") or which("rclone") or "rclone"
+    SABNZBD_NAME = which("newsripper") or which("sabnzbdplus") or "sabnzbdplus"
