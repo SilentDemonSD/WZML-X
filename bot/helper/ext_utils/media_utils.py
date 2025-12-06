@@ -23,6 +23,8 @@ from .bot_utils import cmd_exec, sync_to_async
 from .files_utils import get_mime_type, is_archive, is_archive_split
 from .status_utils import time_to_seconds
 
+threads = max(1, cpu_no // 2)
+cores = ",".join(str(i) for i in range(threads))
 
 def get_md5_hash(up_path):
     md5_hash = md5()
@@ -202,6 +204,9 @@ async def take_ss(video_file, ss_nb) -> bool:
         for i in range(ss_nb):
             output = f"{dirpath}/SS.{name}_{i:02}.png"
             cmd = [
+                "taskset",
+                "-c",
+                f"{cores}",
                 BinConfig.FFMPEG_NAME,
                 "-hide_banner",
                 "-loglevel",
@@ -214,8 +219,8 @@ async def take_ss(video_file, ss_nb) -> bool:
                 "1",
                 "-frames:v",
                 "1",
-            "-threads",
-            f"{max(1, cpu_no // 2)}",
+                "-threads",
+                f"{threads}",
                 output,
             ]
             cap_time += interval
@@ -224,13 +229,13 @@ async def take_ss(video_file, ss_nb) -> bool:
             resutls = await wait_for(gather(*cmds), timeout=60)
             if resutls[0][2] != 0:
                 LOGGER.error(
-                    f"Error while creating sreenshots from video. Path: {video_file}. stderr: {resutls[0][1]}"
+                    f"Error while creating screenshots from video. Path: {video_file}. stderr: {resutls[0][1]}"
                 )
                 await rmtree(dirpath, ignore_errors=True)
                 return False
         except Exception:
             LOGGER.error(
-                f"Error while creating sreenshots from video. Path: {video_file}. Error: Timeout some issues with ffmpeg with specific arch!"
+                f"Error while creating screenshots from video. Path: {video_file}. Error: Timeout some issues with ffmpeg with specific arch!"
             )
             await rmtree(dirpath, ignore_errors=True)
             return False
@@ -245,6 +250,9 @@ async def get_audio_thumbnail(audio_file):
     await makedirs(output_dir, exist_ok=True)
     output = ospath.join(output_dir, f"{time()}.jpg")
     cmd = [
+        "taskset",
+        "-c",
+        f"{cores}",
         BinConfig.FFMPEG_NAME,
         "-hide_banner",
         "-loglevel",
@@ -255,7 +263,7 @@ async def get_audio_thumbnail(audio_file):
         "-vcodec",
         "copy",
         "-threads",
-        f"{max(1, cpu_no // 2)}",
+        f"{threads}",
         output,
     ]
     try:
@@ -283,6 +291,9 @@ async def get_video_thumbnail(video_file, duration):
         duration = 3
     duration = duration // 2
     cmd = [
+        "taskset",
+        "-c",
+        f"{cores}",
         BinConfig.FFMPEG_NAME,
         "-hide_banner",
         "-loglevel",
@@ -292,13 +303,13 @@ async def get_video_thumbnail(video_file, duration):
         "-i",
         video_file,
         "-vf",
-        "scale=640:-1",
+        "thumbnail",
         "-q:v",
-        "5",
-        "-vframes",
+        "1",
+        "-frames:v",
         "1",
         "-threads",
-        f"{max(1, cpu_no // 2)}",
+        f"{threads}",
         output,
     ]
     try:
@@ -333,6 +344,9 @@ async def get_multiple_frames_thumbnail(video_file, layout, keep_screenshots):
     await makedirs(output_dir, exist_ok=True)
     output = ospath.join(output_dir, f"{time()}.jpg")
     cmd = [
+        "taskset",
+        "-c",
+        f"{cores}",
         BinConfig.FFMPEG_NAME,
         "-hide_banner",
         "-loglevel",
@@ -350,7 +364,7 @@ async def get_multiple_frames_thumbnail(video_file, layout, keep_screenshots):
         "-f",
         "mjpeg",
         "-threads",
-        f"{max(1, cpu_no // 2)}",
+        f"{threads}",
         output,
     ]
     try:
@@ -543,7 +557,7 @@ class FFMpeg:
                 "-c:a",
                 "aac",
                 "-threads",
-                f"{max(1, cpu_no // 2)}",
+                f"{threads}",
                 output,
             ]
             if ext == "mp4":
@@ -567,7 +581,7 @@ class FFMpeg:
                 "-c",
                 "copy",
                 "-threads",
-                f"{max(1, cpu_no // 2)}",
+                f"{threads}",
                 output,
             ]
         if self._listener.is_cancelled:
@@ -614,7 +628,7 @@ class FFMpeg:
             "-i",
             audio_file,
             "-threads",
-            f"{max(1, cpu_no // 2)}",
+            f"{threads}",
             output,
         ]
         if self._listener.is_cancelled:
@@ -694,7 +708,7 @@ class FFMpeg:
             "-c:a",
             "aac",
             "-threads",
-            f"{max(1, cpu_no // 2)}",
+            f"{threads}",
             output_file,
         ]
 
@@ -759,7 +773,7 @@ class FFMpeg:
                 "-c",
                 "copy",
                 "-threads",
-                f"{max(1, cpu_no // 2)}",
+                f"{threads}",
                 out_path,
             ]
             if not multi_streams:
