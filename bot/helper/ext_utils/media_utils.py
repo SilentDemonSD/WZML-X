@@ -26,6 +26,7 @@ from .status_utils import time_to_seconds
 threads = max(1, cpu_no // 2)
 cores = ",".join(str(i) for i in range(threads))
 
+
 def get_md5_hash(up_path):
     md5_hash = md5()
     with open(up_path, "rb") as f:
