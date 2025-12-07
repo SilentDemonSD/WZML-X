@@ -29,6 +29,8 @@ from ..ext_utils.status_utils import get_readable_message
 
 
 async def send_message(message, text, buttons=None, block=True, photo=None, **kwargs):
+    if Config.DELETE_LINKS and isinstance(message, Message):
+        message = message.chat.id
     try:
         if photo:
             try:
@@ -141,6 +143,22 @@ async def edit_reply_markup(message, buttons):
 
 async def send_file(message, file, caption="", buttons=None):
     try:
+        if isinstance(message, int):
+            return await TgClient.bot.send_document(
+                chat_id=message,
+                document=file,
+                caption=caption,
+                disable_notification=True,
+                reply_markup=buttons,
+            )
+        if Config.DELETE_LINKS and isinstance(message, Message):
+            return await TgClient.bot.send_document(
+                chat_id=message.chat.id,
+                document=file,
+                caption=caption,
+                disable_notification=True,
+                reply_markup=buttons,
+            )
         return await message.reply_document(
             document=file,
             quote=True,
