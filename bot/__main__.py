@@ -11,6 +11,8 @@ from pytz import timezone
 
 from . import LOGGER, bot_loop
 from .core.tg_client import TgClient
+from pyrogram.errors import FloodWait
+from asyncio import sleep
 
 
 async def main():
@@ -33,9 +35,17 @@ async def main():
 
     Formatter.converter = changetz
 
-    await gather(
-        TgClient.start_bot(), TgClient.start_user(), TgClient.start_helper_bots()
-    )
+    try:
+        await gather(
+            TgClient.start_bot(), TgClient.start_user(), TgClient.start_helper_bots()
+        )
+    except FloodWait as e:
+        LOGGER.warning(f"FloodWait: {e.value} seconds. Sleeping...")
+        await sleep(e.value)
+        await gather(
+            TgClient.start_bot(), TgClient.start_user(), TgClient.start_helper_bots()
+        )
+
     await gather(load_configurations(), update_variables())
 
     from .core.torrent_manager import TorrentManager

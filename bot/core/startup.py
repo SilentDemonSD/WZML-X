@@ -81,7 +81,13 @@ async def load_settings():
     for p in ["thumbnails", "tokens", "rclone"]:
         if await aiopath.exists(p):
             await rmtree(p, ignore_errors=True)
-    await database.connect()
+
+    try:
+        await database.connect()
+    except Exception as e:
+        LOGGER.error(f"Failed to connect to Database: {e}")
+        return
+
     if database.db is not None:
         BOT_ID = Config.BOT_TOKEN.split(":", 1)[0]
         try:
@@ -101,9 +107,13 @@ async def load_settings():
             }
         )
 
-        old_config = await database.db.settings.deployConfig.find_one(
-            {"_id": BOT_ID}, {"_id": 0}
-        )
+        try:
+            old_config = await database.db.settings.deployConfig.find_one(
+                {"_id": BOT_ID}, {"_id": 0}
+            )
+        except Exception as e:
+            LOGGER.error(f"Database Error: {e}")
+            return
         if old_config is None:
             await database.db.settings.deployConfig.replace_one(
                 {"_id": BOT_ID}, config_file, upsert=True
