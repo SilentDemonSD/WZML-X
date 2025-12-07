@@ -148,6 +148,12 @@ class Config:
     def load(cls):
         cls.load_config()
         cls.load_env()
+        for key in ["BOT_TOKEN", "OWNER_ID", "TELEGRAM_API", "TELEGRAM_HASH"]:
+            value = getattr(cls, key)
+            if isinstance(value, str):
+                value = value.strip()
+            if not value:
+                raise ValueError(f"{key} variable is missing!")
 
     @classmethod
     def load_config(cls):
@@ -179,12 +185,6 @@ class Config:
                     except Exception:
                         continue
                 setattr(cls, attr, value)
-        for key in ["BOT_TOKEN", "OWNER_ID", "TELEGRAM_API", "TELEGRAM_HASH"]:
-            value = getattr(cls, key)
-            if isinstance(value, str):
-                value = value.strip()
-            if not value:
-                raise ValueError(f"{key} variable is missing!")
 
     @classmethod
     def load_env(cls):
