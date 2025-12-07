@@ -2,7 +2,7 @@ from contextlib import suppress
 from re import IGNORECASE, findall, search
 
 import cloudscraper
-from imdbinfo import search_title , get_movie
+from imdbinfo import search_title, get_movie
 from pycountry import countries as conn
 from pyrogram.errors import MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty
 
@@ -58,7 +58,7 @@ async def imdb_search(_, message):
         buttons = ButtonMaker()
         if result := search(r"tt(\d+)", title, IGNORECASE):
             movieid = result.group(1)
-            if movie := await sync_to_async(get_movie , movieid):
+            if movie := await sync_to_async(get_movie, movieid):
                 buttons.data_button(
                     f"🎬 {movie.title} ({getattr(movie , 'year' , 'N/A')})",
                     f"imdb {user_id} movie {movieid}",
@@ -121,56 +121,87 @@ def get_poster(query, bulk=False, id=False, file=None):
     else:
         movieid = query
     movie = get_movie(movieid)
-    if getattr(movie , 'release_date' , None):
+    if getattr(movie, "release_date", None):
         date = movie.release_date
-    elif getattr(movie , 'year' , None):
+    elif getattr(movie, "year", None):
         date = movie.year
     else:
         date = "N/A"
 
     plot = None
-    for keyword in ['plot' , 'summaries' , 'synopses']:
-        plot_data = getattr(movie , keyword , None)
+    for keyword in ["plot", "summaries", "synopses"]:
+        plot_data = getattr(movie, keyword, None)
         if type(plot_data) is list:
             plot = plot_data[0]
         else:
             plot = plot_data
         if plot:
             break
-    
+
     if plot and len(plot) > 300:
         plot = f"{plot[:300]}..."
 
-    trailer_list = getattr(movie,'trailers',None)
+    trailer_list = getattr(movie, "trailers", None)
     trailer = trailer_list[-1] if trailer_list else None
 
     return {
         "title": movie.title,
-        "trailer": trailer or 'https://imdb.com/',
-        "votes": str(getattr(movie , 'votes' , 'N/A') or 'N/A'),
+        "trailer": trailer or "https://imdb.com/",
+        "votes": str(getattr(movie, "votes", "N/A") or "N/A"),
         "aka": list_to_str(getattr(movie, "title_akas", []) or []) or "N/A",
-        "seasons": len(movie.info_series.display_seasons) if getattr(movie , 'info_series' , None) and getattr(movie.info_series , 'display_seasons' , None) else 'N/A',
-        "box_office": getattr(movie , 'worldwide_gross' , 'N/A') or 'N/A',
-        "localized_title": getattr(movie , 'title_localized' , 'N/A') or 'N/A',
-        "kind": (getattr(movie , 'kind' , 'N/A') or 'N/A').capitalize(),
+        "seasons": (
+            len(movie.info_series.display_seasons)
+            if getattr(movie, "info_series", None)
+            and getattr(movie.info_series, "display_seasons", None)
+            else "N/A"
+        ),
+        "box_office": getattr(movie, "worldwide_gross", "N/A") or "N/A",
+        "localized_title": getattr(movie, "title_localized", "N/A") or "N/A",
+        "kind": (getattr(movie, "kind", "N/A") or "N/A").capitalize(),
         "imdb_id": f"tt{movie.imdb_id}",
-        "cast": list_to_str([i.name for i in getattr(movie, "stars", [])]) or 'N/A',
-        "runtime": get_readable_time(int(getattr(movie, "duration", 0) or '0') * 60) or 'N/A',
-        "countries": list_to_hash(getattr(movie, "countries", []) or []) or 'N/A',
-        "languages": list_to_hash(getattr(movie, "languages_text", []) or []) or 'N/A',
-        "director": list_to_str([i.name for i in getattr(movie, "directors", [])]) or 'N/A',
-        "writer": list_to_str([i.name for i in getattr(movie, "categories", []).get("writer", [])]) or 'N/A',
-        "producer": list_to_str([i.name for i in getattr(movie, "categories", []).get("producer", [])]) or 'N/A',
-        "composer": list_to_str([i.name for i in getattr(movie, "categories", []).get("composer", [])]) or 'N/A',
-        "cinematographer": list_to_str([i.name for i in getattr(movie, "categories", []).get("cinematographer", [])]) or 'N/A',
-        "music_team": list_to_str([i.name for i in getattr(movie, "categories", []).get("music_department", [])]) or 'N/A',
-        "release_date": getattr(movie , 'release_date' , 'N/A') or 'N/A',
-        "year": str(getattr(movie , 'year' , 'N/A') or 'N/A'),
-        "genres": list_to_hash(getattr(movie, "genres", []) or [], emoji=True) or 'N/A',
-        "poster": getattr(movie , 'cover_url' , 'https://telegra.ph/file/5af8d90a479b0d11df298.jpg') or 'https://telegra.ph/file/5af8d90a479b0d11df298.jpg',
-        "plot": plot or 'N/A',
-        "rating": str(getattr(movie , 'rating' , 'N/A') or 'N/A') + " / 10",
-        "url": getattr(movie , 'url' , 'N/A') or 'N/A',
+        "cast": list_to_str([i.name for i in getattr(movie, "stars", [])]) or "N/A",
+        "runtime": get_readable_time(int(getattr(movie, "duration", 0) or "0") * 60)
+        or "N/A",
+        "countries": list_to_hash(getattr(movie, "countries", []) or []) or "N/A",
+        "languages": list_to_hash(getattr(movie, "languages_text", []) or []) or "N/A",
+        "director": list_to_str([i.name for i in getattr(movie, "directors", [])])
+        or "N/A",
+        "writer": list_to_str(
+            [i.name for i in getattr(movie, "categories", []).get("writer", [])]
+        )
+        or "N/A",
+        "producer": list_to_str(
+            [i.name for i in getattr(movie, "categories", []).get("producer", [])]
+        )
+        or "N/A",
+        "composer": list_to_str(
+            [i.name for i in getattr(movie, "categories", []).get("composer", [])]
+        )
+        or "N/A",
+        "cinematographer": list_to_str(
+            [
+                i.name
+                for i in getattr(movie, "categories", []).get("cinematographer", [])
+            ]
+        )
+        or "N/A",
+        "music_team": list_to_str(
+            [
+                i.name
+                for i in getattr(movie, "categories", []).get("music_department", [])
+            ]
+        )
+        or "N/A",
+        "release_date": getattr(movie, "release_date", "N/A") or "N/A",
+        "year": str(getattr(movie, "year", "N/A") or "N/A"),
+        "genres": list_to_hash(getattr(movie, "genres", []) or [], emoji=True) or "N/A",
+        "poster": getattr(
+            movie, "cover_url", "https://telegra.ph/file/5af8d90a479b0d11df298.jpg"
+        )
+        or "https://telegra.ph/file/5af8d90a479b0d11df298.jpg",
+        "plot": plot or "N/A",
+        "rating": str(getattr(movie, "rating", "N/A") or "N/A") + " / 10",
+        "url": getattr(movie, "url", "N/A") or "N/A",
         "url_cast": f"https://www.imdb.com/title/tt{movieid}/fullcredits#cast",
         "url_releaseinfo": f"https://www.imdb.com/title/tt{movieid}/releaseinfo",
     }
