@@ -49,7 +49,7 @@ class BotCommands:
         "BotSet": ["bsetting", "bs"],
         "UserSet": ["usetting", "us"],
         "Select": ["select", "sel"],
-        "NzbSearch": "nzbsearch",
+        "NzbSearch": ["nzbsearch", "ns"],
         "Plugins": "plugins",
     }
 
