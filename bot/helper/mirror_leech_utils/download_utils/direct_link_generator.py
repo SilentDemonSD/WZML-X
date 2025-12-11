@@ -1201,7 +1201,7 @@ def gofile(url):
             raise e
 
     def __fetch_links(session, _id, folderPath=""):
-        _url = f"https://api.gofile.io/contents/{_id}"
+        _url = f"https://api.gofile.io/contents/{_id}?cache=true"
         headers = {
             "User-Agent": user_agent,
             "Accept-Encoding": "gzip, deflate, br",
