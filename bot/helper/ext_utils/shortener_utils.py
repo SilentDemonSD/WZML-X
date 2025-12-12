@@ -20,9 +20,7 @@ async def short_url(longurl, attempt=0):
     disable_warnings()
     try:
         if Config.PROTECTED_API:
-            res = cget(
-                "GET", Config.PROTECTED_API, params={"url": longurl}
-            ).json()
+            res = cget("GET", Config.PROTECTED_API, params={"url": longurl}).json()
             if res.get("status") == "success":
                 return res["url"]
             raise Exception(f"Protected API Error: {res}")

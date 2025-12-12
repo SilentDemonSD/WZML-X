@@ -88,7 +88,9 @@ class GoFileUpload:
         headers = {"Authorization": f"Bearer {token}"}
         async with (
             ClientSession() as session,
-            session.get("https://api.gofile.io/accounts/website", headers=headers) as resp,
+            session.get(
+                "https://api.gofile.io/accounts/website", headers=headers
+            ) as resp,
         ):
             res = await resp.json()
             return res.get("status") == "ok"
