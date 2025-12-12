@@ -85,19 +85,13 @@ class GoFileUpload:
         if token is None:
             return False
 
+        headers = {"Authorization": f"Bearer {token}"}
         async with (
             ClientSession() as session,
-            session.get(f"https://api.gofile.io/accounts/getid?token={token}") as resp,
+            session.get("https://api.gofile.io/accounts/website", headers=headers) as resp,
         ):
             res = await resp.json()
-
-            if res["status"] == "ok":
-                acc_id = res["data"]["id"]
-                async with session.get(
-                    f"https://api.gofile.io/accounts/{acc_id}?token={token}"
-                ) as resp:
-                    return (await resp.json())["status"] == "ok"
-        return False
+            return res.get("status") == "ok"
 
     async def __resp_handler(self, response):
         if (api_resp := response.get("status", "")) == "ok":
@@ -117,23 +111,15 @@ class GoFileUpload:
         if self.token is None:
             raise Exception("GoFile API token not found!")
 
+        headers = {"Authorization": f"Bearer {self.token}"}
         async with (
             ClientSession() as session,
-            session.get(f"{self.api_url}accounts/getid?token={self.token}") as resp,
+            session.get(f"{self.api_url}accounts/website", headers=headers) as resp,
         ):
             res = await resp.json()
-            if res["status"] == "ok":
-                acc_id = res["data"]["id"]
-                async with session.get(
-                    f"{self.api_url}accounts/{acc_id}?token={self.token}"
-                ) as resp2:
-                    res2 = await resp2.json()
-                    return (
-                        res2["status"] == "ok"
-                        if check_account
-                        else await self.__resp_handler(res2)
-                    )
-        return None
+            if check_account:
+                return res["status"] == "ok"
+            return await self.__resp_handler(res)
 
     async def __setOptions(self, contentId, option, value):
         if self.token is None:
@@ -149,15 +135,16 @@ class GoFileUpload:
         ]:
             raise Exception(f"Invalid GoFile Option Specified: {option}")
 
+        headers = {"Authorization": f"Bearer {self.token}"}
         async with (
             ClientSession() as session,
             session.put(
                 url=f"{self.api_url}contents/{contentId}/update",
-                data={
-                    "token": self.token,
+                json={
                     "attribute": option,
                     "attributeValue": value,
                 },
+                headers=headers,
             ) as resp,
         ):
             return await self.__resp_handler(await resp.json())
@@ -195,15 +182,16 @@ class GoFileUpload:
         if self.token is None:
             raise Exception("GoFile API token not found!")
 
+        headers = {"Authorization": f"Bearer {self.token}"}
         async with (
             ClientSession() as session,
             session.post(
-                url=f"{self.api_url}contents/createFolder",
-                data={
-                    "token": self.token,
+                url=f"{self.api_url}contents/createfolder",
+                json={
                     "parentFolderId": parentFolderId,
                     "folderName": folderName,
                 },
+                headers=headers,
             ) as resp,
         ):
             return await self.__resp_handler(await resp.json())
@@ -246,7 +234,7 @@ class GoFileUpload:
         await aiorename(path, new_path)
 
         upload_file = await self.upload_aiohttp(
-            f"https://{server}.gofile.io/contents/uploadfile",
+            f"https://{server}.gofile.io/uploadfile",
             new_path,
             "file",
             req_dict,
