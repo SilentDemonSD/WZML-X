@@ -1,13 +1,10 @@
 from asyncio import create_subprocess_exec, create_subprocess_shell
 from importlib import import_module
 from os import environ, getenv, path as ospath
-
 from aiofiles import open as aiopen
 from aiofiles.os import makedirs, remove, path as aiopath
 from aioshutil import rmtree
-
 from sabnzbdapi.exception import APIResponseError
-
 from .. import (
     LOGGER,
     aria2_options,
@@ -29,14 +26,13 @@ from ..helper.ext_utils.db_handler import database
 from .config_manager import Config, BinConfig
 from .tg_client import TgClient
 from .torrent_manager import TorrentManager
+from .plugin_manager import get_plugin_manager
 
 
 async def update_qb_options():
     if not qbit_options:
         if not TorrentManager.qbittorrent:
-            LOGGER.warning(
-                "qBittorrent is not initialized. Skipping qBittorrent options update."
-            )
+            LOGGER.warning("qBittorrent is not initialized. Skipping qBittorrent options update.")
             return
         opt = await TorrentManager.qbittorrent.app.preferences()
         qbit_options.update(opt)
@@ -45,9 +41,7 @@ async def update_qb_options():
             if k.startswith("rss"):
                 del qbit_options[k]
         qbit_options["web_ui_password"] = "admin"
-        await TorrentManager.qbittorrent.app.set_preferences(
-            {"web_ui_password": "admin"}
-        )
+        await TorrentManager.qbittorrent.app.set_preferences({"web_ui_password": "admin"})
     else:
         await TorrentManager.qbittorrent.app.set_preferences(qbit_options)
 
@@ -87,17 +81,12 @@ async def load_settings():
             }
         except ModuleNotFoundError:
             config_file = {}
-        config_file.update(
-            {
-                key: value.strip() if isinstance(value, str) else value
-                for key, value in environ.items()
-                if key in var_list
-            }
-        )
-
-        old_config = await database.db.settings.deployConfig.find_one(
-            {"_id": BOT_ID}, {"_id": 0}
-        )
+        config_file.update({
+            key: value.strip() if isinstance(value, str) else value
+            for key, value in environ.items()
+            if key in var_list
+        })
+        old_config = await database.db.settings.deployConfig.find_one({"_id": BOT_ID}, {"_id": 0})
         if old_config is None:
             await database.db.settings.deployConfig.replace_one(
                 {"_id": BOT_ID}, config_file, upsert=True
@@ -341,3 +330,12 @@ async def load_configurations():
             await TorrentManager.qbittorrent.app.set_preferences(qbit_options)
         except Exception as e:
             LOGGER.error(f"Failed to configure qBittorrent: {e}")
+
+async def init_plugin_system():
+    try:
+        plugin_manager = get_plugin_manager()
+        await plugin_manager._load_registry()
+        await plugin_manager.auto_load_plugins()
+        LOGGER.info("Plugin system initialized successfully")
+    except Exception as e:
+        LOGGER.error(f"Failed to initialize plugin system: {e}")

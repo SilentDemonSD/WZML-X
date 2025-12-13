@@ -1,11 +1,9 @@
 from importlib import import_module
-
 from aiofiles import open as aiopen
 from aiofiles.os import path as aiopath
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.errors import PyMongoError
 from pymongo.server_api import ServerApi
-
 from ... import LOGGER, qbit_options, rss_dict, user_data
 from ...core.config_manager import Config
 from ...core.tg_client import TgClient
@@ -230,6 +228,55 @@ class DbManager:
         if self._return:
             return
         await self.db[name][TgClient.ID].drop()
+
+    async def save_plugin_registry(self, registry_data):
+        if self._return:
+            return
+        await self.db.plugins.registry.replace_one(
+            {"_id": TgClient.ID}, {"registry": registry_data}, upsert=True
+        )
+
+    async def load_plugin_registry(self):
+        if self._return:
+            return {}
+        doc = await self.db.plugins.registry.find_one({"_id": TgClient.ID})
+        return doc.get("registry", {}) if doc else {}
+
+    async def save_plugin_config(self, plugin_name, config_data):
+        if self._return:
+            return
+        await self.db.plugins.configs.update_one(
+            {"_id": f"{TgClient.ID}:{plugin_name}"}, 
+            {"$set": {"config": config_data}}, 
+            upsert=True
+        )
+
+    async def load_plugin_config(self, plugin_name):
+        if self._return:
+            return {}
+        doc = await self.db.plugins.configs.find_one({"_id": f"{TgClient.ID}:{plugin_name}"})
+        return doc.get("config", {}) if doc else {}
+
+    async def save_plugin_data(self, plugin_name, data):
+        if self._return:
+            return
+        await self.db.plugins.data.update_one(
+            {"_id": f"{TgClient.ID}:{plugin_name}"}, 
+            {"$set": {"data": data}}, 
+            upsert=True
+        )
+
+    async def load_plugin_data(self, plugin_name):
+        if self._return:
+            return {}
+        doc = await self.db.plugins.data.find_one({"_id": f"{TgClient.ID}:{plugin_name}"})
+        return doc.get("data", {}) if doc else {}
+
+    async def remove_plugin_data(self, plugin_name):
+        if self._return:
+            return
+        await self.db.plugins.configs.delete_one({"_id": f"{TgClient.ID}:{plugin_name}"})
+        await self.db.plugins.data.delete_one({"_id": f"{TgClient.ID}:{plugin_name}"})
 
 
 database = DbManager()

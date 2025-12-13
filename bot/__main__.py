@@ -24,6 +24,7 @@ async def main():
         update_nzb_options,
         update_qb_options,
         update_variables,
+        init_plugin_system,
     )
 
     await load_settings()
@@ -46,6 +47,7 @@ async def main():
         update_aria2_options(),
         update_nzb_options(),
     )
+    await init_plugin_system()
     from .core.jdownloader_booter import jdownloader
     from .helper.ext_utils.files_utils import clean_all
     from .helper.ext_utils.telegraph_helper import telegraph
