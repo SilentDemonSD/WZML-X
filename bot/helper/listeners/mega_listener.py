@@ -1,126 +1,158 @@
-from asyncio import Event
+from secrets import token_hex
+from aiofiles.os import makedirs
+from asyncio import create_subprocess_exec, subprocess
+from re import search as re_search
 
-from mega import MegaApi, MegaError, MegaListener, MegaRequest, MegaTransfer
-
-from ... import LOGGER
-from ..ext_utils.bot_utils import async_to_sync, sync_to_async
-
-
-class AsyncMega:
-    def __init__(self):
-        self.api = None
-        self.folder_api = None
-        self.continue_event = Event()
-
-    async def run(self, function, *args, **kwargs):
-        self.continue_event.clear()
-        await sync_to_async(function, *args, **kwargs)
-        await self.continue_event.wait()
-
-    async def logout(self):
-        await self.run(self.api.logout)
-        if self.folder_api:
-            await self.run(self.folder_api.logout)
-
-    def __getattr__(self, name):
-        attr = getattr(self.api, name)
-        if callable(attr):
-
-            async def wrapper(*args, **kwargs):
-                return await self.run(attr, *args, **kwargs)
-
-            return wrapper
-        return attr
+from ... import LOGGER, task_dict, task_dict_lock
+from ...core.config_manager import Config
+from ..ext_utils.bot_utils import cmd_exec
+from ..ext_utils.task_manager import (
+    check_running_tasks,
+    stop_duplicate_check,
+    limit_checker,
+)
+from ..mirror_leech_utils.status_utils.mega_dl_status import MegaDownloadStatus
+from ..mirror_leech_utils.status_utils.queue_status import QueueStatus
+from ..telegram_helper.message_utils import send_status_message
 
 
-class MegaAppListener(MegaListener):
-    _NO_EVENT_ON = (MegaRequest.TYPE_LOGIN, MegaRequest.TYPE_FETCH_NODES)
-
-    def __init__(self, continue_event: Event, listener):
-        self.continue_event = continue_event
-        self.node = None
-        self.public_node = None
+class MegaAppListener:
+    def __init__(self, listener):
         self.listener = listener
-        self.is_cancelled = False
-        self.error = None
-        self._bytes_transferred = 0
-        self._speed = 0
-        self._name = ""
-        super().__init__()
+        self.process = None
+        self.gid = token_hex(5)
+        self.mega_status = None
+        self.name = ""
+        self.size = 0
 
-    @property
-    def speed(self):
-        return self._speed
+    async def login(self):
+        if (MEGA_EMAIL := Config.MEGA_EMAIL) and (MEGA_PASSWORD := Config.MEGA_PASSWORD):
+            try:
+                await cmd_exec(["mega-login", MEGA_EMAIL, MEGA_PASSWORD])
+            except Exception as e:
+                LOGGER.error(f"Mega Login Failed: {e}")
+        else:
+            LOGGER.info("MegaCmd: Skipping login (No credentials). Proceeding anonymously.")
 
-    @property
-    def downloaded_bytes(self):
-        return self._bytes_transferred
-
-    def onRequestFinish(self, api, request, error):
-        if str(error).lower() != "no error":
-            self.error = error.copy()
-            if str(self.error).casefold() != "not found":
-                LOGGER.error(f"Mega onRequestFinishError: {self.error}")
-            self.continue_event.set()
-            return
-
-        request_type = request.getType()
-
-        if request_type == MegaRequest.TYPE_LOGIN:
-            api.fetchNodes()
-        elif request_type == MegaRequest.TYPE_GET_PUBLIC_NODE:
-            self.public_node = request.getPublicMegaNode()
-            self._name = self.public_node.getName()
-        elif request_type == MegaRequest.TYPE_FETCH_NODES:
-            LOGGER.info("Fetching Root Node.")
-            self.node = api.getRootNode()
-            self._name = self.node.getName()
-            LOGGER.info(f"Node Name: {self.node.getName()}")
-
-        if request_type not in self._NO_EVENT_ON or (
-            self.node and "cloud drive" not in self._name.lower()
-        ):
-            self.continue_event.set()
-
-    def onRequestTemporaryError(self, api, request, error: MegaError):
-        LOGGER.error(f"Mega Request error in {error}")
-        if not self.is_cancelled:
-            self.is_cancelled = True
-            async_to_sync(
-                self.listener.on_download_error, f"RequestTempError: {error.toString()}"
-            )
-        self.error = error.toString()
-        self.continue_event.set()
-
-    def onTransferUpdate(self, api: MegaApi, transfer: MegaTransfer):
-        if self.is_cancelled:
-            api.cancelTransfer(transfer, None)
-            self.continue_event.set()
-            return
-        self._speed = transfer.getSpeed()
-        self._bytes_transferred = transfer.getTransferredBytes()
-
-    def onTransferFinish(self, api: MegaApi, transfer: MegaTransfer, error):
+    async def get_metadata(self):
         try:
-            if self.is_cancelled:
-                self.continue_event.set()
-            elif transfer.isFinished() and (
-                transfer.isFolderTransfer() or transfer.getFileName() == self._name
-            ):
-                async_to_sync(self.listener.on_download_complete)
-                self.continue_event.set()
+            # -l provides details. Expected format varies but contains metadata or file list.
+            stdout, stderr, ret = await cmd_exec(["mega-ls", "-l", self.listener.link])
+            if ret != 0 or not stdout:
+                LOGGER.error(f"Mega metadata fetch failed: {stderr}")
+                return
+
+            lines = stdout.strip().split('\n')
+            is_file_link = "file" in self.listener.link or "/#" in self.listener.link
+            
+            if is_file_link:
+                # Regex to match file details line:
+                # Format: permissions type size date time name
+                # Example: -rwxr-x--- 1 file 1234567 2023-01-01 12:00 filename.ext
+                match = re_search(r'\s(\d+)\s\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\s(.*)$', lines[0])
+                if match:
+                    self.size = int(match.group(1))
+                    self.name = match.group(2).strip()
+            else:
+                # Folder link logic could go here
+                pass
+
         except Exception as e:
-            LOGGER.error(e)
+            LOGGER.error(f"Metadata parsing error: {e}")
 
-    def onTransferTemporaryError(self, api, transfer, error):
-        LOGGER.error(f"Mega download error in file {transfer.getFileName()}: {error}")
-        if transfer.getState() in [1, 4]:
+        if not self.name:
+            self.name = self.listener.name or f"MEGA_Download_{token_hex(2)}"
+        
+        self.listener.name = self.name
+        self.listener.size = self.size
+
+    async def download(self, path):
+        await self.login()
+        await self.get_metadata()
+
+        msg, button = await stop_duplicate_check(self.listener)
+        if msg:
+            await self.listener.on_download_error(msg, button)
             return
-        self.error = f"TransferTempError: {error.toString()} ({transfer.getFileName()})"
-        if not self.is_cancelled:
-            self.is_cancelled = True
-            self.continue_event.set()
 
+        if limit_exceeded := await limit_checker(self.listener):
+            await self.listener.on_download_error(limit_exceeded, is_limit=True)
+            return
+
+        added_to_queue, event = await check_running_tasks(self.listener)
+        if added_to_queue:
+            LOGGER.info(f"Added to Queue/Download: {self.name}")
+            async with task_dict_lock:
+                task_dict[self.listener.mid] = QueueStatus(self.listener, self.gid, "Dl")
+            await self.listener.on_download_start()
+            if self.listener.multi <= 1:
+                await send_status_message(self.listener.message)
+            await event.wait()
+            if self.listener.is_cancelled:
+                return
+
+        self.mega_status = MegaDownloadStatus(self.listener, None, self.gid, "dl")
+        async with task_dict_lock:
+            task_dict[self.listener.mid] = self.mega_status
+
+        if added_to_queue:
+            LOGGER.info(f"Start Queued Download from Mega: {self.name}")
+        else:
+            LOGGER.info(f"Download from Mega: {self.name}")
+            await self.listener.on_download_start()
+            if self.listener.multi <= 1:
+                await send_status_message(self.listener.message)
+
+        await makedirs(path, exist_ok=True)
+        
+        command = ["mega-get", self.listener.link, path]
+        
+        self.process = await create_subprocess_exec(
+            *command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+        
+        while True:
+            try:
+                line_bytes = await self.process.stdout.readuntil(b'\r')
+            except Exception:
+                break
+            
+            line = line_bytes.decode().strip()
+            if not line:
+                if self.process.returncode is not None:
+                    break
+                continue
+
+            self._parse_progress(line)
+            
+            if self.process.returncode is not None:
+                break
+        
+        await self.process.wait()
+        
+        if self.process.returncode == 0:
+            await self.listener.on_download_complete()
+        else:
+            await self.listener.on_download_error(f"MegaCMD exited with {self.process.returncode}")
+
+    def _parse_progress(self, line):
+        pct_match = re_search(r"\((\d+\.?\d*)%\)", line)
+        if pct_match:
+            pct = float(pct_match.group(1))
+            if self.size > 0:
+                self.mega_status._downloaded_bytes = int(self.size * pct / 100)
+        
+        speed_match = re_search(r"(\d+\.?\d*)\s([KMGT]?B)/s", line)
+        if speed_match:
+            val = float(speed_match.group(1))
+            unit = speed_match.group(2)
+            multipliers = {'K': 1024, 'M': 1024**2, 'G': 1024**3, 'T': 1024**4, 'B': 1}
+            unit_char = unit[0].upper()
+            mult = multipliers.get(unit_char, 1)
+            self.mega_status._speed = int(val * mult)
+            
     async def cancel_task(self):
-        self.is_cancelled = True
-        await self.listener.on_download_error("Download Canceled by user")
+        if self.process:
+            self.process.kill()
