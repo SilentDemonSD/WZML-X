@@ -54,7 +54,7 @@ commands = {
     ),
     "7z": (["7z", "i"], r"7-Zip ([\d.]+)"),
     "aiohttp": (["uv", "pip", "show", "aiohttp"], r"Version: ([\d.]+)"),
-    "pyrofork": (["uv", "pip", "show", "pyrofork"], r"Version: ([\d.]+)"),
+    "pyrotgfork": (["uv", "pip", "show", "pyrotgfork"], r"Version: ([\d.]+)"),
     "gapi": (["uv", "pip", "show", "google-api-python-client"], r"Version: ([\d.]+)"),
     "mega": (["pip", "show", "megasdk"], r"Version: ([\d.]+)"),
 }
@@ -157,7 +157,7 @@ async def get_stats(event, key="home"):
 ┠ <b>ffmpeg:</b> {bot_cache["eng_versions"]["ffmpeg"]}
 ┠ <b>7z:</b> {bot_cache["eng_versions"]["7z"]}
 ┠ <b>Aiohttp:</b> {bot_cache["eng_versions"]["aiohttp"]}
-┠ <b>Pyrofork:</b> {bot_cache["eng_versions"]["pyrofork"]}
+┠ <b>PyroTgFork:</b> {bot_cache["eng_versions"]["pyrotgfork"]}
 ┠ <b>Google API:</b> {bot_cache["eng_versions"]["gapi"]}
 ┖ <b>Mega SDK:</b> {bot_cache["eng_versions"]["mega"]}
 """
