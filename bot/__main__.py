@@ -28,9 +28,15 @@ async def main():
 
     await load_settings()
 
-    def changetz(*args):
-        return datetime.now(timezone(Config.TIMEZONE)).timetuple()
+    try:
+        tz = timezone(Config.TIMEZONE)
+    except Exception:
+        from pytz import utc
 
+        tz = utc
+
+    def changetz(*args):
+        return datetime.now(tz).timetuple()
     Formatter.converter = changetz
 
     await gather(
