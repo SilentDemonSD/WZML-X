@@ -1,3 +1,4 @@
+from time import time
 from secrets import token_hex
 from aiofiles.os import makedirs
 from asyncio import create_subprocess_exec, subprocess
@@ -11,7 +12,7 @@ from ..ext_utils.task_manager import (
     stop_duplicate_check,
     limit_checker,
 )
-from ..mirror_leech_utils.status_utils.mega_dl_status import MegaDownloadStatus
+from ..mirror_leech_utils.status_utils.mega_status import MegaDownloadStatus
 from ..mirror_leech_utils.status_utils.queue_status import QueueStatus
 from ..telegram_helper.message_utils import send_status_message
 
@@ -26,6 +27,8 @@ class MegaAppListener:
         self.size = 0
         self.temp_path = f"/wzml_{self.gid}"
         self.is_cancelled = False
+        self._last_time = time()
+        self._val_last = 0
 
     async def login(self):
         if (MEGA_EMAIL := Config.MEGA_EMAIL) and (
@@ -57,9 +60,6 @@ class MegaAppListener:
         if not lines:
             raise Exception("Mega Import: No items found")
 
-        # Parse: FLAGS VERS SIZE DATE TIME NAME
-        # Sample: ---- 1 1290207679 15Jun2025 18:10:36 Name.rar
-        # Regex matches: Size (Number/-), Date (Any non-space), Time (XX:XX:XX), Name (Rest)
         for line in lines:
             match = re_search(r"\s(\d+|-)\s+\S+\s+\d{2}:\d{2}:\d{2}\s+(.*)$", line)
             if match:
@@ -171,21 +171,27 @@ class MegaAppListener:
             await self.cleanup()
 
     def _parse_progress(self, line):
-        LOGGER.info(f"MegaCMD Progress: {line}")
-
         multipliers = {"K": 1024, "M": 1024**2, "G": 1024**3, "T": 1024**4, "B": 1}
         match = re_search(r"\(([\d\.]+)/([\d\.]+)\s([KMGT]?B)", line)
         if match:
             dl_val = float(match.group(1))
-            total_val = float(match.group(2))
-            unit = match.group(3)
-            unit_char = unit[0].upper()
+            unit_char = (match.group(3))[0].upper()
             mult = multipliers.get(unit_char, 1)
             self.mega_status._downloaded_bytes = int(dl_val * mult)
-            self.mega_status._size = int(total_val * mult)
-            self.listener.size = self.mega_status._size
 
-            LOGGER.info(f"MegaCMD Size: {match.group(1)}/{match.group(2)}")
+            if not self.listener.size or self.listener.size == 0:
+                total_val = float(match.group(2))
+                self.mega_status._size = int(total_val * mult)
+                self.listener.size = self.mega_status._size
+
+            cur_time = time()
+            if cur_time - self._last_time >= 2:
+                self.mega_status._speed = int(
+                    (self.mega_status._downloaded_bytes - self._val_last)
+                    / (cur_time - self._last_time)
+                )
+                self._last_time = cur_time
+                self._val_last = self.mega_status._downloaded_bytes
 
     async def cancel_task(self):
         self.is_cancelled = True

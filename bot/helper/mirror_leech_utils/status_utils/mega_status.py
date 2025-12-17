@@ -9,7 +9,6 @@ from ...ext_utils.status_utils import (
 class MegaDownloadStatus:
     def __init__(self, listener, obj, gid, status):
         self.listener = listener
-        self.listener = listener
         self._gid = gid
         self._status = status
         self._speed = 0
