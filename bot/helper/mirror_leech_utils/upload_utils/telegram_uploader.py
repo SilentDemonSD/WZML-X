@@ -502,7 +502,7 @@ class TelegramUploader:
                     quote=True,
                     thumb=thumb,
                     caption=cap_mono,
-                    force_document=True,
+                    disable_content_type_detection=True,
                     disable_notification=True,
                     progress=self._upload_progress,
                 )
