@@ -163,35 +163,31 @@ class MegaAppListener:
             await self.cleanup()
 
     def _parse_progress(self, line):
-        # Format: TRANSFERRING ||...||(31/1230 MB:   2.53 %)
-        # Regex: \(([\d\.]+)/([\d\.]+)\s([KMGT]?B):\s*([\d\.]+)%\)
-        # Group 1: DL, Group 2: Total, Group 3: Unit, Group 4: Pct
-        
-        match = re_search(r'\(([\d\.]+)/([\d\.]+)\s([KMGT]?B):\s*([\d\.]+)%\)', line)
+        LOGGER.info(f"MegaCMD Progress: {line}")
+
+        multipliers = {'K': 1024, 'M': 1024**2, 'G': 1024**3, 'T': 1024**4, 'B': 1}
+        match = re_search(r'\(([\d\.]+)/([\d\.]+)\s([KMGT]?B)', line)
         if match:
             dl_val = float(match.group(1))
             total_val = float(match.group(2))
             unit = match.group(3)
-            pct = float(match.group(4))
-            
-            multipliers = {'K': 1024, 'M': 1024**2, 'G': 1024**3, 'T': 1024**4, 'B': 1}
             unit_char = unit[0].upper()
             mult = multipliers.get(unit_char, 1)
-            
-            current_bytes = int(dl_val * mult)
-            self.mega_status._downloaded_bytes = current_bytes
-            
-            # self.listener.size = int(total_val * mult)
-            
+            self.mega_status._downloaded_bytes = int(dl_val * mult)
+            self.mega_status._size = int(total_val * mult)
+            self.listener.size = self.mega_status._size
+
         speed_match = re_search(r'(\d+\.?\d*)\s([KMGT]?B)/s', line)
         if speed_match:
-             val = float(speed_match.group(1))
-             unit = speed_match.group(2)
-             multipliers = {'K': 1024, 'M': 1024**2, 'G': 1024**3, 'T': 1024**4, 'B': 1}
-             unit_char = unit[0].upper()
-             mult = multipliers.get(unit_char, 1)
-             self.mega_status._speed = int(val * mult)
-            
+            val = float(speed_match.group(1))
+            unit = speed_match.group(2)
+            unit_char = unit[0].upper()
+            mult = multipliers.get(unit_char, 1)
+            self.mega_status._speed = int(val * mult)
+
+        LOGGER.info(f"MegaCMD Size: {match.group(1)}/{match.group(2)} ({match.group(3)}/s)")
+        LOGGER.info(f"MegaCMD Speed: {speed_match.group(1)}/{speed_match.group(2)}")
+    
     async def cancel_task(self):
         self.is_cancelled = True
         if self.process:

@@ -56,7 +56,7 @@ commands = {
     "aiohttp": (["uv", "pip", "show", "aiohttp"], r"Version: ([\d.]+)"),
     "pyrotgfork": (["uv", "pip", "show", "pyrotgfork"], r"Version: ([\d.]+)"),
     "gapi": (["uv", "pip", "show", "google-api-python-client"], r"Version: ([\d.]+)"),
-    "mega": (["pip", "show", "megasdk"], r"Version: ([\d.]+)"),
+    "mega": (["mega-version"], r"version: ([\d.]+)"),
 }
 
 
