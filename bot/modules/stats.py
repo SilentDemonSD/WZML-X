@@ -1,4 +1,4 @@
-from asyncio import gather, sleep
+from asyncio import gather, sleep, wait_for, TimeoutError
 from platform import platform, version
 from re import search as research
 from time import time
@@ -21,7 +21,7 @@ from psutil import (
     AccessDenied,
 )
 
-from .. import LOGGER, bot_cache, bot_start_time
+from .. import LOGGER, bot_cache, bot_start_time, bot_loop
 from ..core.config_manager import Config, BinConfig
 from ..helper.ext_utils.bot_utils import cmd_exec, compare_versions, new_task
 from ..helper.ext_utils.status_utils import (
@@ -284,15 +284,28 @@ async def stats_pages(_, query):
         await edit_message(message, msg, btns)
 
 
-async def get_version_async(command, regex):
+async def get_version_async(command, regex, timeout=5):
     try:
-        out, err, code = await cmd_exec(command)
+        out, err, code = await wait_for(cmd_exec(command), timeout=timeout)
         if code != 0:
             return f"Error: {err}"
         match = research(regex, out)
         return match.group(1) if match else "-"
+    except TimeoutError:
+        return "Timeout"
     except Exception as e:
         return f"Exception: {str(e)}"
+
+
+async def retry_mega_version():
+    await sleep(60)
+    command, regex = commands["mega"]
+    version = await get_version_async(command, regex, timeout=10)
+    if version != "Timeout" and not version.startswith("Exception"):
+        bot_cache["eng_versions"]["mega"] = version
+        LOGGER.info(f"MegaCMD Version Fetched: {version}")
+    else:
+        LOGGER.warning(f"Failed to fetch MegaCMD Version: {version}")
 
 
 @new_task
@@ -310,4 +323,10 @@ async def get_packages_version():
     else:
         last_commit = "No UPSTREAM_REPO"
     bot_cache["commit"] = last_commit
+
+    if bot_cache["eng_versions"]["mega"] in ["Timeout", "N/A"] or bot_cache[
+        "eng_versions"
+    ]["mega"].startswith("Exception"):
+        bot_loop.create_task(retry_mega_version())
+
     LOGGER.info("Fetched Package Versions!")
