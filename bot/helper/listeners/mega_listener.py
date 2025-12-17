@@ -7,7 +7,7 @@ from contextlib import suppress
 
 from ... import LOGGER, task_dict, task_dict_lock
 from ...core.config_manager import Config
-from ...core.mirror_leech_utils.status_utils import MirrorStatus
+from ..ext_utils.status_utils import MirrorStatus
 from ..ext_utils.bot_utils import cmd_exec
 from ..ext_utils.task_manager import (
     check_running_tasks,
