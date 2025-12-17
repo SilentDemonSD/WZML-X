@@ -295,6 +295,7 @@ async def get_version_async(command, regex):
         return f"Exception: {str(e)}"
 
 
+@new_task
 async def get_packages_version():
     tasks = [get_version_async(command, regex) for command, regex in commands.values()]
     versions = await gather(*tasks)
