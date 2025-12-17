@@ -198,6 +198,7 @@ class MegaAppListener:
                 self._val_last = self.mega_status._downloaded_bytes
 
     async def cancel_task(self):
+        LOGGER.info(f"Cancelling {self.mega_status._status}: {self.name}")
         self.is_cancelled = True
         if self.process is not None:
             with suppress(Exception):

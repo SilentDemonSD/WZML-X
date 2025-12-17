@@ -1,4 +1,3 @@
-from ... import LOGGER
 from ...ext_utils.status_utils import (
     EngineStatus,
     MirrorStatus,
@@ -56,6 +55,5 @@ class MegaDownloadStatus:
         return self
 
     async def cancel_task(self):
-        LOGGER.info(f"Cancelling {self._status}: {self.listener.name}")
         await self.listener.cancel_task()
         await self.listener.on_download_error(f"{self._status} stopped by user!")
