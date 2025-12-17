@@ -37,6 +37,7 @@ async def main():
 
     def changetz(*args):
         return datetime.now(tz).timetuple()
+
     Formatter.converter = changetz
 
     await gather(
