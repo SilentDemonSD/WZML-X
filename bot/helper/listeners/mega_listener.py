@@ -43,7 +43,8 @@ class MegaAppListener:
         self.name = ""
         self.size = 0
         self.temp_path = f"/wzml_{self.gid}"
-        self.mega_tag = None
+        self.mega_tags = set()
+        self._is_cleaned = False
         self._last_time = time()
         self._val_last = 0
         mega_tasks[self.gid] = self.temp_path
@@ -100,6 +101,9 @@ class MegaAppListener:
         return f"{self.temp_path}/{self.name}"
 
     async def cleanup(self):
+        if self._is_cleaned:
+            return
+        self._is_cleaned = True
         try:
             LOGGER.info(f"Cleaning up Mega Task: {self.name}")
             await cmd_exec(["mega-rm", "-r", "-f", self.temp_path])
@@ -178,7 +182,6 @@ class MegaAppListener:
                     self._parse_progress(line)
                 except TimeoutError:
                     await self.update_daemon_status()
-                    # Check if process died during timeout
                     if self.process.returncode is not None:
                         break
                     continue
@@ -191,6 +194,7 @@ class MegaAppListener:
             await self.process.wait()
 
             if self.process.returncode == 0:
+                await self.cleanup()
                 await self.listener.on_download_complete()
             else:
                 if self.listener.is_cancelled:
@@ -237,10 +241,11 @@ class MegaAppListener:
                 if self.gid in line:
                     parts = line.split("|")
                     if len(parts) > 1:
-                        self.mega_tag = parts[1].strip()
+                        self.mega_tags.add(parts[1].strip())
                         if len(parts) > 4:
-                            self.mega_status._status = parts[5].strip()
-                    break
+                            status = parts[5].strip().capitalize()
+                            if self.mega_status._status != "Downloading":
+                                self.mega_status._status = status
         except Exception:
             pass
 
@@ -248,25 +253,29 @@ class MegaAppListener:
         LOGGER.info(f"Cancelling {self.mega_status._status}: {self.name}")
         self.listener.is_cancelled = True
 
-        if self.mega_tag:
+        await self.update_daemon_status()
+
+        for tag in self.mega_tags:
             try:
-                LOGGER.info(f"Cancelling Transfer Tag: {self.mega_tag}")
-                await cmd_exec(["mega-transfers", "-c", self.mega_tag])
+                LOGGER.info(f"Cancelling Transfer Tag: {tag}")
+                await cmd_exec(["mega-transfers", "-c", tag])
             except Exception as e:
-                LOGGER.error(f"Mega Transfer Cancel Failed: {e}")
-        else:
-            try:
-                stdout, _, _ = await cmd_exec(["mega-transfers"])
-                for line in stdout.splitlines():
-                    if self.gid in line:
-                        parts = line.split()
-                        if len(parts) > 1 and (tag := parts[1]):
-                            self.mega_tag = tag
-                            LOGGER.info(f"Cancelling Transfer Tag: {tag}")
-                            await cmd_exec(["mega-transfers", "-c", tag])
-                        break
-            except Exception as e:
-                LOGGER.error(f"Mega Transfer Cancel Failed: {e}")
+                LOGGER.error(f"Mega Transfer Cancel Failed for {tag}: {e}")
+
+        try:
+            stdout, _, _ = await cmd_exec(["mega-transfers"])
+            for line in stdout.splitlines():
+                if self.gid in line:
+                    parts = line.split()
+                    if (
+                        len(parts) > 1
+                        and (tag := parts[1])
+                        and tag not in self.mega_tags
+                    ):
+                        LOGGER.info(f"Cancelling Straggler Tag: {tag}")
+                        await cmd_exec(["mega-transfers", "-c", tag])
+        except Exception as e:
+            LOGGER.error(f"Mega Final Cancel Check Failed: {e}")
 
         if self.process is not None:
             with suppress(Exception):
