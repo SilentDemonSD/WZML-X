@@ -50,5 +50,5 @@ class MegaDownloadStatus:
     def gid(self):
         return self._gid
 
-    def task(self):
-        return self
+    async def cancel_task(self):
+        await self.listener.cancel_task()

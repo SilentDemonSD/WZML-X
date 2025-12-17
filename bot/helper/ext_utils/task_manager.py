@@ -172,7 +172,7 @@ async def limit_checker(listener, yt_playlist=0):
         LOGGER.info("SUDO User. Skipping Size Limit...")
         return
 
-    user_id, size = listener.user_id, listener.size
+    _user_id, size = listener.user_id, listener.size
 
     async def recurr_limits(limits):
         nonlocal yt_playlist, size
