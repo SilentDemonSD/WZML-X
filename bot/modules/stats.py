@@ -159,7 +159,7 @@ async def get_stats(event, key="home"):
 ┠ <b>Aiohttp:</b> {bot_cache["eng_versions"]["aiohttp"]}
 ┠ <b>PyroTgFork:</b> {bot_cache["eng_versions"]["pyrotgfork"]}
 ┠ <b>Google API:</b> {bot_cache["eng_versions"]["gapi"]}
-┖ <b>Mega SDK:</b> {bot_cache["eng_versions"]["mega"]}
+┖ <b>Mega CMD:</b> {bot_cache["eng_versions"]["mega"]}
 """
     elif key == "tlimits":
         msg = f"""⌬ <b><i>Bot Task Limits :</i></b>
