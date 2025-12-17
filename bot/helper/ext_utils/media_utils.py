@@ -24,7 +24,6 @@ from .files_utils import get_mime_type, is_archive, is_archive_split
 from .status_utils import time_to_seconds
 
 
-
 def get_md5_hash(up_path):
     md5_hash = md5()
     with open(up_path, "rb") as f:
