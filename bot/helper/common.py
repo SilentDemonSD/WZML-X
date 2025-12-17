@@ -140,7 +140,7 @@ class TaskConfig:
         self.thumb = None
         self.excluded_extensions = []
         self.files_to_proceed = []
-        self.is_super_chat = self.message.chat.type.name in ["SUPERGROUP", "CHANNEL"]
+        self.is_super_chat = self.message.chat.type.name in ["SUPERGROUP", "CHANNEL", "FORUM"]
         self.source_url = None
         self.bot_pm = Config.BOT_PM or self.user_dict.get("BOT_PM")
         self.pm_msg = None
