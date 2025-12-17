@@ -26,13 +26,17 @@ class MegaAppListener:
         self.size = 0
 
     async def login(self):
-        if (MEGA_EMAIL := Config.MEGA_EMAIL) and (MEGA_PASSWORD := Config.MEGA_PASSWORD):
+        if (MEGA_EMAIL := Config.MEGA_EMAIL) and (
+            MEGA_PASSWORD := Config.MEGA_PASSWORD
+        ):
             try:
                 await cmd_exec(["mega-login", MEGA_EMAIL, MEGA_PASSWORD])
             except Exception as e:
                 LOGGER.error(f"Mega Login Failed: {e}")
         else:
-            LOGGER.info("MegaCmd: Skipping login (No credentials). Proceeding anonymously.")
+            LOGGER.info(
+                "MegaCmd: Skipping login (No credentials). Proceeding anonymously."
+            )
 
     async def get_metadata(self):
         try:
@@ -42,14 +46,16 @@ class MegaAppListener:
                 LOGGER.error(f"Mega metadata fetch failed: {stderr}")
                 return
 
-            lines = stdout.strip().split('\n')
+            lines = stdout.strip().split("\n")
             is_file_link = "file" in self.listener.link or "/#" in self.listener.link
-            
+
             if is_file_link:
                 # Regex to match file details line:
                 # Format: permissions type size date time name
                 # Example: -rwxr-x--- 1 file 1234567 2023-01-01 12:00 filename.ext
-                match = re_search(r'\s(\d+)\s\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\s(.*)$', lines[0])
+                match = re_search(
+                    r"\s(\d+)\s\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\s(.*)$", lines[0]
+                )
                 if match:
                     self.size = int(match.group(1))
                     self.name = match.group(2).strip()
@@ -62,7 +68,7 @@ class MegaAppListener:
 
         if not self.name:
             self.name = self.listener.name or f"MEGA_Download_{token_hex(2)}"
-        
+
         self.listener.name = self.name
         self.listener.size = self.size
 
@@ -83,7 +89,9 @@ class MegaAppListener:
         if added_to_queue:
             LOGGER.info(f"Added to Queue/Download: {self.name}")
             async with task_dict_lock:
-                task_dict[self.listener.mid] = QueueStatus(self.listener, self.gid, "Dl")
+                task_dict[self.listener.mid] = QueueStatus(
+                    self.listener, self.gid, "Dl"
+                )
             await self.listener.on_download_start()
             if self.listener.multi <= 1:
                 await send_status_message(self.listener.message)
@@ -104,21 +112,21 @@ class MegaAppListener:
                 await send_status_message(self.listener.message)
 
         await makedirs(path, exist_ok=True)
-        
+
         command = ["mega-get", self.listener.link, path]
-        
+
         self.process = await create_subprocess_exec(
             *command,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
         )
-        
+
         while True:
             try:
-                line_bytes = await self.process.stdout.readuntil(b'\r')
+                line_bytes = await self.process.stdout.readuntil(b"\r")
             except Exception:
                 break
-            
+
             line = line_bytes.decode().strip()
             if not line:
                 if self.process.returncode is not None:
@@ -126,16 +134,18 @@ class MegaAppListener:
                 continue
 
             self._parse_progress(line)
-            
+
             if self.process.returncode is not None:
                 break
-        
+
         await self.process.wait()
-        
+
         if self.process.returncode == 0:
             await self.listener.on_download_complete()
         else:
-            await self.listener.on_download_error(f"MegaCMD exited with {self.process.returncode}")
+            await self.listener.on_download_error(
+                f"MegaCMD exited with {self.process.returncode}"
+            )
 
     def _parse_progress(self, line):
         pct_match = re_search(r"\((\d+\.?\d*)%\)", line)
@@ -143,16 +153,16 @@ class MegaAppListener:
             pct = float(pct_match.group(1))
             if self.size > 0:
                 self.mega_status._downloaded_bytes = int(self.size * pct / 100)
-        
+
         speed_match = re_search(r"(\d+\.?\d*)\s([KMGT]?B)/s", line)
         if speed_match:
             val = float(speed_match.group(1))
             unit = speed_match.group(2)
-            multipliers = {'K': 1024, 'M': 1024**2, 'G': 1024**3, 'T': 1024**4, 'B': 1}
+            multipliers = {"K": 1024, "M": 1024**2, "G": 1024**3, "T": 1024**4, "B": 1}
             unit_char = unit[0].upper()
             mult = multipliers.get(unit_char, 1)
             self.mega_status._speed = int(val * mult)
-            
+
     async def cancel_task(self):
         if self.process:
             self.process.kill()
