@@ -27,7 +27,6 @@ class MegaAppListener:
         self.name = ""
         self.size = 0
         self.temp_path = f"/wzml_{self.gid}"
-        self.is_cancelled = False
         self._last_time = time()
         self._val_last = 0
 
@@ -118,7 +117,7 @@ class MegaAppListener:
                 if self.listener.is_cancelled:
                     return
 
-            self.mega_status = MegaDownloadStatus(self.listener, None, self.gid, "dl")
+            self.mega_status = MegaDownloadStatus(self.listener, self, self.gid, "dl")
             async with task_dict_lock:
                 task_dict[self.listener.mid] = self.mega_status
 
@@ -141,7 +140,7 @@ class MegaAppListener:
             )
 
             while True:
-                if self.is_cancelled:
+                if self.listener.is_cancelled:
                     break
 
                 try:
@@ -199,7 +198,7 @@ class MegaAppListener:
 
     async def cancel_task(self):
         LOGGER.info(f"Cancelling {self.mega_status._status}: {self.name}")
-        self.is_cancelled = True
+        self.listener.is_cancelled = True
         if self.process is not None:
             with suppress(Exception):
                 self.process.kill()

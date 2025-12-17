@@ -55,5 +55,5 @@ class MegaDownloadStatus:
         return self
 
     async def cancel_task(self):
-        await self.listener.cancel_task()
+        await self._obj.cancel_task()
         await self.listener.on_download_error(f"{self._status} stopped by user!")

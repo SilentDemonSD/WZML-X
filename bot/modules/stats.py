@@ -21,7 +21,7 @@ from psutil import (
     AccessDenied,
 )
 
-from .. import bot_cache, bot_start_time
+from .. import LOGGER, bot_cache, bot_start_time
 from ..core.config_manager import Config, BinConfig
 from ..helper.ext_utils.bot_utils import cmd_exec, compare_versions, new_task
 from ..helper.ext_utils.status_utils import (
@@ -146,20 +146,21 @@ async def get_stats(event, key="home"):
 ⌬ <b>REMARKS :</b> <code>{compare_versions(get_version(), official_v)}</code>
     """
     elif key == "stpkgs":
+        ver = bot_cache.get("eng_versions", {})
         msg = f"""⌬ <b><i>Packages Statistics :</i></b>
 │
-┟ <b>python:</b> {bot_cache["eng_versions"]["python"]}
-┠ <b>aria2:</b> {bot_cache["eng_versions"]["aria2"]}
-┠ <b>qBittorrent:</b> {bot_cache["eng_versions"]["qBittorrent"]}
-┠ <b>SABnzbd+:</b> {bot_cache["eng_versions"]["SABnzbd+"]}
-┠ <b>rclone:</b> {bot_cache["eng_versions"]["rclone"]}
-┠ <b>yt-dlp:</b> {bot_cache["eng_versions"]["yt-dlp"]}
-┠ <b>ffmpeg:</b> {bot_cache["eng_versions"]["ffmpeg"]}
-┠ <b>7z:</b> {bot_cache["eng_versions"]["7z"]}
-┠ <b>Aiohttp:</b> {bot_cache["eng_versions"]["aiohttp"]}
-┠ <b>PyroTgFork:</b> {bot_cache["eng_versions"]["pyrotgfork"]}
-┠ <b>Google API:</b> {bot_cache["eng_versions"]["gapi"]}
-┖ <b>Mega CMD:</b> {bot_cache["eng_versions"]["mega"]}
+┟ <b>python:</b> {ver.get("python", "N/A")}
+┠ <b>aria2:</b> {ver.get("aria2", "N/A")}
+┠ <b>qBittorrent:</b> {ver.get("qBittorrent", "N/A")}
+┠ <b>SABnzbd+:</b> {ver.get("SABnzbd+", "N/A")}
+┠ <b>rclone:</b> {ver.get("rclone", "N/A")}
+┠ <b>yt-dlp:</b> {ver.get("yt-dlp", "N/A")}
+┠ <b>ffmpeg:</b> {ver.get("ffmpeg", "N/A")}
+┠ <b>7z:</b> {ver.get("7z", "N/A")}
+┠ <b>Aiohttp:</b> {ver.get("aiohttp", "N/A")}
+┠ <b>PyroTgFork:</b> {ver.get("pyrotgfork", "N/A")}
+┠ <b>Google API:</b> {ver.get("gapi", "N/A")}
+┖ <b>Mega CMD:</b> {ver.get("mega", "N/A")}
 """
     elif key == "tlimits":
         msg = f"""⌬ <b><i>Bot Task Limits :</i></b>
@@ -294,7 +295,6 @@ async def get_version_async(command, regex):
         return f"Exception: {str(e)}"
 
 
-@new_task
 async def get_packages_version():
     tasks = [get_version_async(command, regex) for command, regex in commands.values()]
     versions = await gather(*tasks)
@@ -309,3 +309,4 @@ async def get_packages_version():
     else:
         last_commit = "No UPSTREAM_REPO"
     bot_cache["commit"] = last_commit
+    LOGGER.info("Fetched Package Versions!")
