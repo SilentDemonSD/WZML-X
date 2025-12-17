@@ -3,6 +3,7 @@ from secrets import token_hex
 from aiofiles.os import makedirs
 from asyncio import create_subprocess_exec, subprocess
 from re import search as re_search
+from contextlib import suppress
 
 from ... import LOGGER, task_dict, task_dict_lock
 from ...core.config_manager import Config
@@ -140,6 +141,9 @@ class MegaAppListener:
             )
 
             while True:
+                if self.is_cancelled:
+                    break
+
                 try:
                     line_bytes = await self.process.stdout.readuntil(b"\r")
                 except Exception:
@@ -195,5 +199,6 @@ class MegaAppListener:
 
     async def cancel_task(self):
         self.is_cancelled = True
-        if self.process:
-            self.process.kill()
+        if self.process is not None:
+            with suppress(Exception):
+                self.process.kill()

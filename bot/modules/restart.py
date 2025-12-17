@@ -135,6 +135,7 @@ async def confirm_restart(_, query):
         if st := intervals["status"]:
             for intvl in list(st.values()):
                 intvl.cancel()
+        # mega acc cleanup
         await clean_all()
         await TorrentManager.close_all()
         if sabnzbd_client.LOGGED_IN:

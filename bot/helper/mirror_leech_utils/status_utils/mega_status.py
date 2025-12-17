@@ -1,3 +1,4 @@
+from ... import LOGGER
 from ...ext_utils.status_utils import (
     EngineStatus,
     MirrorStatus,
@@ -7,8 +8,9 @@ from ...ext_utils.status_utils import (
 
 
 class MegaDownloadStatus:
-    def __init__(self, listener, obj, gid, status):
+    def __init__(self, listener, obj, gid, status=""):
         self.listener = listener
+        self._obj = obj
         self._gid = gid
         self._status = status
         self._speed = 0
@@ -50,5 +52,10 @@ class MegaDownloadStatus:
     def gid(self):
         return self._gid
 
+    def task(self):
+        return self
+
     async def cancel_task(self):
+        LOGGER.info(f"Cancelling {self._status}: {self.listener.name}")
         await self.listener.cancel_task()
+        await self.listener.on_download_error(f"{self._status} stopped by user!")
