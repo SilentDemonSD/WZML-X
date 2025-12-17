@@ -1,12 +1,13 @@
 from time import time
 from secrets import token_hex
 from aiofiles.os import makedirs
-from asyncio import create_subprocess_exec, subprocess
+from asyncio import create_subprocess_exec, subprocess, wait_for
 from re import search as re_search
 from contextlib import suppress
 
 from ... import LOGGER, task_dict, task_dict_lock
 from ...core.config_manager import Config
+from ...core.mirror_leech_utils.status_utils import MirrorStatus
 from ..ext_utils.bot_utils import cmd_exec
 from ..ext_utils.task_manager import (
     check_running_tasks,
@@ -22,11 +23,14 @@ mega_tasks = {}
 
 
 async def mega_cleanup():
+    if not mega_tasks:
+        return
+    LOGGER.info("Running Mega Cleanup...")
     for path in list(mega_tasks.values()):
         try:
             await cmd_exec(["mega-rm", "-r", "-f", path])
         except Exception as e:
-            LOGGER.error(f"Mega Restart Cleanup Failed: {e}")
+            LOGGER.error(f"Mega Restart Cleanup Failed for {path}: {e}")
     mega_tasks.clear()
 
 
@@ -39,6 +43,7 @@ class MegaAppListener:
         self.name = ""
         self.size = 0
         self.temp_path = f"/wzml_{self.gid}"
+        self.mega_tag = None
         self._last_time = time()
         self._val_last = 0
         mega_tasks[self.gid] = self.temp_path
@@ -96,6 +101,7 @@ class MegaAppListener:
 
     async def cleanup(self):
         try:
+            LOGGER.info(f"Cleaning up Mega Task: {self.name}")
             await cmd_exec(["mega-rm", "-r", "-f", self.temp_path])
             if self.gid in mega_tasks:
                 del mega_tasks[self.gid]
@@ -132,7 +138,9 @@ class MegaAppListener:
                 if self.listener.is_cancelled:
                     return
 
-            self.mega_status = MegaDownloadStatus(self.listener, self, self.gid, "dl")
+            self.mega_status = MegaDownloadStatus(
+                self.listener, self, self.gid, MirrorStatus.STATUS_DOWNLOAD
+            )
             async with task_dict_lock:
                 task_dict[self.listener.mid] = self.mega_status
 
@@ -159,17 +167,23 @@ class MegaAppListener:
                     break
 
                 try:
-                    line_bytes = await self.process.stdout.readuntil(b"\r")
-                except Exception:
-                    break
-
-                line = line_bytes.decode().strip()
-                if not line:
+                    line_bytes = await wait_for(
+                        self.process.stdout.readuntil(b"\r"), timeout=5
+                    )
+                    line = line_bytes.decode().strip()
+                    if not line:
+                        if self.process.returncode is not None:
+                            break
+                        continue
+                    self._parse_progress(line)
+                except TimeoutError:
+                    await self.update_daemon_status()
+                    # Check if process died during timeout
                     if self.process.returncode is not None:
                         break
                     continue
-
-                self._parse_progress(line)
+                except Exception:
+                    break
 
                 if self.process.returncode is not None:
                     break
@@ -179,9 +193,12 @@ class MegaAppListener:
             if self.process.returncode == 0:
                 await self.listener.on_download_complete()
             else:
-                await self.listener.on_download_error(
-                    f"MegaCMD exited with {self.process.returncode}"
-                )
+                if self.listener.is_cancelled:
+                    return
+                if self.process.returncode != -9:
+                    await self.listener.on_download_error(
+                        f"MegaCMD exited with {self.process.returncode}"
+                    )
         except Exception as e:
             if self.listener.is_cancelled:
                 return
@@ -213,9 +230,44 @@ class MegaAppListener:
                 self._last_time = cur_time
                 self._val_last = self.mega_status._downloaded_bytes
 
+    async def update_daemon_status(self):
+        try:
+            stdout, _, _ = await cmd_exec(["mega-transfers", "--col-separator=|"])
+            for line in stdout.splitlines():
+                if self.gid in line:
+                    parts = line.split("|")
+                    if len(parts) > 1:
+                        self.mega_tag = parts[1].strip()
+                        if len(parts) > 4:
+                            self.mega_status._status = parts[5].strip()
+                    break
+        except Exception:
+            pass
+
     async def cancel_task(self):
         LOGGER.info(f"Cancelling {self.mega_status._status}: {self.name}")
         self.listener.is_cancelled = True
+
+        if self.mega_tag:
+            try:
+                LOGGER.info(f"Cancelling Transfer Tag: {self.mega_tag}")
+                await cmd_exec(["mega-transfers", "-c", self.mega_tag])
+            except Exception as e:
+                LOGGER.error(f"Mega Transfer Cancel Failed: {e}")
+        else:
+            try:
+                stdout, _, _ = await cmd_exec(["mega-transfers"])
+                for line in stdout.splitlines():
+                    if self.gid in line:
+                        parts = line.split()
+                        if len(parts) > 1 and (tag := parts[1]):
+                            self.mega_tag = tag
+                            LOGGER.info(f"Cancelling Transfer Tag: {tag}")
+                            await cmd_exec(["mega-transfers", "-c", tag])
+                        break
+            except Exception as e:
+                LOGGER.error(f"Mega Transfer Cancel Failed: {e}")
+
         if self.process is not None:
             with suppress(Exception):
                 self.process.kill()
