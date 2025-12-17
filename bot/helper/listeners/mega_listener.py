@@ -83,7 +83,7 @@ class MegaAppListener:
 
     async def cleanup(self):
         try:
-            await cmd_exec(["mega-rm", "-r", self.temp_path])
+            await cmd_exec(["mega-rm", "-r", "-f", self.temp_path])
         except Exception as e:
             LOGGER.error(f"Mega Cleanup Failed: {e}")
 

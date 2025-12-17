@@ -4,6 +4,7 @@ from io import StringIO, BytesIO
 from os import path as ospath, getcwd, chdir
 from textwrap import indent
 from traceback import format_exc
+from re import match
 
 from .. import LOGGER
 from ..core.tg_client import TgClient
@@ -41,7 +42,11 @@ async def send(msg, message):
             await send_file(message, out_file)
     else:
         LOGGER.info(f"OUT: '{msg}'")
-        await send_message(message, f"<code>{msg}</code>")
+        if not msg or msg == "\n":
+            msg = "MessageEmpty"
+        elif not bool(match(r"<(spoiler|b|i|code|s|u|/a)>", msg)):
+            msg = f"<code>{msg}</code>"
+        await send_message(message, msg)
 
 
 @new_task
