@@ -36,7 +36,10 @@ async def main():
         tz = utc
 
     def changetz(*args):
-        return datetime.now(tz).timetuple()
+        try:
+            return datetime.now(tz).timetuple()
+        except ImportError:
+            return datetime.now().timetuple()
 
     Formatter.converter = changetz
 
