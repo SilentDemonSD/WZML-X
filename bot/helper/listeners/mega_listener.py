@@ -18,6 +18,18 @@ from ..mirror_leech_utils.status_utils.queue_status import QueueStatus
 from ..telegram_helper.message_utils import send_status_message
 
 
+mega_tasks = {}
+
+
+async def mega_cleanup():
+    for path in list(mega_tasks.values()):
+        try:
+            await cmd_exec(["mega-rm", "-r", "-f", path])
+        except Exception as e:
+            LOGGER.error(f"Mega Restart Cleanup Failed: {e}")
+    mega_tasks.clear()
+
+
 class MegaAppListener:
     def __init__(self, listener):
         self.listener = listener
@@ -29,6 +41,7 @@ class MegaAppListener:
         self.temp_path = f"/wzml_{self.gid}"
         self._last_time = time()
         self._val_last = 0
+        mega_tasks[self.gid] = self.temp_path
 
     async def login(self):
         if (MEGA_EMAIL := Config.MEGA_EMAIL) and (
@@ -84,6 +97,8 @@ class MegaAppListener:
     async def cleanup(self):
         try:
             await cmd_exec(["mega-rm", "-r", "-f", self.temp_path])
+            if self.gid in mega_tasks:
+                del mega_tasks[self.gid]
         except Exception as e:
             LOGGER.error(f"Mega Cleanup Failed: {e}")
 
@@ -168,6 +183,8 @@ class MegaAppListener:
                     f"MegaCMD exited with {self.process.returncode}"
                 )
         except Exception as e:
+            if self.listener.is_cancelled:
+                return
             LOGGER.error(f"Mega Download Logic Error: {e}")
             await self.listener.on_download_error(str(e))
         finally:
