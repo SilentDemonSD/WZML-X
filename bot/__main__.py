@@ -6,6 +6,7 @@ Config.load()
 
 from datetime import datetime
 from logging import Formatter
+from time import localtime
 
 from pytz import timezone
 
@@ -38,8 +39,8 @@ async def main():
     def changetz(*args):
         try:
             return datetime.now(tz).timetuple()
-        except ImportError:
-            return datetime.now().timetuple()
+        except Exception:
+            return localtime()
 
     Formatter.converter = changetz
 
