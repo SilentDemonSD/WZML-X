@@ -17,6 +17,7 @@ from ..core.torrent_manager import TorrentManager
 from ..helper.ext_utils.bot_utils import new_task
 from ..helper.ext_utils.db_handler import database
 from ..helper.ext_utils.files_utils import clean_all
+from ..helper.listeners.mega_listener import mega_cleanup
 from ..helper.telegram_helper import button_build
 from ..helper.telegram_helper.message_utils import (
     delete_message,
@@ -135,6 +136,7 @@ async def confirm_restart(_, query):
         if st := intervals["status"]:
             for intvl in list(st.values()):
                 intvl.cancel()
+        await mega_cleanup()
         await clean_all()
         await TorrentManager.close_all()
         if sabnzbd_client.LOGGED_IN:

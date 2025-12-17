@@ -13,6 +13,7 @@ from pyrogram.errors import (
     WebpageCurlFailed,
     MediaEmpty,
     MediaCaptionTooLong,
+    EntityBoundsInvalid,
 )
 
 try:
@@ -95,7 +96,7 @@ async def send_message(message, text, buttons=None, block=True, photo=None, **kw
     except ReplyMarkupInvalid as rmi:
         LOGGER.warning(str(rmi))
         return await send_message(message, text, None)
-    except MessageEmpty:
+    except (MessageEmpty, EntityBoundsInvalid):
         return await send_message(message, text, parse_mode=ParseMode.DISABLED)
     except Exception as e:
         LOGGER.error(str(e), exc_info=True)
