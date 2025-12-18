@@ -386,6 +386,7 @@ def get_bot_commands():
         "Mirror": "[link/file] Mirror to Upload Destination",
         "QbMirror": "[magnet/torrent] Mirror to Upload Destination using qbit",
         "Ytdl": "[link] Mirror YouTube, m3u8, Social Media and yt-dlp supported urls",
+        "UpHoster": "[link/file] Upload to DDL Servers",
         "Leech": "[link/file] Leech files to Upload to Telegram",
         "QbLeech": "[magnet/torrent] Leech files to Upload to Telegram using qbit",
         "YtdlLeech": "[link] Leech YouTube, m3u8, Social Media and yt-dlp supported urls",
@@ -455,6 +456,8 @@ def get_help_string():
             help_lines.append(f"{cmd_str}: Start Mirroring to cloud using Sabnzbd.")
         elif key == "Ytdl":
             help_lines.append(f"{cmd_str}: Mirror yt-dlp supported link.")
+        elif key == "UpHoster":
+            help_lines.append(f"{cmd_str}: Upload to DDL Servers.")
         elif key == "Leech":
             help_lines.append(f"{cmd_str}: Start leeching to Telegram.")
         elif key == "QbLeech":

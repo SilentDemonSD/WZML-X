@@ -1,4 +1,4 @@
-from asyncio import gather, sleep
+from asyncio import gather, sleep, wait_for, TimeoutError
 from platform import platform, version
 from re import search as research
 from time import time
@@ -21,7 +21,7 @@ from psutil import (
     AccessDenied,
 )
 
-from .. import bot_cache, bot_start_time
+from .. import LOGGER, bot_cache, bot_start_time, bot_loop
 from ..core.config_manager import Config, BinConfig
 from ..helper.ext_utils.bot_utils import cmd_exec, compare_versions, new_task
 from ..helper.ext_utils.status_utils import (
@@ -54,9 +54,9 @@ commands = {
     ),
     "7z": (["7z", "i"], r"7-Zip ([\d.]+)"),
     "aiohttp": (["uv", "pip", "show", "aiohttp"], r"Version: ([\d.]+)"),
-    "pyrofork": (["uv", "pip", "show", "pyrofork"], r"Version: ([\d.]+)"),
+    "pyrotgfork": (["uv", "pip", "show", "pyrotgfork"], r"Version: ([\d.]+)"),
     "gapi": (["uv", "pip", "show", "google-api-python-client"], r"Version: ([\d.]+)"),
-    "mega": (["pip", "show", "megasdk"], r"Version: ([\d.]+)"),
+    "mega": (["mega-version"], r"version: ([\d.]+)"),
 }
 
 
@@ -146,20 +146,21 @@ async def get_stats(event, key="home"):
 ⌬ <b>REMARKS :</b> <code>{compare_versions(get_version(), official_v)}</code>
     """
     elif key == "stpkgs":
+        ver = bot_cache.get("eng_versions", {})
         msg = f"""⌬ <b><i>Packages Statistics :</i></b>
 │
-┟ <b>python:</b> {bot_cache["eng_versions"]["python"]}
-┠ <b>aria2:</b> {bot_cache["eng_versions"]["aria2"]}
-┠ <b>qBittorrent:</b> {bot_cache["eng_versions"]["qBittorrent"]}
-┠ <b>SABnzbd+:</b> {bot_cache["eng_versions"]["SABnzbd+"]}
-┠ <b>rclone:</b> {bot_cache["eng_versions"]["rclone"]}
-┠ <b>yt-dlp:</b> {bot_cache["eng_versions"]["yt-dlp"]}
-┠ <b>ffmpeg:</b> {bot_cache["eng_versions"]["ffmpeg"]}
-┠ <b>7z:</b> {bot_cache["eng_versions"]["7z"]}
-┠ <b>Aiohttp:</b> {bot_cache["eng_versions"]["aiohttp"]}
-┠ <b>Pyrofork:</b> {bot_cache["eng_versions"]["pyrofork"]}
-┠ <b>Google API:</b> {bot_cache["eng_versions"]["gapi"]}
-┖ <b>Mega SDK:</b> {bot_cache["eng_versions"]["mega"]}
+┟ <b>python:</b> {ver.get("python", "N/A")}
+┠ <b>aria2:</b> {ver.get("aria2", "N/A")}
+┠ <b>qBittorrent:</b> {ver.get("qBittorrent", "N/A")}
+┠ <b>SABnzbd+:</b> {ver.get("SABnzbd+", "N/A")}
+┠ <b>rclone:</b> {ver.get("rclone", "N/A")}
+┠ <b>yt-dlp:</b> {ver.get("yt-dlp", "N/A")}
+┠ <b>ffmpeg:</b> {ver.get("ffmpeg", "N/A")}
+┠ <b>7z:</b> {ver.get("7z", "N/A")}
+┠ <b>Aiohttp:</b> {ver.get("aiohttp", "N/A")}
+┠ <b>PyroTgFork:</b> {ver.get("pyrotgfork", "N/A")}
+┠ <b>Google API:</b> {ver.get("gapi", "N/A")}
+┖ <b>Mega CMD:</b> {ver.get("mega", "N/A")}
 """
     elif key == "tlimits":
         msg = f"""⌬ <b><i>Bot Task Limits :</i></b>
@@ -283,15 +284,28 @@ async def stats_pages(_, query):
         await edit_message(message, msg, btns)
 
 
-async def get_version_async(command, regex):
+async def get_version_async(command, regex, timeout=5):
     try:
-        out, err, code = await cmd_exec(command)
+        out, err, code = await wait_for(cmd_exec(command), timeout=timeout)
         if code != 0:
             return f"Error: {err}"
         match = research(regex, out)
         return match.group(1) if match else "-"
+    except TimeoutError:
+        return "Timeout"
     except Exception as e:
         return f"Exception: {str(e)}"
+
+
+async def retry_mega_version():
+    await sleep(60)
+    command, regex = commands["mega"]
+    version = await get_version_async(command, regex, timeout=10)
+    if version != "Timeout" and not version.startswith("Exception"):
+        bot_cache["eng_versions"]["mega"] = version
+        LOGGER.info(f"MegaCMD Version Fetched: {version}")
+    else:
+        LOGGER.warning(f"Failed to fetch MegaCMD Version: {version}")
 
 
 @new_task
@@ -309,3 +323,10 @@ async def get_packages_version():
     else:
         last_commit = "No UPSTREAM_REPO"
     bot_cache["commit"] = last_commit
+
+    if bot_cache["eng_versions"]["mega"] in ["Timeout", "N/A"] or bot_cache[
+        "eng_versions"
+    ]["mega"].startswith("Exception"):
+        bot_loop.create_task(retry_mega_version())
+
+    LOGGER.info("Fetched Package Versions!")

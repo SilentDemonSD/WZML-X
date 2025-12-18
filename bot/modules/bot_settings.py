@@ -247,6 +247,8 @@ async def get_buttons(key=None, edit_type=None, edit_mode=False):
     elif key.startswith("nzbser"):
         index = int(key.replace("nzbser", ""))
         LOGGER.info(f"Data: {key}, {index}")
+        if index >= len(Config.USENET_SERVERS):
+            return await get_buttons("nzbserver")
         for k in list(Config.USENET_SERVERS[index].keys())[start : 10 + start]:
             buttons.data_button(k, f"botset nzbsevar{index} {k}")
         if state == "view":
@@ -667,6 +669,8 @@ async def edit_bot_settings(client, query):
                     intervals["status"][key] = SetInterval(
                         value, update_status_message, key
                     )
+        elif data[2] == "RSS_SIZE_LIMIT":
+            value = 0
         elif data[2] == "EXCLUDED_EXTENSIONS":
             excluded_extensions.clear()
             excluded_extensions.extend(["aria2", "!qB"])

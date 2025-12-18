@@ -20,7 +20,6 @@ from os import cpu_count
 from time import time
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from pyrogram import utils as pyroutils
 
 from .core.config_manager import BinConfig
 from sabnzbdapi import SabnzbdClient
@@ -34,8 +33,7 @@ getLogger("httpx").setLevel(WARNING)
 getLogger("pymongo").setLevel(WARNING)
 getLogger("aiohttp").setLevel(WARNING)
 
-pyroutils.MIN_CHAT_ID = -999999999999
-pyroutils.MIN_CHANNEL_ID = -100999999999999
+
 bot_start_time = time()
 
 bot_loop = new_event_loop()
@@ -50,6 +48,8 @@ basicConfig(
 
 LOGGER = getLogger(__name__)
 cpu_no = cpu_count()
+threads = max(1, cpu_no // 2)
+cores = ",".join(str(i) for i in range(threads))
 
 bot_cache = {}
 DOWNLOAD_DIR = "/usr/src/app/downloads/"

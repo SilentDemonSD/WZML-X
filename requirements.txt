@@ -6,7 +6,7 @@ anytree
 apscheduler
 aioaria2
 aioqbt
-git+https://github.com/cinemagoer/cinemagoer
+imdbinfo
 cloudscraper
 dnspython
 fastapi
@@ -17,6 +17,7 @@ google-auth-oauthlib
 gunicorn
 httpx
 langcodes
+language-data
 jinja2
 lxml
 motor
@@ -26,7 +27,7 @@ pillow
 psutil
 pycountry
 pymongo
-pyrofork==2.2.11
+pyrotgfork
 python-magic
 pytz
 qbittorrent-api
@@ -40,4 +41,3 @@ uvicorn
 uvloop==0.21.0
 xattr
 yt-dlp[default,curl-cffi]
-yt-dlp-ejs

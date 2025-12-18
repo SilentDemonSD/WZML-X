@@ -13,6 +13,7 @@ from pyrogram.enums import ChatAction
 from .. import (
     DOWNLOAD_DIR,
     LOGGER,
+    cores,
     cpu_eater_lock,
     excluded_extensions,
     intervals,
@@ -140,7 +141,11 @@ class TaskConfig:
         self.thumb = None
         self.excluded_extensions = []
         self.files_to_proceed = []
-        self.is_super_chat = self.message.chat.type.name in ["SUPERGROUP", "CHANNEL"]
+        self.is_super_chat = self.message.chat.type.name in [
+            "SUPERGROUP",
+            "CHANNEL",
+            "FORUM",
+        ]
         self.source_url = None
         self.bot_pm = Config.BOT_PM or self.user_dict.get("BOT_PM")
         self.pm_msg = None
@@ -431,7 +436,12 @@ class TaskConfig:
                         self.hybrid_leech = False
                     else:
                         uploader_id = TgClient.user.me.id
-                        if chat.type.name not in ["SUPERGROUP", "CHANNEL", "GROUP"]:
+                        if chat.type.name not in [
+                            "SUPERGROUP",
+                            "CHANNEL",
+                            "GROUP",
+                            "FORUM",
+                        ]:
                             self.user_transmission = False
                             self.hybrid_leech = False
                         else:
@@ -455,7 +465,12 @@ class TaskConfig:
                             raise ValueError("Chat not found!")
                     else:
                         uploader_id = self.client.me.id
-                        if chat.type.name in ["SUPERGROUP", "CHANNEL", "GROUP"]:
+                        if chat.type.name in [
+                            "SUPERGROUP",
+                            "CHANNEL",
+                            "GROUP",
+                            "FORUM",
+                        ]:
                             member = await chat.get_member(uploader_id)
                             if (
                                 not member.privileges.can_manage_chat
@@ -594,17 +609,19 @@ class TaskConfig:
             nextmsg.sender_chat = self.user
         if intervals["stopAll"]:
             return
+
         await obj(
-            self.client,
-            nextmsg,
-            self.is_qbit,
-            self.is_leech,
-            self.is_jd,
-            self.is_nzb,
-            self.same_dir,
-            self.bulk,
-            self.multi_tag,
-            self.options,
+            client=self.client,
+            message=nextmsg,
+            is_qbit=self.is_qbit,
+            is_leech=self.is_leech,
+            is_jd=self.is_jd,
+            is_nzb=self.is_nzb,
+            is_uphoster=self.is_uphoster,
+            same_dir=self.same_dir,
+            bulk=self.bulk,
+            multi_tag=self.multi_tag,
+            options=self.options,
         ).new_event()
 
     async def init_bulk(self, input_list, bulk_start, bulk_end, obj):
@@ -636,17 +653,19 @@ class TaskConfig:
                 nextmsg.from_user = self.user
             else:
                 nextmsg.sender_chat = self.user
+
             await obj(
-                self.client,
-                nextmsg,
-                self.is_qbit,
-                self.is_leech,
-                self.is_jd,
-                self.is_nzb,
-                self.same_dir,
-                self.bulk,
-                self.multi_tag,
-                self.options,
+                client=self.client,
+                message=nextmsg,
+                is_qbit=self.is_qbit,
+                is_leech=self.is_leech,
+                is_jd=self.is_jd,
+                is_nzb=self.is_nzb,
+                is_uphoster=self.is_uphoster,
+                same_dir=self.same_dir,
+                bulk=self.bulk,
+                multi_tag=self.multi_tag,
+                options=self.options,
             ).new_event()
         except Exception:
             await send_message(
@@ -717,6 +736,9 @@ class TaskConfig:
             for ffmpeg_cmd in cmds:
                 self.proceed_count = 0
                 cmd = [
+                    "taskset",
+                    "-c",
+                    f"{cores}",
                     BinConfig.FFMPEG_NAME,
                     "-hide_banner",
                     "-loglevel",

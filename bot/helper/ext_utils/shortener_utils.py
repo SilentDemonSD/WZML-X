@@ -7,17 +7,25 @@ from cloudscraper import create_scraper
 from urllib3 import disable_warnings
 
 from ... import LOGGER, shortener_dict
+from ...core.config_manager import Config
 
 
 async def short_url(longurl, attempt=0):
-    if not shortener_dict:
+    if not shortener_dict and not Config.PROTECTED_API:
         return longurl
     if attempt >= 4:
         return longurl
-    _shortener, _shortener_api = choice(list(shortener_dict.items()))
+
     cget = create_scraper().request
     disable_warnings()
     try:
+        if Config.PROTECTED_API:
+            res = cget("GET", Config.PROTECTED_API, params={"url": longurl}).json()
+            if res.get("status") == "success":
+                return res["url"]
+            raise Exception(f"Protected API Error: {res}")
+
+        _shortener, _shortener_api = choice(list(shortener_dict.items()))
         if "shorte.st" in _shortener:
             headers = {"public-api-token": _shortener_api}
             data = {"urlToShorten": quote(longurl)}
