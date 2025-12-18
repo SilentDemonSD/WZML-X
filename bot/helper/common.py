@@ -637,7 +637,7 @@ class TaskConfig:
             index = self.options.index("-b")
             del self.options[index]
             if bulk_start or bulk_end:
-                del self.options[index + 1]
+                del self.options[index]
             self.options = " ".join(self.options)
             b_msg.append(f"{self.bulk[0]} -i {len(self.bulk)} {self.options}")
             msg = " ".join(b_msg)
