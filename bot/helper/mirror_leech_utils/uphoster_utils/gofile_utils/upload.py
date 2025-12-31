@@ -339,7 +339,7 @@ class GoFileUpload:
         try:
             account_data = await self.__getAccount()
         except Exception as e:
-            raise Exception(f"Invalid GoFile API Key: {e}")
+            raise Exception(f"GoFile Account Error: {e}") from e
 
         if await aiopath.isfile(self._path):
             # Single file upload
