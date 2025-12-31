@@ -270,7 +270,7 @@ Here I will explain how to use mltb.* which is reference to files you want to wo
     "GOFILE_FOLDER_ID": (
         "String",
         "Gofile Folder ID",
-        "<i>Send your Gofile Folder ID.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
+        "<i>Send your Gofile Folder ID. If empty, uploads to Root.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     ),
     "BUZZHEAVIER_TOKEN": (
         "String",
@@ -614,7 +614,7 @@ async def get_user_settings(from_user, stype="main"):
         elif Config.GOFILE_FOLDER_ID:
             gffolder = Config.GOFILE_FOLDER_ID
         else:
-            gffolder = "None"
+            gffolder = "None (Uploads to Root)"
 
         text = f"""⌬ <b>Gofile Settings :</b>
 ┟ <b>Name</b> → {user_name}

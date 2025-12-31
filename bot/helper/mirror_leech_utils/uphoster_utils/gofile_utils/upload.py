@@ -243,7 +243,9 @@ class GoFileUpload:
         )
         return await self.__resp_handler(upload_file)
 
-    async def _upload_dir(self, input_directory, parent_folder_id=None):
+    async def _upload_dir(
+        self, input_directory, parent_folder_id=None, root_folder_id=None
+    ):
         if parent_folder_id is None:
             # Use user's folder_id if specified, otherwise create in root
             if self.folder_id:
@@ -252,9 +254,12 @@ class GoFileUpload:
                 main_folder_code = self.folder_id
             else:
                 # Create main folder in root
-                account_data = await self.__getAccount()
+                if root_folder_id is None:
+                    account_data = await self.__getAccount()
+                    root_folder_id = account_data["rootFolder"]
+
                 folder_data = await self.create_folder(
-                    account_data["rootFolder"], ospath.basename(input_directory)
+                    root_folder_id, ospath.basename(input_directory)
                 )
                 await self.__setOptions(
                     contentId=folder_data["folderId"], option="public", value="true"
@@ -331,13 +336,16 @@ class GoFileUpload:
                 return
 
     async def _upload_process(self):
-        if not await self.is_goapi(self.token):
-            raise Exception("Invalid GoFile API Key, please check your token!")
+        try:
+            account_data = await self.__getAccount()
+        except Exception as e:
+            raise Exception(f"Invalid GoFile API Key: {e}")
 
         if await aiopath.isfile(self._path):
             # Single file upload
+            folder_id = self.folder_id or account_data["rootFolder"]
             file_result = await self.upload_file(
-                path=self._path, folderId=self.folder_id
+                path=self._path, folderId=folder_id
             )
             if file_result and file_result.get("downloadPage"):
                 link = file_result["downloadPage"]
@@ -347,7 +355,9 @@ class GoFileUpload:
                 raise ValueError("Failed to upload file to GoFile")
         elif await aiopath.isdir(self._path):
             # Directory upload
-            folder_code = await self._upload_dir(self._path)
+            folder_code = await self._upload_dir(
+                self._path, root_folder_id=account_data["rootFolder"]
+            )
             if folder_code:
                 link = f"https://gofile.io/d/{folder_code}"
                 mime_type = "Folder"
