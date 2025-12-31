@@ -1,5 +1,5 @@
 from base64 import b64encode
-from random import choice, random
+from random import choice, random, randrange
 from asyncio import sleep as asleep
 from urllib.parse import quote
 
@@ -58,6 +58,87 @@ async def short_url(longurl, attempt=0):
                 "GET",
                 f"http://cutt.ly/api/api.php?key={_shortener_api}&short={longurl}",
             ).json()["url"]["shortLink"]
+        elif "modijiurl.com" in _shortener:
+            long_url = quote(longurl)
+            api_url = f"https://modijiurl.com/api?api={_shortener_api}&url={long_url}"
+            result = cget("GET", api_url).json()
+            if result["status"] == 'error':
+                LOGGER.error(result["message"])
+                return longurl
+            else:
+                return result["shortenedUrl"]
+        elif "linkshortify.com" in _shortener:
+            long_url = quote(longurl)
+            api_url = f"https://linkshortify.com/api?api={_shortener_api}&url={long_url}"
+            result = cget("GET", api_url).json()
+            if result["status"] == 'error':
+                LOGGER.error(result["message"])
+                return longurl
+            else:
+                return result["shortenedUrl"]
+        elif "inshorturl.com" in _shortener:
+            long_url = quote(longurl)
+            api_url = f"https://inshorturl.com/api?api={_shortener_api}&url={long_url}"
+            result = cget("GET", api_url).json()
+            if result["status"] == 'error':
+                LOGGER.error(result["message"])
+                return longurl
+            else:
+                return result["shortenedUrl"]
+        elif "vplink.in" in _shortener:
+            long_url = quote(longurl)
+            api_url = f"https://vplink.in/api?api={_shortener_api}&url={long_url}&alias=CustomAlias"
+            result = cget("GET", api_url).json()
+            if result["status"] == 'error':
+                LOGGER.error(result["message"])
+                return longurl
+            else:
+                return result["shortenedUrl"]
+        elif "papajiurl.com" in _shortener:
+            long_url = quote(longurl)
+            api_url = f"https://papajiurl.com/api?api={_shortener_api}&url={long_url}"
+            result = cget("GET", api_url).json()
+            if result["status"] == 'error':
+                LOGGER.error(result["message"])
+                return longurl
+            else:
+                return result["shortenedUrl"]
+        elif "linkcents.com" in _shortener:
+            long_url = quote(longurl)
+            api_url = f"https://linkcents.com/api?api={_shortener_api}&url={long_url}"
+            result = cget("GET", api_url).json()
+            if result["status"] == 'error':
+                LOGGER.error(result["message"])
+                return longurl
+            else:
+                return result["shortenedUrl"]
+        elif "reel2earn.com" in _shortener:
+            long_url = quote(longurl)
+            api_url = f"https://reel2earn.com/api?api={_shortener_api}&url={long_url}"
+            result = cget("GET", api_url).json()
+            if result["status"] == 'error':
+                LOGGER.error(result["message"])
+                return longurl
+            else:
+                return result["shortenedUrl"]
+        elif "shortner.in" in _shortener:
+            long_url = quote(longurl)
+            api_url = f"https://shortner.in/api?api={_shortener_api}&url={long_url}"
+            result = cget("GET", api_url).json()
+            if result["status"] == 'error':
+                LOGGER.error(result["message"])
+                return longurl
+            else:
+                return result["shortenedUrl"]
+        elif "thalashort.com" in _shortener:
+            long_url = quote(longurl)
+            api_url = f"https://thalashort.com/api?api={_shortener_api}&url={long_url}"
+            result = cget("GET", api_url).json()
+            if result["status"] == 'error':
+                LOGGER.error(result["message"])
+                return longurl
+            else:
+                return result["shortenedUrl"]
         else:
             res = cget(
                 "GET",
