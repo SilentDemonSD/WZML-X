@@ -115,6 +115,14 @@ async def main():
     bot_loop.create_task(telegraph.create_account())
     bot_loop.create_task(rclone_serve_booter())
     bot_loop.create_task(search_images())
+    if not Config.DISABLE_RAPIDGATOR:
+        if Config.RAPIDGATOR_EMAIL and Config.RAPIDGATOR_PASSWORD:
+            from .helper.ext_utils.rapidgator_utils import check_rapidgator_connection
+            bot_loop.create_task(check_rapidgator_connection())
+        else:
+            LOGGER.info("Rapidgator: Global credentials not configured.")
+    else:
+        LOGGER.info("Rapidgator: Disabled.")
 
 
 bot_loop.run_until_complete(main())

@@ -25,6 +25,7 @@ from ..helper.ext_utils.bot_utils import (
 )
 from ..helper.ext_utils.db_handler import database
 from ..helper.ext_utils.mega_utils import get_mega_account_info
+from ..helper.ext_utils.rapidgator_utils import get_rapidgator_account_info
 from ..helper.ext_utils.media_utils import create_thumb
 from ..helper.ext_utils.status_utils import get_readable_file_size
 from ..helper.telegram_helper.button_build import ButtonMaker
@@ -75,6 +76,7 @@ advanced_options = [
 ]
 yt_options = ["YT_DESP", "YT_TAGS", "YT_CATEGORY_ID", "YT_PRIVACY_STATUS"]
 mega_options = ["MEGA_EMAIL", "MEGA_PASSWORD"]
+rapidgator_options = ["RAPIDGATOR_EMAIL", "RAPIDGATOR_PASSWORD"]
 
 user_settings_text = {
     "THUMBNAIL": (
@@ -324,6 +326,16 @@ Here I will explain how to use mltb.* which is reference to files you want to wo
         "String",
         "Your Mega.nz account password for per-user Mega downloads & uploads.",
         "<i>Send your Mega.nz account password.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
+    ),
+    "RAPIDGATOR_EMAIL": (
+        "String",
+        "Your Rapidgator account email for per-user Rapidgator downloads.",
+        "<i>Send your Rapidgator email address.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
+    ),
+    "RAPIDGATOR_PASSWORD": (
+        "String",
+        "Your Rapidgator account password for per-user Rapidgator downloads.",
+        "<i>Send your Rapidgator account password.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     ),
     "DRIVE_CAT": (
         "Dict",
@@ -841,6 +853,7 @@ async def get_user_settings(from_user, stype="main"):
 
         buttons.data_button("YT Up Tools", f"userset {user_id} yttools")
         buttons.data_button("Mega Tools", f"userset {user_id} mega")
+        buttons.data_button("Rapidgator Tools", f"userset {user_id} rapidgator")
         if Config.DRIVE_CATEGORY_MODE:
             dc_enabled = user_dict.get("drive_cat_mode", False)
             buttons.data_button(
@@ -901,6 +914,49 @@ async def get_user_settings(from_user, stype="main"):
 ┃
 ┠ <b>Mega Email</b> → <code>{email_display}</code>
 ┠ <b>Mega Password</b> → <code>{pass_display}</code>
+┖ <b>Account</b> → {account_status}"""
+
+    elif stype == "rapidgator":
+        rg_email = user_dict.get("RAPIDGATOR_EMAIL", "")
+        rg_password = user_dict.get("RAPIDGATOR_PASSWORD", "")
+        has_creds = bool(rg_email and rg_password)
+        masked_pass = (
+            (
+                rg_password[:2] + "*" * (len(rg_password) - 4) + rg_password[-2:]
+                if len(rg_password) > 6
+                else "****"
+            )
+            if rg_password
+            else ""
+        )
+
+        buttons.data_button("Rapidgator Email", f"userset {user_id} menu RAPIDGATOR_EMAIL")
+        if rg_email:
+            buttons.data_button(
+                "Rapidgator Password", f"userset {user_id} menu RAPIDGATOR_PASSWORD"
+            )
+
+        if has_creds:
+            buttons.data_button(
+                "Remove Account",
+                f"userset {user_id} remove RAPIDGATOR_EMAIL",
+                position="l_body",
+            )
+
+        buttons.data_button("Back", f"userset {user_id} back mirror", "footer")
+        buttons.data_button(
+            "Close", f"userset {user_id} close", "footer", style=ButtonStyle.DANGER
+        )
+        btns = buttons.build_menu(1)
+
+        email_display = rg_email or "Not Set"
+        pass_display = masked_pass if rg_password else "Not Set"
+        account_status = "✓ Configured" if has_creds else "❌ Not Configured"
+        text = f"""⌬ <b>Rapidgator Tools :</b>
+┟ <b>Name</b> → {user_name}
+┃
+┠ <b>Rapidgator Email</b> → <code>{email_display}</code>
+┠ <b>Rapidgator Password</b> → <code>{pass_display}</code>
 ┖ <b>Account</b> → {account_status}"""
 
     elif stype == "ffset":
@@ -1345,6 +1401,8 @@ async def get_menu(option, message, user_id):
         back_to = "advanced"
     elif option in mega_options:
         back_to = "mega"
+    elif option in rapidgator_options:
+        back_to = "rapidgator"
     else:
         back_to = "back"
     buttons.data_button("Back", f"userset {user_id} {back_to}", "footer")
@@ -1505,6 +1563,16 @@ async def edit_user_settings(client, query):
             info_text = await get_mega_account_info(mega_email, mega_password)
             msg += f"\n\n{info_text}"
             await edit_message(message, msg, button)
+    elif data[2] == "rapidgator":
+        await query.answer()
+        msg, button = await get_user_settings(query.from_user, "rapidgator")
+        await edit_message(message, msg, button)
+        rg_email = user_dict.get("RAPIDGATOR_EMAIL", "")
+        rg_password = user_dict.get("RAPIDGATOR_PASSWORD", "")
+        if rg_email and rg_password:
+            info_text = await get_rapidgator_account_info(rg_email, rg_password)
+            msg += f"\n\n{info_text}"
+            await edit_message(message, msg, button)
     elif data[2] == "yttools":
         await query.answer()
         await update_user_settings(query, data[2])
@@ -1642,6 +1710,8 @@ async def edit_user_settings(client, query):
             update_user_ldata(user_id, data[3], "")
             if data[3] == "MEGA_EMAIL":
                 update_user_ldata(user_id, "MEGA_PASSWORD", "")
+            elif data[3] == "RAPIDGATOR_EMAIL":
+                update_user_ldata(user_id, "RAPIDGATOR_PASSWORD", "")
             await database.update_user_data(user_id)
         await get_menu(data[3], message, user_id)
     elif data[2] == "reset":

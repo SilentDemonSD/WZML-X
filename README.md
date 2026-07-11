@@ -72,7 +72,7 @@ WZML-X is built for users who want a single bot stack that can mirror, leech, ma
 | Mirroring | Send files to Telegram with a controllable pipeline |
 | Leeching | Deliver files in the format you prefer, including document and media workflows |
 | File selection UI | Review and select torrent / NZB / upload contents before finalizing |
-| Multi-source downloads | Use qBittorrent, Aria2, JDownloader, Mega, NZB, and yt-dlp integrations |
+| Multi-source downloads | Use qBittorrent, Aria2, JDownloader, Mega, Rapidgator, NZB, and yt-dlp integrations |
 | Storage and upload paths | Push content to Google Drive, Rclone, Mega, and other supported routes |
 | Automation | Limit tasks, tune queues, and manage startup updates from one config layer |
 
@@ -86,7 +86,7 @@ Deploy with Docker and provide the required configuration values. The container 
    - Docker installed
    - Your Telegram bot token and Telegram API credentials
    - A MongoDB connection string
-   - The optional service credentials you want to enable, such as Drive, Rclone, Mega, JDownloader, or SABnzbd
+   - The optional service credentials you want to enable, such as Drive, Rclone, Mega, Rapidgator, JDownloader, or SABnzbd
 </details>
 
 ## Deployment
@@ -216,7 +216,7 @@ Then tune the optional behavior from `config_sample.py`.
 
    - qBittorrent and Aria2-related controls
    - JDownloader login details
-   - Mega credentials
+   - Mega and Rapidgator credentials
    - SABnzbd server definitions
    - Google Drive settings
    - RSS, search, media metadata, and logging controls
@@ -295,6 +295,41 @@ WZML-X is a fork of [mirror-leech-telegram-bot](https://github.com/anasty17/mirr
       </tbody>
    </table>
 </details>
+
+## Fork Customizations & Syncing
+
+If you are hosting your own fork of this project (for example, to use custom features like Rapidgator downloads) and want to keep it updated with the upstream repository:
+
+### Setup Your Fork Remotes
+Rename the default remote to `upstream` and add your fork as `origin`:
+```bash
+git remote rename origin upstream
+git remote add origin https://github.com/your-username/WZML-X.git
+```
+
+### Sync Updates From Upstream
+To pull new updates from the original repository into your fork without losing your custom code (like your Rapidgator implementation), run:
+```bash
+# Fetch the latest changes from upstream
+git fetch upstream
+
+# Rebase the upstream branch (wzv3) onto your current branch (e.g. main)
+git rebase upstream/wzv3
+
+# Push the rebased code to your fork
+git push origin main --force
+```
+
+### Rapidgator Downloader Integration
+This fork includes native premium Rapidgator downloading support.
+
+1. **Global Configuration**: Add the following parameters to your `config.env` or `config.py` file:
+   - `RAPIDGATOR_EMAIL`: Your premium Rapidgator account email.
+   - `RAPIDGATOR_PASSWORD`: Your premium Rapidgator account password.
+   - `DISABLE_RAPIDGATOR` (Optional): Set to `True` if you want to turn off Rapidgator support. Default: `False`.
+   - `RAPIDGATOR_LIMIT` (Optional): Size limit (in GB) for downloading from Rapidgator. Default: `0` (unlimited).
+
+2. **Per-User Configuration**: Users can also configure their own premium Rapidgator credentials inside Telegram via `/usersettings` -> **Mirror Settings** -> **Rapidgator Tools**.
 
 ## License
 

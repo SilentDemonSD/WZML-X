@@ -31,6 +31,12 @@ def is_mega_link(url: str):
     return "mega.nz" in url or "mega.co.nz" in url
 
 
+def is_rapidgator_link(url: str):
+    if not url:
+        return False
+    return "rapidgator.net" in url or "rapidgator.asia" in url or "rg.to" in url
+
+
 def is_mega_folder_link(link: str) -> bool:
     if not link:
         return False

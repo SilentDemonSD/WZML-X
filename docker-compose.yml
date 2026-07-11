@@ -35,6 +35,8 @@ services:
 
     expose:
       - "8080"
+    ports:
+      - "8281:8080"
 
   tunnel:
     build:
