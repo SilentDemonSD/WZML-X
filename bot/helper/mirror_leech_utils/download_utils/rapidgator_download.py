@@ -73,7 +73,6 @@ async def add_rapidgator_download(listener, path):
     a2c_opt = {
         "follow-torrent": "false",
         "follow-metalink": "false",
-        "check-certificate": "false",
         "header": [
             "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
             "Referer: https://rapidgator.net/"

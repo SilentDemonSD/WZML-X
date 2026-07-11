@@ -31,7 +31,7 @@ async def get_rapidgator_session(username, password):
             'password': password
         }
         try:
-            async with session.post(login_url, data=login_data, headers=headers, ssl=False) as response:
+            async with session.post(login_url, data=login_data, headers=headers) as response:
                 if response.status != 200:
                     raise Exception(f"HTTP login status {response.status}")
                 
@@ -98,7 +98,7 @@ async def get_rapidgator_link(url: str, username, password):
     }
     
     async with aiohttp.ClientSession() as session:
-        async with session.get(api_download_url, headers=headers, ssl=False) as api_response:
+        async with session.get(api_download_url, headers=headers) as api_response:
             if api_response.status != 200:
                 # If session is invalid (e.g. 401), clear cache and retry once
                 if api_response.status == 401:
@@ -107,7 +107,7 @@ async def get_rapidgator_link(url: str, username, password):
                     _RG_SESSIONS.pop(key, None)
                     session_id = await get_rapidgator_session(username, password)
                     api_download_url = f"https://rapidgator.net/api/file/download?sid={session_id}&url={clean_url}"
-                    async with session.get(api_download_url, headers=headers, ssl=False) as retry_response:
+                    async with session.get(api_download_url, headers=headers) as retry_response:
                         if retry_response.status != 200:
                             raise Exception(f"API returned status {retry_response.status} after session refresh")
                         api_response = retry_response
@@ -137,9 +137,8 @@ async def get_rapidgator_link(url: str, username, password):
             
             # Fallback for filename parsing
             if not filename:
-                # 1. Try fetching the original HTML page and scraping it
                 try:
-                    async with session.get(url, headers=headers, ssl=False) as page_response:
+                    async with session.get(url, headers=headers) as page_response:
                         html_content = await page_response.text()
                         patterns = [
                             r'<title>Download file ([^<]+)</title>',
@@ -173,13 +172,13 @@ async def get_rapidgator_link(url: str, username, password):
             # Fetch size using a HEAD request to the direct download link
             total_size = 0
             try:
-                async with session.head(download_url, headers=headers, ssl=False, allow_redirects=True) as head_resp:
+                async with session.head(download_url, headers=headers, allow_redirects=True) as head_resp:
                     total_size = int(head_resp.headers.get('Content-Length', 0))
             except Exception as e:
                 LOGGER.warning(f"Failed to get file size via HEAD request: {e}")
                 # Fallback: try GET
                 try:
-                    async with session.get(download_url, headers=headers, ssl=False, allow_redirects=True) as get_resp:
+                    async with session.get(download_url, headers=headers, allow_redirects=True) as get_resp:
                         total_size = int(get_resp.headers.get('Content-Length', 0))
                 except Exception as e2:
                     LOGGER.warning(f"Failed to get file size via GET request: {e2}")
