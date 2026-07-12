@@ -107,24 +107,45 @@ class Rapidgator:
         filename = response_data.get('filename')
         
         # Fallback for filename parsing
+        # 1. Try to extract filename from the input URL
+        if not filename:
+            try:
+                clean_input_url = url.split('?')[0].split('#')[0]
+                path_segments = [seg for seg in urlparse(clean_input_url).path.split('/') if seg]
+                if len(path_segments) >= 3 and path_segments[0] == 'file':
+                    name_seg = path_segments[2]
+                    if name_seg.lower().endswith('.html'):
+                        name_seg = name_seg[:-5]
+                    filename = name_seg
+                elif path_segments and '.' in path_segments[-1] and path_segments[-1] != 'file':
+                    name_seg = path_segments[-1]
+                    if name_seg.lower().endswith('.html'):
+                        name_seg = name_seg[:-5]
+                    filename = name_seg
+            except Exception as e:
+                LOGGER.warning(f"Failed to extract filename from input URL: {e}")
+
+        # 2. Scrape filename from HTML as fallback
         if not filename:
             try:
                 page_response = await self.session.get(url, headers=headers)
                 html_content = page_response.text
-                patterns = [
-                    r'<title>Download file ([^<]+)</title>',
-                    r'Downloading:\s*</strong>\s*<a[^>]*>\s*([^<]+)</a>',
-                    r'<strong>\s*Downloading:\s*</strong>[^<]*<a[^>]*>([^<]+)</a>',
-                    r'filename["\']:\s*["\']([^"\']+)["\']',
-                ]
-                for pattern in patterns:
-                    match = re.search(pattern, html_content, re.IGNORECASE)
-                    if match:
-                        filename = match.group(1).strip()
-                        break
+                if html_content:
+                    patterns = [
+                        r'<title>Download file ([^<]+)</title>',
+                        r'Downloading:\s*</strong>\s*<a[^>]*>\s*([^<]+)</a>',
+                        r'<strong>\s*Downloading:\s*</strong>[^<]*<a[^>]*>([^<]+)</a>',
+                        r'filename["\']:\s*["\']([^"\']+)["\']',
+                    ]
+                    for pattern in patterns:
+                        match = re.search(pattern, html_content, re.IGNORECASE)
+                        if match:
+                            filename = match.group(1).strip()
+                            break
             except Exception as e:
                 LOGGER.warning(f"Failed to fetch HTML or scrape filename: {e}")
         
+        # 3. Fallback to parsing download_url path segments
         if not filename:
             try:
                 path_segments = [seg for seg in urlparse(download_url).path.split('/') if seg]
@@ -133,6 +154,7 @@ class Rapidgator:
             except Exception:
                 pass
                 
+        # 4. Fallback to ID-based name
         if not filename:
             filename = f'rapidgator_{file_id}'
             
