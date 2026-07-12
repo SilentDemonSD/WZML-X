@@ -16,7 +16,7 @@ from ...listeners.direct_listener import DirectListener
 from ...mirror_leech_utils.status_utils.rapidgator_status import RapidgatorStatus
 from ...mirror_leech_utils.status_utils.queue_status import QueueStatus
 from ...telegram_helper.message_utils import send_status_message
-from ...ext_utils.rapidgator_utils import get_rapidgator_link
+from ...ext_utils.rapidgator_utils import Rapidgator
 
 
 async def add_rapidgator_download(listener, path):
@@ -38,7 +38,8 @@ async def add_rapidgator_download(listener, path):
 
     # Resolve link
     try:
-        url, filename, size = await get_rapidgator_link(listener.link, rg_email, rg_password)
+        rg = Rapidgator(rg_email, rg_password)
+        url, filename, size = await rg.get_download_link(listener.link)
     except Exception as e:
         await listener.on_download_error(f"Rapidgator error: {str(e)}")
         return
