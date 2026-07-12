@@ -247,12 +247,27 @@ async def pre_task_check(message):
     LOGGER.info("Running Pre Task Checks ...")
     msg = []
     button = None
-    if await CustomFilters.sudo("", message):
-        return msg, button
     user_id = (message.from_user or message.sender_chat).id
+    user_dict = user_data.get(user_id, {})
+
+    if await CustomFilters.sudo("", message):
+        if Config.BOT_PM or user_dict.get("BOT_PM"):
+            _msg, button = await check_botpm(message, button)
+            if _msg:
+                msg.append(_msg)
+        if msg:
+            username = message.from_user.mention
+            final_msg = f"⌬ <b>Task Checks :</b>\n│\n┟ <b>Name</b> → {username}\n┃\n"
+            for i, m_part in enumerate(msg, 1):
+                final_msg += f"{m_part}\n"
+            if button is not None:
+                button = button.build_menu(2)
+            return final_msg, button
+        return None, None
+
     if Config.RSS_CHAT and user_id == int(Config.RSS_CHAT):
         return msg, button
-    user_dict = user_data.get(user_id, {})
+
     if message.chat.type != message.chat.type.BOT:
         if ids := Config.FORCE_SUB_IDS:
             _msg, button = await forcesub(message, ids, button)
@@ -273,17 +288,14 @@ async def pre_task_check(message):
         msg.append(
             f"┠ Max Concurrent Bot's Tasks Limit exceeded.\n┠ Bot Tasks Limit : {bmax_tasks} task"
         )
-
     maxtask = safe_int(user_dict.get("maxtask", Config.USER_MAX_TASKS))
     if maxtask > 0 and len(await get_specific_tasks("All", user_id)) >= maxtask:
         msg.append(
             f"┠ Max Concurrent User's Task(s) Limit exceeded! \n┠ User Task Limit : {maxtask} tasks"
         )
-
     token_msg, button = await verify_token(user_id, button)
     if token_msg is not None:
         msg.append(token_msg)
-
     if msg:
         username = message.from_user.mention
         final_msg = f"⌬ <b>Task Checks :</b>\n│\n┟ <b>Name</b> → {username}\n┃\n"
@@ -292,5 +304,4 @@ async def pre_task_check(message):
         if button is not None:
             button = button.build_menu(2)
         return final_msg, button
-
     return None, None
