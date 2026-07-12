@@ -65,7 +65,7 @@ class Rapidgator:
     async def get_download_link(self, url: str):
         session_id = await self.login()
         
-        file_id_match = re.search(r'rapidgator\.net/file/([a-zA-Z0-9]+)', url)
+        file_id_match = re.search(r'(?:rapidgator\.(?:net|asia)|rg\.to)/file/([a-zA-Z0-9]+)', url)
         if not file_id_match:
             raise Exception("Invalid Rapidgator URL format")
             
