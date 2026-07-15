@@ -2,7 +2,8 @@ from asyncio import Event, wait_for, TimeoutError as AsyncTimeout
 from os.path import exists as path_exists
 
 from aiofiles.os import remove as aioremove
-from pyrogram import Client
+from pyrogram import Client, __version__ as wzgram_version
+from ..version import get_version
 from pyrogram.enums import ChatType
 from pyrogram.filters import create, user, text, private
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
@@ -52,7 +53,7 @@ def _stop_btns():
 
 def _header(user_name):
     return (
-        "⌬ <u><i><b>Pyrogram String Session Generator</b></i></u>\n│\n"
+        "⌬ <u><i><b>WZGram String Session Generator</b></i></u>\n│\n"
         f"│ <b>User</b> → <b>{user_name}</b>!"
     )
 
@@ -232,9 +233,13 @@ async def gen_pyro_string(_, message):
     try:
         pyro_client = Client(
             f"WZML-X-{user_id}",
+            in_memory=True,
             api_id=api_id,
             api_hash=api_hash,
             workdir="/usr/src/app",
+            app_version=f"@WZML_X {get_version()}",
+            device_model="@WZML_X Bot V3",
+            system_version="@WZML_X WzPyro Server",
         )
     except Exception as e:
         return await edit_message(
@@ -334,8 +339,9 @@ async def gen_pyro_string(_, message):
         session_string = await pyro_client.export_session_string()
         await pyro_client.send_message(
             "me",
-            f"⌬ <b><u>Pyrogram Session Generated</u></b>\n\n"
+            f"⌬ <b><u>WZGram Session Generated</u></b>\n\n"
             f"<code>{session_string}</code>\n\n"
+            f"<b>WZGram v{wzgram_version} | WZML-X {get_version()}</b>\n"
             f"<b>Via <a href='https://github.com/SilentDemonSD/WZML-X'>WZML-X</a> [ @WZML_X ]</b>",
             disable_web_page_preview=True,
         )
@@ -343,7 +349,7 @@ async def gen_pyro_string(_, message):
         await edit_message(
             sess_msg,
             f"{h}\n┃\n{c}\n┃\n"
-            "┠  <b>String Session Generated Successfully!</b>\n"
+            "┠  <b>WZGram Session Generated Successfully!</b>\n"
             "┃\n"
             "┖ <i>Check your <b>Saved Messages</b>.</i>",
         )

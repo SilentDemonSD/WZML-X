@@ -1,3 +1,4 @@
+from asyncio import gather
 from time import time
 from uuid import uuid4
 
@@ -32,20 +33,32 @@ async def chat_info(channel_id):
 async def forcesub(message, ids, button=None):
     join_button = {}
     _msg = ""
-    for channel_id in ids.split():
+
+    async def _check_channel(channel_id):
         chat = await chat_info(channel_id)
+        if chat is None:
+            return None
         try:
             await chat.get_member(message.from_user.id)
+            return None
         except UserNotParticipant:
             if username := chat.username:
                 invite_link = f"https://t.me/{username}"
             else:
                 invite_link = chat.invite_link
-            join_button[chat.title] = invite_link
+            return (chat.title, invite_link)
         except RPCError as e:
             LOGGER.error(f"{e.NAME}: {e.MESSAGE} for {channel_id}")
         except Exception as e:
             LOGGER.error(f"{e} for {channel_id}")
+        return None
+
+    results = await gather(*[_check_channel(cid) for cid in ids.split()])
+    for result in results:
+        if result:
+            title, link = result
+            join_button[title] = link
+
     if join_button:
         if button is None:
             button = ButtonMaker()
