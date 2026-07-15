@@ -73,6 +73,8 @@ class TelegramUploader:
         self._user_session = self._listener.transmission_mode in ("user", "both")
         self._hu: HypertgUpload | None = None
         self._error = ""
+        self._upload_seq = []
+        self._msg_to_seq = {}
 
     async def _user_settings(self):
         settings_map = {
@@ -256,6 +258,7 @@ class TelegramUploader:
             )[-1]
 
     async def _send_media_group(self, subkey, key, msgs):
+        old_ids = [(msg[0], msg[1]) for msg in msgs]
         for index, msg in enumerate(msgs):
             if self._listener.transmission_mode == "both" or not self._user_session:
                 msgs[index] = await _call_with_flood_retry(
@@ -281,6 +284,18 @@ class TelegramUploader:
         if self._listener.is_super_chat or self._listener.up_dest:
             for m in msgs_list:
                 self._msgs_dict[m.link] = m.caption
+        for i, (old_cid, old_mid) in enumerate(old_ids):
+            old_key = (old_cid, old_mid)
+            if old_key in self._msg_to_seq:
+                seq_idx = self._msg_to_seq.pop(old_key)
+                new_msg = msgs_list[i]
+                self._upload_seq[seq_idx] = {
+                    "chat_id": new_msg.chat.id,
+                    "msg_id": new_msg.id,
+                    "link": new_msg.link,
+                    "file_": self._upload_seq[seq_idx]["file_"],
+                }
+                self._msg_to_seq[(new_msg.chat.id, new_msg.id)] = seq_idx
         self._sent_msg = msgs_list[-1]
 
     async def _copy_media(self):
@@ -305,15 +320,112 @@ class TelegramUploader:
                 else:
                     LOGGER.error(f"Failed To Send in BotPM:\n{err_msg}")
 
-    async def _upload_file_task(self, file_, f_path, dirpath, user_session):
+    async def _sequence_copies(self, src_chat):
+        for entry in self._upload_seq:
+            if entry is None:
+                continue
+            chat_id = entry["chat_id"]
+            msg_id = entry["msg_id"]
+            copy_from_chat = chat_id
+            copy_from_msg = msg_id
+            in_dump = chat_id != src_chat.id and not self._listener.up_dest
+            if in_dump:
+                try:
+                    bot_copy = await _call_with_flood_retry(
+                        TgClient.bot.copy_message,
+                        chat_id=src_chat.id,
+                        from_chat_id=chat_id,
+                        message_id=msg_id,
+                    )
+                    copy_from_chat = src_chat.id
+                    copy_from_msg = bot_copy.id
+                    entry["chat_id"] = src_chat.id
+                    entry["msg_id"] = bot_copy.id
+                    entry["link"] = bot_copy.link
+                except Exception as e:
+                    LOGGER.error(f"Failed to copy from dump_chat: {e}")
+                    continue
+            elif chat_id == src_chat.id and self._user_session and not self._is_private:
+                try:
+                    bot_copy = await _call_with_flood_retry(
+                        TgClient.bot.copy_message,
+                        chat_id=src_chat.id,
+                        from_chat_id=src_chat.id,
+                        message_id=msg_id,
+                    )
+                    copy_from_chat = src_chat.id
+                    copy_from_msg = bot_copy.id
+                    entry["chat_id"] = src_chat.id
+                    entry["msg_id"] = bot_copy.id
+                    entry["link"] = bot_copy.link
+                    try:
+                        await TgClient.bot.delete_messages(
+                            chat_id=chat_id, message_ids=msg_id
+                        )
+                    except Exception:
+                        LOGGER.warning(
+                            "Delete Permission not given. "
+                            "Bot can't delete ghost mode original."
+                        )
+                except Exception as e:
+                    LOGGER.error(
+                        f"Failed to copy for ghost mode. "
+                        f"Make sure bot has message delete permission: {e}"
+                    )
+                    continue
+            if self._bot_pm:
+                try:
+                    await _call_with_flood_retry(
+                        TgClient.bot.copy_message,
+                        chat_id=self._listener.user_id,
+                        from_chat_id=copy_from_chat,
+                        message_id=copy_from_msg,
+                        reply_to_message_id=(
+                            self._listener.pm_msg.id if self._listener.pm_msg else None
+                        ),
+                    )
+                except Exception as err:
+                    if not self._listener.is_cancelled:
+                        err_msg = str(err)
+                        if "Can't copy" in err_msg:
+                            LOGGER.warning(
+                                f"BotPM copy skipped (restricted content): {err_msg}"
+                            )
+                        else:
+                            LOGGER.error(f"Failed To Send in BotPM:\n{err_msg}")
+            for dest_attr in ("cmd_up_dest", "leech_dest"):
+                dest = getattr(self._listener, dest_attr, None)
+                if not dest or dest == self._listener.up_dest:
+                    continue
+                if not isinstance(dest, int):
+                    if "|" in str(dest):
+                        dest, _ = str(dest).split("|", 1)
+                    if str(dest).lstrip("-").isdigit():
+                        dest = int(dest)
+                try:
+                    await _call_with_flood_retry(
+                        TgClient.bot.copy_message,
+                        chat_id=dest,
+                        from_chat_id=copy_from_chat,
+                        message_id=copy_from_msg,
+                    )
+                except Exception as e:
+                    if not self._listener.is_cancelled:
+                        LOGGER.error(f"Failed to forward to {dest_attr}: {e}")
+
+    async def _upload_file_task(self, file_, f_path, dirpath, user_session, seq_idx):
         up_path = None
         try:
             up_path, cap_mono = await self._prepare_file(file_, dirpath)
-            sent = await self._upload_file(cap_mono, up_path, user_session=user_session)
+            sent = await self._upload_file(
+                cap_mono, up_path, file_, seq_idx, user_session=user_session
+            )
             if sent and not self._is_corrupted:
                 if self._listener.is_super_chat or self._listener.up_dest:
                     if not self._is_private:
-                        self._msgs_dict[sent.link] = file_
+                        entry = self._upload_seq[seq_idx]
+                        if entry["msg_id"] == sent.id:
+                            self._msgs_dict[sent.link] = file_
             return sent
         except StopTransmission:
             return None
@@ -333,6 +445,7 @@ class TelegramUploader:
         if not res:
             return
         upload_tasks = []
+        seq_idx = 0
         for dirpath, _, files in natsorted(await sync_to_async(walk, self._path)):
             if dirpath.strip().endswith("/yt-dlp-thumb"):
                 continue
@@ -376,12 +489,14 @@ class TelegramUploader:
                     ):
                         self._user_session = True
                     self._last_msg_in_group = False
+                    self._upload_seq.append(None)
                     task = ensure_future(
                         self._upload_file_task(
-                            file_, f_path, dirpath, self._user_session
+                            file_, f_path, dirpath, self._user_session, seq_idx
                         )
                     )
                     upload_tasks.append(task)
+                    seq_idx += 1
                     if self._listener.is_cancelled:
                         return
                 except Exception as err:
@@ -405,6 +520,12 @@ class TelegramUploader:
                         LOGGER.info(
                             f"While sending media group at the end of task. Error: {e}"
                         )
+        if self._upload_seq:
+            src_chat = self._listener.message.chat
+            await self._sequence_copies(src_chat)
+            self._msgs_dict = {
+                e["link"]: e["file_"] for e in self._upload_seq if e is not None
+            }
         if self._listener.is_cancelled:
             return
         if self._total_files == 0:
@@ -424,7 +545,7 @@ class TelegramUploader:
         return
 
     async def _upload_file(
-        self, cap_mono, o_path, force_document=False, user_session=False
+        self, cap_mono, o_path, file_, seq_idx, force_document=False, user_session=False
     ):
         if self._sent_msg is None:
             LOGGER.error("Cannot upload: _sent_msg is None")
@@ -466,6 +587,14 @@ class TelegramUploader:
 
             self._sent_msg = sent_msg
 
+            self._upload_seq[seq_idx] = {
+                "chat_id": sent_msg.chat.id,
+                "msg_id": sent_msg.id,
+                "link": sent_msg.link,
+                "file_": file_,
+            }
+            self._msg_to_seq[(sent_msg.chat.id, sent_msg.id)] = seq_idx
+
             if (
                 not self._listener.is_cancelled
                 and self._media_group
@@ -485,55 +614,6 @@ class TelegramUploader:
                         await self._send_media_group(pname, key, msgs)
                     else:
                         self._last_msg_in_group = True
-
-            src_chat_id = self._listener.message.chat.id
-            upl_chat_id = sent_msg.chat.id
-            if upl_chat_id != src_chat_id and not self._listener.up_dest:
-                try:
-                    bot_copy = await _call_with_flood_retry(
-                        TgClient.bot.copy_message,
-                        chat_id=src_chat_id,
-                        from_chat_id=upl_chat_id,
-                        message_id=sent_msg.id,
-                    )
-                    self._sent_msg = bot_copy
-                except Exception as e:
-                    LOGGER.error(f"Failed to copy from dump_chat: {e}")
-            elif upl_chat_id == src_chat_id and user_session and not self._is_private:
-                try:
-                    bot_copy = await _call_with_flood_retry(
-                        TgClient.bot.copy_message,
-                        chat_id=upl_chat_id,
-                        from_chat_id=upl_chat_id,
-                        message_id=sent_msg.id,
-                    )
-                    await delete_message(sent_msg)
-                    self._sent_msg = bot_copy
-                    sent_msg = bot_copy
-                except Exception as e:
-                    LOGGER.error(f"Failed to copy for ghost mode: {e}")
-
-            if self._sent_msg:
-                await self._copy_media()
-                for dest_attr in ("cmd_up_dest", "leech_dest"):
-                    dest = getattr(self._listener, dest_attr, None)
-                    if not dest or dest == self._listener.up_dest:
-                        continue
-                    if not isinstance(dest, int):
-                        if "|" in str(dest):
-                            dest, _ = str(dest).split("|", 1)
-                        if str(dest).lstrip("-").isdigit():
-                            dest = int(dest)
-                    try:
-                        await _call_with_flood_retry(
-                            TgClient.bot.copy_message,
-                            chat_id=dest,
-                            from_chat_id=sent_msg.chat.id,
-                            message_id=sent_msg.id,
-                        )
-                    except Exception as e:
-                        if not self._listener.is_cancelled:
-                            LOGGER.error(f"Failed to forward to {dest_attr}: {e}")
 
             return sent_msg
         except StopTransmission:
