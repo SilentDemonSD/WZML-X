@@ -2,7 +2,7 @@ from contextlib import suppress
 from pyrogram.enums import ButtonStyle
 from re import IGNORECASE, findall, search
 
-from imdbio import search_title, get_movie, get_akas
+from imdbio import search_title, get_movie, get_akas, get_media_gallery
 from pycountry import countries as conn
 from pyrogram.errors import MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty
 
@@ -60,7 +60,7 @@ async def imdb_search(_, message):
             movieid = result.group(1)
             if movie := await sync_to_async(get_movie, movieid):
                 buttons.data_button(
-                    f"🎬 {movie.title} ({getattr(movie, 'year', 'N/A')})",
+                    f"{movie.title} ({getattr(movie, 'year', 'N/A')})",
                     f"imdb {user_id} movie {movieid}",
                 )
             else:
@@ -73,11 +73,11 @@ async def imdb_search(_, message):
                 )
             for movie in movies:
                 buttons.data_button(
-                    f"🎬 {movie.title} ({getattr(movie, 'year', 'N/A')})",
+                    f"{movie.title} ({getattr(movie, 'year', 'N/A')})",
                     f"imdb {user_id} movie {movie.id}",
                 )
         buttons.data_button(
-            "🚫 Close 🚫", f"imdb {user_id} close", style=ButtonStyle.DANGER
+            "Close", f"imdb {user_id} close", style=ButtonStyle.DANGER
         )
         await edit_message(
             k, "<b><i>Search Results found on IMDb.com</i></b>", buttons.build_menu(1)
@@ -142,6 +142,7 @@ def get_poster(query, bulk=False, id=False, file=None):
         if plot:
             break
 
+    plot_full = plot or ""
     if plot and len(plot) > 300:
         plot = f"{plot[:300]}..."
 
@@ -165,7 +166,7 @@ def get_poster(query, bulk=False, id=False, file=None):
         list_to_str([c.name for c in company_credits.get("production", [])]) or "N/A"
     )
 
-    kind = "N/A"
+    kind = ""
     if movie.is_series():
         kind = "Series"
     elif movie.is_episode():
@@ -175,10 +176,49 @@ def get_poster(query, bulk=False, id=False, file=None):
 
     try:
         akas = get_akas(f"tt{movie.imdb_id}")
-        aka_list = [a.title for a in akas["akas"][:LIST_ITEMS]]
+        seen_aka = set()
+        aka_list = []
+        for a in akas["akas"][:LIST_ITEMS * 2]:
+            title = a.title
+            if title.lower() not in seen_aka:
+                seen_aka.add(title.lower())
+                aka_list.append(title)
+            if len(aka_list) >= LIST_ITEMS:
+                break
         aka_text = list_to_str(aka_list) or "N/A"
     except Exception:
         aka_text = list_to_str(getattr(movie, "title_akas", []) or []) or "N/A"
+
+    _box_office = getattr(movie, "box_office", None) or {}
+    _end_year = getattr(movie, "year_end", None)
+    _end_year_str = f"-{_end_year}" if _end_year else ""
+    _certificate = getattr(movie, "certificate", None) or getattr(movie, "mpaa", None) or ""
+    if not _certificate:
+        _certs = getattr(movie, "certificates", {}) or {}
+        for _key in ["US", "MPAA"]:
+            if _key in _certs:
+                _val = _certs[_key]
+                if isinstance(_val, (list, tuple)) and len(_val) >= 2:
+                    cert_val = str(_val[1]).strip() if _val[1] else ""
+                    if cert_val:
+                        _certificate = cert_val
+                        break
+        if not _certificate:
+            for _val in _certs.values():
+                if isinstance(_val, (list, tuple)) and len(_val) >= 2:
+                    cert_val = str(_val[1]).strip() if _val[1] else ""
+                    if cert_val:
+                        _certificate = cert_val
+                        break
+    _keywords_list = getattr(movie, "storyline_keywords", []) or []
+    _creators_list = (
+        getattr(getattr(movie, "info_series", None), "creators", []) or []
+    )
+    _production_companies = (
+        [c.name for c in getattr(movie, "company_credits", {}).get("production", [])]
+        if getattr(movie, "company_credits", None)
+        else []
+    )
 
     return {
         "title": movie.title,
@@ -231,18 +271,38 @@ def get_poster(query, bulk=False, id=False, file=None):
         "release_date": getattr(movie, "release_date", "N/A") or date or "N/A",
         "year": str(getattr(movie, "year", "N/A") or "N/A"),
         "genres": list_to_hash(getattr(movie, "genres", []) or [], emoji=True) or "N/A",
+        "genres_plain": list_to_plain(getattr(movie, "genres", []) or []) or "N/A",
+        "countries_plain": list_to_plain(getattr(movie, "countries", []) or []) or "N/A",
+        "languages_plain": list_to_plain(getattr(movie, "languages_text", []) or []) or "N/A",
         "poster": getattr(
             movie, "cover_url", "https://telegra.ph/file/5af8d90a479b0d11df298.jpg"
         )
         or "https://telegra.ph/file/5af8d90a479b0d11df298.jpg",
         "plot": plot or "N/A",
+        "plot_full": plot_full or "N/A",
         "rating": str(getattr(movie, "rating", "N/A") or "N/A") + " / 10",
         "url": getattr(movie, "url", "N/A") or "N/A",
         "url_cast": f"https://www.imdb.com/title/tt{movieid}/fullcredits#cast",
         "url_releaseinfo": f"https://www.imdb.com/title/tt{movieid}/releaseinfo",
         "awards": awards_text,
         "production": production,
+        "metascore": str(getattr(movie, "metacritic_rating", "") or ""),
+        "end_year": _end_year_str,
+        "certificate": _certificate,
+        "keywords": " · ".join(_keywords_list[:10]) or "",
+        "creators": list_to_str([i.name for i in _creators_list[:3]]) or "N/A",
+        "budget": getattr(movie, "production_budget", "") or "",
+        "box_opening": _box_office.get("opening_weekend", "") or "",
+        "box_domestic": _box_office.get("domestic", "") or "",
+        "release_country": getattr(movie, "release_country", "") or "",
+        "production_companies": _production_companies,
     }
+
+
+def list_to_plain(k):
+    if not k:
+        return ""
+    return ", ".join(str(item) for item in k[:10])
 
 
 def list_to_str(k):
@@ -322,44 +382,235 @@ async def imdb_callback(_, query):
         if imdb["trailer"]:
             if isinstance(imdb["trailer"], list):
                 buttons.url_button(
-                    "▶️ IMDb Trailer ", imdb["trailer"][-1], style=ButtonStyle.PRIMARY
+                    "IMDb Trailer", imdb["trailer"][-1], style=ButtonStyle.PRIMARY
                 )
                 imdb["trailer"] = list_to_str(imdb["trailer"])
             else:
                 buttons.url_button(
-                    "▶️ IMDb Trailer ", imdb["trailer"], style=ButtonStyle.PRIMARY
+                    "IMDb Trailer", imdb["trailer"], style=ButtonStyle.PRIMARY
                 )
         buttons.data_button(
-            "🚫 Close 🚫", f"imdb {user_id} close", style=ButtonStyle.DANGER
+            "Close", f"imdb {user_id} close", style=ButtonStyle.DANGER
         )
         buttons = buttons.build_menu(1)
-        template = ""
-        # if int(data[1]) in user_data and user_data[int(data[1])].get('imdb_temp'):
-        #    template = user_data[int(data[1])].get('imdb_temp')
-        # if not template:
+
+        title = imdb.get("title", "N/A")
+        year = imdb.get("year", "N/A")
+        end_year = imdb.get("end_year", "")
+        aka = imdb.get("aka", "")
+        rating = imdb.get("rating", "N/A")
+        votes = imdb.get("votes", "N/A")
+        metascore = imdb.get("metascore", "")
+        kind = imdb.get("kind", "N/A")
+        runtime = imdb.get("runtime", "N/A")
+        certificate = imdb.get("certificate", "")
+        genres = imdb.get("genres", "N/A")
+        genres_plain = imdb.get("genres_plain", "N/A")
+        release_date = imdb.get("release_date", "N/A")
+        release_country = imdb.get("release_country", "")
+        countries = imdb.get("countries", "N/A")
+        countries_plain = imdb.get("countries_plain", "N/A")
+        languages = imdb.get("languages", "N/A")
+        languages_plain = imdb.get("languages_plain", "N/A")
+        plot = imdb.get("plot", "N/A")
+        plot_full = imdb.get("plot_full", "N/A")
+        director = imdb.get("director", "N/A")
+        creators = imdb.get("creators", "N/A")
+        writer = imdb.get("writer", "N/A")
+        cast = imdb.get("cast", "N/A")
+        production_companies = imdb.get("production_companies", [])
+        budget = imdb.get("budget", "")
+        box_opening = imdb.get("box_opening", "")
+        box_domestic = imdb.get("box_domestic", "")
+        box_office = imdb.get("box_office", "N/A")
+        keywords = imdb.get("keywords", "")
+        url = imdb.get("url", "https://imdb.com/")
+        poster = imdb.get("poster", "")
+
+        year_text = f"{year}{end_year}" if end_year else year
+
+        tagline_parts = []
+        if kind:
+            tagline_parts.append(f"<b>{kind.title()}</b>")
+        if runtime and runtime != "N/A":
+            tagline_parts.append(f"<i>{runtime}</i>")
+        if certificate:
+            tagline_parts.append(f"<b>{certificate}</b>")
+        tagline = " | ".join(tagline_parts)
+
+        gallery_html = ""
+        all_images = [poster] if poster else []
+        seen = set()
+        if poster:
+            seen.add(poster)
+        try:
+            gallery = await sync_to_async(
+                get_media_gallery, data[3], locale="en"
+            )
+            if gallery and gallery.items:
+                for item in gallery.items[:5]:
+                    url = item.url
+                    if url and url not in seen:
+                        seen.add(url)
+                        all_images.append(url)
+        except Exception:
+            pass
+        if len(all_images) == 1:
+            gallery_html = f'<img src="{all_images[0]}"/>\n'
+        elif len(all_images) > 1:
+            slides = "\n".join(
+                f'<img src="{img}"/>' for img in all_images
+            )
+            gallery_html = f"<tg-slideshow>\n{slides}\n</tg-slideshow>\n"
+
+        prod_html = ""
+        if production_companies:
+            prod_items = "".join(
+                f"<li>{p}</li>" for p in production_companies[:6]
+            )
+            prod_html = f"""
+<details>
+<summary>Production companies</summary>
+<ul>{prod_items}</ul>
+</details>"""
+
+        ratings_rows = ""
+        if rating and rating != "N/A":
+            ratings_rows += f"<tr><td>IMDb</td><td>{rating} ({votes} votes)</td></tr>"
+        if metascore:
+            ratings_rows += f"<tr><td>Metascore</td><td>{metascore}/100</td></tr>"
+        ratings_table = ""
+        if ratings_rows:
+            ratings_table = f"""
+<table bordered striped>
+<caption>Ratings</caption>
+<tr><th>Source</th><th>Score</th></tr>
+{ratings_rows}
+</table>"""
+
+        info_rows = ""
+        if genres_plain and genres_plain != "N/A":
+            info_rows += f"<tr><td><b>Genres</b></td><td>{genres_plain}</td></tr>"
+        rel = " | ".join(filter(None, [release_date, release_country]))
+        if rel:
+            info_rows += f"<tr><td><b>Release</b></td><td>{rel}</td></tr>"
+        if countries_plain and countries_plain != "N/A":
+            info_rows += f"<tr><td><b>Countries</b></td><td>{countries_plain}</td></tr>"
+        if languages_plain and languages_plain != "N/A":
+            info_rows += f"<tr><td><b>Languages</b></td><td>{languages_plain}</td></tr>"
+        info_table = ""
+        if info_rows:
+            info_table = f"""
+<table striped>
+<caption>Info</caption>
+{info_rows}
+</table>"""
+
+        plot_lines = plot_full.split("\n") if plot_full else [""]
+        plot_formatted = "\n".join(f"> {line}" for line in plot_lines)
+
+        credits_items = ""
+        if director and director != "N/A":
+            credits_items += f"<li><b>Director</b> — {director}</li>"
+        if creators and creators != "N/A":
+            credits_items += f"<li><b>Creators</b> — {creators}</li>"
+        if writer and writer != "N/A":
+            credits_items += f"<li><b>Writers</b> — {writer}</li>"
+        if cast and cast != "N/A":
+            credits_items += f"<li><b>Stars</b> — {cast}</li>"
+        credits_html = ""
+        if credits_items:
+            credits_html = f"""
+<h3>Credits</h3>
+<ul>{credits_items}</ul>"""
+
+        box_office_rows = ""
+        if budget:
+            box_office_rows += f"<tr><td><b>Budget</b></td><td><code>{budget}</code></td></tr>"
+        if box_opening:
+            box_office_rows += f"<tr><td><b>Opening Weekend</b></td><td><code>{box_opening}</code></td></tr>"
+        if box_domestic:
+            box_office_rows += f"<tr><td><b>Domestic</b></td><td><code>{box_domestic}</code></td></tr>"
+        if box_office and box_office != "N/A":
+            box_office_rows += f"<tr><td><b>Worldwide</b></td><td><code>{box_office}</code></td></tr>"
+        box_office_table = ""
+        if box_office_rows:
+            box_office_table = f"""
+<table bordered striped>
+<caption>Box Office</caption>
+{box_office_rows}
+</table>"""
+
+        keywords_html = ""
+        if keywords:
+            kw_items = "".join(
+                f"<li><code>{kw.strip()}</code></li>"
+                for kw in keywords.split(" · ")[:10]
+                if kw.strip()
+            )
+            keywords_html = f"""
+<details>
+<summary>Keywords</summary>
+<ul>{kw_items}</ul>
+</details>"""
+
         template = Config.IMDB_TEMPLATE
-        if imdb and template != "":
+        if template:
             cap = template.format(**imdb, **locals())
-        else:
-            cap = "No Results"
-        if imdb.get("poster"):
-            try:
-                await TgClient.bot.send_photo(
-                    chat_id=reply_to.chat.id,
-                    caption=cap,
-                    photo=imdb["poster"],
-                    reply_to_message_id=reply_to.id,
-                    reply_markup=buttons,
+            if poster:
+                try:
+                    await TgClient.bot.send_photo(
+                        chat_id=reply_to.chat.id,
+                        caption=cap,
+                        photo=poster,
+                        reply_to_message_id=reply_to.id,
+                        reply_markup=buttons,
+                    )
+                except (MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty):
+                    fallback_poster = poster.replace(".jpg", "._V1_UX360.jpg")
+                    await send_message(
+                        reply_to, cap, buttons, photo=fallback_poster
+                    )
+            else:
+                await send_message(
+                    reply_to,
+                    cap,
+                    buttons,
+                    "https://telegra.ph/file/5af8d90a479b0d11df298.jpg",
                 )
-            except (MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty):
-                poster = imdb.get("poster").replace(".jpg", "._V1_UX360.jpg")
-                await send_message(reply_to, cap, buttons, photo=poster)
         else:
-            await send_message(
-                reply_to,
-                cap,
-                buttons,
-                "https://telegra.ph/file/5af8d90a479b0d11df298.jpg",
+            rich_html = f"""<h1>{title}  ({year_text})</h1>
+<i>{aka}</i>
+
+{gallery_html}
+<p>{tagline}</p>
+
+{ratings_table}
+
+{info_table}
+
+<details>
+<summary><b>Plot (tap to expand — spoilers)</b></summary>
+<aside>{plot_formatted}</aside>
+</details>
+
+{credits_html}
+
+{prod_html}
+
+{box_office_table}
+
+{keywords_html}
+
+<hr/>
+
+<a href="{url}">Open on IMDb</a>"""
+
+            await TgClient.bot.send_message(
+                reply_to.chat.id,
+                rich_text=rich_html,
+                reply_to_message_id=reply_to.id,
+                reply_markup=buttons,
             )
         await delete_message(message)
     else:

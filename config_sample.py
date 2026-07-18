@@ -90,18 +90,9 @@ HYDRA_IP = ""
 HYDRA_API_KEY = ""
 
 # Media Search
-IMDB_TEMPLATE = """<b>Title: </b> {title} [{year}]
-<b>Also Known As:</b> {aka}
-<b>Rating ⭐️:</b> <i>{rating}</i>
-<b>Release Info: </b> <a href="{url_releaseinfo}">{release_date}</a>
-<b>Genre: </b>{genres}
-<b>IMDb URL:</b> {url}
-<b>Language: </b>{languages}
-<b>Country of Origin : </b> {countries}
-
-<b>Story Line: </b><code>{plot}</code>
-
-<a href="{url_cast}">Read More ...</a>"""
+# Optional: Set IMDB_TEMPLATE to use old HTML format instead of Rich Messages.
+# If empty (default), IMDb uses Rich Messages with tables and collapsible sections.
+IMDB_TEMPLATE = ""
 
 # Task Tools
 FORCE_SUB_IDS = ""
