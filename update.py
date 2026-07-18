@@ -101,7 +101,7 @@ def _fetch_config_from_db(config_file, db_part):
         return
 
     old_config = run(_fetch_db_config(database_url, db_part, collection="deployConfig"))
-    env_keys = {k: config_file[k] for k in _VAR_LIST if k in config_file}
+    env_keys = {k: config_file[k] for k in _VAR_LIST if k in environ}
 
     if old_config is not None and old_config != config_file:
         merged = dict(config_file)
