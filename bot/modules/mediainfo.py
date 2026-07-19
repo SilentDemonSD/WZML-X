@@ -24,20 +24,29 @@ async def gen_mediainfo(message, link=None, media=None, mmsg=None):
             await mkdir(path)
         file_size = 0
         if link:
-            filename = search(".+/(.+)", link).group(1)
-            des_path = ospath.join(path, filename)
             headers = {
                 "user-agent": "Mozilla/5.0 (Linux; Android 12; 2201116PI) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Mobile Safari/537.36"
             }
             async with ClientSession() as session:
                 async with session.get(link, headers=headers) as response:
+                    content_disp = response.headers.get("Content-Disposition")
+                    if content_disp and 'filename=' in content_disp:
+                        match = match = search(r'filename="([^"]+)"', content_disp)
+                        if match:
+                            filename = match.group(1)
+                        else:
+                            filename = None
+                    if not filename:
+                        filename = search(".+/(.+)", link).group(1)
+                    des_path = ospath.join(path, filename[:200])
                     file_size = int(response.headers.get("Content-Length", 0))
                     async with aiopen(des_path, "wb") as f:
                         async for chunk in response.content.iter_chunked(10000000):
                             await f.write(chunk)
                             break
         elif media:
-            des_path = ospath.join(path, media.file_name)
+            des_path = ospath.join(path, media.file_name[:200])
+            filename = media.file_name
             file_size = media.file_size
             if file_size <= 50000000:
                 await mmsg.download(ospath.join(getcwd(), des_path))
@@ -46,7 +55,7 @@ async def gen_mediainfo(message, link=None, media=None, mmsg=None):
                     async with aiopen(des_path, "ab") as f:
                         await f.write(chunk)
         stdout, _, _ = await cmd_exec(split(f'mediainfo "{des_path}"'))
-        tc = f"<h4>📌 {ospath.basename(des_path)}</h4><br><br>"
+        tc = f"<h4>📌 {filename[:200]}</h4><br><br>"
         if len(stdout) != 0:
             tc += parseinfo(stdout, file_size)
     except Exception as e:
