@@ -33,6 +33,7 @@ class Config:
     DISABLE_NZB = True
     DISABLE_RSS = False
     DISABLE_SEARCH = False
+    DISABLE_SPOTDL = False
     DISABLE_YTDLP = False
     EQUAL_SPLITS = False
     EXCLUDED_EXTENSIONS = ""
@@ -77,6 +78,7 @@ class Config:
     CLONE_LIMIT = 0
     JD_LIMIT = 0
     NZB_LIMIT = 0
+    SPOTDL_LIMIT = 0
     YTDLP_LIMIT = 0
     PLAYLIST_LIMIT = 0
     LEECH_LIMIT = 0
