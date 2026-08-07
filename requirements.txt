@@ -24,7 +24,7 @@ pillow
 psutil
 pycountry
 pymongo
-wzgram
+https://github.com/CipherSpren/wzgram.git
 python-magic
 pytz
 qbittorrent-api
