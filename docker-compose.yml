@@ -37,13 +37,10 @@ services:
       - "8080"
 
   tunnel:
-    build:
-      context: .
-      dockerfile: tunnel.Dockerfile
+    image: cloudflare/cloudflared:latest
     restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN}
     network_mode: "service:app"
-    volumes:
-      - tunnel_data:/data
 
   # --- Second instance example (uncomment to run) ---
   # app2:
