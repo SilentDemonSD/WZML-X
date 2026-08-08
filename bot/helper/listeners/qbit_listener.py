@@ -136,7 +136,7 @@ async def _qb_listener():
                     intervals["qb"] = ""
                     break
                 for tor_info in torrents:
-                    tag = tor_info.tags[0]
+                    tag = tor_info.tags[0] if tor_info.tags else None
                     if tag not in qb_torrents:
                         continue
                     state = tor_info.state
