@@ -127,6 +127,7 @@ DEFAULT_DESP = {
     "DEFAULT_UPLOAD": "Default upload destination: gd (Google Drive) or rc (rclone). Default: rc.",
     "DELETE_LINKS": "Auto-delete source links/messages on task start. Default: False.",
     "DEBRID_LINK_API": "Debrid-link.com API key for premium hoster support.",
+    "ALLDEBRID_API_KEY": "AllDebrid API key, used by the -ad flag to unlock links/magnets.",
     "DISABLE_TORRENTS": "Disable all torrent downloads. Default: False.",
     "DISABLE_LEECH": "Disable all leech (download to Telegram) tasks. Default: False.",
     "DISABLE_BULK": "Disable bulk (zip/unzip) operations. Default: False.",
@@ -618,6 +619,8 @@ async def edit_variable(_, message, pre_message, key):
     elif key == "LOGIN_PASS":
         value = str(value)
     elif key == "DEBRID_LINK_API":
+        value = str(value)
+    elif key == "ALLDEBRID_API_KEY":
         value = str(value)
     elif value.isdigit():
         value = int(value)

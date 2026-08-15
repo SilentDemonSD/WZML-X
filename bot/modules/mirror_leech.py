@@ -1,7 +1,9 @@
 from ast import literal_eval
 from base64 import b64encode
+from os import path as ospath
 from re import match as re_match
 
+from aiofiles import open as aiopen
 from aiofiles.os import path as aiopath
 from bot.core.config_manager import Config
 
@@ -24,6 +26,11 @@ from ..helper.ext_utils.links_utils import (
 )
 from ..helper.ext_utils.task_manager import pre_task_check
 from ..helper.listeners.task_listener import TaskListener
+from ..helper.mirror_leech_utils.download_utils.alldebrid_resolver import (
+    alldebrid_resolve,
+    alldebrid_resolve_magnet,
+    alldebrid_resolve_torrent,
+)
 from ..helper.mirror_leech_utils.download_utils.aria2_download import (
     add_aria2_download,
 )
@@ -114,6 +121,7 @@ class Mirror(TaskListener):
             "-hl": False,
             "-bt": False,
             "-ut": False,
+            "-ad": False,
             "-yt": False,
             "-i": 0,
             "-sp": 0,
@@ -186,6 +194,7 @@ class Mirror(TaskListener):
         self.folder_name = f"/{args['-m']}".rstrip("/") if len(args["-m"]) > 0 else ""
         self.bot_trans = args["-bt"]
         self.user_trans = args["-ut"]
+        self.is_alldebrid = args["-ad"]
         self.is_yt = args["-yt"]
         self.metadata_dict = self.default_metadata_dict.copy()
         self.audio_metadata_dict = self.audio_metadata_dict.copy()
@@ -381,8 +390,48 @@ class Mirror(TaskListener):
 
         self._set_mode_engine()
 
+        if self.is_alldebrid and (
+            is_magnet(self.link) or self.link.endswith(".torrent")
+        ):
+            try:
+                if is_magnet(self.link):
+                    LOGGER.info("AllDebrid magnet route")
+                    resolved = await alldebrid_resolve_magnet(
+                        self.link,
+                        is_cancelled=lambda: self.is_cancelled,
+                    )
+                else:
+                    LOGGER.info(f"AllDebrid torrent file route: {self.link}")
+                    async with aiopen(self.link, "rb") as fh:
+                        torrent_bytes = await fh.read()
+                    resolved = await alldebrid_resolve_torrent(
+                        torrent_bytes,
+                        ospath.basename(self.link),
+                        is_cancelled=lambda: self.is_cancelled,
+                    )
+            except DirectDownloadLinkException as e:
+                e = str(e)
+                LOGGER.info(e)
+                if e.startswith("ERROR:"):
+                    await send_message(self.message, e)
+                    await self.remove_from_same_dir()
+                    await delete_links(self.message)
+                    return
+                resolved = None
+            except Exception as e:
+                await send_message(self.message, e)
+                await self.remove_from_same_dir()
+                await delete_links(self.message)
+                return
+            if isinstance(resolved, dict):
+                self._alldebrid_magnet_id = resolved.get("magnet_id", 0)
+                self.link = resolved
+                self.is_jd = False
+                self.is_qbit = False
+
         if (
-            not self.is_jd
+            isinstance(self.link, str)
+            and not self.is_jd
             and not self.is_nzb
             and not self.is_qbit
             and not is_magnet(self.link)
@@ -393,8 +442,29 @@ class Mirror(TaskListener):
             and not is_gdrive_id(self.link)
             and not is_mega_link(self.link)
         ):
-            content_type = await get_content_type(self.link)
-            if content_type is None or re_match(r"text/html|text/plain", content_type):
+            if self.is_alldebrid:
+                try:
+                    self.link = await alldebrid_resolve(self.link)
+                    if isinstance(self.link, str):
+                        LOGGER.info(f"AllDebrid link: {self.link}")
+                except DirectDownloadLinkException as e:
+                    e = str(e)
+                    LOGGER.info(e)
+                    if e.startswith("ERROR:"):
+                        await send_message(self.message, e)
+                        await self.remove_from_same_dir()
+                        await delete_links(self.message)
+                        return
+                except Exception as e:
+                    await send_message(self.message, e)
+                    await self.remove_from_same_dir()
+                    await delete_links(self.message)
+                    return
+
+            if isinstance(self.link, str) and (
+                (content_type := await get_content_type(self.link)) is None
+                or re_match(r"text/html|text/plain", content_type)
+            ):
                 try:
                     self.link = await sync_to_async(direct_link_generator, self.link)
                     if isinstance(self.link, tuple):

@@ -252,6 +252,20 @@ Here I will explain how to use mltb.* which is reference to files you want to wo
 3. Third cmd: the input is mltb.m4a so this cmd will work only on m4a audios and the output is mltb.mp3 so the output extension is mp3.
 4. Fourth cmd: the input is mltb.audio so this cmd will work on all audios and the output is mltb.mp3 so the output extension is mp3."""
 
+alldebrid_arg = """<b>AllDebrid Unlock</b>: -ad
+
+/cmd link -ad
+Resolves filehost links (1fichier, rapidgator, mega, etc.) via the
+AllDebrid API before handing off to the existing direct downloader.
+
+Magnet/torrent inputs are also routed through AllDebrid when -ad
+is set: the bot uploads the magnet (or replied <code>.torrent</code>
+file), waits for AllDebrid to finish torrenting, then downloads each
+file directly from AllDebrid CDNs. This bypasses aria2/qBittorrent
+entirely so dead torrents finish faster on a debrid plan.
+
+Requires <code>ALLDEBRID_API_KEY</code> in the bot configuration."""
+
 metadata = """<b>Metadata</b>: -meta
 
 Apply custom metadata to media files using pipe (|) separator.
@@ -338,6 +352,7 @@ MIRROR_HELP_DICT = {
     "Leech-Type": leech_as,
     "FFmpeg-Cmds": ffmpeg_cmds,
     "Metadata": metadata,
+    "AllDebrid": alldebrid_arg,
 }
 
 CLONE_HELP_DICT = {
