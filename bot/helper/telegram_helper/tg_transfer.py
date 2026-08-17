@@ -6,6 +6,7 @@ from pyrogram.file_id import FileType, ThumbnailSource
 from pyrogram.session import Auth, Session
 
 from ... import LOGGER
+from ...core.config_manager import Config
 from ...core.tg_client import TgClient
 
 MB = 1024 * 1024
@@ -106,6 +107,15 @@ class HypertgTransfer:
         global _global_work_loads
         self._obj = obj
         self._listener = obj._listener
+        if not Config.USE_HYPER:
+            self.clients = {}
+            self.client_ids = []
+            self.num_clients = 0
+            self.work_loads = {}
+            self._pool = MtprotoPool({})
+            self._cancel = Event()
+            self._tasks = []
+            return
         self.clients = dict(TgClient.helper_bots)
         if _global_work_loads is None:
             _global_work_loads = dict(TgClient.helper_loads)
