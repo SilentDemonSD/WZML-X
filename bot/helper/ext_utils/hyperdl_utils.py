@@ -391,6 +391,23 @@ class HypertgDownload(HypertgTransfer):
 
         write_tasks = set()
         failed_offsets = set()
+        write_errors = 0
+        max_writes = max(max_win, min_win)
+
+        def _reap_writes():
+            nonlocal write_errors
+            for t in [t for t in write_tasks if t.done()]:
+                write_tasks.discard(t)
+                if not t.cancelled() and t.exception() is not None:
+                    write_errors += 1
+
+        async def _queue_write(roff, chunk):
+            write_tasks.add(create_task(_write(roff, chunk)))
+            _reap_writes()
+            while len(write_tasks) >= max_writes:
+                await wait(write_tasks, return_when=FIRST_COMPLETED)
+                _reap_writes()
+
         try:
             while cur <= last_byte or inflight:
                 if bot_down:
@@ -399,18 +416,18 @@ class HypertgDownload(HypertgTransfer):
                             inflight, return_when=FIRST_COMPLETED
                         )
                         for f in done_set:
+                            known = _inflight_offsets.pop(f, None)
                             try:
                                 s, roff, chunk = f.result()
                                 if not chunk:
                                     failed_offsets.add(roff)
                                     continue
-                                write_tasks.add(create_task(_write(roff, chunk)))
+                                await _queue_write(roff, chunk)
                             except CancelledError:
                                 raise
                             except Exception:
-                                roff = _inflight_offsets.get(f)
-                                if roff is not None:
-                                    failed_offsets.add(roff)
+                                if known is not None:
+                                    failed_offsets.add(known)
                     c = cur
                     while c <= last_byte:
                         failed_offsets.add(c)
@@ -428,6 +445,7 @@ class HypertgDownload(HypertgTransfer):
                     break
                 done_set, inflight = await wait(inflight, return_when=FIRST_COMPLETED)
                 for f in done_set:
+                    _inflight_offsets.pop(f, None)
                     s, roff, chunk = f.result()
                     if not chunk:
                         failed_offsets.add(roff)
@@ -436,7 +454,7 @@ class HypertgDownload(HypertgTransfer):
                     if ok_count >= window:
                         window = min(window + 2, max_win)
                         ok_count = 0
-                    write_tasks.add(create_task(_write(roff, chunk)))
+                    await _queue_write(roff, chunk)
         except CancelledError:
             raise
         except Exception as e:
@@ -449,16 +467,18 @@ class HypertgDownload(HypertgTransfer):
             for f in inflight:
                 if not f.done():
                     f.cancel()
+            inflight.clear()
+            _inflight_offsets.clear()
             if write_tasks:
                 write_results = await gather(*write_tasks, return_exceptions=True)
-                write_errors = sum(
+                write_errors += sum(
                     1 for r in write_results if isinstance(r, BaseException)
                 )
-                if write_errors:
-                    LOGGER.warning(
-                        f"HypertgDL {write_errors}/{len(write_results)} "
-                        f"write tasks failed client={cname}"
-                    )
+                write_tasks.clear()
+            if write_errors:
+                LOGGER.warning(
+                    f"HypertgDL {write_errors} write tasks failed client={cname}"
+                )
         return failed_offsets
 
     async def _part(self, start, end, final_path, ci, fid, csz):
@@ -480,10 +500,11 @@ class HypertgDownload(HypertgTransfer):
 
     @staticmethod
     async def _pwrite(fd, data, offset):
-        total = len(data)
+        view = memoryview(data)
+        total = len(view)
         written = 0
         while written < total:
-            n = await to_thread(os.pwrite, fd, data[written:], offset + written)
+            n = await to_thread(os.pwrite, fd, view[written:], offset + written)
             if n == 0:
                 raise OSError(f"pwrite returned 0 at offset {offset + written}")
             written += n
