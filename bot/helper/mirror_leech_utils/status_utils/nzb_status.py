@@ -1,7 +1,7 @@
 from asyncio import gather
 from collections import defaultdict
 
-from .... import LOGGER, sabnzbd_client, nzb_jobs, nzb_listener_lock
+from .... import LOGGER, sabnzbd_client
 from ...ext_utils.status_utils import (
     MirrorStatus,
     EngineStatus,
@@ -9,6 +9,7 @@ from ...ext_utils.status_utils import (
     get_readable_time,
     time_to_seconds,
 )
+from ...listeners.nzb_listener import _remove_job
 
 
 async def get_download(nzo_id, old_info=None):
@@ -157,10 +158,5 @@ class SabnzbdStatus:
         LOGGER.info(f"Cancelling Download: {self.name()}")
         await gather(
             self.listener.on_download_error("Stopped by user!"),
-            sabnzbd_client.delete_job(self._gid, delete_files=True),
-            sabnzbd_client.delete_category(f"{self.listener.mid}"),
-            sabnzbd_client.delete_history(self._gid, delete_files=True),
+            _remove_job(self._gid, self.listener.mid),
         )
-        async with nzb_listener_lock:
-            if self._gid in nzb_jobs:
-                del nzb_jobs[self._gid]
