@@ -441,6 +441,7 @@ class MegaAppListener(MegaListener):
         self._smoothed_speed = 0
         self._last_speed_time = 0
         self._caller_manages_completion = False
+        self._completion_sent = False
         self._cancel_token = None
         self._upload_mode = False
         self.node = None
@@ -604,7 +605,12 @@ class MegaAppListener(MegaListener):
                     except Exception:
                         pass
             elif request_type == MegaRequest.TYPE_LOGIN:
-                pass
+                try:
+                    fut = self._async_api._request_future
+                    if fut is not None and not fut.done():
+                        fut.set_result(True)
+                except Exception:
+                    pass
             elif request_type == MegaRequest.TYPE_FETCH_NODES:
                 root_node = api.getRootNode()
                 if not root_node:
@@ -612,9 +618,15 @@ class MegaAppListener(MegaListener):
                         root_node = api.getNodeByPath("/", None)
                     except Exception:
                         pass
+                LOGGER.info("MEGA DEBUG FETCH: root=%s", root_node)
                 self.node = root_node
                 if self.node:
+                    LOGGER.info("MEGA DEBUG FETCH: name=%s handle=%s folder=%s", self.node.getName(), self.node.getHandle(), self.node.isFolder())
                     self._cache_node_data(self.node)
+                    try:
+                        self._size = self.node.getSize()
+                    except Exception:
+                        pass
             elif request_type == MegaRequest.TYPE_EXPORT:
                 try:
                     self._export_link = request.getLink()
@@ -1024,7 +1036,12 @@ class MegaFolderListener(MegaListener):
 
             if self.is_cancelled:
                 self._set_request_event()
-                self._set_transfer_event()
+                try:
+                    fut = self._async_api._request_future
+                    if fut is not None and not fut.done():
+                        fut.set_result(True)
+                except Exception:
+                    pass
                 return
 
             LOGGER.info(
@@ -1034,7 +1051,12 @@ class MegaFolderListener(MegaListener):
                 err_code,
             )
             if request_type == MegaRequest.TYPE_LOGIN:
-                pass
+                try:
+                    fut = self._async_api._request_future
+                    if fut is not None and not fut.done():
+                        fut.set_result(True)
+                except Exception:
+                    pass
             elif request_type == MegaRequest.TYPE_FETCH_NODES:
                 root_node = api.getRootNode()
                 if not root_node:
@@ -1130,7 +1152,11 @@ class MegaFolderListener(MegaListener):
 
             if not self._is_target_transfer(transfer):
                 return
-            LOGGER.info("MegaFolder: onTransferFinish TARGET err=%s", err_code)
+            transferred = transfer.getTransferredBytes()
+            total = transfer.getTotalBytes()
+            speed = transfer.getSpeed()
+            state = transfer.getState()
+            LOGGER.info("MegaFolder: onTransferFinish TARGET err=%s transferred=%s total=%s speed=%s state=%s", err_code, transferred, total, speed, state)
             if err_code != MegaError.API_OK:
                 self.error = f"{err_code} {error.toString()}"
                 if err_code == MegaError.API_EINCOMPLETE:
