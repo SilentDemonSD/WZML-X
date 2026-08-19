@@ -66,7 +66,7 @@ class PixelDrainUpload(BaseUpload):
         auth = BasicAuth("", self.token)
         async with ClientSession(auth=auth) as session:
             async with session.post(f"{self.api_url}list", json=data) as resp:
-                if resp.status == 200:
+                if resp.status in [200, 201]:
                     res = await resp.json(content_type=None)
                     if res.get("success"):
                         return res.get("id")
@@ -102,7 +102,7 @@ class PixelDrainUpload(BaseUpload):
             raise Exception("No files uploaded from directory.")
         list_id = await self.create_list(folder_name, uploaded_files)
         if list_id:
-            return f"list/{list_id}"
+            return f"l/{list_id}"
         else:
             return f"u/{uploaded_files[0]['id']}"
 
