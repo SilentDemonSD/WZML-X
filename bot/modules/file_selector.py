@@ -84,13 +84,12 @@ async def select(_, message):
         return
 
     try:
+        await task.update()
+        id_ = task.hash() if task.listener.is_qbit else task.gid()
         if not task.queued:
-            await task.update()
-            id_ = task.gid()
             if task.listener.is_nzb:
                 await sabnzbd_client.pause_job(id_)
             elif task.listener.is_qbit:
-                id_ = task.hash()
                 await TorrentManager.qbittorrent.torrents.stop([id_])
             else:
                 try:
