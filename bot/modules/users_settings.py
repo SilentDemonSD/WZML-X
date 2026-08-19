@@ -1343,6 +1343,8 @@ async def get_menu(option, message, user_id):
         back_to = "ffset"
     elif option in advanced_options:
         back_to = "advanced"
+    elif option in uphoster_options:
+        back_to = option.split("_")[0].lower()
     elif option in mega_options:
         back_to = "mega"
     else:
