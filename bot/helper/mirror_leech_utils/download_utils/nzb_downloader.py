@@ -82,13 +82,13 @@ async def add_nzb(listener, path):
     use_par2_lock = listener.extract and sab_par2_lock.throttled
     job_id = None
     par2_lock_acquired = False
+    url = listener.link
+    nzbpath = None
+    if await aiopath.exists(listener.link):
+        url = None
+        nzbpath = listener.link
     try:
         await sabnzbd_client.create_category(f"{listener.mid}", path)
-        url = listener.link
-        nzbpath = None
-        if await aiopath.exists(listener.link):
-            url = None
-            nzbpath = listener.link
         add_to_queue, event = await check_running_tasks(listener)
         res = await sabnzbd_client.add_uri(
             url,
