@@ -364,6 +364,8 @@
                 width: calc(100% - 0.3rem);
             }
         }
+        .sort-bar { display: flex; gap: 10px; padding: 12px 0 6px; justify-content: center; }
+        .sort-bar button { width: auto; min-width: 130px; height: 40px; margin: 0; padding: 0 20px; border-radius: 12px; }
     </style>
 </head>
 
@@ -396,6 +398,7 @@
         </div>
 
         <div id="fileManager" style="display: none;">
+            <div class="sort-bar"><button type="button" onclick="setSort('name')">Name <span id="name-sort">↑</span></button><button type="button" onclick="setSort('size')">Size <span id="size-sort">↕</span></button></div>
             <div id="fileTree" class="file-tree"></div>
             <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1vh 0;">
                 <button type="button" id="selectAllBtn" style="width: auto; padding: 0 1rem; height: 4vh; margin: 0;">Select All</button>
@@ -467,6 +470,17 @@
             return totalSize;
         }
 
+        let sortBy = "name";
+        let sortAsc = true;
+
+        function setSort(type) {
+            if (sortBy === type) sortAsc = !sortAsc;
+            else { sortBy = type; sortAsc = type === "name"; }
+            document.getElementById("name-sort").textContent = sortBy === "name" ? (sortAsc ? "↑" : "↓") : "↕";
+            document.getElementById("size-sort").textContent = sortBy === "size" ? (sortAsc ? "↑" : "↓") : "↕";
+            renderFileTree(currentFolder ? currentFolder.children : files);
+        }
+
         function renderFileTree(nodes) {
             fileTree.innerHTML = '';
             if (currentFolder) {
@@ -476,7 +490,7 @@
                 backButton.addEventListener('click', goBack);
                 fileTree.appendChild(backButton);
             }
-            nodes.forEach(node => {
+            const sortedNodes = [...nodes].sort((a, b) => { const av = sortBy === "name" ? a.name.toLowerCase() : (a.type === "folder" ? calculateFolderSize(a) : a.size); const bv = sortBy === "name" ? b.name.toLowerCase() : (b.type === "folder" ? calculateFolderSize(b) : b.size); if (av < bv) return sortAsc ? -1 : 1; if (av > bv) return sortAsc ? 1 : -1; return 0; }); sortedNodes.forEach(node => {
                 const div = document.createElement('div');
                 div.className = 'file-tree-item';
                 const checkboxWrapper = document.createElement('div');
