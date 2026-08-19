@@ -1009,8 +1009,9 @@ async def get_user_settings(from_user, stype="main"):
         else:
             ytopt = "None"
 
-        upload_paths = user_dict.get("UPLOAD_PATHS", {})
-        if not upload_paths and "UPLOAD_PATHS" not in user_dict and Config.UPLOAD_PATHS:
+        if user_dict.get("UPLOAD_PATHS", False):
+            upload_paths = user_dict["UPLOAD_PATHS"]
+        elif "UPLOAD_PATHS" not in user_dict and Config.UPLOAD_PATHS:
             upload_paths = Config.UPLOAD_PATHS
         else:
             upload_paths = "None"
