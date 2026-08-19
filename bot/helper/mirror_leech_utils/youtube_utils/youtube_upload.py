@@ -258,6 +258,8 @@ class YouTubeUpload(YouTubeHelper):
         video_response = None
         retries = 0
         current_chunk_uploaded_bytes = 0
+        self.status = None
+        self.file_processed_bytes = 0
 
         while video_response is None and not self.listener.is_cancelled:
             try:
