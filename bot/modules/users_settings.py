@@ -1390,7 +1390,7 @@ async def get_menu(option, message, user_id):
                 lines.append(
                     f"  <b>{escape(k)}</b>: <code>{escape(did)}</code>{ilink_part}"
                 )
-            val = "<br>".join(lines)
+            val = "\n   ".join(lines)
         elif not val:
             val = "<b>Not Exists</b>"
 
