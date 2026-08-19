@@ -3,7 +3,6 @@ from os import path as ospath
 from os import walk as oswalk
 
 from aiofiles.os import path as aiopath
-from aiofiles.os import rename as aiorename
 from aiohttp import ClientSession
 from tenacity import (
     retry,
@@ -119,18 +118,14 @@ class BuzzHeavierUpload(BaseUpload):
     async def upload_file(self, path: str, parentId: str = ""):
         if self.listener.is_cancelled:
             return None
-        new_path = ospath.join(
-            ospath.dirname(path), ospath.basename(path).replace(" ", ".")
-        )
-        await aiorename(path, new_path)
-        file_name = ospath.basename(new_path)
+        file_name = ospath.basename(path).replace(" ", ".")
         if not parentId:
             parentId = await self.__get_root_id()
         if parentId:
             url = f"{self.upload_url}{parentId}/{file_name}"
         else:
             url = f"{self.upload_url}{file_name}"
-        return await self.upload_aiohttp(url, new_path)
+        return await self.upload_aiohttp(url, path)
 
     async def _upload_dir(self, input_directory):
         parent_folder_id = self.folder_id or await self.__get_root_id()
