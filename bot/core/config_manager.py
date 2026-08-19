@@ -25,6 +25,7 @@ class Config:
     DEBRID_LINK_API = ""
     DISABLE_TORRENTS = False
     DISABLE_LEECH = False
+    DISABLE_MIRROR = False
     DISABLE_BULK = False
     DISABLE_MULTI = False
     DISABLE_SEED = False
