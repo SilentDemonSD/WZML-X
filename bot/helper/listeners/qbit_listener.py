@@ -169,7 +169,9 @@ async def _qb_listener():
                             msg += f"{tor_info.hash} Downloaded Bytes: {tor_info.downloaded} "
                             msg += f"Size: {tor_info.size} Total Size: {tor_info.total_size}"
                             LOGGER.warning(msg)
-                            await TorrentManager.qbittorrent.torrents.recheck(
+                            # Automatic recheck disabled: disk verification is very slow
+                            # on high I/O load. Continue/reannounce instead.
+                            await TorrentManager.qbittorrent.torrents.reannounce(
                                 [tor_info.hash]
                             )
                             qb_torrents[tag]["rechecked"] = True

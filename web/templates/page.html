@@ -366,6 +366,112 @@
         }
         .sort-bar { display: flex; gap: 10px; padding: 12px 0 6px; justify-content: center; }
         .sort-bar button { width: auto; min-width: 130px; height: 40px; margin: 0; padding: 0 20px; border-radius: 12px; }
+
+        .file-tree-item,
+        .file-tree-item * {
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            user-select: none !important;
+        }
+
+        .file-tree-item input[type="checkbox"] {
+            -webkit-user-select: auto !important;
+            -moz-user-select: auto !important;
+            -ms-user-select: auto !important;
+            user-select: auto !important;
+        }
+
+
+        /* ===== Torrent selector controls ===== */
+        .selection-top-bar {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            background: #1a2028;
+            border-radius: 0 0 1.5rem 1.5rem;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.11);
+        }
+
+        .selection-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .selection-actions button {
+            width: auto;
+            height: 4.5vh;
+            min-height: 42px;
+            margin: 0;
+            padding: 0 1rem;
+        }
+
+        .selection-stats {
+            text-align: center;
+            white-space: nowrap;
+            line-height: 1.6;
+        }
+
+        .search-box {
+            justify-self: end;
+            width: 100%;
+            max-width: 320px;
+        }
+
+        #fileSearch {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 0.7rem 1rem;
+            border: 2px solid rgba(255, 255, 255, 0.11);
+            border-radius: 1.5rem;
+            background: #0D1117;
+            color: inherit;
+            outline: none;
+        }
+
+        .selection-bottom-bar {
+            position: sticky;
+            bottom: 0;
+            z-index: 20;
+            padding: 1rem 0 0.5rem;
+            background: #1a2028;
+            border-top: 2px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .selection-bottom-bar #submitBtn {
+            margin: 0 auto;
+            width: 50%;
+        }
+
+        @media (max-width: 800px) {
+            .selection-top-bar {
+                grid-template-columns: 1fr;
+            }
+
+            .selection-actions,
+            .search-box {
+                justify-self: center;
+            }
+
+            .selection-stats {
+                order: -1;
+            }
+
+            .search-box {
+                max-width: none;
+            }
+
+            .selection-bottom-bar #submitBtn {
+                width: 90%;
+            }
+        }
+
     </style>
 </head>
 
@@ -381,11 +487,6 @@
         </div>
     </header>
 
-    <div id="sticks">
-        <h4>Selected files: <b id="checked_files">0</b> of <b id="total_files">0</b></h4>
-        <h4>Selected files size: <b id="checked_size">0</b> of <b id="total_size">0</b></h4>
-    </div>
-
     <section>
         <div id="pinEntry" class="pin-entry">
             <form id="pinForm" class="pin-form" onsubmit="return false">
@@ -398,14 +499,32 @@
         </div>
 
         <div id="fileManager" style="display: none;">
-            <div class="sort-bar"><button type="button" onclick="setSort('name')">Name <span id="name-sort">↑</span></button><button type="button" onclick="setSort('size')">Size <span id="size-sort">↕</span></button></div>
-            <div id="fileTree" class="file-tree"></div>
-            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1vh 0;">
-                <button type="button" id="selectAllBtn" style="width: auto; padding: 0 1rem; height: 4vh; margin: 0;">Select All</button>
-                <button type="button" id="invertSelectionBtn" style="width: auto; padding: 0 1rem; height: 4vh; margin: 0;">Invert</button>
-                <button type="button" id="selectEverythingBtn" style="width: auto; padding: 0 1rem; height: 4vh; margin: 0;">Select Everything</button>
+            <div class="selection-top-bar">
+                <div class="selection-actions">
+                    <button type="button" id="selectAllBtn">Select All</button>
+                    <button type="button" id="invertSelectionBtn">Invert</button>
+                </div>
+
+                <div class="selection-stats">
+                    <div>Selected files: <b id="checked_files">0</b> of <b id="total_files">0</b></div>
+                    <div>Selected files size: <b id="checked_size">0</b> of <b id="total_size">0</b></div>
+                </div>
+
+                <div class="search-box">
+                    <input type="search" id="fileSearch" placeholder="Search files...">
+                </div>
             </div>
-            <button type="button" id="submitBtn">Submit Selection</button>
+
+            <div class="sort-bar">
+                <button type="button" onclick="setSort('name')">Name <span id="name-sort">↑</span></button>
+                <button type="button" onclick="setSort('size')">Size <span id="size-sort">↕</span></button>
+            </div>
+
+            <div id="fileTree" class="file-tree"></div>
+
+            <div class="selection-bottom-bar">
+                <button type="button" id="submitBtn">Submit Selection</button>
+            </div>
         </div>
     </section>
 
@@ -472,6 +591,23 @@
 
         let sortBy = "name";
         let sortAsc = true;
+        let lastSelectedNode = null;
+
+        function filterFilesBySearch() {
+            const searchInput = document.getElementById('fileSearch');
+            if (!searchInput) return;
+
+            const query = searchInput.value.toLowerCase().trim();
+
+            document.querySelectorAll('#fileTree .file-tree-item').forEach(row => {
+                const name = row.querySelector('.file-name');
+                if (!name) return;
+
+                row.style.display = (!query || name.textContent.toLowerCase().includes(query))
+                    ? ''
+                    : 'none';
+            });
+        }
 
         function setSort(type) {
             if (sortBy === type) sortAsc = !sortAsc;
@@ -500,7 +636,17 @@
                 checkbox.type = 'checkbox';
                 checkbox.id = node.id;
                 checkbox.checked = node.selected;
-                checkbox.addEventListener('change', () => toggleFile(node));
+                checkbox.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    toggleFile(node, {
+                        shiftKey: event.shiftKey,
+                        ctrlKey: event.ctrlKey,
+                        metaKey: event.metaKey,
+                        checked: !node.selected
+                    });
+                });
 
                 checkboxWrapper.appendChild(checkbox);
 
@@ -532,12 +678,35 @@
                         sizeInfo.appendChild(progressText);
                     }
                 }
-                div.addEventListener('click', (event) => {
-                    if (event.target.className === 'file-name cursor-pointer') {
-                        toggleFile(node);
-                    } else if (event.target.className === 'edit-btn') {
-                        openEditFileNameModal(node);
+                div.addEventListener('pointerdown', (event) => {
+                    if (
+                        event.target.closest('input[type="checkbox"]') ||
+                        event.target.closest('.edit-btn')
+                    ) {
+                        return;
                     }
+
+                    // Folder ke naam par click = folder open
+                    if (
+                        node.type === 'folder' &&
+                        event.target.closest('.folder-name')
+                    ) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        openFolder(node);
+                        return;
+                    }
+
+                    // Baaki puri row = selection
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    toggleFile(node, {
+                        shiftKey: event.shiftKey,
+                        ctrlKey: event.ctrlKey,
+                        metaKey: event.metaKey,
+                        checked: !node.selected
+                    });
                 });
 
                 fileInfo.appendChild(nameElement);
@@ -575,16 +744,64 @@
             return folder.children.some(child => child.type === 'folder' ? areSomeChildrenSelected(child) : child.selected);
         }
 
-        function toggleFile(node) {
-            if (node.type === 'folder') {
-                const isSelected = !areAllChildrenSelected(node);
-                toggleFolder(node, isSelected);
+        function toggleFile(node, event = {}) {
+            const visibleNodes = [...(currentFolder ? currentFolder.children : files)].sort((a, b) => {
+                const av = sortBy === "name"
+                    ? a.name.toLowerCase()
+                    : (a.type === "folder" ? calculateFolderSize(a) : a.size);
+                const bv = sortBy === "name"
+                    ? b.name.toLowerCase()
+                    : (b.type === "folder" ? calculateFolderSize(b) : b.size);
+
+                if (av < bv) return sortAsc ? -1 : 1;
+                if (av > bv) return sortAsc ? 1 : -1;
+                return 0;
+            });
+
+            const shouldSelect = event.checked !== undefined ? event.checked : !node.selected;
+
+
+            if (event.shiftKey && lastSelectedNode) {
+                const start = visibleNodes.findIndex(
+                    n => n.id === lastSelectedNode.id
+                );
+                const end = visibleNodes.findIndex(
+                    n => n.id === node.id
+                );
+
+                if (start !== -1 && end !== -1) {
+                    const from = Math.min(start, end);
+                    const to = Math.max(start, end);
+
+                    for (let i = from; i <= to; i++) {
+                        const current = visibleNodes[i];
+
+                        if (current.type === 'folder') {
+                            toggleFolder(current, shouldSelect);
+                        } else {
+                            current.selected = shouldSelect;
+                        }
+
+                        updateParentFolders(current);
+                    }
+                } else {
+                    node.selected = shouldSelect;
+                    updateParentFolders(node);
+                }
             } else {
-                node.selected = !node.selected;
+                if (node.type === 'folder') {
+                    toggleFolder(node, shouldSelect);
+                } else {
+                    node.selected = shouldSelect;
+                }
+
+                updateParentFolders(node);
             }
-            updateParentFolders(node);
+
+            lastSelectedNode = node;
             updateStats();
             renderFileTree(currentFolder ? currentFolder.children : files);
+            filterFilesBySearch();
         }
 
         function toggleFolder(folder, isSelected) {
@@ -623,6 +840,10 @@
         }
 
         function updateStats() {
+            const oldChecked = document.getElementById('checked_files');
+            const oldTotal = document.getElementById('total_files');
+            const oldCheckedSize = document.getElementById('checked_size');
+            const oldTotalSize = document.getElementById('total_size');
             const stats = calculateStats(files);
             checkedFilesEl.textContent = stats.selectedCount;
             totalFilesEl.textContent = stats.totalCount;
@@ -893,21 +1114,16 @@
             });
         });
 
-        const invertSelectionBtn = document.getElementById('invertSelectionBtn');
-        const selectEverythingBtn = document.getElementById('selectEverythingBtn');
+        const fileSearch = document.getElementById('fileSearch');
+        if (fileSearch) {
+            fileSearch.addEventListener('input', filterFilesBySearch);
+        }
 
-        invertSelectionBtn.addEventListener('click', invertSelection);
-        selectEverythingBtn.addEventListener('click', selectEverything);
 
         selectAllBtn.addEventListener('click', selectAll);
-        selectEverythingBtn.addEventListener('click', selectEverything);
-        submitBtn.addEventListener('click', submitData);
+        invertSelectionBtn.addEventListener('click', invertSelection);
 
-        reusableModal.addEventListener('click', (event) => {
-            if (event.target === reusableModal) {
-                event.stopPropagation();
-            }
-        });
+        submitBtn.addEventListener('click', submitData);
 
         function updateSelectAllButtonText() {
             const nodes = currentFolder ? currentFolder.children : files;
