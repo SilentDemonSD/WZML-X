@@ -5,8 +5,7 @@ from os import walk as oswalk
 from random import choice
 
 from aiofiles.os import path as aiopath
-from aiofiles.os import rename as aiorename
-from aiohttp import ClientSession
+from aiohttp import ClientSession, FormData
 from aiohttp.client_exceptions import ContentTypeError
 from tenacity import (
     retry,
@@ -117,9 +116,14 @@ class GoFileUpload(BaseUpload):
         with ProgressFileReader(
             filename=file_path, read_callback=self._progress_callback
         ) as file:
-            data[req_file] = file
+            form = FormData()
+            for key, value in data.items():
+                form.add_field(key, value)
+            form.add_field(
+                req_file, file, filename=ospath.basename(file_path).replace(" ", ".")
+            )
             async with ClientSession() as session:
-                async with session.post(url, data=data) as resp:
+                async with session.post(url, data=form) as resp:
                     if resp.status == 200:
                         try:
                             return await resp.json()
@@ -176,13 +180,9 @@ class GoFileUpload(BaseUpload):
             req_dict["expire"] = expire
         if self.listener.is_cancelled:
             return None
-        new_path = ospath.join(
-            ospath.dirname(path), ospath.basename(path).replace(" ", ".")
-        )
-        await aiorename(path, new_path)
         upload_file = await self.upload_aiohttp(
             f"https://{server}.gofile.io/uploadfile",
-            new_path,
+            path,
             "file",
             req_dict,
         )
