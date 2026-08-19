@@ -159,7 +159,8 @@ async def confirm_selection(_, query):
                             f"{e} Error in resume, this mostly happens after abuse aria2. Try to use select cmd again!"
                         )
         elif task.listener.is_nzb:
-            await sabnzbd_client.resume_job(id_)
+            if not task.queued:
+                await sabnzbd_client.resume_job(id_)
         await send_status_message(message)
         await delete_message(message)
     else:
