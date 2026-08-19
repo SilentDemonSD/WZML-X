@@ -66,7 +66,7 @@ class YouTubeUpload(YouTubeHelper):
             self.token_path = f"tokens/{self.listener.user_id}.pickle"
 
     def _yt_opt(self, key):
-        return self.listener.user_dict.get(key) or getattr(Config, key)
+        return self.listener.user_dict.get(key) or Config.get(key)
 
     def upload(self):
         """Main upload function"""
@@ -236,7 +236,7 @@ class YouTubeUpload(YouTubeHelper):
         title = file_name
         description = self._yt_opt("YT_DESP")
         tags = self._yt_opt("YT_TAGS")
-        category_id = self._yt_opt("YT_CATEGORY_ID")
+        category_id = str(self._yt_opt("YT_CATEGORY_ID"))
         privacy_status = self._yt_opt("YT_PRIVACY_STATUS")
 
         video_body = {
