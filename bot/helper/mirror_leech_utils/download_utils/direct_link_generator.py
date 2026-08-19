@@ -937,18 +937,21 @@ def terabox(url):
     }
 
     def __load_cookies():
-        if not ospath.isfile("cookies.txt"):
+        cfile = next(
+            (f for f in ("terabox.txt", "cookies.txt") if ospath.isfile(f)), None
+        )
+        if not cfile:
             return None
         cookies = {}
         try:
-            with open("cookies.txt") as f:
+            with open(cfile) as f:
                 for line in f:
                     line = line.rstrip("\r\n")
                     if line.startswith("#HttpOnly_"):
                         line = line[len("#HttpOnly_") :]
                     if not line or line.startswith("#"):
                         continue
-                    parts = line.split("\t")
+                    parts = line.split(None, 6)
                     if len(parts) < 7:
                         continue
                     if any(k in parts[0].lower() for k in COOKIE_DOMAINS):
@@ -968,7 +971,7 @@ def terabox(url):
             surl = qs["surl"][0]
         elif "/s/" in parsed.path:
             surl = parsed.path.split("/s/", 1)[1].split("/", 1)[0]
-        if surl.startswith("1") and len(surl) > 20:
+        if surl.startswith("1"):
             surl = surl[1:]
         if not surl:
             raise DirectDownloadLinkException(
@@ -1128,6 +1131,7 @@ def terabox(url):
         }
         details = {"contents": [], "title": "", "total_size": 0}
         pending = []
+        base = {"dir": ""}
 
         def __walk(dir_path=None, root=False):
             page = 1
@@ -1143,7 +1147,8 @@ def terabox(url):
                     num=200,
                 )
                 if root and page == 1 and not details["title"]:
-                    details["title"] = (data.get("title") or surl).lstrip("/")
+                    base["dir"] = (data.get("title") or "").rstrip("/")
+                    details["title"] = ospath.basename(base["dir"]) or surl
                 items = data.get("list") or []
                 if not items:
                     break
@@ -1151,8 +1156,11 @@ def terabox(url):
                     if int(it.get("isdir") or 0):
                         __walk(dir_path=it["path"])
                     else:
+                        parent = ospath.dirname(it.get("path", ""))
+                        if base["dir"] and parent.startswith(base["dir"]):
+                            parent = parent[len(base["dir"]) :]
                         entry = {
-                            "path": ospath.dirname(it.get("path", "")).lstrip("/"),
+                            "path": parent.strip("/"),
                             "filename": it["server_filename"],
                             "url": it.get("dlink", ""),
                         }
@@ -1203,45 +1211,12 @@ def terabox(url):
         return details
 
     cookies = __load_cookies()
-    if cookies:
-        try:
-            return __crawl_with_cookies(cookies)
-        except DirectDownloadLinkException:
-            raise
-        except Exception:
-            pass
-
-    api_url = "https://teraboxdl.site/api/proxy"
-    headers = {"Referer": "https://teraboxdl.site/", "User-Agent": user_agent}
-    payload = {"url": url}
-
-    try:
-        with Session() as session:
-            req = session.post(
-                api_url, json=payload, headers=headers, timeout=30
-            ).json()
-    except Exception as e:
-        raise DirectDownloadLinkException(f"ERROR: {e.__class__.__name__}") from e
-
-    details = {"contents": [], "title": "", "total_size": 0}
-
-    if req.get("errno") != 0 or not req.get("list"):
-        raise DirectDownloadLinkException("ERROR: File not found!")
-
-    for data in req["list"]:
-        item = {
-            "path": data.get("path", ""),
-            "filename": data["server_filename"],
-            "url": data["direct_link"],
-        }
-        details["contents"].append(item)
-        details["total_size"] += data.get("size", 0)
-
-    details["title"] = req["list"][0]["server_filename"]
-
-    if len(details["contents"]) == 1:
-        return details["contents"][0]["url"]
-    return details
+    if not cookies:
+        raise DirectDownloadLinkException(
+            "ERROR: Terabox needs login cookies. Export your terabox.com "
+            "cookies (netscape format, must contain ndus) into terabox.txt"
+        )
+    return __crawl_with_cookies(cookies)
 
 
 def filepress(url):
