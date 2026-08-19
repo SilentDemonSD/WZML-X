@@ -18,12 +18,15 @@ async def _remove_job(nzo_id, mid=None):
         if nzo_id in nzb_jobs and nzb_jobs[nzo_id].get("par2_lock"):
             await sab_par2_lock.release()
             del nzb_jobs[nzo_id]["par2_lock"]
-    tasks = [sabnzbd_client.delete_history(nzo_id, delete_files=True)]
-    if mid:
-        tasks.append(sabnzbd_client.delete_category(f"{mid}"))
-    res1 = (await gather(*tasks))[0]
-    if not res1:
-        await sabnzbd_client.delete_job(nzo_id, True)
+    try:
+        tasks = [sabnzbd_client.delete_history(nzo_id, delete_files=True)]
+        if mid:
+            tasks.append(sabnzbd_client.delete_category(f"{mid}"))
+        res1 = (await gather(*tasks))[0]
+        if not res1:
+            await sabnzbd_client.delete_job(nzo_id, True)
+    except Exception as e:
+        LOGGER.error(f"{e}: Sabnzbd, while removing job. ID: {nzo_id}")
     async with nzb_listener_lock:
         if nzo_id in nzb_jobs:
             del nzb_jobs[nzo_id]
