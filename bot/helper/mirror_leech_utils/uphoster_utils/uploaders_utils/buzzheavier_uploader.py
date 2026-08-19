@@ -144,9 +144,7 @@ class BuzzHeavierUpload(BaseUpload):
             if self.listener.is_cancelled:
                 break
             rel_path = ospath.relpath(root, input_directory)
-            current_folder_id = folder_ids.get(ospath.dirname(rel_path), main_folder_id)
-            if rel_path != ".":
-                current_folder_id = folder_ids.get(rel_path)
+            current_folder_id = folder_ids.get(rel_path, main_folder_id)
             for subdir in _dirs:
                 sub_folder_data = await self.create_folder(current_folder_id, subdir)
                 sub_folder_id = extract_id(sub_folder_data)
@@ -154,7 +152,9 @@ class BuzzHeavierUpload(BaseUpload):
                     raise Exception(
                         f"Could not retrieve subfolder ID from response: {sub_folder_data}"
                     )
-                sub_rel_path = ospath.join(rel_path, subdir)
+                sub_rel_path = (
+                    subdir if rel_path == "." else ospath.join(rel_path, subdir)
+                )
                 folder_ids[sub_rel_path] = sub_folder_id
                 self.total_folders += 1
             for file in files:
