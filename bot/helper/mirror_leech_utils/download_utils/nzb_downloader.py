@@ -121,6 +121,7 @@ async def add_nzb(listener, path):
                 if err := slots[0]["fail_message"]:
                     if par2_lock_acquired:
                         await sab_par2_lock.release()
+                        par2_lock_acquired = False
                     await gather(
                         listener.on_download_error(err),
                         sabnzbd_client.delete_history(job_id, delete_files=True),
@@ -179,6 +180,8 @@ async def add_nzb(listener, path):
             if listener.is_cancelled:
                 return
             async with task_dict_lock:
+                if listener.mid not in task_dict:
+                    return
                 task_dict[listener.mid].queued = False
 
             await sabnzbd_client.resume_job(job_id)
@@ -188,6 +191,7 @@ async def add_nzb(listener, path):
     except Exception as e:
         if par2_lock_acquired:
             await sab_par2_lock.release()
+            par2_lock_acquired = False
         await listener.on_download_error(f"{e}")
     finally:
         if nzbpath and await aiopath.exists(listener.link):
