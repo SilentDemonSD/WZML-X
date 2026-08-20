@@ -223,13 +223,12 @@ class TelegramUploader:
     def _get_input_media(self, subkey, key):
         rlist = []
         for msg in self._media_dict[key][subkey]:
+            caption = msg.caption.html if msg.caption else None
             if key == "videos":
-                input_media = InputMediaVideo(
-                    media=msg.video.file_id, caption=msg.caption
-                )
+                input_media = InputMediaVideo(media=msg.video.file_id, caption=caption)
             else:
                 input_media = InputMediaDocument(
-                    media=msg.document.file_id, caption=msg.caption
+                    media=msg.document.file_id, caption=caption
                 )
             rlist.append(input_media)
         return rlist
@@ -270,17 +269,31 @@ class TelegramUploader:
                 msgs[index] = await _call_with_flood_retry(
                     TgClient.user.get_messages, chat_id=msg[0], message_ids=msg[1]
                 )
-        msgs_list = await _call_with_flood_retry(
-            msgs[0].reply_to_message.reply_media_group,
-            media=self._get_input_media(subkey, key),
-            reply_parameters=ReplyParameters(message_id=msgs[0].reply_to_message.id),
-            disable_notification=True,
-        )
+        media = self._get_input_media(subkey, key)
+        del self._media_dict[key][subkey]
+        if reply_target := msgs[0].reply_to_message:
+            msgs_list = await _call_with_flood_retry(
+                reply_target.reply_media_group,
+                media=media,
+                reply_parameters=ReplyParameters(message_id=reply_target.id),
+                disable_notification=True,
+            )
+        else:
+            msgs_list = await _call_with_flood_retry(
+                (
+                    self._listener.client
+                    if self._listener.transmission_mode == "both"
+                    or not self._user_session
+                    else TgClient.user
+                ).send_media_group,
+                chat_id=msgs[0].chat.id,
+                media=media,
+                disable_notification=True,
+            )
         for msg in msgs:
             if msg.link in self._msgs_dict:
                 del self._msgs_dict[msg.link]
             await delete_message(msg)
-        del self._media_dict[key][subkey]
         if self._listener.is_super_chat or self._listener.up_dest:
             for m in msgs_list:
                 self._msgs_dict[m.link] = m.caption
@@ -496,6 +509,8 @@ class TelegramUploader:
                         )
                     )
                     upload_tasks.append(task)
+                    if not Config.USE_HYPER:
+                        await task
                     seq_idx += 1
                     if self._listener.is_cancelled:
                         return

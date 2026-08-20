@@ -90,6 +90,7 @@ BOOL_VARS = [
     "DISABLE_FF_MODE",
     "DISABLE_JD",
     "DISABLE_LEECH",
+    "DISABLE_MIRROR",
     "DISABLE_MULTI",
     "DISABLE_NZB",
     "DISABLE_RSS",
@@ -127,8 +128,10 @@ DEFAULT_DESP = {
     "DEFAULT_UPLOAD": "Default upload destination: gd (Google Drive) or rc (rclone). Default: rc.",
     "DELETE_LINKS": "Auto-delete source links/messages on task start. Default: False.",
     "DEBRID_LINK_API": "Debrid-link.com API key for premium hoster support.",
+    "ALLDEBRID_API_KEY": "AllDebrid API key, used by the -ad flag to unlock links/magnets.",
     "DISABLE_TORRENTS": "Disable all torrent downloads. Default: False.",
     "DISABLE_LEECH": "Disable all leech (download to Telegram) tasks. Default: False.",
+    "DISABLE_MIRROR": "Disable all mirror (upload to cloud) tasks. Default: False.",
     "DISABLE_BULK": "Disable bulk (zip/unzip) operations. Default: False.",
     "DISABLE_MULTI": "Disable multi-part splits. Default: False.",
     "DISABLE_SEED": "Disable seeding after torrent download. Default: False.",
@@ -276,6 +279,7 @@ RESTART_VARS = {
 ONOFF_VARS = [
     "DISABLE_TORRENTS",
     "DISABLE_LEECH",
+    "DISABLE_MIRROR",
     "DISABLE_BULK",
     "DISABLE_MULTI",
     "DISABLE_SEED",
@@ -419,6 +423,7 @@ async def get_buttons(key=None, edit_type=None, edit_mode=False):
                     "shortener.txt",
                     "categories.txt",
                     "cookies.txt",
+                    "terabox.txt",
                     ".netrc",
                 ]
             ]
@@ -618,6 +623,8 @@ async def edit_variable(_, message, pre_message, key):
     elif key == "LOGIN_PASS":
         value = str(value)
     elif key == "DEBRID_LINK_API":
+        value = str(value)
+    elif key == "ALLDEBRID_API_KEY":
         value = str(value)
     elif value.isdigit():
         value = int(value)

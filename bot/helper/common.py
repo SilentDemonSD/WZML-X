@@ -122,6 +122,8 @@ class TaskConfig:
         self.is_gdrive = False
         self.is_rclone = False
         self.is_ytdlp = False
+        self.is_alldebrid = False
+        self._alldebrid_magnet_id = 0
         self.equal_splits = False
         self.transmission_mode = "bot"
         self.extract = False

@@ -5,6 +5,7 @@ from wz_bin import bin_name
 
 
 class Config:
+    ALLDEBRID_API_KEY = ""
     AS_DOCUMENT = False
     AUTHORIZED_CHATS = ""
     BASE_URL = ""
@@ -24,6 +25,7 @@ class Config:
     DEBRID_LINK_API = ""
     DISABLE_TORRENTS = False
     DISABLE_LEECH = False
+    DISABLE_MIRROR = False
     DISABLE_BULK = False
     DISABLE_MULTI = False
     DISABLE_SEED = False

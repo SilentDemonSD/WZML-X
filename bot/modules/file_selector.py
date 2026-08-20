@@ -84,13 +84,12 @@ async def select(_, message):
         return
 
     try:
+        await task.update()
+        id_ = task.hash() if task.listener.is_qbit else task.gid()
         if not task.queued:
-            await task.update()
-            id_ = task.gid()
             if task.listener.is_nzb:
                 await sabnzbd_client.pause_job(id_)
             elif task.listener.is_qbit:
-                id_ = task.hash()
                 await TorrentManager.qbittorrent.torrents.stop([id_])
             else:
                 try:
@@ -160,7 +159,8 @@ async def confirm_selection(_, query):
                             f"{e} Error in resume, this mostly happens after abuse aria2. Try to use select cmd again!"
                         )
         elif task.listener.is_nzb:
-            await sabnzbd_client.resume_job(id_)
+            if not task.queued:
+                await sabnzbd_client.resume_job(id_)
         await send_status_message(message)
         await delete_message(message)
     else:

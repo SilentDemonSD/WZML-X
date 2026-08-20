@@ -13,17 +13,20 @@ from ..ext_utils.status_utils import get_task_by_gid, get_raw_file_size
 from ..ext_utils.task_manager import stop_duplicate_check, limit_checker
 
 
-async def _remove_job(nzo_id, mid):
+async def _remove_job(nzo_id, mid=None):
     async with nzb_listener_lock:
         if nzo_id in nzb_jobs and nzb_jobs[nzo_id].get("par2_lock"):
             await sab_par2_lock.release()
             del nzb_jobs[nzo_id]["par2_lock"]
-    res1, _ = await gather(
-        sabnzbd_client.delete_history(nzo_id, delete_files=True),
-        sabnzbd_client.delete_category(f"{mid}"),
-    )
-    if not res1:
-        await sabnzbd_client.delete_job(nzo_id, True)
+    try:
+        tasks = [sabnzbd_client.delete_history(nzo_id, delete_files=True)]
+        if mid:
+            tasks.append(sabnzbd_client.delete_category(f"{mid}"))
+        res1 = (await gather(*tasks))[0]
+        if not res1:
+            await sabnzbd_client.delete_job(nzo_id, True)
+    except Exception as e:
+        LOGGER.error(f"{e}: Sabnzbd, while removing job. ID: {nzo_id}")
     async with nzb_listener_lock:
         if nzo_id in nzb_jobs:
             del nzb_jobs[nzo_id]
@@ -37,6 +40,8 @@ async def _on_download_error(err, nzo_id, button=None, is_limit=False):
             task.listener.on_download_error(err, button, is_limit),
             _remove_job(nzo_id, task.listener.mid),
         )
+    else:
+        await _remove_job(nzo_id)
 
 
 @new_task
@@ -66,6 +71,8 @@ async def _on_download_complete(nzo_id):
         if intervals["stopAll"]:
             return
         await _remove_job(nzo_id, task.listener.mid)
+    else:
+        await _remove_job(nzo_id)
 
 
 @new_task

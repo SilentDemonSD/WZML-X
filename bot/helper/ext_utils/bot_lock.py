@@ -135,6 +135,8 @@ class SmartLock:
 
     async def release(self):
         async with self._lock:
+            if self._active == 0:
+                return
             should_resume = (
                 self._throttled
                 and self._active >= self._get_max_slots()
