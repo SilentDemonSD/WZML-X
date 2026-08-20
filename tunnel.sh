@@ -8,7 +8,7 @@ touch "$URL_FILE"
 rm -f /tmp/tunnel_log
 mkfifo /tmp/tunnel_log || true
 
-cloudflared tunnel --no-autoupdate --url "${1:-http://localhost:8080}" > /tmp/tunnel_log 2>&1 &
+cloudflared tunnel --no-autoupdate --protocol http2 --url "${1:-http://localhost:8080}" > /tmp/tunnel_log 2>&1 &
 CFPID=$!
 
 cleanup() {

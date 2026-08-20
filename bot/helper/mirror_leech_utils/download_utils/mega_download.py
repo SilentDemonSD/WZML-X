@@ -143,6 +143,30 @@ async def add_mega_download(listener, path):
 
         if is_folder:
             async_api.folder_api = folder_api = MegaApi("", mega_dir, "WZML-X", 4)
+
+            # Authenticate folder API with the configured premium MEGA account.
+            if mega_email and mega_password:
+                LOGGER.info("Mega: authenticating premium account for folder download")
+                await async_api.login(mega_email, mega_password)
+                if listener.is_cancelled or async_api._mega_listener.is_cancelled:
+                    return
+                if async_api._mega_listener.error:
+                    await listener.on_download_error(
+                        _mega_error_format(async_api._mega_listener.error)
+                    )
+                    return
+
+                account_auth = api.getAccountAuth()
+                if not account_auth:
+                    await listener.on_download_error(
+                        "Failed to obtain MEGA account authentication."
+                    )
+                    return
+
+                folder_api.setAccountAuth(account_auth)
+                LOGGER.info("Mega: premium account auth applied to folder API")
+                del account_auth
+
             folder_listener = MegaFolderListener(async_api, listener)
             async_api._folder_listener = folder_listener
             folder_api.addListener(folder_listener)
@@ -301,11 +325,62 @@ async def add_mega_download(listener, path):
                 return
             if not dl_listener.retryable_error:
                 return
+
+            if dl_listener.retryable_error.startswith("-13"):
+                local_size = 0
+                if os.path.isdir(download_path):
+                    for root, dirs, files in os.walk(download_path):
+                        for filename in files:
+                            try:
+                                local_size += os.path.getsize(os.path.join(root, filename))
+                            except OSError:
+                                pass
+                elif os.path.isfile(download_path):
+                    try:
+                        local_size = os.path.getsize(download_path)
+                    except OSError:
+                        pass
+
+                expected_size = dl_listener._total_folder_size or dl_listener._size
+
+                LOGGER.warning(
+                    "MegaDownload: API_EINCOMPLETE local_size=%s expected_size=%s transferred=%s",
+                    local_size,
+                    expected_size,
+                    dl_listener.downloaded_bytes,
+                )
+
+                if expected_size > 0:
+                    missing = expected_size - local_size
+                    tolerance = max(2 * 1024 * 1024, int(expected_size * 0.001))
+                    LOGGER.warning(
+                        "MegaDownload: API_EINCOMPLETE missing=%s tolerance=%s",
+                        missing,
+                        tolerance,
+                    )
+                    if missing <= tolerance:
+                        LOGGER.warning(
+                            "MegaDownload: treating API_EINCOMPLETE as complete; local data is within tolerance"
+                        )
+                        dl_listener.retryable_error = None
+                        await listener.on_download_complete()
+                        return
+
             if attempt >= 4:
+                LOGGER.error(
+                    "MegaDownload: transfer incomplete after 5 attempts: %s",
+                    dl_listener.retryable_error,
+                )
                 await listener.on_download_error(
                     _mega_error_format(dl_listener.retryable_error)
                 )
                 return
+
+            LOGGER.warning(
+                "MegaDownload: transfer incomplete, retrying attempt %s/5: %s",
+                attempt + 2,
+                dl_listener.retryable_error,
+            )
             await clean_download(download_path)
             await asleep(2**attempt)
 

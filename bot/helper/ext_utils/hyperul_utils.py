@@ -104,7 +104,7 @@ class HypertgUpload(HypertgTransfer):
 
         up_size = ospath.getsize(file_path)
         hyper_user_only = False
-        if up_size > 2097152000 and (TgClient.user or any(k < 0 for k in self.clients)):
+        if up_size > 2097152000 and any(k < 0 for k in self.clients):
             if TgClient.user:
                 use_hyper = False
                 user_session = True
