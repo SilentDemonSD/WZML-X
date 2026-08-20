@@ -37,9 +37,6 @@ async def _tunnel_monitor_loop():
 
 
 async def apply_tunnel_url_once():
-    if Config.BASE_URL:
-        LOGGER.info("tunnel_monitor: BASE_URL already set, skipping")
-        return Config.BASE_URL
     url = await _read_tunnel_url()
     if url:
         Config.BASE_URL = url
@@ -48,8 +45,5 @@ async def apply_tunnel_url_once():
 
 
 def start_tunnel_monitor():
-    if Config.BASE_URL:
-        LOGGER.info("tunnel_monitor: BASE_URL already set, background monitor disabled")
-        return
     bot_loop.create_task(_tunnel_monitor_loop())
     LOGGER.info("tunnel_monitor: background monitor started")
