@@ -143,6 +143,7 @@ sabnzbd_client = SabnzbdClient(
     host="http://localhost",
     api_key=_sabnzbd_api_key,
     port="8070",
+    RETRIES=1,
 )
 
 scheduler = AsyncIOScheduler(event_loop=bot_loop)
