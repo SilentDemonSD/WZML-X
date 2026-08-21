@@ -3,21 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#08060f">
     <title>WZML-X</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <meta name="description" content="WZML-X — experience the next generation of workflow automation.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="WZML-X">
+    <meta property="og:title" content="WZML-X">
+    <meta property="og:description" content="Experience the next generation of workflow automation.">
+    <meta name="twitter:card" content="summary">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22.5' fill='%23F4F2FE'/%3E%3Cpath d='M 19.4 42.6 C 20.0 55.4 22.4 66.4 29.8 68.3 C 37.0 70.1 43.2 61.0 45.2 48.8 C 47.5 61.0 53.4 66.6 61.0 68.3 C 68.6 70.0 75.6 55.5 80.6 35.3' fill='none' stroke='%235236CB' stroke-width='11.1' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Exo:wght@300;400;600;700&display=swap');
-
-        body {
-            font-family: 'Exo', sans-serif !important;
-        }
-        
         :root {
-            --bg-color: #0a0f1c;
-            --primary-blue: #00b7ff;
-            --primary-yellow: #ffd700;
-            --primary-orange: #ff4500;
-            --text-color: #ffffff;
+            --bg: #08060f;
+            --line: rgba(255, 255, 255, 0.07);
+            --line-strong: rgba(255, 255, 255, 0.12);
+            --deep: #2A1178;
+            --mid: #5236CB;
+            --light: #907DFB;
+            --pale: #B9A9FD;
+            --text: #EDEAF6;
+            --muted: #8F88AB;
         }
 
         * {
@@ -26,215 +34,285 @@
             box-sizing: border-box;
         }
 
+        html { -webkit-text-size-adjust: 100%; }
+
         body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #000000;
-            color: var(--text-color);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
             line-height: 1.6;
             min-height: 100vh;
-        }
-
-        .container {
             display: flex;
-            flex-direction: column;
-            justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            padding: 2rem;
+            justify-content: center;
+            padding: 2.5rem 1.25rem;
+            -webkit-font-smoothing: antialiased;
             position: relative;
-            overflow: hidden;
+            overflow-x: hidden;
         }
 
-        .background-animation {
+        body::before {
+            content: '';
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-                radial-gradient(circle at 20% 20%, var(--primary-blue) 0%, transparent 40%),
-                radial-gradient(circle at 80% 20%, var(--primary-yellow) 0%, transparent 40%),
-                radial-gradient(circle at 50% 80%, var(--primary-orange) 0%, transparent 40%);
-            opacity: 0.15;
-            filter: blur(70px);
+            inset: 0;
+            background:
+                radial-gradient(55rem 34rem at 50% -12%, rgba(82, 54, 203, 0.32) 0%, transparent 70%),
+                radial-gradient(38rem 28rem at 8% 104%, rgba(42, 17, 120, 0.38) 0%, transparent 70%);
+            pointer-events: none;
             z-index: 0;
         }
 
-        .content {
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(var(--line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--line) 1px, transparent 1px);
+            background-size: 76px 76px;
+            mask-image: radial-gradient(46rem 36rem at 50% 26%, #000 0%, transparent 78%);
+            -webkit-mask-image: radial-gradient(46rem 36rem at 50% 26%, #000 0%, transparent 78%);
+            opacity: 0.45;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .card {
             position: relative;
             z-index: 1;
+            width: 100%;
+            max-width: 44rem;
             text-align: center;
-            background: rgba(10, 15, 28, 0.7);
-            padding: 3rem;
-            border-radius: 15px;
-            backdrop-filter: blur(20px);
-            box-shadow: 
-                0 0 30px rgba(0, 183, 255, 0.2),
-                inset 0 0 30px rgba(0, 183, 255, 0.1);
-            border: 1px solid rgba(0, 183, 255, 0.1);
-            animation: contentAppear 1s ease-out;
+            padding: 3rem 2.75rem 1.75rem;
+            border-radius: 26px;
+            background: linear-gradient(180deg, rgba(24, 16, 46, 0.9), rgba(10, 7, 20, 0.92));
+            border: 1px solid var(--line-strong);
+            box-shadow: 0 32px 80px -24px rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(24px);
+            animation: rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
 
-        @keyframes contentAppear {
-            from { 
-                opacity: 0; 
-                transform: translateY(20px);
-                backdrop-filter: blur(0px);
-            }
-            to { 
-                opacity: 1; 
-                transform: translateY(0);
-                backdrop-filter: blur(20px);
-            }
-        }
-
-        .logo {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-bottom: 1.5rem;
-            border: 2px solid var(--primary-blue);
-            box-shadow: 0 0 20px rgba(0, 183, 255, 0.3);
-            animation: logoSpin 10s linear infinite;
-        }
-
-        @keyframes logoSpin {
-            from { transform: rotateY(0deg); }
-            to { transform: rotateY(360deg); }
-        }
-
-        h1 {
-            font-size: 3.5rem;
-            margin-bottom: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 5px;
-            background: linear-gradient(45deg, var(--primary-blue), var(--primary-yellow), var(--primary-orange));
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            text-shadow: 0 0 20px rgba(0, 183, 255, 0.3);
-        }
-
-        .subtitle {
-            font-size: 1.2rem;
-            margin-bottom: 2rem;
-            color: var(--text-color);
-            opacity: 0.9;
-        }
-
-        .version {
-            font-size: 1rem;
-            color: var(--primary-blue);
-            margin-bottom: 1rem;
-            font-weight: 600;
-        }
-
-        .links {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .button {
-            display: inline-block;
-            padding: 0.8rem 1.5rem;
-            background: linear-gradient(45deg, var(--bg-color), #FF4D00, #FFDD00, #FFDD00, var(--primary-blue), var(--primary-blue), #00FFFF, white);
-            color: var(--bg-color);
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .button::before {
+        .card::before {
             content: '';
             position: absolute;
             top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: all 0.5s ease;
+            left: 15%;
+            right: 15%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(185, 169, 253, 0.6), transparent);
         }
 
-        .button:hover::before {
-            left: 100%;
+        @keyframes rise {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: none; }
+        }
+
+        .logo {
+            width: 76px;
+            height: 76px;
+            display: block;
+            margin: 0 auto 1.5rem;
+            border-radius: 18px;
+            box-shadow: 0 18px 44px -14px rgba(82, 54, 203, 0.85);
+        }
+
+        h1 {
+            font-size: clamp(2.25rem, 7vw, 3rem);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1.05;
+            background: linear-gradient(180deg, #FFFFFF 30%, var(--pale) 130%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .version {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-top: 0.6rem;
+        }
+
+        .subtitle {
+            font-size: 1.0625rem;
+            color: var(--muted);
+            max-width: 28rem;
+            margin: 1rem auto 0;
+        }
+
+        .links {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.75rem;
+            margin-top: 2.5rem;
+            text-align: left;
+        }
+
+        .button {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            padding: 0.95rem 1.15rem;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.035);
+            border: 1px solid var(--line);
+            color: var(--text);
+            text-decoration: none;
+            font-size: 0.9375rem;
+            font-weight: 500;
+            transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+        }
+
+        .button .ico {
+            width: 2.1rem;
+            height: 2.1rem;
+            flex: none;
+            display: grid;
+            place-items: center;
+            border-radius: 11px;
+            color: var(--pale);
+            background: rgba(144, 125, 251, 0.12);
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+
+        .button .ico svg {
+            width: 1.05rem;
+            height: 1.05rem;
+            display: block;
+        }
+
+        .button .arrow {
+            margin-left: auto;
+            display: grid;
+            place-items: center;
+            color: var(--muted);
+            opacity: 0;
+            transform: translateX(-5px);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        .button .arrow svg {
+            width: 0.95rem;
+            height: 0.95rem;
+            display: block;
         }
 
         .button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0, 183, 255, 0.3);
+            background: rgba(144, 125, 251, 0.08);
+            border-color: rgba(144, 125, 251, 0.4);
+            transform: translateY(-2px);
         }
 
-        .copyright {
-            margin-top: 2rem;
-            font-size: 0.9rem;
-            opacity: 0.7;
-            color: var(--text-color);
+        .button:hover .ico {
+            background: linear-gradient(135deg, var(--mid), var(--light));
+            color: #fff;
         }
 
-        .tagline {
-            font-size: 1rem;
-            color: var(--primary-yellow);
-            margin-top: 1.5rem;
-            font-weight: 500;
-            letter-spacing: 1px;
+        .button:hover .arrow {
+            opacity: 1;
+            transform: none;
         }
 
-        @media (max-width: 768px) {
-            .content {
-                padding: 2rem;
-            }
+        .button:focus-visible {
+            outline: 2px solid var(--light);
+            outline-offset: 3px;
+        }
 
-            h1 {
-                font-size: 2.5rem;
-            }
+        .footer {
+            margin-top: 2.25rem;
+            padding-top: 1.4rem;
+            border-top: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            font-size: 0.8125rem;
+            color: var(--muted);
+        }
 
-            .subtitle {
-                font-size: 1rem;
-            }
+        .footer .tagline { color: var(--pale); font-weight: 500; }
 
-            .links {
-                flex-direction: column;
-            }
+        @media (max-width: 640px) {
+            .card { padding: 2.25rem 1.4rem 1.5rem; }
+            .links { grid-template-columns: 1fr; }
+            .footer { flex-direction: column; text-align: center; gap: 0.4rem; }
+        }
 
-            .button {
-                width: 100%;
-            }
+        @media (prefers-reduced-motion: reduce) {
+            * { animation: none !important; transition: none !important; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="background-animation"></div>
-        <div class="content">
-            <img class="logo" src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/IMG_20250213_112455_659.jpg-n4TftLXY3h5mHsdJIZQPSWUTX58iLY.jpeg" alt="WZMLX Logo">
-            <div class="version">V3.0.0</div>
-            <h1><b>WZML-X</b></h1>
-            <p class="subtitle">Experience the next generation of workflow automation</p>
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+        <symbol id="i-telegram" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M23.1 3.4a1.4 1.4 0 0 0-1.5-.2L1.6 11.5a1.4 1.4 0 0 0 .1 2.6l4.8 1.6 1.8 5.5a1.4 1.4 0 0 0 2.3.6l2.7-2.5 4.7 3.5a1.4 1.4 0 0 0 2.2-.8l3.4-16.2a1.4 1.4 0 0 0-.5-1.4ZM9.3 15.2l-.7 3.4-1.2-3.7 9-6.1-7.1 6.4Z"/>
+        </symbol>
+        <symbol id="i-chat" viewBox="0 0 24 24">
+            <path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M21 11.5a8.5 8.5 0 0 1-11.7 7.9L3 21l1.6-5.4A8.5 8.5 0 1 1 21 11.5Z"/>
+        </symbol>
+        <symbol id="i-book" viewBox="0 0 24 24">
+            <path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2Zm20 0h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7Z"/>
+        </symbol>
+        <symbol id="i-github" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.9 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.2 4.5 18.2 4.8 18.2 4.8c.6 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3Z"/>
+        </symbol>
+        <symbol id="i-arrow" viewBox="0 0 24 24">
+            <path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M5 12h14m-6-6 6 6-6 6"/>
+        </symbol>
+    </svg>
 
-            <div class="links">
-              <a href="https://t.me/WZML_X" class="button">
-                <i class="fab fa-telegram-plane"></i> Telegram Channel
-              </a>
-              <a href="https://t.me/WZML_Support" class="button">
-                <i class="fas fa-comments"></i> Support Group
-              </a>
-              <a href="https://github.com/SilentDemonSD/WZML-X" class="button">
-                <i class="fab fa-github"></i> GitHub Repository
-              </a>
-              <a href="https://wzmlx.mysterysd.in/docs" class="button">
-                <i class="fas fa-book"></i> Documentation
-              </a>
-            </div>
+    <main class="card">
+        <svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="WZML-X logo">
+            <defs>
+                <linearGradient id="face" x1="50" y1="0" x2="50" y2="100" gradientUnits="userSpaceOnUse">
+                    <stop offset="0" stop-color="#FAF8FF"/>
+                    <stop offset="0.46" stop-color="#F4F2FE"/>
+                    <stop offset="1" stop-color="#EEEAFB"/>
+                </linearGradient>
+                <linearGradient id="wg" gradientUnits="userSpaceOnUse" x1="15" y1="70" x2="86" y2="30">
+                    <stop offset="0" stop-color="#2A1178"/>
+                    <stop offset="0.5" stop-color="#33188C"/>
+                    <stop offset="0.76" stop-color="#5236CB"/>
+                    <stop offset="0.92" stop-color="#907DFB"/>
+                    <stop offset="1" stop-color="#B9A9FD"/>
+                </linearGradient>
+            </defs>
+            <rect x="0" y="0" width="100" height="100" rx="22.5" ry="22.5" fill="url(#face)"/>
+            <path d="M 19.4 42.6 C 20.0 55.4 22.4 66.4 29.8 68.3 C 37.0 70.1 43.2 61.0 45.2 48.8 C 47.5 61.0 53.4 66.6 61.0 68.3 C 68.6 70.0 75.6 55.5 80.6 35.3" fill="none" stroke="url(#wg)" stroke-width="11.1" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
 
-            <div class="tagline">SIMPLIFY YOUR WORKFLOW, MAXIMIZE YOUR IMPACT!</div>
-            <p class="copyright">&copy; 2025 WZML-X. All rights reserved.</p>
+        <h1>WZML-X</h1>
+        <span class="version">Version 3.0.0</span>
+        <p class="subtitle">Experience the next generation of workflow automation</p>
+
+        <nav class="links">
+            <a href="https://t.me/WZMLX_Updates" class="button" target="_blank" rel="noopener noreferrer">
+                <span class="ico"><svg aria-hidden="true"><use href="#i-telegram"/></svg></span> Telegram Channel
+                <span class="arrow"><svg aria-hidden="true"><use href="#i-arrow"/></svg></span>
+            </a>
+            <a href="https://t.me/WZMLX_Support" class="button" target="_blank" rel="noopener noreferrer">
+                <span class="ico"><svg aria-hidden="true"><use href="#i-chat"/></svg></span> Support Chat
+                <span class="arrow"><svg aria-hidden="true"><use href="#i-arrow"/></svg></span>
+            </a>
+            <a href="https://wzmlx.com" class="button" target="_blank" rel="noopener noreferrer">
+                <span class="ico"><svg aria-hidden="true"><use href="#i-book"/></svg></span> Documentation
+                <span class="arrow"><svg aria-hidden="true"><use href="#i-arrow"/></svg></span>
+            </a>
+            <a href="https://github.com/SilentDemonSD/WZML-X" class="button" target="_blank" rel="noopener noreferrer">
+                <span class="ico"><svg aria-hidden="true"><use href="#i-github"/></svg></span> GitHub Repository
+                <span class="arrow"><svg aria-hidden="true"><use href="#i-arrow"/></svg></span>
+            </a>
+        </nav>
+
+        <div class="footer">
+            <span class="tagline">Simplify your workflow, maximize your impact</span>
+            <span>&copy; 2026 WZML-X</span>
         </div>
-    </div>
+    </main>
 </body>
 </html>
