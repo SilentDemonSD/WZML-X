@@ -32,6 +32,6 @@ niquests
 speedtest-cli
 tenacity
 uvicorn
-uvloop==0.21.0
+uvloop==0.22.1
 xattr
 yt-dlp[default,curl-cffi]
