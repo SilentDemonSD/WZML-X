@@ -28,3 +28,4 @@ graphify-out/*
 AGENTS.md
 __pycache__/
 DESIGN.md
+.claude
