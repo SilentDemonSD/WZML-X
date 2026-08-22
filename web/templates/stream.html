@@ -37,9 +37,10 @@
             --r: 12px;
             --r-frame: 18px;
             --pad: clamp(.6rem, 2vw, 1.5rem);
-            --chrome: 14.5rem;
+            --bar-pad: 16px;
+            --chrome: 16.5rem;
             --content: min(1240px,
-                calc((100dvh - var(--chrome)) * 16 / 9),
+                calc((100svh - var(--chrome)) * 16 / 9),
                 calc(100vw - 2 * var(--pad)));
             --sans: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             --display: 'Tektur', 'Montserrat', system-ui, sans-serif;
@@ -70,10 +71,11 @@
         }
 
         body {
-            min-height: 100dvh;
+            min-height: 100svh;
             display: flex;
             flex-direction: column;
             justify-content: center;
+            justify-content: safe center;
             overflow-x: hidden;
             background: var(--bg);
             color: var(--text);
@@ -240,7 +242,7 @@
             align-items: center;
             gap: .6rem;
             height: 54px;
-            padding: 0;
+            padding-inline: var(--bar-pad);
             border-radius: 16px;
             border: 1px solid rgba(93, 157, 255, .2);
             background: rgba(4, 4, 11, .86);
@@ -848,7 +850,8 @@
         @media (max-width: 640px) {
             :root {
                 --pad: 16px;
-                --chrome: 17rem;
+                --bar-pad: 14px;
+                --chrome: 18.5rem;
             }
 
             body {
@@ -1263,6 +1266,17 @@
                 el("appDd").querySelector(".dd-btn b").textContent = "an app";
             }
 
+            var wanted = null;
+
+            function holdSubtitle() {
+                if (!wanted) return;
+                if (wanted.mode !== "showing") wanted.mode = "showing";
+                for (var i = 0; i < vid.textTracks.length; i++) {
+                    var t = vid.textTracks[i];
+                    if (t !== wanted && t.mode === "showing") t.mode = "disabled";
+                }
+            }
+
             function applyTracks(info) {
                 var auds = (info && info.audio) || [];
                 var subs = (info && info.subtitle) || [];
@@ -1300,6 +1314,7 @@
                             for (var i = 0; i < vid.textTracks.length; i++) {
                                 vid.textTracks[i].mode = "disabled";
                             }
+                            wanted = null;
                             if (it.value === "-1") return;
                             var tr = document.createElement("track");
                             tr.kind = "subtitles";
@@ -1307,14 +1322,19 @@
                             tr.src = location.origin + "/subs/" +
                                 encodeURIComponent(TOKEN) + "/" +
                                 encodeURIComponent(it.value) + ".vtt";
-                            tr.default = true;
+                            tr.srclang = "und";
                             vid.appendChild(tr);
+                            wanted = tr.track || null;
+                            if (wanted) wanted.mode = "showing";
                             tr.addEventListener("load", function () {
-                                if (tr.track) tr.track.mode = "showing";
+                                wanted = tr.track || wanted;
+                                if (wanted) wanted.mode = "showing";
                             });
                             tr.addEventListener("error", function () {
+                                wanted = null;
                                 toast("Could not load that subtitle track");
                             });
+                            toast("Extracting subtitles, cues appear as they load");
                         });
                 }
             }
@@ -1371,6 +1391,9 @@
                 el("dl").setAttribute("download", FILE);
                 buildApps();
                 loadTracks();
+                if (vid.textTracks) {
+                    vid.textTracks.addEventListener("change", holdSubtitle);
+                }
                 addMeta(bytes(info.size));
                 if (MIME) addMeta(MIME);
 
