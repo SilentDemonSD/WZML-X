@@ -1094,6 +1094,7 @@
             #rate = 1;
             #streams = [];
             #starting = false;
+            #mounted = false;
 
             constructor() {
                 super();
@@ -1101,7 +1102,13 @@
                 Object.assign(this.#host.style, {
                     position: "absolute", inset: "0", zIndex: "1"
                 });
-                const root = this.shadowRoot || this;
+            }
+
+            #mount() {
+                if (this.#mounted) return;
+                const root = this.shadowRoot;
+                if (!root) return;
+                this.#mounted = true;
                 const css = document.createElement("style");
                 css.textContent = ":host{display:block;position:relative;"
                     + "width:100%;height:100%}"
@@ -1109,9 +1116,13 @@
                     + "object-fit:contain;background:#000105}";
                 root.appendChild(css);
                 root.appendChild(this.#host);
-                if (this.nativeEl) {
-                    this.nativeEl.style.visibility = "hidden";
-                }
+                const native = this.nativeEl;
+                if (native) native.style.visibility = "hidden";
+            }
+
+            connectedCallback() {
+                try { super.connectedCallback(); } catch (e) { }
+                this.#mount();
             }
 
             get streams() { return this.#streams; }
@@ -1160,6 +1171,7 @@
 
             async #boot(url) {
                 if (this.#starting) return;
+                this.#mount();
                 this.#starting = true;
                 this.#emit("loadstart");
                 try {
@@ -1234,8 +1246,8 @@
             get duration() { return this.#dur || NaN; }
             get buffered() { return ranges(this.#dur); }
             get seekable() { return ranges(this.#dur); }
-            get videoWidth() { return this.#host.clientWidth || 0; }
-            get videoHeight() { return this.#host.clientHeight || 0; }
+            get videoWidth() { return (this.#host && this.#host.clientWidth) || 0; }
+            get videoHeight() { return (this.#host && this.#host.clientHeight) || 0; }
 
             get currentTime() { return this.#time; }
             set currentTime(v) {
@@ -1682,6 +1694,7 @@
                     return true;
                 }).catch(function (e) {
                     lmErr(e);
+                    lmEl = null;
                     stall("Cannot play this file",
                         "The advanced decoder is unavailable. Download the file, "
                         + "or open it in an app below.");
