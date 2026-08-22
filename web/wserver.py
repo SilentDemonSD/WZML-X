@@ -599,13 +599,7 @@ async def stream_proxy(
 
 @app.api_route("/stream/{token}", methods=["GET", "HEAD"])
 async def stream_route(token: str, request: Request):
-    params = {}
-    track = request.query_params.get("a")
-    if track is not None:
-        if not track.isdigit() or len(track) > 2:
-            raise HTTPException(status_code=404, detail="Unknown track")
-        params["a"] = track
-    return await stream_proxy(token, request, "/_stream", params)
+    return await stream_proxy(token, request, "/_stream")
 
 
 @app.api_route("/dl/{token}", methods=["GET", "HEAD"])

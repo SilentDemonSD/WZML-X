@@ -33,7 +33,6 @@ _runner = None
 
 _PROBE_BYTES = 6 * 1024 * 1024
 _PROBE_TIMEOUT = 45
-_MP4_SAFE_AUDIO = ("aac", "mp3")
 _probe_cache = {}
 _LANG = {
     "eng": "English", "jpn": "Japanese", "spa": "Spanish", "fre": "French",
@@ -169,102 +168,10 @@ async def _meta(request):
     return web.json_response(info)
 
 
-async def _audio_codec(cid, mid, aidx):
-    try:
-        tracks = await _probe(cid, mid)
-    except Exception:
-        return "aac"
-    for t in tracks.get("audio", []):
-        if t["index"] == aidx:
-            return "copy" if t.get("codec") in _MP4_SAFE_AUDIO else "aac"
-    return "aac"
-
-
-async def _remux(request, cid, mid, aidx):
-    acodec = await _audio_codec(cid, mid, aidx)
-    try:
-        st = await open_stream(cid, mid, "bulk")
-    except StreamGone:
-        purge_fid(cid, mid)
-        raise web.HTTPNotFound(text="file is gone") from None
-    except NoClientAvailable as e:
-        raise web.HTTPServiceUnavailable(text=str(e)) from None
-
-    proc = await _spawn_ffmpeg(
-        [
-            BinConfig.FFMPEG_NAME, "-hide_banner", "-loglevel", "error",
-            "-i", "pipe:0",
-            "-map", "0:v:0", "-map", f"0:a:{aidx}",
-            "-sn", "-dn", "-ignore_unknown",
-            "-threads", "1",
-            "-c:v", "copy", "-c:a", acodec,
-        ]
-        + ([] if acodec == "copy" else ["-b:a", "160k"])
-        + [
-            "-movflags", "frag_keyframe+empty_moov+default_base_moof",
-            "-f", "mp4", "pipe:1",
-        ],
-        f"audio remux (a:{aidx} {acodec})",
-    )
-    resp = web.StreamResponse(
-        status=200,
-        headers={
-            "Content-Type": "video/mp4",
-            "Accept-Ranges": "none",
-            "Cache-Control": "no-store",
-            "Content-Disposition": _disposition(st.name, True),
-        },
-    )
-    resp.enable_compression(False)
-    await resp.prepare(request)
-
-    async def feed():
-        gen = st.iter_range(0, st.size - 1)
-        try:
-            async for piece in gen:
-                proc.stdin.write(piece)
-                await proc.stdin.drain()
-        except (BrokenPipeError, ConnectionResetError):
-            pass
-        finally:
-            await gen.aclose()
-            try:
-                proc.stdin.close()
-            except Exception:
-                pass
-
-    pusher = ensure_future(feed())
-    try:
-        while True:
-            chunk = await proc.stdout.read(65536)
-            if not chunk:
-                break
-            await resp.write(chunk)
-        await resp.write_eof()
-    except (ConnectionResetError, ConnectionError, CancelledError):
-        LOGGER.debug(f"remux aborted: {cid}/{mid}")
-    finally:
-        pusher.cancel()
-        try:
-            proc.kill()
-        except Exception:
-            pass
-    return resp
-
-
 async def _serve(request, kind):
     _, cid, mid = await _resolve(request)
     inline = kind == "playback"
 
-    aidx = request.query.get("a")
-    if aidx is not None and request.method == "GET":
-        try:
-            aidx = int(aidx)
-        except ValueError:
-            raise web.HTTPNotFound(text="bad track") from None
-        if 0 <= aidx <= 31:
-            return await _remux(request, cid, mid, aidx)
-        raise web.HTTPNotFound(text="bad track")
     viewer = request.headers.get("X-Viewer") or request.remote
 
     if request.method == "HEAD":
