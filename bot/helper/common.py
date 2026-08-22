@@ -365,9 +365,10 @@ class TaskConfig:
                     or self.up_dest == "gd"
                 ):
                     self.up_dest = self.user_dict.get("GDRIVE_ID") or Config.GDRIVE_ID
-                elif (
-                    not self.up_dest and default_upload == "mega"
-                ) or self.up_dest == "mega":
+                elif not self.is_uphoster and (
+                    (not self.up_dest and default_upload == "mega")
+                    or self.up_dest == "mega"
+                ):
                     self.up_dest = "mega:"
 
                 if self.is_uphoster and not self.up_dest:
