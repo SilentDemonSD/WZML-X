@@ -603,8 +603,8 @@ async def download_route(token: str, request: Request):
     return await stream_proxy(token, request, "/_dl")
 
 
-@app.get("/watch/{token}", response_class=HTMLResponse)
-async def watch_page(token: str, request: Request):
+@app.get("/xstrm/{token}", response_class=HTMLResponse)
+async def xstrm_page(token: str, request: Request):
     if not _SAFE_TOKEN.match(token or ""):
         raise HTTPException(status_code=404, detail="Unknown link")
     response = templates.TemplateResponse(request, "stream.html")

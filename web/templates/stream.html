@@ -11,10 +11,10 @@
         href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22.5' fill='%23F5F7FF'/%3E%3Cpath d='M 19.4 42.6 C 20.0 55.4 22.4 66.4 29.8 68.3 C 37.0 70.1 43.2 61.0 45.2 48.8 C 47.5 61.0 53.4 66.6 61.0 68.3 C 68.6 70.0 75.6 55.5 80.6 35.3' fill='none' stroke='%233D87FF' stroke-width='11.1' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://cdn.plyr.io">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap"
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Tektur:wght@500;600;700&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.plyr.io/3.8.4/plyr.css">
     <style>
         :root {
             color-scheme: dark;
@@ -28,28 +28,12 @@
             --accent: #3D87FF;
             --accent-2: #5B9DFF;
             --accent-soft: #071D5C;
-            --ok: #16A34A;
-            --radius: 14px;
-
-            --plyr-color-main: #3D87FF;
-            --plyr-video-background: #00000C;
-            --plyr-video-control-color: #F5F7FF;
-            --plyr-video-control-color-hover: #00000C;
-            --plyr-menu-background: #010116;
-            --plyr-menu-color: #F5F7FF;
-            --plyr-menu-border-color: #16409E;
-            --plyr-menu-back-border-color: #16409E;
-            --plyr-tooltip-background: #010116;
-            --plyr-tooltip-color: #F5F7FF;
-            --plyr-badge-background: #071D5C;
-            --plyr-badge-text-color: #F5F7FF;
-            --plyr-captions-background: rgba(1, 1, 22, .82);
-            --plyr-captions-text-color: #F5F7FF;
-            --plyr-range-fill-background: #3D87FF;
-            --plyr-video-progress-buffered-background: rgba(93, 157, 255, .28);
-            --plyr-font-family: 'Montserrat', system-ui, sans-serif;
-            --plyr-font-size-base: 14px;
-            --plyr-font-size-small: 13px;
+            --r-lg: 22px;
+            --r-md: 14px;
+            --r-sm: 10px;
+            --sans: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --display: 'Tektur', 'Montserrat', system-ui, sans-serif;
+            --mono: ui-monospace, 'SF Mono', 'Cascadia Mono', Consolas, monospace;
         }
 
         *,
@@ -66,24 +50,106 @@
 
         body {
             min-height: 100vh;
+            min-height: 100dvh;
             background: var(--bg);
             color: var(--text);
-            font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: var(--sans);
             font-size: 15px;
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            opacity: .5;
+            background:
+                linear-gradient(rgba(42, 95, 208, .16) 1px, transparent 1px) 50% / 12px 12px,
+                linear-gradient(90deg, rgba(42, 95, 208, .16) 1px, transparent 1px) 50% / 12px 12px,
+                radial-gradient(circle at 50% 18%, rgba(61, 135, 255, .13), transparent 26%),
+                radial-gradient(circle at 50% 90%, rgba(7, 29, 92, .5), transparent 42%);
+        }
+
+        .glyph {
+            position: fixed;
+            z-index: 0;
+            font-family: var(--display);
+            font-size: clamp(12rem, 24vw, 26rem);
+            font-weight: 600;
+            line-height: .8;
+            letter-spacing: -.08em;
+            color: #080f26;
+            filter: drop-shadow(0 0 42px rgba(0, 0, 12, .9));
+            user-select: none;
+            -webkit-user-select: none;
+            pointer-events: none;
+            animation: fade 1.2s cubic-bezier(.16, 1, .3, 1) both;
+        }
+
+        .glyph::before {
+            content: attr(data-letter);
+            position: absolute;
+            inset: 0;
+            color: transparent;
+            background:
+                radial-gradient(circle at 40% 25%, rgba(93, 157, 255, .34), transparent 34%),
+                radial-gradient(circle at 60% 75%, rgba(61, 135, 255, .13), transparent 36%),
+                linear-gradient(rgba(245, 247, 255, .16), rgba(245, 247, 255, .04));
+            -webkit-background-clip: text;
+            background-clip: text;
+            filter: blur(22px);
+            opacity: .9;
+            transform: scale(1.06);
+        }
+
+        .glyph::after {
+            content: attr(data-letter);
+            position: absolute;
+            inset: 0;
+            color: rgba(203, 210, 229, .13);
+            text-shadow: 0 0 18px rgba(93, 157, 255, .12), 0 0 60px rgba(0, 0, 12, .92);
+            transform: scale(1.01);
+        }
+
+        .glyph--w {
+            top: 50%;
+            left: clamp(.25rem, 1.5vw, 1.75rem);
+            transform: translateY(-50%) scaleX(.92);
+        }
+
+        .glyph--x {
+            top: 50%;
+            right: clamp(1rem, 3vw, 3rem);
+            transform: translateY(-50%) scaleX(.92);
+        }
+
+        @keyframes fade {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
         }
 
         .topbar {
-            display: flex;
-            align-items: center;
-            gap: .65rem;
-            padding: .85rem 1.1rem;
-            border-bottom: 1px solid var(--line);
-            background: var(--surface);
             position: sticky;
             top: 0;
-            z-index: 5;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            gap: .7rem;
+            padding: .8rem clamp(.9rem, 3vw, 2rem);
+            background: rgba(1, 1, 22, .72);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border-bottom: 1px solid rgba(42, 95, 208, .22);
         }
 
         .topbar svg {
@@ -93,92 +159,230 @@
             border-radius: 7px;
         }
 
-        .brand {
-            font-weight: 800;
-            letter-spacing: .02em;
-            font-size: .98rem;
+        .wordmark {
+            font-family: var(--display);
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: .06em;
         }
 
-        .brand a {
+        .wordmark a {
             color: var(--text);
             text-decoration: none;
         }
 
-        .wrap {
-            max-width: 60rem;
+        .now {
+            margin-left: auto;
+            font-family: var(--mono);
+            font-size: .72rem;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 45%;
+        }
+
+        .page {
+            position: relative;
+            z-index: 1;
+            max-width: 1140px;
             margin: 0 auto;
-            padding: 1.25rem 1.1rem 3rem;
+            padding: clamp(1rem, 3vw, 2rem) clamp(.9rem, 3vw, 2rem) 4rem;
+        }
+
+        .rise {
+            animation: rise .6s cubic-bezier(.16, 1, .3, 1) both;
+        }
+
+        .rise:nth-child(2) { animation-delay: .06s; }
+        .rise:nth-child(3) { animation-delay: .12s; }
+        .rise:nth-child(4) { animation-delay: .18s; }
+
+        @keyframes rise {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: none;
+            }
         }
 
         .stage {
-            border: 1px solid var(--line);
-            border-radius: var(--radius);
-            overflow: hidden;
-            background: #000;
-            box-shadow: 0 1px 2px rgba(0, 0, 12, .6), 0 8px 24px -12px rgba(61, 135, 255, .18);
+            display: flex;
+            justify-content: center;
         }
 
-        .plyr {
-            border-radius: 0;
+        .shell {
+            position: relative;
+            width: min(1080px, 100%);
+            aspect-ratio: 16 / 9;
+            border-radius: var(--r-lg);
+            overflow: hidden;
+            background: #000208;
+            box-shadow:
+                0 24px 80px rgba(0, 0, 12, .78),
+                0 0 0 1px rgba(42, 95, 208, .34),
+                0 0 70px -14px rgba(61, 135, 255, .42);
+        }
+
+        .shell.dead {
+            display: none;
+        }
+
+        video-player {
+            display: block;
+            width: 100%;
+            height: 100%;
+            --media-accent-color: #3D87FF;
+            --media-accent-text-color: #00000C;
+            --media-border-radius: 10px;
+            --media-scale-unit: 16px;
+            --media-object-fit: contain;
+        }
+
+        video-skin {
+            display: block;
+            width: 100%;
+            height: 100%;
+            aspect-ratio: 16 / 9;
+        }
+
+        .shell video {
+            width: 100%;
+            height: 100%;
+            background: #000;
+        }
+
+        .loading {
+            position: absolute;
+            inset: 0;
+            z-index: 3;
+            display: grid;
+            place-items: center;
+            background:
+                radial-gradient(circle, rgba(61, 135, 255, .07), transparent 42%),
+                linear-gradient(rgba(0, 0, 12, .96), rgba(0, 0, 12, .99));
+            transition: opacity .25s ease, visibility .25s ease;
+        }
+
+        .loading.gone {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .pill {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 18px;
+            border-radius: 999px;
+            background: rgba(1, 1, 22, .76);
+            border: 1px solid rgba(93, 157, 255, .16);
+            backdrop-filter: blur(22px);
+            -webkit-backdrop-filter: blur(22px);
+            box-shadow: 0 18px 40px rgba(0, 0, 12, .5);
+        }
+
+        .ring {
+            width: 40px;
+            height: 40px;
+            flex: none;
+            border-radius: 999px;
+            border: 2px solid rgba(93, 157, 255, .2);
+            border-top-color: var(--accent);
+            animation: spin .9s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .pill b {
+            display: block;
+            font-size: .95rem;
+            font-weight: 600;
+        }
+
+        .pill span {
+            display: block;
+            font-size: .84rem;
+            color: var(--muted);
         }
 
         h1 {
-            font-size: 1.15rem;
+            font-size: clamp(1.15rem, 2.4vw, 1.5rem);
             font-weight: 800;
-            letter-spacing: .02em;
-            margin: 1.15rem 0 .35rem;
+            letter-spacing: .01em;
+            margin: 1.4rem 0 .4rem;
             overflow-wrap: anywhere;
         }
 
         .meta {
             display: flex;
             flex-wrap: wrap;
-            gap: .45rem .9rem;
-            font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
-            font-variant-numeric: tabular-nums;
-            font-size: .8rem;
-            color: var(--muted);
-            margin-bottom: 1.15rem;
-        }
-
-        .meta span {
-            display: inline-flex;
             align-items: center;
-            gap: .4rem;
+            gap: .4rem .8rem;
+            font-family: var(--mono);
+            font-variant-numeric: tabular-nums;
+            font-size: .78rem;
+            color: var(--muted);
         }
 
-        .dot {
+        .meta i {
             width: 4px;
             height: 4px;
             border-radius: 50%;
             background: var(--line-2);
         }
 
-        .eyebrow {
-            font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
-            font-size: .68rem;
-            font-weight: 600;
-            letter-spacing: .22em;
-            text-transform: uppercase;
-            color: var(--muted);
-            margin: 1.6rem 0 .6rem;
+        .grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+            gap: 1rem;
+            margin-top: 1.6rem;
+            align-items: start;
         }
 
-        .actions {
-            display: flex;
-            flex-wrap: wrap;
+        .card {
+            border: 1px solid rgba(42, 95, 208, .28);
+            border-radius: var(--r-md);
+            background: rgba(1, 1, 22, .66);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            padding: 1.1rem;
+        }
+
+        .eyebrow {
+            font-family: var(--mono);
+            font-size: .66rem;
+            font-weight: 600;
+            letter-spacing: .24em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin: 0 0 .8rem;
+        }
+
+        .stack {
+            display: grid;
             gap: .5rem;
         }
 
         .btn {
             display: inline-flex;
             align-items: center;
-            justify-content: center;
-            gap: .5rem;
-            min-height: 44px;
-            padding: .55rem 1rem;
-            border-radius: 10px;
-            border: 1px solid var(--line);
+            justify-content: flex-start;
+            gap: .6rem;
+            min-height: 46px;
+            padding: .6rem 1rem;
+            border-radius: var(--r-sm);
+            border: 1px solid rgba(42, 95, 208, .34);
             background: var(--surface-2);
             color: var(--text);
             font: inherit;
@@ -186,7 +390,7 @@
             font-weight: 500;
             text-decoration: none;
             cursor: pointer;
-            transition: border-color .2s ease, background .2s ease, transform .2s ease;
+            transition: border-color .18s ease, background .18s ease, transform .18s ease;
         }
 
         .btn:hover {
@@ -218,18 +422,14 @@
             border-color: var(--accent-2);
         }
 
-        .btn[hidden] {
-            display: none;
-        }
-
         .tabs {
             display: inline-flex;
-            gap: .25rem;
-            padding: .25rem;
-            border: 1px solid var(--line);
+            gap: .2rem;
+            padding: .22rem;
+            border: 1px solid rgba(42, 95, 208, .3);
             border-radius: 12px;
-            background: var(--surface);
-            margin-bottom: .75rem;
+            background: var(--surface-2);
+            margin-bottom: .8rem;
         }
 
         .tab {
@@ -238,13 +438,13 @@
             background: none;
             color: var(--muted);
             font: inherit;
-            font-size: .82rem;
+            font-size: .8rem;
             font-weight: 500;
-            padding: .45rem .9rem;
-            min-height: 38px;
+            padding: .4rem .85rem;
+            min-height: 36px;
             border-radius: 9px;
             cursor: pointer;
-            transition: background .2s ease, color .2s ease;
+            transition: background .18s ease, color .18s ease;
         }
 
         .tab:hover {
@@ -264,7 +464,7 @@
 
         .apps {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
             gap: .5rem;
         }
 
@@ -272,17 +472,16 @@
             display: flex;
             align-items: center;
             gap: .7rem;
-            padding: .65rem .8rem;
+            padding: .6rem .75rem;
             border-radius: 12px;
-            border: 1px solid var(--line);
+            border: 1px solid rgba(42, 95, 208, .3);
             background: var(--surface-2);
             color: var(--text);
             text-decoration: none;
-            font-size: .875rem;
+            font-size: .85rem;
             font-weight: 500;
             min-height: 56px;
-            cursor: pointer;
-            transition: border-color .2s ease, transform .2s ease;
+            transition: border-color .18s ease, transform .18s ease;
         }
 
         .app:hover {
@@ -304,42 +503,29 @@
             border-radius: 9px;
             background: var(--accent-soft);
             color: var(--accent-2);
-            font-weight: 800;
+            font-family: var(--display);
+            font-weight: 700;
             font-size: .95rem;
-            letter-spacing: .02em;
         }
 
         .app small {
             display: block;
             color: var(--muted);
-            font-size: .72rem;
+            font-size: .7rem;
             font-weight: 400;
             line-height: 1.3;
-        }
-
-        .panel {
-            border: 1px solid var(--line);
-            border-radius: var(--radius);
-            background: var(--surface);
-            padding: 1.1rem;
-        }
-
-        .panel p {
-            margin: 0 0 .85rem;
-            color: var(--muted);
-            font-size: .9rem;
         }
 
         .notice {
             display: none;
             align-items: flex-start;
             gap: .7rem;
-            border: 1px solid var(--line-2);
-            border-radius: var(--radius);
-            background: var(--accent-soft);
+            border: 1px solid rgba(42, 95, 208, .45);
+            border-radius: var(--r-md);
+            background: rgba(7, 29, 92, .6);
             padding: .85rem 1rem;
-            margin-bottom: 1.1rem;
-            font-size: .88rem;
+            margin-bottom: 1rem;
+            font-size: .87rem;
         }
 
         .notice.show {
@@ -354,53 +540,27 @@
             margin-top: .15rem;
         }
 
-        .notice b {
-            font-weight: 600;
-        }
-
         .resume {
             display: none;
             align-items: center;
             justify-content: space-between;
-            gap: .8rem;
+            gap: .7rem;
             flex-wrap: wrap;
-            border: 1px solid var(--line);
-            border-radius: var(--radius);
-            background: var(--surface-2);
-            padding: .7rem .9rem;
+            border: 1px solid rgba(42, 95, 208, .3);
+            border-radius: var(--r-md);
+            background: rgba(1, 1, 22, .7);
+            padding: .6rem .9rem;
             margin-top: .9rem;
-            font-size: .875rem;
+            font-size: .87rem;
         }
 
         .resume.show {
             display: flex;
         }
 
-        .tracks {
-            display: none;
-            gap: .5rem;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .tracks.show {
+        .pair {
             display: flex;
-        }
-
-        select {
-            font: inherit;
-            font-size: .85rem;
-            color: var(--text);
-            background: var(--surface-2);
-            border: 1px solid var(--line);
-            border-radius: 10px;
-            min-height: 44px;
-            padding: .4rem .7rem;
-        }
-
-        select:focus-visible {
-            outline: 2px solid var(--accent);
-            outline-offset: 2px;
+            gap: .4rem;
         }
 
         .toast {
@@ -408,15 +568,15 @@
             left: 50%;
             bottom: 1.4rem;
             transform: translate(-50%, 1.5rem);
-            background: var(--surface);
+            background: rgba(1, 1, 22, .95);
             border: 1px solid var(--line-2);
-            border-radius: 10px;
-            padding: .6rem 1rem;
-            font-size: .85rem;
+            border-radius: 999px;
+            padding: .55rem 1.1rem;
+            font-size: .84rem;
             opacity: 0;
             pointer-events: none;
             transition: opacity .2s ease, transform .2s ease;
-            z-index: 50;
+            z-index: 60;
         }
 
         .toast.show {
@@ -426,24 +586,68 @@
 
         .err {
             text-align: center;
-            padding: 3.5rem 1rem;
-            color: var(--muted);
+            padding: 4rem 1rem;
         }
 
         .err h2 {
-            color: var(--text);
-            font-weight: 800;
+            font-family: var(--display);
+            font-weight: 700;
             letter-spacing: .02em;
             margin: 0 0 .5rem;
         }
 
-        @media (max-width: 560px) {
-            .wrap {
-                padding: 1rem .8rem 2.5rem;
+        .err p {
+            color: var(--muted);
+            margin: 0 0 1.3rem;
+        }
+
+        @media (max-width: 900px) {
+            .grid {
+                grid-template-columns: minmax(0, 1fr);
             }
 
-            .btn {
-                flex: 1 1 calc(50% - .25rem);
+            .glyph {
+                font-size: clamp(11rem, 34vmin, 19rem);
+            }
+
+            .glyph--w {
+                top: 1.2rem;
+                left: clamp(.5rem, 6vw, 2.5rem);
+                transform: none;
+            }
+
+            .glyph--x {
+                top: auto;
+                bottom: 2.6rem;
+                right: clamp(.6rem, 4vw, 2.2rem);
+                transform: none;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .page {
+                padding-left: .8rem;
+                padding-right: .8rem;
+            }
+
+            .shell {
+                border-radius: 16px;
+            }
+
+            video-player {
+                --media-scale-unit: 14px;
+            }
+
+            .glyph {
+                font-size: clamp(9rem, 38vmin, 15rem);
+            }
+
+            .now {
+                display: none;
+            }
+
+            .apps {
+                grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
             }
         }
 
@@ -460,6 +664,9 @@
 </head>
 
 <body>
+    <div class="glyph glyph--w" data-letter="W" aria-hidden="true">W</div>
+    <div class="glyph glyph--x" data-letter="X" aria-hidden="true">X</div>
+
     <header class="topbar">
         <svg viewBox="0 0 100 100" aria-hidden="true">
             <rect width="100" height="100" rx="22.5" fill="#F5F7FF" />
@@ -467,73 +674,92 @@
                 d="M 19.4 42.6 C 20.0 55.4 22.4 66.4 29.8 68.3 C 37.0 70.1 43.2 61.0 45.2 48.8 C 47.5 61.0 53.4 66.6 61.0 68.3 C 68.6 70.0 75.6 55.5 80.6 35.3"
                 fill="none" stroke="#3D87FF" stroke-width="11.1" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
-        <span class="brand"><a href="/">WZML-X</a></span>
+        <span class="wordmark"><a href="/">WZML-X</a></span>
+        <span class="now" id="now"></span>
     </header>
 
-    <main class="wrap" id="root">
-        <div class="notice" id="notice">
+    <main class="page" id="root">
+        <div class="notice rise" id="notice">
             <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M12 2 1 21h22L12 2zm0 6 6.5 11h-13L12 8zm-1 3v4h2v-4h-2zm0 5v2h2v-2h-2z" />
             </svg>
             <div id="noticeText"></div>
         </div>
 
-        <div class="stage" id="stage">
-            <video id="player" playsinline controls crossorigin="anonymous"></video>
+        <div class="stage rise">
+            <div class="shell" id="shell">
+                <video-player>
+                    <video-skin>
+                        <video id="player" playsinline preload="metadata"></video>
+                    </video-skin>
+                </video-player>
+                <div class="loading" id="loading">
+                    <div class="pill">
+                        <div class="ring"></div>
+                        <div>
+                            <b>Opening the stream</b>
+                            <span id="loadingText">Reaching Telegram…</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="resume" id="resume">
             <span id="resumeText"></span>
-            <span style="display:flex;gap:.4rem">
+            <span class="pair">
                 <button class="btn primary" type="button" id="resumeGo">Resume</button>
                 <button class="btn" type="button" id="resumeNo">Start over</button>
             </span>
         </div>
 
-        <h1 id="title">Loading…</h1>
-        <div class="meta" id="meta"></div>
-
-        <div class="tracks" id="tracks">
-            <label class="eyebrow" style="margin:0" for="subSel">Subtitles</label>
-            <select id="subSel"></select>
-            <label class="eyebrow" style="margin:0" for="audSel" id="audLabel">Audio</label>
-            <select id="audSel"></select>
+        <div class="rise">
+            <h1 id="title">Loading…</h1>
+            <div class="meta" id="meta"></div>
         </div>
 
-        <p class="eyebrow">Actions</p>
-        <div class="actions">
-            <a class="btn primary" id="dl" href="#" download>
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 3v10.6l3.3-3.3 1.4 1.4L12 17.4l-4.7-4.7 1.4-1.4 3.3 3.3V3h2zM5 19h14v2H5v-2z" />
-                </svg>
-                Download
-            </a>
-            <button class="btn" type="button" id="copy">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z" />
-                </svg>
-                Copy link
-            </button>
-            <button class="btn" type="button" id="copyDl">
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M3.9 12a3.1 3.1 0 0 1 3.1-3.1h4V7H7a5 5 0 0 0 0 10h4v-1.9H7A3.1 3.1 0 0 1 3.9 12zM8 13h8v-2H8v2zm9-6h-4v1.9h4a3.1 3.1 0 0 1 0 6.2h-4V17h4a5 5 0 0 0 0-10z" />
-                </svg>
-                Copy direct link
-            </button>
-        </div>
+        <div class="grid rise">
+            <section class="card">
+                <p class="eyebrow">This file</p>
+                <div class="stack">
+                    <a class="btn primary" id="dl" href="#" download>
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 3v10.6l3.3-3.3 1.4 1.4L12 17.4l-4.7-4.7 1.4-1.4 3.3 3.3V3h2zM5 19h14v2H5v-2z" />
+                        </svg>
+                        Download
+                    </a>
+                    <button class="btn" type="button" id="copy">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z" />
+                        </svg>
+                        Copy page link
+                    </button>
+                    <button class="btn" type="button" id="copyDl">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path
+                                d="M3.9 12a3.1 3.1 0 0 1 3.1-3.1h4V7H7a5 5 0 0 0 0 10h4v-1.9H7A3.1 3.1 0 0 1 3.9 12zM8 13h8v-2H8v2zm9-6h-4v1.9h4a3.1 3.1 0 0 1 0 6.2h-4V17h4a5 5 0 0 0 0-10z" />
+                        </svg>
+                        Copy direct link
+                    </button>
+                </div>
+            </section>
 
-        <p class="eyebrow">Open in an external player</p>
-        <div class="tabs" id="tabs" role="tablist">
-            <button class="tab" type="button" role="tab" data-os="desktop">Desktop</button>
-            <button class="tab" type="button" role="tab" data-os="android">Android</button>
-            <button class="tab" type="button" role="tab" data-os="ios">iOS</button>
+            <section class="card">
+                <p class="eyebrow">Open in an app</p>
+                <div class="tabs" id="tabs" role="tablist">
+                    <button class="tab" type="button" role="tab" data-os="desktop">Desktop</button>
+                    <button class="tab" type="button" role="tab" data-os="android">Android</button>
+                    <button class="tab" type="button" role="tab" data-os="ios">iOS</button>
+                </div>
+                <div class="apps" id="ext"></div>
+            </section>
         </div>
-        <div class="apps" id="ext"></div>
     </main>
 
     <div class="toast" id="toast"></div>
 
-    <script src="https://cdn.plyr.io/3.8.4/plyr.js"></script>
+    <script type="module"
+        src="https://cdn.jsdelivr.net/npm/@videojs/html@10.0.0-beta.31/cdn/video.js"></script>
     <script>
         (function () {
             "use strict";
@@ -545,16 +771,12 @@
             var PREF_KEY = "wzx:prefs";
 
             var el = function (id) { return document.getElementById(id); };
-            var video = el("player");
-            var player = null;
-            var meta = null;
+            var vid = el("player");
 
-            function store(key, val) {
-                try { localStorage.setItem(key, val); } catch (e) { /* private mode */ }
-            }
-            function load(key) {
-                try { return localStorage.getItem(key); } catch (e) { return null; }
-            }
+            function store(k, v) { try { localStorage.setItem(k, v); } catch (e) { } }
+            function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+            function prefs() { try { return JSON.parse(load(PREF_KEY) || "{}"); } catch (e) { return {}; } }
+            function savePrefs(p) { store(PREF_KEY, JSON.stringify(p)); }
 
             function toast(text) {
                 var t = el("toast");
@@ -575,7 +797,7 @@
                 s = Math.floor(s);
                 var h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), q = s % 60;
                 var pad = function (x) { return x < 10 ? "0" + x : "" + x; };
-                return (h ? h + ":" + pad(m) : m + "") + ":" + pad(q);
+                return (h ? h + ":" + pad(m) : "" + m) + ":" + pad(q);
             }
 
             function notice(html) {
@@ -584,19 +806,17 @@
             }
 
             function fatal(head, body) {
-                el("root").innerHTML =
-                    '<div class="err"><h2></h2><p></p>' +
-                    '<p><a class="btn" href="/">Back to home</a></p></div>';
+                el("root").innerHTML = '<div class="err"><h2></h2><p></p>' +
+                    '<p><a class="btn primary" href="/">Back to WZML-X</a></p></div>';
                 el("root").querySelector("h2").textContent = head;
-                el("root").querySelector(".err p").textContent = body;
+                el("root").querySelector("p").textContent = body;
             }
 
             function detectOS() {
                 var ua = navigator.userAgent || "";
-                var touch = navigator.maxTouchPoints || 0;
                 if (/android/i.test(ua)) return "android";
                 if (/iPad|iPhone|iPod/.test(ua)) return "ios";
-                if (/Macintosh/.test(ua) && touch > 1) return "ios";
+                if (/Macintosh/.test(ua) && (navigator.maxTouchPoints || 0) > 1) return "ios";
                 return "desktop";
             }
 
@@ -605,19 +825,18 @@
                 return "data:audio/x-mpegurl;charset=utf-8," + encodeURIComponent(text);
             }
 
-            function androidIntent(pkg, name) {
+            function intent(pkg, name) {
                 return "intent:" + STREAM + "#Intent;package=" + pkg +
-                    ";type=video/*;S.title=" + encodeURIComponent(name || "Video") +
-                    ";end";
+                    ";type=video/*;S.title=" + encodeURIComponent(name || "Video") + ";end";
             }
 
             function extApps(os, name) {
                 var enc = encodeURIComponent(STREAM);
                 if (os === "android") {
                     return [
-                        ["V", "VLC", "Android", androidIntent("org.videolan.vlc", name)],
-                        ["N", "nPlayer", "Android", androidIntent("com.newin.nplayer.pro", name)],
-                        ["M", "MX Player", "Android", androidIntent("com.mxtech.videoplayer.ad", name)]
+                        ["V", "VLC", "Android", intent("org.videolan.vlc", name)],
+                        ["N", "nPlayer", "Android", intent("com.newin.nplayer.pro", name)],
+                        ["M", "MX Player", "Android", intent("com.mxtech.videoplayer.ad", name)]
                     ];
                 }
                 if (os === "ios") {
@@ -648,100 +867,39 @@
                     var av = document.createElement("span");
                     av.className = "avatar";
                     av.textContent = app[0];
-                    var txt = document.createElement("span");
-                    txt.textContent = app[1];
-                    var sub = document.createElement("small");
-                    sub.textContent = app[2];
-                    txt.appendChild(sub);
+                    var tx = document.createElement("span");
+                    tx.textContent = app[1];
+                    var sm = document.createElement("small");
+                    sm.textContent = app[2];
+                    tx.appendChild(sm);
                     a.appendChild(av);
-                    a.appendChild(txt);
+                    a.appendChild(tx);
                     box.appendChild(a);
                 });
             }
 
             function wireTabs(name) {
-                var tabs = Array.prototype.slice.call(
-                    el("tabs").querySelectorAll(".tab"));
+                var tabs = Array.prototype.slice.call(el("tabs").querySelectorAll(".tab"));
                 function pick(os) {
                     tabs.forEach(function (t) {
-                        t.setAttribute("aria-selected",
-                            t.dataset.os === os ? "true" : "false");
+                        t.setAttribute("aria-selected", t.dataset.os === os ? "true" : "false");
                     });
                     buildExt(os, name);
                 }
-                tabs.forEach(function (t) {
-                    t.onclick = function () { pick(t.dataset.os); };
-                });
+                tabs.forEach(function (t) { t.onclick = function () { pick(t.dataset.os); }; });
                 pick(detectOS());
-            }
-
-            function prefs() {
-                try { return JSON.parse(load(PREF_KEY) || "{}"); } catch (e) { return {}; }
-            }
-
-            function savePrefs(p) { store(PREF_KEY, JSON.stringify(p)); }
-
-            function wireTracks() {
-                var subSel = el("subSel"), audSel = el("audSel");
-                var texts = video.textTracks || [];
-                var audios = video.audioTracks || null;
-                var any = false;
-
-                subSel.innerHTML = "";
-                var none = document.createElement("option");
-                none.value = "-1";
-                none.textContent = "Off";
-                subSel.appendChild(none);
-                for (var i = 0; i < texts.length; i++) {
-                    if (texts[i].kind !== "subtitles" && texts[i].kind !== "captions") continue;
-                    var o = document.createElement("option");
-                    o.value = String(i);
-                    o.textContent = texts[i].label || texts[i].language || ("Track " + (i + 1));
-                    subSel.appendChild(o);
-                    any = true;
-                }
-                subSel.parentNode && (subSel.previousElementSibling.hidden = !any);
-                subSel.hidden = !any;
-                subSel.onchange = function () {
-                    var pick = parseInt(subSel.value, 10);
-                    for (var i = 0; i < texts.length; i++) {
-                        texts[i].mode = (i === pick) ? "showing" : "disabled";
-                    }
-                };
-
-                var hasAudio = audios && audios.length > 1;
-                el("audLabel").hidden = !hasAudio;
-                audSel.hidden = !hasAudio;
-                if (hasAudio) {
-                    audSel.innerHTML = "";
-                    for (var j = 0; j < audios.length; j++) {
-                        var a = document.createElement("option");
-                        a.value = String(j);
-                        a.textContent = audios[j].label || audios[j].language || ("Audio " + (j + 1));
-                        if (audios[j].enabled) a.selected = true;
-                        audSel.appendChild(a);
-                    }
-                    audSel.onchange = function () {
-                        var pick = parseInt(audSel.value, 10);
-                        for (var j = 0; j < audios.length; j++) {
-                            audios[j].enabled = (j === pick);
-                        }
-                    };
-                    any = true;
-                }
-                if (any) el("tracks").classList.add("show");
             }
 
             function wireResume() {
                 var saved = parseFloat(load(POS_KEY) || "0");
-                var dur = video.duration;
+                var dur = vid.duration;
                 if (saved > 30 && isFinite(dur) && saved < dur - 30) {
                     el("resumeText").textContent = "You stopped at " + clock(saved) + ".";
                     el("resume").classList.add("show");
                     el("resumeGo").onclick = function () {
-                        video.currentTime = saved;
+                        vid.currentTime = saved;
                         el("resume").classList.remove("show");
-                        video.play();
+                        vid.play();
                     };
                     el("resumeNo").onclick = function () {
                         store(POS_KEY, "0");
@@ -749,103 +907,79 @@
                     };
                 }
                 var last = 0;
-                video.addEventListener("timeupdate", function () {
-                    var now = video.currentTime;
+                vid.addEventListener("timeupdate", function () {
+                    var now = vid.currentTime;
                     if (Math.abs(now - last) < 5) return;
                     last = now;
                     store(POS_KEY, String(now));
                 });
-                video.addEventListener("ended", function () { store(POS_KEY, "0"); });
+                vid.addEventListener("ended", function () { store(POS_KEY, "0"); });
+            }
+
+            function addMeta(text) {
+                var box = el("meta");
+                if (box.children.length) box.appendChild(document.createElement("i"));
+                var s = document.createElement("span");
+                s.textContent = text;
+                box.appendChild(s);
             }
 
             function start(info) {
-                meta = info;
                 var name = info.name || "Untitled";
                 document.title = name + " — WZML-X";
                 el("title").textContent = name;
+                el("now").textContent = name;
                 el("dl").href = DIRECT;
                 el("dl").setAttribute("download", name);
                 wireTabs(name);
-
-                var bits = [];
-                bits.push(bytes(info.size));
-                if (info.mime) bits.push(info.mime);
-                el("meta").innerHTML = "";
-                bits.forEach(function (b, i) {
-                    if (i) {
-                        var d = document.createElement("i");
-                        d.className = "dot";
-                        el("meta").appendChild(d);
-                    }
-                    var s = document.createElement("span");
-                    s.textContent = b;
-                    el("meta").appendChild(s);
-                });
-
-                video.src = STREAM;
+                addMeta(bytes(info.size));
+                if (info.mime) addMeta(info.mime);
 
                 var p = prefs();
-                player = new Plyr(video, {
-                    iconUrl: "https://cdn.plyr.io/3.8.4/plyr.svg",
-                    blankVideo: "",
-                    controls: ["play-large", "restart", "rewind", "play", "fast-forward",
-                        "progress", "current-time", "duration", "mute", "volume",
-                        "captions", "settings", "pip", "airplay", "fullscreen"],
-                    settings: ["captions", "speed", "loop"],
-                    speed: { selected: p.speed || 1, options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] },
-                    keyboard: { focused: true, global: true },
-                    tooltips: { controls: true, seek: true },
-                    seekTime: 10,
-                    invertTime: false,
-                    storage: { enabled: false }
-                });
+                if (typeof p.volume === "number") vid.volume = p.volume;
+                if (p.muted) vid.muted = true;
+                if (typeof p.rate === "number" && p.rate > 0) vid.playbackRate = p.rate;
 
-                if (typeof p.volume === "number") video.volume = p.volume;
-                if (p.muted) video.muted = true;
-
-                player.on("volumechange", function () {
+                vid.addEventListener("volumechange", function () {
                     var q = prefs();
-                    q.volume = video.volume;
-                    q.muted = video.muted;
+                    q.volume = vid.volume;
+                    q.muted = vid.muted;
                     savePrefs(q);
                 });
-                player.on("ratechange", function () {
+                vid.addEventListener("ratechange", function () {
                     var q = prefs();
-                    q.speed = player.speed;
+                    q.rate = vid.playbackRate;
                     savePrefs(q);
                 });
-                player.on("loadedmetadata", function () {
-                    var d = video.duration;
-                    if (isFinite(d) && d > 0) {
-                        var s = document.createElement("span");
-                        var i = document.createElement("i");
-                        i.className = "dot";
-                        el("meta").appendChild(i);
-                        s.textContent = clock(d);
-                        el("meta").appendChild(s);
-                    }
-                    wireTracks();
+
+                vid.addEventListener("loadedmetadata", function () {
+                    el("loading").classList.add("gone");
+                    if (isFinite(vid.duration) && vid.duration > 0) addMeta(clock(vid.duration));
                     wireResume();
-                    if (video.textTracks) {
-                        video.textTracks.addEventListener("addtrack", wireTracks);
-                    }
-                    if (video.audioTracks) {
-                        video.audioTracks.addEventListener("addtrack", wireTracks);
-                    }
                 });
-                player.on("error", function () {
-                    var err = video.error;
-                    if (err && err.code === 4) {
-                        el("stage").hidden = true;
+
+                vid.addEventListener("error", function () {
+                    el("loading").classList.add("gone");
+                    var e = vid.error;
+                    if (e && e.code === 4) {
+                        el("shell").classList.add("dead");
                         notice("<b>This browser cannot decode this file.</b> " +
                             (info.mime || "The container or codec") +
-                            " is not supported here. Open it in an external player " +
-                            "below, or download it.");
+                            " is not supported here. Open it in an app below, or download it.");
                     } else {
-                        notice("<b>Playback stopped.</b> The connection dropped or the " +
-                            "link expired. Reload, or use an external player below.");
+                        notice("<b>Playback stopped.</b> The connection dropped or the link " +
+                            "expired. Reload the page, or open it in an app below.");
                     }
                 });
+
+                if (info.mime) vid.setAttribute("type", info.mime);
+                vid.src = STREAM;
+
+                setTimeout(function () {
+                    if (!el("loading").classList.contains("gone")) {
+                        el("loadingText").textContent = "Still buffering — large files take a moment.";
+                    }
+                }, 6000);
             }
 
             el("copy").onclick = function () {

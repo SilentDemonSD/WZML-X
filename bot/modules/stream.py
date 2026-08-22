@@ -42,7 +42,7 @@ async def gen_stream_link(chat_id, msg_id):
     if not token:
         return None
     base = Config.BASE_URL.rstrip("/")
-    return f"{base}/watch/{token}", f"{base}/dl/{token}"
+    return f"{base}/xstrm/{token}", f"{base}/dl/{token}"
 
 
 async def _dump_copy(message):
@@ -104,7 +104,7 @@ async def stream_links(_, message):
     mime = getattr(media, "mime_type", "") or ""
     playable = mime.startswith(_PLAYABLE)
 
-    watch = f"{base}/watch/{token}"
+    watch = f"{base}/xstrm/{token}"
     direct = f"{base}/dl/{token}"
 
     msg = "<b>〶 Stream Links Generated</b>\n\n"
