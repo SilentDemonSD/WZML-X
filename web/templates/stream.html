@@ -441,6 +441,45 @@
             background: #000105;
         }
 
+        .lmgate {
+            position: absolute;
+            inset: 0;
+            z-index: 3;
+            display: none;
+            place-items: center;
+            border: 0;
+            background: rgba(0, 0, 3, .42);
+            cursor: pointer;
+        }
+
+        .lmgate.on {
+            display: grid;
+        }
+
+        .lmgate-ring {
+            display: grid;
+            place-items: center;
+            width: 76px;
+            height: 76px;
+            border-radius: 50%;
+            background: rgba(61, 135, 255, .92);
+            box-shadow: 0 14px 44px rgba(0, 0, 3, .6),
+                0 0 0 10px rgba(61, 135, 255, .14);
+            transition: transform .18s ease, background .18s ease;
+        }
+
+        .lmgate:hover .lmgate-ring {
+            transform: scale(1.06);
+            background: var(--accent-2);
+        }
+
+        .lmgate svg {
+            width: 30px;
+            height: 30px;
+            fill: #000003;
+            margin-left: 4px;
+        }
+
         .lmbar {
             position: absolute;
             left: 0;
@@ -1251,6 +1290,14 @@
                     </div>
                     <div class="lm" id="lm">
                         <div class="lm-host" id="lmHost"></div>
+                        <button class="lmgate" id="lmGate" type="button"
+                            aria-label="Play">
+                            <span class="lmgate-ring">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M8 5v14l11-7z" />
+                                </svg>
+                            </span>
+                        </button>
                         <div class="lmbar">
                             <button class="lmbtn play" type="button" id="lmPlay" aria-label="Play">
                                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
@@ -1660,27 +1707,73 @@
                 b.setAttribute("aria-label", playing ? "Pause" : "Play");
             }
 
+            var lmDur = 0;
+            var lmScale = 0;
+
             function lmDuration() {
-                try {
-                    if (typeof lm.getDuration === "function") {
-                        return Number(lm.getDuration()) / 1000;
+                if (lmDur > 0) return lmDur;
+                var best = 0;
+                lmStreams.forEach(function (t) {
+                    var d = lmStreamSeconds(t);
+                    if (d > best) best = d;
+                });
+                lmDur = best;
+                return lmDur;
+            }
+
+            // The time event's unit is not documented. Infer it once from the
+            // known duration instead of assuming milliseconds.
+            function lmSeconds(pts) {
+                var v = Number(pts);
+                if (!isFinite(v) || v < 0) return 0;
+                if (!lmScale) {
+                    var d = lmDuration();
+                    if (d > 0) {
+                        if (v / 1e6 <= d * 1.5) lmScale = 1e6;
+                        else if (v / 1e3 <= d * 1.5) lmScale = 1e3;
+                        else lmScale = 1;
+                    } else {
+                        return v / 1000;
                     }
-                } catch (e) { }
-                return 0;
+                    lmLog("time scale = 1/" + lmScale);
+                }
+                return v / lmScale;
             }
 
             function lmSeekTo(sec) {
                 sec = Math.max(0, sec);
+                var ms = Math.round(sec * 1000);
                 try {
-                    lm.seek(BigInt(Math.round(sec * 1000)));
+                    lm.seek(BigInt(ms));
                 } catch (e) {
-                    try { lm.seek(Math.round(sec * 1000)); } catch (e2) { lmErr(e2); }
+                    try { lm.seek(ms); } catch (e2) { lmErr(e2); }
                 }
             }
 
             var lmPlaying = false;
             var lmMuted = false;
             var lmLastVol = 1;
+            var lmPending = 0;
+            var lmStarted = false;
+
+            // Playback must begin from a real click so the AudioContext is allowed
+            // to start. Autoplaying gives picture with no sound in Chrome.
+            function lmStart() {
+                if (!lm) return;
+                el("lmGate").classList.remove("on");
+                try {
+                    lm.play();
+                    lmPlaying = true;
+                    lmIcon(true);
+                    lmStarted = true;
+                    if (lmPending > 1) {
+                        lmSeekTo(lmPending);
+                        lmPending = 0;
+                    }
+                } catch (e) {
+                    lmErr(e);
+                }
+            }
 
             function lmClock(t, dur) {
                 var s = Math.max(0, Math.floor(t));
@@ -1709,7 +1802,7 @@
                     if (t > 30) store(POS_KEY, String(t));
                 }
 
-                lm.on("time", function (pts) { paint(Number(pts) / 1000); });
+                lm.on("time", function (pts) { paint(lmSeconds(pts)); });
                 lm.on("played", function () { lmPlaying = true; lmIcon(true); });
                 lm.on("playing", function () {
                     lmPlaying = true;
@@ -1733,6 +1826,7 @@
                 // libmedia exposes no isPlaying(), so the state is tracked from
                 // its own events instead of being asked for.
                 el("lmPlay").onclick = function () {
+                    if (!lmStarted) { lmStart(); return; }
                     try {
                         if (lmPlaying) {
                             lm.pause();
@@ -1828,6 +1922,8 @@
                     var q = prefs(); q.volume = v; savePrefs(q);
                 };
 
+                el("lmGate").onclick = lmStart;
+
                 el("lmFs").onclick = function () {
                     var box = el("frame");
                     if (document.fullscreenElement) document.exitFullscreen();
@@ -1843,12 +1939,31 @@
                 return bits.length ? bits.join(" \u00b7 ") : "Track " + (i + 1);
             }
 
+            var LM_KIND = { video: [0, "Video"], audio: [1, "Audio"],
+                subtitle: [3, "Subtitle"] };
+
             function lmByType(kind) {
-                return lmStreams.filter(function (t) { return t.mediaType === kind; });
+                var want = LM_KIND[kind] || [];
+                return lmStreams.filter(function (t) {
+                    return want.indexOf(t.mediaType) !== -1;
+                });
+            }
+
+            // getDuration() is internal to libmedia, so seconds come from the
+            // stream's own duration scaled by its time base.
+            function lmStreamSeconds(t) {
+                if (!t || !t.duration) return 0;
+                var tb = t.timeBase;
+                var d = Number(t.duration);
+                if (!isFinite(d) || d <= 0) return 0;
+                if (tb && Number(tb.den) > 0) {
+                    return d * (Number(tb.num) || 1) / Number(tb.den);
+                }
+                return d / 1000;
             }
 
             function lmRebuildMenus() {
-                var auds = lmByType(1), subs = lmByType(3);
+                var auds = lmByType("audio"), subs = lmByType("subtitle");
                 if (auds.length > 1) {
                     dropdown(el("audDd"), "Audio",
                         [{ items: auds.map(function (t, i) {
@@ -1886,7 +2001,7 @@
             // (that is what ffprobe reports). libmedia wants the global stream
             // index, where the video stream usually occupies 0. Translate.
             function lmPickAudio(nth) {
-                var auds = lmByType(1);
+                var auds = lmByType("audio");
                 if (!auds.length) {
                     lmLog("no audio streams to pick from");
                     return Promise.resolve();
@@ -1945,14 +2060,16 @@
                         if (typeof audioIndex === "number") {
                             lmPickAudio(audioIndex);
                         }
-                        return lm.play();
+                        return true;
                     }).then(function () {
-                        lmLog("playing");
-                        if (atSec > 1) lmSeekTo(atSec);
+                        lmDuration();
+                        lmLog("ready, duration=" + lmDur.toFixed(1) + "s");
+                        if (atSec > 1) lmPending = atSec;
                         el("loading").classList.add("gone");
                         clearStall();
                         lmRebuildMenus();
-                        toast("Using the advanced decoder");
+                        el("lmGate").classList.add("on");
+                        lmIcon(false);
                         return true;
                     });
                 }).catch(function (e) {
