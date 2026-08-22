@@ -10,6 +10,8 @@ class BotCommands:
         "Mirror": ["mirror", "m"],
         "QbMirror": ["qbmirror", "qm"],
         "JdMirror": ["jdmirror", "jm"],
+        "Spotdl": ["spotdl", "sp"],
+        "SpotdlLeech": ["spotdlleech", "spl"],
         "Ytdl": ["ytdl", "y"],
         "UpHoster": ["uphoster", "up"],
         "NzbMirror": ["nzbmirror", "nm"],

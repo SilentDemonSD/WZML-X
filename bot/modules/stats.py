@@ -54,6 +54,7 @@ commands = {
     ),
     "python": (["python3", "--version"], r"Python ([\d.]+)"),
     "rclone": ([BinConfig.RCLONE_NAME, "--version"], r"rclone v([\d.]+)"),
+    "spotdl": (["uv", "pip", "show", "spotdl"], r"Version: ([\d.]+)"),
     "yt-dlp": (["yt-dlp", "--version"], r"([\d.]+)"),
     "ffmpeg": (
         [BinConfig.FFMPEG_NAME, "-version"],
@@ -192,6 +193,7 @@ async def get_stats(event, key="home"):
 ┠ <b>Aiohttp:</b> v{ver.get("aiohttp", "N/A")}
 ┠ <b>WzGram:</b> v{ver.get("wzgram", "N/A")}
 ┠ <b>Google API:</b> v{ver.get("gapi", "N/A")}
+┠ <b>spotdl:</b> v{ver.get("spotdl", "N/A")}
 ┖ <b>MegaSDK:</b> v{ver.get("mega", "N/A")}
 """
     elif key == "tlimits":
@@ -204,6 +206,7 @@ async def get_stats(event, key="home"):
 ┠ <b>Clone Limit :</b> {Config.CLONE_LIMIT or "∞"} GB
 ┠ <b>JDown Limit :</b> {Config.JD_LIMIT or "∞"} GB
 ┠ <b>NZB Limit :</b> {Config.NZB_LIMIT or "∞"} GB
+┠ <b>SpotDL Limit :</b> {Config.SPOTDL_LIMIT or "∞"} GB
 ┠ <b>YT-DLP Limit :</b> {Config.YTDLP_LIMIT or "∞"} GB
 ┠ <b>Playlist Limit :</b> {Config.PLAYLIST_LIMIT or "∞"}
 ┠ <b>Mega Limit :</b> {Config.MEGA_LIMIT or "∞"} GB

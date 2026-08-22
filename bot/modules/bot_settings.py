@@ -96,6 +96,7 @@ BOOL_VARS = [
     "DISABLE_RSS",
     "DISABLE_SEARCH",
     "DISABLE_SEED",
+    "DISABLE_SPOTDL",
     "DISABLE_TORRENTS",
     "DISABLE_YTDLP",
     "DISABLE_MEGA",
@@ -141,6 +142,7 @@ DEFAULT_DESP = {
     "DISABLE_NZB": "Disable SABnzbd/Usenet downloads. Saves ~100-200MB RAM. Default: False.",
     "DISABLE_RSS": "Disable RSS feed monitoring. Saves CPU cycles. Default: False.",
     "DISABLE_SEARCH": "Disable torrent search plugins. Saves network I/O. Default: False.",
+    "DISABLE_SPOTDL": "Disable Spotify/SpotDL downloads. Default: False.",
     "DISABLE_YTDLP": "Disable YouTube/YT-DLP downloads. Default: False.",
     "EQUAL_SPLITS": "Split files into equal parts of LEECH_SPLIT_SIZE. Default: False.",
     "EXCLUDED_EXTENSIONS": "File extensions to exclude from upload/clone. Space-separated.",
@@ -184,6 +186,7 @@ DEFAULT_DESP = {
     "CLONE_LIMIT": "Google Drive clone size limit in GB. 0 = unlimited.",
     "JD_LIMIT": "JDownloader download size limit in GB. 0 = unlimited.",
     "NZB_LIMIT": "Usenet download size limit in GB. 0 = unlimited.",
+    "SPOTDL_LIMIT": "SpotDL download size limit in GB. 0 = unlimited.",
     "YTDLP_LIMIT": "yt-dlp download size limit in GB. 0 = unlimited.",
     "PLAYLIST_LIMIT": "Max items to download from a playlist. 0 = unlimited.",
     "LEECH_LIMIT": "Leech (Telegram upload) size limit in GB. 0 = unlimited.",
@@ -289,6 +292,7 @@ ONOFF_VARS = [
     "DISABLE_NZB",
     "DISABLE_RSS",
     "DISABLE_SEARCH",
+    "DISABLE_SPOTDL",
     "DISABLE_YTDLP",
 ]
 

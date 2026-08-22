@@ -10,6 +10,24 @@ mirror = """<b>Send link along with command line or </b>
 <b>NOTE:</b>
 1. Commands that start with <b>qb</b> are ONLY for torrents."""
 
+spotdl = """<b>Send Spotify link along with command line</b>:
+
+/cmd link
+
+<b>By replying to link</b>:
+/cmd -fmt mp3 -n new name
+
+<b>Supported links:</b>
+• Track: open.spotify.com/track/...
+• Playlist: open.spotify.com/playlist/...
+• Album: open.spotify.com/album/...
+• Artist: open.spotify.com/artist/...
+
+<b>Flags:</b>
+• -fmt: Output format (mp3, flac, ogg, opus, m4a, wav)
+• -s: Interactive format selection
+• -n: Custom output name (for single track only)"""
+
 yt = """<b>Send link along with command line</b>:
 
 /cmd link
@@ -363,6 +381,30 @@ CLONE_HELP_DICT = {
     "Rclone": rclone_cl,
 }
 
+SPOTDL_HELP_DICT = {
+    "main": spotdl,
+    "New-Name": f"{new_name}\nNote: Don't add file extension",
+    "Format": "<b>Output Format</b>: -fmt\n\n/cmd link -fmt flac\nSupported formats: mp3, flac, ogg, opus, m4a, wav. Default: mp3.",
+    "Quality": "<b>Select Format</b>: -s\n\n/cmd link -s\nInteractive format selection via buttons.",
+    "Multi-Link": multi_link,
+    "Same-Directory": same_dir,
+    "Thumb": thumb,
+    "Split-Size": split_size,
+    "Upload-Destination": upload,
+    "Rclone-Flags": rcf,
+    "Bulk": bulk,
+    "Sample-Video": sample_video,
+    "Screenshot": screenshot,
+    "Convert-Media": convert_media,
+    "Force-Start": force_start,
+    "Name-Swap": name_swap,
+    "TG-Transmission": transmission,
+    "Thumb-Layout": thumbnail_layout,
+    "Leech-Type": leech_as,
+    "FFmpeg-Cmds": ffmpeg_cmds,
+    "Metadata": metadata,
+}
+
 RSS_HELP_MESSAGE = """
 Use this format to add feed url:
 Title1 link (required)
@@ -400,6 +442,8 @@ def get_bot_commands():
 
     static_commands = {
         "Mirror": "[link/file] Mirror to Upload Destination",
+        "Spotdl": "[spotify link] Download songs from Spotify via YouTube",
+        "SpotdlLeech": "[spotify link] Leech songs from Spotify via YouTube",
         "QbMirror": "[magnet/torrent] Mirror to Upload Destination using qbit",
         "Ytdl": "[link] Mirror YouTube, m3u8, Social Media and yt-dlp supported urls",
         "UpHoster": "[link/file] Upload to DDL Servers",
@@ -472,6 +516,10 @@ def get_help_string():
             help_lines.append(f"{cmd_str}: Start Mirroring to cloud using JDownloader.")
         elif key == "NzbMirror":
             help_lines.append(f"{cmd_str}: Start Mirroring to cloud using Sabnzbd.")
+        elif key == "Spotdl":
+            help_lines.append(f"{cmd_str}: Mirror Spotify song(s) via SpotDL.")
+        elif key == "SpotdlLeech":
+            help_lines.append(f"{cmd_str}: Leech Spotify song(s) via SpotDL.")
         elif key == "Ytdl":
             help_lines.append(f"{cmd_str}: Mirror yt-dlp supported link.")
         elif key == "UpHoster":

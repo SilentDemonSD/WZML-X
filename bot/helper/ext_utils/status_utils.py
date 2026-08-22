@@ -48,6 +48,7 @@ class EngineStatus:
         self.STATUS_QBIT = f"qBit v{ver.get('qBittorrent', 'N/A')}"
         self.STATUS_TGRAM = f"WzPyro v{ver.get('wzgram', 'N/A')}"
         self.STATUS_MEGA = f"MegaSDK v{ver.get('mega', 'N/A')}"
+        self.STATUS_SPOTDL = f"SpotDL v{ver.get('spotdl', 'N/A')}"
         self.STATUS_YTDLP = f"yt-dlp v{ver.get('yt-dlp', 'N/A')}"
         self.STATUS_FFMPEG = f"ffmpeg v{ver.get('ffmpeg', 'N/A')}"
         self.STATUS_7Z = f"7z v{ver.get('7z', 'N/A')}"

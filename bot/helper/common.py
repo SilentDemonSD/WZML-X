@@ -121,6 +121,7 @@ class TaskConfig:
         self.is_uphoster = False
         self.is_gdrive = False
         self.is_rclone = False
+        self.is_spotdl = False
         self.is_ytdlp = False
         self.is_alldebrid = False
         self._alldebrid_magnet_id = 0
@@ -194,7 +195,7 @@ class TaskConfig:
         self.is_gdrive = is_gdrive_link(self.source_url) if self.source_url else False
         self.is_mega = is_mega_link(self.link) if self.source_url else False
 
-        in_mode = f"#{'Mega' if self.is_mega else 'qBit' if self.is_qbit else 'SABnzbd' if self.is_nzb else 'JDown' if self.is_jd else 'RCloneDL' if self.is_rclone else 'ytdlp' if self.is_ytdlp else 'GDrive' if (self.is_clone or self.is_gdrive) else 'Aria2' if (self.source_url and self.source_url != self.message.link) else 'TgMedia'}"
+        in_mode = f"#{'Mega' if self.is_mega else 'qBit' if self.is_qbit else 'SABnzbd' if self.is_nzb else 'JDown' if self.is_jd else 'RCloneDL' if self.is_rclone else 'SpotDL' if self.is_spotdl else 'ytdlp' if self.is_ytdlp else 'GDrive' if (self.is_clone or self.is_gdrive) else 'Aria2' if (self.source_url and self.source_url != self.message.link) else 'TgMedia'}"
 
         self.mode = (in_mode, out_mode)
 
