@@ -1095,6 +1095,9 @@
             #streams = [];
             #starting = false;
             #mounted = false;
+            #loaded = false;
+            #started = false;
+            #pendingSeek = null;
 
             constructor() {
                 super();
@@ -1173,6 +1176,9 @@
                 if (this.#starting) return;
                 this.#mount();
                 this.#starting = true;
+                this.#loaded = false;
+                this.#started = false;
+                this.#pendingSeek = null;
                 this.#emit("loadstart");
                 try {
                     const AVPlayer = await loadAVPlayer();
@@ -1208,6 +1214,7 @@
                     });
 
                     await p.load(url);
+                    this.#loaded = true;
                     this.#streams = p.getStreams ? p.getStreams() : [];
                     this.#dur = this.#durationFrom(this.#streams);
                     this.#ready = 4;
@@ -1226,17 +1233,37 @@
             }
 
             async play() {
-                if (!this.#player) return;
+                if (!this.#player || !this.#loaded) return;
                 await this.#player.play();
+                this.#started = true;
                 this.#paused = false;
                 this.#emit("play");
+                if (this.#pendingSeek !== null) {
+                    const at = this.#pendingSeek;
+                    this.#pendingSeek = null;
+                    this.#seekTo(at);
+                }
             }
 
             pause() {
-                if (!this.#player) return;
+                if (!this.#player || !this.#started) return;
                 this.#player.pause();
                 this.#paused = true;
                 this.#emit("pause");
+            }
+
+            #seekTo(secs) {
+                if (!this.#player) return;
+                const ms = Math.max(0, Math.round(secs * 1000));
+                try {
+                    Promise.resolve(this.#player.seek(BigInt(ms))).catch(() => { });
+                } catch (e) {
+                    try {
+                        Promise.resolve(this.#player.seek(ms)).catch(() => { });
+                    } catch (e2) { }
+                }
+                this.#emit("seeking");
+                this.#emit("timeupdate");
             }
 
             get paused() { return this.#paused; }
@@ -1251,13 +1278,15 @@
 
             get currentTime() { return this.#time; }
             set currentTime(v) {
-                if (!this.#player) return;
-                const ms = Math.max(0, Math.round(Number(v) * 1000));
-                this.#time = Number(v);
-                try { this.#player.seek(BigInt(ms)); }
-                catch (e) { try { this.#player.seek(ms); } catch (e2) { } }
-                this.#emit("seeking");
-                this.#emit("timeupdate");
+                const t = Number(v);
+                if (!isFinite(t) || t < 0) return;
+                this.#time = t;
+                if (!this.#player || !this.#started) {
+                    this.#pendingSeek = t;
+                    this.#emit("timeupdate");
+                    return;
+                }
+                this.#seekTo(t);
             }
 
             get volume() { return this.#vol; }
@@ -1663,16 +1692,24 @@
                         lmRebuildMenus();
                         el("loading").classList.add("gone");
                         clearStall();
+                        var chain = Promise.resolve();
+                        if (gesture) {
+                            chain = chain.then(function () { return lmEl.play(); });
+                        }
                         if (atSec > 1) {
-                            try { lmEl.currentTime = atSec; } catch (e) { }
+                            chain = chain.then(function () {
+                                lmEl.currentTime = atSec;
+                            });
                         }
                         if (typeof wantAudioNth === "number") {
-                            var pick = lmByType("audio");
-                            if (pick[wantAudioNth]) {
-                                lmSwitchAudio(pick[wantAudioNth].id);
-                            }
+                            chain = chain.then(function () {
+                                var pick = lmByType("audio");
+                                if (pick[wantAudioNth]) {
+                                    return lmSwitchAudio(pick[wantAudioNth].id);
+                                }
+                            });
                         }
-                        if (gesture) Promise.resolve(lmEl.play()).catch(lmErr);
+                        chain.catch(lmErr);
                     });
                     lmEl.addEventListener("error", function () {
                         el("loading").classList.add("gone");
