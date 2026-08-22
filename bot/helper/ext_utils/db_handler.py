@@ -226,6 +226,34 @@ class DbManager:
             {"$set": {"dump_msg_id": dump_msg_id, "dump_chat": dump_chat}},
         )
 
+    async def add_stream(self, token, chat_id, msg_id):
+        if self._return:
+            return
+        await self.db.streams[_part()].update_one(
+            {"_id": token},
+            {"$set": {"cid": int(chat_id), "mid": int(msg_id)}},
+            upsert=True,
+        )
+
+    async def find_stream(self, chat_id, msg_id):
+        if self._return:
+            return None
+        doc = await self.db.streams[_part()].find_one(
+            {"cid": int(chat_id), "mid": int(msg_id)}
+        )
+        return doc["_id"] if doc else None
+
+    async def get_stream(self, token):
+        if self._return:
+            return None
+        doc = await self.db.streams[_part()].find_one({"_id": token})
+        return (doc["cid"], doc["mid"]) if doc else None
+
+    async def rm_stream(self, token):
+        if self._return:
+            return
+        await self.db.streams[_part()].delete_one({"_id": token})
+
     async def get_pm_uids(self):
         if self._return:
             return

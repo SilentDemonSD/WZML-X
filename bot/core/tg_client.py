@@ -20,6 +20,7 @@ class TgClient:
     _lock = Lock()
     _hlock = Lock()
     _ulock = Lock()
+    _slock = Lock()
 
     bot = None
     user = None
@@ -27,6 +28,8 @@ class TgClient:
     helper_loads = {}
     helper_users = {}
     helper_user_loads = {}
+    stream_bots = {}
+    stream_loads = {}
 
     BNAME = ""
     ID = 0
@@ -123,6 +126,61 @@ class TgClient:
                         else None,
                     )
                     for no, b_token in enumerate(Config.HELPER_TOKENS.split(), start=1)
+                )
+            )
+
+    @classmethod
+    async def _retry_sclient(cls, no, b_token, delay, proxy=None):
+        await sleep(delay)
+        try:
+            sbot = cls.wztgClient(
+                f"WZ-SBot{no}",
+                bot_token=b_token,
+                no_updates=True,
+                proxy=proxy,
+            )
+            await sbot.start()
+            LOGGER.info(f"Stream Bot [@{sbot.me.username}] Started!")
+            cls.stream_bots[no], cls.stream_loads[no] = sbot, 0
+        except FloodWait as e:
+            LOGGER.warning(f"Stream Bot{no} FloodWait: Retrying in {e.value}s...")
+            bot_loop.create_task(cls._retry_sclient(no, b_token, e.value, proxy))
+        except Exception as e:
+            LOGGER.error(f"Failed to start stream bot {no} from STREAM_TOKENS. {e}")
+
+    @classmethod
+    async def start_sclient(cls, no, b_token, proxy=None):
+        try:
+            sbot = cls.wztgClient(
+                f"WZ-SBot{no}",
+                bot_token=b_token,
+                no_updates=True,
+                proxy=proxy,
+            )
+            await sbot.start()
+            LOGGER.info(f"Stream Bot [@{sbot.me.username}] Started!")
+            cls.stream_bots[no], cls.stream_loads[no] = sbot, 0
+        except FloodWait as e:
+            LOGGER.warning(
+                f"Stream Bot{no} FloodWait: Retrying in {e.value}s (non-blocking)..."
+            )
+            bot_loop.create_task(cls._retry_sclient(no, b_token, e.value, proxy))
+        except Exception as e:
+            LOGGER.error(f"Failed to start stream bot {no} from STREAM_TOKENS. {e}")
+            cls.stream_bots.pop(no, None)
+
+    @classmethod
+    async def start_stream_bots(cls):
+        if not Config.STREAM_TOKENS:
+            return
+        LOGGER.info("Generating stream client from STREAM_TOKENS")
+        async with cls._slock:
+            await gather(
+                *(
+                    cls.start_sclient(no, b_token)
+                    for no, b_token in enumerate(
+                        Config.STREAM_TOKENS.split(), start=1
+                    )
                 )
             )
 
@@ -282,6 +340,9 @@ class TgClient:
             if cls.helper_users:
                 clients.extend(h_user.stop() for h_user in cls.helper_users.values())
                 cls.helper_users = {}
+            if cls.stream_bots:
+                clients.extend(s_bot.stop() for s_bot in cls.stream_bots.values())
+                cls.stream_bots = {}
             if clients:
                 await gather(*clients, return_exceptions=True)
             LOGGER.info("All Client(s) stopped")
@@ -298,4 +359,6 @@ class TgClient:
                 await gather(
                     *[h_user.restart() for h_user in cls.helper_users.values()]
                 )
+            if cls.stream_bots:
+                await gather(*[s_bot.restart() for s_bot in cls.stream_bots.values()])
             LOGGER.info("All Client(s) restarted")

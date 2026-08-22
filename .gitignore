@@ -27,3 +27,4 @@ graphify-out/*
 .agent*
 AGENTS.md
 __pycache__/
+DESIGN.md

@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="referrer" content="no-referrer">
+    <meta name="theme-color" content="#00000C">
+    <title>Stream — WZML-X</title>
+    <link rel="icon"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22.5' fill='%23F5F7FF'/%3E%3Cpath d='M 19.4 42.6 C 20.0 55.4 22.4 66.4 29.8 68.3 C 37.0 70.1 43.2 61.0 45.2 48.8 C 47.5 61.0 53.4 66.6 61.0 68.3 C 68.6 70.0 75.6 55.5 80.6 35.3' fill='none' stroke='%233D87FF' stroke-width='11.1' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/static/plyr.css">
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #00000C;
+            --surface: #010116;
+            --surface-2: #02021F;
+            --line: #16409E;
+            --line-2: #2A5FD0;
+            --text: #F5F7FF;
+            --muted: #CBD2E5;
+            --accent: #3D87FF;
+            --accent-2: #5B9DFF;
+            --accent-soft: #071D5C;
+            --ok: #16A34A;
+            --radius: 14px;
+
+            --plyr-color-main: #3D87FF;
+            --plyr-video-background: #00000C;
+            --plyr-video-control-color: #F5F7FF;
+            --plyr-video-control-color-hover: #00000C;
+            --plyr-menu-background: #010116;
+            --plyr-menu-color: #F5F7FF;
+            --plyr-menu-border-color: #16409E;
+            --plyr-menu-back-border-color: #16409E;
+            --plyr-tooltip-background: #010116;
+            --plyr-tooltip-color: #F5F7FF;
+            --plyr-badge-background: #071D5C;
+            --plyr-badge-text-color: #F5F7FF;
+            --plyr-captions-background: rgba(1, 1, 22, .82);
+            --plyr-captions-text-color: #F5F7FF;
+            --plyr-range-fill-background: #3D87FF;
+            --plyr-video-progress-buffered-background: rgba(93, 157, 255, .28);
+            --plyr-font-family: 'Montserrat', system-ui, sans-serif;
+            --plyr-font-size-base: 14px;
+            --plyr-font-size-small: 13px;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 15px;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            gap: .65rem;
+            padding: .85rem 1.1rem;
+            border-bottom: 1px solid var(--line);
+            background: var(--surface);
+            position: sticky;
+            top: 0;
+            z-index: 5;
+        }
+
+        .topbar svg {
+            width: 26px;
+            height: 26px;
+            flex: none;
+            border-radius: 7px;
+        }
+
+        .brand {
+            font-weight: 800;
+            letter-spacing: .02em;
+            font-size: .98rem;
+        }
+
+        .brand a {
+            color: var(--text);
+            text-decoration: none;
+        }
+
+        .wrap {
+            max-width: 60rem;
+            margin: 0 auto;
+            padding: 1.25rem 1.1rem 3rem;
+        }
+
+        .stage {
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            overflow: hidden;
+            background: #000;
+            box-shadow: 0 1px 2px rgba(0, 0, 12, .6), 0 8px 24px -12px rgba(61, 135, 255, .18);
+        }
+
+        .plyr {
+            border-radius: 0;
+        }
+
+        h1 {
+            font-size: 1.15rem;
+            font-weight: 800;
+            letter-spacing: .02em;
+            margin: 1.15rem 0 .35rem;
+            overflow-wrap: anywhere;
+        }
+
+        .meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .45rem .9rem;
+            font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+            font-variant-numeric: tabular-nums;
+            font-size: .8rem;
+            color: var(--muted);
+            margin-bottom: 1.15rem;
+        }
+
+        .meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+        }
+
+        .dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--line-2);
+        }
+
+        .eyebrow {
+            font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+            font-size: .68rem;
+            font-weight: 600;
+            letter-spacing: .22em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin: 1.6rem 0 .6rem;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .5rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .5rem;
+            min-height: 44px;
+            padding: .55rem 1rem;
+            border-radius: 10px;
+            border: 1px solid var(--line);
+            background: var(--surface-2);
+            color: var(--text);
+            font: inherit;
+            font-size: .875rem;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: border-color .2s ease, background .2s ease, transform .2s ease;
+        }
+
+        .btn:hover {
+            border-color: var(--line-2);
+            transform: translateY(-1px);
+        }
+
+        .btn:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        .btn svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+            flex: none;
+        }
+
+        .btn.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #00000C;
+            font-weight: 600;
+        }
+
+        .btn.primary:hover {
+            background: var(--accent-2);
+            border-color: var(--accent-2);
+        }
+
+        .btn[hidden] {
+            display: none;
+        }
+
+        .tabs {
+            display: inline-flex;
+            gap: .25rem;
+            padding: .25rem;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: var(--surface);
+            margin-bottom: .75rem;
+        }
+
+        .tab {
+            appearance: none;
+            border: 0;
+            background: none;
+            color: var(--muted);
+            font: inherit;
+            font-size: .82rem;
+            font-weight: 500;
+            padding: .45rem .9rem;
+            min-height: 38px;
+            border-radius: 9px;
+            cursor: pointer;
+            transition: background .2s ease, color .2s ease;
+        }
+
+        .tab:hover {
+            color: var(--text);
+        }
+
+        .tab[aria-selected="true"] {
+            background: var(--accent);
+            color: #00000C;
+            font-weight: 600;
+        }
+
+        .tab:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        .apps {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+            gap: .5rem;
+        }
+
+        .app {
+            display: flex;
+            align-items: center;
+            gap: .7rem;
+            padding: .65rem .8rem;
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            background: var(--surface-2);
+            color: var(--text);
+            text-decoration: none;
+            font-size: .875rem;
+            font-weight: 500;
+            min-height: 56px;
+            cursor: pointer;
+            transition: border-color .2s ease, transform .2s ease;
+        }
+
+        .app:hover {
+            border-color: var(--line-2);
+            transform: translateY(-1px);
+        }
+
+        .app:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        .avatar {
+            width: 2rem;
+            height: 2rem;
+            flex: none;
+            display: grid;
+            place-items: center;
+            border-radius: 9px;
+            background: var(--accent-soft);
+            color: var(--accent-2);
+            font-weight: 800;
+            font-size: .95rem;
+            letter-spacing: .02em;
+        }
+
+        .app small {
+            display: block;
+            color: var(--muted);
+            font-size: .72rem;
+            font-weight: 400;
+            line-height: 1.3;
+        }
+
+        .panel {
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            background: var(--surface);
+            padding: 1.1rem;
+        }
+
+        .panel p {
+            margin: 0 0 .85rem;
+            color: var(--muted);
+            font-size: .9rem;
+        }
+
+        .notice {
+            display: none;
+            align-items: flex-start;
+            gap: .7rem;
+            border: 1px solid var(--line-2);
+            border-radius: var(--radius);
+            background: var(--accent-soft);
+            padding: .85rem 1rem;
+            margin-bottom: 1.1rem;
+            font-size: .88rem;
+        }
+
+        .notice.show {
+            display: flex;
+        }
+
+        .notice svg {
+            width: 18px;
+            height: 18px;
+            fill: var(--accent-2);
+            flex: none;
+            margin-top: .15rem;
+        }
+
+        .notice b {
+            font-weight: 600;
+        }
+
+        .resume {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: .8rem;
+            flex-wrap: wrap;
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            background: var(--surface-2);
+            padding: .7rem .9rem;
+            margin-top: .9rem;
+            font-size: .875rem;
+        }
+
+        .resume.show {
+            display: flex;
+        }
+
+        .tracks {
+            display: none;
+            gap: .5rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .tracks.show {
+            display: flex;
+        }
+
+        select {
+            font: inherit;
+            font-size: .85rem;
+            color: var(--text);
+            background: var(--surface-2);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            min-height: 44px;
+            padding: .4rem .7rem;
+        }
+
+        select:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        .toast {
+            position: fixed;
+            left: 50%;
+            bottom: 1.4rem;
+            transform: translate(-50%, 1.5rem);
+            background: var(--surface);
+            border: 1px solid var(--line-2);
+            border-radius: 10px;
+            padding: .6rem 1rem;
+            font-size: .85rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .2s ease, transform .2s ease;
+            z-index: 50;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+
+        .err {
+            text-align: center;
+            padding: 3.5rem 1rem;
+            color: var(--muted);
+        }
+
+        .err h2 {
+            color: var(--text);
+            font-weight: 800;
+            letter-spacing: .02em;
+            margin: 0 0 .5rem;
+        }
+
+        @media (max-width: 560px) {
+            .wrap {
+                padding: 1rem .8rem 2.5rem;
+            }
+
+            .btn {
+                flex: 1 1 calc(50% - .25rem);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            *,
+            *::before,
+            *::after {
+                animation: none !important;
+                transition-duration: .01ms !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="topbar">
+        <svg viewBox="0 0 100 100" aria-hidden="true">
+            <rect width="100" height="100" rx="22.5" fill="#F5F7FF" />
+            <path
+                d="M 19.4 42.6 C 20.0 55.4 22.4 66.4 29.8 68.3 C 37.0 70.1 43.2 61.0 45.2 48.8 C 47.5 61.0 53.4 66.6 61.0 68.3 C 68.6 70.0 75.6 55.5 80.6 35.3"
+                fill="none" stroke="#3D87FF" stroke-width="11.1" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <span class="brand"><a href="/">WZML-X</a></span>
+    </header>
+
+    <main class="wrap" id="root">
+        <div class="notice" id="notice">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 2 1 21h22L12 2zm0 6 6.5 11h-13L12 8zm-1 3v4h2v-4h-2zm0 5v2h2v-2h-2z" />
+            </svg>
+            <div id="noticeText"></div>
+        </div>
+
+        <div class="stage" id="stage">
+            <video id="player" playsinline controls crossorigin="anonymous"></video>
+        </div>
+
+        <div class="resume" id="resume">
+            <span id="resumeText"></span>
+            <span style="display:flex;gap:.4rem">
+                <button class="btn primary" type="button" id="resumeGo">Resume</button>
+                <button class="btn" type="button" id="resumeNo">Start over</button>
+            </span>
+        </div>
+
+        <h1 id="title">Loading…</h1>
+        <div class="meta" id="meta"></div>
+
+        <div class="tracks" id="tracks">
+            <label class="eyebrow" style="margin:0" for="subSel">Subtitles</label>
+            <select id="subSel"></select>
+            <label class="eyebrow" style="margin:0" for="audSel" id="audLabel">Audio</label>
+            <select id="audSel"></select>
+        </div>
+
+        <p class="eyebrow">Actions</p>
+        <div class="actions">
+            <a class="btn primary" id="dl" href="#" download>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 3v10.6l3.3-3.3 1.4 1.4L12 17.4l-4.7-4.7 1.4-1.4 3.3 3.3V3h2zM5 19h14v2H5v-2z" />
+                </svg>
+                Download
+            </a>
+            <button class="btn" type="button" id="copy">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm0 16H8V7h11v14z" />
+                </svg>
+                Copy link
+            </button>
+            <button class="btn" type="button" id="copyDl">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3.9 12a3.1 3.1 0 0 1 3.1-3.1h4V7H7a5 5 0 0 0 0 10h4v-1.9H7A3.1 3.1 0 0 1 3.9 12zM8 13h8v-2H8v2zm9-6h-4v1.9h4a3.1 3.1 0 0 1 0 6.2h-4V17h4a5 5 0 0 0 0-10z" />
+                </svg>
+                Copy direct link
+            </button>
+        </div>
+
+        <p class="eyebrow">Open in an external player</p>
+        <div class="tabs" id="tabs" role="tablist">
+            <button class="tab" type="button" role="tab" data-os="desktop">Desktop</button>
+            <button class="tab" type="button" role="tab" data-os="android">Android</button>
+            <button class="tab" type="button" role="tab" data-os="ios">iOS</button>
+        </div>
+        <div class="apps" id="ext"></div>
+    </main>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="/static/plyr.js"></script>
+    <script>
+        (function () {
+            "use strict";
+
+            var TOKEN = (location.pathname.split("/").filter(Boolean).pop() || "");
+            var STREAM = location.origin + "/stream/" + encodeURIComponent(TOKEN);
+            var DIRECT = location.origin + "/dl/" + encodeURIComponent(TOKEN);
+            var POS_KEY = "wzx:pos:" + TOKEN;
+            var PREF_KEY = "wzx:prefs";
+
+            var el = function (id) { return document.getElementById(id); };
+            var video = el("player");
+            var player = null;
+            var meta = null;
+
+            function store(key, val) {
+                try { localStorage.setItem(key, val); } catch (e) { /* private mode */ }
+            }
+            function load(key) {
+                try { return localStorage.getItem(key); } catch (e) { return null; }
+            }
+
+            function toast(text) {
+                var t = el("toast");
+                t.textContent = text;
+                t.classList.add("show");
+                setTimeout(function () { t.classList.remove("show"); }, 1800);
+            }
+
+            function bytes(n) {
+                if (!n) return "unknown size";
+                var u = ["B", "KB", "MB", "GB", "TB"], i = 0, v = n;
+                while (v >= 1024 && i < u.length - 1) { v /= 1024; i++; }
+                return (i === 0 ? v : v.toFixed(v < 10 ? 2 : 1)) + " " + u[i];
+            }
+
+            function clock(s) {
+                if (!isFinite(s) || s <= 0) return "";
+                s = Math.floor(s);
+                var h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), q = s % 60;
+                var pad = function (x) { return x < 10 ? "0" + x : "" + x; };
+                return (h ? h + ":" + pad(m) : m + "") + ":" + pad(q);
+            }
+
+            function notice(html) {
+                el("noticeText").innerHTML = html;
+                el("notice").classList.add("show");
+            }
+
+            function fatal(head, body) {
+                el("root").innerHTML =
+                    '<div class="err"><h2></h2><p></p>' +
+                    '<p><a class="btn" href="/">Back to home</a></p></div>';
+                el("root").querySelector("h2").textContent = head;
+                el("root").querySelector(".err p").textContent = body;
+            }
+
+            function detectOS() {
+                var ua = navigator.userAgent || "";
+                var touch = navigator.maxTouchPoints || 0;
+                if (/android/i.test(ua)) return "android";
+                if (/iPad|iPhone|iPod/.test(ua)) return "ios";
+                if (/Macintosh/.test(ua) && touch > 1) return "ios";
+                return "desktop";
+            }
+
+            function m3u(name) {
+                var text = "#EXTM3U\n#EXTINF:-1," + (name || "Video") + "\n" + STREAM + "\n";
+                return "data:audio/x-mpegurl;charset=utf-8," + encodeURIComponent(text);
+            }
+
+            function androidIntent(pkg, name) {
+                return "intent:" + STREAM + "#Intent;package=" + pkg +
+                    ";type=video/*;S.title=" + encodeURIComponent(name || "Video") +
+                    ";end";
+            }
+
+            function extApps(os, name) {
+                var enc = encodeURIComponent(STREAM);
+                if (os === "android") {
+                    return [
+                        ["V", "VLC", "Android", androidIntent("org.videolan.vlc", name)],
+                        ["N", "nPlayer", "Android", androidIntent("com.newin.nplayer.pro", name)],
+                        ["M", "MX Player", "Android", androidIntent("com.mxtech.videoplayer.ad", name)]
+                    ];
+                }
+                if (os === "ios") {
+                    return [
+                        ["I", "Infuse", "iOS / iPadOS", "infuse://x-callback-url/play?url=" + enc],
+                        ["V", "VLC", "iOS / iPadOS", "vlc-x-callback://x-callback-url/stream?url=" + enc],
+                        ["N", "nPlayer", "iOS / iPadOS", "nplayer-" + STREAM]
+                    ];
+                }
+                return [
+                    ["I", "IINA", "macOS", "iina://weblink?url=" + enc],
+                    ["V", "VLC", "Playlist file", m3u(name)],
+                    ["N", "nPlayer", "macOS", "nplayer-" + STREAM]
+                ];
+            }
+
+            function buildExt(os, name) {
+                var box = el("ext");
+                box.innerHTML = "";
+                extApps(os, name).forEach(function (app) {
+                    var a = document.createElement("a");
+                    a.className = "app";
+                    a.href = app[3];
+                    a.rel = "noopener";
+                    if (app[1] === "VLC" && os === "desktop") {
+                        a.setAttribute("download", (name || "video") + ".m3u");
+                    }
+                    var av = document.createElement("span");
+                    av.className = "avatar";
+                    av.textContent = app[0];
+                    var txt = document.createElement("span");
+                    txt.textContent = app[1];
+                    var sub = document.createElement("small");
+                    sub.textContent = app[2];
+                    txt.appendChild(sub);
+                    a.appendChild(av);
+                    a.appendChild(txt);
+                    box.appendChild(a);
+                });
+            }
+
+            function wireTabs(name) {
+                var tabs = Array.prototype.slice.call(
+                    el("tabs").querySelectorAll(".tab"));
+                function pick(os) {
+                    tabs.forEach(function (t) {
+                        t.setAttribute("aria-selected",
+                            t.dataset.os === os ? "true" : "false");
+                    });
+                    buildExt(os, name);
+                }
+                tabs.forEach(function (t) {
+                    t.onclick = function () { pick(t.dataset.os); };
+                });
+                pick(detectOS());
+            }
+
+            function prefs() {
+                try { return JSON.parse(load(PREF_KEY) || "{}"); } catch (e) { return {}; }
+            }
+
+            function savePrefs(p) { store(PREF_KEY, JSON.stringify(p)); }
+
+            function wireTracks() {
+                var subSel = el("subSel"), audSel = el("audSel");
+                var texts = video.textTracks || [];
+                var audios = video.audioTracks || null;
+                var any = false;
+
+                subSel.innerHTML = "";
+                var none = document.createElement("option");
+                none.value = "-1";
+                none.textContent = "Off";
+                subSel.appendChild(none);
+                for (var i = 0; i < texts.length; i++) {
+                    if (texts[i].kind !== "subtitles" && texts[i].kind !== "captions") continue;
+                    var o = document.createElement("option");
+                    o.value = String(i);
+                    o.textContent = texts[i].label || texts[i].language || ("Track " + (i + 1));
+                    subSel.appendChild(o);
+                    any = true;
+                }
+                subSel.parentNode && (subSel.previousElementSibling.hidden = !any);
+                subSel.hidden = !any;
+                subSel.onchange = function () {
+                    var pick = parseInt(subSel.value, 10);
+                    for (var i = 0; i < texts.length; i++) {
+                        texts[i].mode = (i === pick) ? "showing" : "disabled";
+                    }
+                };
+
+                var hasAudio = audios && audios.length > 1;
+                el("audLabel").hidden = !hasAudio;
+                audSel.hidden = !hasAudio;
+                if (hasAudio) {
+                    audSel.innerHTML = "";
+                    for (var j = 0; j < audios.length; j++) {
+                        var a = document.createElement("option");
+                        a.value = String(j);
+                        a.textContent = audios[j].label || audios[j].language || ("Audio " + (j + 1));
+                        if (audios[j].enabled) a.selected = true;
+                        audSel.appendChild(a);
+                    }
+                    audSel.onchange = function () {
+                        var pick = parseInt(audSel.value, 10);
+                        for (var j = 0; j < audios.length; j++) {
+                            audios[j].enabled = (j === pick);
+                        }
+                    };
+                    any = true;
+                }
+                if (any) el("tracks").classList.add("show");
+            }
+
+            function wireResume() {
+                var saved = parseFloat(load(POS_KEY) || "0");
+                var dur = video.duration;
+                if (saved > 30 && isFinite(dur) && saved < dur - 30) {
+                    el("resumeText").textContent = "You stopped at " + clock(saved) + ".";
+                    el("resume").classList.add("show");
+                    el("resumeGo").onclick = function () {
+                        video.currentTime = saved;
+                        el("resume").classList.remove("show");
+                        video.play();
+                    };
+                    el("resumeNo").onclick = function () {
+                        store(POS_KEY, "0");
+                        el("resume").classList.remove("show");
+                    };
+                }
+                var last = 0;
+                video.addEventListener("timeupdate", function () {
+                    var now = video.currentTime;
+                    if (Math.abs(now - last) < 5) return;
+                    last = now;
+                    store(POS_KEY, String(now));
+                });
+                video.addEventListener("ended", function () { store(POS_KEY, "0"); });
+            }
+
+            function start(info) {
+                meta = info;
+                var name = info.name || "Untitled";
+                document.title = name + " — WZML-X";
+                el("title").textContent = name;
+                el("dl").href = DIRECT;
+                el("dl").setAttribute("download", name);
+                wireTabs(name);
+
+                var bits = [];
+                bits.push(bytes(info.size));
+                if (info.mime) bits.push(info.mime);
+                el("meta").innerHTML = "";
+                bits.forEach(function (b, i) {
+                    if (i) {
+                        var d = document.createElement("i");
+                        d.className = "dot";
+                        el("meta").appendChild(d);
+                    }
+                    var s = document.createElement("span");
+                    s.textContent = b;
+                    el("meta").appendChild(s);
+                });
+
+                video.src = STREAM;
+
+                var p = prefs();
+                player = new Plyr(video, {
+                    iconUrl: "/static/plyr.svg",
+                    blankVideo: "",
+                    controls: ["play-large", "restart", "rewind", "play", "fast-forward",
+                        "progress", "current-time", "duration", "mute", "volume",
+                        "captions", "settings", "pip", "airplay", "fullscreen"],
+                    settings: ["captions", "speed", "loop"],
+                    speed: { selected: p.speed || 1, options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] },
+                    keyboard: { focused: true, global: true },
+                    tooltips: { controls: true, seek: true },
+                    seekTime: 10,
+                    invertTime: false,
+                    storage: { enabled: false }
+                });
+
+                if (typeof p.volume === "number") video.volume = p.volume;
+                if (p.muted) video.muted = true;
+
+                player.on("volumechange", function () {
+                    var q = prefs();
+                    q.volume = video.volume;
+                    q.muted = video.muted;
+                    savePrefs(q);
+                });
+                player.on("ratechange", function () {
+                    var q = prefs();
+                    q.speed = player.speed;
+                    savePrefs(q);
+                });
+                player.on("loadedmetadata", function () {
+                    var d = video.duration;
+                    if (isFinite(d) && d > 0) {
+                        var s = document.createElement("span");
+                        var i = document.createElement("i");
+                        i.className = "dot";
+                        el("meta").appendChild(i);
+                        s.textContent = clock(d);
+                        el("meta").appendChild(s);
+                    }
+                    wireTracks();
+                    wireResume();
+                    if (video.textTracks) {
+                        video.textTracks.addEventListener("addtrack", wireTracks);
+                    }
+                    if (video.audioTracks) {
+                        video.audioTracks.addEventListener("addtrack", wireTracks);
+                    }
+                });
+                player.on("error", function () {
+                    var err = video.error;
+                    if (err && err.code === 4) {
+                        el("stage").hidden = true;
+                        notice("<b>This browser cannot decode this file.</b> " +
+                            (info.mime || "The container or codec") +
+                            " is not supported here. Open it in an external player " +
+                            "below, or download it.");
+                    } else {
+                        notice("<b>Playback stopped.</b> The connection dropped or the " +
+                            "link expired. Reload, or use an external player below.");
+                    }
+                });
+            }
+
+            el("copy").onclick = function () {
+                navigator.clipboard.writeText(location.href).then(
+                    function () { toast("Page link copied"); },
+                    function () { toast("Copy failed"); });
+            };
+            el("copyDl").onclick = function () {
+                navigator.clipboard.writeText(DIRECT).then(
+                    function () { toast("Direct link copied"); },
+                    function () { toast("Copy failed"); });
+            };
+
+            if (!TOKEN) {
+                fatal("Nothing to play", "This link is missing its file reference.");
+                return;
+            }
+
+            fetch("/api/stream/" + encodeURIComponent(TOKEN), { cache: "no-store" })
+                .then(function (r) {
+                    if (r.status === 404) throw new Error("gone");
+                    if (!r.ok) throw new Error("bad");
+                    return r.json();
+                })
+                .then(start)
+                .catch(function (e) {
+                    if (e && e.message === "gone") {
+                        fatal("This file is no longer available",
+                            "It was removed from the source chat, or the link is wrong.");
+                    } else {
+                        fatal("Could not load this file",
+                            "The streaming service did not respond. Try again shortly.");
+                    }
+                });
+        })();
+    </script>
+</body>
+
+</html>

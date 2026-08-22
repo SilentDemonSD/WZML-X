@@ -31,6 +31,7 @@ WEB_ACCESS_PASSWORD = (
 
 # Hyper Tg Downloader
 HELPER_TOKENS = ""
+STREAM_TOKENS = ""
 USE_HYPER = True
 
 # MegaAPI v4.30

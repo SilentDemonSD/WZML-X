@@ -324,6 +324,13 @@ async def add_handlers():
     )
     TgClient.bot.add_handler(
         MessageHandler(
+            stream_links,
+            filters=command(BotCommands.StreamCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
             picture_add,
             filters=command(BotCommands.AddImageCommand, case_sensitive=True)
             & CustomFilters.authorized,

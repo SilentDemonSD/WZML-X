@@ -86,6 +86,7 @@ async def main():
         TgClient.start_user(),
         TgClient.start_helper_bots(),
         TgClient.start_helper_users(),
+        TgClient.start_stream_bots(),
     )
     await gather(load_configurations(), update_variables())
 

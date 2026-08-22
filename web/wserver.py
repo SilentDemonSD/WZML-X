@@ -14,8 +14,9 @@ set_event_loop(bot_loop)
 
 from asyncio import sleep
 from importlib import import_module
-from os import environ
+from os import environ, path as ospath
 from re import compile as re_compile
+from html import escape
 from urllib.parse import urlparse
 from contextlib import asynccontextmanager
 from logging import INFO, WARNING, FileHandler, StreamHandler, basicConfig, getLogger
@@ -24,7 +25,13 @@ from aioaria2 import Aria2HttpClient
 from aiohttp.client_exceptions import ClientError
 from aioqbt.client import create_client
 from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse, Response
+from fastapi.responses import (
+    HTMLResponse,
+    JSONResponse,
+    Response,
+    StreamingResponse,
+)
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sabnzbdapi import SabnzbdClient
 from aioqbt.exc import AQError
@@ -178,20 +185,38 @@ SERVICES = {
 }
 
 
+STREAM_PORT = environ.get("STREAM_PORT", "") or "8091"
+STREAM_BASE = f"http://127.0.0.1:{STREAM_PORT}"
+_SAFE_TOKEN = re_compile(r"^[A-Za-z0-9_-]{4,32}$")
+http_session = None
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global aria2, qbittorrent
+    global aria2, qbittorrent, http_session
     aria2 = Aria2HttpClient("http://localhost:6800/jsonrpc")
     qbittorrent = await create_client("http://localhost:8090/api/v2/")
+    http_session = ClientSession(auto_decompress=True)
     yield
     await aria2.close()
     await qbittorrent.close()
+    await http_session.close()
 
 
 app = FastAPI(lifespan=lifespan)
 
+if ospath.isdir("web/static"):
+    app.mount("/static", StaticFiles(directory="web/static"), name="static")
+
 
 templates = Jinja2Templates(directory="web/templates/")
+
+
+def _client_ip(request: Request):
+    fwd = request.headers.get("x-forwarded-for", "")
+    if fwd:
+        return fwd.split(",")[0].strip()[:64]
+    return (request.client.host if request.client else "unknown")[:64]
 
 
 async def re_verify(paused, resumed, hash_id):
@@ -431,36 +456,36 @@ def rewrite_location(location: str, proxy_prefix: str) -> str:
 async def proxy_fetch(
     method: str, url: str, headers: dict, params: dict, body: bytes, proxy_prefix: str
 ):
-    async with ClientSession(auto_decompress=True) as session:
-        async with session.request(
-            method,
-            url,
-            headers=headers,
-            params=params,
-            data=body,
-            allow_redirects=False,
-        ) as upstream:
-            raw = [
-                (k.lower().encode("latin-1"), v.encode("latin-1"))
-                for k, v in upstream.headers.items()
-                if k.lower() not in ("content-length", "content-encoding")
-            ]
-            if upstream.status in (301, 302, 303, 307, 308):
-                loc = upstream.headers.get("Location")
-                if loc:
-                    new_loc = rewrite_location(loc, proxy_prefix)
-                    raw = [
-                        (k, new_loc.encode("latin-1") if k == b"location" else v)
-                        for k, v in raw
-                    ]
-            body = (
-                await upstream.read()
-                if upstream.status not in (301, 302, 303, 307, 308)
-                else b""
-            )
-            response = Response(content=body, status_code=upstream.status)
-            response.raw_headers = raw
-            return response
+    session = http_session or ClientSession(auto_decompress=True)
+    async with session.request(
+        method,
+        url,
+        headers=headers,
+        params=params,
+        data=body,
+        allow_redirects=False,
+    ) as upstream:
+        raw = [
+            (k.lower().encode("latin-1"), v.encode("latin-1"))
+            for k, v in upstream.headers.items()
+            if k.lower() not in ("content-length", "content-encoding")
+        ]
+        if upstream.status in (301, 302, 303, 307, 308):
+            loc = upstream.headers.get("Location")
+            if loc:
+                new_loc = rewrite_location(loc, proxy_prefix)
+                raw = [
+                    (k, new_loc.encode("latin-1") if k == b"location" else v)
+                    for k, v in raw
+                ]
+        body = (
+            await upstream.read()
+            if upstream.status not in (301, 302, 303, 307, 308)
+            else b""
+        )
+        response = Response(content=body, status_code=upstream.status)
+        response.raw_headers = raw
+        return response
 
 
 async def protected_proxy(
@@ -515,9 +540,112 @@ async def qbittorrent_proxy(path: str = "", request: Request = None):
     return await protected_proxy("qbit", path, request)
 
 
-@app.exception_handler(Exception)
-async def page_not_found(_, exc):
-    return HTMLResponse(
-        f"<h1>404: Task not found! Mostly wrong input. <br><br>Error: {exc}</h1>",
-        status_code=404,
+_HOP = (
+    "connection",
+    "keep-alive",
+    "proxy-authenticate",
+    "proxy-authorization",
+    "te",
+    "trailers",
+    "transfer-encoding",
+    "upgrade",
+    "content-encoding",
+)
+
+
+async def stream_proxy(token: str, request: Request, upstream_path: str):
+    if not _SAFE_TOKEN.match(token or ""):
+        raise HTTPException(status_code=404, detail="Unknown link")
+    headers = {}
+    rng = request.headers.get("range")
+    if rng:
+        headers["Range"] = rng
+    if inm := request.headers.get("if-range"):
+        headers["If-Range"] = inm
+    headers["X-Viewer"] = _client_ip(request)
+
+    upstream = await http_session.request(
+        request.method,
+        f"{STREAM_BASE}{upstream_path}/{token}",
+        headers=headers,
+        allow_redirects=False,
     )
+
+    out = {
+        k: v for k, v in upstream.headers.items() if k.lower() not in _HOP
+    }
+    out.setdefault("Accept-Ranges", "bytes")
+    out["Referrer-Policy"] = "no-referrer"
+    out["X-Content-Type-Options"] = "nosniff"
+
+    if request.method == "HEAD" or upstream.status in (204, 304, 416):
+        body = await upstream.read()
+        upstream.release()
+        return Response(
+            content=body if request.method != "HEAD" else b"",
+            status_code=upstream.status,
+            headers=out,
+        )
+
+    async def _pump():
+        try:
+            async for chunk in upstream.content.iter_chunked(262144):
+                yield chunk
+        finally:
+            upstream.release()
+
+    return StreamingResponse(_pump(), status_code=upstream.status, headers=out)
+
+
+@app.api_route("/stream/{token}", methods=["GET", "HEAD"])
+async def stream_route(token: str, request: Request):
+    return await stream_proxy(token, request, "/_stream")
+
+
+@app.api_route("/dl/{token}", methods=["GET", "HEAD"])
+async def download_route(token: str, request: Request):
+    return await stream_proxy(token, request, "/_dl")
+
+
+@app.get("/watch/{token}", response_class=HTMLResponse)
+async def watch_page(token: str, request: Request):
+    if not _SAFE_TOKEN.match(token or ""):
+        raise HTTPException(status_code=404, detail="Unknown link")
+    response = templates.TemplateResponse(request, "stream.html")
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    return response
+
+
+@app.get("/api/stream/{token}")
+async def stream_meta(token: str, request: Request):
+    if not _SAFE_TOKEN.match(token or ""):
+        raise HTTPException(status_code=404, detail="Unknown link")
+    async with http_session.get(f"{STREAM_BASE}/_meta/{token}") as upstream:
+        body = await upstream.read()
+    return Response(
+        content=body,
+        status_code=upstream.status,
+        media_type="application/json",
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@app.exception_handler(HTTPException)
+async def http_error(request: Request, exc: HTTPException):
+    if request.url.path.startswith(("/app/files/", "/api/", "/stream/", "/dl/")):
+        return JSONResponse(
+            {"error": str(exc.detail)}, status_code=exc.status_code
+        )
+    return HTMLResponse(
+        f"<h1>{exc.status_code}: {escape(str(exc.detail))}</h1>",
+        status_code=exc.status_code,
+    )
+
+
+@app.exception_handler(Exception)
+async def server_error(request: Request, exc: Exception):
+    LOGGER.error(f"Unhandled error on {request.url.path}: {exc}")
+    if request.url.path.startswith(("/app/files/", "/api/", "/stream/", "/dl/")):
+        return JSONResponse({"error": "Internal server error"}, status_code=500)
+    return HTMLResponse("<h1>500: Internal server error</h1>", status_code=500)

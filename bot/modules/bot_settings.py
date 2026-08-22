@@ -119,6 +119,7 @@ DEFAULT_DESP = {
     "BASE_URL": "Public URL for torrent web file selection. Format: http://ip or http://ip:port.",
     "BOT_TOKEN": "Telegram Bot Token from @BotFather.",
     "HELPER_TOKENS": "Additional bot tokens for parallel task handling.",
+    "STREAM_TOKENS": "Bot tokens dedicated to /stream and /dl. If set, streaming uses these and is isolated from mirror/leech load. Falls back to HELPER_TOKENS.",
     "BOT_MAX_TASKS": "Max tasks (including queued) the bot runs in parallel. 0 = unlimited.",
     "BOT_PM": "Send files/links to bot owner PM. Default: False.",
     "CMD_SUFFIX": "Text appended to all bot commands. Useful for running multiple bot instances.",
@@ -203,6 +204,8 @@ DEFAULT_DESP = {
     "HYPER_THREADS": "Number of parallel download parts (clients). 0 = auto.",
     "HYPER_PIPELINE": "Concurrent GetFile requests per HyperDL part. Default: 4.",
     "HYPER_CHUNK": "HyperDL working chunk size in bytes. Default: 512 * 1024 (512KB).",
+    "STREAM_PIPELINE": "Concurrent GetFile requests for /dl downloads. Default: 8.",
+    "STREAM_CHUNK": "Streaming chunk size in bytes, capped at 1 MiB. Default: 1048576.",
     "CPU_LIMIT": "CPU limit percentage for background services (SABnzbd, JDownloader). Default: 20.",
     "THROTTLE_SERVICES": "Pause services during heavy ops (FFmpeg). auto=low-end only, always, never.",
     "HYDRA_IP": "Hydra API IP address for search.",
@@ -265,6 +268,7 @@ PROTECTED_VARS = {
     "DATABASE_URL",
 }
 RESTART_VARS = {
+    "STREAM_TOKENS",
     "CMD_SUFFIX",
     "OWNER_ID",
     "USER_SESSION_STRING",

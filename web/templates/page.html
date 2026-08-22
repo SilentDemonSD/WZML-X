@@ -4,44 +4,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-    <meta name="theme-color" content="#12111a" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#00000C" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#00000C" media="(prefers-color-scheme: dark)">
     <title>Torrent File Selector — WZML-X</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22.5' fill='%23F4F2FE'/%3E%3Cpath d='M 19.4 42.6 C 20.0 55.4 22.4 66.4 29.8 68.3 C 37.0 70.1 43.2 61.0 45.2 48.8 C 47.5 61.0 53.4 66.6 61.0 68.3 C 68.6 70.0 75.6 55.5 80.6 35.3' fill='none' stroke='%235236CB' stroke-width='11.1' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22.5' fill='%23F5F7FF'/%3E%3Cpath d='M 19.4 42.6 C 20.0 55.4 22.4 66.4 29.8 68.3 C 37.0 70.1 43.2 61.0 45.2 48.8 C 47.5 61.0 53.4 66.6 61.0 68.3 C 68.6 70.0 75.6 55.5 80.6 35.3' fill='none' stroke='%233D87FF' stroke-width='11.1' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #f4f5f9;
-            --surface: #ffffff;
-            --surface-2: #fafafd;
-            --line: #e7e7f0;
-            --line-2: #d8d8e6;
-            --text: #17161f;
-            --muted: #6d6a83;
-            --accent: #5236cb;
-            --accent-2: #6f56e8;
-            --accent-soft: #efecfd;
-            --ok: #16a34a;
-            --shadow: 0 1px 2px rgba(23, 22, 31, 0.05), 0 8px 24px -12px rgba(23, 22, 31, 0.14);
+            color-scheme: dark;
+            --bg: #00000C;
+            --surface: #010116;
+            --surface-2: #02021F;
+            --line: #16409E;
+            --line-2: #2A5FD0;
+            --text: #F5F7FF;
+            --muted: #CBD2E5;
+            --accent: #3D87FF;
+            --accent-2: #5B9DFF;
+            --accent-soft: #071D5C;
+            --ok: #16A34A;
+            --shadow: 0 1px 2px rgba(0, 0, 12, 0.6), 0 8px 24px -12px rgba(61, 135, 255, 0.18);
             --radius: 14px;
         }
 
         @media (prefers-color-scheme: dark) {
             :root {
-                --bg: #0e0d15;
-                --surface: #16151f;
-                --surface-2: #1c1a27;
-                --line: #262336;
-                --line-2: #322e45;
-                --text: #eceaf4;
-                --muted: #9591ad;
-                --accent: #8b74ff;
-                --accent-2: #a390ff;
-                --accent-soft: #241f3d;
-                --ok: #4ade80;
-                --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -12px rgba(0, 0, 0, 0.7);
+                --bg: #00000C;
+                --surface: #010116;
+                --surface-2: #02021F;
+                --line: #16409E;
+                --line-2: #2A5FD0;
+                --text: #F5F7FF;
+                --muted: #CBD2E5;
+                --accent: #3D87FF;
+                --accent-2: #5B9DFF;
+                --accent-soft: #071D5C;
+                --ok: #16A34A;
+                --shadow: 0 1px 2px rgba(0, 0, 12, 0.6), 0 8px 24px -12px rgba(61, 135, 255, 0.18);
             }
         }
 
@@ -58,7 +59,7 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             font-size: 15px;
             background: var(--bg);
             color: var(--text);
@@ -108,8 +109,8 @@
 
         .name {
             font-size: 0.98rem;
-            font-weight: 650;
-            letter-spacing: -0.01em;
+            font-weight: 800;
+            letter-spacing: 0.02em;
             white-space: nowrap;
         }
 
@@ -156,7 +157,7 @@
         button {
             font-family: inherit;
             font-size: 0.86rem;
-            font-weight: 550;
+            font-weight: 500;
             color: var(--text);
             background: var(--surface);
             border: 1px solid var(--line-2);
@@ -183,14 +184,14 @@
         .btn-primary {
             background: var(--accent);
             border-color: var(--accent);
-            color: #fff;
+            color: #00000C;
             font-weight: 600;
         }
 
         .btn-primary:hover {
             background: var(--accent-2);
             border-color: var(--accent-2);
-            color: #fff;
+            color: #00000C;
         }
 
         .btn-primary:disabled {
@@ -220,7 +221,7 @@
         input[type="password"]:focus,
         input[type="search"]:focus {
             border-color: var(--accent);
-            box-shadow: 0 0 0 3px var(--accent-soft);
+            box-shadow: 0 0 0 3px var(--line-2);
         }
 
         input[type="checkbox"] {
@@ -272,8 +273,8 @@
 
         .pin-form label {
             font-size: 1.1rem;
-            font-weight: 650;
-            letter-spacing: -0.01em;
+            font-weight: 700;
+            letter-spacing: 0.01em;
         }
 
         .pin-form .hint {
@@ -294,7 +295,7 @@
             text-align: center;
             font-family: inherit;
             font-size: 1.5rem;
-            font-weight: 650;
+            font-weight: 600;
             color: var(--text);
             background: var(--surface);
             border: 1px solid var(--line-2);
@@ -311,7 +312,7 @@
         .pin-digit:focus {
             border-color: var(--accent);
             background: var(--surface);
-            box-shadow: 0 0 0 3px var(--accent-soft);
+            box-shadow: 0 0 0 3px var(--line-2);
         }
 
         .pin-digit:disabled {
@@ -355,8 +356,8 @@
             height: 0.9rem;
             margin-right: 0.4rem;
             vertical-align: -0.12rem;
-            border: 2px solid rgba(255, 255, 255, 0.4);
-            border-top-color: #fff;
+            border: 2px solid rgba(245, 247, 255, 0.35);
+            border-top-color: #F5F7FF;
             border-radius: 50%;
             animation: spin 0.7s linear infinite;
         }
@@ -392,7 +393,7 @@
 
         .summary b {
             color: var(--text);
-            font-weight: 650;
+            font-weight: 600;
             font-variant-numeric: tabular-nums;
         }
 
@@ -453,7 +454,7 @@
             border: none;
             padding: 0.2rem 0.4rem;
             font-size: 0.85rem;
-            font-weight: 550;
+            font-weight: 500;
             color: var(--accent);
             border-radius: 6px;
         }
@@ -689,7 +690,7 @@
             position: fixed;
             inset: 0;
             z-index: 100;
-            background: rgba(23, 22, 31, 0.45);
+            background: rgba(0, 0, 12, 0.72);
             backdrop-filter: blur(3px);
             padding: 1rem;
         }
@@ -706,15 +707,15 @@
             background: var(--surface);
             border: 1px solid var(--line);
             border-radius: var(--radius);
-            box-shadow: 0 24px 60px -20px rgba(23, 22, 31, 0.45);
+            box-shadow: 0 24px 60px -20px rgba(0, 0, 12, 0.75);
             padding: 1.4rem;
             animation: fade 0.2s ease both;
         }
 
         .modal h2 {
             font-size: 1.05rem;
-            font-weight: 650;
-            letter-spacing: -0.01em;
+            font-weight: 700;
+            letter-spacing: 0.01em;
             margin-bottom: 0.5rem;
         }
 
@@ -744,7 +745,7 @@
         .edit-name-input:focus {
             outline: none;
             border-color: var(--accent);
-            box-shadow: 0 0 0 3px var(--accent-soft);
+            box-shadow: 0 0 0 3px var(--line-2);
         }
 
         @media (max-width: 640px) {
@@ -833,14 +834,14 @@
                 <svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="WZML-X logo">
                     <defs>
                         <linearGradient id="wg" gradientUnits="userSpaceOnUse" x1="15" y1="70" x2="86" y2="30">
-                            <stop offset="0" stop-color="#2A1178"/>
-                            <stop offset="0.5" stop-color="#33188C"/>
-                            <stop offset="0.76" stop-color="#5236CB"/>
-                            <stop offset="0.92" stop-color="#907DFB"/>
-                            <stop offset="1" stop-color="#B9A9FD"/>
+                            <stop offset="0" stop-color="#16409E"/>
+                            <stop offset="0.5" stop-color="#2A5FD0"/>
+                            <stop offset="0.76" stop-color="#3D87FF"/>
+                            <stop offset="0.92" stop-color="#5B9DFF"/>
+                            <stop offset="1" stop-color="#CBD2E5"/>
                         </linearGradient>
                     </defs>
-                    <rect x="0" y="0" width="100" height="100" rx="22.5" ry="22.5" fill="#F4F2FE"/>
+                    <rect x="0" y="0" width="100" height="100" rx="22.5" ry="22.5" fill="#F5F7FF"/>
                     <path d="M 19.4 42.6 C 20.0 55.4 22.4 66.4 29.8 68.3 C 37.0 70.1 43.2 61.0 45.2 48.8 C 47.5 61.0 53.4 66.6 61.0 68.3 C 68.6 70.0 75.6 55.5 80.6 35.3" fill="none" stroke="url(#wg)" stroke-width="11.1" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
                 <h1 class="name"><a href="https://t.me/WZMLX_Updates">Torrent Selector</a></h1>
