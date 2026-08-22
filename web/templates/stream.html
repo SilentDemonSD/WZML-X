@@ -522,25 +522,58 @@
             transform: translateY(-50%);
         }
 
+        .lmmenu {
+            position: relative;
+            flex: none;
+        }
+
+        .lmpop {
+            position: absolute;
+            right: 0;
+            bottom: calc(100% + 8px);
+            display: none;
+            min-width: 6rem;
+            padding: .25rem;
+            border-radius: var(--r);
+            border: 1px solid rgba(93, 157, 255, .3);
+            background: rgba(4, 4, 11, .97);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            box-shadow: 0 16px 40px rgba(0, 0, 3, .85);
+        }
+
+        .lmmenu.open .lmpop {
+            display: block;
+        }
+
+        .lmpop button {
+            display: block;
+            width: 100%;
+            padding: .35rem .5rem;
+            border: 0;
+            border-radius: 8px;
+            background: none;
+            color: var(--text);
+            font: inherit;
+            font-size: .78rem;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .lmpop button:hover {
+            background: var(--accent-soft);
+        }
+
+        .lmpop button[aria-selected="true"] {
+            color: var(--accent-2);
+        }
+
         .lmtime {
             font-family: var(--mono);
             font-variant-numeric: tabular-nums;
             font-size: .72rem;
             color: var(--muted);
             white-space: nowrap;
-            flex: none;
-        }
-
-        .lmrate {
-            font-family: var(--mono);
-            font-size: .7rem;
-            color: var(--text);
-            background: none;
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            height: 28px;
-            padding: 0 .3rem;
-            cursor: pointer;
             flex: none;
         }
 
@@ -552,7 +585,6 @@
 
         @media (max-width: 640px) {
             .lmvol { display: none; }
-            .lmrate { display: none; }
         }
 
         .loading {
@@ -1143,23 +1175,24 @@
                             <button class="lmbtn" type="button" id="lmPlay" aria-label="Play">
                                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
                             </button>
-                            <span class="lmtime" id="lmCur">0:00</span>
+                            <button class="lmbtn" type="button" id="lmMute" aria-label="Mute">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4zm11.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM13 3.2v2.1a6.8 6.8 0 0 1 0 13.4v2.1a8.9 8.9 0 0 0 0-17.6z"/></svg>
+                            </button>
+                            <input class="lmvol" id="lmVol" type="range" min="0" max="1"
+                                step="0.05" value="1" aria-label="Volume">
+                            <span class="lmtime" id="lmTime">0:00 / 0:00</span>
                             <div class="lmseek" id="lmSeek" role="slider" tabindex="0"
                                 aria-label="Seek" aria-valuemin="0" aria-valuemax="100"
                                 aria-valuenow="0">
                                 <div class="lmfill" id="lmFill"></div>
                             </div>
-                            <span class="lmtime" id="lmDur">0:00</span>
-                            <input class="lmvol" id="lmVol" type="range" min="0" max="1"
-                                step="0.05" value="1" aria-label="Volume">
-                            <select class="lmrate" id="lmRate" aria-label="Playback speed">
-                                <option value="0.5">0.5x</option>
-                                <option value="0.75">0.75x</option>
-                                <option value="1" selected>1x</option>
-                                <option value="1.25">1.25x</option>
-                                <option value="1.5">1.5x</option>
-                                <option value="2">2x</option>
-                            </select>
+                            <div class="lmmenu">
+                                <button class="lmbtn" type="button" id="lmGear"
+                                    aria-label="Playback speed" aria-expanded="false">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm7.4-1.6.1-.4-.1-.4 1.7-1.3-1.7-3-2 .7a6.7 6.7 0 0 0-1.4-.8L15.7 5h-3.4l-.3 2.1a6.7 6.7 0 0 0-1.4.8l-2-.7-1.7 3 1.7 1.3-.1.4.1.4-1.7 1.3 1.7 3 2-.7c.4.3.9.6 1.4.8l.3 2.1h3.4l.3-2.1c.5-.2 1-.5 1.4-.8l2 .7 1.7-3-1.7-1.3z"/></svg>
+                                </button>
+                                <div class="lmpop" id="lmRates" role="listbox"></div>
+                            </div>
                             <button class="lmbtn" type="button" id="lmFs" aria-label="Fullscreen">
                                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9V3h6v2H5v4H3zm12-6h6v6h-2V5h-4V3zM3 15h2v4h4v2H3v-6zm16 0h2v6h-6v-2h4v-4z"/></svg>
                             </button>
@@ -1552,6 +1585,20 @@
                 }
             }
 
+            var lmPlaying = false;
+            var lmMuted = false;
+            var lmLastVol = 1;
+
+            function lmClock(t, dur) {
+                var s = Math.max(0, Math.floor(t));
+                var h = Math.floor(s / 3600);
+                var m = Math.floor((s % 3600) / 60);
+                var q = s % 60;
+                var pad = function (x) { return x < 10 ? "0" + x : "" + x; };
+                if (dur >= 3600) return h + ":" + pad(m) + ":" + pad(q);
+                return m + ":" + pad(q);
+            }
+
             function lmWireBar() {
                 var seek = el("lmSeek"), fill = el("lmFill"), dur = 0, at = 0;
 
@@ -1561,17 +1608,26 @@
                     if (!dur) return;
                     var pct = Math.max(0, Math.min(100, (t / dur) * 100));
                     fill.style.width = pct + "%";
-                    el("lmCur").textContent = clock(t) || "0:00";
-                    el("lmDur").textContent = clock(dur) || "0:00";
+                    el("lmTime").textContent =
+                        lmClock(t, dur) + " / " + lmClock(dur, dur);
                     seek.setAttribute("aria-valuenow", Math.round(pct));
                     if (t > 30) store(POS_KEY, String(t));
                 }
 
                 lm.on("time", function (pts) { paint(Number(pts) / 1000); });
-                lm.on("played", function () { lmIcon(true); });
-                lm.on("playing", function () { lmIcon(true); clearStall(); });
-                lm.on("paused", function () { lmIcon(false); });
-                lm.on("ended", function () { lmIcon(false); store(POS_KEY, "0"); });
+                lm.on("played", function () { lmPlaying = true; lmIcon(true); });
+                lm.on("playing", function () {
+                    lmPlaying = true;
+                    lmIcon(true);
+                    clearStall();
+                });
+                lm.on("paused", function () { lmPlaying = false; lmIcon(false); });
+                lm.on("stopped", function () { lmPlaying = false; lmIcon(false); });
+                lm.on("ended", function () {
+                    lmPlaying = false;
+                    lmIcon(false);
+                    store(POS_KEY, "0");
+                });
                 lm.on("error", function (e) {
                     lmErr(e);
                     stall("Playback failed",
@@ -1579,13 +1635,56 @@
                         + "it in an app below.");
                 });
 
+                // libmedia exposes no isPlaying(), so the state is tracked from
+                // its own events instead of being asked for.
                 el("lmPlay").onclick = function () {
                     try {
-                        if (lm.isPlaying && lm.isPlaying()) lm.pause();
-                        else lm.play();
+                        if (lmPlaying) {
+                            lm.pause();
+                            lmPlaying = false;
+                        } else {
+                            lm.play();
+                            lmPlaying = true;
+                        }
+                        lmIcon(lmPlaying);
                     } catch (e) {
-                        try { lm.play(); } catch (e2) { lmErr(e2); }
+                        lmErr(e);
                     }
+                };
+
+                el("lmMute").onclick = function () {
+                    lmMuted = !lmMuted;
+                    try { lm.setVolume(lmMuted ? 0 : lmLastVol); } catch (e) { lmErr(e); }
+                    el("lmVol").value = lmMuted ? 0 : lmLastVol;
+                    this.style.opacity = lmMuted ? ".5" : "1";
+                };
+
+                var rates = [0.5, 0.75, 1, 1.25, 1.5, 2];
+                var pop = el("lmRates");
+                pop.innerHTML = "";
+                rates.forEach(function (r) {
+                    var b = document.createElement("button");
+                    b.type = "button";
+                    b.setAttribute("role", "option");
+                    b.textContent = r + "x";
+                    if (r === 1) b.setAttribute("aria-selected", "true");
+                    b.onclick = function () {
+                        try { lm.setPlaybackRate(r); } catch (e) { lmErr(e); }
+                        var sel = pop.querySelectorAll('[aria-selected="true"]');
+                        Array.prototype.forEach.call(sel, function (n) {
+                            n.removeAttribute("aria-selected");
+                        });
+                        b.setAttribute("aria-selected", "true");
+                        el("lmGear").parentNode.classList.remove("open");
+                        var q = prefs(); q.rate = r; savePrefs(q);
+                    };
+                    pop.appendChild(b);
+                });
+                el("lmGear").onclick = function () {
+                    var box = this.parentNode;
+                    box.classList.toggle("open");
+                    this.setAttribute("aria-expanded",
+                        box.classList.contains("open") ? "true" : "false");
                 };
 
                 seek.addEventListener("click", function (ev) {
@@ -1604,14 +1703,11 @@
 
                 el("lmVol").oninput = function () {
                     var v = parseFloat(this.value);
+                    lmLastVol = v || lmLastVol;
+                    lmMuted = v === 0;
+                    el("lmMute").style.opacity = lmMuted ? ".5" : "1";
                     try { lm.setVolume(v); } catch (e) { lmErr(e); }
                     var q = prefs(); q.volume = v; savePrefs(q);
-                };
-
-                el("lmRate").onchange = function () {
-                    var r = parseFloat(this.value);
-                    try { lm.setPlaybackRate(r); } catch (e) { lmErr(e); }
-                    var q = prefs(); q.rate = r; savePrefs(q);
                 };
 
                 el("lmFs").onclick = function () {
@@ -1643,7 +1739,9 @@
                         String(auds[0].index),
                         function (it) {
                             Promise.resolve(lm.selectAudio(Number(it.value)))
-                                .then(function () { toast("Switched audio track"); })
+                                .then(function () {
+                                    toast("Switched to " + it.label);
+                                })
                                 .catch(lmErr);
                         });
                 }
@@ -1666,11 +1764,19 @@
                 }
             }
 
+            // The native menu numbers audio tracks 0,1,2 among audio streams only
+            // (that is what ffprobe reports). libmedia wants the global stream
+            // index, where the video stream usually occupies 0. Translate.
+            function lmPickAudio(nth) {
+                var auds = lmByType(1);
+                if (!auds.length) return Promise.resolve();
+                var target = auds[nth] || auds[0];
+                return Promise.resolve(lm.selectAudio(target.index)).catch(lmErr);
+            }
+
             function startLibmedia(atSec, audioIndex) {
                 if (lm) {
-                    if (typeof audioIndex === "number") {
-                        Promise.resolve(lm.selectAudio(audioIndex)).catch(lmErr);
-                    }
+                    if (typeof audioIndex === "number") lmPickAudio(audioIndex);
                     return Promise.resolve(true);
                 }
                 return loadLibmedia().then(function (Ctor) {
@@ -1697,10 +1803,17 @@
                         }
                         if (typeof p.rate === "number" && p.rate > 0) {
                             try { lm.setPlaybackRate(p.rate); } catch (e) { }
-                            el("lmRate").value = String(p.rate);
+                            var opts = el("lmRates").querySelectorAll("button");
+                            Array.prototype.forEach.call(opts, function (n) {
+                                if (parseFloat(n.textContent) === p.rate) {
+                                    n.setAttribute("aria-selected", "true");
+                                } else {
+                                    n.removeAttribute("aria-selected");
+                                }
+                            });
                         }
                         if (typeof audioIndex === "number") {
-                            try { lm.selectAudio(audioIndex); } catch (e) { lmErr(e); }
+                            lmPickAudio(audioIndex);
                         }
                         return lm.play();
                     }).then(function () {
