@@ -5,6 +5,8 @@ from asyncio import (
     Semaphore,
     ensure_future,
     gather,
+    get_running_loop,
+    shield,
     sleep,
     wait,
     wait_for,
@@ -43,7 +45,20 @@ _FID_MAX = 512
 _STICKY_TTL = 300
 _SESSION_IDLE = 900
 
-_GATE = Semaphore(64)
+_GATE = None
+_inflight_chunks = {}
+
+
+def _swallow(fut):
+    if not fut.cancelled():
+        fut.exception()
+
+
+def gate():
+    global _GATE
+    if _GATE is None:
+        _GATE = Semaphore(max(8, int(getattr(Config, "STREAM_GATE", 0) or 96)))
+    return _GATE
 
 
 class StreamGone(Exception):
@@ -89,8 +104,8 @@ def profile(name):
                 invoke_timeout=8.0,
                 sleep_threshold=0,
                 cdn=False,
-                max_per_client=3,
-                retries=1,
+                max_per_client=max(1, int(Config.STREAM_PER_CLIENT or 6)),
+                retries=2,
             ),
             StreamProfile(
                 name="bulk",
@@ -378,6 +393,53 @@ class HypertgStream:
         self._loc[ci] = (cur_gen + 1, HypertgTransfer._location(fid))
 
     async def _fetch(self, ci, off, lim):
+        key = (self.chat_id, self.msg_id, off, lim)
+        shared = _inflight_chunks.get(key)
+        if shared is not None:
+            try:
+                return await shield(shared)
+            except Exception:
+                pass
+        fut = get_running_loop().create_future()
+        fut.add_done_callback(_swallow)
+        _inflight_chunks[key] = fut
+        try:
+            data = await self._pull(ci, off, lim)
+            if not fut.done():
+                fut.set_result(data)
+            return data
+        except BaseException as e:
+            if not fut.done():
+                fut.set_exception(e)
+            raise
+        finally:
+            if _inflight_chunks.get(key) is fut:
+                del _inflight_chunks[key]
+            if not fut.done():
+                fut.cancel()
+
+    async def _swap_client(self, ci):
+        try:
+            picked = await POOL.acquire(self.prof, 1)
+        except NoClientAvailable:
+            return None
+        new = picked[0]
+        if new == ci:
+            await POOL.release([new])
+            return None
+        try:
+            fid = await get_fid(new, POOL.client(new), self.chat_id, self.msg_id)
+        except Exception:
+            await POOL.release([new])
+            return None
+        self._loc[new] = (0, HypertgTransfer._location(fid))
+        self._dc[new] = fid.dc_id
+        self._idxs = [new if x == ci else x for x in self._idxs]
+        await POOL.release([ci])
+        LOGGER.info(f"HypertgStream failed over from client {ci} to {new}")
+        return new
+
+    async def _pull(self, ci, off, lim):
         refreshes = 0
         attempt = 0
         while True:
@@ -385,7 +447,7 @@ class HypertgStream:
                 return b""
             gen, loc = self._loc[ci]
             try:
-                async with _GATE:
+                async with gate():
                     sess = await POOL.session(ci, self._dc[ci])
                     r = await sess.invoke(
                         raw.functions.upload.GetFile(
@@ -413,21 +475,34 @@ class HypertgStream:
                 await POOL.drop(ci, self._dc[ci])
                 self._dc[ci] = e.value
             except (FloodWait, FloodPremiumWait) as e:
-                if e.value > 30 or self._dead:
-                    POOL.cool(ci, e.value)
+                if self._dead:
+                    raise StreamAbort("stream closed") from None
+                POOL.cool(ci, e.value)
+                if e.value > 5:
+                    nxt = await self._swap_client(ci)
+                    if nxt is not None:
+                        ci = nxt
+                        continue
+                if e.value > 30:
                     raise StreamAbort(f"flood wait {e.value}s on client {ci}") from None
                 await sleep(e.value + 1)
             except (ConnectionError, OSError, TimeoutError):
                 attempt += 1
+                await POOL.drop(ci, self._dc[ci])
                 if attempt > self.prof.retries:
                     POOL.cool(ci, 30)
-                    raise StreamAbort(f"client {ci} unreachable") from None
-                await POOL.drop(ci, self._dc[ci])
+                    nxt = await self._swap_client(ci)
+                    if nxt is None:
+                        raise StreamAbort(f"client {ci} unreachable") from None
+                    ci = nxt
+                    attempt = 0
 
     async def iter_range(self, start, end_incl):
         end_ex = end_incl + 1
         plan = plan_chunks(start, end_ex, self.prof)
         window = self.prof.window
+        wmax = window * 3
+        streak = 0
         inflight = {}
         ready = {}
         nxt = launch = sent = 0
@@ -447,6 +522,10 @@ class HypertgStream:
                 data = ready.pop(nxt)
                 off, lim = plan[nxt]
                 nxt += 1
+                streak += 1
+                if streak >= window and window < wmax:
+                    window += 1
+                    streak = 0
                 lo = max(start, off) - off
                 hi = min(end_ex, off + lim) - off
                 if len(data) < hi:

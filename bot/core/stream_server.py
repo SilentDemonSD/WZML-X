@@ -255,6 +255,7 @@ async def _serve(request, kind):
                 "Content-Type": info["mime"] or "application/octet-stream",
                 "Accept-Ranges": "bytes",
                 "Content-Disposition": _disposition(info["name"], inline),
+                "Cache-Control": "private, max-age=86400, immutable",
                 "ETag": f'"{info["unique_id"]}"',
             },
         )
@@ -288,7 +289,7 @@ async def _serve(request, kind):
         "Content-Length": str(end - start + 1),
         "Accept-Ranges": "bytes",
         "Content-Disposition": _disposition(st.name, inline),
-        "Cache-Control": "no-store",
+        "Cache-Control": "private, max-age=86400, immutable",
     }
     if st.unique_id:
         headers["ETag"] = f'"{st.unique_id}"'
@@ -364,7 +365,8 @@ async def _subs(request):
 
     proc = await create_subprocess_exec(
         "ffmpeg", "-hide_banner", "-loglevel", "error",
-        "-i", "pipe:0", "-map", f"0:s:{idx}", "-f", "webvtt", "pipe:1",
+        "-i", "pipe:0", "-map", f"0:s:{idx}",
+        "-f", "webvtt", "-flush_packets", "1", "pipe:1",
         stdin=PIPE, stdout=PIPE, stderr=PIPE,
     )
     resp = web.StreamResponse(

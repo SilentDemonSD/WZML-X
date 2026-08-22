@@ -574,6 +574,7 @@ async def stream_proxy(
         k: v for k, v in upstream.headers.items() if k.lower() not in _HOP
     }
     out.setdefault("Accept-Ranges", "bytes")
+    out.setdefault("Cache-Control", "private, max-age=86400, immutable")
     out["Referrer-Policy"] = "no-referrer"
     out["X-Content-Type-Options"] = "nosniff"
 
