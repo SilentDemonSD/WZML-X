@@ -14,7 +14,7 @@ set_event_loop(bot_loop)
 
 from asyncio import sleep
 from importlib import import_module
-from os import environ, path as ospath
+from os import environ
 from re import compile as re_compile
 from html import escape
 from urllib.parse import urlparse
@@ -31,7 +31,6 @@ from fastapi.responses import (
     Response,
     StreamingResponse,
 )
-from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sabnzbdapi import SabnzbdClient
 from aioqbt.exc import AQError
@@ -204,9 +203,6 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
-
-if ospath.isdir("web/static"):
-    app.mount("/static", StaticFiles(directory="web/static"), name="static")
 
 
 templates = Jinja2Templates(directory="web/templates/")

@@ -11,9 +11,10 @@
         href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22.5' fill='%23F5F7FF'/%3E%3Cpath d='M 19.4 42.6 C 20.0 55.4 22.4 66.4 29.8 68.3 C 37.0 70.1 43.2 61.0 45.2 48.8 C 47.5 61.0 53.4 66.6 61.0 68.3 C 68.6 70.0 75.6 55.5 80.6 35.3' fill='none' stroke='%233D87FF' stroke-width='11.1' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.plyr.io">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="/static/plyr.css">
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.8.4/plyr.css">
     <style>
         :root {
             color-scheme: dark;
@@ -532,7 +533,7 @@
 
     <div class="toast" id="toast"></div>
 
-    <script src="/static/plyr.js"></script>
+    <script src="https://cdn.plyr.io/3.8.4/plyr.js"></script>
     <script>
         (function () {
             "use strict";
@@ -785,7 +786,7 @@
 
                 var p = prefs();
                 player = new Plyr(video, {
-                    iconUrl: "/static/plyr.svg",
+                    iconUrl: "https://cdn.plyr.io/3.8.4/plyr.svg",
                     blankVideo: "",
                     controls: ["play-large", "restart", "rewind", "play", "fast-forward",
                         "progress", "current-time", "duration", "mute", "volume",
