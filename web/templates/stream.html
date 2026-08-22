@@ -415,6 +415,146 @@
             --media-object-fit: contain;
         }
 
+
+        .lm {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            display: none;
+            background: #000105;
+        }
+
+        .lm.on {
+            display: block;
+        }
+
+        .lm-host {
+            position: absolute;
+            inset: 0;
+        }
+
+        .lm-host canvas,
+        .lm-host video {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: contain;
+            background: #000105;
+        }
+
+        .lmbar {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            padding: .55rem .7rem;
+            background: linear-gradient(transparent, rgba(0, 0, 3, .92));
+            opacity: 0;
+            transition: opacity .2s ease;
+        }
+
+        .lm:hover .lmbar,
+        .lm.idle .lmbar,
+        .lmbar:focus-within {
+            opacity: 1;
+        }
+
+        .lmbtn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            flex: none;
+            padding: 0;
+            border: 0;
+            border-radius: 8px;
+            background: none;
+            color: var(--text);
+            cursor: pointer;
+            transition: background .16s ease;
+        }
+
+        .lmbtn:hover {
+            background: rgba(93, 157, 255, .18);
+        }
+
+        .lmbtn:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        .lmbtn svg {
+            width: 17px;
+            height: 17px;
+            fill: currentColor;
+        }
+
+        .lmseek {
+            position: relative;
+            flex: 1 1 auto;
+            height: 4px;
+            border-radius: 999px;
+            background: rgba(203, 210, 229, .2);
+            cursor: pointer;
+        }
+
+        .lmfill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            border-radius: 999px;
+            background: var(--accent);
+        }
+
+        .lmfill::after {
+            content: "";
+            position: absolute;
+            right: -5px;
+            top: 50%;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--accent-2);
+            transform: translateY(-50%);
+        }
+
+        .lmtime {
+            font-family: var(--mono);
+            font-variant-numeric: tabular-nums;
+            font-size: .72rem;
+            color: var(--muted);
+            white-space: nowrap;
+            flex: none;
+        }
+
+        .lmrate {
+            font-family: var(--mono);
+            font-size: .7rem;
+            color: var(--text);
+            background: none;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            height: 28px;
+            padding: 0 .3rem;
+            cursor: pointer;
+            flex: none;
+        }
+
+        .lmvol {
+            width: 68px;
+            flex: none;
+            accent-color: var(--accent);
+        }
+
+        @media (max-width: 640px) {
+            .lmvol { display: none; }
+            .lmrate { display: none; }
+        }
+
         .loading {
             position: absolute;
             inset: 0;
@@ -997,6 +1137,34 @@
                             </video-minimal-skin>
                         </video-player>
                     </div>
+                    <div class="lm" id="lm">
+                        <div class="lm-host" id="lmHost"></div>
+                        <div class="lmbar">
+                            <button class="lmbtn" type="button" id="lmPlay" aria-label="Play">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+                            </button>
+                            <span class="lmtime" id="lmCur">0:00</span>
+                            <div class="lmseek" id="lmSeek" role="slider" tabindex="0"
+                                aria-label="Seek" aria-valuemin="0" aria-valuemax="100"
+                                aria-valuenow="0">
+                                <div class="lmfill" id="lmFill"></div>
+                            </div>
+                            <span class="lmtime" id="lmDur">0:00</span>
+                            <input class="lmvol" id="lmVol" type="range" min="0" max="1"
+                                step="0.05" value="1" aria-label="Volume">
+                            <select class="lmrate" id="lmRate" aria-label="Playback speed">
+                                <option value="0.5">0.5x</option>
+                                <option value="0.75">0.75x</option>
+                                <option value="1" selected>1x</option>
+                                <option value="1.25">1.25x</option>
+                                <option value="1.5">1.5x</option>
+                                <option value="2">2x</option>
+                            </select>
+                            <button class="lmbtn" type="button" id="lmFs" aria-label="Fullscreen">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9V3h6v2H5v4H3zm12-6h6v6h-2V5h-4V3zM3 15h2v4h4v2H3v-6zm16 0h2v6h-6v-2h4v-4z"/></svg>
+                            </button>
+                        </div>
+                    </div>
                     <div class="stall">
                         <div class="stall-box" id="stallText"></div>
                     </div>
@@ -1329,6 +1497,230 @@
                 }
             }
 
+
+            var LM_SRC = "https://cdn.jsdelivr.net/npm/@libmedia/avplayer@1.3.1" +
+                "/dist/umd/avplayer.js";
+            var lm = null;
+            var lmLoading = null;
+            var lmStreams = [];
+
+            function lmErr(e) {
+                try { console.error("libmedia", e); } catch (x) { }
+            }
+
+            function loadLibmedia() {
+                if (window.AVPlayer) return Promise.resolve(window.AVPlayer);
+                if (lmLoading) return lmLoading;
+                lmLoading = new Promise(function (ok, no) {
+                    var sc = document.createElement("script");
+                    sc.src = LM_SRC;
+                    sc.onload = function () {
+                        if (window.AVPlayer) ok(window.AVPlayer);
+                        else no(new Error("AVPlayer global missing"));
+                    };
+                    sc.onerror = function () { no(new Error("decoder script failed")); };
+                    document.head.appendChild(sc);
+                });
+                return lmLoading;
+            }
+
+            function lmIcon(playing) {
+                var b = el("lmPlay");
+                b.innerHTML = playing
+                    ? '<svg viewBox="0 0 24 24" aria-hidden="true">'
+                      + '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>'
+                    : '<svg viewBox="0 0 24 24" aria-hidden="true">'
+                      + '<path d="M8 5v14l11-7z"/></svg>';
+                b.setAttribute("aria-label", playing ? "Pause" : "Play");
+            }
+
+            function lmDuration() {
+                try {
+                    if (typeof lm.getDuration === "function") {
+                        return Number(lm.getDuration()) / 1000;
+                    }
+                } catch (e) { }
+                return 0;
+            }
+
+            function lmSeekTo(sec) {
+                sec = Math.max(0, sec);
+                try {
+                    lm.seek(BigInt(Math.round(sec * 1000)));
+                } catch (e) {
+                    try { lm.seek(Math.round(sec * 1000)); } catch (e2) { lmErr(e2); }
+                }
+            }
+
+            function lmWireBar() {
+                var seek = el("lmSeek"), fill = el("lmFill"), dur = 0, at = 0;
+
+                function paint(t) {
+                    at = t;
+                    if (!dur) dur = lmDuration();
+                    if (!dur) return;
+                    var pct = Math.max(0, Math.min(100, (t / dur) * 100));
+                    fill.style.width = pct + "%";
+                    el("lmCur").textContent = clock(t) || "0:00";
+                    el("lmDur").textContent = clock(dur) || "0:00";
+                    seek.setAttribute("aria-valuenow", Math.round(pct));
+                    if (t > 30) store(POS_KEY, String(t));
+                }
+
+                lm.on("time", function (pts) { paint(Number(pts) / 1000); });
+                lm.on("played", function () { lmIcon(true); });
+                lm.on("playing", function () { lmIcon(true); clearStall(); });
+                lm.on("paused", function () { lmIcon(false); });
+                lm.on("ended", function () { lmIcon(false); store(POS_KEY, "0"); });
+                lm.on("error", function (e) {
+                    lmErr(e);
+                    stall("Playback failed",
+                        "The decoder could not continue. Download the file, or open "
+                        + "it in an app below.");
+                });
+
+                el("lmPlay").onclick = function () {
+                    try {
+                        if (lm.isPlaying && lm.isPlaying()) lm.pause();
+                        else lm.play();
+                    } catch (e) {
+                        try { lm.play(); } catch (e2) { lmErr(e2); }
+                    }
+                };
+
+                seek.addEventListener("click", function (ev) {
+                    if (!dur) dur = lmDuration();
+                    if (!dur) return;
+                    var r = seek.getBoundingClientRect();
+                    var x = Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width));
+                    lmSeekTo(x * dur);
+                });
+
+                seek.addEventListener("keydown", function (ev) {
+                    if (ev.key !== "ArrowRight" && ev.key !== "ArrowLeft") return;
+                    ev.preventDefault();
+                    lmSeekTo(at + (ev.key === "ArrowRight" ? 10 : -10));
+                });
+
+                el("lmVol").oninput = function () {
+                    var v = parseFloat(this.value);
+                    try { lm.setVolume(v); } catch (e) { lmErr(e); }
+                    var q = prefs(); q.volume = v; savePrefs(q);
+                };
+
+                el("lmRate").onchange = function () {
+                    var r = parseFloat(this.value);
+                    try { lm.setPlaybackRate(r); } catch (e) { lmErr(e); }
+                    var q = prefs(); q.rate = r; savePrefs(q);
+                };
+
+                el("lmFs").onclick = function () {
+                    var box = el("frame");
+                    if (document.fullscreenElement) document.exitFullscreen();
+                    else if (box.requestFullscreen) box.requestFullscreen();
+                };
+            }
+
+            function lmLabel(t, i) {
+                var m = t.metadata || {};
+                var bits = [];
+                if (m.title) bits.push(m.title);
+                if (m.language) bits.push(m.language);
+                return bits.length ? bits.join(" \u00b7 ") : "Track " + (i + 1);
+            }
+
+            function lmByType(kind) {
+                return lmStreams.filter(function (t) { return t.mediaType === kind; });
+            }
+
+            function lmRebuildMenus() {
+                var auds = lmByType(1), subs = lmByType(3);
+                if (auds.length > 1) {
+                    dropdown(el("audDd"), "Audio",
+                        [{ items: auds.map(function (t, i) {
+                            return { label: lmLabel(t, i), value: String(t.index) };
+                        }) }],
+                        String(auds[0].index),
+                        function (it) {
+                            Promise.resolve(lm.selectAudio(Number(it.value)))
+                                .then(function () { toast("Switched audio track"); })
+                                .catch(lmErr);
+                        });
+                }
+                if (subs.length) {
+                    var items = [{ label: "Off", value: "-1" }].concat(
+                        subs.map(function (t, i) {
+                            return { label: lmLabel(t, i), value: String(t.index) };
+                        }));
+                    dropdown(el("subDd"), "Subs", [{ items: items }], "-1",
+                        function (it) {
+                            if (it.value === "-1") {
+                                try {
+                                    if (lm.unselectSubtitle) lm.unselectSubtitle();
+                                } catch (e) { lmErr(e); }
+                                return;
+                            }
+                            Promise.resolve(lm.selectSubtitle(Number(it.value)))
+                                .catch(lmErr);
+                        });
+                }
+            }
+
+            function startLibmedia(atSec, audioIndex) {
+                if (lm) {
+                    if (typeof audioIndex === "number") {
+                        Promise.resolve(lm.selectAudio(audioIndex)).catch(lmErr);
+                    }
+                    return Promise.resolve(true);
+                }
+                return loadLibmedia().then(function (Ctor) {
+                    try { vid.pause(); } catch (e) { }
+                    vid.removeAttribute("src");
+                    try { vid.load(); } catch (e) { }
+                    el("lm").classList.add("on");
+                    el("loading").classList.remove("gone");
+                    el("loadingText").textContent = "Starting the advanced decoder";
+
+                    lm = new Ctor({
+                        container: el("lmHost"),
+                        enableWorker: true,
+                        enableHardware: true,
+                        isLive: false
+                    });
+                    lmWireBar();
+                    return lm.load(STREAM).then(function () {
+                        lmStreams = lm.getStreams ? lm.getStreams() : [];
+                        var p = prefs();
+                        if (typeof p.volume === "number") {
+                            try { lm.setVolume(p.volume); } catch (e) { }
+                            el("lmVol").value = p.volume;
+                        }
+                        if (typeof p.rate === "number" && p.rate > 0) {
+                            try { lm.setPlaybackRate(p.rate); } catch (e) { }
+                            el("lmRate").value = String(p.rate);
+                        }
+                        if (typeof audioIndex === "number") {
+                            try { lm.selectAudio(audioIndex); } catch (e) { lmErr(e); }
+                        }
+                        return lm.play();
+                    }).then(function () {
+                        if (atSec > 1) lmSeekTo(atSec);
+                        el("loading").classList.add("gone");
+                        clearStall();
+                        lmRebuildMenus();
+                        toast("Using the advanced decoder");
+                        return true;
+                    });
+                }).catch(function (e) {
+                    lmErr(e);
+                    el("loading").classList.add("gone");
+                    stall("Cannot play this file",
+                        "The advanced decoder could not handle it. Download the file, "
+                        + "or open it in an app below.");
+                    return false;
+                });
+            }
+
             function applyTracks(info) {
                 var auds = (info && info.audio) || [];
                 var subs = (info && info.subtitle) || [];
@@ -1340,17 +1732,8 @@
                         }) }],
                         String(auds[0].index),
                         function (it) {
-                            var at = Math.max(0, vid.currentTime || 0);
-                            var was = !vid.paused;
-                            vid.src = it.value === "0" ? STREAM
-                                : STREAM + "?a=" + encodeURIComponent(it.value);
-                            vid.addEventListener("loadedmetadata", function once() {
-                                vid.removeEventListener("loadedmetadata", once);
-                                try { vid.currentTime = at; } catch (e) { }
-                                if (was) vid.play();
-                            });
-                            toast(it.value === "0" ? "Original audio"
-                                : "Switched audio, restarts from the beginning");
+                            startLibmedia(Math.max(0, vid.currentTime || 0),
+                                Number(it.value));
                         });
                 }
 
@@ -1482,10 +1865,7 @@
 
                 vid.addEventListener("loadeddata", function () {
                     if (!vid.videoWidth && !vid.videoHeight) {
-                        notice("<b>Your browser played the audio but could not decode " +
-                            "the picture.</b> The video codec is not supported here. " +
-                            "10-bit H.264 and HEVC are the usual causes on phones. " +
-                            "Open it in an app below, or download it.");
+                        startLibmedia(Math.max(0, vid.currentTime || 0));
                     }
                 });
 
@@ -1493,10 +1873,10 @@
                     el("loading").classList.add("gone");
                     var e = vid.error;
                     if (e && e.code === 4) {
-                        stall("Cannot decode this file",
-                            (MIME || "This container or codec") +
-                            " is not supported by this browser. Pick a player " +
-                            "below, or download it.");
+                        stall("Switching decoder",
+                            "This browser cannot decode the file natively. Loading "
+                            + "the advanced decoder.");
+                        startLibmedia(Math.max(0, vid.currentTime || 0));
                     } else {
                         stall("Playback stopped",
                             "The connection dropped or the link expired. Reload " +
