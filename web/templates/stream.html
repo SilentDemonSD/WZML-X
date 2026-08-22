@@ -63,13 +63,18 @@
         body {
             margin: 0;
             padding: 0;
+        }
+
+        html {
             height: 100%;
-            overflow: hidden;
         }
 
         body {
+            min-height: 100dvh;
             display: flex;
             flex-direction: column;
+            justify-content: center;
+            overflow-x: hidden;
             background: var(--bg);
             color: var(--text);
             font-family: var(--sans);
@@ -282,13 +287,9 @@
         .page {
             position: relative;
             z-index: var(--z-page);
-            flex: 1;
-            min-height: 0;
-            display: flex;
-            flex-direction: column;
+            flex: none;
             width: 100%;
-            padding: clamp(.6rem, 1.4vw, 1rem) var(--pad)
-                clamp(.7rem, 1.6vw, 1.1rem);
+            padding: 14px var(--pad) clamp(.7rem, 1.6vw, 1.1rem);
         }
 
         body.dark .page {
@@ -296,10 +297,8 @@
         }
 
         .stage {
-            flex: 1;
-            min-height: 0;
-            display: grid;
-            place-items: center;
+            display: flex;
+            justify-content: center;
         }
 
         .frame {
@@ -455,7 +454,8 @@
         .head {
             display: flex;
             align-items: center;
-            gap: .8rem;
+            flex-wrap: wrap;
+            gap: 10px .8rem;
         }
 
         .txt {
@@ -497,8 +497,10 @@
 
         .acts {
             display: flex;
+            flex-wrap: wrap;
             gap: .35rem;
-            flex: none;
+            flex: 0 0 auto;
+            margin-left: auto;
         }
 
         .btn {
@@ -566,7 +568,7 @@
 
         .controls {
             display: flex;
-            flex-wrap: nowrap;
+            flex-wrap: wrap;
             align-items: center;
             gap: .4rem;
             margin-top: 18px;
@@ -792,7 +794,7 @@
             display: grid;
             place-content: center;
             text-align: center;
-            height: 100%;
+            min-height: 40dvh;
             gap: .5rem;
         }
 
@@ -832,9 +834,21 @@
             }
         }
 
+        @media (max-width: 900px) {
+            .acts {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            .acts .btn:first-child {
+                flex: 1 1 auto;
+            }
+        }
+
         @media (max-width: 640px) {
             :root {
-                --chrome: 13rem;
+                --pad: 16px;
+                --chrome: 17rem;
             }
 
             body {
