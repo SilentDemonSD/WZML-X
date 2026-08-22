@@ -1,4 +1,4 @@
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from pyrogram.enums import ButtonStyle
 
 from ...core.config_manager import Config
@@ -23,6 +23,13 @@ class ButtonMaker:
     def url_button(self, key, link, position=None, style=None):
         self.buttons[position if position in self.buttons else "default"].append(
             InlineKeyboardButton(text=key, url=link, style=_btn_style(style))
+        )
+
+    def web_app_button(self, key, link, position=None, style=None):
+        self.buttons[position if position in self.buttons else "default"].append(
+            InlineKeyboardButton(
+                text=key, web_app=WebAppInfo(url=link), style=_btn_style(style)
+            )
         )
 
     def data_button(self, key, data, position=None, style=None):

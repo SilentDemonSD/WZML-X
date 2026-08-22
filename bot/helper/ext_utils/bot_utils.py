@@ -18,7 +18,7 @@ from aiofiles import open as aiopen
 from aiofiles.os import mkdir
 from aiofiles.os import path as aiopath
 from niquests import AsyncSession
-from pyrogram.enums import ButtonStyle
+from pyrogram.enums import ButtonStyle, ChatType
 from pyrogram.handlers import MessageHandler
 
 from ... import LOGGER, bot_loop, user_data
@@ -168,20 +168,27 @@ def compare_versions(v1, v2):
     )
 
 
-def bt_selection_buttons(id_):
+def bt_selection_buttons(id_, message=None):
     gid = id_[:12] if len(id_) > 25 else id_
     bot_id = _resolve_bot_id()
     pin = derive_pin(id_, bot_id)
     buttons = ButtonMaker()
+    private = bool(
+        message is not None
+        and getattr(message, "chat", None) is not None
+        and message.chat.type == ChatType.PRIVATE
+        and str(Config.BASE_URL).startswith("https://")
+    )
+    add_open = buttons.web_app_button if private else buttons.url_button
     if Config.WEB_PINCODE:
-        buttons.url_button(
+        add_open(
             "Select Files",
             f"{Config.BASE_URL}/app/files?gid={id_}",
             style=ButtonStyle.PRIMARY,
         )
         buttons.data_button("Pincode", f"sel pin {gid} {pin}")
     else:
-        buttons.url_button(
+        add_open(
             "Select Files",
             f"{Config.BASE_URL}/app/files?gid={id_}&pin={pin}",
             style=ButtonStyle.PRIMARY,
