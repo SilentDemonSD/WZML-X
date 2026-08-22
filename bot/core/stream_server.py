@@ -1,6 +1,13 @@
-from asyncio import CancelledError
+from asyncio import (
+    CancelledError,
+    create_subprocess_exec,
+    ensure_future,
+    wait_for,
+)
+from json import loads
 from os import getenv
 from re import compile as re_compile
+from subprocess import PIPE
 from urllib.parse import quote
 
 from aiohttp import web
@@ -22,6 +29,101 @@ from ..helper.telegram_helper.tg_stream import (
 _TOKEN_RE = re_compile(r"^[A-Za-z0-9_-]{4,32}$")
 _PLAYABLE = ("video/", "audio/")
 _runner = None
+
+_PROBE_BYTES = 6 * 1024 * 1024
+_PROBE_TIMEOUT = 45
+_probe_cache = {}
+_LANG = {
+    "eng": "English", "jpn": "Japanese", "spa": "Spanish", "fre": "French",
+    "fra": "French", "ger": "German", "deu": "German", "ita": "Italian",
+    "por": "Portuguese", "rus": "Russian", "hin": "Hindi", "tam": "Tamil",
+    "tel": "Telugu", "ben": "Bengali", "kor": "Korean", "chi": "Chinese",
+    "zho": "Chinese", "ara": "Arabic", "tur": "Turkish", "pol": "Polish",
+    "dut": "Dutch", "nld": "Dutch", "swe": "Swedish", "tha": "Thai",
+    "vie": "Vietnamese", "ind": "Indonesian", "mal": "Malayalam",
+    "kan": "Kannada", "mar": "Marathi", "urd": "Urdu", "fil": "Filipino",
+}
+
+
+def _title(stream, n):
+    tags = stream.get("tags") or {}
+    name = tags.get("title") or ""
+    lang = (tags.get("language") or "").lower()
+    pretty = _LANG.get(lang, lang.upper() if lang and lang != "und" else "")
+    codec = (stream.get("codec_name") or "").upper()
+    ch = stream.get("channels")
+    bits = [b for b in (name, pretty) if b]
+    label = " · ".join(dict.fromkeys(bits)) if bits else "Track %d" % (n + 1)
+    extra = []
+    if codec:
+        extra.append(codec)
+    if ch == 6:
+        extra.append("5.1")
+    elif ch == 8:
+        extra.append("7.1")
+    elif ch == 2:
+        extra.append("Stereo")
+    if stream.get("disposition", {}).get("forced"):
+        extra.append("Forced")
+    if extra:
+        label += "  (" + ", ".join(extra) + ")"
+    return label
+
+
+async def _prefix(cid, mid, size):
+    st = await open_stream(cid, mid, "bulk")
+    end = min(size, _PROBE_BYTES) - 1
+    gen = st.iter_range(0, end)
+    buf = bytearray()
+    try:
+        async for chunk in gen:
+            buf.extend(chunk)
+    finally:
+        await gen.aclose()
+    return bytes(buf)
+
+
+async def _probe(cid, mid):
+    key = (cid, mid)
+    if key in _probe_cache:
+        return _probe_cache[key]
+    info = await probe(cid, mid)
+    raw = await _prefix(cid, mid, info["size"] or _PROBE_BYTES)
+    proc = await create_subprocess_exec(
+        "ffprobe", "-hide_banner", "-loglevel", "error",
+        "-print_format", "json", "-show_streams", "-",
+        stdin=PIPE, stdout=PIPE, stderr=PIPE,
+    )
+    try:
+        out, _ = await wait_for(proc.communicate(raw), timeout=_PROBE_TIMEOUT)
+    except Exception:
+        try:
+            proc.kill()
+        except Exception:
+            pass
+        out = b""
+    streams = []
+    try:
+        streams = loads(out)["streams"]
+    except Exception:
+        streams = []
+    audio, subtitle = [], []
+    for st_ in streams:
+        kind = st_.get("codec_type")
+        if kind == "audio":
+            audio.append({"index": len(audio), "title": _title(st_, len(audio))})
+        elif kind == "subtitle":
+            codec = (st_.get("codec_name") or "").lower()
+            if codec in ("dvd_subtitle", "hdmv_pgs_subtitle", "dvb_subtitle"):
+                continue
+            subtitle.append(
+                {"index": len(subtitle), "title": _title(st_, len(subtitle))}
+            )
+    result = {"audio": audio, "subtitle": subtitle}
+    if len(_probe_cache) > 128:
+        _probe_cache.clear()
+    _probe_cache[key] = result
+    return result
 
 
 def stream_port():
@@ -59,9 +161,83 @@ async def _meta(request):
     return web.json_response(info)
 
 
+async def _remux(request, cid, mid, aidx):
+    try:
+        st = await open_stream(cid, mid, "bulk")
+    except StreamGone:
+        purge_fid(cid, mid)
+        raise web.HTTPNotFound(text="file is gone") from None
+    except NoClientAvailable as e:
+        raise web.HTTPServiceUnavailable(text=str(e)) from None
+
+    proc = await create_subprocess_exec(
+        "ffmpeg", "-hide_banner", "-loglevel", "error",
+        "-i", "pipe:0",
+        "-map", "0:v:0", "-map", f"0:a:{aidx}",
+        "-c", "copy",
+        "-movflags", "frag_keyframe+empty_moov+default_base_moof",
+        "-f", "mp4", "pipe:1",
+        stdin=PIPE, stdout=PIPE, stderr=PIPE,
+    )
+    resp = web.StreamResponse(
+        status=200,
+        headers={
+            "Content-Type": "video/mp4",
+            "Accept-Ranges": "none",
+            "Cache-Control": "no-store",
+            "Content-Disposition": _disposition(st.name, True),
+        },
+    )
+    resp.enable_compression(False)
+    await resp.prepare(request)
+
+    async def feed():
+        gen = st.iter_range(0, st.size - 1)
+        try:
+            async for piece in gen:
+                proc.stdin.write(piece)
+                await proc.stdin.drain()
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+        finally:
+            await gen.aclose()
+            try:
+                proc.stdin.close()
+            except Exception:
+                pass
+
+    pusher = ensure_future(feed())
+    try:
+        while True:
+            chunk = await proc.stdout.read(65536)
+            if not chunk:
+                break
+            await resp.write(chunk)
+        await resp.write_eof()
+    except (ConnectionResetError, ConnectionError, CancelledError):
+        LOGGER.debug(f"remux aborted: {cid}/{mid}")
+    finally:
+        pusher.cancel()
+        try:
+            proc.kill()
+        except Exception:
+            pass
+    return resp
+
+
 async def _serve(request, kind):
     _, cid, mid = await _resolve(request)
     inline = kind == "playback"
+
+    aidx = request.query.get("a")
+    if aidx is not None and request.method == "GET":
+        try:
+            aidx = int(aidx)
+        except ValueError:
+            raise web.HTTPNotFound(text="bad track") from None
+        if 0 <= aidx <= 31:
+            return await _remux(request, cid, mid, aidx)
+        raise web.HTTPNotFound(text="bad track")
     viewer = request.headers.get("X-Viewer") or request.remote
 
     if request.method == "HEAD":
@@ -147,6 +323,95 @@ async def _dl(request):
     return await _serve(request, "bulk")
 
 
+async def _tracks(request):
+    _, cid, mid = await _resolve(request)
+    try:
+        return web.json_response(await _probe(cid, mid))
+    except StreamGone:
+        purge_fid(cid, mid)
+        raise web.HTTPNotFound(text="file is gone") from None
+    except NoClientAvailable as e:
+        raise web.HTTPServiceUnavailable(text=str(e)) from None
+    except Exception as e:
+        LOGGER.error(f"track probe failed for {cid}/{mid}: {e}")
+        return web.json_response({"audio": [], "subtitle": []})
+
+
+async def _pump(st, resp, start, end):
+    gen = st.iter_range(start, end)
+    try:
+        async for piece in gen:
+            await resp.write(piece)
+    finally:
+        await gen.aclose()
+
+
+async def _subs(request):
+    _, cid, mid = await _resolve(request)
+    try:
+        idx = int(request.match_info.get("idx", "0"))
+    except ValueError:
+        raise web.HTTPNotFound(text="bad track") from None
+    if idx < 0 or idx > 31:
+        raise web.HTTPNotFound(text="bad track")
+    try:
+        st = await open_stream(cid, mid, "bulk")
+    except StreamGone:
+        purge_fid(cid, mid)
+        raise web.HTTPNotFound(text="file is gone") from None
+    except NoClientAvailable as e:
+        raise web.HTTPServiceUnavailable(text=str(e)) from None
+
+    proc = await create_subprocess_exec(
+        "ffmpeg", "-hide_banner", "-loglevel", "error",
+        "-i", "pipe:0", "-map", f"0:s:{idx}", "-f", "webvtt", "pipe:1",
+        stdin=PIPE, stdout=PIPE, stderr=PIPE,
+    )
+    resp = web.StreamResponse(
+        status=200,
+        headers={
+            "Content-Type": "text/vtt; charset=utf-8",
+            "Cache-Control": "no-store",
+            "Access-Control-Allow-Origin": "*",
+        },
+    )
+    resp.enable_compression(False)
+    await resp.prepare(request)
+
+    async def feed():
+        gen = st.iter_range(0, st.size - 1)
+        try:
+            async for piece in gen:
+                proc.stdin.write(piece)
+                await proc.stdin.drain()
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+        finally:
+            await gen.aclose()
+            try:
+                proc.stdin.close()
+            except Exception:
+                pass
+
+    pusher = ensure_future(feed())
+    try:
+        while True:
+            chunk = await proc.stdout.read(65536)
+            if not chunk:
+                break
+            await resp.write(chunk)
+        await resp.write_eof()
+    except (ConnectionResetError, ConnectionError, CancelledError):
+        LOGGER.debug(f"subtitle stream aborted: {cid}/{mid}")
+    finally:
+        pusher.cancel()
+        try:
+            proc.kill()
+        except Exception:
+            pass
+    return resp
+
+
 async def _ping(_):
     return web.json_response({"ok": True})
 
@@ -155,6 +420,8 @@ def build_app():
     app = web.Application()
     app.router.add_route("GET", "/_ping", _ping)
     app.router.add_route("GET", "/_meta/{token}", _meta)
+    app.router.add_route("GET", "/_tracks/{token}", _tracks)
+    app.router.add_route("GET", "/_subs/{token}/{idx}", _subs)
     app.router.add_route("*", "/_stream/{token}", _stream)
     app.router.add_route("*", "/_dl/{token}", _dl)
     return app

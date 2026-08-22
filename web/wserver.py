@@ -549,7 +549,9 @@ _HOP = (
 )
 
 
-async def stream_proxy(token: str, request: Request, upstream_path: str):
+async def stream_proxy(
+    token: str, request: Request, upstream_path: str, params: dict = None
+):
     if not _SAFE_TOKEN.match(token or ""):
         raise HTTPException(status_code=404, detail="Unknown link")
     headers = {}
@@ -564,6 +566,7 @@ async def stream_proxy(token: str, request: Request, upstream_path: str):
         request.method,
         f"{STREAM_BASE}{upstream_path}/{token}",
         headers=headers,
+        params=params or None,
         allow_redirects=False,
     )
 
@@ -595,7 +598,13 @@ async def stream_proxy(token: str, request: Request, upstream_path: str):
 
 @app.api_route("/stream/{token}", methods=["GET", "HEAD"])
 async def stream_route(token: str, request: Request):
-    return await stream_proxy(token, request, "/_stream")
+    params = {}
+    track = request.query_params.get("a")
+    if track is not None:
+        if not track.isdigit() or len(track) > 2:
+            raise HTTPException(status_code=404, detail="Unknown track")
+        params["a"] = track
+    return await stream_proxy(token, request, "/_stream", params)
 
 
 @app.api_route("/dl/{token}", methods=["GET", "HEAD"])
@@ -611,6 +620,48 @@ async def xstrm_page(token: str, request: Request):
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     response.headers["Referrer-Policy"] = "no-referrer"
     return response
+
+
+@app.get("/subs/{token}/{track}")
+async def subs_route(token: str, track: str, request: Request):
+    if not _SAFE_TOKEN.match(token or ""):
+        raise HTTPException(status_code=404, detail="Unknown link")
+    idx = track[:-4] if track.endswith(".vtt") else track
+    if not idx.isdigit() or len(idx) > 2:
+        raise HTTPException(status_code=404, detail="Unknown track")
+
+    upstream = await http_session.get(f"{STREAM_BASE}/_subs/{token}/{idx}")
+    if upstream.status != 200:
+        upstream.release()
+        raise HTTPException(status_code=upstream.status, detail="Track unavailable")
+
+    async def _pump():
+        try:
+            async for chunk in upstream.content.iter_chunked(16384):
+                yield chunk
+        finally:
+            upstream.release()
+
+    return StreamingResponse(
+        _pump(),
+        status_code=200,
+        media_type="text/vtt; charset=utf-8",
+        headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"},
+    )
+
+
+@app.get("/api/tracks/{token}")
+async def tracks_route(token: str, request: Request):
+    if not _SAFE_TOKEN.match(token or ""):
+        raise HTTPException(status_code=404, detail="Unknown link")
+    async with http_session.get(f"{STREAM_BASE}/_tracks/{token}") as upstream:
+        body = await upstream.read()
+    return Response(
+        content=body,
+        status_code=upstream.status,
+        media_type="application/json",
+        headers={"Cache-Control": "no-store"},
+    )
 
 
 @app.get("/api/stream/{token}")
