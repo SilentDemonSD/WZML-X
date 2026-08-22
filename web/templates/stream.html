@@ -415,648 +415,12 @@
             --media-object-fit: contain;
         }
 
-
-        .lm {
-            position: absolute;
-            inset: 0;
-            z-index: 2;
-            display: none;
-            background: #000105;
-        }
-
-        .lm.on {
+        libmedia-video {
             display: block;
-        }
-
-        .lm-host {
-            position: absolute;
-            inset: 0;
-        }
-
-        .lm-host canvas,
-        .lm-host video {
-            width: 100% !important;
-            height: 100% !important;
-            object-fit: contain;
-            background: #000105;
-        }
-
-        .lmgate {
-            position: absolute;
-            inset: 0;
-            z-index: 3;
-            display: none;
-            place-items: center;
-            border: 0;
-            background: rgba(0, 0, 3, .42);
-            cursor: pointer;
-        }
-
-        .lmgate.on {
-            display: grid;
-        }
-
-        .lmgate-ring {
-            display: grid;
-            place-items: center;
-            width: 76px;
-            height: 76px;
-            border-radius: 50%;
-            background: rgba(61, 135, 255, .92);
-            box-shadow: 0 14px 44px rgba(0, 0, 3, .6),
-                0 0 0 10px rgba(61, 135, 255, .14);
-            transition: transform .18s ease, background .18s ease;
-        }
-
-        .lmgate:hover .lmgate-ring {
-            transform: scale(1.06);
-            background: var(--accent-2);
-        }
-
-        .lmgate svg {
-            width: 30px;
-            height: 30px;
-            fill: #000003;
-            margin-left: 4px;
-        }
-
-        .lmbar {
-            position: absolute;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            display: grid;
-            grid-template-columns: auto auto auto 1fr auto auto;
-            align-items: center;
-            gap: .35rem;
-            padding: 2.5rem .85rem .8rem;
-            background: linear-gradient(transparent,
-                    rgba(0, 0, 3, .55) 45%, rgba(0, 0, 3, .92));
-            opacity: 0;
-            transform: translateY(6px);
-            transition: opacity .22s ease, transform .22s ease;
-        }
-
-        .lm:hover .lmbar,
-        .lm.idle .lmbar,
-        .lmbar:focus-within {
-            opacity: 1;
-            transform: none;
-        }
-
-        .lmbtn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 36px;
-            height: 36px;
-            flex: none;
-            padding: 0;
-            border: 0;
-            border-radius: 10px;
-            background: none;
-            color: var(--text);
-            cursor: pointer;
-            transition: background .16s ease, color .16s ease, transform .12s ease;
-        }
-
-        .lmbtn:hover {
-            background: rgba(93, 157, 255, .16);
-            color: var(--accent-2);
-        }
-
-        .lmbtn:active {
-            transform: scale(.94);
-        }
-
-        .lmbtn:focus-visible {
-            outline: 2px solid var(--accent);
-            outline-offset: 2px;
-        }
-
-        .lmbtn svg {
-            width: 18px;
-            height: 18px;
-            fill: currentColor;
-        }
-
-        .lmbtn.play {
-            background: rgba(93, 157, 255, .14);
-        }
-
-        .lmbtn.play:hover {
-            background: var(--accent);
-            color: #000003;
-        }
-
-        .lmseek {
             position: relative;
-            height: 16px;
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-            touch-action: none;
-        }
-
-        .lmseek::before {
-            content: "";
-            position: absolute;
-            left: 0;
-            right: 0;
-            height: 4px;
-            border-radius: 999px;
-            background: rgba(203, 210, 229, .18);
-            transition: height .16s ease;
-        }
-
-        .lmseek:hover::before,
-        .lmseek:focus-visible::before {
-            height: 6px;
-        }
-
-        .lmseek:focus-visible {
-            outline: none;
-        }
-
-        .lmfill {
-            position: absolute;
-            left: 0;
-            height: 4px;
-            border-radius: 999px;
-            background: linear-gradient(90deg, var(--accent), var(--accent-2));
-            transition: height .16s ease;
-        }
-
-        .lmseek:hover .lmfill,
-        .lmseek:focus-visible .lmfill {
-            height: 6px;
-        }
-
-        .lmfill::after {
-            content: "";
-            position: absolute;
-            right: -6px;
-            top: 50%;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: var(--text);
-            box-shadow: 0 2px 8px rgba(0, 0, 3, .7);
-            transform: translateY(-50%) scale(0);
-            transition: transform .16s ease;
-        }
-
-        .lmseek:hover .lmfill::after,
-        .lmseek:focus-visible .lmfill::after {
-            transform: translateY(-50%) scale(1);
-        }
-
-        .lmtime {
-            font-family: var(--mono);
-            font-variant-numeric: tabular-nums;
-            font-size: .74rem;
-            letter-spacing: .01em;
-            color: var(--muted);
-            white-space: nowrap;
-            flex: none;
-            padding: 0 .3rem 0 .15rem;
-        }
-
-        .lmtime b {
-            color: var(--text);
-            font-weight: 500;
-        }
-
-        .lmvol {
-            width: 0;
-            opacity: 0;
-            flex: none;
-            accent-color: var(--accent);
-            transition: width .2s ease, opacity .2s ease;
-        }
-
-        .lmbar:hover .lmvol,
-        .lmvol:focus-visible {
-            width: 72px;
-            opacity: 1;
-        }
-
-        .lmmenu {
-            position: relative;
-            flex: none;
-        }
-
-        .lmpop {
-            position: absolute;
-            right: 0;
-            bottom: calc(100% + 8px);
-            display: none;
-            min-width: 6rem;
-            padding: .25rem;
-            border-radius: var(--r);
-            border: 1px solid rgba(93, 157, 255, .3);
-            background: rgba(4, 4, 11, .97);
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
-            box-shadow: 0 16px 40px rgba(0, 0, 3, .85);
-        }
-
-        .lmmenu.open .lmpop {
-            display: block;
-        }
-
-        .lmpop button {
-            display: block;
             width: 100%;
-            padding: .35rem .5rem;
-            border: 0;
-            border-radius: 8px;
-            background: none;
-            color: var(--text);
-            font: inherit;
-            font-size: .78rem;
-            text-align: left;
-            cursor: pointer;
-        }
-
-        .lmpop button:hover {
-            background: var(--accent-soft);
-        }
-
-        .lmpop button[aria-selected="true"] {
-            color: var(--accent-2);
-        }
-
-        .lmtime {
-            font-family: var(--mono);
-            font-variant-numeric: tabular-nums;
-            font-size: .72rem;
-            color: var(--muted);
-            white-space: nowrap;
-            flex: none;
-        }
-
-        .lmvol {
-            width: 68px;
-            flex: none;
-            accent-color: var(--accent);
-        }
-
-        @media (max-width: 640px) {
-            .lmvol { display: none; }
-        }
-
-        .loading {
-            position: absolute;
-            inset: 0;
-            z-index: 3;
-            display: grid;
-            place-items: center;
-            background: linear-gradient(rgba(0, 0, 3, .96), rgba(0, 0, 3, .99));
-            transition: opacity .25s ease, visibility .25s ease;
-        }
-
-        .loading.gone {
-            opacity: 0;
-            visibility: hidden;
-        }
-
-        .load-copy {
-            text-align: center;
-            max-width: 20rem;
-            padding: 0 1rem;
-        }
-
-        .load-copy b {
-            display: block;
-            font-family: var(--display);
-            font-weight: 600;
-            font-size: .95rem;
-            letter-spacing: .04em;
-        }
-
-        .load-copy span {
-            display: block;
-            margin-top: .25rem;
-            font-size: .8rem;
-            color: var(--muted);
-        }
-
-        .bar {
-            height: 2px;
-            width: 8rem;
-            margin: .8rem auto 0;
-            border-radius: 2px;
-            background: rgba(93, 157, 255, .16);
-            overflow: hidden;
-        }
-
-        .bar::after {
-            content: "";
-            display: block;
-            width: 40%;
             height: 100%;
-            border-radius: 2px;
-            background: var(--accent);
-            animation: sweep 1.4s ease-in-out infinite;
-        }
-
-        @keyframes sweep {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(250%); }
-        }
-
-        .below {
-            flex: none;
-            width: var(--content);
-            margin-inline: auto;
-            padding-top: 14px;
-            transition: opacity .45s ease;
-        }
-
-        body.dark .below {
-            opacity: .05;
-            pointer-events: none;
-        }
-
-        .head {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px .8rem;
-        }
-
-        .txt {
-            min-width: 0;
-            flex: 1 1 auto;
-        }
-
-        h1 {
-            font-size: clamp(.95rem, 1.4vw, 1.2rem);
-            font-weight: 700;
-            letter-spacing: .005em;
-            margin: 0;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .meta {
-            display: flex;
-            align-items: center;
-            gap: .3rem .65rem;
-            margin-top: 6px;
-            font-family: var(--mono);
-            font-variant-numeric: tabular-nums;
-            font-size: .72rem;
-            color: var(--muted);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .meta i {
-            width: 3px;
-            height: 3px;
-            border-radius: 50%;
-            background: var(--line-2);
-            flex: none;
-        }
-
-        .acts {
-            display: flex;
-            flex-wrap: wrap;
-            gap: .35rem;
-            flex: 0 0 auto;
-            margin-left: auto;
-        }
-
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: .45rem;
-            height: 36px;
-            padding: 0 .8rem;
-            border-radius: var(--r);
-            border: 1px solid var(--line);
-            background: var(--surface-2);
-            color: var(--text);
-            font: inherit;
-            font-size: .8rem;
-            font-weight: 500;
-            text-decoration: none;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: border-color .16s ease, background .16s ease, transform .12s ease;
-        }
-
-        .btn:hover {
-            border-color: var(--line-2);
-            background: var(--accent-soft);
-        }
-
-        .btn:active {
-            transform: scale(.97);
-        }
-
-        .btn:focus-visible {
-            outline: 2px solid var(--accent);
-            outline-offset: 2px;
-        }
-
-        .btn svg {
-            width: 15px;
-            height: 15px;
-            fill: currentColor;
-            flex: none;
-        }
-
-        .btn.primary {
-            background: var(--accent);
-            border-color: var(--accent);
-            color: #000003;
-            font-weight: 600;
-        }
-
-        .btn.primary:hover {
-            background: var(--accent-2);
-            border-color: var(--accent-2);
-        }
-
-        .btn.icon {
-            width: 36px;
-            padding: 0;
-        }
-
-        .btn.on {
-            border-color: var(--accent);
-            color: var(--accent-2);
-        }
-
-        .controls {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: .4rem;
-            margin-top: 18px;
-            padding-top: 18px;
-            border-top: 1px solid var(--line);
-        }
-
-        .spacer {
-            flex: 1 1 auto;
-        }
-
-        .dd {
-            position: relative;
-            display: none;
-            min-width: 0;
-        }
-
-        .dd.show {
-            display: block;
-        }
-
-        .dd-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: .4rem;
-            height: 36px;
-            max-width: 100%;
-            padding: 0 .65rem;
-            border-radius: var(--r);
-            border: 1px solid var(--line);
-            background: var(--surface-2);
-            color: var(--text);
-            font: inherit;
-            font-size: .78rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: border-color .16s ease, background .16s ease;
-        }
-
-        .dd-btn:hover {
-            border-color: var(--line-2);
-            background: var(--accent-soft);
-        }
-
-        .dd-btn:focus-visible {
-            outline: 2px solid var(--accent);
-            outline-offset: 2px;
-        }
-
-        .dd-btn em {
-            font-family: var(--mono);
-            font-style: normal;
-            font-size: .62rem;
-            letter-spacing: .14em;
-            text-transform: uppercase;
-            color: var(--muted);
-            flex: none;
-        }
-
-        .dd-btn b {
-            font-weight: 500;
-            min-width: 0;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .dd-btn svg {
-            width: 11px;
-            height: 11px;
-            fill: var(--muted);
-            flex: none;
-            transition: transform .18s ease;
-        }
-
-        .dd.open .dd-btn svg {
-            transform: rotate(180deg);
-        }
-
-        .dd-panel {
-            position: absolute;
-            bottom: calc(100% + 6px);
-            left: 0;
-            min-width: 100%;
-            width: max-content;
-            max-width: min(21rem, 86vw);
-            max-height: min(17rem, 46dvh);
-            overflow-y: auto;
-            overscroll-behavior: contain;
-            scrollbar-width: thin;
-            scrollbar-color: rgba(42, 95, 208, .5) transparent;
-            padding: .3rem;
-            border-radius: var(--r);
-            border: 1px solid rgba(93, 157, 255, .28);
-            background: rgba(4, 4, 11, .98);
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
-            box-shadow: 0 18px 48px rgba(0, 0, 3, .85);
-            display: none;
-            z-index: var(--z-pop);
-        }
-
-        .dd.down .dd-panel {
-            bottom: auto;
-            top: calc(100% + 6px);
-        }
-
-        .dd.right .dd-panel {
-            left: auto;
-            right: 0;
-        }
-
-        .dd.open .dd-panel {
-            display: block;
-        }
-
-        .dd-group {
-            font-family: var(--mono);
-            font-size: .58rem;
-            letter-spacing: .16em;
-            text-transform: uppercase;
-            color: var(--muted);
-            padding: .45rem .5rem .25rem;
-        }
-
-        .dd-item {
-            display: flex;
-            align-items: center;
-            gap: .5rem;
-            width: 100%;
-            padding: .42rem .5rem;
-            border: 0;
-            border-radius: 8px;
-            background: none;
-            color: var(--text);
-            font: inherit;
-            font-size: .78rem;
-            text-align: left;
-            cursor: pointer;
-            transition: background .12s ease;
-        }
-
-        .dd-item:hover,
-        .dd-item:focus-visible {
-            background: var(--accent-soft);
-            outline: none;
-        }
-
-        .dd-item[aria-selected="true"] {
-            color: var(--accent-2);
-        }
-
-        .dd-item[aria-selected="true"]::after {
-            content: "";
-            width: 6px;
-            height: 6px;
-            margin-left: auto;
-            border-radius: 50%;
-            background: var(--accent);
-            flex: none;
+            background: #000105;
         }
 
         .notice {
@@ -1288,43 +652,6 @@
                             </video-minimal-skin>
                         </video-player>
                     </div>
-                    <div class="lm" id="lm">
-                        <div class="lm-host" id="lmHost"></div>
-                        <button class="lmgate" id="lmGate" type="button"
-                            aria-label="Play">
-                            <span class="lmgate-ring">
-                                <svg viewBox="0 0 24 24" aria-hidden="true">
-                                    <path d="M8 5v14l11-7z" />
-                                </svg>
-                            </span>
-                        </button>
-                        <div class="lmbar">
-                            <button class="lmbtn play" type="button" id="lmPlay" aria-label="Play">
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
-                            </button>
-                            <button class="lmbtn" type="button" id="lmMute" aria-label="Mute">
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4zm11.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM13 3.2v2.1a6.8 6.8 0 0 1 0 13.4v2.1a8.9 8.9 0 0 0 0-17.6z"/></svg>
-                            </button>
-                            <input class="lmvol" id="lmVol" type="range" min="0" max="1"
-                                step="0.05" value="1" aria-label="Volume">
-                            <span class="lmtime" id="lmTime"><b>0:00</b> / 0:00</span>
-                            <div class="lmseek" id="lmSeek" role="slider" tabindex="0"
-                                aria-label="Seek" aria-valuemin="0" aria-valuemax="100"
-                                aria-valuenow="0">
-                                <div class="lmfill" id="lmFill"></div>
-                            </div>
-                            <div class="lmmenu">
-                                <button class="lmbtn" type="button" id="lmGear"
-                                    aria-label="Playback speed" aria-expanded="false">
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm0 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm7.4-1.6.1-.4-.1-.4 1.7-1.3-1.7-3-2 .7a6.7 6.7 0 0 0-1.4-.8L15.7 5h-3.4l-.3 2.1a6.7 6.7 0 0 0-1.4.8l-2-.7-1.7 3 1.7 1.3-.1.4.1.4-1.7 1.3 1.7 3 2-.7c.4.3.9.6 1.4.8l.3 2.1h3.4l.3-2.1c.5-.2 1-.5 1.4-.8l2 .7 1.7-3-1.7-1.3z"/></svg>
-                                </button>
-                                <div class="lmpop" id="lmRates" role="listbox"></div>
-                            </div>
-                            <button class="lmbtn" type="button" id="lmFs" aria-label="Fullscreen">
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9V3h6v2H5v4H3zm12-6h6v6h-2V5h-4V3zM3 15h2v4h4v2H3v-6zm16 0h2v6h-6v-2h4v-4z"/></svg>
-                            </button>
-                        </div>
-                    </div>
                     <div class="stall">
                         <div class="stall-box" id="stallText"></div>
                     </div>
@@ -1395,6 +722,259 @@
 
     <script type="module"
         src="https://cdn.jsdelivr.net/npm/@videojs/html@10.0.0-beta.31/cdn/video-minimal.js"></script>
+    <script type="module">
+        import { CustomVideoElement } from
+            "https://cdn.jsdelivr.net/npm/custom-media-element@1.4.6/+esm";
+
+        const AVPLAYER_SRC =
+            "https://cdn.jsdelivr.net/npm/@libmedia/avplayer@1.3.1/dist/umd/avplayer.js";
+
+        let loading = null;
+
+        function loadAVPlayer() {
+            if (window.AVPlayer) return Promise.resolve(window.AVPlayer);
+            if (loading) return loading;
+            loading = new Promise((ok, no) => {
+                const sc = document.createElement("script");
+                sc.src = AVPLAYER_SRC;
+                sc.crossOrigin = "anonymous";
+                sc.onload = () => window.AVPlayer
+                    ? ok(window.AVPlayer)
+                    : no(new Error("AVPlayer global missing"));
+                sc.onerror = () => no(new Error("decoder failed to load"));
+                document.head.appendChild(sc);
+            });
+            return loading;
+        }
+
+        function ranges(end) {
+            return {
+                length: end > 0 ? 1 : 0,
+                start: () => 0,
+                end: () => end
+            };
+        }
+
+        class LibmediaVideoElement extends CustomVideoElement {
+            static tagName = "libmedia-video";
+            static observedAttributes = [
+                ...(CustomVideoElement.observedAttributes || []), "src"
+            ];
+
+            #player = null;
+            #host = null;
+            #time = 0;
+            #dur = 0;
+            #scale = 0;
+            #paused = true;
+            #ended = false;
+            #ready = 0;
+            #vol = 1;
+            #muted = false;
+            #rate = 1;
+            #streams = [];
+            #starting = false;
+
+            constructor() {
+                super();
+                this.#host = document.createElement("div");
+                Object.assign(this.#host.style, {
+                    position: "absolute", inset: "0", zIndex: "1"
+                });
+                const root = this.shadowRoot || this;
+                const css = document.createElement("style");
+                css.textContent = ":host{display:block;position:relative;"
+                    + "width:100%;height:100%}"
+                    + "canvas,video{width:100%!important;height:100%!important;"
+                    + "object-fit:contain;background:#000105}";
+                root.appendChild(css);
+                root.appendChild(this.#host);
+                if (this.nativeEl) {
+                    this.nativeEl.style.visibility = "hidden";
+                }
+            }
+
+            get streams() { return this.#streams; }
+            get player() { return this.#player; }
+
+            attributeChangedCallback(name, was, now) {
+                if (name === "src") {
+                    if (now && now !== was) this.#boot(now);
+                    return;
+                }
+                try { super.attributeChangedCallback(name, was, now); } catch (e) { }
+            }
+
+            get src() { return this.getAttribute("src") || ""; }
+            set src(v) { this.setAttribute("src", v); }
+
+            #emit(type) { this.dispatchEvent(new Event(type)); }
+
+            #seconds(pts) {
+                const v = Number(pts);
+                if (!isFinite(v) || v < 0) return 0;
+                if (!this.#scale) {
+                    const d = this.#dur;
+                    if (d > 0) {
+                        this.#scale = v / 1e6 <= d * 1.5 ? 1e6
+                            : (v / 1e3 <= d * 1.5 ? 1e3 : 1);
+                    } else return v / 1e6;
+                }
+                return v / this.#scale;
+            }
+
+            #durationFrom(streams) {
+                let best = 0;
+                for (const t of streams) {
+                    if (!t || !t.duration) continue;
+                    const tb = t.timeBase;
+                    const d = Number(t.duration);
+                    if (!isFinite(d) || d <= 0) continue;
+                    const secs = tb && Number(tb.den) > 0
+                        ? d * (Number(tb.num) || 1) / Number(tb.den)
+                        : d / 1000;
+                    if (secs > best) best = secs;
+                }
+                return best;
+            }
+
+            async #boot(url) {
+                if (this.#starting) return;
+                this.#starting = true;
+                this.#emit("loadstart");
+                try {
+                    const AVPlayer = await loadAVPlayer();
+                    if (this.#player) {
+                        try { await this.#player.destroy(); } catch (e) { }
+                        this.#player = null;
+                    }
+                    const p = new AVPlayer({
+                        container: this.#host,
+                        isLive: false
+                    });
+                    this.#player = p;
+
+                    p.on("time", (pts) => {
+                        this.#time = this.#seconds(pts);
+                        this.#emit("timeupdate");
+                    });
+                    p.on("played", () => {
+                        this.#paused = false; this.#ended = false; this.#emit("play");
+                    });
+                    p.on("playing", () => {
+                        this.#paused = false; this.#emit("playing");
+                    });
+                    p.on("paused", () => { this.#paused = true; this.#emit("pause"); });
+                    p.on("ended", () => {
+                        this.#paused = true; this.#ended = true; this.#emit("ended");
+                    });
+                    p.on("seeking", () => this.#emit("seeking"));
+                    p.on("seeked", () => this.#emit("seeked"));
+                    p.on("error", (e) => {
+                        console.error("[wzx] libmedia-video", e);
+                        this.#emit("error");
+                    });
+
+                    await p.load(url);
+                    this.#streams = p.getStreams ? p.getStreams() : [];
+                    this.#dur = this.#durationFrom(this.#streams);
+                    this.#ready = 4;
+                    this.#emit("durationchange");
+                    this.#emit("loadedmetadata");
+                    this.#emit("canplay");
+                    this.dispatchEvent(new CustomEvent("libmediastreams", {
+                        detail: this.#streams, bubbles: true
+                    }));
+                } catch (e) {
+                    console.error("[wzx] libmedia-video boot", e);
+                    this.#emit("error");
+                } finally {
+                    this.#starting = false;
+                }
+            }
+
+            async play() {
+                if (!this.#player) return;
+                await this.#player.play();
+                this.#paused = false;
+                this.#emit("play");
+            }
+
+            pause() {
+                if (!this.#player) return;
+                this.#player.pause();
+                this.#paused = true;
+                this.#emit("pause");
+            }
+
+            get paused() { return this.#paused; }
+            get ended() { return this.#ended; }
+            get seeking() { return false; }
+            get readyState() { return this.#ready; }
+            get duration() { return this.#dur || NaN; }
+            get buffered() { return ranges(this.#dur); }
+            get seekable() { return ranges(this.#dur); }
+            get videoWidth() { return this.#host.clientWidth || 0; }
+            get videoHeight() { return this.#host.clientHeight || 0; }
+
+            get currentTime() { return this.#time; }
+            set currentTime(v) {
+                if (!this.#player) return;
+                const ms = Math.max(0, Math.round(Number(v) * 1000));
+                this.#time = Number(v);
+                try { this.#player.seek(BigInt(ms)); }
+                catch (e) { try { this.#player.seek(ms); } catch (e2) { } }
+                this.#emit("seeking");
+                this.#emit("timeupdate");
+            }
+
+            get volume() { return this.#vol; }
+            set volume(v) {
+                this.#vol = Math.max(0, Math.min(1, Number(v)));
+                try { this.#player && this.#player.setVolume(this.#muted ? 0 : this.#vol); }
+                catch (e) { }
+                this.#emit("volumechange");
+            }
+
+            get muted() { return this.#muted; }
+            set muted(v) {
+                this.#muted = !!v;
+                try { this.#player && this.#player.setVolume(this.#muted ? 0 : this.#vol); }
+                catch (e) { }
+                this.#emit("volumechange");
+            }
+
+            get playbackRate() { return this.#rate; }
+            set playbackRate(v) {
+                this.#rate = Number(v) || 1;
+                try { this.#player && this.#player.setPlaybackRate(this.#rate); }
+                catch (e) { }
+                this.dispatchEvent(new Event("ratechange"));
+            }
+
+            selectAudio(id) {
+                return this.#player ? this.#player.selectAudio(id) : Promise.resolve();
+            }
+
+            selectSubtitle(id) {
+                return this.#player
+                    ? this.#player.selectSubtitle(id)
+                    : Promise.resolve();
+            }
+
+            disconnectedCallback() {
+                try { this.#player && this.#player.destroy(); } catch (e) { }
+                this.#player = null;
+                try { super.disconnectedCallback(); } catch (e) { }
+            }
+        }
+
+        if (!customElements.get("libmedia-video")) {
+            customElements.define("libmedia-video", LibmediaVideoElement);
+        }
+        window.__wzxMediaElement = true;
+    </script>
+
     <script>
         (function () {
             "use strict";
@@ -1657,11 +1237,7 @@
                 }
             }
 
-
-            var LM_SRC = "https://cdn.jsdelivr.net/npm/@libmedia/avplayer@1.3.1" +
-                "/dist/umd/avplayer.js";
-            var lm = null;
-            var lmLoading = null;
+            var lmEl = null;
             var lmStreams = [];
 
             function lmErr(e) {
@@ -1675,270 +1251,6 @@
                 } catch (x) { }
             }
 
-            function loadLibmedia() {
-                if (window.AVPlayer) return Promise.resolve(window.AVPlayer);
-                if (lmLoading) return lmLoading;
-                lmLog("fetching decoder", LM_SRC);
-                lmLoading = new Promise(function (ok, no) {
-                    var sc = document.createElement("script");
-                    sc.src = LM_SRC;
-                    sc.crossOrigin = "anonymous";
-                    sc.onload = function () {
-                        lmLog("decoder script loaded, AVPlayer=" + typeof window.AVPlayer);
-                        if (window.AVPlayer) ok(window.AVPlayer);
-                        else no(new Error("AVPlayer global missing after load"));
-                    };
-                    sc.onerror = function (e) {
-                        lmErr(e);
-                        no(new Error("decoder script failed to load"));
-                    };
-                    document.head.appendChild(sc);
-                });
-                return lmLoading;
-            }
-
-            function lmIcon(playing) {
-                var b = el("lmPlay");
-                b.innerHTML = playing
-                    ? '<svg viewBox="0 0 24 24" aria-hidden="true">'
-                      + '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>'
-                    : '<svg viewBox="0 0 24 24" aria-hidden="true">'
-                      + '<path d="M8 5v14l11-7z"/></svg>';
-                b.setAttribute("aria-label", playing ? "Pause" : "Play");
-            }
-
-            var lmDur = 0;
-            var lmScale = 0;
-
-            function lmDuration() {
-                if (lmDur > 0) return lmDur;
-                var best = 0;
-                lmStreams.forEach(function (t) {
-                    var d = lmStreamSeconds(t);
-                    if (d > best) best = d;
-                });
-                lmDur = best;
-                return lmDur;
-            }
-
-            // The time event's unit is not documented. Infer it once from the
-            // known duration instead of assuming milliseconds.
-            function lmSeconds(pts) {
-                var v = Number(pts);
-                if (!isFinite(v) || v < 0) return 0;
-                if (!lmScale) {
-                    var d = lmDuration();
-                    if (d > 0) {
-                        if (v / 1e6 <= d * 1.5) lmScale = 1e6;
-                        else if (v / 1e3 <= d * 1.5) lmScale = 1e3;
-                        else lmScale = 1;
-                    } else {
-                        return v / 1000;
-                    }
-                    lmLog("time scale = 1/" + lmScale);
-                }
-                return v / lmScale;
-            }
-
-            function lmSeekTo(sec) {
-                sec = Math.max(0, sec);
-                var ms = Math.round(sec * 1000);
-                try {
-                    lm.seek(BigInt(ms));
-                } catch (e) {
-                    try { lm.seek(ms); } catch (e2) { lmErr(e2); }
-                }
-            }
-
-            var lmPlaying = false;
-            var lmMuted = false;
-            var lmLastVol = 1;
-            var lmPending = 0;
-            var lmStarted = false;
-
-            // Playback must begin from a real click so the AudioContext is allowed
-            // to start. Autoplaying gives picture with no sound in Chrome.
-            function lmStart() {
-                if (!lm) return;
-                el("lmGate").classList.remove("on");
-                try {
-                    lm.play();
-                    lmPlaying = true;
-                    lmIcon(true);
-                    lmStarted = true;
-                    if (lmPending > 1) {
-                        lmSeekTo(lmPending);
-                        lmPending = 0;
-                    }
-                } catch (e) {
-                    lmErr(e);
-                }
-            }
-
-            function lmClock(t, dur) {
-                var s = Math.max(0, Math.floor(t));
-                var h = Math.floor(s / 3600);
-                var m = Math.floor((s % 3600) / 60);
-                var q = s % 60;
-                var pad = function (x) { return x < 10 ? "0" + x : "" + x; };
-                if (dur >= 3600) return h + ":" + pad(m) + ":" + pad(q);
-                return m + ":" + pad(q);
-            }
-
-            function lmWireBar() {
-                var seek = el("lmSeek"), fill = el("lmFill"), dur = 0, at = 0;
-
-                function paint(t) {
-                    at = t;
-                    if (!dur) dur = lmDuration();
-                    if (!dur) return;
-                    var pct = Math.max(0, Math.min(100, (t / dur) * 100));
-                    fill.style.width = pct + "%";
-                    el("lmTime").innerHTML = "<b></b> / ";
-                    el("lmTime").firstChild.textContent = lmClock(t, dur);
-                    el("lmTime").appendChild(
-                        document.createTextNode(lmClock(dur, dur)));
-                    seek.setAttribute("aria-valuenow", Math.round(pct));
-                    if (t > 30) store(POS_KEY, String(t));
-                }
-
-                lm.on("time", function (pts) { paint(lmSeconds(pts)); });
-                lm.on("played", function () { lmPlaying = true; lmIcon(true); });
-                lm.on("playing", function () {
-                    lmPlaying = true;
-                    lmIcon(true);
-                    clearStall();
-                });
-                lm.on("paused", function () { lmPlaying = false; lmIcon(false); });
-                lm.on("stopped", function () { lmPlaying = false; lmIcon(false); });
-                lm.on("ended", function () {
-                    lmPlaying = false;
-                    lmIcon(false);
-                    store(POS_KEY, "0");
-                });
-                lm.on("error", function (e) {
-                    lmErr(e);
-                    stall("Playback failed",
-                        "The decoder could not continue. Download the file, or open "
-                        + "it in an app below.");
-                });
-
-                // libmedia exposes no isPlaying(), so the state is tracked from
-                // its own events instead of being asked for.
-                el("lmPlay").onclick = function () {
-                    if (!lmStarted) { lmStart(); return; }
-                    try {
-                        if (lmPlaying) {
-                            lm.pause();
-                            lmPlaying = false;
-                        } else {
-                            lm.play();
-                            lmPlaying = true;
-                        }
-                        lmIcon(lmPlaying);
-                    } catch (e) {
-                        lmErr(e);
-                    }
-                };
-
-                el("lmMute").onclick = function () {
-                    lmMuted = !lmMuted;
-                    try { lm.setVolume(lmMuted ? 0 : lmLastVol); } catch (e) { lmErr(e); }
-                    el("lmVol").value = lmMuted ? 0 : lmLastVol;
-                    this.style.opacity = lmMuted ? ".5" : "1";
-                };
-
-                var rates = [0.5, 0.75, 1, 1.25, 1.5, 2];
-                var pop = el("lmRates");
-                pop.innerHTML = "";
-                rates.forEach(function (r) {
-                    var b = document.createElement("button");
-                    b.type = "button";
-                    b.setAttribute("role", "option");
-                    b.textContent = r + "x";
-                    if (r === 1) b.setAttribute("aria-selected", "true");
-                    b.onclick = function () {
-                        try { lm.setPlaybackRate(r); } catch (e) { lmErr(e); }
-                        var sel = pop.querySelectorAll('[aria-selected="true"]');
-                        Array.prototype.forEach.call(sel, function (n) {
-                            n.removeAttribute("aria-selected");
-                        });
-                        b.setAttribute("aria-selected", "true");
-                        el("lmGear").parentNode.classList.remove("open");
-                        var q = prefs(); q.rate = r; savePrefs(q);
-                    };
-                    pop.appendChild(b);
-                });
-                el("lmGear").onclick = function () {
-                    var box = this.parentNode;
-                    box.classList.toggle("open");
-                    this.setAttribute("aria-expanded",
-                        box.classList.contains("open") ? "true" : "false");
-                };
-
-                var dragging = false;
-
-                function seekFromEvent(ev) {
-                    if (!dur) dur = lmDuration();
-                    if (!dur) return;
-                    var r = seek.getBoundingClientRect();
-                    var cx = ev.clientX !== undefined ? ev.clientX
-                        : (ev.touches && ev.touches[0] ? ev.touches[0].clientX : 0);
-                    var x = Math.max(0, Math.min(1, (cx - r.left) / r.width));
-                    fill.style.width = (x * 100) + "%";
-                    return x * dur;
-                }
-
-                seek.addEventListener("pointerdown", function (ev) {
-                    dragging = true;
-                    seek.setPointerCapture && seek.setPointerCapture(ev.pointerId);
-                    seekFromEvent(ev);
-                });
-                seek.addEventListener("pointermove", function (ev) {
-                    if (dragging) seekFromEvent(ev);
-                });
-                seek.addEventListener("pointerup", function (ev) {
-                    if (!dragging) return;
-                    dragging = false;
-                    var t = seekFromEvent(ev);
-                    if (t !== undefined) lmSeekTo(t);
-                });
-                seek.addEventListener("pointercancel", function () {
-                    dragging = false;
-                });
-
-                seek.addEventListener("keydown", function (ev) {
-                    if (ev.key !== "ArrowRight" && ev.key !== "ArrowLeft") return;
-                    ev.preventDefault();
-                    lmSeekTo(at + (ev.key === "ArrowRight" ? 10 : -10));
-                });
-
-                el("lmVol").oninput = function () {
-                    var v = parseFloat(this.value);
-                    lmLastVol = v || lmLastVol;
-                    lmMuted = v === 0;
-                    el("lmMute").style.opacity = lmMuted ? ".5" : "1";
-                    try { lm.setVolume(v); } catch (e) { lmErr(e); }
-                    var q = prefs(); q.volume = v; savePrefs(q);
-                };
-
-                el("lmGate").onclick = lmStart;
-
-                el("lmFs").onclick = function () {
-                    var box = el("frame");
-                    if (document.fullscreenElement) document.exitFullscreen();
-                    else if (box.requestFullscreen) box.requestFullscreen();
-                };
-            }
-
-            function lmLabel(t, i) {
-                var m = t.metadata || {};
-                var bits = [];
-                if (m.title) bits.push(m.title);
-                if (m.language) bits.push(m.language);
-                return bits.length ? bits.join(" \u00b7 ") : "Track " + (i + 1);
-            }
-
             var LM_KIND = { video: [0, "Video"], audio: [1, "Audio"],
                 subtitle: [3, "Subtitle"] };
 
@@ -1949,17 +1261,28 @@
                 });
             }
 
-            // getDuration() is internal to libmedia, so seconds come from the
-            // stream's own duration scaled by its time base.
-            function lmStreamSeconds(t) {
-                if (!t || !t.duration) return 0;
-                var tb = t.timeBase;
-                var d = Number(t.duration);
-                if (!isFinite(d) || d <= 0) return 0;
-                if (tb && Number(tb.den) > 0) {
-                    return d * (Number(tb.num) || 1) / Number(tb.den);
-                }
-                return d / 1000;
+            function lmLabel(t, i) {
+                var m = t.metadata || {};
+                var bits = [];
+                if (m.title) bits.push(m.title);
+                if (m.language) bits.push(m.language);
+                return bits.length ? bits.join(" \u00b7 ") : "Track " + (i + 1);
+            }
+
+            function lmSwitchAudio(id, label) {
+                var wasPlaying = lmEl && !lmEl.paused;
+                if (wasPlaying) lmEl.pause();
+                return Promise.resolve(lmEl.selectAudio(id))
+                    .then(function () {
+                        lmLog("selectAudio resolved id=" + id);
+                        if (wasPlaying) lmEl.play();
+                        if (label) toast("Switched to " + label);
+                    })
+                    .catch(function (e) {
+                        lmErr(e);
+                        toast("That audio track could not be decoded");
+                        if (wasPlaying) lmEl.play();
+                    });
             }
 
             function lmRebuildMenus() {
@@ -1971,11 +1294,7 @@
                         }) }],
                         String(auds[0].id),
                         function (it) {
-                            Promise.resolve(lm.selectAudio(Number(it.value)))
-                                .then(function () {
-                                    toast("Switched to " + it.label);
-                                })
-                                .catch(lmErr);
+                            lmSwitchAudio(Number(it.value), it.label);
                         });
                 }
                 if (subs.length) {
@@ -1985,98 +1304,72 @@
                         }));
                     dropdown(el("subDd"), "Subs", [{ items: items }], "-1",
                         function (it) {
-                            if (it.value === "-1") {
-                                try {
-                                    if (lm.unselectSubtitle) lm.unselectSubtitle();
-                                } catch (e) { lmErr(e); }
-                                return;
-                            }
-                            Promise.resolve(lm.selectSubtitle(Number(it.value)))
+                            if (it.value === "-1") return;
+                            Promise.resolve(lmEl.selectSubtitle(Number(it.value)))
                                 .catch(lmErr);
                         });
                 }
             }
 
-            // The native menu numbers audio tracks 0,1,2 among audio streams only
-            // (that is what ffprobe reports). libmedia wants the global stream
-            // index, where the video stream usually occupies 0. Translate.
-            function lmPickAudio(nth) {
-                var auds = lmByType("audio");
-                if (!auds.length) {
-                    lmLog("no audio streams to pick from");
-                    return Promise.resolve();
-                }
-                var target = auds[nth] || auds[0];
-                lmLog("selectAudio nth=" + nth + " -> id " + target.id);
-                return Promise.resolve(lm.selectAudio(target.id))
-                    .then(function () { lmLog("selectAudio resolved"); })
-                    .catch(lmErr);
-            }
-
-            function startLibmedia(atSec, audioIndex) {
-                if (lm) {
-                    if (typeof audioIndex === "number") lmPickAudio(audioIndex);
+            function startLibmedia(atSec, wantAudioNth) {
+                var gesture = typeof wantAudioNth === "number";
+                if (lmEl) {
+                    if (typeof wantAudioNth === "number") {
+                        var have = lmByType("audio");
+                        if (have[wantAudioNth]) {
+                            lmSwitchAudio(have[wantAudioNth].id);
+                        }
+                    }
                     return Promise.resolve(true);
                 }
-                lmLog("startLibmedia at=" + atSec + " audioIndex=" + audioIndex);
-                return loadLibmedia().then(function (Ctor) {
-                    lmLog("constructing AVPlayer");
+                lmLog("swapping in libmedia-video at=" + atSec);
+                return customElements.whenDefined("libmedia-video").then(function () {
+                    var skin = vid.parentNode;
+                    lmEl = document.createElement("libmedia-video");
+                    lmEl.setAttribute("playsinline", "");
+                    lmEl.setAttribute("crossorigin", "anonymous");
+
+                    lmEl.addEventListener("libmediastreams", function (ev) {
+                        lmStreams = ev.detail || [];
+                        lmLog("streams", lmStreams.map(function (t) {
+                            return { id: t.id, mediaType: t.mediaType };
+                        }));
+                        lmRebuildMenus();
+                        el("loading").classList.add("gone");
+                        clearStall();
+                        if (atSec > 1) {
+                            try { lmEl.currentTime = atSec; } catch (e) { }
+                        }
+                        if (typeof wantAudioNth === "number") {
+                            var pick = lmByType("audio");
+                            if (pick[wantAudioNth]) {
+                                lmSwitchAudio(pick[wantAudioNth].id);
+                            }
+                        }
+                        if (gesture) Promise.resolve(lmEl.play()).catch(lmErr);
+                    });
+                    lmEl.addEventListener("error", function () {
+                        el("loading").classList.add("gone");
+                        stall("Cannot play this file",
+                            "The decoder could not handle it. Download the file, "
+                            + "or open it in an app below.");
+                    });
+
                     try { vid.pause(); } catch (e) { }
                     vid.removeAttribute("src");
                     try { vid.load(); } catch (e) { }
-                    el("lm").classList.add("on");
+                    skin.replaceChild(lmEl, vid);
+                    vid = lmEl;
+                    bindMedia(lmEl, false);
+
                     el("loading").classList.remove("gone");
                     el("loadingText").textContent = "Starting the advanced decoder";
-
-                    lm = new Ctor({
-                        container: el("lmHost"),
-                        enableWorker: true,
-                        enableHardware: true,
-                        isLive: false
-                    });
-                    lmWireBar();
-                    lmLog("loading source", STREAM);
-                    return lm.load(STREAM).then(function () {
-                        lmStreams = lm.getStreams ? lm.getStreams() : [];
-                        lmLog("streams", lmStreams.map(function (t) {
-                            return { id: t.id, index: t.index, mediaType: t.mediaType };
-                        }));
-                        var p = prefs();
-                        if (typeof p.volume === "number") {
-                            try { lm.setVolume(p.volume); } catch (e) { }
-                            el("lmVol").value = p.volume;
-                        }
-                        if (typeof p.rate === "number" && p.rate > 0) {
-                            try { lm.setPlaybackRate(p.rate); } catch (e) { }
-                            var opts = el("lmRates").querySelectorAll("button");
-                            Array.prototype.forEach.call(opts, function (n) {
-                                if (parseFloat(n.textContent) === p.rate) {
-                                    n.setAttribute("aria-selected", "true");
-                                } else {
-                                    n.removeAttribute("aria-selected");
-                                }
-                            });
-                        }
-                        if (typeof audioIndex === "number") {
-                            lmPickAudio(audioIndex);
-                        }
-                        return true;
-                    }).then(function () {
-                        lmDuration();
-                        lmLog("ready, duration=" + lmDur.toFixed(1) + "s");
-                        if (atSec > 1) lmPending = atSec;
-                        el("loading").classList.add("gone");
-                        clearStall();
-                        lmRebuildMenus();
-                        el("lmGate").classList.add("on");
-                        lmIcon(false);
-                        return true;
-                    });
+                    lmEl.src = STREAM;
+                    return true;
                 }).catch(function (e) {
                     lmErr(e);
-                    el("loading").classList.add("gone");
                     stall("Cannot play this file",
-                        "The advanced decoder could not handle it. Download the file, "
+                        "The advanced decoder is unavailable. Download the file, "
                         + "or open it in an app below.");
                     return false;
                 });
@@ -2087,13 +1380,16 @@
                 var subs = (info && info.subtitle) || [];
                 lmLog("probe: " + auds.length + " audio, " + subs.length + " subtitle");
 
-                // A native media element cannot switch audio tracks, so a file with
-                // more than one is handed to the decoder up front rather than being
-                // swapped over mid playback.
                 if (auds.length > 1) {
-                    lmLog("multi audio file, using the decoder from the start");
-                    startLibmedia(0);
-                    return;
+                    dropdown(el("audDd"), "Audio",
+                        [{ items: auds.map(function (t, i) {
+                            return { label: t.title, value: String(i) };
+                        }) }],
+                        "0",
+                        function (it) {
+                            startLibmedia(Math.max(0, vid.currentTime || 0),
+                                Number(it.value));
+                        });
                 }
 
                 if (subs.length) {
@@ -2140,16 +1436,17 @@
                     .catch(function () { });
             }
 
-            function wireResume() {
+            function wireResume(m) {
+                m = m || vid;
                 var saved = parseFloat(load(POS_KEY) || "0");
-                var dur = vid.duration;
+                var dur = m.duration;
                 if (saved > 30 && isFinite(dur) && saved < dur - 30) {
                     el("resumeText").textContent = "Stopped at " + clock(saved);
                     el("resume").classList.add("show");
                     el("resumeGo").onclick = function () {
-                        vid.currentTime = saved;
+                        m.currentTime = saved;
                         el("resume").classList.remove("show");
-                        vid.play();
+                        m.play();
                     };
                     el("resumeNo").onclick = function () {
                         store(POS_KEY, "0");
@@ -2157,13 +1454,13 @@
                     };
                 }
                 var last = 0;
-                vid.addEventListener("timeupdate", function () {
-                    var now = vid.currentTime;
+                m.addEventListener("timeupdate", function () {
+                    var now = m.currentTime;
                     if (Math.abs(now - last) < 5) return;
                     last = now;
                     store(POS_KEY, String(now));
                 });
-                vid.addEventListener("ended", function () { store(POS_KEY, "0"); });
+                m.addEventListener("ended", function () { store(POS_KEY, "0"); });
             }
 
             function addMeta(text) {
@@ -2172,6 +1469,46 @@
                 var s = document.createElement("span");
                 s.textContent = text;
                 box.appendChild(s);
+            }
+
+            var metaShown = false;
+
+            function bindMedia(m, watchNative) {
+                var p = prefs();
+                if (typeof p.volume === "number") m.volume = p.volume;
+                if (p.muted) m.muted = true;
+                if (typeof p.rate === "number" && p.rate > 0) m.playbackRate = p.rate;
+
+                m.addEventListener("volumechange", function () {
+                    var q = prefs();
+                    q.volume = m.volume;
+                    q.muted = m.muted;
+                    savePrefs(q);
+                });
+                m.addEventListener("ratechange", function () {
+                    var q = prefs();
+                    q.rate = m.playbackRate;
+                    savePrefs(q);
+                });
+                m.addEventListener("loadedmetadata", function () {
+                    el("loading").classList.add("gone");
+                    if (metaShown) return;
+                    metaShown = true;
+                    if (isFinite(m.duration) && m.duration > 0) {
+                        addMeta(clock(m.duration));
+                    }
+                    wireResume(m);
+                });
+                m.addEventListener("playing", clearStall);
+                m.addEventListener("loadstart", clearStall);
+
+                if (watchNative) {
+                    m.addEventListener("loadeddata", function () {
+                        if (!m.videoWidth && !m.videoHeight) {
+                            startLibmedia(Math.max(0, m.currentTime || 0));
+                        }
+                    });
+                }
             }
 
             function start(info) {
@@ -2191,43 +1528,7 @@
                 addMeta(bytes(info.size));
                 if (MIME) addMeta(MIME);
 
-                var p = prefs();
-                if (typeof p.volume === "number") vid.volume = p.volume;
-                if (p.muted) vid.muted = true;
-                if (typeof p.rate === "number" && p.rate > 0) vid.playbackRate = p.rate;
-
-                vid.addEventListener("volumechange", function () {
-                    var q = prefs();
-                    q.volume = vid.volume;
-                    q.muted = vid.muted;
-                    savePrefs(q);
-                });
-                vid.addEventListener("ratechange", function () {
-                    var q = prefs();
-                    q.rate = vid.playbackRate;
-                    savePrefs(q);
-                });
-
-                var once = false;
-                vid.addEventListener("loadedmetadata", function () {
-                    el("loading").classList.add("gone");
-                    if (once) return;
-                    once = true;
-                    if (isFinite(vid.duration) && vid.duration > 0) {
-                        addMeta(clock(vid.duration));
-                    }
-                    wireResume();
-                });
-
-                vid.addEventListener("playing", clearStall);
-                vid.addEventListener("loadstart", clearStall);
-
-                vid.addEventListener("loadeddata", function () {
-                    if (!vid.videoWidth && !vid.videoHeight) {
-                        startLibmedia(Math.max(0, vid.currentTime || 0));
-                    }
-                });
-
+                bindMedia(vid, true);
                 vid.addEventListener("error", function () {
                     el("loading").classList.add("gone");
                     var e = vid.error;
