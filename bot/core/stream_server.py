@@ -12,7 +12,8 @@ from urllib.parse import quote
 
 from aiohttp import web
 
-from .. import LOGGER, bot_loop
+from .. import LOGGER, bot_loop, service_cores
+from .config_manager import BinConfig
 from ..helper.ext_utils.db_handler import database
 from ..helper.telegram_helper.tg_stream import (
     FULL,
@@ -32,6 +33,7 @@ _runner = None
 
 _PROBE_BYTES = 6 * 1024 * 1024
 _PROBE_TIMEOUT = 45
+_MP4_SAFE_AUDIO = ("aac", "mp3")
 _probe_cache = {}
 _LANG = {
     "eng": "English", "jpn": "Japanese", "spa": "Spanish", "fre": "French",
@@ -111,7 +113,13 @@ async def _probe(cid, mid):
     for st_ in streams:
         kind = st_.get("codec_type")
         if kind == "audio":
-            audio.append({"index": len(audio), "title": _title(st_, len(audio))})
+            audio.append(
+                {
+                    "index": len(audio),
+                    "title": _title(st_, len(audio)),
+                    "codec": (st_.get("codec_name") or "").lower(),
+                }
+            )
         elif kind == "subtitle":
             codec = (st_.get("codec_name") or "").lower()
             if codec in ("dvd_subtitle", "hdmv_pgs_subtitle", "dvb_subtitle"):
@@ -161,7 +169,19 @@ async def _meta(request):
     return web.json_response(info)
 
 
+async def _audio_codec(cid, mid, aidx):
+    try:
+        tracks = await _probe(cid, mid)
+    except Exception:
+        return "aac"
+    for t in tracks.get("audio", []):
+        if t["index"] == aidx:
+            return "copy" if t.get("codec") in _MP4_SAFE_AUDIO else "aac"
+    return "aac"
+
+
 async def _remux(request, cid, mid, aidx):
+    acodec = await _audio_codec(cid, mid, aidx)
     try:
         st = await open_stream(cid, mid, "bulk")
     except StreamGone:
@@ -170,14 +190,21 @@ async def _remux(request, cid, mid, aidx):
     except NoClientAvailable as e:
         raise web.HTTPServiceUnavailable(text=str(e)) from None
 
-    proc = await create_subprocess_exec(
-        "ffmpeg", "-hide_banner", "-loglevel", "error",
-        "-i", "pipe:0",
-        "-map", "0:v:0", "-map", f"0:a:{aidx}",
-        "-c", "copy",
-        "-movflags", "frag_keyframe+empty_moov+default_base_moof",
-        "-f", "mp4", "pipe:1",
-        stdin=PIPE, stdout=PIPE, stderr=PIPE,
+    proc = await _spawn_ffmpeg(
+        [
+            BinConfig.FFMPEG_NAME, "-hide_banner", "-loglevel", "error",
+            "-i", "pipe:0",
+            "-map", "0:v:0", "-map", f"0:a:{aidx}",
+            "-sn", "-dn", "-ignore_unknown",
+            "-threads", "1",
+            "-c:v", "copy", "-c:a", acodec,
+        ]
+        + ([] if acodec == "copy" else ["-b:a", "160k"])
+        + [
+            "-movflags", "frag_keyframe+empty_moov+default_base_moof",
+            "-f", "mp4", "pipe:1",
+        ],
+        f"audio remux (a:{aidx} {acodec})",
     )
     resp = web.StreamResponse(
         status=200,
@@ -324,6 +351,37 @@ async def _dl(request):
     return await _serve(request, "bulk")
 
 
+async def _drain_stderr(proc, what):
+    try:
+        buf = await proc.stderr.read()
+    except Exception:
+        return
+    msg = buf.decode("utf-8", "replace").strip()
+    if msg:
+        LOGGER.error(f"{what}: {msg[-600:]}")
+
+
+def _nice(args):
+    if service_cores:
+        return ["taskset", "-c", service_cores] + args
+    return args
+
+
+async def _spawn_ffmpeg(args, what):
+    args = _nice(args)
+    try:
+        proc = await create_subprocess_exec(
+            *args, stdin=PIPE, stdout=PIPE, stderr=PIPE
+        )
+    except FileNotFoundError:
+        LOGGER.error(f"{what} failed: {BinConfig.FFMPEG_NAME} not found on PATH")
+        raise web.HTTPServiceUnavailable(
+            text=f"{BinConfig.FFMPEG_NAME} is not installed"
+        ) from None
+    ensure_future(_drain_stderr(proc, what))
+    return proc
+
+
 async def _tracks(request):
     _, cid, mid = await _resolve(request)
     try:
@@ -363,11 +421,14 @@ async def _subs(request):
     except NoClientAvailable as e:
         raise web.HTTPServiceUnavailable(text=str(e)) from None
 
-    proc = await create_subprocess_exec(
-        "ffmpeg", "-hide_banner", "-loglevel", "error",
-        "-i", "pipe:0", "-map", f"0:s:{idx}",
-        "-f", "webvtt", "-flush_packets", "1", "pipe:1",
-        stdin=PIPE, stdout=PIPE, stderr=PIPE,
+    proc = await _spawn_ffmpeg(
+        [
+            BinConfig.FFMPEG_NAME, "-hide_banner", "-loglevel", "error",
+            "-threads", "1", "-vn", "-an",
+            "-i", "pipe:0", "-map", f"0:s:{idx}",
+            "-f", "webvtt", "-flush_packets", "1", "pipe:1",
+        ],
+        "subtitle extraction",
     )
     resp = web.StreamResponse(
         status=200,
