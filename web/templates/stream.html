@@ -446,39 +446,48 @@
             left: 0;
             right: 0;
             bottom: 0;
-            display: flex;
+            display: grid;
+            grid-template-columns: auto auto auto 1fr auto auto;
             align-items: center;
-            gap: .5rem;
-            padding: .55rem .7rem;
-            background: linear-gradient(transparent, rgba(0, 0, 3, .92));
+            gap: .35rem;
+            padding: 2.5rem .85rem .8rem;
+            background: linear-gradient(transparent,
+                    rgba(0, 0, 3, .55) 45%, rgba(0, 0, 3, .92));
             opacity: 0;
-            transition: opacity .2s ease;
+            transform: translateY(6px);
+            transition: opacity .22s ease, transform .22s ease;
         }
 
         .lm:hover .lmbar,
         .lm.idle .lmbar,
         .lmbar:focus-within {
             opacity: 1;
+            transform: none;
         }
 
         .lmbtn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 32px;
-            height: 32px;
+            width: 36px;
+            height: 36px;
             flex: none;
             padding: 0;
             border: 0;
-            border-radius: 8px;
+            border-radius: 10px;
             background: none;
             color: var(--text);
             cursor: pointer;
-            transition: background .16s ease;
+            transition: background .16s ease, color .16s ease, transform .12s ease;
         }
 
         .lmbtn:hover {
-            background: rgba(93, 157, 255, .18);
+            background: rgba(93, 157, 255, .16);
+            color: var(--accent-2);
+        }
+
+        .lmbtn:active {
+            transform: scale(.94);
         }
 
         .lmbtn:focus-visible {
@@ -487,39 +496,110 @@
         }
 
         .lmbtn svg {
-            width: 17px;
-            height: 17px;
+            width: 18px;
+            height: 18px;
             fill: currentColor;
+        }
+
+        .lmbtn.play {
+            background: rgba(93, 157, 255, .14);
+        }
+
+        .lmbtn.play:hover {
+            background: var(--accent);
+            color: #000003;
         }
 
         .lmseek {
             position: relative;
-            flex: 1 1 auto;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            touch-action: none;
+        }
+
+        .lmseek::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
             height: 4px;
             border-radius: 999px;
-            background: rgba(203, 210, 229, .2);
-            cursor: pointer;
+            background: rgba(203, 210, 229, .18);
+            transition: height .16s ease;
+        }
+
+        .lmseek:hover::before,
+        .lmseek:focus-visible::before {
+            height: 6px;
+        }
+
+        .lmseek:focus-visible {
+            outline: none;
         }
 
         .lmfill {
             position: absolute;
             left: 0;
-            top: 0;
-            bottom: 0;
+            height: 4px;
             border-radius: 999px;
-            background: var(--accent);
+            background: linear-gradient(90deg, var(--accent), var(--accent-2));
+            transition: height .16s ease;
+        }
+
+        .lmseek:hover .lmfill,
+        .lmseek:focus-visible .lmfill {
+            height: 6px;
         }
 
         .lmfill::after {
             content: "";
             position: absolute;
-            right: -5px;
+            right: -6px;
             top: 50%;
-            width: 10px;
-            height: 10px;
+            width: 12px;
+            height: 12px;
             border-radius: 50%;
-            background: var(--accent-2);
-            transform: translateY(-50%);
+            background: var(--text);
+            box-shadow: 0 2px 8px rgba(0, 0, 3, .7);
+            transform: translateY(-50%) scale(0);
+            transition: transform .16s ease;
+        }
+
+        .lmseek:hover .lmfill::after,
+        .lmseek:focus-visible .lmfill::after {
+            transform: translateY(-50%) scale(1);
+        }
+
+        .lmtime {
+            font-family: var(--mono);
+            font-variant-numeric: tabular-nums;
+            font-size: .74rem;
+            letter-spacing: .01em;
+            color: var(--muted);
+            white-space: nowrap;
+            flex: none;
+            padding: 0 .3rem 0 .15rem;
+        }
+
+        .lmtime b {
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        .lmvol {
+            width: 0;
+            opacity: 0;
+            flex: none;
+            accent-color: var(--accent);
+            transition: width .2s ease, opacity .2s ease;
+        }
+
+        .lmbar:hover .lmvol,
+        .lmvol:focus-visible {
+            width: 72px;
+            opacity: 1;
         }
 
         .lmmenu {
@@ -1172,7 +1252,7 @@
                     <div class="lm" id="lm">
                         <div class="lm-host" id="lmHost"></div>
                         <div class="lmbar">
-                            <button class="lmbtn" type="button" id="lmPlay" aria-label="Play">
+                            <button class="lmbtn play" type="button" id="lmPlay" aria-label="Play">
                                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
                             </button>
                             <button class="lmbtn" type="button" id="lmMute" aria-label="Mute">
@@ -1180,7 +1260,7 @@
                             </button>
                             <input class="lmvol" id="lmVol" type="range" min="0" max="1"
                                 step="0.05" value="1" aria-label="Volume">
-                            <span class="lmtime" id="lmTime">0:00 / 0:00</span>
+                            <span class="lmtime" id="lmTime"><b>0:00</b> / 0:00</span>
                             <div class="lmseek" id="lmSeek" role="slider" tabindex="0"
                                 aria-label="Seek" aria-valuemin="0" aria-valuemax="100"
                                 aria-valuenow="0">
@@ -1538,20 +1618,33 @@
             var lmStreams = [];
 
             function lmErr(e) {
-                try { console.error("libmedia", e); } catch (x) { }
+                try { console.error("[wzx] libmedia", e); } catch (x) { }
+            }
+
+            function lmLog(m, extra) {
+                try {
+                    if (extra === undefined) console.info("[wzx] " + m);
+                    else console.info("[wzx] " + m, extra);
+                } catch (x) { }
             }
 
             function loadLibmedia() {
                 if (window.AVPlayer) return Promise.resolve(window.AVPlayer);
                 if (lmLoading) return lmLoading;
+                lmLog("fetching decoder", LM_SRC);
                 lmLoading = new Promise(function (ok, no) {
                     var sc = document.createElement("script");
                     sc.src = LM_SRC;
+                    sc.crossOrigin = "anonymous";
                     sc.onload = function () {
+                        lmLog("decoder script loaded, AVPlayer=" + typeof window.AVPlayer);
                         if (window.AVPlayer) ok(window.AVPlayer);
-                        else no(new Error("AVPlayer global missing"));
+                        else no(new Error("AVPlayer global missing after load"));
                     };
-                    sc.onerror = function () { no(new Error("decoder script failed")); };
+                    sc.onerror = function (e) {
+                        lmErr(e);
+                        no(new Error("decoder script failed to load"));
+                    };
                     document.head.appendChild(sc);
                 });
                 return lmLoading;
@@ -1608,8 +1701,10 @@
                     if (!dur) return;
                     var pct = Math.max(0, Math.min(100, (t / dur) * 100));
                     fill.style.width = pct + "%";
-                    el("lmTime").textContent =
-                        lmClock(t, dur) + " / " + lmClock(dur, dur);
+                    el("lmTime").innerHTML = "<b></b> / ";
+                    el("lmTime").firstChild.textContent = lmClock(t, dur);
+                    el("lmTime").appendChild(
+                        document.createTextNode(lmClock(dur, dur)));
                     seek.setAttribute("aria-valuenow", Math.round(pct));
                     if (t > 30) store(POS_KEY, String(t));
                 }
@@ -1687,12 +1782,35 @@
                         box.classList.contains("open") ? "true" : "false");
                 };
 
-                seek.addEventListener("click", function (ev) {
+                var dragging = false;
+
+                function seekFromEvent(ev) {
                     if (!dur) dur = lmDuration();
                     if (!dur) return;
                     var r = seek.getBoundingClientRect();
-                    var x = Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width));
-                    lmSeekTo(x * dur);
+                    var cx = ev.clientX !== undefined ? ev.clientX
+                        : (ev.touches && ev.touches[0] ? ev.touches[0].clientX : 0);
+                    var x = Math.max(0, Math.min(1, (cx - r.left) / r.width));
+                    fill.style.width = (x * 100) + "%";
+                    return x * dur;
+                }
+
+                seek.addEventListener("pointerdown", function (ev) {
+                    dragging = true;
+                    seek.setPointerCapture && seek.setPointerCapture(ev.pointerId);
+                    seekFromEvent(ev);
+                });
+                seek.addEventListener("pointermove", function (ev) {
+                    if (dragging) seekFromEvent(ev);
+                });
+                seek.addEventListener("pointerup", function (ev) {
+                    if (!dragging) return;
+                    dragging = false;
+                    var t = seekFromEvent(ev);
+                    if (t !== undefined) lmSeekTo(t);
+                });
+                seek.addEventListener("pointercancel", function () {
+                    dragging = false;
                 });
 
                 seek.addEventListener("keydown", function (ev) {
@@ -1734,9 +1852,9 @@
                 if (auds.length > 1) {
                     dropdown(el("audDd"), "Audio",
                         [{ items: auds.map(function (t, i) {
-                            return { label: lmLabel(t, i), value: String(t.index) };
+                            return { label: lmLabel(t, i), value: String(t.id) };
                         }) }],
-                        String(auds[0].index),
+                        String(auds[0].id),
                         function (it) {
                             Promise.resolve(lm.selectAudio(Number(it.value)))
                                 .then(function () {
@@ -1748,7 +1866,7 @@
                 if (subs.length) {
                     var items = [{ label: "Off", value: "-1" }].concat(
                         subs.map(function (t, i) {
-                            return { label: lmLabel(t, i), value: String(t.index) };
+                            return { label: lmLabel(t, i), value: String(t.id) };
                         }));
                     dropdown(el("subDd"), "Subs", [{ items: items }], "-1",
                         function (it) {
@@ -1769,9 +1887,15 @@
             // index, where the video stream usually occupies 0. Translate.
             function lmPickAudio(nth) {
                 var auds = lmByType(1);
-                if (!auds.length) return Promise.resolve();
+                if (!auds.length) {
+                    lmLog("no audio streams to pick from");
+                    return Promise.resolve();
+                }
                 var target = auds[nth] || auds[0];
-                return Promise.resolve(lm.selectAudio(target.index)).catch(lmErr);
+                lmLog("selectAudio nth=" + nth + " -> id " + target.id);
+                return Promise.resolve(lm.selectAudio(target.id))
+                    .then(function () { lmLog("selectAudio resolved"); })
+                    .catch(lmErr);
             }
 
             function startLibmedia(atSec, audioIndex) {
@@ -1779,7 +1903,9 @@
                     if (typeof audioIndex === "number") lmPickAudio(audioIndex);
                     return Promise.resolve(true);
                 }
+                lmLog("startLibmedia at=" + atSec + " audioIndex=" + audioIndex);
                 return loadLibmedia().then(function (Ctor) {
+                    lmLog("constructing AVPlayer");
                     try { vid.pause(); } catch (e) { }
                     vid.removeAttribute("src");
                     try { vid.load(); } catch (e) { }
@@ -1794,8 +1920,12 @@
                         isLive: false
                     });
                     lmWireBar();
+                    lmLog("loading source", STREAM);
                     return lm.load(STREAM).then(function () {
                         lmStreams = lm.getStreams ? lm.getStreams() : [];
+                        lmLog("streams", lmStreams.map(function (t) {
+                            return { id: t.id, index: t.index, mediaType: t.mediaType };
+                        }));
                         var p = prefs();
                         if (typeof p.volume === "number") {
                             try { lm.setVolume(p.volume); } catch (e) { }
@@ -1817,6 +1947,7 @@
                         }
                         return lm.play();
                     }).then(function () {
+                        lmLog("playing");
                         if (atSec > 1) lmSeekTo(atSec);
                         el("loading").classList.add("gone");
                         clearStall();
@@ -1837,17 +1968,15 @@
             function applyTracks(info) {
                 var auds = (info && info.audio) || [];
                 var subs = (info && info.subtitle) || [];
+                lmLog("probe: " + auds.length + " audio, " + subs.length + " subtitle");
 
+                // A native media element cannot switch audio tracks, so a file with
+                // more than one is handed to the decoder up front rather than being
+                // swapped over mid playback.
                 if (auds.length > 1) {
-                    dropdown(el("audDd"), "Audio",
-                        [{ items: auds.map(function (t) {
-                            return { label: t.title, value: String(t.index) };
-                        }) }],
-                        String(auds[0].index),
-                        function (it) {
-                            startLibmedia(Math.max(0, vid.currentTime || 0),
-                                Number(it.value));
-                        });
+                    lmLog("multi audio file, using the decoder from the start");
+                    startLibmedia(0);
+                    return;
                 }
 
                 if (subs.length) {
