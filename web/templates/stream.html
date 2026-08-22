@@ -349,8 +349,43 @@
                 0 0 0 1px rgba(42, 95, 208, .3);
         }
 
-        .frame.dead {
+        .frame.stalled .shell {
+            filter: saturate(.35) brightness(.55);
+        }
+
+        .stall {
+            position: absolute;
+            inset: 0;
+            z-index: 4;
             display: none;
+            place-items: center;
+            padding: 1rem;
+            background: rgba(0, 0, 3, .72);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
+        }
+
+        .frame.stalled .stall {
+            display: grid;
+        }
+
+        .stall-box {
+            max-width: 26rem;
+            text-align: center;
+            padding: .9rem 1.1rem;
+            border-radius: var(--r);
+            border: 1px solid rgba(93, 157, 255, .3);
+            background: rgba(4, 4, 11, .92);
+            font-size: .84rem;
+            line-height: 1.45;
+        }
+
+        .stall-box b {
+            display: block;
+            margin-bottom: .25rem;
+            font-family: var(--display);
+            font-weight: 600;
+            letter-spacing: .03em;
         }
 
         .fill {
@@ -962,6 +997,9 @@
                             </video-minimal-skin>
                         </video-player>
                     </div>
+                    <div class="stall">
+                        <div class="stall-box" id="stallText"></div>
+                    </div>
                     <div class="loading" id="loading">
                         <div class="load-copy">
                             <b>Opening the stream</b>
@@ -1069,6 +1107,20 @@
                 var h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), q = s % 60;
                 var pad = function (x) { return x < 10 ? "0" + x : "" + x; };
                 return (h ? h + ":" + pad(m) : "" + m) + ":" + pad(q);
+            }
+
+            function stall(head, body) {
+                var box = el("stallText");
+                box.innerHTML = "";
+                var b = document.createElement("b");
+                b.textContent = head;
+                box.appendChild(b);
+                box.appendChild(document.createTextNode(body));
+                el("frame").classList.add("stalled");
+            }
+
+            function clearStall() {
+                el("frame").classList.remove("stalled");
             }
 
             function notice(html) {
@@ -1298,7 +1350,7 @@
                                 if (was) vid.play();
                             });
                             toast(it.value === "0" ? "Original audio"
-                                : "Switched audio, seeking is off");
+                                : "Switched audio, restarts from the beginning");
                         });
                 }
 
@@ -1414,11 +1466,19 @@
                     savePrefs(q);
                 });
 
+                var once = false;
                 vid.addEventListener("loadedmetadata", function () {
                     el("loading").classList.add("gone");
-                    if (isFinite(vid.duration) && vid.duration > 0) addMeta(clock(vid.duration));
+                    if (once) return;
+                    once = true;
+                    if (isFinite(vid.duration) && vid.duration > 0) {
+                        addMeta(clock(vid.duration));
+                    }
                     wireResume();
                 });
+
+                vid.addEventListener("playing", clearStall);
+                vid.addEventListener("loadstart", clearStall);
 
                 vid.addEventListener("loadeddata", function () {
                     if (!vid.videoWidth && !vid.videoHeight) {
@@ -1433,13 +1493,14 @@
                     el("loading").classList.add("gone");
                     var e = vid.error;
                     if (e && e.code === 4) {
-                        el("frame").classList.add("dead");
-                        notice("<b>This browser cannot decode this file.</b> " +
-                            (MIME || "The container or codec") +
-                            " is not supported here. Pick a player below, or download it.");
+                        stall("Cannot decode this file",
+                            (MIME || "This container or codec") +
+                            " is not supported by this browser. Pick a player " +
+                            "below, or download it.");
                     } else {
-                        notice("<b>Playback stopped.</b> The connection dropped or the " +
-                            "link expired. Reload the page, or pick a player below.");
+                        stall("Playback stopped",
+                            "The connection dropped or the link expired. Reload " +
+                            "the page, or pick a player below.");
                     }
                 });
 
