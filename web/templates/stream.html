@@ -1729,6 +1729,7 @@
             var cueAt = -2;
             var subTimer = null;
             var subTrack = "-1";
+            var cueStore = {};
 
             var SUB_SIZES = [["Small", "1.05rem"], ["Medium", "1.4rem"],
                 ["Large", "1.85rem"], ["Huge", "2.4rem"]];
@@ -1822,6 +1823,15 @@
                     toast("Subtitles off");
                     return;
                 }
+                var held = cueStore[subTrack];
+                if (held) {
+                    cues = held;
+                    applySubStyle();
+                    subTimer = setInterval(paintCue, 200);
+                    paintCue();
+                    toast((label || "Subtitles") + " on");
+                    return;
+                }
                 toast("Extracting subtitles, this can take a moment");
                 fetch("/subs/" + encodeURIComponent(TOKEN) + "/"
                     + encodeURIComponent(subTrack) + ".vtt", { cache: "force-cache" })
@@ -1836,6 +1846,7 @@
                             toast("That subtitle track is empty");
                             return;
                         }
+                        cueStore[subTrack] = cues;
                         applySubStyle();
                         subTimer = setInterval(paintCue, 200);
                         paintCue();

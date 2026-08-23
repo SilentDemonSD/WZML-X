@@ -625,10 +625,25 @@ async def subs_route(token: str, track: str, request: Request):
     if not idx.isdigit() or len(idx) > 2:
         raise HTTPException(status_code=404, detail="Unknown track")
 
-    upstream = await http_session.get(f"{STREAM_BASE}/_subs/{token}/{idx}")
-    if upstream.status != 200:
+    forward = {}
+    if tag := request.headers.get("if-none-match"):
+        forward["If-None-Match"] = tag
+
+    upstream = await http_session.get(
+        f"{STREAM_BASE}/_subs/{token}/{idx}", headers=forward
+    )
+    if upstream.status not in (200, 304):
         upstream.release()
         raise HTTPException(status_code=upstream.status, detail="Track unavailable")
+
+    passed = {"Referrer-Policy": "no-referrer"}
+    for name in ("Cache-Control", "ETag"):
+        if value := upstream.headers.get(name):
+            passed[name] = value
+
+    if upstream.status == 304:
+        upstream.release()
+        return Response(status_code=304, headers=passed)
 
     async def _pump():
         try:
@@ -641,7 +656,7 @@ async def subs_route(token: str, track: str, request: Request):
         _pump(),
         status_code=200,
         media_type="text/vtt; charset=utf-8",
-        headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"},
+        headers=passed,
     )
 
 
@@ -651,11 +666,16 @@ async def tracks_route(token: str, request: Request):
         raise HTTPException(status_code=404, detail="Unknown link")
     async with http_session.get(f"{STREAM_BASE}/_tracks/{token}") as upstream:
         body = await upstream.read()
+        cache = upstream.headers.get("Cache-Control", "no-store")
+        tag = upstream.headers.get("ETag")
+    headers = {"Cache-Control": cache}
+    if tag:
+        headers["ETag"] = tag
     return Response(
         content=body,
         status_code=upstream.status,
         media_type="application/json",
-        headers={"Cache-Control": "no-store"},
+        headers=headers,
     )
 
 

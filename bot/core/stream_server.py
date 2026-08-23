@@ -2,8 +2,11 @@ from asyncio import (
     CancelledError,
     create_subprocess_exec,
     ensure_future,
+    get_running_loop,
+    shield,
     wait_for,
 )
+from collections import OrderedDict
 from json import loads
 from os import getenv
 from re import compile as re_compile
@@ -33,7 +36,14 @@ _runner = None
 
 _PROBE_BYTES = 6 * 1024 * 1024
 _PROBE_TIMEOUT = 45
-_probe_cache = {}
+_PROBE_KEEP = 128
+_probe_cache = OrderedDict()
+
+_VTT_TOTAL_MAX = 48 * 1024 * 1024
+_VTT_ENTRY_MAX = 6 * 1024 * 1024
+_vtt_cache = OrderedDict()
+_vtt_bytes = 0
+_vtt_inflight = {}
 _LANG = {
     "eng": "English", "jpn": "Japanese", "spa": "Spanish", "fre": "French",
     "fra": "French", "ger": "German", "deu": "German", "ita": "Italian",
@@ -87,6 +97,7 @@ async def _prefix(cid, mid, size):
 async def _probe(cid, mid):
     key = (cid, mid)
     if key in _probe_cache:
+        _probe_cache.move_to_end(key)
         return _probe_cache[key]
     info = await probe(cid, mid)
     raw = await _prefix(cid, mid, info["size"] or _PROBE_BYTES)
@@ -127,9 +138,9 @@ async def _probe(cid, mid):
                 {"index": len(subtitle), "title": _title(st_, len(subtitle))}
             )
     result = {"audio": audio, "subtitle": subtitle}
-    if len(_probe_cache) > 128:
-        _probe_cache.clear()
     _probe_cache[key] = result
+    while len(_probe_cache) > _PROBE_KEEP:
+        _probe_cache.popitem(last=False)
     return result
 
 
@@ -292,9 +303,16 @@ async def _spawn_ffmpeg(args, what):
 async def _tracks(request):
     _, cid, mid = await _resolve(request)
     try:
-        return web.json_response(await _probe(cid, mid))
+        return web.json_response(
+            await _probe(cid, mid),
+            headers={
+                "Cache-Control": "private, max-age=3600",
+                "ETag": f'"tracks-{cid}-{mid}"',
+            },
+        )
     except StreamGone:
         purge_fid(cid, mid)
+        purge_vtt(cid, mid)
         raise web.HTTPNotFound(text="file is gone") from None
     except NoClientAvailable as e:
         raise web.HTTPServiceUnavailable(text=str(e)) from None
@@ -312,6 +330,48 @@ async def _pump(st, resp, start, end):
         await gen.aclose()
 
 
+def _vtt_keep(key, data):
+    global _vtt_bytes
+    if not data or len(data) > _VTT_ENTRY_MAX:
+        return
+    old = _vtt_cache.pop(key, None)
+    if old is not None:
+        _vtt_bytes -= len(old)
+    _vtt_cache[key] = data
+    _vtt_bytes += len(data)
+    while _vtt_bytes > _VTT_TOTAL_MAX and _vtt_cache:
+        _, dropped = _vtt_cache.popitem(last=False)
+        _vtt_bytes -= len(dropped)
+
+
+def _vtt_reply(request, key, data):
+    tag = f'"{key[0]}-{key[1]}-{key[2]}-{len(data)}"'
+    if request.headers.get("If-None-Match") == tag:
+        return web.Response(
+            status=304,
+            headers={
+                "ETag": tag,
+                "Cache-Control": "private, max-age=86400",
+                "Access-Control-Allow-Origin": "*",
+            },
+        )
+    return web.Response(
+        body=data,
+        headers={
+            "Content-Type": "text/vtt; charset=utf-8",
+            "ETag": tag,
+            "Cache-Control": "private, max-age=86400",
+            "Access-Control-Allow-Origin": "*",
+        },
+    )
+
+
+def purge_vtt(cid, mid):
+    global _vtt_bytes
+    for key in [k for k in _vtt_cache if k[0] == cid and k[1] == mid]:
+        _vtt_bytes -= len(_vtt_cache.pop(key))
+
+
 async def _subs(request):
     _, cid, mid = await _resolve(request)
     try:
@@ -320,10 +380,27 @@ async def _subs(request):
         raise web.HTTPNotFound(text="bad track") from None
     if idx < 0 or idx > 31:
         raise web.HTTPNotFound(text="bad track")
+
+    key = (cid, mid, idx)
+    hit = _vtt_cache.get(key)
+    if hit is not None:
+        _vtt_cache.move_to_end(key)
+        return _vtt_reply(request, key, hit)
+
+    pending = _vtt_inflight.get(key)
+    if pending is not None:
+        try:
+            shared = await shield(pending)
+        except Exception:
+            shared = None
+        if shared:
+            return _vtt_reply(request, key, shared)
+
     try:
         st = await open_stream(cid, mid, "bulk")
     except StreamGone:
         purge_fid(cid, mid)
+        purge_vtt(cid, mid)
         raise web.HTTPNotFound(text="file is gone") from None
     except NoClientAvailable as e:
         raise web.HTTPServiceUnavailable(text=str(e)) from None
@@ -337,11 +414,16 @@ async def _subs(request):
         ],
         "subtitle extraction",
     )
+    done = get_running_loop().create_future()
+    done.add_done_callback(lambda f: f.exception())
+    _vtt_inflight[key] = done
+
     resp = web.StreamResponse(
         status=200,
         headers={
             "Content-Type": "text/vtt; charset=utf-8",
-            "Cache-Control": "no-store",
+            "Cache-Control": "private, max-age=86400",
+            "ETag": f'"{cid}-{mid}-{idx}-live"',
             "Access-Control-Allow-Origin": "*",
         },
     )
@@ -364,16 +446,40 @@ async def _subs(request):
                 pass
 
     pusher = ensure_future(feed())
+    buf = []
+    seen = 0
     try:
         while True:
             chunk = await proc.stdout.read(65536)
             if not chunk:
                 break
+            if buf is not None:
+                seen += len(chunk)
+                if seen > _VTT_ENTRY_MAX:
+                    buf = None
+                else:
+                    buf.append(chunk)
             await resp.write(chunk)
         await resp.write_eof()
+        try:
+            rc = await wait_for(proc.wait(), timeout=10)
+        except Exception:
+            rc = None
+        if rc == 0 and buf:
+            data = b"".join(buf)
+            _vtt_keep(key, data)
+            if not done.done():
+                done.set_result(data)
+            LOGGER.info(
+                f"subtitle track cached: {cid}/{mid}/{idx} ({len(data)} bytes)"
+            )
     except (ConnectionResetError, ConnectionError, CancelledError):
         LOGGER.debug(f"subtitle stream aborted: {cid}/{mid}")
     finally:
+        if not done.done():
+            done.set_result(None)
+        if _vtt_inflight.get(key) is done:
+            del _vtt_inflight[key]
         pusher.cancel()
         try:
             proc.kill()
