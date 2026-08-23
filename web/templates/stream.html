@@ -353,6 +353,36 @@
             filter: saturate(.35) brightness(.55);
         }
 
+        .subs {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: var(--sub-pos, 8%);
+            display: none;
+            justify-content: center;
+            padding: 0 6%;
+            pointer-events: none;
+            z-index: 4;
+        }
+
+        .subs.on {
+            display: flex;
+        }
+
+        .subs span {
+            font-weight: 600;
+            font-size: var(--sub-size, 1.4rem);
+            line-height: 1.35;
+            letter-spacing: .01em;
+            color: #fff;
+            text-align: center;
+            background: rgba(0, 0, 0, .62);
+            padding: .16em .5em;
+            border-radius: .3em;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, .9);
+            white-space: pre-wrap;
+        }
+
         .stall {
             position: absolute;
             inset: 0;
@@ -398,6 +428,10 @@
             display: block;
             width: 100%;
             height: 100%;
+        }
+
+        video-player {
+            position: relative;
         }
 
         .shell video {
@@ -970,6 +1004,7 @@
                             <video-minimal-skin>
                                 <video id="player" playsinline webkit-playsinline preload="metadata"></video>
                             </video-minimal-skin>
+                            <div class="subs" id="subs"><span id="subsText"></span></div>
                         </video-player>
                     </div>
                     <div class="stall">
@@ -1032,6 +1067,7 @@
             <div class="controls">
                 <div class="dd" id="audDd"></div>
                 <div class="dd" id="subDd"></div>
+                <div class="dd" id="subCfgDd"></div>
                 <div class="spacer"></div>
                 <div class="dd show" id="appDd"></div>
             </div>
@@ -1336,11 +1372,17 @@
                 } else if (Number(id) < 0) {
                     this.#subsOn = false;
                 } else {
-                    await p.selectSubtitle(id);
                     this.#subsOn = true;
+                    const cur = p.selectedSubtitleStream;
+                    if (!cur || cur.id !== Number(id)) {
+                        try { await p.selectSubtitle(id); } catch (e) { }
+                    }
                 }
                 await this.#settle();
                 this.#applySubs();
+                if (kind !== "audio" && this.#subsOn && this.#started) {
+                    await this.#doSeek(this.#time);
+                }
             }
 
             play() {
@@ -1546,7 +1588,9 @@
                         b.className = "dd-item";
                         b.setAttribute("role", "option");
                         b.textContent = it.label;
-                        if (it.value === current) {
+                        if (Array.isArray(current)
+                        ? current.indexOf(it.value) !== -1
+                        : it.value === current) {
                             b.setAttribute("aria-selected", "true");
                             setLabel(it.label);
                         }
@@ -1681,22 +1725,170 @@
                 el("appDd").querySelector(".dd-btn b").textContent = "an app";
             }
 
-            var wanted = null;
+            var cues = [];
+            var cueAt = -2;
+            var subTimer = null;
+            var subTrack = "-1";
 
-            function holdSubtitle() {
-                if (!wanted) return;
-                if (wanted.mode !== "showing") wanted.mode = "showing";
-                for (var i = 0; i < vid.textTracks.length; i++) {
-                    var t = vid.textTracks[i];
-                    if (t !== wanted && t.mode === "showing") t.mode = "disabled";
+            var SUB_SIZES = [["Small", "1.05rem"], ["Medium", "1.4rem"],
+                ["Large", "1.85rem"], ["Huge", "2.4rem"]];
+            var SUB_POS = [["Bottom", "3%"], ["Low", "8%"],
+                ["Raised", "15%"], ["High", "23%"]];
+
+            function subStyle() {
+                var p = prefs();
+                return {
+                    size: p.subSize || "1.4rem",
+                    pos: p.subPos || "8%"
+                };
+            }
+
+            function applySubStyle() {
+                var st = subStyle();
+                var r = document.documentElement.style;
+                r.setProperty("--sub-size", st.size);
+                r.setProperty("--sub-pos", st.pos);
+            }
+
+            function stamp(txt) {
+                var bits = txt.trim().split(":");
+                var out = 0;
+                for (var i = 0; i < bits.length; i++) {
+                    out = out * 60 + parseFloat(bits[i].replace(",", "."));
                 }
+                return isFinite(out) ? out : 0;
+            }
+
+            function parseVtt(text) {
+                var lines = text.replace(/\r/g, "").split("\n");
+                var out = [];
+                var i = 0;
+                while (i < lines.length) {
+                    var line = lines[i++];
+                    if (line.indexOf("-->") === -1) continue;
+                    var half = line.split("-->");
+                    var from = stamp(half[0]);
+                    var to = stamp(half[1].trim().split(/\s+/)[0]);
+                    var buf = [];
+                    while (i < lines.length && lines[i].trim() !== "") {
+                        buf.push(lines[i++]);
+                    }
+                    if (to > from) {
+                        out.push({
+                            s: from, e: to,
+                            t: buf.join("\n").replace(/<[^>]*>/g, "")
+                        });
+                    }
+                }
+                out.sort(function (a, b) { return a.s - b.s; });
+                return out;
+            }
+
+            function paintCue() {
+                if (!vid) return;
+                var t = vid.currentTime || 0;
+                var lo = 0, hi = cues.length - 1, hit = -1;
+                while (lo <= hi) {
+                    var mid = (lo + hi) >> 1;
+                    if (t < cues[mid].s) hi = mid - 1;
+                    else if (t > cues[mid].e) lo = mid + 1;
+                    else { hit = mid; break; }
+                }
+                if (hit === cueAt) return;
+                cueAt = hit;
+                var box = el("subs");
+                if (hit === -1) {
+                    box.classList.remove("on");
+                    el("subsText").textContent = "";
+                } else {
+                    el("subsText").textContent = cues[hit].t;
+                    box.classList.add("on");
+                }
+            }
+
+            function stopSubs() {
+                if (subTimer) clearInterval(subTimer);
+                subTimer = null;
+                cues = [];
+                cueAt = -2;
+                el("subs").classList.remove("on");
+                el("subsText").textContent = "";
+            }
+
+            function setSubtitleTrack(value, label) {
+                subTrack = String(value);
+                stopSubs();
+                if (subTrack === "-1") {
+                    toast("Subtitles off");
+                    return;
+                }
+                toast("Extracting subtitles, this can take a moment");
+                fetch("/subs/" + encodeURIComponent(TOKEN) + "/"
+                    + encodeURIComponent(subTrack) + ".vtt", { cache: "force-cache" })
+                    .then(function (r) {
+                        if (!r.ok) throw new Error("vtt " + r.status);
+                        return r.text();
+                    })
+                    .then(function (txt) {
+                        if (subTrack === "-1") return;
+                        cues = parseVtt(txt);
+                        if (!cues.length) {
+                            toast("That subtitle track is empty");
+                            return;
+                        }
+                        applySubStyle();
+                        subTimer = setInterval(paintCue, 200);
+                        paintCue();
+                        toast((label || "Subtitles") + " on");
+                    })
+                    .catch(function (e) {
+                        lmErr(e);
+                        toast("Could not load that subtitle track");
+                    });
+            }
+
+            function buildSubStyleMenu() {
+                var st = subStyle();
+                dropdown(el("subCfgDd"), "Text", [
+                    { label: "Size", items: SUB_SIZES.map(function (x) {
+                        return { label: x[0], value: "s:" + x[1] };
+                    }) },
+                    { label: "Position", items: SUB_POS.map(function (x) {
+                        return { label: x[0], value: "p:" + x[1] };
+                    }) }
+                ], ["s:" + st.size, "p:" + st.pos], function (it) {
+                    var q = prefs();
+                    if (it.value.charAt(0) === "s") q.subSize = it.value.slice(2);
+                    else q.subPos = it.value.slice(2);
+                    savePrefs(q);
+                    applySubStyle();
+                    buildSubStyleMenu();
+                });
+                el("subCfgDd").querySelector(".dd-btn b").textContent = "Style";
+            }
+
+            function buildSubMenu() {
+                var list = (probeInfo && probeInfo.subtitle) || [];
+                if (!list.length) return;
+                var items = [{ label: "Off", value: "-1" }].concat(
+                    list.map(function (t, i) {
+                        return {
+                            label: t.title || ("Track " + (i + 1)),
+                            value: String(t.index)
+                        };
+                    }));
+                dropdown(el("subDd"), "Subs", [{ items: items }], subTrack,
+                    function (it) {
+                        setSubtitleTrack(it.value, it.label);
+                        buildSubMenu();
+                    });
+                buildSubStyleMenu();
             }
 
             var lmEl = null;
             var lmStreams = [];
             var probeInfo = null;
             var lmCurAudio = null;
-            var lmCurSub = "-1";
 
             function lmErr(e) {
                 try { console.error("[wzx] libmedia", e); } catch (x) { }
@@ -1757,19 +1949,7 @@
                             lmSwitchAudio(Number(it.value), it.label);
                         });
                 }
-                if (subs.length) {
-                    var items = [{ label: "Off", value: "-1" }].concat(
-                        subs.map(function (t, i) {
-                            return { label: lmLabel(t, i, "subtitle"),
-                                value: String(t.id) };
-                        }));
-                    dropdown(el("subDd"), "Subs", [{ items: items }], lmCurSub,
-                        function (it) {
-                            lmCurSub = it.value;
-                            Promise.resolve(lmEl.selectSubtitle(Number(it.value)))
-                                .catch(lmErr);
-                        });
-                }
+                buildSubMenu();
             }
 
             function startLibmedia(atSec, wantAudioNth) {
@@ -1867,41 +2047,7 @@
                         });
                 }
 
-                if (subs.length) {
-                    var items = [{ label: "Off", value: "-1" }].concat(
-                        subs.map(function (t) {
-                            return { label: t.title, value: String(t.index) };
-                        }));
-                    dropdown(el("subDd"), "Subs", [{ items: items }], "-1",
-                        function (it) {
-                            var old = vid.querySelectorAll("track");
-                            Array.prototype.forEach.call(old, function (n) { n.remove(); });
-                            for (var i = 0; i < vid.textTracks.length; i++) {
-                                vid.textTracks[i].mode = "disabled";
-                            }
-                            wanted = null;
-                            if (it.value === "-1") return;
-                            var tr = document.createElement("track");
-                            tr.kind = "subtitles";
-                            tr.label = it.label;
-                            tr.src = location.origin + "/subs/" +
-                                encodeURIComponent(TOKEN) + "/" +
-                                encodeURIComponent(it.value) + ".vtt";
-                            tr.srclang = "und";
-                            vid.appendChild(tr);
-                            wanted = tr.track || null;
-                            if (wanted) wanted.mode = "showing";
-                            tr.addEventListener("load", function () {
-                                wanted = tr.track || wanted;
-                                if (wanted) wanted.mode = "showing";
-                            });
-                            tr.addEventListener("error", function () {
-                                wanted = null;
-                                toast("Could not load that subtitle track");
-                            });
-                            toast("Extracting subtitles, cues appear as they load");
-                        });
-                }
+                buildSubMenu();
             }
 
             function loadTracks() {
@@ -1996,10 +2142,8 @@
                 el("dl").href = DIRECT;
                 el("dl").setAttribute("download", FILE);
                 buildApps();
+                applySubStyle();
                 loadTracks();
-                if (vid.textTracks) {
-                    vid.textTracks.addEventListener("change", holdSubtitle);
-                }
                 addMeta(bytes(info.size));
                 if (MIME) addMeta(MIME);
 
@@ -2084,8 +2228,7 @@
                 if (!lmEl || !/division by zero/i.test(msg)) return;
                 e.preventDefault();
                 lmErr(r);
-                Promise.resolve(lmEl.selectSubtitle(-1)).catch(lmErr);
-                toast("Subtitles turned off, that track stopped playback");
+                toast("Playback hit a decoder fault, try reloading");
             });
 
             el("copy").onclick = function () {
