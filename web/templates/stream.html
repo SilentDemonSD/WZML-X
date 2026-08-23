@@ -1085,7 +1085,6 @@
             #host = null;
             #time = 0;
             #dur = 0;
-            #scale = 0;
             #paused = true;
             #ended = false;
             #ready = 0;
@@ -1098,6 +1097,7 @@
             #loaded = false;
             #started = false;
             #pendingSeek = null;
+            #queue = Promise.resolve();
 
             constructor() {
                 super();
@@ -1147,14 +1147,7 @@
             #seconds(pts) {
                 const v = Number(pts);
                 if (!isFinite(v) || v < 0) return 0;
-                if (!this.#scale) {
-                    const d = this.#dur;
-                    if (d > 0) {
-                        this.#scale = v / 1e6 <= d * 1.5 ? 1e6
-                            : (v / 1e3 <= d * 1.5 ? 1e3 : 1);
-                    } else return v / 1e6;
-                }
-                return v / this.#scale;
+                return v / 1000;
             }
 
             #durationFrom(streams) {
@@ -1232,38 +1225,88 @@
                 }
             }
 
-            async play() {
-                if (!this.#player || !this.#loaded) return;
-                await this.#player.play();
-                this.#started = true;
-                this.#paused = false;
-                this.#emit("play");
+            #run(fn) {
+                const step = () => fn();
+                const next = this.#queue.then(step, step);
+                this.#queue = next.then(() => { }, () => { });
+                return next;
+            }
+
+            #playable(st) { return st === 4 || st === 7 || st === 8; }
+
+            #active(st) { return st === 5 || st === 6; }
+
+            #transient(st) { return st === 2 || st === 3 || st === 10; }
+
+            async #settle() {
+                const p = this.#player;
+                if (!p) return;
+                for (let i = 0; i < 80 && this.#transient(p.status); i++) {
+                    await new Promise((r) => setTimeout(r, 25));
+                }
+            }
+
+            async #doPlay() {
+                const p = this.#player;
+                if (!p || !this.#loaded) return;
+                await this.#settle();
+                if (this.#active(p.status)) {
+                    this.#started = true;
+                } else if (this.#playable(p.status)) {
+                    await p.play();
+                    this.#started = true;
+                } else {
+                    this.#paused = true;
+                    this.#emit("pause");
+                    return;
+                }
                 if (this.#pendingSeek !== null) {
                     const at = this.#pendingSeek;
                     this.#pendingSeek = null;
-                    this.#seekTo(at);
+                    await this.#doSeek(at);
                 }
+            }
+
+            async #doPause() {
+                const p = this.#player;
+                if (!p || !this.#started) return;
+                await this.#settle();
+                if (this.#active(p.status)) p.pause();
+            }
+
+            async #doSeek(secs) {
+                const p = this.#player;
+                if (!p) return;
+                const ms = Math.max(0, Math.round(secs * 1000));
+                this.#emit("seeking");
+                try {
+                    await p.seek(BigInt(ms));
+                } catch (e) {
+                    try { await p.seek(ms); } catch (e2) { }
+                }
+                this.#emit("seeked");
+                this.#emit("timeupdate");
+            }
+
+            async #doSelect(kind, id) {
+                const p = this.#player;
+                if (!p) return;
+                await this.#settle();
+                if (kind === "audio") await p.selectAudio(id);
+                else await p.selectSubtitle(id);
+                await this.#settle();
+            }
+
+            play() {
+                this.#paused = false;
+                this.#emit("play");
+                return this.#run(() => this.#doPlay());
             }
 
             pause() {
-                if (!this.#player || !this.#started) return;
-                this.#player.pause();
                 this.#paused = true;
                 this.#emit("pause");
-            }
-
-            #seekTo(secs) {
-                if (!this.#player) return;
-                const ms = Math.max(0, Math.round(secs * 1000));
-                try {
-                    Promise.resolve(this.#player.seek(BigInt(ms))).catch(() => { });
-                } catch (e) {
-                    try {
-                        Promise.resolve(this.#player.seek(ms)).catch(() => { });
-                    } catch (e2) { }
-                }
-                this.#emit("seeking");
-                this.#emit("timeupdate");
+                this.#run(() => this.#doPause());
             }
 
             get paused() { return this.#paused; }
@@ -1286,7 +1329,7 @@
                     this.#emit("timeupdate");
                     return;
                 }
-                this.#seekTo(t);
+                this.#run(() => this.#doSeek(t));
             }
 
             get volume() { return this.#vol; }
@@ -1314,13 +1357,11 @@
             }
 
             selectAudio(id) {
-                return this.#player ? this.#player.selectAudio(id) : Promise.resolve();
+                return this.#run(() => this.#doSelect("audio", id));
             }
 
             selectSubtitle(id) {
-                return this.#player
-                    ? this.#player.selectSubtitle(id)
-                    : Promise.resolve();
+                return this.#run(() => this.#doSelect("subtitle", id));
             }
 
             disconnectedCallback() {
