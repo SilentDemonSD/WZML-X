@@ -410,9 +410,12 @@ async def load_configurations():
         ))
         bot_loop.create_task(cmd_exec("python3 cron_boot.py", shell=True))
 
-    from .stream_server import spawn_stream_server
+    if Config.DISABLE_STREAM:
+        LOGGER.info("Streaming is disabled. Skipping stream server.")
+    else:
+        from .stream_server import spawn_stream_server
 
-    spawn_stream_server()
+        spawn_stream_server()
 
     from ..helper.ext_utils.tunnel_monitor import apply_tunnel_url_once
 

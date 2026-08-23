@@ -343,7 +343,7 @@
             height: 100%;
             border-radius: var(--r-frame);
             overflow: hidden;
-            background: #000105;
+            background: #000105 var(--art, none) center / cover no-repeat;
             box-shadow:
                 0 22px 70px rgba(0, 0, 3, .82),
                 0 0 0 1px rgba(42, 95, 208, .3);
@@ -1484,6 +1484,7 @@
             var TOKEN = (location.pathname.split("/").filter(Boolean).pop() || "");
             var STREAM = location.origin + "/stream/" + encodeURIComponent(TOKEN);
             var DIRECT = location.origin + "/dl/" + encodeURIComponent(TOKEN);
+            var POSTER = location.origin + "/poster/" + encodeURIComponent(TOKEN);
             var POS_KEY = "wzx:pos:" + TOKEN;
             var PREF_KEY = "wzx:prefs";
 
@@ -2132,6 +2133,7 @@
                     wireResume(m);
                 });
                 m.addEventListener("playing", clearStall);
+                m.addEventListener("playing", dropArt);
                 m.addEventListener("loadstart", clearStall);
 
                 if (watchNative) {
@@ -2141,6 +2143,23 @@
                         }
                     });
                 }
+            }
+
+            function dropArt() {
+                document.documentElement.style.removeProperty("--art");
+            }
+
+            function showArt() {
+                var probe = new Image();
+                probe.onload = function () {
+                    if (vid && !vid.paused) return;
+                    document.documentElement.style.setProperty(
+                        "--art", 'url("' + POSTER + '")');
+                    if (vid && vid.tagName.toLowerCase() === "video") {
+                        vid.setAttribute("poster", POSTER);
+                    }
+                };
+                probe.src = POSTER;
             }
 
             function start(info) {
@@ -2154,6 +2173,7 @@
                 el("dl").setAttribute("download", FILE);
                 buildApps();
                 applySubStyle();
+                showArt();
                 loadTracks();
                 addMeta(bytes(info.size));
                 if (MIME) addMeta(MIME);

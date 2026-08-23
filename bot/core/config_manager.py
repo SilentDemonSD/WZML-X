@@ -36,6 +36,7 @@ class Config:
     DISABLE_NZB = True
     DISABLE_RSS = False
     DISABLE_SEARCH = False
+    DISABLE_STREAM = False
     DISABLE_YTDLP = False
     EQUAL_SPLITS = False
     EXCLUDED_EXTENSIONS = ""

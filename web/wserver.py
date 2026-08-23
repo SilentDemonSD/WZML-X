@@ -549,6 +549,13 @@ _HOP = (
 )
 
 
+def _stream_offline():
+    return HTTPException(
+        status_code=503,
+        detail="Streaming is disabled or the stream service is not running.",
+    )
+
+
 async def stream_proxy(
     token: str, request: Request, upstream_path: str, params: dict = None
 ):
@@ -562,13 +569,16 @@ async def stream_proxy(
         headers["If-Range"] = inm
     headers["X-Viewer"] = _client_ip(request)
 
-    upstream = await http_session.request(
-        request.method,
-        f"{STREAM_BASE}{upstream_path}/{token}",
-        headers=headers,
-        params=params or None,
-        allow_redirects=False,
-    )
+    try:
+        upstream = await http_session.request(
+            request.method,
+            f"{STREAM_BASE}{upstream_path}/{token}",
+            headers=headers,
+            params=params or None,
+            allow_redirects=False,
+        )
+    except ClientError as e:
+        raise _stream_offline() from e
 
     out = {
         k: v for k, v in upstream.headers.items() if k.lower() not in _HOP
@@ -607,6 +617,70 @@ async def download_route(token: str, request: Request):
     return await stream_proxy(token, request, "/_dl")
 
 
+@app.get("/playlist/{token}", response_class=HTMLResponse)
+async def playlist_page(token: str, request: Request):
+    if not _SAFE_TOKEN.match(token or ""):
+        raise HTTPException(status_code=404, detail="Unknown link")
+    response = templates.TemplateResponse(request, "playlist.html")
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    return response
+
+
+@app.get("/api/playlist/{token}")
+async def playlist_api(token: str, request: Request):
+    if not _SAFE_TOKEN.match(token or ""):
+        raise HTTPException(status_code=404, detail="Unknown link")
+    try:
+        async with http_session.get(f"{STREAM_BASE}/_playlist/{token}") as upstream:
+            body = await upstream.read()
+            cache = upstream.headers.get("Cache-Control", "no-store")
+            tag = upstream.headers.get("ETag")
+            status = upstream.status
+    except ClientError as e:
+        raise _stream_offline() from e
+    headers = {"Cache-Control": cache, "Referrer-Policy": "no-referrer"}
+    if tag:
+        headers["ETag"] = tag
+    return Response(
+        content=body,
+        status_code=status,
+        media_type="application/json",
+        headers=headers,
+    )
+
+
+@app.get("/poster/{token}")
+async def poster_route(token: str, request: Request):
+    if not _SAFE_TOKEN.match(token or ""):
+        raise HTTPException(status_code=404, detail="Unknown link")
+    forward = {}
+    if tag := request.headers.get("if-none-match"):
+        forward["If-None-Match"] = tag
+    try:
+        async with http_session.get(
+            f"{STREAM_BASE}/_poster/{token}", headers=forward
+        ) as upstream:
+            status = upstream.status
+            body = b"" if status == 304 else await upstream.read()
+            out = {
+                "Cache-Control": upstream.headers.get(
+                    "Cache-Control", "private, max-age=86400"
+                ),
+                "Referrer-Policy": "no-referrer",
+            }
+            if etag := upstream.headers.get("ETag"):
+                out["ETag"] = etag
+            ctype = upstream.headers.get("Content-Type", "image/jpeg")
+    except ClientError as e:
+        raise _stream_offline() from e
+    if status not in (200, 304):
+        raise HTTPException(status_code=404, detail="No artwork")
+    if status == 304:
+        return Response(status_code=304, headers=out)
+    return Response(content=body, media_type=ctype, headers=out)
+
+
 @app.get("/xstrm/{token}", response_class=HTMLResponse)
 async def xstrm_page(token: str, request: Request):
     if not _SAFE_TOKEN.match(token or ""):
@@ -629,9 +703,12 @@ async def subs_route(token: str, track: str, request: Request):
     if tag := request.headers.get("if-none-match"):
         forward["If-None-Match"] = tag
 
-    upstream = await http_session.get(
-        f"{STREAM_BASE}/_subs/{token}/{idx}", headers=forward
-    )
+    try:
+        upstream = await http_session.get(
+            f"{STREAM_BASE}/_subs/{token}/{idx}", headers=forward
+        )
+    except ClientError as e:
+        raise _stream_offline() from e
     if upstream.status not in (200, 304):
         upstream.release()
         raise HTTPException(status_code=upstream.status, detail="Track unavailable")
@@ -664,10 +741,13 @@ async def subs_route(token: str, track: str, request: Request):
 async def tracks_route(token: str, request: Request):
     if not _SAFE_TOKEN.match(token or ""):
         raise HTTPException(status_code=404, detail="Unknown link")
-    async with http_session.get(f"{STREAM_BASE}/_tracks/{token}") as upstream:
-        body = await upstream.read()
-        cache = upstream.headers.get("Cache-Control", "no-store")
-        tag = upstream.headers.get("ETag")
+    try:
+        async with http_session.get(f"{STREAM_BASE}/_tracks/{token}") as upstream:
+            body = await upstream.read()
+            cache = upstream.headers.get("Cache-Control", "no-store")
+            tag = upstream.headers.get("ETag")
+    except ClientError as e:
+        raise _stream_offline() from e
     headers = {"Cache-Control": cache}
     if tag:
         headers["ETag"] = tag
@@ -683,11 +763,15 @@ async def tracks_route(token: str, request: Request):
 async def stream_meta(token: str, request: Request):
     if not _SAFE_TOKEN.match(token or ""):
         raise HTTPException(status_code=404, detail="Unknown link")
-    async with http_session.get(f"{STREAM_BASE}/_meta/{token}") as upstream:
-        body = await upstream.read()
+    try:
+        async with http_session.get(f"{STREAM_BASE}/_meta/{token}") as upstream:
+            body = await upstream.read()
+            status = upstream.status
+    except ClientError as e:
+        raise _stream_offline() from e
     return Response(
         content=body,
-        status_code=upstream.status,
+        status_code=status,
         media_type="application/json",
         headers={"Cache-Control": "no-store"},
     )

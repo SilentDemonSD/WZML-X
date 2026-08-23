@@ -226,14 +226,26 @@ class DbManager:
             {"$set": {"dump_msg_id": dump_msg_id, "dump_chat": dump_chat}},
         )
 
-    async def add_stream(self, token, chat_id, msg_id):
+    async def add_stream(self, token, chat_id, msg_id, poster=None):
         if self._return:
             return
+        doc = {"cid": int(chat_id), "mid": int(msg_id)}
+        if poster:
+            doc["pcid"] = int(poster[0])
+            doc["pmid"] = int(poster[1])
         await self.db.streams[_part()].update_one(
             {"_id": token},
-            {"$set": {"cid": int(chat_id), "mid": int(msg_id)}},
+            {"$set": doc},
             upsert=True,
         )
+
+    async def get_stream_art(self, token):
+        if self._return:
+            return None
+        doc = await self.db.streams[_part()].find_one({"_id": token})
+        if doc and doc.get("pcid") and doc.get("pmid"):
+            return (doc["pcid"], doc["pmid"])
+        return None
 
     async def find_stream(self, chat_id, msg_id):
         if self._return:
@@ -253,6 +265,36 @@ class DbManager:
         if self._return:
             return
         await self.db.streams[_part()].delete_one({"_id": token})
+
+    async def add_playlist(self, token, name, items, poster=None):
+        if self._return:
+            return
+        doc = {"name": name or "", "items": list(items)}
+        doc["pcid"] = int(poster[0]) if poster else None
+        doc["pmid"] = int(poster[1]) if poster else None
+        await self.db.playlists[_part()].update_one(
+            {"_id": token},
+            {"$set": doc},
+            upsert=True,
+        )
+
+    async def get_playlist(self, token):
+        if self._return:
+            return None
+        doc = await self.db.playlists[_part()].find_one({"_id": token})
+        if not doc:
+            return None
+        return {
+            "name": doc.get("name") or "",
+            "items": doc.get("items") or [],
+            "pcid": doc.get("pcid"),
+            "pmid": doc.get("pmid"),
+        }
+
+    async def rm_playlist(self, token):
+        if self._return:
+            return
+        await self.db.playlists[_part()].delete_one({"_id": token})
 
     async def get_pm_uids(self):
         if self._return:

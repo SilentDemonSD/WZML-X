@@ -96,6 +96,7 @@ BOOL_VARS = [
     "DISABLE_RSS",
     "DISABLE_SEARCH",
     "DISABLE_SEED",
+    "DISABLE_STREAM",
     "DISABLE_TORRENTS",
     "DISABLE_YTDLP",
     "DISABLE_MEGA",
@@ -142,6 +143,7 @@ DEFAULT_DESP = {
     "DISABLE_NZB": "Disable SABnzbd/Usenet downloads. Saves ~100-200MB RAM. Default: False.",
     "DISABLE_RSS": "Disable RSS feed monitoring. Saves CPU cycles. Default: False.",
     "DISABLE_SEARCH": "Disable torrent search plugins. Saves network I/O. Default: False.",
+    "DISABLE_STREAM": "Disable streaming. Stops /stream and the stream server. Default: False.",
     "DISABLE_YTDLP": "Disable YouTube/YT-DLP downloads. Default: False.",
     "EQUAL_SPLITS": "Split files into equal parts of LEECH_SPLIT_SIZE. Default: False.",
     "EXCLUDED_EXTENSIONS": "File extensions to exclude from upload/clone. Space-separated.",
@@ -295,6 +297,7 @@ ONOFF_VARS = [
     "DISABLE_NZB",
     "DISABLE_RSS",
     "DISABLE_SEARCH",
+    "DISABLE_STREAM",
     "DISABLE_YTDLP",
 ]
 
@@ -755,6 +758,15 @@ async def _handle_service_toggle(key, disabled):
                 LOGGER.info("SABnzbd stopped via Module Settings")
         else:
             LOGGER.info("SABnzbd requires restart to re-enable")
+    elif key == "DISABLE_STREAM":
+        from ..core.stream_server import spawn_stream_server, stop_stream_server
+
+        if disabled:
+            await stop_stream_server()
+            LOGGER.info("Stream server stopped via Module Settings")
+        else:
+            spawn_stream_server()
+            LOGGER.info("Stream server started via Module Settings")
     elif key == "DISABLE_RSS":
         if disabled:
             if scheduler.running:

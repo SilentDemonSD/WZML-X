@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="referrer" content="no-referrer">
+    <meta name="theme-color" content="#000003">
+    <title>Playlist · WZML-X</title>
+    <link rel="icon"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22.5' fill='%23F5F7FF'/%3E%3Cpath d='M 19.4 42.6 C 20.0 55.4 22.4 66.4 29.8 68.3 C 37.0 70.1 43.2 61.0 45.2 48.8 C 47.5 61.0 53.4 66.6 61.0 68.3 C 68.6 70.0 75.6 55.5 80.6 35.3' fill='none' stroke='%233D87FF' stroke-width='11.1' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Tektur:wght@500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #000003;
+            --surface: #04040B;
+            --surface-2: #07070F;
+            --line: rgba(42, 95, 208, .28);
+            --line-2: #2A5FD0;
+            --text: #F5F7FF;
+            --muted: #C3CBDF;
+            --accent: #3D87FF;
+            --accent-2: #5B9DFF;
+            --accent-soft: #06153F;
+            --r: 12px;
+            --r-frame: 18px;
+            --pad: clamp(.7rem, 2vw, 1.5rem);
+            --bar-pad: 16px;
+            --wrap: 1180px;
+            --sans: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --display: 'Tektur', 'Montserrat', system-ui, sans-serif;
+            --card: 250px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scrollbar-color: var(--line-2) var(--bg);
+        }
+
+        body {
+            min-height: 100svh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--sans);
+            font-size: 16px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .veil {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            opacity: .38;
+            background:
+                linear-gradient(rgba(42, 95, 208, .13) 1px, transparent 1px) 50% / 13px 13px,
+                linear-gradient(90deg, rgba(42, 95, 208, .13) 1px, transparent 1px) 50% / 13px 13px,
+                radial-gradient(circle at 50% 8%, rgba(61, 135, 255, .12), transparent 30%),
+                radial-gradient(circle at 50% 96%, rgba(6, 21, 63, .55), transparent 46%);
+        }
+
+        .wrap {
+            position: relative;
+            z-index: 3;
+            width: 100%;
+            max-width: var(--wrap);
+            margin-inline: auto;
+            padding-inline: var(--pad);
+        }
+
+        .topwrap {
+            padding-top: clamp(.5rem, 1.2vw, .8rem);
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            height: 54px;
+            padding-inline: var(--bar-pad);
+            border-radius: 16px;
+            border: 1px solid rgba(93, 157, 255, .2);
+            background: rgba(4, 4, 11, .86);
+            backdrop-filter: blur(20px) saturate(140%);
+            -webkit-backdrop-filter: blur(20px) saturate(140%);
+            box-shadow:
+                0 10px 32px rgba(0, 0, 3, .7),
+                inset 0 1px rgba(245, 247, 255, .06);
+        }
+
+        .mark {
+            width: 25px;
+            height: 25px;
+            flex: none;
+            border-radius: 7px;
+            outline: 1px solid rgba(93, 157, 255, .32);
+            outline-offset: 1px;
+        }
+
+        .wordmark {
+            font-family: var(--display);
+            font-weight: 700;
+            font-size: .98rem;
+            letter-spacing: .07em;
+        }
+
+        .wordmark a {
+            color: var(--text);
+            text-decoration: none;
+        }
+
+        .now {
+            margin-left: auto;
+            font-size: .74rem;
+            color: var(--muted);
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .head {
+            padding: clamp(1.4rem, 4vw, 2.6rem) 0 clamp(.9rem, 2vw, 1.3rem);
+        }
+
+        h1 {
+            font-family: var(--display);
+            font-weight: 700;
+            font-size: clamp(1.35rem, 3.4vw, 2.1rem);
+            letter-spacing: .01em;
+            line-height: 1.2;
+            overflow-wrap: anywhere;
+        }
+
+        .meta {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            margin-top: .5rem;
+            font-size: .8rem;
+            color: var(--muted);
+            letter-spacing: .03em;
+        }
+
+        .meta i {
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            background: var(--line-2);
+            display: inline-block;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(var(--card), 1fr));
+            gap: clamp(.7rem, 1.6vw, 1.1rem);
+            padding-bottom: clamp(2rem, 6vw, 4rem);
+        }
+
+        .item {
+            position: relative;
+        }
+
+        .card {
+            display: block;
+            border-radius: var(--r-frame);
+            overflow: hidden;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            text-decoration: none;
+            color: inherit;
+            transition: border-color .2s ease, transform .2s ease, background .2s ease;
+        }
+
+        .card:hover {
+            background: var(--surface-2);
+            border-color: rgba(93, 157, 255, .55);
+            transform: translateY(-2px);
+        }
+
+        .card:focus-visible {
+            outline: 2px solid var(--line-2);
+            outline-offset: 2px;
+        }
+
+        .art {
+            position: relative;
+            display: block;
+            aspect-ratio: 16 / 9;
+            background:
+                radial-gradient(circle at 50% 40%, rgba(61, 135, 255, .18), transparent 62%),
+                var(--accent-soft);
+            overflow: hidden;
+        }
+
+        .art img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .badge {
+            position: absolute;
+            left: .55rem;
+            top: .55rem;
+            min-width: 1.5rem;
+            height: 1.5rem;
+            padding: 0 .4rem;
+            display: grid;
+            place-items: center;
+            border-radius: 7px;
+            background: rgba(0, 0, 3, .78);
+            border: 1px solid rgba(93, 157, 255, .28);
+            font-size: .7rem;
+            font-weight: 700;
+            letter-spacing: .02em;
+        }
+
+        .play {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            opacity: 0;
+            transition: opacity .2s ease;
+            background: rgba(0, 0, 3, .42);
+        }
+
+        .card:hover .play {
+            opacity: 1;
+        }
+
+        .play svg {
+            width: 42px;
+            height: 42px;
+            fill: var(--text);
+            filter: drop-shadow(0 4px 14px rgba(0, 0, 3, .9));
+        }
+
+        .body {
+            display: block;
+            padding: .7rem .8rem .8rem;
+        }
+
+        .name {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            font-size: .82rem;
+            font-weight: 600;
+            line-height: 1.35;
+            overflow-wrap: anywhere;
+        }
+
+        .size {
+            margin-top: .3rem;
+            font-size: .72rem;
+            color: var(--muted);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .tag {
+            margin-left: .4rem;
+            padding: .05rem .35rem;
+            border-radius: 5px;
+            background: var(--accent-soft);
+            border: 1px solid var(--line);
+            font-size: .62rem;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            color: var(--accent-2);
+        }
+
+        .dl {
+            position: absolute;
+            right: .55rem;
+            top: .55rem;
+            width: 1.9rem;
+            height: 1.9rem;
+            display: grid;
+            place-items: center;
+            border-radius: 8px;
+            background: rgba(0, 0, 3, .78);
+            border: 1px solid rgba(93, 157, 255, .28);
+            color: var(--muted);
+            transition: color .2s ease, border-color .2s ease, background .2s ease;
+        }
+
+        .dl svg {
+            width: 15px;
+            height: 15px;
+            fill: currentColor;
+        }
+
+        .dl:hover {
+            color: var(--text);
+            background: var(--accent);
+            border-color: var(--accent-2);
+        }
+
+        .dl:focus-visible {
+            outline: 2px solid var(--line-2);
+            outline-offset: 2px;
+        }
+
+        .skel {
+            border-radius: var(--r-frame);
+            border: 1px solid var(--line);
+            background: var(--surface);
+            overflow: hidden;
+        }
+
+        .skel span {
+            display: block;
+            aspect-ratio: 16 / 9;
+            background: linear-gradient(100deg,
+                    var(--surface-2) 30%,
+                    rgba(42, 95, 208, .16) 50%,
+                    var(--surface-2) 70%) 0 0 / 300% 100%;
+            animation: sweep 1.5s linear infinite;
+        }
+
+        @keyframes sweep {
+            to {
+                background-position: -150% 0;
+            }
+        }
+
+        .note {
+            grid-column: 1 / -1;
+            padding: clamp(2.5rem, 8vw, 5rem) 1rem;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        .note b {
+            display: block;
+            color: var(--text);
+            font-family: var(--display);
+            font-size: 1.05rem;
+            margin-bottom: .4rem;
+        }
+
+        .note a {
+            display: inline-block;
+            margin-top: 1rem;
+            padding: .5rem .9rem;
+            border-radius: var(--r);
+            border: 1px solid var(--line);
+            background: var(--accent-soft);
+            color: var(--text);
+            text-decoration: none;
+            font-size: .8rem;
+            font-weight: 600;
+        }
+
+        .note a:hover {
+            border-color: var(--accent-2);
+        }
+
+        @media (max-width: 640px) {
+            :root {
+                --pad: 14px;
+                --bar-pad: 13px;
+                --card: 150px;
+            }
+
+            body {
+                font-size: 15px;
+            }
+
+            .topbar {
+                height: 48px;
+                border-radius: 14px;
+            }
+
+            .wordmark {
+                font-size: .9rem;
+            }
+
+            .now {
+                display: none;
+            }
+
+            .name {
+                font-size: .76rem;
+            }
+
+            .size {
+                font-size: .68rem;
+            }
+
+            .play svg {
+                width: 32px;
+                height: 32px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            *,
+            *::before,
+            *::after {
+                animation-duration: .001ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: .001ms !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="veil"></div>
+
+    <div class="wrap topwrap">
+        <header class="topbar">
+            <svg class="mark" viewBox="0 0 100 100" aria-hidden="true">
+                <rect width="100" height="100" rx="22.5" fill="#F5F7FF" />
+                <path
+                    d="M 19.4 42.6 C 20.0 55.4 22.4 66.4 29.8 68.3 C 37.0 70.1 43.2 61.0 45.2 48.8 C 47.5 61.0 53.4 66.6 61.0 68.3 C 68.6 70.0 75.6 55.5 80.6 35.3"
+                    fill="none" stroke="#3D87FF" stroke-width="11.1" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span class="wordmark"><a href="/">WZML-X</a></span>
+            <span class="now" id="now"></span>
+        </header>
+    </div>
+
+    <main class="wrap">
+        <div class="head">
+            <h1 id="title">Loading</h1>
+            <div class="meta" id="meta"></div>
+        </div>
+        <div class="grid" id="grid"></div>
+    </main>
+
+    <script>
+        (function () {
+            "use strict";
+
+            var TOKEN = (location.pathname.split("/").filter(Boolean).pop() || "");
+            var el = function (id) { return document.getElementById(id); };
+
+            function bytes(n) {
+                if (!n) return "unknown size";
+                var u = ["B", "KB", "MB", "GB", "TB"], i = 0, v = n;
+                while (v >= 1024 && i < u.length - 1) { v /= 1024; i++; }
+                return (i === 0 ? v : v.toFixed(v < 10 ? 2 : 1)) + " " + u[i];
+            }
+
+            function note(head, body, link) {
+                var box = document.createElement("div");
+                box.className = "note";
+                var b = document.createElement("b");
+                b.textContent = head;
+                box.appendChild(b);
+                box.appendChild(document.createTextNode(body));
+                if (link) {
+                    var a = document.createElement("a");
+                    a.href = "/";
+                    a.textContent = link;
+                    box.appendChild(a);
+                }
+                el("grid").innerHTML = "";
+                el("grid").appendChild(box);
+            }
+
+            function skeletons(n) {
+                var grid = el("grid");
+                grid.innerHTML = "";
+                for (var i = 0; i < n; i++) {
+                    var s = document.createElement("div");
+                    s.className = "skel";
+                    s.appendChild(document.createElement("span"));
+                    grid.appendChild(s);
+                }
+            }
+
+            var PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true">'
+                + '<path d="M8 5v14l11-7z"/></svg>';
+            var DOWN = '<svg viewBox="0 0 24 24" aria-hidden="true">'
+                + '<path d="M12 3v10.6l3.3-3.3 1.4 1.4L12 17.4l-4.7-4.7 1.4-1.4 3.3 3.3V3h2z'
+                + 'M5 19h14v2H5v-2z"/></svg>';
+
+            function card(item, index, poster) {
+                var wrap = document.createElement("div");
+                wrap.className = "item";
+
+                var a = document.createElement("a");
+                a.className = "card";
+                a.href = (item.playable ? "/xstrm/" : "/dl/") + item.token;
+                a.title = item.name;
+
+                var art = document.createElement("span");
+                art.className = "art";
+                if (poster) {
+                    var img = document.createElement("img");
+                    img.src = poster;
+                    img.alt = "";
+                    img.loading = "lazy";
+                    img.decoding = "async";
+                    img.addEventListener("error", function () { img.remove(); });
+                    art.appendChild(img);
+                }
+                var badge = document.createElement("span");
+                badge.className = "badge";
+                badge.textContent = index;
+                art.appendChild(badge);
+                if (item.playable) {
+                    var play = document.createElement("span");
+                    play.className = "play";
+                    play.innerHTML = PLAY;
+                    art.appendChild(play);
+                }
+                a.appendChild(art);
+
+                var body = document.createElement("span");
+                body.className = "body";
+                var name = document.createElement("span");
+                name.className = "name";
+                name.textContent = item.name;
+                var size = document.createElement("span");
+                size.className = "size";
+                size.textContent = bytes(item.size);
+                if (!item.playable) {
+                    var tag = document.createElement("span");
+                    tag.className = "tag";
+                    tag.textContent = "file";
+                    size.appendChild(tag);
+                }
+                body.appendChild(name);
+                body.appendChild(size);
+                a.appendChild(body);
+                wrap.appendChild(a);
+
+                var dl = document.createElement("a");
+                dl.className = "dl";
+                dl.href = "/dl/" + item.token;
+                dl.setAttribute("download", item.name);
+                dl.title = "Download " + item.name;
+                dl.setAttribute("aria-label", "Download " + item.name);
+                dl.innerHTML = DOWN;
+                wrap.appendChild(dl);
+
+                return wrap;
+            }
+
+            function addMeta(text) {
+                var box = el("meta");
+                if (box.children.length) box.appendChild(document.createElement("i"));
+                var s = document.createElement("span");
+                s.textContent = text;
+                box.appendChild(s);
+            }
+
+            function render(data) {
+                var items = data.items || [];
+                var title = data.name || "Playlist";
+                document.title = title + " · WZML-X";
+                el("title").textContent = title;
+                el("now").textContent = title;
+
+                var total = 0;
+                for (var i = 0; i < items.length; i++) {
+                    total += items[i].size || 0;
+                }
+                addMeta(items.length + (items.length === 1 ? " file" : " files"));
+                if (total) addMeta(bytes(total));
+
+                if (!items.length) {
+                    note("This playlist is empty",
+                        "None of its files are available any more.", "Back to WZML-X");
+                    return;
+                }
+
+                var poster = data.poster
+                    ? "/poster/" + encodeURIComponent(TOKEN)
+                    : null;
+                var grid = el("grid");
+                grid.innerHTML = "";
+                var frag = document.createDocumentFragment();
+                for (var n = 0; n < items.length; n++) {
+                    frag.appendChild(card(items[n], n + 1, poster));
+                }
+                grid.appendChild(frag);
+            }
+
+            if (!TOKEN) {
+                el("title").textContent = "Nothing to play";
+                note("Nothing to play", "This link is missing its playlist reference.",
+                    "Back to WZML-X");
+                return;
+            }
+
+            skeletons(8);
+
+            fetch("/api/playlist/" + encodeURIComponent(TOKEN), { cache: "no-store" })
+                .then(function (r) {
+                    if (r.status === 404) throw new Error("gone");
+                    if (!r.ok) throw new Error("bad");
+                    return r.json();
+                })
+                .then(render)
+                .catch(function (e) {
+                    el("title").textContent = "Playlist unavailable";
+                    if (e && e.message === "gone") {
+                        note("This playlist is no longer available",
+                            "It was removed, or the link is wrong.", "Back to WZML-X");
+                    } else {
+                        note("Could not load this playlist",
+                            "The streaming service did not respond. Try again shortly.",
+                            "Back to WZML-X");
+                    }
+                });
+        })();
+    </script>
+</body>
+
+</html>

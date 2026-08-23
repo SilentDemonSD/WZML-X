@@ -572,6 +572,38 @@ async def probe(chat_id, msg_id):
     }
 
 
+_POSTER_MAX = 8 * 1024 * 1024
+
+
+async def poster_bytes(chat_id, msg_id):
+    clients, _, _ = POOL.resolve()
+    if not clients:
+        raise NoClientAvailable("no stream or helper bots are running")
+    ci = next(iter(clients))
+    client = clients[ci]
+    msg = await client.get_messages(chat_id, msg_id)
+    if msg is None or getattr(msg, "empty", False):
+        raise StreamGone(f"msg {msg_id} missing from {chat_id}")
+    media = media_of(msg)
+    mime = getattr(media, "mime_type", None)
+    if mime is None or mime.startswith("image/"):
+        target = media
+    else:
+        thumbs = getattr(media, "thumbs", None)
+        if not thumbs:
+            raise StreamGone(f"msg {msg_id} carries no artwork")
+        target = max(thumbs, key=lambda t: getattr(t, "file_size", 0) or 0)
+    if (getattr(target, "file_size", 0) or 0) > _POSTER_MAX:
+        raise StreamGone(f"msg {msg_id} artwork is too large")
+    buf = await client.download_media(target, in_memory=True)
+    if buf is None:
+        raise StreamGone(f"msg {msg_id} artwork could not be read")
+    data = buf.getvalue() if hasattr(buf, "getvalue") else bytes(buf)
+    if not data:
+        raise StreamGone(f"msg {msg_id} artwork is empty")
+    return data
+
+
 async def shutdown():
     pending = [t for t in _BG if not t.done()]
     for t in pending:

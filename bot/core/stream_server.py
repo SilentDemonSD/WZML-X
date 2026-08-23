@@ -25,6 +25,7 @@ from ..helper.telegram_helper.tg_stream import (
     StreamGone,
     open_stream,
     parse_range,
+    poster_bytes,
     probe,
     purge_fid,
     shutdown,
@@ -38,6 +39,12 @@ _PROBE_BYTES = 6 * 1024 * 1024
 _PROBE_TIMEOUT = 45
 _PROBE_KEEP = 128
 _probe_cache = OrderedDict()
+
+_LIST_KEEP = 64
+_list_cache = OrderedDict()
+
+_POSTER_KEEP = 256
+_poster_cache = OrderedDict()
 
 _VTT_TOTAL_MAX = 48 * 1024 * 1024
 _VTT_ENTRY_MAX = 6 * 1024 * 1024
@@ -366,6 +373,126 @@ def _vtt_reply(request, key, data):
     )
 
 
+async def _playlist_body(token):
+    hit = _list_cache.get(token)
+    if hit is not None:
+        _list_cache.move_to_end(token)
+        return hit
+    doc = await database.get_playlist(token)
+    if not doc:
+        return None
+    items = []
+    for tok in doc["items"]:
+        found = await database.get_stream(tok)
+        if not found:
+            continue
+        try:
+            info = await probe(found[0], found[1])
+        except StreamGone:
+            purge_fid(found[0], found[1])
+            continue
+        except NoClientAvailable:
+            raise
+        except Exception as e:
+            LOGGER.error(f"playlist probe failed for {tok}: {e}")
+            continue
+        mime = info.get("mime") or ""
+        items.append(
+            {
+                "token": tok,
+                "name": info.get("name") or "Untitled",
+                "size": info.get("size") or 0,
+                "mime": mime,
+                "playable": mime.startswith(_PLAYABLE),
+            }
+        )
+    body = {
+        "name": doc["name"] or (items[0]["name"] if items else "Playlist"),
+        "items": items,
+        "poster": bool(doc.get("pcid") and doc.get("pmid")) or bool(items),
+    }
+    _list_cache[token] = body
+    while len(_list_cache) > _LIST_KEEP:
+        _list_cache.popitem(last=False)
+    return body
+
+
+async def _poster_source(token):
+    doc = await database.get_playlist(token)
+    if doc:
+        if doc.get("pcid") and doc.get("pmid"):
+            return int(doc["pcid"]), int(doc["pmid"])
+        for tok in doc["items"]:
+            found = await database.get_stream(tok)
+            if found:
+                return found
+        return None
+    art = await database.get_stream_art(token)
+    if art:
+        return art
+    return await database.get_stream(token)
+
+
+async def _poster(request):
+    token = request.match_info.get("token", "")
+    if not _TOKEN_RE.match(token):
+        raise web.HTTPNotFound(text="unknown link")
+
+    data = _poster_cache.get(token)
+    if data is None:
+        source = await _poster_source(token)
+        if not source:
+            raise web.HTTPNotFound(text="unknown link")
+        try:
+            data = await poster_bytes(source[0], source[1])
+        except NoClientAvailable as e:
+            raise web.HTTPServiceUnavailable(text=str(e)) from None
+        except Exception as e:
+            LOGGER.debug(f"poster unavailable for {token}: {e}")
+            data = b""
+        _poster_cache[token] = data
+        while len(_poster_cache) > _POSTER_KEEP:
+            _poster_cache.popitem(last=False)
+    else:
+        _poster_cache.move_to_end(token)
+
+    if not data:
+        raise web.HTTPNotFound(text="no artwork")
+
+    tag = f'"poster-{token}-{len(data)}"'
+    common = {
+        "ETag": tag,
+        "Cache-Control": "private, max-age=86400",
+        "Access-Control-Allow-Origin": "*",
+    }
+    if request.headers.get("If-None-Match") == tag:
+        return web.Response(status=304, headers=common)
+    return web.Response(
+        body=data,
+        headers={"Content-Type": "image/jpeg", **common},
+    )
+
+
+async def _playlist(request):
+    token = request.match_info.get("token", "")
+    if not _TOKEN_RE.match(token):
+        raise web.HTTPNotFound(text="unknown link")
+    try:
+        body = await _playlist_body(token)
+    except NoClientAvailable as e:
+        raise web.HTTPServiceUnavailable(text=str(e)) from None
+    if body is None:
+        raise web.HTTPNotFound(text="unknown link")
+    tag = '"list-%s-%d"' % (token, len(body["items"]))
+    return web.json_response(
+        body,
+        headers={
+            "Cache-Control": "private, max-age=300",
+            "ETag": tag,
+        },
+    )
+
+
 def purge_vtt(cid, mid):
     global _vtt_bytes
     for key in [k for k in _vtt_cache if k[0] == cid and k[1] == mid]:
@@ -497,6 +624,8 @@ def build_app():
     app.router.add_route("GET", "/_ping", _ping)
     app.router.add_route("GET", "/_meta/{token}", _meta)
     app.router.add_route("GET", "/_tracks/{token}", _tracks)
+    app.router.add_route("GET", "/_playlist/{token}", _playlist)
+    app.router.add_route("GET", "/_poster/{token}", _poster)
     app.router.add_route("GET", "/_subs/{token}/{idx}", _subs)
     app.router.add_route("*", "/_stream/{token}", _stream)
     app.router.add_route("*", "/_dl/{token}", _dl)

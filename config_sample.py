@@ -51,6 +51,7 @@ DISABLE_JD = False
 DISABLE_NZB = False
 DISABLE_RSS = False
 DISABLE_SEARCH = False
+DISABLE_STREAM = False
 DISABLE_YTDLP = False
 
 # Telegraph
