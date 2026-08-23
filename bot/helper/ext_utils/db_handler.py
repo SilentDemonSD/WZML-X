@@ -1,4 +1,5 @@
 from importlib import import_module
+from time import time
 from uuid import uuid4
 
 from aiofiles import open as aiopen
@@ -16,6 +17,11 @@ def _bot_id():
     if TgClient.ID:
         return str(TgClient.ID)
     return Config.BOT_TOKEN.split(":", 1)[0]
+
+
+def _expired(doc):
+    exp = doc.get("exp")
+    return bool(exp) and time() >= exp
 
 
 def _part():
@@ -226,13 +232,15 @@ class DbManager:
             {"$set": {"dump_msg_id": dump_msg_id, "dump_chat": dump_chat}},
         )
 
-    async def add_stream(self, token, chat_id, msg_id, poster=None):
+    async def add_stream(self, token, chat_id, msg_id, poster=None, exp=None):
         if self._return:
             return
         doc = {"cid": int(chat_id), "mid": int(msg_id)}
         if poster:
             doc["pcid"] = int(poster[0])
             doc["pmid"] = int(poster[1])
+        if exp:
+            doc["exp"] = int(exp)
         await self.db.streams[_part()].update_one(
             {"_id": token},
             {"$set": doc},
@@ -251,7 +259,7 @@ class DbManager:
         if self._return:
             return None
         doc = await self.db.streams[_part()].find_one(
-            {"cid": int(chat_id), "mid": int(msg_id)}
+            {"cid": int(chat_id), "mid": int(msg_id), "exp": {"$exists": False}}
         )
         return doc["_id"] if doc else None
 
@@ -259,19 +267,26 @@ class DbManager:
         if self._return:
             return None
         doc = await self.db.streams[_part()].find_one({"_id": token})
-        return (doc["cid"], doc["mid"]) if doc else None
+        if not doc:
+            return None
+        if _expired(doc):
+            await self.rm_stream(token)
+            return None
+        return (doc["cid"], doc["mid"])
 
     async def rm_stream(self, token):
         if self._return:
             return
         await self.db.streams[_part()].delete_one({"_id": token})
 
-    async def add_playlist(self, token, name, items, poster=None):
+    async def add_playlist(self, token, name, items, poster=None, exp=None):
         if self._return:
             return
         doc = {"name": name or "", "items": list(items)}
         doc["pcid"] = int(poster[0]) if poster else None
         doc["pmid"] = int(poster[1]) if poster else None
+        if exp:
+            doc["exp"] = int(exp)
         await self.db.playlists[_part()].update_one(
             {"_id": token},
             {"$set": doc},
@@ -283,6 +298,9 @@ class DbManager:
             return None
         doc = await self.db.playlists[_part()].find_one({"_id": token})
         if not doc:
+            return None
+        if _expired(doc):
+            await self.rm_playlist(token)
             return None
         return {
             "name": doc.get("name") or "",

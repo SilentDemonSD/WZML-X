@@ -1,5 +1,6 @@
 from html import escape
 from secrets import token_urlsafe
+from time import time
 
 from pyrogram.enums import ButtonStyle
 
@@ -8,38 +9,45 @@ from ..core.config_manager import Config
 from ..core.tg_client import TgClient
 from ..helper.ext_utils.db_handler import database
 from ..helper.ext_utils.links_utils import is_telegram_link
+from ..helper.telegram_helper.bot_commands import BotCommands
 from ..helper.telegram_helper.button_build import ButtonMaker
 from ..helper.telegram_helper.message_utils import (
-    delete_message,
+    delete_links,
     edit_message,
     get_tg_link_message,
     send_message,
 )
-from ..helper.ext_utils.status_utils import get_readable_file_size
+from ..helper.ext_utils.status_utils import (
+    get_raw_time,
+    get_readable_file_size,
+    get_readable_time,
+)
 from ..helper.telegram_helper.tg_transfer import media_of
 
 _PLAYABLE = ("video/", "audio/")
 _MAX_BATCH = 50
 _MAX_BUTTONS = 20
+_LABEL = 22
 
 
-async def _mint_token(chat_id, msg_id):
-    existing = await database.find_stream(chat_id, msg_id)
-    if existing:
-        return existing
+async def _mint_token(chat_id, msg_id, poster=None, exp=None):
+    if not exp and not poster:
+        existing = await database.find_stream(chat_id, msg_id)
+        if existing:
+            return existing
     for _ in range(6):
         token = token_urlsafe(5)
         if await database.get_stream(token) is None:
-            await database.add_stream(token, chat_id, msg_id)
+            await database.add_stream(token, chat_id, msg_id, poster, exp)
             return token
     return None
 
 
-async def _mint_playlist(name, items, poster):
+async def _mint_playlist(name, items, poster, exp):
     for _ in range(6):
         token = token_urlsafe(5)
         if await database.get_playlist(token) is None:
-            await database.add_playlist(token, name, items, poster)
+            await database.add_playlist(token, name, items, poster, exp)
             return token
     return None
 
@@ -81,16 +89,26 @@ def parse_stream_args(parts):
     poster = None
     link = None
     playlist = False
+    ttl = 0
     words = []
-    want_poster = False
+    want = None
     for part in parts:
-        if want_poster:
-            want_poster = False
+        if want == "poster":
+            want = None
             if is_telegram_link(part):
                 poster = part
                 continue
+        elif want == "ttl":
+            want = None
+            seconds = get_raw_time(part)
+            if seconds:
+                ttl = seconds
+                continue
         if part in ("-t", "-thumb"):
-            want_poster = True
+            want = "poster"
+            continue
+        if part in ("-ttl", "-expire"):
+            want = "ttl"
             continue
         if part in ("-pl", "-playlist"):
             playlist = True
@@ -104,6 +122,7 @@ def parse_stream_args(parts):
         "link": link,
         "poster": poster,
         "playlist": playlist,
+        "ttl": ttl,
         "name": " ".join(words).strip(),
     }
 
@@ -128,12 +147,14 @@ def _playable(media):
     return (getattr(media, "mime_type", "") or "").startswith(_PLAYABLE)
 
 
-async def _register(message, poster=None):
+def _short(name, limit=_LABEL):
+    name = name or "File"
+    return name if len(name) <= limit else name[: limit - 1] + "…"
+
+
+async def _register(message, poster=None, exp=None):
     chat_id, msg_id = await _dump_copy(message)
-    token = await _mint_token(chat_id, msg_id)
-    if token and poster:
-        await database.add_stream(token, chat_id, msg_id, poster)
-    return token
+    return await _mint_token(chat_id, msg_id, poster, exp)
 
 
 def _ready():
@@ -155,6 +176,42 @@ def _ready():
     return None
 
 
+def _usage():
+    one, two = BotCommands.StreamCommand[0], BotCommands.StreamCommand[1]
+    return f"""
+<b>By replying to media:</b>
+<code>/{one} or /{two} [media]</code>
+
+<b>By reply/sending telegram link:</b>
+<code>/{one} or /{two} [link]</code>
+
+<b>By sending a batch range:</b>
+<code>/{one} or /{two} [link]-[last id]</code>
+
+<b>As one playlist page:</b>
+<code>/{one} -pl [name] [link range]</code>
+
+<b>With cover art:</b>
+<code>/{one} -t [photo link] [link]</code>
+
+<b>Self expiring links:</b>
+<code>/{one} -ttl [1d2h3m] [link]</code>
+"""
+
+
+def _head(title, rows, tag):
+    msg = f"<b><i>{escape(title)}</i></b>\n│"
+    for i, (label, value) in enumerate(rows):
+        edge = "┟" if i == 0 else "┠"
+        msg += f"\n{edge} <b>{label}</b> → {value}"
+    msg += f"\n┖ <b>Task By</b> → {tag}\n\n"
+    return msg
+
+
+def _done(line):
+    return "〶 <b><u>Action Performed :</u></b>\n" + f"⋗ <i>{line}</i>\n"
+
+
 async def stream_links(_, message):
     blocked = _ready()
     if blocked:
@@ -166,15 +223,8 @@ async def stream_links(_, message):
     reply = message.reply_to_message
 
     if not args["link"] and not reply:
-        await send_message(
-            message,
-            "<b>Reply to a media file or pass a link</b>\n\n"
-            "<i>/stream — as a reply to any video, audio or document</i>\n"
-            "<i>/stream https://t.me/c/123/45 — one file</i>\n"
-            "<i>/stream https://t.me/c/123/45-49 — a batch</i>\n"
-            "<i>/stream -pl Name https://t.me/c/123/45-49 — one playlist page</i>\n"
-            "<i>/stream -t https://t.me/c/123/9 ... — set the cover art</i>",
-        )
+        await send_message(message, _usage())
+        await delete_links(message)
         return
 
     status = await send_message(message, "<i>Generating links...</i>")
@@ -209,10 +259,13 @@ async def stream_links(_, message):
         except Exception as e:
             LOGGER.error(f"stream poster failed: {e}")
 
+    ttl = args["ttl"]
+    exp = int(time() + ttl) if ttl else None
+
     try:
         minted = []
         for msg, media in picked:
-            token = await _register(msg, poster)
+            token = await _register(msg, poster, exp)
             if token:
                 minted.append((token, media))
     except Exception as e:
@@ -225,69 +278,87 @@ async def stream_links(_, message):
         return
 
     base = Config.BASE_URL.rstrip("/")
+    tag = message.from_user.mention if message.from_user else "N/A"
+    total = sum(getattr(m, "file_size", 0) or 0 for _t, m in minted)
     buttons = ButtonMaker()
 
     if args["playlist"]:
-        first = getattr(minted[0][1], "file_name", "") or "Playlist"
-        title = args["name"] or first
-        token = await _mint_playlist(title, [t for t, _m in minted], poster)
+        title = args["name"] or (
+            getattr(minted[0][1], "file_name", "") or "Playlist"
+        )
+        token = await _mint_playlist(
+            title, [t for t, _m in minted], poster, exp
+        )
         if not token:
-            await edit_message(status, "<b>Could not allocate a playlist. Try again.</b>")
+            await edit_message(
+                status, "<b>Could not allocate a playlist. Try again.</b>"
+            )
             return
-        total = sum(getattr(m, "file_size", 0) or 0 for _t, m in minted)
+        rows = [
+            ("Task Size", get_readable_file_size(total)),
+            ("Total Files", f"{len(minted)} of {asked}"),
+            ("In Mode", "#TgMedia"),
+            ("Out Mode", "#Playlist"),
+        ]
+        if ttl:
+            rows.append(("Expires In", get_readable_time(ttl)))
         page = f"{base}/playlist/{token}"
-        msg = "<b>〶 Playlist Generated</b>\n\n"
-        msg += f"<b>┎ Name</b> → <code>{escape(title)}</code>\n"
-        msg += f"<b>┠ Files</b> → {len(minted)} of {asked}\n"
-        msg += f"<b>┖ Size</b> → {get_readable_file_size(total)}\n\n"
-        msg += f"<b>Task By: </b>{message.from_user.mention if message.from_user else 'N/A'}"
+        msg = _head(title, rows, tag) + _done("Playlist page is ready")
         buttons.url_button("▶️ Open Playlist", page, style=ButtonStyle.PRIMARY)
         buttons.url_button("🔗 Share", f"https://t.me/share/url?url={page}")
         await edit_message(status, msg, buttons.build_menu(2))
-        await delete_message(message)
+        await delete_links(message)
         return
 
     if len(minted) == 1:
         token, media = minted[0]
         name = getattr(media, "file_name", "") or "Media"
-        size = getattr(media, "file_size", 0) or 0
-        mime = getattr(media, "mime_type", "") or ""
+        mime = getattr(media, "mime_type", "") or "unknown"
         watch = f"{base}/xstrm/{token}"
         direct = f"{base}/dl/{token}"
-
-        msg = "<b>〶 Stream Links Generated</b>\n\n"
-        msg += f"<b>┎ Name</b> → <code>{escape(name)}</code>\n"
-        msg += f"<b>┠ Size</b> → {get_readable_file_size(size)}\n"
-        msg += f"<b>┖ Type</b> → {escape(mime) if mime else 'unknown'}\n\n"
-        if not _playable(media):
-            msg += "<i>Not a media type browsers can play — use the download link.</i>\n\n"
-        msg += f"<b>Task By: </b>{message.from_user.mention if message.from_user else 'N/A'}"
-
+        rows = [
+            ("Task Size", get_readable_file_size(total)),
+            ("Type", escape(mime)),
+            ("In Mode", "#TgMedia"),
+            ("Out Mode", "#Stream" if _playable(media) else "#Download"),
+        ]
+        if ttl:
+            rows.append(("Expires In", get_readable_time(ttl)))
+        msg = _head(name, rows, tag)
         if _playable(media):
+            msg += _done("Stream and download links are ready")
             buttons.url_button("▶️ Stream", watch, style=ButtonStyle.PRIMARY)
+        else:
+            msg += _done("Browsers cannot play this type, use download")
         buttons.url_button("⬇️ Download", direct, style=ButtonStyle.SUCCESS)
         buttons.url_button(
             "🔗 Share",
             f"https://t.me/share/url?url={watch if _playable(media) else direct}",
         )
         await edit_message(status, msg, buttons.build_menu(2))
-        await delete_message(message)
+        await delete_links(message)
         return
 
-    total = sum(getattr(m, "file_size", 0) or 0 for _t, m in minted)
     shown = minted[:_MAX_BUTTONS]
-    msg = "<b>〶 Stream Links Generated</b>\n\n"
-    msg += f"<b>┎ Files</b> → {len(minted)} of {asked}\n"
-    msg += f"<b>┖ Size</b> → {get_readable_file_size(total)}\n\n"
+    rows = [
+        ("Task Size", get_readable_file_size(total)),
+        ("Total Files", f"{len(minted)} of {asked}"),
+        ("In Mode", "#TgMedia"),
+        ("Out Mode", "#Stream"),
+    ]
+    if ttl:
+        rows.append(("Expires In", get_readable_time(ttl)))
+    title = getattr(minted[0][1], "file_name", "") or "Stream Links"
+    msg = _head(title, rows, tag)
     if len(minted) > len(shown):
-        msg += f"<i>Showing the first {len(shown)}. Use -pl for one page.</i>\n\n"
-    msg += f"<b>Task By: </b>{message.from_user.mention if message.from_user else 'N/A'}"
+        msg += _done(f"Showing the first {len(shown)}, use -pl for one page")
+    else:
+        msg += _done("Stream and download links are ready")
 
-    for i, (token, media) in enumerate(shown, 1):
-        label = getattr(media, "file_name", "") or f"File {i}"
-        if len(label) > 28:
-            label = label[:27] + "…"
-        target = "xstrm" if _playable(media) else "dl"
-        buttons.url_button(f"{i}. {label}", f"{base}/{target}/{token}")
-    await edit_message(status, msg, buttons.build_menu(1))
-    await delete_message(message)
+    for token, media in shown:
+        label = _short(getattr(media, "file_name", ""))
+        if _playable(media):
+            buttons.url_button(f"S: {label}", f"{base}/xstrm/{token}")
+        buttons.url_button(f"D: {label}", f"{base}/dl/{token}")
+    await edit_message(status, msg, buttons.build_menu(2))
+    await delete_links(message)
