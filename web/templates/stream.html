@@ -1067,12 +1067,16 @@
             return loading;
         }
 
-        function ranges(end) {
-            return {
-                length: end > 0 ? 1 : 0,
-                start: () => 0,
-                end: () => end
-            };
+        const MEDIA_CONTEXT = Symbol.for("@videojs/media");
+
+        class ContextEvent extends Event {
+            constructor(context, contextTarget, callback, subscribe) {
+                super("context-request", { bubbles: true, composed: true });
+                this.context = context;
+                this.contextTarget = contextTarget;
+                this.callback = callback;
+                this.subscribe = subscribe;
+            }
         }
 
         class LibmediaVideoElement extends CustomVideoElement {
@@ -1099,6 +1103,8 @@
             #pendingSeek = null;
             #subsOn = false;
             #queue = Promise.resolve();
+            #setMedia = null;
+            #unsub = null;
 
             constructor() {
                 super();
@@ -1127,6 +1133,23 @@
             connectedCallback() {
                 try { super.connectedCallback(); } catch (e) { }
                 this.#mount();
+                this.#claimPlayer();
+            }
+
+            #claimPlayer() {
+                const self = this;
+                this.dispatchEvent(new ContextEvent(
+                    MEDIA_CONTEXT,
+                    this,
+                    function (value, unsubscribe) {
+                        if (unsubscribe) self.#unsub = unsubscribe;
+                        self.#setMedia = (value && value.setMedia) || null;
+                        if (self.isConnected && self.#setMedia) {
+                            self.#setMedia(self);
+                        }
+                    },
+                    true
+                ));
             }
 
             get streams() { return this.#streams; }
@@ -1302,7 +1325,14 @@
                 if (!p) return;
                 await this.#settle();
                 if (kind === "audio") {
+                    const at = this.#time;
                     await p.selectAudio(id);
+                    await this.#settle();
+                    let now = at;
+                    try { now = Number(p.currentTime) / 1000; } catch (e) { }
+                    if (this.#started && Math.abs(now - at) > 2) {
+                        await this.#doSeek(at);
+                    }
                 } else if (Number(id) < 0) {
                     this.#subsOn = false;
                 } else {
@@ -1330,8 +1360,17 @@
             get seeking() { return false; }
             get readyState() { return this.#ready; }
             get duration() { return this.#dur || NaN; }
-            get buffered() { return ranges(this.#dur); }
-            get seekable() { return ranges(this.#dur); }
+            #ranges() {
+                const self = this;
+                return {
+                    get length() { return self.#dur > 0 ? 1 : 0; },
+                    start: function () { return 0; },
+                    end: function () { return self.#dur; }
+                };
+            }
+
+            get buffered() { return this.#ranges(); }
+            get seekable() { return this.#ranges(); }
             get videoWidth() { return (this.#host && this.#host.clientWidth) || 0; }
             get videoHeight() { return (this.#host && this.#host.clientHeight) || 0; }
 
@@ -1381,6 +1420,10 @@
             }
 
             disconnectedCallback() {
+                try { this.#setMedia && this.#setMedia(null); } catch (e) { }
+                try { this.#unsub && this.#unsub(); } catch (e) { }
+                this.#unsub = null;
+                this.#setMedia = null;
                 try { this.#player && this.#player.destroy(); } catch (e) { }
                 this.#player = null;
                 try { super.disconnectedCallback(); } catch (e) { }
@@ -1651,6 +1694,9 @@
 
             var lmEl = null;
             var lmStreams = [];
+            var probeInfo = null;
+            var lmCurAudio = null;
+            var lmCurSub = "-1";
 
             function lmErr(e) {
                 try { console.error("[wzx] libmedia", e); } catch (x) { }
@@ -1673,7 +1719,9 @@
                 });
             }
 
-            function lmLabel(t, i) {
+            function lmLabel(t, i, kind) {
+                var probe = probeInfo && probeInfo[kind];
+                if (probe && probe[i] && probe[i].title) return probe[i].title;
                 var m = t.metadata || {};
                 var bits = [];
                 if (m.title) bits.push(m.title);
@@ -1684,6 +1732,8 @@
             function lmSwitchAudio(id, label) {
                 return Promise.resolve(lmEl.selectAudio(id))
                     .then(function () {
+                        lmCurAudio = id;
+                        lmRebuildMenus();
                         lmLog("selectAudio resolved id=" + id);
                         if (label) toast("Switched to " + label);
                     })
@@ -1696,11 +1746,13 @@
             function lmRebuildMenus() {
                 var auds = lmByType("audio"), subs = lmByType("subtitle");
                 if (auds.length > 1) {
+                    if (lmCurAudio === null) lmCurAudio = auds[0].id;
                     dropdown(el("audDd"), "Audio",
                         [{ items: auds.map(function (t, i) {
-                            return { label: lmLabel(t, i), value: String(t.id) };
+                            return { label: lmLabel(t, i, "audio"),
+                                value: String(t.id) };
                         }) }],
-                        String(auds[0].id),
+                        String(lmCurAudio),
                         function (it) {
                             lmSwitchAudio(Number(it.value), it.label);
                         });
@@ -1708,10 +1760,12 @@
                 if (subs.length) {
                     var items = [{ label: "Off", value: "-1" }].concat(
                         subs.map(function (t, i) {
-                            return { label: lmLabel(t, i), value: String(t.id) };
+                            return { label: lmLabel(t, i, "subtitle"),
+                                value: String(t.id) };
                         }));
-                    dropdown(el("subDd"), "Subs", [{ items: items }], "-1",
+                    dropdown(el("subDd"), "Subs", [{ items: items }], lmCurSub,
                         function (it) {
+                            lmCurSub = it.value;
                             Promise.resolve(lmEl.selectSubtitle(Number(it.value)))
                                 .catch(lmErr);
                         });
@@ -1792,7 +1846,11 @@
             }
 
             function applyTracks(info) {
-                if (lmEl) return;
+                probeInfo = info || null;
+                if (lmEl) {
+                    lmRebuildMenus();
+                    return;
+                }
                 var auds = (info && info.audio) || [];
                 var subs = (info && info.subtitle) || [];
                 lmLog("probe: " + auds.length + " audio, " + subs.length + " subtitle");
