@@ -663,7 +663,17 @@ async def poster_route(token: str, request: Request):
             f"{STREAM_BASE}/_poster/{token}", headers=forward
         ) as upstream:
             status = upstream.status
-            body = b"" if status == 304 else await upstream.content.read(_POSTER_CAP)
+            body = b""
+            if status != 304:
+                chunks = []
+                seen = 0
+                async for piece in upstream.content.iter_chunked(65536):
+                    seen += len(piece)
+                    if seen > _POSTER_CAP:
+                        chunks = []
+                        break
+                    chunks.append(piece)
+                body = b"".join(chunks)
             out = {
                 "Cache-Control": upstream.headers.get(
                     "Cache-Control", "private, max-age=86400"
@@ -679,6 +689,8 @@ async def poster_route(token: str, request: Request):
         raise HTTPException(status_code=404, detail="No artwork")
     if status == 304:
         return Response(status_code=304, headers=out)
+    if not body:
+        raise HTTPException(status_code=404, detail="No artwork")
     return Response(content=body, media_type=ctype, headers=out)
 
 

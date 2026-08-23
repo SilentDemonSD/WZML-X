@@ -270,9 +270,16 @@ class DbManager:
         if self._return:
             return None
         doc = await self.db.streams[_part()].find_one({"_id": token})
-        if not doc or not doc.get("pl"):
+        if doc and doc.get("pl"):
+            return (doc["pl"], int(doc.get("pi") or 0))
+        owner = await self.db.playlists[_part()].find_one({"items": token})
+        if not owner:
             return None
-        return (doc["pl"], int(doc.get("pi") or 0))
+        if _expired(owner):
+            await self.rm_playlist(owner["_id"])
+            return None
+        items = owner.get("items") or []
+        return (owner["_id"], items.index(token) if token in items else 0)
 
     async def find_stream(self, chat_id, msg_id):
         if self._return:

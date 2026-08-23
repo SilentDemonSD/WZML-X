@@ -339,6 +339,7 @@
 
         .shell {
             position: relative;
+            z-index: 2;
             width: 100%;
             height: 100%;
             border-radius: var(--r-frame);
@@ -387,19 +388,17 @@
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            width: clamp(46px, 5vw, 66px);
-            height: 44%;
+            width: clamp(52px, 5vw, 88px);
+            height: 46%;
             display: none;
             align-items: center;
             justify-content: center;
-            border-radius: 14px;
             overflow: hidden;
-            z-index: 6;
-            opacity: 0;
+            z-index: 1;
+            opacity: .72;
             text-decoration: none;
-            border: 1px solid rgba(93, 157, 255, .22);
-            transition: opacity .25s ease, transform .25s cubic-bezier(.2, .8, .3, 1),
-                border-color .25s ease;
+            box-shadow: 0 18px 44px rgba(0, 0, 3, .8);
+            transition: opacity .28s ease, transform .28s cubic-bezier(.2, .8, .3, 1);
         }
 
         .nav.on {
@@ -407,30 +406,37 @@
         }
 
         .nav.prev {
-            left: 10px;
+            right: calc(100% - 22px);
+            border-radius: var(--r-frame) 0 0 var(--r-frame);
         }
 
         .nav.next {
-            right: 10px;
+            left: calc(100% - 22px);
+            border-radius: 0 var(--r-frame) var(--r-frame) 0;
         }
 
-        .shell:hover .nav.on,
-        .nav.on:focus-visible {
+        .nav:hover,
+        .nav:focus-visible {
             opacity: 1;
         }
 
-        .nav:hover {
-            transform: translateY(-50%) scale(1.06);
-            border-color: rgba(93, 157, 255, .6);
+        .nav.prev:hover,
+        .nav.prev:focus-visible {
+            transform: translateY(-50%) translateX(-9px);
+        }
+
+        .nav.next:hover,
+        .nav.next:focus-visible {
+            transform: translateY(-50%) translateX(9px);
         }
 
         .navart {
             position: absolute;
-            inset: -14%;
+            inset: -16%;
             background-color: var(--surface-2);
             background-size: cover;
             background-position: center;
-            filter: blur(9px) saturate(125%) brightness(.72);
+            filter: blur(10px) saturate(125%) brightness(.62);
         }
 
         .nav svg {
@@ -438,16 +444,55 @@
             width: 26px;
             height: 26px;
             fill: var(--text);
+            opacity: 0;
+            transform: scale(.8);
             filter: drop-shadow(0 3px 10px rgba(0, 0, 3, .95));
+            transition: opacity .2s ease, transform .2s cubic-bezier(.2, .8, .3, 1);
+        }
+
+        .nav:hover svg,
+        .nav:focus-visible svg {
+            opacity: 1;
+            transform: scale(1);
         }
 
         body.dark .nav {
             display: none;
         }
 
-        @media (hover: none) {
-            .nav.on {
+        @media (max-width: 1180px) {
+            .nav {
+                z-index: 6;
+                opacity: 0;
+                height: 40%;
+                width: 46px;
+            }
+
+            .nav.prev {
+                right: auto;
+                left: 10px;
+                border-radius: 12px;
+            }
+
+            .nav.next {
+                left: auto;
+                right: 10px;
+                border-radius: 12px;
+            }
+
+            .nav.prev:hover,
+            .nav.next:hover {
+                transform: translateY(-50%);
+            }
+
+            .frame:hover .nav.on,
+            .nav.on:focus-visible {
                 opacity: 1;
+            }
+
+            .nav svg {
+                opacity: 1;
+                transform: scale(1);
             }
         }
 
@@ -1075,18 +1120,6 @@
                             <div class="subs" id="subs"><span id="subsText"></span></div>
                         </video-player>
                     </div>
-                    <a class="nav prev" id="navPrev" aria-label="Previous file">
-                        <span class="navart"></span>
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M15.4 7.4 14 6l-6 6 6 6 1.4-1.4-4.6-4.6z" />
-                        </svg>
-                    </a>
-                    <a class="nav next" id="navNext" aria-label="Next file">
-                        <span class="navart"></span>
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M8.6 16.6 10 18l6-6-6-6-1.4 1.4 4.6 4.6z" />
-                        </svg>
-                    </a>
                     <div class="stall">
                         <div class="stall-box" id="stallText"></div>
                     </div>
@@ -1098,6 +1131,18 @@
                         </div>
                     </div>
                 </div>
+                <a class="nav prev" id="navPrev" aria-label="Previous file">
+                    <span class="navart"></span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M15.4 7.4 14 6l-6 6 6 6 1.4-1.4-4.6-4.6z" />
+                    </svg>
+                </a>
+                <a class="nav next" id="navNext" aria-label="Next file">
+                    <span class="navart"></span>
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M8.6 16.6 10 18l6-6-6-6-1.4 1.4 4.6 4.6z" />
+                    </svg>
+                </a>
             </div>
         </div>
 
