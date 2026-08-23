@@ -1097,6 +1097,7 @@
             #loaded = false;
             #started = false;
             #pendingSeek = null;
+            #subsOn = false;
             #queue = Promise.resolve();
 
             constructor() {
@@ -1246,6 +1247,12 @@
                 }
             }
 
+            #applySubs() {
+                const p = this.#player;
+                if (!p || typeof p.setSubtitleEnable !== "function") return;
+                try { p.setSubtitleEnable(this.#subsOn); } catch (e) { }
+            }
+
             async #doPlay() {
                 const p = this.#player;
                 if (!p || !this.#loaded) return;
@@ -1260,6 +1267,7 @@
                     this.#emit("pause");
                     return;
                 }
+                this.#applySubs();
                 if (this.#pendingSeek !== null) {
                     const at = this.#pendingSeek;
                     this.#pendingSeek = null;
@@ -1284,6 +1292,7 @@
                 } catch (e) {
                     try { await p.seek(ms); } catch (e2) { }
                 }
+                this.#applySubs();
                 this.#emit("seeked");
                 this.#emit("timeupdate");
             }
@@ -1292,9 +1301,16 @@
                 const p = this.#player;
                 if (!p) return;
                 await this.#settle();
-                if (kind === "audio") await p.selectAudio(id);
-                else await p.selectSubtitle(id);
+                if (kind === "audio") {
+                    await p.selectAudio(id);
+                } else if (Number(id) < 0) {
+                    this.#subsOn = false;
+                } else {
+                    await p.selectSubtitle(id);
+                    this.#subsOn = true;
+                }
                 await this.#settle();
+                this.#applySubs();
             }
 
             play() {
@@ -1666,18 +1682,14 @@
             }
 
             function lmSwitchAudio(id, label) {
-                var wasPlaying = lmEl && !lmEl.paused;
-                if (wasPlaying) lmEl.pause();
                 return Promise.resolve(lmEl.selectAudio(id))
                     .then(function () {
                         lmLog("selectAudio resolved id=" + id);
-                        if (wasPlaying) lmEl.play();
                         if (label) toast("Switched to " + label);
                     })
                     .catch(function (e) {
                         lmErr(e);
                         toast("That audio track could not be decoded");
-                        if (wasPlaying) lmEl.play();
                     });
             }
 
@@ -1700,7 +1712,6 @@
                         }));
                     dropdown(el("subDd"), "Subs", [{ items: items }], "-1",
                         function (it) {
-                            if (it.value === "-1") return;
                             Promise.resolve(lmEl.selectSubtitle(Number(it.value)))
                                 .catch(lmErr);
                         });
@@ -2007,6 +2018,16 @@
                 if (e.key === "Escape" && document.body.classList.contains("dark")) {
                     setLights(false);
                 }
+            });
+
+            window.addEventListener("unhandledrejection", function (e) {
+                var r = e && e.reason;
+                var msg = r && r.message ? r.message : String(r || "");
+                if (!lmEl || !/division by zero/i.test(msg)) return;
+                e.preventDefault();
+                lmErr(r);
+                Promise.resolve(lmEl.selectSubtitle(-1)).catch(lmErr);
+                toast("Subtitles turned off, that track stopped playback");
             });
 
             el("copy").onclick = function () {
