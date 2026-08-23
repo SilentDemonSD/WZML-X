@@ -232,15 +232,22 @@ class DbManager:
             {"$set": {"dump_msg_id": dump_msg_id, "dump_chat": dump_chat}},
         )
 
-    async def add_stream(self, token, chat_id, msg_id, poster=None, exp=None):
+    async def add_stream(
+        self, token, chat_id, msg_id, poster=None, exp=None, pl=None, pi=0
+    ):
         if self._return:
             return
         doc = {"cid": int(chat_id), "mid": int(msg_id)}
-        if poster:
+        if isinstance(poster, str):
+            doc["purl"] = poster
+        elif poster:
             doc["pcid"] = int(poster[0])
             doc["pmid"] = int(poster[1])
         if exp:
             doc["exp"] = int(exp)
+        if pl:
+            doc["pl"] = pl
+            doc["pi"] = int(pi)
         await self.db.streams[_part()].update_one(
             {"_id": token},
             {"$set": doc},
@@ -251,9 +258,21 @@ class DbManager:
         if self._return:
             return None
         doc = await self.db.streams[_part()].find_one({"_id": token})
-        if doc and doc.get("pcid") and doc.get("pmid"):
-            return (doc["pcid"], doc["pmid"])
+        if not doc:
+            return None
+        if doc.get("purl"):
+            return ("url", doc["purl"])
+        if doc.get("pcid") and doc.get("pmid"):
+            return ("tg", (doc["pcid"], doc["pmid"]))
         return None
+
+    async def get_stream_nav(self, token):
+        if self._return:
+            return None
+        doc = await self.db.streams[_part()].find_one({"_id": token})
+        if not doc or not doc.get("pl"):
+            return None
+        return (doc["pl"], int(doc.get("pi") or 0))
 
     async def find_stream(self, chat_id, msg_id):
         if self._return:
@@ -283,8 +302,9 @@ class DbManager:
         if self._return:
             return
         doc = {"name": name or "", "items": list(items)}
-        doc["pcid"] = int(poster[0]) if poster else None
-        doc["pmid"] = int(poster[1]) if poster else None
+        doc["purl"] = poster if isinstance(poster, str) else None
+        doc["pcid"] = int(poster[0]) if poster and not isinstance(poster, str) else None
+        doc["pmid"] = int(poster[1]) if poster and not isinstance(poster, str) else None
         if exp:
             doc["exp"] = int(exp)
         await self.db.playlists[_part()].update_one(
@@ -305,6 +325,7 @@ class DbManager:
         return {
             "name": doc.get("name") or "",
             "items": doc.get("items") or [],
+            "purl": doc.get("purl"),
             "pcid": doc.get("pcid"),
             "pmid": doc.get("pmid"),
         }

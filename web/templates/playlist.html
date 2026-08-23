@@ -173,6 +173,12 @@
 
         .item {
             position: relative;
+            transition: z-index 0s;
+        }
+
+        .item:hover,
+        .item:focus-within {
+            z-index: 6;
         }
 
         .card {
@@ -183,13 +189,19 @@
             border: 1px solid var(--line);
             text-decoration: none;
             color: inherit;
-            transition: border-color .2s ease, transform .2s ease, background .2s ease;
+            transform-origin: center;
+            transition: border-color .25s ease, transform .25s cubic-bezier(.2, .8, .3, 1),
+                background .25s ease, box-shadow .25s ease;
         }
 
-        .card:hover {
+        .item:hover .card,
+        .item:focus-within .card {
             background: var(--surface-2);
-            border-color: rgba(93, 157, 255, .55);
-            transform: translateY(-2px);
+            border-color: rgba(93, 157, 255, .6);
+            transform: scale(1.055);
+            box-shadow:
+                0 26px 60px rgba(0, 0, 3, .82),
+                0 0 0 1px rgba(93, 157, 255, .22);
         }
 
         .card:focus-visible {
@@ -237,24 +249,39 @@
             display: grid;
             place-items: center;
             opacity: 0;
-            transition: opacity .2s ease;
-            background: rgba(0, 0, 3, .42);
+            transition: opacity .25s ease;
+            background:
+                radial-gradient(circle at 50% 50%, rgba(0, 0, 3, .35), rgba(0, 0, 3, .62));
         }
 
-        .card:hover .play {
+        .item:hover .play,
+        .item:focus-within .play {
             opacity: 1;
         }
 
         .play svg {
-            width: 42px;
-            height: 42px;
+            width: 30px;
+            height: 30px;
             fill: var(--text);
-            filter: drop-shadow(0 4px 14px rgba(0, 0, 3, .9));
+            padding: .7rem;
+            box-sizing: content-box;
+            border-radius: 50%;
+            background: rgba(61, 135, 255, .32);
+            border: 1px solid rgba(93, 157, 255, .55);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            transform: scale(.86);
+            transition: transform .25s cubic-bezier(.2, .8, .3, 1);
+        }
+
+        .item:hover .play svg,
+        .item:focus-within .play svg {
+            transform: scale(1);
         }
 
         .body {
             display: block;
-            padding: .7rem .8rem .8rem;
+            padding: .7rem 3rem .8rem .8rem;
         }
 
         .name {
@@ -290,17 +317,26 @@
 
         .dl {
             position: absolute;
-            right: .55rem;
-            top: .55rem;
-            width: 1.9rem;
-            height: 1.9rem;
+            right: .7rem;
+            bottom: .78rem;
+            width: 2.1rem;
+            height: 2.1rem;
             display: grid;
             place-items: center;
-            border-radius: 8px;
-            background: rgba(0, 0, 3, .78);
-            border: 1px solid rgba(93, 157, 255, .28);
+            border-radius: 50%;
+            background: var(--accent-soft);
+            border: 1px solid var(--line);
             color: var(--muted);
-            transition: color .2s ease, border-color .2s ease, background .2s ease;
+            transform: scale(.9);
+            transition: color .2s ease, border-color .2s ease, background .2s ease,
+                transform .25s cubic-bezier(.2, .8, .3, 1);
+        }
+
+        .item:hover .dl,
+        .item:focus-within .dl {
+            transform: scale(1);
+            color: var(--text);
+            border-color: rgba(93, 157, 255, .5);
         }
 
         .dl svg {
@@ -310,9 +346,10 @@
         }
 
         .dl:hover {
-            color: var(--text);
+            color: #fff;
             background: var(--accent);
             border-color: var(--accent-2);
+            transform: scale(1.12);
         }
 
         .dl:focus-visible {
@@ -408,8 +445,28 @@
             }
 
             .play svg {
-                width: 32px;
-                height: 32px;
+                width: 22px;
+                height: 22px;
+                padding: .5rem;
+            }
+
+            .body {
+                padding-right: 2.7rem;
+            }
+
+            .dl {
+                width: 1.85rem;
+                height: 1.85rem;
+                transform: scale(1);
+            }
+        }
+
+        @media (hover: none) {
+
+            .play,
+            .dl {
+                opacity: 1;
+                transform: scale(1);
             }
         }
 

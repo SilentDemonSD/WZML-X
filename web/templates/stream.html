@@ -383,6 +383,74 @@
             white-space: pre-wrap;
         }
 
+        .nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: clamp(46px, 5vw, 66px);
+            height: 44%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            border-radius: 14px;
+            overflow: hidden;
+            z-index: 6;
+            opacity: 0;
+            text-decoration: none;
+            border: 1px solid rgba(93, 157, 255, .22);
+            transition: opacity .25s ease, transform .25s cubic-bezier(.2, .8, .3, 1),
+                border-color .25s ease;
+        }
+
+        .nav.on {
+            display: flex;
+        }
+
+        .nav.prev {
+            left: 10px;
+        }
+
+        .nav.next {
+            right: 10px;
+        }
+
+        .shell:hover .nav.on,
+        .nav.on:focus-visible {
+            opacity: 1;
+        }
+
+        .nav:hover {
+            transform: translateY(-50%) scale(1.06);
+            border-color: rgba(93, 157, 255, .6);
+        }
+
+        .navart {
+            position: absolute;
+            inset: -14%;
+            background-color: var(--surface-2);
+            background-size: cover;
+            background-position: center;
+            filter: blur(9px) saturate(125%) brightness(.72);
+        }
+
+        .nav svg {
+            position: relative;
+            width: 26px;
+            height: 26px;
+            fill: var(--text);
+            filter: drop-shadow(0 3px 10px rgba(0, 0, 3, .95));
+        }
+
+        body.dark .nav {
+            display: none;
+        }
+
+        @media (hover: none) {
+            .nav.on {
+                opacity: 1;
+            }
+        }
+
         .stall {
             position: absolute;
             inset: 0;
@@ -1007,6 +1075,18 @@
                             <div class="subs" id="subs"><span id="subsText"></span></div>
                         </video-player>
                     </div>
+                    <a class="nav prev" id="navPrev" aria-label="Previous file">
+                        <span class="navart"></span>
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M15.4 7.4 14 6l-6 6 6 6 1.4-1.4-4.6-4.6z" />
+                        </svg>
+                    </a>
+                    <a class="nav next" id="navNext" aria-label="Next file">
+                        <span class="navart"></span>
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M8.6 16.6 10 18l6-6-6-6-1.4 1.4 4.6 4.6z" />
+                        </svg>
+                    </a>
                     <div class="stall">
                         <div class="stall-box" id="stallText"></div>
                     </div>
@@ -2162,6 +2242,25 @@
                 probe.src = POSTER;
             }
 
+            function wireNav(list) {
+                if (!list) return;
+                var pairs = [["navPrev", list.prev], ["navNext", list.next]];
+                for (var i = 0; i < pairs.length; i++) {
+                    var node = el(pairs[i][0]);
+                    var side = pairs[i][1];
+                    if (!side || !side.token) continue;
+                    node.href = "/xstrm/" + encodeURIComponent(side.token);
+                    node.title = (i === 0 ? "Previous: " : "Next: ") + side.name;
+                    node.setAttribute("aria-label", node.title);
+                    node.querySelector(".navart").style.backgroundImage =
+                        'url("/poster/' + encodeURIComponent(side.token) + '")';
+                    node.classList.add("on");
+                }
+                if (list.total > 1) {
+                    addMeta(list.index + " of " + list.total);
+                }
+            }
+
             function start(info) {
                 FILE = info.name || "Untitled";
                 MIME = info.mime || "";
@@ -2177,6 +2276,7 @@
                 loadTracks();
                 addMeta(bytes(info.size));
                 if (MIME) addMeta(MIME);
+                wireNav(info.playlist);
 
                 bindMedia(vid, true);
                 vid.addEventListener("error", function () {

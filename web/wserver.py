@@ -187,6 +187,7 @@ SERVICES = {
 STREAM_PORT = environ.get("STREAM_PORT", "") or "8091"
 STREAM_BASE = f"http://127.0.0.1:{STREAM_PORT}"
 _SAFE_TOKEN = re_compile(r"^[A-Za-z0-9_-]{4,32}$")
+_POSTER_CAP = 8 * 1024 * 1024
 http_session = None
 
 
@@ -662,7 +663,7 @@ async def poster_route(token: str, request: Request):
             f"{STREAM_BASE}/_poster/{token}", headers=forward
         ) as upstream:
             status = upstream.status
-            body = b"" if status == 304 else await upstream.read()
+            body = b"" if status == 304 else await upstream.content.read(_POSTER_CAP)
             out = {
                 "Cache-Control": upstream.headers.get(
                     "Cache-Control", "private, max-age=86400"

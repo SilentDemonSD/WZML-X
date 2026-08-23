@@ -172,8 +172,40 @@ def _disposition(name, inline):
     return f"{kind}; filename*=UTF-8''{quote(name, safe='')}"
 
 
+async def _neighbours(token):
+    nav = await database.get_stream_nav(token)
+    if not nav:
+        return None
+    body = await _playlist_body(nav[0])
+    if not body or not body["items"]:
+        return None
+    tokens = [i["token"] for i in body["items"]]
+    idx = tokens.index(token) if token in tokens else nav[1]
+    if idx < 0 or idx >= len(tokens):
+        return None
+    out = {
+        "token": nav[0],
+        "name": body["name"],
+        "index": idx + 1,
+        "total": len(tokens),
+        "prev": None,
+        "next": None,
+    }
+    if idx > 0:
+        out["prev"] = {
+            "token": tokens[idx - 1],
+            "name": body["items"][idx - 1]["name"],
+        }
+    if idx + 1 < len(tokens):
+        out["next"] = {
+            "token": tokens[idx + 1],
+            "name": body["items"][idx + 1]["name"],
+        }
+    return out
+
+
 async def _meta(request):
-    _, cid, mid = await _resolve(request)
+    token, cid, mid = await _resolve(request)
     try:
         info = await probe(cid, mid)
     except StreamGone:
@@ -183,6 +215,13 @@ async def _meta(request):
         raise web.HTTPServiceUnavailable(text=str(e)) from None
     mime = info["mime"]
     info["playable"] = mime.startswith(_PLAYABLE)
+    try:
+        nav = await _neighbours(token)
+    except Exception as e:
+        LOGGER.debug(f"playlist nav unavailable for {token}: {e}")
+        nav = None
+    if nav:
+        info["playlist"] = nav
     return web.json_response(info)
 
 
@@ -420,17 +459,20 @@ async def _playlist_body(token):
 async def _poster_source(token):
     doc = await database.get_playlist(token)
     if doc:
+        if doc.get("purl"):
+            return ("url", doc["purl"])
         if doc.get("pcid") and doc.get("pmid"):
-            return int(doc["pcid"]), int(doc["pmid"])
+            return ("tg", (int(doc["pcid"]), int(doc["pmid"])))
         for tok in doc["items"]:
             found = await database.get_stream(tok)
             if found:
-                return found
+                return ("tg", found)
         return None
     art = await database.get_stream_art(token)
     if art:
         return art
-    return await database.get_stream(token)
+    found = await database.get_stream(token)
+    return ("tg", found) if found else None
 
 
 async def _poster(request):
@@ -438,13 +480,16 @@ async def _poster(request):
     if not _TOKEN_RE.match(token):
         raise web.HTTPNotFound(text="unknown link")
 
+    source = await _poster_source(token)
+    if not source:
+        raise web.HTTPNotFound(text="unknown link")
+    if source[0] == "url":
+        raise web.HTTPFound(source[1])
+
     data = _poster_cache.get(token)
     if data is None:
-        source = await _poster_source(token)
-        if not source:
-            raise web.HTTPNotFound(text="unknown link")
         try:
-            data = await poster_bytes(source[0], source[1])
+            data = await poster_bytes(source[1][0], source[1][1])
         except NoClientAvailable as e:
             raise web.HTTPServiceUnavailable(text=str(e)) from None
         except Exception as e:

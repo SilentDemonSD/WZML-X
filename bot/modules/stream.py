@@ -8,7 +8,7 @@ from .. import LOGGER
 from ..core.config_manager import Config
 from ..core.tg_client import TgClient
 from ..helper.ext_utils.db_handler import database
-from ..helper.ext_utils.links_utils import is_telegram_link
+from ..helper.ext_utils.links_utils import is_telegram_link, is_url
 from ..helper.telegram_helper.bot_commands import BotCommands
 from ..helper.telegram_helper.button_build import ButtonMaker
 from ..helper.telegram_helper.message_utils import (
@@ -30,24 +30,23 @@ _MAX_BUTTONS = 20
 _LABEL = 22
 
 
-async def _mint_token(chat_id, msg_id, poster=None, exp=None):
-    if not exp and not poster:
+async def _mint_token(chat_id, msg_id, poster=None, exp=None, pl=None, pi=0):
+    if not exp and not poster and not pl:
         existing = await database.find_stream(chat_id, msg_id)
         if existing:
             return existing
     for _ in range(6):
         token = token_urlsafe(5)
         if await database.get_stream(token) is None:
-            await database.add_stream(token, chat_id, msg_id, poster, exp)
+            await database.add_stream(token, chat_id, msg_id, poster, exp, pl, pi)
             return token
     return None
 
 
-async def _mint_playlist(name, items, poster, exp):
+async def _reserve_playlist():
     for _ in range(6):
         token = token_urlsafe(5)
         if await database.get_playlist(token) is None:
-            await database.add_playlist(token, name, items, poster, exp)
             return token
     return None
 
@@ -95,7 +94,7 @@ def parse_stream_args(parts):
     for part in parts:
         if want == "poster":
             want = None
-            if is_telegram_link(part):
+            if is_telegram_link(part) or is_url(part):
                 poster = part
                 continue
         elif want == "ttl":
@@ -116,6 +115,8 @@ def parse_stream_args(parts):
         if is_telegram_link(part):
             if link is None:
                 link = part
+            continue
+        if is_url(part):
             continue
         words.append(part)
     return {
@@ -152,9 +153,9 @@ def _short(name, limit=_LABEL):
     return name if len(name) <= limit else name[: limit - 1] + "…"
 
 
-async def _register(message, poster=None, exp=None):
+async def _register(message, poster=None, exp=None, pl=None, pi=0):
     chat_id, msg_id = await _dump_copy(message)
-    return await _mint_token(chat_id, msg_id, poster, exp)
+    return await _mint_token(chat_id, msg_id, poster, exp, pl, pi)
 
 
 def _ready():
@@ -252,20 +253,32 @@ async def stream_links(_, message):
 
     poster = None
     if args["poster"]:
-        try:
-            pmsg, _s = await get_tg_link_message(args["poster"])
-            if pmsg and not isinstance(pmsg, list):
-                poster = await _dump_copy(pmsg)
-        except Exception as e:
-            LOGGER.error(f"stream poster failed: {e}")
+        if is_telegram_link(args["poster"]):
+            try:
+                pmsg, _s = await get_tg_link_message(args["poster"])
+                if pmsg and not isinstance(pmsg, list):
+                    poster = await _dump_copy(pmsg)
+            except Exception as e:
+                LOGGER.error(f"stream poster failed: {e}")
+        else:
+            poster = args["poster"]
 
     ttl = args["ttl"]
     exp = int(time() + ttl) if ttl else None
 
+    pl_token = None
+    if args["playlist"]:
+        pl_token = await _reserve_playlist()
+        if not pl_token:
+            await edit_message(
+                status, "<b>Could not allocate a playlist. Try again.</b>"
+            )
+            return
+
     try:
         minted = []
-        for msg, media in picked:
-            token = await _register(msg, poster, exp)
+        for index, (msg, media) in enumerate(picked):
+            token = await _register(msg, poster, exp, pl_token, index)
             if token:
                 minted.append((token, media))
     except Exception as e:
@@ -286,23 +299,16 @@ async def stream_links(_, message):
         title = args["name"] or (
             getattr(minted[0][1], "file_name", "") or "Playlist"
         )
-        token = await _mint_playlist(
-            title, [t for t, _m in minted], poster, exp
+        await database.add_playlist(
+            pl_token, title, [t for t, _m in minted], poster, exp
         )
-        if not token:
-            await edit_message(
-                status, "<b>Could not allocate a playlist. Try again.</b>"
-            )
-            return
         rows = [
             ("Task Size", get_readable_file_size(total)),
             ("Total Files", f"{len(minted)} of {asked}"),
-            ("In Mode", "#TgMedia"),
-            ("Out Mode", "#Playlist"),
         ]
         if ttl:
             rows.append(("Expires In", get_readable_time(ttl)))
-        page = f"{base}/playlist/{token}"
+        page = f"{base}/playlist/{pl_token}"
         msg = _head(title, rows, tag) + _done("Playlist page is ready")
         buttons.url_button("▶️ Open Playlist", page, style=ButtonStyle.PRIMARY)
         buttons.url_button("🔗 Share", f"https://t.me/share/url?url={page}")
@@ -319,8 +325,6 @@ async def stream_links(_, message):
         rows = [
             ("Task Size", get_readable_file_size(total)),
             ("Type", escape(mime)),
-            ("In Mode", "#TgMedia"),
-            ("Out Mode", "#Stream" if _playable(media) else "#Download"),
         ]
         if ttl:
             rows.append(("Expires In", get_readable_time(ttl)))
@@ -343,8 +347,6 @@ async def stream_links(_, message):
     rows = [
         ("Task Size", get_readable_file_size(total)),
         ("Total Files", f"{len(minted)} of {asked}"),
-        ("In Mode", "#TgMedia"),
-        ("Out Mode", "#Stream"),
     ]
     if ttl:
         rows.append(("Expires In", get_readable_time(ttl)))
