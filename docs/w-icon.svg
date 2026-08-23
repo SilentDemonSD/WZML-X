@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 100 100" role="img" aria-label="W logo">
+  <defs>
+    <linearGradient id="face" x1="50" y1="0" x2="50" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FAF8FF"></stop>
+      <stop offset="0.46" stop-color="#F4F2FE"></stop>
+      <stop offset="1" stop-color="#EEEAFB"></stop>
+    </linearGradient>
+<linearGradient id="wg" gradientUnits="userSpaceOnUse" x1="15" y1="70" x2="86" y2="30">
+      <stop offset="0" stop-color="#2A1178"></stop>
+      <stop offset="0.5" stop-color="#33188C"></stop>
+      <stop offset="0.76" stop-color="#5236CB"></stop>
+      <stop offset="0.92" stop-color="#907DFB"></stop>
+      <stop offset="1" stop-color="#B9A9FD"></stop>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="100" height="100" rx="22.5" ry="22.5" fill="url(#face)"></rect>
+  <path d="M 19.4 42.6 C 20.0 55.4 22.4 66.4 29.8 68.3 C 37.0 70.1 43.2 61.0 45.2 48.8 C 47.5 61.0 53.4 66.6 61.0 68.3 C 68.6 70.0 75.6 55.5 80.6 35.3" fill="none" stroke="url(#wg)" stroke-width="11.1" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>

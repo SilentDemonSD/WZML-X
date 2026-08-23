@@ -3,539 +3,919 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Torrent File Selector</title>
-    <link rel="icon" href="https://graph.org/file/1a6ad157f55bc42b548df.png" type="image/jpg">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#12111a" media="(prefers-color-scheme: dark)">
+    <title>Torrent File Selector — WZML-X</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22.5' fill='%23F4F2FE'/%3E%3Cpath d='M 19.4 42.6 C 20.0 55.4 22.4 66.4 29.8 68.3 C 37.0 70.1 43.2 61.0 45.2 48.8 C 47.5 61.0 53.4 66.6 61.0 68.3 C 68.6 70.0 75.6 55.5 80.6 35.3' fill='none' stroke='%235236CB' stroke-width='11.1' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg: #f4f5f9;
+            --surface: #ffffff;
+            --surface-2: #fafafd;
+            --line: #e7e7f0;
+            --line-2: #d8d8e6;
+            --text: #17161f;
+            --muted: #6d6a83;
+            --accent: #5236cb;
+            --accent-2: #6f56e8;
+            --accent-soft: #efecfd;
+            --ok: #16a34a;
+            --shadow: 0 1px 2px rgba(23, 22, 31, 0.05), 0 8px 24px -12px rgba(23, 22, 31, 0.14);
+            --radius: 14px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0e0d15;
+                --surface: #16151f;
+                --surface-2: #1c1a27;
+                --line: #262336;
+                --line-2: #322e45;
+                --text: #eceaf4;
+                --muted: #9591ad;
+                --accent: #8b74ff;
+                --accent-2: #a390ff;
+                --accent-soft: #241f3d;
+                --ok: #4ade80;
+                --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -12px rgba(0, 0, 0, 0.7);
+            }
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: "Ubuntu", sans-serif;
             list-style: none;
             text-decoration: none;
-            outline: none !important;
-            color: white;
+        }
+
+        html {
+            -webkit-text-size-adjust: 100%;
         }
 
         body {
-            background-color: #0D1117;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 15px;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
             min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            padding-bottom: 6rem;
         }
 
-        header {
-            margin: 3vh 1vw;
-            padding: 0.5rem 1rem;
+        .wrap {
+            width: 100%;
+            max-width: 62rem;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        .appbar {
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            background: color-mix(in srgb, var(--surface) 86%, transparent);
+            backdrop-filter: saturate(180%) blur(12px);
+            border-bottom: 1px solid var(--line);
+        }
+
+        .appbar .wrap {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            border-radius: 30px;
-            background-color: #161B22;
-            border: 2px solid rgba(255, 255, 255, 0.11);
-        }
-
-        header:hover,
-        section:hover {
-            box-shadow: 0px 0px 15px black;
+            gap: 1rem;
+            height: 3.75rem;
         }
 
         .brand {
             display: flex;
             align-items: center;
+            gap: 0.6rem;
+            min-width: 0;
+            margin-right: auto;
         }
 
-        .brand img {
-            width: 2.5rem;
-            height: 2.5rem;
-            border: 2px solid black;
-            border-radius: 50%;
+        .brand .logo {
+            width: 1.9rem;
+            height: 1.9rem;
+            flex-shrink: 0;
+            border-radius: 8px;
         }
 
         .name {
-            margin-left: 1vw;
-            font-size: 1.5rem;
-            color: white;
+            font-size: 0.98rem;
+            font-weight: 650;
+            letter-spacing: -0.01em;
+            white-space: nowrap;
         }
 
         .name a {
-            color: white;
-            text-decoration: none;
+            color: var(--text);
+        }
+
+        .name a:hover {
+            color: var(--accent);
+        }
+
+        .social {
+            display: flex;
+            gap: 0.15rem;
         }
 
         .social a {
-            font-size: 1.5rem;
-            color: white;
-            padding-left: 1vw;
-            text-decoration: none;
+            display: grid;
+            place-items: center;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 8px;
+            color: var(--muted);
+            transition: color 150ms ease, background 150ms ease;
         }
 
-        .social a:hover,
-        .brand:hover {
-            filter: invert(0.3);
+        .social a svg {
+            width: 1.05rem;
+            height: 1.05rem;
         }
 
-        #sticks {
-            margin: 0vh 1vw;
-            margin-bottom: 1vh;
-            padding: 1vh 3vw;
-            display: flex;
-            flex-direction: column;
-            border: 2px solid rgba(255, 255, 255, 0.11);
-            border-radius: 20px;
-            background-color: #161B22;
-            align-items: center;
+        .social a:hover {
+            color: var(--text);
+            background: var(--surface-2);
         }
 
-        #sticks.stick {
-            position: sticky;
-            top: 0;
-            z-index: 10000;
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
         }
 
-        #sticks h4 {
-            margin: 0.3rem 0;
-        }
-
-        section {
-            margin: 0vh 1vw;
-            margin-bottom: 10vh;
-            padding: 1vh 3vw;
-            display: flex;
-            flex-direction: column;
-            border: 2px solid rgba(255, 255, 255, 0.11);
-            border-radius: 20px;
-            background-color: #161B22;
-        }
-
-        li:nth-child(1) {
-            padding: 1rem 1rem 0.5rem 1rem;
-        }
-
-        li:nth-child(n+1) {
-            padding-left: 1rem;
-        }
-
-        li label {
-            padding-left: 0.5rem;
-        }
-
-        li {
-            padding-bottom: 0.5rem;
-        }
-
-        span.arrow {
-            margin-right: 0.5rem;
-            cursor: pointer;
-            user-select: none;
-            transition: transform 200ms ease-out;
-        }
-
-        span.arrow.active {
-            transform: rotate(90deg);
-            display: inline-block;
-        }
-
-        ul.tree {
-            margin: 1vh 1vw 1vh 1vw;
-            padding: 0 0 0.5rem 0;
-            border: 2px solid black;
-            border-radius: 20px;
-            background-color: #1c2129;
-            overflow: hidden;
-        }
-
-        input[type="checkbox"] {
-            cursor: pointer;
-            user-select: none;
-        }
-
-        input[type="submit"],
-        input[type="button"],
         button {
-            border-radius: 20px;
-            margin: 2vh auto 1vh auto;
-            width: 50%;
-            display: block;
-            height: 5.5vh;
-            border: 2px solid rgba(255, 255, 255, 0.11);
-            background-color: #0D1117;
-            color: white;
-            font-size: 16px;
-            font-weight: 500;
+            font-family: inherit;
+            font-size: 0.86rem;
+            font-weight: 550;
+            color: var(--text);
+            background: var(--surface);
+            border: 1px solid var(--line-2);
+            border-radius: 9px;
+            padding: 0.45rem 0.85rem;
             cursor: pointer;
-            transition: background-color 200ms ease;
+            white-space: nowrap;
+            transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
         }
 
-        input[type="submit"]:hover,
-        input[type="submit"]:focus,
-        input[type="button"]:hover,
         button:hover {
-            background-color: rgba(255, 255, 255, 0.068);
+            background: var(--surface-2);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        button:focus-visible,
+        input:focus-visible,
+        a:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-2);
+            border-color: var(--accent-2);
+            color: #fff;
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
         }
 
         input[type="text"],
-        input[type="password"] {
-            border-radius: 20px;
+        input[type="password"],
+        input[type="search"] {
+            font-family: inherit;
+            font-size: 0.9rem;
+            color: var(--text);
+            background: var(--surface);
+            border: 1px solid var(--line-2);
+            border-radius: 9px;
+            padding: 0.5rem 0.75rem;
             outline: none;
-            width: 50vw;
-            height: 4vh;
-            padding: 1rem;
-            margin: 0.5vh;
-            border: 2px solid rgba(255, 255, 255, 0.11);
-            background-color: #3e475531;
-            box-shadow: inset 0px 0px 10px black;
-            color: white;
+            transition: border-color 150ms ease, box-shadow 150ms ease;
+        }
+
+        input::placeholder {
+            color: var(--muted);
         }
 
         input[type="text"]:focus,
-        input[type="password"]:focus {
-            border-color: rgba(255, 255, 255, 0.404);
+        input[type="password"]:focus,
+        input[type="search"]:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-soft);
+        }
+
+        input[type="checkbox"] {
+            width: 1rem;
+            height: 1rem;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        .pin-entry {
+            animation: fade 0.35s ease both;
+        }
+
+        .pin-entry.fadeOut {
+            animation: fade 0.35s ease reverse both;
+        }
+
+        @keyframes fade {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: none; }
         }
 
         .pin-form {
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 2vh 0;
+            gap: 0.6rem;
+            max-width: 24rem;
+            margin: 4rem auto 0;
+            padding: 2.25rem 1.75rem;
+            text-align: center;
+        }
+
+        .pin-badge {
+            display: grid;
+            place-items: center;
+            width: 2.75rem;
+            height: 2.75rem;
+            border-radius: 12px;
+            background: var(--accent-soft);
+            color: var(--accent);
+            margin-bottom: 0.35rem;
+        }
+
+        .pin-badge svg {
+            width: 1.3rem;
+            height: 1.3rem;
         }
 
         .pin-form label {
-            font-size: larger;
-            font-weight: 500;
-            margin-bottom: 1vh;
+            font-size: 1.1rem;
+            font-weight: 650;
+            letter-spacing: -0.01em;
         }
 
-        .pin-form input[type="text"] {
-            width: 50%;
+        .pin-form .hint {
+            color: var(--muted);
+            font-size: 0.86rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .pin-digits {
+            display: flex;
+            gap: 0.6rem;
+            margin: 0.35rem 0 0.15rem;
+        }
+
+        .pin-digit {
+            width: 3.1rem;
+            height: 3.6rem;
+            text-align: center;
+            font-family: inherit;
+            font-size: 1.5rem;
+            font-weight: 650;
+            color: var(--text);
+            background: var(--surface);
+            border: 1px solid var(--line-2);
+            border-radius: 12px;
+            outline: none;
+            caret-color: var(--accent);
+            transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
+        }
+
+        .pin-digit:hover {
+            border-color: var(--accent);
+        }
+
+        .pin-digit:focus {
+            border-color: var(--accent);
+            background: var(--surface);
+            box-shadow: 0 0 0 3px var(--accent-soft);
+        }
+
+        .pin-digit:disabled {
+            opacity: 0.6;
+        }
+
+        .pin-form.invalid .pin-digit {
+            border-color: #e5484d;
+        }
+
+        .pin-error {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.84rem;
+            font-weight: 500;
+            color: #e5484d;
+            min-height: 1.25rem;
+        }
+
+        .pin-error svg {
+            width: 0.95rem;
+            height: 0.95rem;
+            flex-shrink: 0;
+        }
+
+        .pin-form.shake {
+            animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translateX(-2px); }
+            20%, 80% { transform: translateX(4px); }
+            30%, 50%, 70% { transform: translateX(-7px); }
+            40%, 60% { transform: translateX(7px); }
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 0.9rem;
+            height: 0.9rem;
+            margin-right: 0.4rem;
+            vertical-align: -0.12rem;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
         .pin-form button {
-            width: 50%;
+            width: 100%;
+            padding: 0.6rem;
+            font-size: 0.92rem;
         }
 
-        .file-tree-item {
+        #fileManager {
+            padding-top: 1.25rem;
+        }
+
+        .toolbar {
             display: flex;
             align-items: center;
-            padding: 0.4rem 1rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            transition: background-color 0.2s;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            padding: 0.85rem 1rem;
+            margin-bottom: 0.85rem;
         }
 
-        .file-tree-item:hover {
-            background-color: rgba(255, 255, 255, 0.05);
+        .summary {
+            font-size: 0.88rem;
+            color: var(--muted);
+            margin-right: auto;
         }
 
-        .file-tree-item .icon {
-            margin-right: 0.5rem;
+        .summary b {
+            color: var(--text);
+            font-weight: 650;
+            font-variant-numeric: tabular-nums;
         }
 
-        .file-tree-item .file-info {
+        .selection-actions {
             display: flex;
-            flex-direction: column;
-            flex-grow: 1;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            position: relative;
+            flex: 1 1 12rem;
+            min-width: 10rem;
+        }
+
+        .search-box > svg {
+            position: absolute;
+            left: 0.65rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0.95rem;
+            height: 0.95rem;
+            color: var(--muted);
+            pointer-events: none;
+        }
+
+        #fileSearch {
+            width: 100%;
+            padding-left: 2.1rem;
+        }
+
+        .listbar {
+            position: sticky;
+            top: 3.75rem;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 0.9rem;
+            border-bottom: 1px solid var(--line);
+            background: var(--surface-2);
+            border-radius: var(--radius) var(--radius) 0 0;
+        }
+
+        .crumbs {
+            display: flex;
+            align-items: center;
+            gap: 0.15rem;
+            flex-wrap: wrap;
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-right: auto;
             min-width: 0;
         }
 
-        .file-tree-item .file-name {
-            word-break: break-word;
+        .crumbs button {
+            background: none;
+            border: none;
+            padding: 0.2rem 0.4rem;
+            font-size: 0.85rem;
+            font-weight: 550;
+            color: var(--accent);
+            border-radius: 6px;
+        }
+
+        .crumbs button:hover {
+            background: var(--accent-soft);
+        }
+
+        .crumbs .sep {
+            color: var(--line-2);
+        }
+
+        .crumbs .current {
+            padding: 0.2rem 0.4rem;
+            font-weight: 600;
+            color: var(--text);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 18rem;
+        }
+
+        .sort-bar {
+            display: flex;
+            gap: 0.35rem;
+            flex-shrink: 0;
+        }
+
+        .sort-bar button {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.8rem;
+        }
+
+        .sort-bar button.active {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-soft);
+        }
+
+        .file-tree {
+            border-radius: 0 0 var(--radius) var(--radius);
+            overflow: hidden;
+        }
+
+        .empty {
+            padding: 3rem 1rem;
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        .file-tree-item {
+            display: grid;
+            grid-template-columns: auto auto minmax(0, 1fr) auto auto;
+            align-items: center;
+            gap: 0.7rem;
+            padding: 0.6rem 0.9rem;
+            border-bottom: 1px solid var(--line);
             cursor: pointer;
+            transition: background 120ms ease;
+        }
+
+        .file-tree-item:last-child {
+            border-bottom: none;
+        }
+
+        .file-tree-item:hover {
+            background: var(--surface-2);
+        }
+
+        .file-tree-item.is-selected {
+            background: color-mix(in srgb, var(--accent-soft) 60%, transparent);
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+        }
+
+        .file-tree-item .icon {
+            display: grid;
+            place-items: center;
+            width: 1.9rem;
+            height: 1.9rem;
+            border-radius: 8px;
+            background: var(--surface-2);
+            color: var(--muted);
+            flex-shrink: 0;
+        }
+
+        .file-tree-item.folder .icon {
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
+
+        .file-tree-item .icon svg {
+            width: 1rem;
+            height: 1rem;
+        }
+
+        .file-info {
+            min-width: 0;
+        }
+
+        .file-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .file-tree-item.folder .file-name {
             font-weight: 600;
-            cursor: pointer;
         }
 
-        .file-tree-item .size-info {
-            font-size: 0.8em;
-            color: #8b949e;
+        .file-tree-item.folder .file-name:hover {
+            color: var(--accent);
+            text-decoration: underline;
+        }
+
+        .size-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.78rem;
+            color: var(--muted);
+            margin-top: 0.15rem;
+        }
+
+        .progress {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .progress .bar {
+            width: 4rem;
+            height: 4px;
+            border-radius: 999px;
+            background: var(--line);
+            overflow: hidden;
+        }
+
+        .progress .bar span {
+            display: block;
+            height: 100%;
+            border-radius: 999px;
+            background: var(--accent);
+        }
+
+        .progress.done {
+            color: var(--ok);
         }
 
         .edit-btn {
             background: none;
             border: none;
-            color: inherit;
-            cursor: pointer;
-            font-size: 0.9em;
             padding: 0;
-            margin-left: 0.5rem;
+            font: inherit;
+            font-size: 0.78rem;
+            color: var(--accent);
+            cursor: pointer;
         }
 
         .edit-btn:hover {
             text-decoration: underline;
         }
 
-        .checkbox-wrapper {
+        .meta-size {
+            display: none;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .file-size {
+            font-size: 0.82rem;
+            font-variant-numeric: tabular-nums;
+            color: var(--muted);
+            white-space: nowrap;
+            text-align: right;
+        }
+
+        .chevron {
+            display: grid;
+            place-items: center;
+            width: 1.1rem;
+            color: var(--line-2);
+        }
+
+        .chevron svg {
+            width: 0.9rem;
+            height: 0.9rem;
+        }
+
+        .file-tree-item,
+        .file-tree-item * {
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .actionbar {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 30;
+            background: color-mix(in srgb, var(--surface) 90%, transparent);
+            backdrop-filter: saturate(180%) blur(12px);
+            border-top: 1px solid var(--line);
+        }
+
+        .actionbar .wrap {
             display: flex;
             align-items: center;
-            justify-content: center;
-            width: 40px;
+            justify-content: space-between;
+            gap: 1rem;
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+        }
+
+        .actionbar .note {
+            font-size: 0.84rem;
+            color: var(--muted);
+        }
+
+        #submitBtn {
+            padding: 0.55rem 1.4rem;
+            font-size: 0.9rem;
         }
 
         .modal {
             display: none;
             position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
+            inset: 0;
+            z-index: 100;
+            background: rgba(23, 22, 31, 0.45);
+            backdrop-filter: blur(3px);
+            padding: 1rem;
+        }
+
+        .modal.open {
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .modal-content {
-            background-color: #161B22;
-            border: 2px solid rgba(255, 255, 255, 0.11);
-            margin: 15% auto;
-            padding: 20px;
-            border-radius: 20px;
-            width: 90%;
-            max-width: 500px;
+            width: 100%;
+            max-width: 26rem;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            box-shadow: 0 24px 60px -20px rgba(23, 22, 31, 0.45);
+            padding: 1.4rem;
+            animation: fade 0.2s ease both;
         }
 
         .modal h2 {
-            margin-bottom: 1rem;
+            font-size: 1.05rem;
+            font-weight: 650;
+            letter-spacing: -0.01em;
+            margin-bottom: 0.5rem;
         }
 
         .modal p {
-            margin-bottom: 1rem;
-        }
-
-        .edit-name-input {
-            background-color: transparent;
-            border: none;
-            border-bottom: 1px solid white;
-            color: white;
-            font-size: inherit;
-            padding: 2px 4px;
-            margin-right: 8px;
-            width: 100%;
-        }
-
-        .edit-name-input:focus {
-            outline: none;
-            border-bottom: 2px solid white;
-        }
-
-        .pin-entry {
-            animation: fadeIn 0.5s;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .pin-entry.fadeOut {
-            animation: fadeOut 0.5s;
-        }
-
-        @keyframes fadeOut {
-            from { opacity: 1; }
-            to { opacity: 0; }
+            color: var(--muted);
+            font-size: 0.9rem;
         }
 
         .modal-footer {
             display: flex;
             gap: 0.5rem;
-            margin-top: 1rem;
+            justify-content: flex-end;
+            margin-top: 1.1rem;
         }
 
-        .modal-footer button {
-            margin: 0;
-            width: auto;
-            padding: 0 1.5rem;
-            height: 4vh;
-        }
-
-        @media (max-width: 768px) {
-            input[type="submit"],
-            input[type="button"],
-            button {
-                width: 100%;
-            }
-            .pin-form input[type="text"],
-            .pin-form button {
-                width: calc(100% - 0.3rem);
-            }
-        }
-        .sort-bar { display: flex; gap: 10px; padding: 12px 0 6px; justify-content: center; }
-        .sort-bar button { width: auto; min-width: 130px; height: 40px; margin: 0; padding: 0 20px; border-radius: 12px; }
-
-        .file-tree-item,
-        .file-tree-item * {
-            -webkit-user-select: none !important;
-            -moz-user-select: none !important;
-            -ms-user-select: none !important;
-            user-select: none !important;
-        }
-
-        .file-tree-item input[type="checkbox"] {
-            -webkit-user-select: auto !important;
-            -moz-user-select: auto !important;
-            -ms-user-select: auto !important;
-            user-select: auto !important;
-        }
-
-
-        /* ===== Torrent selector controls ===== */
-        .selection-top-bar {
-            position: sticky;
-            top: 0;
-            z-index: 20;
-            display: grid;
-            grid-template-columns: 1fr auto 1fr;
-            align-items: center;
-            gap: 1rem;
-            padding: 1rem;
-            margin-bottom: 0.5rem;
-            background: #1a2028;
-            border-radius: 0 0 1.5rem 1.5rem;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.11);
-        }
-
-        .selection-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .selection-actions button {
-            width: auto;
-            height: 4.5vh;
-            min-height: 42px;
-            margin: 0;
-            padding: 0 1rem;
-        }
-
-        .selection-stats {
-            text-align: center;
-            white-space: nowrap;
-            line-height: 1.6;
-        }
-
-        .search-box {
-            justify-self: end;
+        .edit-name-input {
             width: 100%;
-            max-width: 320px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            color: var(--text);
+            background: var(--surface);
+            border: 1px solid var(--line-2);
+            border-radius: 9px;
+            padding: 0.55rem 0.7rem;
         }
 
-        #fileSearch {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 0.7rem 1rem;
-            border: 2px solid rgba(255, 255, 255, 0.11);
-            border-radius: 1.5rem;
-            background: #0D1117;
-            color: inherit;
+        .edit-name-input:focus {
             outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-soft);
         }
 
-        .selection-bottom-bar {
-            position: sticky;
-            bottom: 0;
-            z-index: 20;
-            padding: 1rem 0 0.5rem;
-            background: #1a2028;
-            border-top: 2px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .selection-bottom-bar #submitBtn {
-            margin: 0 auto;
-            width: 50%;
-        }
-
-        @media (max-width: 800px) {
-            .selection-top-bar {
-                grid-template-columns: 1fr;
+        @media (max-width: 640px) {
+            .toolbar {
+                gap: 0.6rem;
             }
 
-            .selection-actions,
-            .search-box {
-                justify-self: center;
-            }
-
-            .selection-stats {
-                order: -1;
+            .summary {
+                flex: 1 1 100%;
+                margin-right: 0;
             }
 
             .search-box {
-                max-width: none;
+                flex: 1 1 100%;
             }
 
-            .selection-bottom-bar #submitBtn {
-                width: 90%;
+            .file-tree-item {
+                gap: 0.55rem;
+                padding: 0.6rem 0.7rem;
+            }
+
+            .file-tree-item .icon {
+                display: none;
+            }
+
+            .file-size {
+                display: none;
+            }
+
+            .meta-size {
+                display: inline;
+                font-weight: 600;
+                color: var(--text);
+            }
+
+            .crumbs .current {
+                max-width: 9rem;
             }
         }
 
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
     </style>
 </head>
 
 <body>
-    <header>
-        <div class="brand">
-            <img src="https://graph.org/file/1a6ad157f55bc42b548df.png" alt="logo">
-            <h2 class="name"><a href="https://t.me/WZML_X">Torrent Selector</a></h2>
-        </div>
-        <div class="social">
-            <a href="https://www.github.com/SilentDemonSD/WZML-X"><i class="fab fa-github"></i></a>
-            <a href="https://t.me/WZML_X"><i class="fab fa-telegram"></i></a>
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+        <symbol id="i-telegram" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M23.1 3.4a1.4 1.4 0 0 0-1.5-.2L1.6 11.5a1.4 1.4 0 0 0 .1 2.6l4.8 1.6 1.8 5.5a1.4 1.4 0 0 0 2.3.6l2.7-2.5 4.7 3.5a1.4 1.4 0 0 0 2.2-.8l3.4-16.2a1.4 1.4 0 0 0-.5-1.4ZM9.3 15.2l-.7 3.4-1.2-3.7 9-6.1-7.1 6.4Z"/>
+        </symbol>
+        <symbol id="i-github" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.9 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0C17.2 4.5 18.2 4.8 18.2 4.8c.6 1.7.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3Z"/>
+        </symbol>
+        <symbol id="i-lock" viewBox="0 0 24 24">
+            <path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M7 10V7a5 5 0 0 1 10 0v3M6 10h12a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1Z"/>
+        </symbol>
+        <symbol id="i-search" viewBox="0 0 24 24">
+            <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16Zm10 2-4.35-4.35"/>
+        </symbol>
+        <symbol id="i-folder" viewBox="0 0 24 24">
+            <path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.6.8l.9 1.2H19a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>
+        </symbol>
+        <symbol id="i-file" viewBox="0 0 24 24">
+            <path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Zm0 0v5h5"/>
+        </symbol>
+        <symbol id="i-chevron" viewBox="0 0 24 24">
+            <path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="m9 6 6 6-6 6"/>
+        </symbol>
+        <symbol id="i-alert" viewBox="0 0 24 24">
+            <path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 8v5m0 3.5h.01M10.3 3.9 2.4 17.6A2 2 0 0 0 4.1 20.6h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>
+        </symbol>
+        <symbol id="i-pencil" viewBox="0 0 24 24">
+            <path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17v3Z"/>
+        </symbol>
+    </svg>
+
+    <header class="appbar">
+        <div class="wrap">
+            <div class="brand">
+                <svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="WZML-X logo">
+                    <defs>
+                        <linearGradient id="wg" gradientUnits="userSpaceOnUse" x1="15" y1="70" x2="86" y2="30">
+                            <stop offset="0" stop-color="#2A1178"/>
+                            <stop offset="0.5" stop-color="#33188C"/>
+                            <stop offset="0.76" stop-color="#5236CB"/>
+                            <stop offset="0.92" stop-color="#907DFB"/>
+                            <stop offset="1" stop-color="#B9A9FD"/>
+                        </linearGradient>
+                    </defs>
+                    <rect x="0" y="0" width="100" height="100" rx="22.5" ry="22.5" fill="#F4F2FE"/>
+                    <path d="M 19.4 42.6 C 20.0 55.4 22.4 66.4 29.8 68.3 C 37.0 70.1 43.2 61.0 45.2 48.8 C 47.5 61.0 53.4 66.6 61.0 68.3 C 68.6 70.0 75.6 55.5 80.6 35.3" fill="none" stroke="url(#wg)" stroke-width="11.1" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <h1 class="name"><a href="https://t.me/WZMLX_Updates">Torrent Selector</a></h1>
+            </div>
+            <div class="social">
+                <a href="https://www.github.com/SilentDemonSD/WZML-X" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><svg aria-hidden="true"><use href="#i-github"/></svg></a>
+                <a href="https://t.me/WZMLX_Updates" target="_blank" rel="noopener noreferrer" aria-label="Telegram"><svg aria-hidden="true"><use href="#i-telegram"/></svg></a>
+            </div>
         </div>
     </header>
 
-    <section>
+    <main class="wrap">
         <div id="pinEntry" class="pin-entry">
-            <form id="pinForm" class="pin-form" onsubmit="return false">
-                <label for="pinInput">Pin Code:</label>
-                <input type="text" id="pinInput"
-                    title="Enter the code that you have got from Telegram to access the Torrent"
-                    placeholder="Enter the code that you have got from Telegram to access the Torrent">
-                <button type="submit" id="submitPin">Submit</button>
+            <form id="pinForm" class="pin-form card" onsubmit="return false">
+                <span class="pin-badge"><svg aria-hidden="true"><use href="#i-lock"/></svg></span>
+                <label for="pinDigit0">Enter your pin</label>
+                <p class="hint">Use the code you received on Telegram to open this torrent's file list.</p>
+                <div class="pin-digits" id="pinDigits">
+                    <input class="pin-digit" id="pinDigit0" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="1" aria-label="Pin digit 1">
+                    <input class="pin-digit" id="pinDigit1" type="text" inputmode="numeric" autocomplete="off" maxlength="1" aria-label="Pin digit 2">
+                    <input class="pin-digit" id="pinDigit2" type="text" inputmode="numeric" autocomplete="off" maxlength="1" aria-label="Pin digit 3">
+                    <input class="pin-digit" id="pinDigit3" type="text" inputmode="numeric" autocomplete="off" maxlength="1" aria-label="Pin digit 4">
+                </div>
+                <input type="hidden" id="pinInput">
+                <p class="pin-error" id="pinError" role="alert" hidden></p>
+                <button type="submit" id="submitPin" class="btn-primary">Unlock files</button>
             </form>
         </div>
 
         <div id="fileManager" style="display: none;">
-            <div class="selection-top-bar">
+            <div class="toolbar card">
+                <p class="summary">
+                    <b id="checked_files">0</b> of <b id="total_files">0</b> files
+                    &nbsp;·&nbsp; <b id="checked_size">0</b> of <b id="total_size">0</b>
+                </p>
+
                 <div class="selection-actions">
-                    <button type="button" id="selectAllBtn">Select All</button>
+                    <button type="button" id="selectAllBtn">This folder</button>
+                    <button type="button" id="selectEverythingBtn">All files</button>
                     <button type="button" id="invertSelectionBtn">Invert</button>
                 </div>
 
-                <div class="selection-stats">
-                    <div>Selected files: <b id="checked_files">0</b> of <b id="total_files">0</b></div>
-                    <div>Selected files size: <b id="checked_size">0</b> of <b id="total_size">0</b></div>
-                </div>
-
                 <div class="search-box">
+                    <svg aria-hidden="true"><use href="#i-search"/></svg>
                     <input type="search" id="fileSearch" placeholder="Search files...">
                 </div>
             </div>
 
-            <div class="sort-bar">
-                <button type="button" onclick="setSort('name')">Name <span id="name-sort">↑</span></button>
-                <button type="button" onclick="setSort('size')">Size <span id="size-sort">↕</span></button>
-            </div>
-
-            <div id="fileTree" class="file-tree"></div>
-
-            <div class="selection-bottom-bar">
-                <button type="button" id="submitBtn">Submit Selection</button>
+            <div class="card">
+                <div class="listbar">
+                    <nav class="crumbs" id="crumbs" aria-label="Folder path"></nav>
+                    <div class="sort-bar">
+                        <button type="button" id="sortNameBtn" onclick="setSort('name')">Name <span id="name-sort">↑</span></button>
+                        <button type="button" id="sortSizeBtn" onclick="setSort('size')">Size <span id="size-sort">↕</span></button>
+                    </div>
+                </div>
+                <div id="fileTree" class="file-tree"></div>
             </div>
         </div>
-    </section>
+    </main>
+
+    <div class="actionbar" id="actionbar" style="display: none;">
+        <div class="wrap">
+            <span class="note" id="actionNote">Nothing selected</span>
+            <button type="button" id="submitBtn" class="btn-primary">Submit selection</button>
+        </div>
+    </div>
 
     <div id="reusableModal" class="modal">
         <div class="modal-content">
-            <h2 id="modalTitle" style="margin-bottom: 1rem;"></h2>
+            <h2 id="modalTitle"></h2>
             <div id="modalBody"></div>
             <div id="modalFooter" class="modal-footer"></div>
         </div>
     </div>
-
     <script>
         const fileTree = document.getElementById('fileTree');
         const selectAllBtn = document.getElementById('selectAllBtn');
@@ -553,14 +933,9 @@
         const checkedSizeEl = document.getElementById('checked_size');
         const totalSizeEl = document.getElementById('total_size');
 
-        pinInput.focus();
         const urlParams = new Proxy(new URLSearchParams(window.location.search), {
             get: (searchParams, prop) => searchParams.get(prop),
         });
-        if (urlParams.pin) {
-            pinInput.value = urlParams.pin;
-            setTimeout(() => submitPin.click(), 0);
-        }
         let currentFolder = null;
         let files = [];
         let allowEdit = false;
@@ -593,53 +968,138 @@
         let sortAsc = true;
         let lastSelectedNode = null;
 
+
         function filterFilesBySearch() {
             const searchInput = document.getElementById('fileSearch');
             if (!searchInput) return;
-
             const query = searchInput.value.toLowerCase().trim();
-
+            let visible = 0;
             document.querySelectorAll('#fileTree .file-tree-item').forEach(row => {
                 const name = row.querySelector('.file-name');
                 if (!name) return;
-
-                row.style.display = (!query || name.textContent.toLowerCase().includes(query))
-                    ? ''
-                    : 'none';
+                const hit = !query || name.textContent.toLowerCase().includes(query);
+                row.style.display = hit ? '' : 'none';
+                if (hit) visible += 1;
             });
+            const empty = fileTree.querySelector('.empty');
+            if (empty) return;
+            let none = fileTree.querySelector('.no-match');
+            if (visible === 0) {
+                if (!none) {
+                    none = document.createElement('div');
+                    none.className = 'empty no-match';
+                    none.textContent = 'No files match your search.';
+                    fileTree.appendChild(none);
+                }
+            } else if (none) {
+                none.remove();
+            }
         }
+
 
         function setSort(type) {
             if (sortBy === type) sortAsc = !sortAsc;
             else { sortBy = type; sortAsc = type === "name"; }
             document.getElementById("name-sort").textContent = sortBy === "name" ? (sortAsc ? "↑" : "↓") : "↕";
             document.getElementById("size-sort").textContent = sortBy === "size" ? (sortAsc ? "↑" : "↓") : "↕";
+            document.getElementById("sortNameBtn").classList.toggle('active', sortBy === "name");
+            document.getElementById("sortSizeBtn").classList.toggle('active', sortBy === "size");
             renderFileTree(currentFolder ? currentFolder.children : files);
+        }
+
+
+        function renderCrumbs() {
+            const box = document.getElementById('crumbs');
+            if (!box) return;
+            const chain = [];
+            let node = currentFolder;
+            while (node) {
+                chain.unshift(node);
+                node = findParent(node);
+            }
+            box.innerHTML = '';
+            const addBtn = (label, target) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = label;
+                btn.addEventListener('click', () => {
+                    currentFolder = target;
+                    renderCrumbs();
+                    renderFileTree(target ? target.children : files);
+                    updateStats();
+                });
+                box.appendChild(btn);
+            };
+            const addSep = () => {
+                const sep = document.createElement('span');
+                sep.className = 'sep';
+                sep.textContent = '/';
+                box.appendChild(sep);
+            };
+            if (chain.length === 0) {
+                const root = document.createElement('span');
+                root.className = 'current';
+                root.textContent = 'All files';
+                box.appendChild(root);
+                return;
+            }
+            addBtn('All files', null);
+            chain.forEach((folder, i) => {
+                addSep();
+                if (i === chain.length - 1) {
+                    const current = document.createElement('span');
+                    current.className = 'current';
+                    current.textContent = folder.name;
+                    current.title = folder.name;
+                    box.appendChild(current);
+                } else {
+                    addBtn(folder.name, folder);
+                }
+            });
+        }
+
+        function icon(id) {
+            const wrap = document.createElement('span');
+            wrap.className = 'icon';
+            wrap.innerHTML = `<svg aria-hidden="true"><use href="#${id}"/></svg>`;
+            return wrap;
+        }
+
+        function sortNodes(nodes) {
+            return [...nodes].sort((a, b) => {
+                const av = sortBy === "name" ? a.name.toLowerCase() : (a.type === "folder" ? calculateFolderSize(a) : a.size);
+                const bv = sortBy === "name" ? b.name.toLowerCase() : (b.type === "folder" ? calculateFolderSize(b) : b.size);
+                if (av < bv) return sortAsc ? -1 : 1;
+                if (av > bv) return sortAsc ? 1 : -1;
+                return 0;
+            });
         }
 
         function renderFileTree(nodes) {
             fileTree.innerHTML = '';
-            if (currentFolder) {
-                const backButton = document.createElement('div');
-                backButton.className = 'file-tree-item folder';
-                backButton.innerHTML = '<span class="icon">📁</span>...';
-                backButton.addEventListener('click', goBack);
-                fileTree.appendChild(backButton);
+            if (!nodes || nodes.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'empty';
+                empty.textContent = 'This folder is empty.';
+                fileTree.appendChild(empty);
+                return;
             }
-            const sortedNodes = [...nodes].sort((a, b) => { const av = sortBy === "name" ? a.name.toLowerCase() : (a.type === "folder" ? calculateFolderSize(a) : a.size); const bv = sortBy === "name" ? b.name.toLowerCase() : (b.type === "folder" ? calculateFolderSize(b) : b.size); if (av < bv) return sortAsc ? -1 : 1; if (av > bv) return sortAsc ? 1 : -1; return 0; }); sortedNodes.forEach(node => {
-                const div = document.createElement('div');
-                div.className = 'file-tree-item';
+
+            sortNodes(nodes).forEach(node => {
+                const isFolder = node.type === 'folder';
+                const row = document.createElement('div');
+                row.className = isFolder ? 'file-tree-item folder' : 'file-tree-item';
+
                 const checkboxWrapper = document.createElement('div');
                 checkboxWrapper.className = 'checkbox-wrapper';
-
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.id = node.id;
                 checkbox.checked = node.selected;
+                checkbox.setAttribute('aria-label', node.name);
                 checkbox.addEventListener('click', (event) => {
                     event.preventDefault();
                     event.stopPropagation();
-
                     toggleFile(node, {
                         shiftKey: event.shiftKey,
                         ctrlKey: event.ctrlKey,
@@ -647,60 +1107,102 @@
                         checked: !node.selected
                     });
                 });
-
                 checkboxWrapper.appendChild(checkbox);
-
-                const icon = document.createElement('span');
-                icon.className = 'icon';
-                icon.textContent = node.type === 'folder' ? '📁' : '📄';
 
                 const fileInfo = document.createElement('div');
                 fileInfo.className = 'file-info';
 
                 const nameElement = document.createElement('div');
-                nameElement.className = 'file-name cursor-pointer';
+                nameElement.className = 'file-name';
                 nameElement.textContent = node.name;
+                nameElement.title = node.name;
+                if (isFolder) nameElement.classList.add('folder', 'folder-name');
+                fileInfo.appendChild(nameElement);
 
-                const sizeInfo = document.createElement('div');
-                sizeInfo.className = 'size-info';
-                const size = node.type === 'folder' ? calculateFolderSize(node) : node.size;
-                sizeInfo.textContent = formatSize(size);
-                if (node.type === 'file') {
-                    if (allowEdit) {
-                        const editBtn = document.createElement('span');
-                        editBtn.textContent = ' | Edit ✏️';
-                        editBtn.className = 'edit-btn';
-                        sizeInfo.appendChild(editBtn);
-                    }
+                const size = isFolder ? calculateFolderSize(node) : node.size;
+                const meta = document.createElement('div');
+                meta.className = 'size-info';
+
+                const metaSize = document.createElement('span');
+                metaSize.className = 'meta-size';
+                metaSize.textContent = formatSize(size);
+                meta.appendChild(metaSize);
+
+                if (isFolder) {
+                    const count = document.createElement('span');
+                    const total = countFiles(node);
+                    count.textContent = `${total} file${total === 1 ? '' : 's'}`;
+                    meta.appendChild(count);
+                } else {
                     if (node.progress !== undefined) {
-                        const progressText = document.createElement('span');
-                        progressText.textContent = ` | Progress: ${node.progress}%`;
-                        sizeInfo.appendChild(progressText);
+                        const pct = Math.min(100, Math.max(0, Math.round(node.progress)));
+                        const progress = document.createElement('span');
+                        progress.className = pct >= 100 ? 'progress done' : 'progress';
+                        if (pct >= 100) {
+                            progress.textContent = 'Complete';
+                        } else {
+                            progress.innerHTML = `<span class="bar"><span style="width:${pct}%"></span></span>${pct}%`;
+                        }
+                        meta.appendChild(progress);
+                    }
+                    if (allowEdit) {
+                        const editBtn = document.createElement('button');
+                        editBtn.type = 'button';
+                        editBtn.className = 'edit-btn';
+                        editBtn.textContent = 'Rename';
+                        editBtn.addEventListener('click', (event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            openEditFileNameModal(node);
+                        });
+                        meta.appendChild(editBtn);
                     }
                 }
-                div.addEventListener('pointerdown', (event) => {
-                    if (
-                        event.target.closest('input[type="checkbox"]') ||
-                        event.target.closest('.edit-btn')
-                    ) {
-                        return;
-                    }
+                fileInfo.appendChild(meta);
 
-                    // Folder ke naam par click = folder open
-                    if (
-                        node.type === 'folder' &&
-                        event.target.closest('.folder-name')
-                    ) {
+                const sizeCell = document.createElement('div');
+                sizeCell.className = 'file-size';
+                sizeCell.textContent = formatSize(size);
+
+                const chevron = document.createElement('span');
+                chevron.className = 'chevron';
+                if (isFolder) chevron.innerHTML = '<svg aria-hidden="true"><use href="#i-chevron"/></svg>';
+
+                row.appendChild(checkboxWrapper);
+                row.appendChild(icon(isFolder ? 'i-folder' : 'i-file'));
+                row.appendChild(fileInfo);
+                row.appendChild(sizeCell);
+                row.appendChild(chevron);
+
+                if (isFolder) {
+                    if (areAllChildrenSelected(node)) {
+                        checkbox.checked = true;
+                    } else if (areSomeChildrenSelected(node)) {
+                        checkbox.indeterminate = true;
+                    }
+                    nameElement.addEventListener('click', (event) => {
                         event.preventDefault();
                         event.stopPropagation();
                         openFolder(node);
+                    });
+                    chevron.addEventListener('click', (event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        openFolder(node);
+                    });
+                }
+
+                row.classList.toggle('is-selected', isFolder ? areAllChildrenSelected(node) : !!node.selected);
+
+                row.addEventListener('pointerdown', (event) => {
+                    if (event.target.closest('input[type="checkbox"]') ||
+                        event.target.closest('.edit-btn') ||
+                        event.target.closest('.chevron') ||
+                        (isFolder && event.target.closest('.folder-name'))) {
                         return;
                     }
-
-                    // Baaki puri row = selection
                     event.preventDefault();
                     event.stopPropagation();
-
                     toggleFile(node, {
                         shiftKey: event.shiftKey,
                         ctrlKey: event.ctrlKey,
@@ -709,31 +1211,23 @@
                     });
                 });
 
-                fileInfo.appendChild(nameElement);
-                fileInfo.appendChild(sizeInfo);
-
-                div.appendChild(checkboxWrapper);
-                div.appendChild(icon);
-                div.appendChild(fileInfo);
-
-                if (node.type === 'folder') {
-                    div.classList.add('folder');
-                    nameElement.classList.add('folder', 'folder-name');
-                    nameElement.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        openFolder(node);
-                    });
-                    if (areAllChildrenSelected(node)) {
-                        checkbox.checked = true;
-                    } else if (areSomeChildrenSelected(node)) {
-                        checkbox.indeterminate = true;
-                    }
-                }
-
-                fileTree.appendChild(div);
+                fileTree.appendChild(row);
             });
+
             updateSelectAllButtonText();
             updateSelectEverythingButtonText();
+            filterFilesBySearch();
+        }
+
+        function countFiles(node) {
+            let total = 0;
+            const queue = [node];
+            while (queue.length) {
+                const current = queue.pop();
+                if (current.type === 'file') total += 1;
+                else if (current.children) queue.push(...current.children);
+            }
+            return total;
         }
 
         function areAllChildrenSelected(folder) {
@@ -819,36 +1313,41 @@
         }
 
         function updateParentFolders(node) {
-            let parent = findParent(files[0], node.id);
+            let parent = findParent(node);
             while (parent) {
                 parent.selected = areAllChildrenSelected(parent);
-                parent = findParent(files[0], parent.id);
+                parent = findParent(parent);
             }
         }
 
-        function findParent(root, id) {
-            if (root && root.children) {
-                for (const child of root.children) {
-                    if (child.id === id) {
-                        return root;
-                    }
-                    const found = findParent(child, id);
-                    if (found) return found;
-                }
-            }
-            return null;
+
+        const parentOf = new Map();
+
+        function buildParents(nodes, parent = null) {
+            nodes.forEach(node => {
+                parentOf.set(node, parent);
+                if (node.children) buildParents(node.children, node);
+            });
         }
+
+        function findParent(node) {
+            return parentOf.get(node) || null;
+        }
+
 
         function updateStats() {
-            const oldChecked = document.getElementById('checked_files');
-            const oldTotal = document.getElementById('total_files');
-            const oldCheckedSize = document.getElementById('checked_size');
-            const oldTotalSize = document.getElementById('total_size');
             const stats = calculateStats(files);
             checkedFilesEl.textContent = stats.selectedCount;
             totalFilesEl.textContent = stats.totalCount;
             checkedSizeEl.textContent = formatSize(stats.selectedSize);
             totalSizeEl.textContent = formatSize(stats.totalSize);
+            const note = document.getElementById('actionNote');
+            if (note) {
+                note.textContent = stats.selectedCount === 0
+                    ? 'Nothing selected'
+                    : `${stats.selectedCount} file${stats.selectedCount === 1 ? '' : 's'} · ${formatSize(stats.selectedSize)} selected`;
+            }
+            submitBtn.disabled = stats.selectedCount === 0;
         }
 
         function calculateStats(nodes) {
@@ -876,24 +1375,21 @@
             return { selectedCount, totalCount, selectedSize, totalSize };
         }
 
+
         function openFolder(folder) {
             currentFolder = folder;
+            renderCrumbs();
             renderFileTree(folder.children);
             updateStats();
         }
 
+
         function goBack() {
-            if (currentFolder) {
-                const parent = findParent(files[0], currentFolder.id);
-                if (parent) {
-                    currentFolder = parent;
-                    renderFileTree(parent.children);
-                } else {
-                    currentFolder = null;
-                    renderFileTree(files);
-                }
-                updateStats();
-            }
+            if (!currentFolder) return;
+            currentFolder = findParent(currentFolder);
+            renderCrumbs();
+            renderFileTree(currentFolder ? currentFolder.children : files);
+            updateStats();
         }
 
         function selectAll() {
@@ -957,24 +1453,26 @@
             updateSelectEverythingButtonText();
         }
 
+
         function getFullPath(node) {
             const path = [];
-            let currentNode = findParent(files[0], node.id);
-            while (currentNode) {
-                path.unshift(currentNode.name);
-                currentNode = findParent(files[0], currentNode.id);
+            let current = findParent(node);
+            while (current) {
+                path.unshift(current.name);
+                current = findParent(current);
             }
-            return path.length > 0 ? path.join('/') : '';
+            return path.join('/');
         }
 
         function openEditFileNameModal(node) {
             modalTitle.textContent = `Edit ${node.type === 'folder' ? 'Folder' : 'File'} Name`;
-            modalBody.innerHTML = `<input type="text" id="editNameInput" class="edit-name-input" value="${node.name}">`;
-            modalFooter.innerHTML = `<button id="saveNameBtn">Save</button><button id="cancelNameBtn">Cancel</button>`;
+            modalBody.innerHTML = '<input type="text" id="editNameInput" class="edit-name-input">';
+            modalFooter.innerHTML = '<button type="button" id="cancelNameBtn">Cancel</button><button type="button" id="saveNameBtn" class="btn-primary">Save</button>';
 
             const saveNameBtn = document.getElementById('saveNameBtn');
             const cancelNameBtn = document.getElementById('cancelNameBtn');
             const editNameInput = document.getElementById('editNameInput');
+            editNameInput.value = node.name;
 
             saveNameBtn.addEventListener('click', () => {
                 closeModal();
@@ -1000,7 +1498,7 @@
                             modalTitle.textContent = 'Error';
                             modalBody.innerHTML = '<p>There was an error submitting your Rename. Try Again!.</p>';
                         }
-                        modalFooter.innerHTML = '<button onclick="closeModal()">Okay</button>';
+                        modalFooter.innerHTML = '<button type="button" class="btn-primary" onclick="closeModal()">Okay</button>';
                         openModal();
                     });
                 }
@@ -1019,19 +1517,21 @@
             editNameInput.focus();
         }
 
+
         function openModal() {
-            reusableModal.style.display = 'block';
+            reusableModal.classList.add('open');
         }
 
+
         function closeModal() {
-            reusableModal.style.display = 'none';
+            reusableModal.classList.remove('open');
         }
 
         function submitData() {
             if (parseInt(checkedFilesEl.innerText) === 0) {
                 modalTitle.textContent = 'Error';
                 modalBody.innerHTML = '<p>No files selected.</p>';
-                modalFooter.innerHTML = '<button onclick="closeModal()">Okay</button>';
+                modalFooter.innerHTML = '<button type="button" class="btn-primary" onclick="closeModal()">Okay</button>';
                 openModal();
                 return;
             }
@@ -1051,41 +1551,126 @@
                     modalTitle.textContent = 'Error';
                     modalBody.innerHTML = '<p>An error occurred while submitting your selection. Try Again!</p>';
                 }
-                modalFooter.innerHTML = '<button onclick="closeModal()">Okay</button>';
+                modalFooter.innerHTML = '<button type="button" class="btn-primary" onclick="closeModal()">Okay</button>';
                 openModal();
             });
         }
 
-        pinInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                submitPin.click();
-            }
+        const pinForm = document.getElementById('pinForm');
+        const pinError = document.getElementById('pinError');
+        const pinDigits = Array.from(document.querySelectorAll('.pin-digit'));
+
+        function syncPin() {
+            pinInput.value = pinDigits.map(d => d.value).join('');
+        }
+
+        function clearPinError() {
+            pinError.hidden = true;
+            pinError.textContent = '';
+            pinForm.classList.remove('invalid');
+        }
+
+        function showPinError(message) {
+            pinError.innerHTML = '<svg aria-hidden="true"><use href="#i-alert"/></svg>';
+            pinError.appendChild(document.createTextNode(message));
+            pinError.hidden = false;
+            pinForm.classList.add('invalid');
+            pinForm.classList.remove('shake');
+            void pinForm.offsetWidth;
+            pinForm.classList.add('shake');
+        }
+
+        function setPinBusy(busy) {
+            submitPin.disabled = busy;
+            submitPin.innerHTML = busy ? '<span class="spinner"></span>Checking...' : 'Unlock files';
+            pinDigits.forEach(d => { d.disabled = busy; });
+        }
+
+        function focusDigit(index) {
+            const target = pinDigits[Math.max(0, Math.min(pinDigits.length - 1, index))];
+            target.focus();
+            target.select();
+        }
+
+        function fillPin(value) {
+            const digits = String(value || '').replace(/\D/g, '').slice(0, pinDigits.length).split('');
+            pinDigits.forEach((d, i) => { d.value = digits[i] || ''; });
+            syncPin();
+            return digits.length;
+        }
+
+        function resetPin() {
+            fillPin('');
+            focusDigit(0);
+        }
+
+        pinDigits.forEach((digit, index) => {
+            digit.addEventListener('focus', () => digit.select());
+
+            digit.addEventListener('input', () => {
+                const cleaned = digit.value.replace(/\D/g, '');
+                digit.value = cleaned.slice(-1);
+                syncPin();
+                clearPinError();
+                if (digit.value && index < pinDigits.length - 1) {
+                    focusDigit(index + 1);
+                }
+                if (pinDigits.every(d => d.value)) {
+                    submitPin.click();
+                }
+            });
+
+            digit.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !digit.value && index > 0) {
+                    e.preventDefault();
+                    pinDigits[index - 1].value = '';
+                    syncPin();
+                    focusDigit(index - 1);
+                } else if (e.key === 'ArrowLeft' && index > 0) {
+                    e.preventDefault();
+                    focusDigit(index - 1);
+                } else if (e.key === 'ArrowRight' && index < pinDigits.length - 1) {
+                    e.preventDefault();
+                    focusDigit(index + 1);
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    submitPin.click();
+                }
+            });
+
+            digit.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const filled = fillPin((e.clipboardData || window.clipboardData).getData('text'));
+                clearPinError();
+                focusDigit(filled >= pinDigits.length ? pinDigits.length - 1 : filled);
+                if (pinDigits.every(d => d.value)) {
+                    submitPin.click();
+                }
+            });
         });
+
         submitPin.addEventListener('click', () => {
-            pinInput.blur();
-            if (pinInput.value === '') {
-                modalTitle.textContent = 'Missing Pin';
-                modalBody.innerHTML = `<p>The pin is missing.</p>`;
-                modalFooter.innerHTML = '<button onclick="closeModal()">Try Again</button>';
-                openModal();
+            if (submitPin.disabled) return;
+            syncPin();
+            if (pinInput.value.length < pinDigits.length) {
+                showPinError('Enter all 4 digits.');
+                focusDigit(pinInput.value.length);
                 return false;
             }
             if (urlParams.gid == null || urlParams.gid === '') {
-                modalTitle.textContent = 'Missing parameter';
-                modalBody.innerHTML = `<p>The parameter gid is missing.</p>`;
-                modalFooter.innerHTML = '<button onclick="closeModal()">Try Again</button>';
-                openModal();
+                showPinError('The gid parameter is missing from the link.');
                 return false;
             }
+            clearPinError();
+            setPinBusy(true);
             const requestUrl = `/app/files/torrent?gid=${urlParams.gid}&pin=${pinInput.value}&mode=get`;
             fetch(requestUrl).then(function (response) {
                 if (response.ok) {
                     return response.json().then(data => {
                         if (data.error) {
-                            modalTitle.textContent = data.error;
-                            modalBody.innerHTML = `<p>${data.message}. Try Again!</p>`;
-                            modalFooter.innerHTML = '<button onclick="closeModal()">Retry</button>';
-                            openModal();
+                            setPinBusy(false);
+                            showPinError(data.message || data.error);
+                            resetPin();
                         } else {
                             files = data.files;
                             allowEdit = data.engine === "qbittorrent";
@@ -1093,6 +1678,9 @@
                             setTimeout(() => {
                                 pinEntry.style.display = 'none';
                                 fileManager.style.display = 'block';
+                                document.getElementById('actionbar').style.display = 'block';
+                                buildParents(files);
+                                renderCrumbs();
                                 renderFileTree(files);
                                 updateStats();
                                 updateSelectAllButtonText();
@@ -1101,18 +1689,25 @@
                         }
                     });
                 } else {
-                    modalTitle.textContent = 'Something Went Wrong!';
-                    modalBody.innerHTML = '<p>Check console. Status Code: ' + response.status + '</p>';
-                    modalFooter.innerHTML = '<button onclick="closeModal()">Retry</button>';
-                    openModal();
+                    setPinBusy(false);
+                    showPinError(`Something went wrong (status ${response.status}).`);
                 }
             }).catch(error => {
-                modalTitle.textContent = 'Server Error';
-                modalBody.innerHTML = '<p>There was an error connecting to the server. Try Again!</p><br>' + error.message;
-                modalFooter.innerHTML = '<button onclick="closeModal()">Retry</button>';
-                openModal();
+                setPinBusy(false);
+                showPinError(`Could not reach the server. ${error.message}`);
             });
         });
+
+        if (urlParams.pin) {
+            fillPin(urlParams.pin);
+            if (pinInput.value.length === pinDigits.length) {
+                setTimeout(() => submitPin.click(), 0);
+            } else {
+                focusDigit(pinInput.value.length);
+            }
+        } else {
+            focusDigit(0);
+        }
 
         const fileSearch = document.getElementById('fileSearch');
         if (fileSearch) {
@@ -1122,39 +1717,29 @@
 
         selectAllBtn.addEventListener('click', selectAll);
         invertSelectionBtn.addEventListener('click', invertSelection);
+        selectEverythingBtn.addEventListener('click', selectEverything);
 
         submitBtn.addEventListener('click', submitData);
 
         function updateSelectAllButtonText() {
+            selectAllBtn.style.display = currentFolder ? '' : 'none';
             const nodes = currentFolder ? currentFolder.children : files;
             if (nodes.length === 0) {
-                selectAllBtn.textContent = 'Select All';
+                selectAllBtn.textContent = 'This folder';
                 return;
             }
             const allSelected = nodes.every(node => node.type === 'folder' ? areAllChildrenSelected(node) : node.selected);
-            selectAllBtn.textContent = allSelected ? 'Deselect All' : 'Select All';
+            selectAllBtn.textContent = allSelected ? 'Clear folder' : 'This folder';
         }
 
         function updateSelectEverythingButtonText() {
             if (files.length === 0) {
-                selectEverythingBtn.textContent = 'Select Everything';
+                selectEverythingBtn.textContent = 'All files';
                 return;
             }
             const allSelected = files.every(node => node.type === 'folder' ? areAllChildrenSelected(node) : node.selected);
-            selectEverythingBtn.textContent = allSelected ? 'Deselect Everything' : 'Select Everything';
+            selectEverythingBtn.textContent = allSelected ? 'Clear all' : 'All files';
         }
-
-        function sticking() {
-            var window_top = window.scrollY;
-            var div_top = document.querySelector('.brand').offsetTop;
-            if (window_top > div_top) {
-                document.getElementById('sticks').classList.add('stick');
-            } else {
-                document.getElementById('sticks').classList.remove('stick');
-            }
-        }
-        window.addEventListener('scroll', sticking);
-        sticking();
     </script>
 </body>
 

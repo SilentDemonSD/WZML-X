@@ -1,5 +1,5 @@
 <p align="center">
-   <img src="docs/WZML-X.png" alt="WZML-X logo" width="420">
+   <img src="docs/w-icon.svg" alt="WZML-X logo" width="160">
 </p>
 
 <h1 align="center">WZML-X</h1>
