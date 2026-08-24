@@ -2,7 +2,6 @@ name: gen_pyro_sess
 version: "1.0.0"
 author: WZML-X
 description: Generate a Pyrogram string session step by step
-icon: "🔐"
 license: MIT
 repository: https://github.com/SilentDemonSD/WZML-X
 tags: [utility, session]

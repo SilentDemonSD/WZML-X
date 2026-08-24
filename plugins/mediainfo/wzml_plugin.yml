@@ -2,7 +2,6 @@ name: mediainfo
 version: "1.0.0"
 author: WZML-X
 description: Read MediaInfo of a replied media or a direct link
-icon: "📑"
 license: MIT
 repository: https://github.com/SilentDemonSD/WZML-X
 tags: [media, utility]

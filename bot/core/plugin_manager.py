@@ -315,14 +315,26 @@ class PluginManager:
         self.bot = bot
         self.records: Dict[str, PluginRecord] = {}
         self.states: Dict[str, Dict[str, Any]] = {}
+        self.errors: Dict[str, str] = {}
         self.installer = None
         self._lock = Lock()
         self._quiet = False
-        self.plugins_dir = Path(__file__).resolve().parents[2] / "plugins"
+        self.plugins_dir = self._resolve_dir()
         try:
             self.plugins_dir.mkdir(exist_ok=True)
         except OSError as err:
             LOGGER.error(f"cannot create plugins dir: {err}")
+
+    @staticmethod
+    def _resolve_dir():
+        beside = Path(__file__).resolve().parents[2] / "plugins"
+        if beside.is_dir():
+            return beside
+        here = Path.cwd() / "plugins"
+        if here.is_dir():
+            LOGGER.warning(f"using {here} for plugins, not {beside}")
+            return here
+        return beside
 
     def dir_of(self, name):
         target = (self.plugins_dir / name).resolve()
@@ -333,6 +345,7 @@ class PluginManager:
     def discover(self):
         found = []
         if not self.plugins_dir.is_dir():
+            LOGGER.error(f"plugins folder not found at {self.plugins_dir}")
             return found
         for entry in sorted(self.plugins_dir.iterdir()):
             if not entry.is_dir() or entry.name.startswith((".", "__")):
@@ -341,6 +354,10 @@ class PluginManager:
                 continue
             if any((entry / n).is_file() for n in MANIFEST_NAMES):
                 found.append(entry.name)
+            else:
+                LOGGER.warning(
+                    f"{entry.name} has no {MANIFEST_NAMES[0]}, skipping it"
+                )
         return found
 
     def disk_manifest(self, name):
@@ -351,7 +368,6 @@ class PluginManager:
             return None
 
     def available(self):
-        """On disk, carrying a manifest, but not loaded right now."""
         return [name for name in self.discover() if name not in self.records]
 
     async def set_autoload(self, name, value):
@@ -626,7 +642,12 @@ class PluginManager:
 
     async def load(self, name, **kwargs):
         async with self._lock:
-            return await self._do_load(name, **kwargs)
+            ok, err = await self._do_load(name, **kwargs)
+            if ok:
+                self.errors.pop(name, None)
+            else:
+                self.errors[name] = err
+            return ok, err
 
     async def unload(self, name):
         async with self._lock:
@@ -818,6 +839,28 @@ class PluginManager:
             self.states = {}
         return self.states
 
+    async def rescan(self):
+        before = set(self.records)
+        if not self.plugins_dir.is_dir():
+            self.plugins_dir = self._resolve_dir()
+        found = self.discover()
+        for name in found:
+            if name in self.records:
+                continue
+            state = self.states.get(name) or {}
+            if not state.get("autoload", True):
+                continue
+            ok, err = await self.load(
+                name,
+                enabled=state.get("enabled", True),
+                source=state.get("source", "local"),
+                url=state.get("url", ""),
+                config=state.get("config") or {},
+            )
+            if not ok:
+                LOGGER.error(f"plugin {name} not loaded: {err}")
+        return found, sorted(set(self.records) - before)
+
     async def unload_all(self):
         async with self._lock:
             self._quiet = True
@@ -834,7 +877,9 @@ class PluginManager:
             return
         async with self._lock:
             await self.load_states()
+            LOGGER.info(f"Plugins folder: {self.plugins_dir}")
             found = self.discover()
+            self.errors.clear()
             self._quiet = True
             loaded = 0
             try:
@@ -856,6 +901,7 @@ class PluginManager:
                     if ok:
                         loaded += 1
                     else:
+                        self.errors[name] = err
                         LOGGER.error(f"plugin {name} not loaded: {err}")
             finally:
                 self._quiet = False

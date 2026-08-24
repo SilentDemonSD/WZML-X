@@ -14,7 +14,7 @@ from .config_manager import Config
 from .plugin_manager import MANIFEST_NAMES, PluginManifest, read_manifest
 
 DEFAULT_SLUG = "SilentDemonSD/WZML-X"
-DEFAULT_BRANCH = "master"
+DEFAULT_BRANCH = "wzv3-dev"
 INDEX_PATH = "plugins/index.json"
 MAX_ARCHIVE = 16 * 1024 * 1024
 MAX_UNPACKED = 48 * 1024 * 1024
@@ -28,7 +28,6 @@ class InstallError(Exception):
 
 
 def upstream_slug():
-    """owner/repo from UPSTREAM_REPO, with any embedded credentials dropped."""
     repo = str(Config.UPSTREAM_REPO or "").strip()
     if not repo:
         return DEFAULT_SLUG
@@ -212,11 +211,27 @@ async def install_dependencies(specs):
     return False, last[:500]
 
 
+def index_problem(payload):
+    if not isinstance(payload, (dict, list)):
+        return "that URL is not a plugin index"
+    if isinstance(payload, list):
+        return ""
+    if "plugins" in payload:
+        return "" if isinstance(payload["plugins"], list) else "its plugins key is not a list"
+    if payload.get("$schema") and ("properties" in payload or "$defs" in payload):
+        return (
+            "that is the index SCHEMA, not an index. Point PLUGIN_INDEXES at a "
+            "file holding a plugins list instead"
+        )
+    return "no plugins key in that file"
+
+
 class PluginInstaller:
     def __init__(self, manager):
         self.manager = manager
         self._index = []
         self._index_at = 0.0
+        self.problems = []
 
     @property
     def staging_dir(self):
@@ -234,22 +249,58 @@ class PluginInstaller:
         if not force and self._index and time() - self._index_at < INDEX_TTL:
             return self._index
 
-        from niquests import AsyncSession
-
         entries = []
         seen = set()
-        async with AsyncSession() as session:
+        problems = []
+        try:
+            from niquests import AsyncSession
+
+            session_factory = AsyncSession
+        except Exception as err:
+            self.problems = [(u, f"cannot reach the network: {err}") for u in self.index_urls()]
+            self._index = []
+            self._index_at = time()
+            LOGGER.error(f"plugin index: no http client available: {err}")
+            return []
+
+        try:
+            entries, problems = await self._read_indexes(session_factory, seen)
+        except Exception as err:
+            problems = [(u, f"index fetch failed: {err}") for u in self.index_urls()]
+            LOGGER.error(f"plugin index fetch failed: {err}", exc_info=True)
+        self._index = entries
+        self._index_at = time()
+        self.problems = problems
+        return entries
+
+    async def _read_indexes(self, session_factory, seen):
+        entries = []
+        problems = []
+        async with session_factory() as session:
             for url in self.index_urls():
                 try:
                     response = await session.get(url, allow_redirects=True, timeout=20)
                     if response.status_code != 200:
-                        LOGGER.warning(f"plugin index {url} -> HTTP {response.status_code}")
+                        why = f"HTTP {response.status_code}"
+                        if response.status_code == 404:
+                            why += " (no index file at that address)"
+                        problems.append((url, why))
+                        LOGGER.warning(f"plugin index {url} -> {why}")
                         continue
                     payload = json_loads(response.content or b"{}")
                 except Exception as err:
+                    problems.append((url, f"unreadable: {err}"))
                     LOGGER.warning(f"plugin index {url} unreadable: {err}")
                     continue
+
+                why = index_problem(payload)
+                if why:
+                    problems.append((url, why))
+                    LOGGER.warning(f"plugin index {url}: {why}")
+                    continue
+
                 items = payload.get("plugins") if isinstance(payload, dict) else payload
+                good = 0
                 for item in items or []:
                     if not isinstance(item, dict):
                         continue
@@ -260,9 +311,10 @@ class PluginInstaller:
                     item["id"] = name
                     item["index"] = url
                     entries.append(item)
-        self._index = entries
-        self._index_at = time()
-        return entries
+                    good += 1
+                if not good:
+                    problems.append((url, "reachable, but it lists no plugins yet"))
+        return entries, problems
 
     def index_entry(self, name):
         for item in self._index:
@@ -280,7 +332,6 @@ class PluginInstaller:
         shutil.rmtree(self.staging_dir, ignore_errors=True)
 
     def _stage_root_of(self, path):
-        """The per-install folder directly under .staging that holds `path`."""
         staging = self.staging_dir.resolve()
         current = Path(path).resolve()
         while current.parent != staging:
@@ -290,7 +341,6 @@ class PluginInstaller:
         return current
 
     async def stage_archive(self, archive, expect_sha=None):
-        """Extract and validate. Returns (staged_root, manifest, missing_deps)."""
         if expect_sha:
             got = digest(archive)
             if got.lower() != str(expect_sha).lower():
@@ -338,8 +388,6 @@ class PluginInstaller:
         return await self.stage_url(github_archive_url(spec))
 
     async def finalize(self, staged_root, manifest, source="local", url=""):
-        """Install a staged plugin. Returns True, or raises InstallError after
-        rolling the previous version back."""
         name = manifest.name
         target = self.manager.dir_of(name)
 
@@ -403,6 +451,7 @@ def get_installer():
 
 __all__ = [
     "InstallError",
+    "index_problem",
     "official_index_url",
     "upstream_slug",
     "PluginInstaller",

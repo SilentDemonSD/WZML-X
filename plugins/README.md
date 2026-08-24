@@ -7,7 +7,8 @@ restarting the bot.
 
 > Plugin code runs inside the bot process with full access to its tokens,
 > database and host. There is no sandbox. Only install plugins you trust.
-> Installing, enabling and removing is **owner-only**; sudo users can look.
+> Enabling, disabling and removing is **owner-only**. Sudo users can browse and
+> install, but not change what is already there.
 
 ---
 
@@ -21,7 +22,7 @@ restarting the bot.
 6. [Lifecycle hooks](#lifecycle-hooks)
 7. [Settings](#settings)
 8. [The helpers you get](#the-helpers-you-get)
-9. [Load and unload semantics](#load-and-unload-semantics)
+9. [States and actions](#states-and-actions)
 10. [Dependencies](#dependencies)
 11. [Installing and publishing](#installing-and-publishing)
 12. [What gets your plugin refused](#what-gets-your-plugin-refused)
@@ -41,7 +42,6 @@ name: hello
 version: "1.0.0"
 author: You
 description: Say hello
-icon: "👋"
 entry: hello.py
 commands:
   - name: hello
@@ -98,7 +98,7 @@ commands lives in Python.
 | `entry` | string | `<name>.py` | The Python file loaded as the plugin. |
 | `author` | string | `""` | Shown in `/plugins`. |
 | `description` | string | `""` | Shown in `/plugins` and `/help`. |
-| `icon` | string | `""` | One emoji, shown beside the name. |
+| `icon` | string | `""` | Accepted for compatibility; the menu does not show it. |
 | `license` | string | `""` | Informational. |
 | `repository` | string | `""` | Informational. |
 | `tags` | list | `[]` | Shown in `/plugins` and used by marketplace listings. |
@@ -364,44 +364,34 @@ Positions are `default`, `header`, `f_body`, `l_body`, `footer`.
 
 ---
 
-## Load and unload semantics
+## States and actions
 
-A plugin has three states, and `/plugins → Installed` marks each one:
+A plugin is in one of three states, and `/plugins → Installed` shows each one
+with a coloured button plus a line naming the state:
 
-| | State | Meaning |
+| Button | State | Meaning |
 | --- | --- | --- |
-| ✅ | loaded, enabled | In memory, commands live. |
-| ⛔ | loaded, disabled | In memory, commands off. |
-| ⚪ | unloaded | Not in memory at all. Files still on disk. |
+| SUCCESS | Enabled | In memory, commands live. |
+| DANGER | Disabled | In memory, commands off. |
+| plain | Not Loaded | Not in memory. Files still on disk. |
 
 Every action and exactly what it touches:
 
 | Action | Handlers | Module in memory | Files on disk | DB record |
 | --- | --- | --- | --- | --- |
-| **load** | attached if enabled | imported | kept | `autoload: true` |
 | **enable** | attached | reused | kept | `enabled: true` |
 | **disable** | detached | **kept** | kept | `enabled: false` |
-| **reload** | rebuilt | re-imported from disk | kept | unchanged |
-| **unload** | detached | purged | kept | `autoload: false` |
+| **rescan** | attached for anything new | imported | kept | seeded if new |
 | **uninstall** | detached | purged | **deleted** | **deleted** |
 
 **Disable is cheap and reversible** — the code stays in memory, only the handlers
 come off, so `/yourcommand` stops answering instantly and re-enabling is
-immediate.
+immediate. Both the enabled and disabled choices persist across restarts.
 
-**Unload goes further** — the module and all its submodules are dropped from
-`sys.modules` and the plugin releases whatever it was holding. Use it to free
-memory, or to force a genuinely clean import next time. An unloaded plugin still
-appears in the list, marked ⚪, with a **Load** button and its manifest read
-straight from disk, so you can see what it would add before bringing it back.
-
-**Both choices persist.** Unload something and it stays unloaded across
-restarts; the bot logs `plugin <name> left unloaded` at boot. Only unloading from
-the menu does this — the internal unloads that reload and upgrade perform never
-mark a plugin as unloaded.
-
-**Reload is what you want after editing a file** — it re-reads from disk,
-including your sibling modules, without changing either stored choice.
+Plugins are loaded at boot. **Rescan** picks up a folder you dropped in while the
+bot was running, and reports how many it found and how many were newly loaded.
+A folder that fails to load stays listed with the reason on its page rather than
+disappearing.
 
 Everything above is serialized behind a lock, so two people mashing buttons in
 `/plugins` cannot interleave a disable with a reload and leave a handler
@@ -479,7 +469,6 @@ An index looks like:
       "version": "1.0.0",
       "author": "You",
       "description": "Say hello",
-      "icon": "👋",
       "tags": ["utility"],
       "url": "https://example.com/hello-1.0.0.zip",
       "sha256": "9f3c…"
@@ -543,5 +532,5 @@ These ship with the bot and are ordinary plugins — read them as worked example
 | `nzb_search` | `/nzbsearch`, `/ns` | — | aiohttp, reading `Config` |
 | `gen_pyro_sess` | `/exportsession` | — | its own runtime handlers and client |
 
-Disable, unload or uninstall any of them from `/plugins`; the choice is stored
-per bot and survives a restart.
+Disable or uninstall any of them from `/plugins`; the choice is stored per bot
+and survives a restart.

@@ -7,7 +7,7 @@ from pyrogram.enums import ButtonStyle
 from pyrogram.filters import command, create, regex
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
 
-from .. import LOGGER
+from .. import LOGGER, sudo_users, user_data
 from ..core.config_manager import Config
 from ..core.plugin_installer import (
     MAX_ARCHIVE,
@@ -30,35 +30,63 @@ INPUT_TIMEOUT = 120
 waiting = {}
 pending = {}
 
+OWNER_ONLY = {
+    "on",
+    "off",
+    "rm",
+    "rmask",
+    "get",
+    "update",
+    "rescan",
+    "deps_ok",
+    "deps_no",
+    "cfge",
+    "cfgr",
+}
+SUDO_ALLOWED = {"install", "upload", "github"}
+MUTATING = OWNER_ONLY | SUDO_ALLOWED
+
 
 def _is_owner(user_id):
-    return user_id == Config.OWNER_ID
+    try:
+        return int(user_id) == int(Config.OWNER_ID or 0)
+    except (TypeError, ValueError):
+        return str(user_id) == str(Config.OWNER_ID)
 
 
-def _tag(rec):
-    mark = "✅" if rec.enabled else "⛔"
-    icon = f"{rec.manifest.icon} " if rec.manifest.icon else ""
-    return f"{mark} {icon}{rec.name}"
+def _is_sudo(user_id):
+    if _is_owner(user_id):
+        return True
+    return user_id in sudo_users or bool(user_data.get(user_id, {}).get("SUDO"))
 
 
-def _plugin_text(rec):
-    man = rec.manifest
-    lines = [f"⌬ <b><u>{man.icon + ' ' if man.icon else ''}{man.name}</u></b>", "│"]
-    lines.append(f"┟ <b>Version</b> → <code>{man.version}</code>")
-    lines.append(f"┠ <b>State</b> → {'Enabled' if rec.enabled else 'Disabled'}")
-    if man.author:
-        lines.append(f"┠ <b>Author</b> → {man.author}")
-    lines.append(f"┠ <b>Source</b> → {rec.source}")
-    if rec.commands:
-        lines.append("┠ <b>Commands</b> → " + ", ".join(f"/{c}" for c in rec.commands))
-    if man.callbacks:
-        lines.append(f"┠ <b>Callbacks</b> → {len(man.callbacks)}")
-    if man.tags:
-        lines.append("┠ <b>Tags</b> → " + ", ".join(man.tags))
-    if man.python_dependencies:
-        lines.append("┠ <b>Requires</b> → " + ", ".join(man.python_dependencies))
-    lines.append(f"┖ <b>About</b> → <i>{man.description or 'No description'}</i>")
+def _may(user_id, action):
+    if action in OWNER_ONLY:
+        return _is_owner(user_id)
+    if action in SUDO_ALLOWED:
+        return _is_sudo(user_id)
+    return True
+
+
+def _wz(title, rows, note=""):
+    lines = [f"⌬ <b><u>{title}</u></b>", "│"]
+    for index, (key, value) in enumerate(rows):
+        edge = "┟" if index == 0 else ("┖" if index == len(rows) - 1 else "┠")
+        lines.append(f"{edge} <b>{key}</b> → {value}")
+    if not rows:
+        lines = [f"⌬ <b><u>{title}</u></b>"]
+    if note:
+        lines.append("")
+        lines.append(f"<i>{note}</i>")
     return "\n".join(lines)
+
+
+def _state_of(rec):
+    return "Enabled" if rec.enabled else "Disabled"
+
+
+def _style_of(rec):
+    return ButtonStyle.SUCCESS if rec.enabled else ButtonStyle.DANGER
 
 
 async def build_menu(user_id, view="main", arg=""):
@@ -66,6 +94,7 @@ async def build_menu(user_id, view="main", arg=""):
     installer = get_installer()
     buttons = ButtonMaker()
     owner = _is_owner(user_id)
+    sudo = _is_sudo(user_id)
 
     if view == "main":
         records = manager.list_plugins()
@@ -76,43 +105,67 @@ async def build_menu(user_id, view="main", arg=""):
             f"Installed ({total})", f"plugins {user_id} list", position="header"
         )
         buttons.data_button("Marketplace", f"plugins {user_id} mkt 0")
-        if owner:
-            buttons.data_button("Install", f"plugins {user_id} install")
+        if sudo:
+            buttons.data_button(
+                "Install", f"plugins {user_id} install", style=ButtonStyle.PRIMARY
+            )
         buttons.data_button(
             "Close", f"plugins {user_id} close", position="footer", style=ButtonStyle.DANGER
         )
-        text = (
-            "⌬ <b><u>Plugin Manager</u></b>\n│\n"
-            f"┟ <b>Installed</b> → {total}\n"
-            f"┠ <b>Enabled</b> → {on}\n"
-            f"┠ <b>Disabled</b> → {len(records) - on}\n"
-            f"┠ <b>Unloaded</b> → {len(idle)}\n"
-            f"┖ <b>Folder</b> → <code>plugins/</code>"
-        )
+        rows = [
+            ("Installed", str(total)),
+            ("Enabled", str(on)),
+            ("Disabled", str(len(records) - on)),
+            ("Not Loaded", str(len(idle))),
+            ("Folder", f"<code>{manager.plugins_dir}</code>"),
+        ]
+        note = ""
         if Config.DISABLE_PLUGINS:
-            text += "\n\n<i>Plugins are switched off in Module Settings.</i>"
-        return text, buttons.build_menu(2)
+            note = "Plugins are switched off in Module Settings."
+        return _wz("Plugin Manager", rows, note), buttons.build_menu(2)
 
     if view == "list":
         records = sorted(manager.list_plugins(), key=lambda r: r.name)
         idle = sorted(manager.available())
         for rec in records:
-            buttons.data_button(_tag(rec), f"plugins {user_id} view {rec.name}")
+            buttons.data_button(
+                rec.name, f"plugins {user_id} view {rec.name}", style=_style_of(rec)
+            )
         for name in idle:
-            buttons.data_button(f"⚪ {name}", f"plugins {user_id} dview {name}")
+            buttons.data_button(name, f"plugins {user_id} dview {name}")
+        if owner:
+            buttons.data_button(
+                "Rescan", f"plugins {user_id} rescan", position="l_body"
+            )
         buttons.data_button("Back", f"plugins {user_id} main", position="footer")
         buttons.data_button(
             "Close", f"plugins {user_id} close", position="footer", style=ButtonStyle.DANGER
         )
-        if records or idle:
-            text = (
-                "⌬ <b><u>Installed Plugins</u></b>\n\n"
-                "✅ enabled · ⛔ disabled · ⚪ unloaded\n\n"
-                "<i>Pick one to manage it.</i>"
+
+        if not records and not idle:
+            rows = [
+                ("Looked In", f"<code>{manager.plugins_dir}</code>"),
+                ("Folder Exists", str(manager.plugins_dir.is_dir())),
+                ("Needs", "a subfolder holding <code>wzml_plugin.yml</code>"),
+            ]
+            return (
+                _wz(
+                    "Installed Plugins",
+                    rows,
+                    "No plugin folders found. If you expected the bundled plugins "
+                    "here, the deploy did not include the plugins/ folder.",
+                ),
+                buttons.build_menu(2, lb_cols=1),
             )
-        else:
-            text = "⌬ <b><u>Installed Plugins</u></b>\n\n<i>Nothing installed yet.</i>"
-        return text, buttons.build_menu(2)
+
+        rows = [(rec.name, _state_of(rec)) for rec in records]
+        rows += [
+            (name, manager.errors.get(name, "Not Loaded")[:48]) for name in idle
+        ]
+        return (
+            _wz("Installed Plugins", rows, "Pick one to manage it."),
+            buttons.build_menu(2, lb_cols=1),
+        )
 
     if view == "view":
         rec = manager.get(arg)
@@ -120,13 +173,13 @@ async def build_menu(user_id, view="main", arg=""):
             return "<i>That plugin is not loaded any more.</i>", buttons.build_menu(1)
         if owner:
             if rec.enabled:
-                buttons.data_button("Disable", f"plugins {user_id} off {arg}")
+                buttons.data_button(
+                    "Disable", f"plugins {user_id} off {arg}", style=ButtonStyle.DANGER
+                )
             else:
                 buttons.data_button(
-                    "Enable", f"plugins {user_id} on {arg}", style=ButtonStyle.PRIMARY
+                    "Enable", f"plugins {user_id} on {arg}", style=ButtonStyle.SUCCESS
                 )
-            buttons.data_button("Reload", f"plugins {user_id} reload {arg}")
-            buttons.data_button("Unload", f"plugins {user_id} unload {arg}")
             if rec.manifest.config_schema:
                 buttons.data_button("Settings", f"plugins {user_id} cfg {arg}")
             if rec.source in ("github", "market", "url"):
@@ -138,43 +191,67 @@ async def build_menu(user_id, view="main", arg=""):
         buttons.data_button(
             "Close", f"plugins {user_id} close", position="footer", style=ButtonStyle.DANGER
         )
-        return _plugin_text(rec), buttons.build_menu(2)
+        man = rec.manifest
+        rows = [("Version", f"<code>{man.version}</code>"), ("State", _state_of(rec))]
+        if man.author:
+            rows.append(("Author", man.author))
+        rows.append(("Source", rec.source))
+        if rec.commands:
+            rows.append(
+                ("Commands", ", ".join(f"/{c}" for c in rec.commands))
+            )
+        if man.callbacks:
+            rows.append(("Callbacks", str(len(man.callbacks))))
+        if man.tags:
+            rows.append(("Tags", ", ".join(man.tags)))
+        if man.python_dependencies:
+            rows.append(("Requires", ", ".join(man.python_dependencies)))
+        rows.append(("About", f"<i>{man.description or 'No description'}</i>"))
+        note = ""
+        if not owner:
+            note = (
+                "Only the owner can change plugins. You are "
+                f"<code>{user_id}</code>, OWNER_ID is <code>{Config.OWNER_ID}</code>."
+            )
+        return _wz(man.name, rows, note), buttons.build_menu(2)
 
     if view == "dview":
         man = manager.disk_manifest(arg)
         if owner:
             buttons.data_button(
-                "Load", f"plugins {user_id} load {arg}", style=ButtonStyle.PRIMARY
-            )
-            buttons.data_button(
                 "Uninstall", f"plugins {user_id} rmask {arg}", style=ButtonStyle.DANGER
             )
+            buttons.data_button("Rescan", f"plugins {user_id} rescan")
         buttons.data_button("Back", f"plugins {user_id} list", position="footer")
         buttons.data_button(
             "Close", f"plugins {user_id} close", position="footer", style=ButtonStyle.DANGER
         )
         if man is None:
-            return (
-                f"⌬ <b>{arg}</b>\n\n<i>On disk, but its manifest cannot be read. "
-                "Check the log.</i>",
-                buttons.build_menu(2),
-            )
-        lines = [f"⌬ <b><u>{man.icon + ' ' if man.icon else ''}{man.name}</u></b>", "│"]
-        lines.append(f"┟ <b>Version</b> → <code>{man.version}</code>")
-        lines.append("┠ <b>State</b> → Unloaded")
+            rows = [
+                ("State", "Not Loaded"),
+                ("Problem", "its manifest cannot be read, check the log"),
+            ]
+            return _wz(arg, rows), buttons.build_menu(2)
+        rows = [("Version", f"<code>{man.version}</code>"), ("State", "Not Loaded")]
         if man.author:
-            lines.append(f"┠ <b>Author</b> → {man.author}")
+            rows.append(("Author", man.author))
         if man.command_names():
-            lines.append(
-                "┠ <b>Commands</b> → "
-                + ", ".join(f"/{c}" for c in man.command_names())
+            rows.append(
+                ("Commands", ", ".join(f"/{c}" for c in man.command_names()))
             )
         if man.python_dependencies:
-            lines.append("┠ <b>Requires</b> → " + ", ".join(man.python_dependencies))
-        lines.append(f"┖ <b>About</b> → <i>{man.description or 'No description'}</i>")
-        lines.append("")
-        lines.append("<i>Its code is not in memory and its commands are inactive.</i>")
-        return "\n".join(lines), buttons.build_menu(2)
+            rows.append(("Requires", ", ".join(man.python_dependencies)))
+        if arg in manager.errors:
+            rows.append(("Error", f"<i>{manager.errors[arg]}</i>"))
+        rows.append(("About", f"<i>{man.description or 'No description'}</i>"))
+        return (
+            _wz(
+                man.name,
+                rows,
+                "Its code is not in memory and its commands are inactive.",
+            ),
+            buttons.build_menu(2),
+        )
 
     if view == "mkt":
         page = int(arg or 0)
@@ -186,11 +263,11 @@ async def build_menu(user_id, view="main", arg=""):
         total = len(entries)
         chunk = entries[page * PAGE : page * PAGE + PAGE]
         for item in chunk:
-            icon = f"{item.get('icon')} " if item.get("icon") else ""
-            mark = "✅ " if manager.get(item["id"]) else ""
+            installed = manager.get(item["id"])
             buttons.data_button(
-                f"{mark}{icon}{item.get('name') or item['id']}",
+                item.get("name") or item["id"],
                 f"plugins {user_id} show {item['id']}",
+                style=ButtonStyle.SUCCESS if installed else ButtonStyle.DEFAULT,
             )
         pages = max(1, -(-total // PAGE))
         if pages > 1:
@@ -205,44 +282,47 @@ async def build_menu(user_id, view="main", arg=""):
         buttons.data_button(
             "Close", f"plugins {user_id} close", position="footer", style=ButtonStyle.DANGER
         )
-        if total:
-            text = (
-                "⌬ <b><u>Plugin Marketplace</u></b>\n\n"
-                f"<i>{total} plugin(s) from {len(installer.index_urls())} index(es).</i>"
-            )
-        else:
-            text = (
-                "⌬ <b><u>Plugin Marketplace</u></b>\n\n"
-                "<i>No plugins found. The index may be unreachable, or you can add "
-                "your own with PLUGIN_INDEXES in bot settings.</i>"
-            )
-        return text, buttons.build_menu(1, fb_cols=8, lb_cols=1)
+
+        rows = [
+            ("Listed", str(total)),
+            ("Sources", str(len(installer.index_urls()))),
+        ]
+        for url, why in getattr(installer, "problems", [])[:3]:
+            rows.append((url.rsplit("/", 3)[-1] or "index", f"<i>{why}</i>"))
+        note = (
+            ""
+            if total
+            else "Add your own with PLUGIN_INDEXES in bot settings. It must be a "
+            "JSON file holding a plugins list."
+        )
+        return _wz("Plugin Marketplace", rows, note), buttons.build_menu(
+            1, fb_cols=8, lb_cols=1
+        )
 
     if view == "show":
         item = installer.index_entry(arg)
         if item is None:
             return "<i>That entry is gone from the index.</i>", buttons.build_menu(1)
-        installed = get_plugin_manager().get(arg)
-        if owner:
-            label = "Reinstall" if installed else "Install"
+        installed = manager.get(arg)
+        if sudo:
             buttons.data_button(
-                label, f"plugins {user_id} get {arg}", style=ButtonStyle.PRIMARY
+                "Reinstall" if installed else "Install",
+                f"plugins {user_id} get {arg}",
+                style=ButtonStyle.PRIMARY,
             )
         buttons.data_button("Back", f"plugins {user_id} mkt 0", position="footer")
         buttons.data_button(
             "Close", f"plugins {user_id} close", position="footer", style=ButtonStyle.DANGER
         )
-        icon = f"{item.get('icon')} " if item.get("icon") else ""
-        lines = [f"⌬ <b><u>{icon}{item.get('name') or arg}</u></b>", "│"]
-        lines.append(f"┟ <b>Version</b> → <code>{item.get('version', '?')}</code>")
+        rows = [("Version", f"<code>{item.get('version', '?')}</code>")]
         if item.get("author"):
-            lines.append(f"┠ <b>Author</b> → {item['author']}")
+            rows.append(("Author", item["author"]))
         if item.get("tags"):
-            lines.append("┠ <b>Tags</b> → " + ", ".join(item["tags"]))
+            rows.append(("Tags", ", ".join(item["tags"])))
         if installed:
-            lines.append(f"┠ <b>Installed</b> → <code>{installed.version}</code>")
-        lines.append(f"┖ <b>About</b> → <i>{item.get('description') or 'No description'}</i>")
-        return "\n".join(lines), buttons.build_menu(2)
+            rows.append(("Installed", f"<code>{installed.version}</code>"))
+        rows.append(("About", f"<i>{item.get('description') or 'No description'}</i>"))
+        return _wz(item.get("name") or arg, rows), buttons.build_menu(2)
 
     if view == "install":
         buttons.data_button("Upload a .zip", f"plugins {user_id} upload")
@@ -251,32 +331,46 @@ async def build_menu(user_id, view="main", arg=""):
         buttons.data_button(
             "Close", f"plugins {user_id} close", position="footer", style=ButtonStyle.DANGER
         )
-        text = (
-            "⌬ <b><u>Install a Plugin</u></b>\n\n"
-            "<i>A plugin is a folder holding a <code>wzml_plugin.yml</code> manifest "
-            "and its Python files. Plugin code runs with full access to this bot — "
-            "only install what you trust.</i>"
+        rows = [
+            ("Needs", "a folder with <code>wzml_plugin.yml</code>"),
+            ("Accepts", "a .zip upload, or <code>owner/repo</code>"),
+            ("Limit", f"{MAX_ARCHIVE // (1024 * 1024)} MB"),
+        ]
+        return (
+            _wz(
+                "Install a Plugin",
+                rows,
+                "Plugin code runs with full access to this bot. Only install what "
+                "you trust.",
+            ),
+            buttons.build_menu(2),
         )
-        return text, buttons.build_menu(2)
 
     if view == "deps":
         state = pending.get(user_id)
         if not state:
             return "<i>That request expired.</i>", buttons.build_menu(1)
         buttons.data_button(
-            "Install & continue", f"plugins {user_id} deps_ok", style=ButtonStyle.PRIMARY
+            "Install & Continue",
+            f"plugins {user_id} deps_ok",
+            style=ButtonStyle.SUCCESS,
         )
         buttons.data_button(
             "Cancel", f"plugins {user_id} deps_no", style=ButtonStyle.DANGER
         )
         man = state["manifest"]
-        text = (
-            f"⌬ <b><u>{man.name} v{man.version}</u></b>\n\n"
-            "<b>Needs these packages, which are not installed:</b>\n"
-            + "\n".join(f"• <code>{d}</code>" for d in state["missing"])
-            + "\n\n<i>Install them into the bot's environment and continue?</i>"
+        rows = [
+            ("Plugin", f"{man.name} <code>{man.version}</code>"),
+            ("Missing", ", ".join(f"<code>{d}</code>" for d in state["missing"])),
+        ]
+        return (
+            _wz(
+                "Dependencies Needed",
+                rows,
+                "Install them into the bot's environment and continue?",
+            ),
+            buttons.build_menu(2),
         )
-        return text, buttons.build_menu(2)
 
     if view == "cfg":
         rec = manager.get(arg)
@@ -284,40 +378,39 @@ async def build_menu(user_id, view="main", arg=""):
             return "<i>That plugin is not loaded any more.</i>", buttons.build_menu(1)
         items = manager.schema_items(arg)
         current = manager.effective_config(arg)
-        lines = [f"⌬ <b><u>{arg} settings</u></b>", "│"]
+        rows = []
         for index, (key, spec) in enumerate(items):
             value = current.get(key)
-            shown = "not set" if value is None else str(value)
-            edge = "┖" if index == len(items) - 1 else ("┟" if index == 0 else "┠")
-            lines.append(f"{edge} <b>{key}</b> → <code>{shown}</code>")
+            rows.append((key, f"<code>{'not set' if value is None else value}</code>"))
             if owner:
                 kind = str((spec or {}).get("type") or "string").lower()
-                label = (
-                    f"{key}: {'on' if value else 'off'}"
-                    if kind in ("bool", "boolean")
-                    else key
-                )
-                buttons.data_button(label, f"plugins {user_id} cfge {arg} {index}")
-        if not items:
-            lines.append("┖ <i>This plugin has no settings.</i>")
+                if kind in ("bool", "boolean"):
+                    buttons.data_button(
+                        key,
+                        f"plugins {user_id} cfge {arg} {index}",
+                        style=ButtonStyle.SUCCESS if value else ButtonStyle.DANGER,
+                    )
+                else:
+                    buttons.data_button(key, f"plugins {user_id} cfge {arg} {index}")
         if owner and items:
             buttons.data_button(
-                "Reset all", f"plugins {user_id} cfgr {arg}", position="l_body"
+                "Reset All", f"plugins {user_id} cfgr {arg}", position="l_body"
             )
         buttons.data_button("Back", f"plugins {user_id} view {arg}", position="footer")
         buttons.data_button(
             "Close", f"plugins {user_id} close", position="footer", style=ButtonStyle.DANGER
         )
-        return "\n".join(lines), buttons.build_menu(2, lb_cols=1)
+        note = "" if items else "This plugin has no settings."
+        return _wz(f"{arg} Settings", rows, note), buttons.build_menu(2, lb_cols=1)
 
     if view == "rmask":
         buttons.data_button(
-            "Yes, remove it", f"plugins {user_id} rm {arg}", style=ButtonStyle.DANGER
+            "Yes, Remove", f"plugins {user_id} rm {arg}", style=ButtonStyle.DANGER
         )
-        buttons.data_button("No", f"plugins {user_id} view {arg}")
+        buttons.data_button("No", f"plugins {user_id} list")
+        rows = [("Plugin", f"<code>{arg}</code>"), ("Removes", "its folder and settings")]
         return (
-            f"⌬ <b>Uninstall <code>{arg}</code>?</b>\n\n"
-            "<i>Its folder and stored settings are deleted. This cannot be undone.</i>",
+            _wz("Confirm Uninstall", rows, "This cannot be undone."),
             buttons.build_menu(2),
         )
 
@@ -381,13 +474,13 @@ async def _finish(query, staged, manifest, source, url):
     except InstallError as err:
         text, markup = await build_menu(user_id, "install")
         await edit_message(
-            query.message, f"<b>Install failed:</b> <i>{err}</i>\n\n{text}", markup
+            query.message, f"<b>Install failed</b> → <i>{err}</i>\n\n{text}", markup
         )
         return
     text, markup = await build_menu(user_id, "view", manifest.name)
     await edit_message(
         query.message,
-        f"<b>Installed {manifest.name} v{manifest.version}.</b>\n\n{text}",
+        f"<b>Installed</b> → {manifest.name} <code>{manifest.version}</code>\n\n{text}",
         markup,
     )
 
@@ -406,13 +499,13 @@ async def _on_upload(client, message, query):
         text, markup = await build_menu(user_id, "install")
         await edit_message(
             query.message,
-            f"<b>Rejected:</b> <i>that file is {doc.file_size} bytes, the limit is "
+            f"<b>Rejected</b> → <i>that file is {doc.file_size} bytes, the limit is "
             f"{MAX_ARCHIVE}.</i>\n\n{text}",
             markup,
         )
         return
     target = str(installer.staging_dir / f"upload_{user_id}.bin")
-    from aiofiles.os import makedirs
+    from aiofiles.os import makedirs, remove
 
     await makedirs(ospath.dirname(target), exist_ok=True)
     await edit_message(query.message, "<i>Downloading the archive…</i>")
@@ -422,12 +515,10 @@ async def _on_upload(client, message, query):
     except InstallError as err:
         text, markup = await build_menu(user_id, "install")
         await edit_message(
-            query.message, f"<b>Rejected:</b> <i>{err}</i>\n\n{text}", markup
+            query.message, f"<b>Rejected</b> → <i>{err}</i>\n\n{text}", markup
         )
         return
     finally:
-        from aiofiles.os import remove
-
         try:
             await remove(target)
         except OSError:
@@ -448,7 +539,7 @@ async def _on_github(client, message, query):
     except InstallError as err:
         text, markup = await build_menu(user_id, "install")
         await edit_message(
-            query.message, f"<b>Rejected:</b> <i>{err}</i>\n\n{text}", markup
+            query.message, f"<b>Rejected</b> → <i>{err}</i>\n\n{text}", markup
         )
         return
     await _stage_done(query, staged, manifest, missing, "github", spec)
@@ -466,12 +557,12 @@ async def _on_config(client, message, query, plugin=None, key=None, spec=None):
     except ValueError as err:
         text, markup = await build_menu(user_id, "cfg", plugin)
         return await edit_message(
-            query.message, f"<b>{key}: {err}</b>\n\n{text}", markup
+            query.message, f"<b>{key}</b> → <i>{err}</i>\n\n{text}", markup
         )
     ok, err = await manager.set_config(plugin, key, value)
     text, markup = await build_menu(user_id, "cfg", plugin)
     if not ok:
-        text = f"<b>Could not save:</b> <i>{err}</i>\n\n{text}"
+        text = f"<b>Could not save</b> → <i>{err}</i>\n\n{text}"
     await edit_message(query.message, text, markup)
 
 
@@ -496,14 +587,14 @@ async def edit_plugins_menu(client, query):
     manager.bot = client
     installer = get_installer()
 
-    mutating = {
-        "on", "off", "load", "unload", "reload", "rm", "rmask", "get", "update",
-        "install", "upload", "github", "deps_ok", "deps_no",
-        "cfge", "cfgr",
-    }
-    if action in mutating and not _is_owner(user_id):
-        return await query.answer("Owner only.", show_alert=True)
-    if action in mutating and Config.DISABLE_PLUGINS:
+    if action in MUTATING and not _may(user_id, action):
+        return await query.answer(
+            "Only the owner can change plugins."
+            if action in OWNER_ONLY
+            else "Sudo users only.",
+            show_alert=True,
+        )
+    if action in MUTATING and Config.DISABLE_PLUGINS:
         return await query.answer(
             "Plugins are switched off in Module Settings.", show_alert=True
         )
@@ -538,37 +629,23 @@ async def edit_plugins_menu(client, query):
         text, markup = await build_menu(user_id, "mkt", "0")
         return await edit_message(query.message, text, markup)
 
-    if action == "load":
-        await query.answer(f"Loading {arg}...")
-        ok, err = await manager.load(arg)
-        if ok:
-            await manager.set_autoload(arg, True)
-        text, markup = await build_menu(user_id, "view" if ok else "dview", arg)
-        if not ok:
-            text = f"<b>Load failed:</b> <i>{err}</i>\n\n{text}"
-        return await edit_message(query.message, text, markup)
+    if action == "rescan":
+        await query.answer("Rescanning the folder…")
+        found, fresh = await manager.rescan()
+        text, markup = await build_menu(user_id, "list")
+        head = f"<b>Scan</b> → {len(found)} folder(s)"
+        head += f", {len(fresh)} newly loaded" if fresh else ", nothing new"
+        return await edit_message(query.message, f"{head}\n\n{text}", markup)
 
-    if action == "unload":
-        await query.answer(f"Unloading {arg}...")
-        ok, err = await manager.unload(arg)
-        if ok:
-            await manager.set_autoload(arg, False)
-        text, markup = await build_menu(user_id, "dview" if ok else "view", arg)
-        if not ok:
-            text = f"<b>Unload failed:</b> <i>{err}</i>\n\n{text}"
-        return await edit_message(query.message, text, markup)
-
-    if action in ("on", "off", "reload"):
-        await query.answer(f"Working on {arg}…")
+    if action in ("on", "off"):
+        await query.answer("Working…")
         if action == "on":
             ok, err = await manager.enable(arg)
-        elif action == "off":
-            ok, err = await manager.disable(arg)
         else:
-            ok, err = await manager.reload(arg)
+            ok, err = await manager.disable(arg)
         text, markup = await build_menu(user_id, "view" if ok else "list", arg)
         if not ok:
-            text = f"<b>{action} failed:</b> <i>{err}</i>\n\n{text}"
+            text = f"<b>Failed</b> → <i>{err}</i>\n\n{text}"
         return await edit_message(query.message, text, markup)
 
     if action == "rm":
@@ -576,7 +653,7 @@ async def edit_plugins_menu(client, query):
         ok, err = await installer.uninstall(arg)
         text, markup = await build_menu(user_id, "list")
         if not ok:
-            text = f"<b>Uninstall failed:</b> <i>{err}</i>\n\n{text}"
+            text = f"<b>Uninstall failed</b> → <i>{err}</i>\n\n{text}"
         return await edit_message(query.message, text, markup)
 
     if action in ("get", "update"):
@@ -600,7 +677,7 @@ async def edit_plugins_menu(client, query):
         except InstallError as err:
             text, markup = await build_menu(user_id, "mkt", "0")
             return await edit_message(
-                query.message, f"<b>Rejected:</b> <i>{err}</i>\n\n{text}", markup
+                query.message, f"<b>Rejected</b> → <i>{err}</i>\n\n{text}", markup
             )
         return await _stage_done(query, staged, manifest, missing, source, url)
 
@@ -619,7 +696,7 @@ async def edit_plugins_menu(client, query):
             text, markup = await build_menu(user_id, "install")
             return await edit_message(
                 query.message,
-                f"<b>Could not install the packages:</b> <i>{err}</i>\n\n{text}",
+                f"<b>Could not install</b> → <i>{err}</i>\n\n{text}",
                 markup,
             )
         return await _finish(
@@ -661,37 +738,31 @@ async def edit_plugins_menu(client, query):
             bounds.append(f"max {spec['max']}")
         if (spec or {}).get("choices"):
             bounds.append("one of " + ", ".join(str(c) for c in spec["choices"]))
-        note = (spec or {}).get("description") or ""
-        prompt = (
-            f"⌬ <b>Set <code>{key}</code> for {arg}</b>\n\n"
-            f"<i>Type: {kind}"
-            + (f" ({', '.join(bounds)})" if bounds else "")
-            + "</i>\n"
-            + (f"<i>{note}</i>\n" if note else "")
-            + "\n<i>Send the new value.</i>"
-        )
+        rows = [("Setting", f"<code>{key}</code>"), ("Type", kind)]
+        if bounds:
+            rows.append(("Limits", ", ".join(bounds)))
+        if (spec or {}).get("description"):
+            rows.append(("About", f"<i>{spec['description']}</i>"))
+        prompt = _wz(f"{arg} Settings", rows, "Send the new value.")
         return await _ask(
             client, query, prompt, partial(_on_config, plugin=arg, key=key, spec=spec)
         )
 
     if action == "upload":
         await query.answer()
+        rows = [("Send", "a .zip of the plugin folder"), ("Needs", "wzml_plugin.yml")]
         return await _ask(
-            client,
-            query,
-            "⌬ <b>Send the plugin .zip</b>\n\n"
-            "<i>It must contain a wzml_plugin.yml manifest.</i>",
-            _on_upload,
+            client, query, _wz("Upload a Plugin", rows), _on_upload
         )
 
     if action == "github":
         await query.answer()
+        rows = [
+            ("Send", "<code>owner/repo</code>"),
+            ("Or", "<code>owner/repo@branch</code>"),
+        ]
         return await _ask(
-            client,
-            query,
-            "⌬ <b>Send the repository</b>\n\n"
-            "<i>Like <code>owner/repo</code> or <code>owner/repo@branch</code>.</i>",
-            _on_github,
+            client, query, _wz("Install from GitHub", rows), _on_github
         )
 
     await query.answer()
