@@ -278,6 +278,11 @@ class RcloneTransferHelper:
         else:
             oconfig_path = "rclone.conf"
 
+        if ":" not in rc_path:
+            await self._listener.on_upload_error(
+                f"Invalid rclone upload destination: {self._listener.up_dest}"
+            )
+            return
         oremote, rc_path = rc_path.split(":", 1)
 
         if await aiopath.isdir(path):
@@ -369,6 +374,11 @@ class RcloneTransferHelper:
 
     async def clone(self, config_path, src_remote, src_path, mime_type, method):
         destination = self._listener.up_dest
+        if ":" not in destination:
+            await self._listener.on_upload_error(
+                f"Invalid rclone upload destination: {destination}"
+            )
+            return None, None
         dst_remote, dst_path = destination.split(":", 1)
 
         try:
