@@ -31,6 +31,7 @@ WEB_ACCESS_PASSWORD = (
 
 # Hyper Tg Downloader
 HELPER_TOKENS = ""
+STREAM_TOKENS = ""
 USE_HYPER = True
 
 # MegaAPI v4.30
@@ -50,6 +51,7 @@ DISABLE_JD = False
 DISABLE_NZB = False
 DISABLE_RSS = False
 DISABLE_SEARCH = False
+DISABLE_STREAM = False
 DISABLE_YTDLP = False
 
 # Telegraph

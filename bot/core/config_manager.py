@@ -12,6 +12,7 @@ class Config:
     BOT_TOKEN = ""
     HELPER_TOKENS = ""
     HELPER_STRINGS = ""
+    STREAM_TOKENS = ""
     HELPER_BOT_PROXIES = ""
     HELPER_USER_PROXIES = ""
     BOT_MAX_TASKS = 0
@@ -35,6 +36,7 @@ class Config:
     DISABLE_NZB = True
     DISABLE_RSS = False
     DISABLE_SEARCH = False
+    DISABLE_STREAM = False
     DISABLE_YTDLP = False
     EQUAL_SPLITS = False
     EXCLUDED_EXTENSIONS = ""
@@ -98,6 +100,10 @@ class Config:
     HYPER_THREADS = 0
     HYPER_PIPELINE = 4
     HYPER_CHUNK = 512 * 1024
+    STREAM_PIPELINE = 8
+    STREAM_CHUNK = 1048576
+    STREAM_PER_CLIENT = 6
+    STREAM_GATE = 96
     CPU_LIMIT = 20
     THROTTLE_SERVICES = "auto"
     HYDRA_IP = ""

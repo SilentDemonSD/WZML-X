@@ -169,7 +169,7 @@ async def add_nzb(listener, path):
                     await sleep(1)
             if not add_to_queue:
                 await sabnzbd_client.pause_job(job_id)
-            SBUTTONS = bt_selection_buttons(job_id)
+            SBUTTONS = bt_selection_buttons(job_id, listener.message)
             msg = "<b>Download Paused!</b>\n\n<i>Select your files &amp; press <b>Done Selecting</b> to start.</i>"
             await send_message(listener.message, msg, SBUTTONS)
         elif listener.multi <= 1:

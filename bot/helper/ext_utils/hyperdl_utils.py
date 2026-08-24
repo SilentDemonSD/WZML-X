@@ -38,7 +38,7 @@ from pyrogram.session import Session
 from ... import LOGGER
 from ...core.config_manager import Config
 from ...core.tg_client import TgClient
-from ..telegram_helper.tg_transfer import MB, HypertgTransfer
+from ..telegram_helper.tg_transfer import MB, HypertgTransfer, media_of
 
 _load_lock = Lock()
 
@@ -138,24 +138,7 @@ class HypertgDownload(HypertgTransfer):
 
     @staticmethod
     def _media_of(message):
-        for attr in (
-            "audio",
-            "document",
-            "photo",
-            "sticker",
-            "animation",
-            "video",
-            "voice",
-            "video_note",
-            "new_chat_photo",
-            "story",
-            "web_page",
-        ):
-            if m := getattr(message, attr, None):
-                return m
-        raise ValueError(
-            f"No downloadable media in msg {message.id} (type: {message.media})"
-        )
+        return media_of(message)
 
     async def _do_req(self, sess, client, location, off, csz, attempt=0):
         try:

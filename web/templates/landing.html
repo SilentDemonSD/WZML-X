@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#08060f">
+    <meta name="theme-color" content="#00000C">
     <title>WZML-X</title>
     <meta name="description" content="WZML-X — experience the next generation of workflow automation.">
     <meta property="og:type" content="website">
@@ -11,21 +11,22 @@
     <meta property="og:title" content="WZML-X">
     <meta property="og:description" content="Experience the next generation of workflow automation.">
     <meta name="twitter:card" content="summary">
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22.5' fill='%23F4F2FE'/%3E%3Cpath d='M 19.4 42.6 C 20.0 55.4 22.4 66.4 29.8 68.3 C 37.0 70.1 43.2 61.0 45.2 48.8 C 47.5 61.0 53.4 66.6 61.0 68.3 C 68.6 70.0 75.6 55.5 80.6 35.3' fill='none' stroke='%235236CB' stroke-width='11.1' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22.5' fill='%23F5F7FF'/%3E%3Cpath d='M 19.4 42.6 C 20.0 55.4 22.4 66.4 29.8 68.3 C 37.0 70.1 43.2 61.0 45.2 48.8 C 47.5 61.0 53.4 66.6 61.0 68.3 C 68.6 70.0 75.6 55.5 80.6 35.3' fill='none' stroke='%233D87FF' stroke-width='11.1' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #08060f;
-            --line: rgba(255, 255, 255, 0.07);
-            --line-strong: rgba(255, 255, 255, 0.12);
-            --deep: #2A1178;
-            --mid: #5236CB;
-            --light: #907DFB;
-            --pale: #B9A9FD;
-            --text: #EDEAF6;
-            --muted: #8F88AB;
+            color-scheme: dark;
+            --bg: #00000C;
+            --line: rgba(93, 157, 255, 0.10);
+            --line-strong: rgba(42, 95, 208, 0.55);
+            --deep: #16409E;
+            --mid: #1A4AB0;
+            --light: #3D87FF;
+            --pale: #5B9DFF;
+            --text: #F5F7FF;
+            --muted: #CBD2E5;
         }
 
         * {
@@ -37,7 +38,7 @@
         html { -webkit-text-size-adjust: 100%; }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: var(--bg);
             color: var(--text);
             line-height: 1.6;
@@ -56,8 +57,8 @@
             position: fixed;
             inset: 0;
             background:
-                radial-gradient(55rem 34rem at 50% -12%, rgba(82, 54, 203, 0.32) 0%, transparent 70%),
-                radial-gradient(38rem 28rem at 8% 104%, rgba(42, 17, 120, 0.38) 0%, transparent 70%);
+                radial-gradient(55rem 34rem at 50% -12%, rgba(61, 135, 255, 0.18) 0%, transparent 70%),
+                radial-gradient(38rem 28rem at 8% 104%, rgba(26, 74, 176, 0.35) 0%, transparent 70%);
             pointer-events: none;
             z-index: 0;
         }
@@ -85,9 +86,9 @@
             text-align: center;
             padding: 3rem 2.75rem 1.75rem;
             border-radius: 26px;
-            background: linear-gradient(180deg, rgba(24, 16, 46, 0.9), rgba(10, 7, 20, 0.92));
+            background: linear-gradient(180deg, rgba(1, 1, 22, 0.92), rgba(0, 0, 12, 0.94));
             border: 1px solid var(--line-strong);
-            box-shadow: 0 32px 80px -24px rgba(0, 0, 0, 0.95);
+            box-shadow: 0 32px 80px -24px rgba(0, 0, 12, 0.95);
             backdrop-filter: blur(24px);
             animation: rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
@@ -99,7 +100,7 @@
             left: 15%;
             right: 15%;
             height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(185, 169, 253, 0.6), transparent);
+            background: linear-gradient(90deg, transparent, rgba(93, 157, 255, 0.70), transparent);
         }
 
         @keyframes rise {
@@ -113,15 +114,15 @@
             display: block;
             margin: 0 auto 1.5rem;
             border-radius: 18px;
-            box-shadow: 0 18px 44px -14px rgba(82, 54, 203, 0.85);
+            box-shadow: 0 18px 44px -14px rgba(61, 135, 255, 0.50);
         }
 
         h1 {
             font-size: clamp(2.25rem, 7vw, 3rem);
             font-weight: 800;
-            letter-spacing: -0.03em;
+            letter-spacing: 0.02em;
             line-height: 1.05;
-            background: linear-gradient(180deg, #FFFFFF 30%, var(--pale) 130%);
+            background: linear-gradient(180deg, #F5F7FF 30%, var(--pale) 130%);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
@@ -130,7 +131,7 @@
         .version {
             display: block;
             font-size: 0.75rem;
-            font-weight: 600;
+            font-weight: 500;
             letter-spacing: 0.18em;
             text-transform: uppercase;
             color: var(--muted);
@@ -139,6 +140,7 @@
 
         .subtitle {
             font-size: 1.0625rem;
+            font-weight: 500;
             color: var(--muted);
             max-width: 28rem;
             margin: 1rem auto 0;
@@ -158,7 +160,7 @@
             gap: 0.85rem;
             padding: 0.95rem 1.15rem;
             border-radius: 14px;
-            background: rgba(255, 255, 255, 0.035);
+            background: rgba(93, 157, 255, 0.05);
             border: 1px solid var(--line);
             color: var(--text);
             text-decoration: none;
@@ -175,7 +177,7 @@
             place-items: center;
             border-radius: 11px;
             color: var(--pale);
-            background: rgba(144, 125, 251, 0.12);
+            background: rgba(61, 135, 255, 0.14);
             transition: background 0.2s ease, color 0.2s ease;
         }
 
@@ -202,14 +204,14 @@
         }
 
         .button:hover {
-            background: rgba(144, 125, 251, 0.08);
-            border-color: rgba(144, 125, 251, 0.4);
+            background: rgba(61, 135, 255, 0.12);
+            border-color: rgba(93, 157, 255, 0.50);
             transform: translateY(-2px);
         }
 
         .button:hover .ico {
             background: linear-gradient(135deg, var(--mid), var(--light));
-            color: #fff;
+            color: #F5F7FF;
         }
 
         .button:hover .arrow {
@@ -270,16 +272,16 @@
         <svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="WZML-X logo">
             <defs>
                 <linearGradient id="face" x1="50" y1="0" x2="50" y2="100" gradientUnits="userSpaceOnUse">
-                    <stop offset="0" stop-color="#FAF8FF"/>
-                    <stop offset="0.46" stop-color="#F4F2FE"/>
-                    <stop offset="1" stop-color="#EEEAFB"/>
+                    <stop offset="0" stop-color="#F5F7FF"/>
+                    <stop offset="0.46" stop-color="#F5F7FF"/>
+                    <stop offset="1" stop-color="#CBD2E5"/>
                 </linearGradient>
                 <linearGradient id="wg" gradientUnits="userSpaceOnUse" x1="15" y1="70" x2="86" y2="30">
-                    <stop offset="0" stop-color="#2A1178"/>
-                    <stop offset="0.5" stop-color="#33188C"/>
-                    <stop offset="0.76" stop-color="#5236CB"/>
-                    <stop offset="0.92" stop-color="#907DFB"/>
-                    <stop offset="1" stop-color="#B9A9FD"/>
+                    <stop offset="0" stop-color="#16409E"/>
+                    <stop offset="0.5" stop-color="#2A5FD0"/>
+                    <stop offset="0.76" stop-color="#3D87FF"/>
+                    <stop offset="0.92" stop-color="#5B9DFF"/>
+                    <stop offset="1" stop-color="#CBD2E5"/>
                 </linearGradient>
             </defs>
             <rect x="0" y="0" width="100" height="100" rx="22.5" ry="22.5" fill="url(#face)"/>

@@ -125,7 +125,7 @@ async def add_qb_torrent(listener, path, ratio, seed_time):
             ext_hash = tor_info.hash
             if not add_to_queue:
                 await TorrentManager.qbittorrent.torrents.stop([ext_hash])
-            SBUTTONS = bt_selection_buttons(ext_hash)
+            SBUTTONS = bt_selection_buttons(ext_hash, listener.message)
             msg = "<b>Download Paused!</b>\n\n<i>Select your files &amp; press <b>Done Selecting</b> to start !</i>"
             await send_message(listener.message, msg, SBUTTONS)
         elif listener.multi <= 1 and not listener.is_rss:

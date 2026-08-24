@@ -29,6 +29,7 @@ class BotCommands:
         "ForceStart": ["forcestart", "fs"],
         "Status": ["status", "s", "statusall"],
         "MediaInfo": ["mediainfo", "mi"],
+        "Stream": ["stream", "sl"],
         "Ping": "ping",
         "Restart": ["restart", "r", "restartall"],
         "RestartSessions": ["restartses", "rses"],

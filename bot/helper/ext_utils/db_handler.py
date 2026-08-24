@@ -1,4 +1,5 @@
 from importlib import import_module
+from time import time
 from uuid import uuid4
 
 from aiofiles import open as aiopen
@@ -16,6 +17,11 @@ def _bot_id():
     if TgClient.ID:
         return str(TgClient.ID)
     return Config.BOT_TOKEN.split(":", 1)[0]
+
+
+def _expired(doc):
+    exp = doc.get("exp")
+    return bool(exp) and time() >= exp
 
 
 def _part():
@@ -225,6 +231,122 @@ class DbManager:
             {"link": link},
             {"$set": {"dump_msg_id": dump_msg_id, "dump_chat": dump_chat}},
         )
+
+    async def add_stream(
+        self, token, chat_id, msg_id, poster=None, exp=None, pl=None, pi=0
+    ):
+        if self._return:
+            return
+        doc = {"cid": int(chat_id), "mid": int(msg_id)}
+        if isinstance(poster, str):
+            doc["purl"] = poster
+        elif poster:
+            doc["pcid"] = int(poster[0])
+            doc["pmid"] = int(poster[1])
+        if exp:
+            doc["exp"] = int(exp)
+        if pl:
+            doc["pl"] = pl
+            doc["pi"] = int(pi)
+        await self.db.streams[_part()].update_one(
+            {"_id": token},
+            {"$set": doc},
+            upsert=True,
+        )
+
+    async def get_stream_art(self, token):
+        if self._return:
+            return None
+        doc = await self.db.streams[_part()].find_one({"_id": token})
+        if not doc:
+            return None
+        if _expired(doc):
+            await self.rm_stream(token)
+            return None
+        if doc.get("purl"):
+            return ("url", doc["purl"])
+        if doc.get("pcid") and doc.get("pmid"):
+            return ("tg", (doc["pcid"], doc["pmid"]))
+        return None
+
+    async def get_stream_nav(self, token):
+        if self._return:
+            return None
+        doc = await self.db.streams[_part()].find_one({"_id": token})
+        if doc and _expired(doc):
+            await self.rm_stream(token)
+            return None
+        if doc and doc.get("pl"):
+            return (doc["pl"], int(doc.get("pi") or 0))
+        owner = await self.db.playlists[_part()].find_one({"items": token})
+        if not owner:
+            return None
+        if _expired(owner):
+            await self.rm_playlist(owner["_id"])
+            return None
+        items = owner.get("items") or []
+        return (owner["_id"], items.index(token) if token in items else 0)
+
+    async def find_stream(self, chat_id, msg_id):
+        if self._return:
+            return None
+        doc = await self.db.streams[_part()].find_one(
+            {"cid": int(chat_id), "mid": int(msg_id), "exp": {"$exists": False}}
+        )
+        return doc["_id"] if doc else None
+
+    async def get_stream(self, token):
+        if self._return:
+            return None
+        doc = await self.db.streams[_part()].find_one({"_id": token})
+        if not doc:
+            return None
+        if _expired(doc):
+            await self.rm_stream(token)
+            return None
+        return (doc["cid"], doc["mid"])
+
+    async def rm_stream(self, token):
+        if self._return:
+            return
+        await self.db.streams[_part()].delete_one({"_id": token})
+
+    async def add_playlist(self, token, name, items, poster=None, exp=None):
+        if self._return:
+            return
+        doc = {"name": name or "", "items": list(items)}
+        doc["purl"] = poster if isinstance(poster, str) else None
+        doc["pcid"] = int(poster[0]) if poster and not isinstance(poster, str) else None
+        doc["pmid"] = int(poster[1]) if poster and not isinstance(poster, str) else None
+        if exp:
+            doc["exp"] = int(exp)
+        await self.db.playlists[_part()].update_one(
+            {"_id": token},
+            {"$set": doc},
+            upsert=True,
+        )
+
+    async def get_playlist(self, token):
+        if self._return:
+            return None
+        doc = await self.db.playlists[_part()].find_one({"_id": token})
+        if not doc:
+            return None
+        if _expired(doc):
+            await self.rm_playlist(token)
+            return None
+        return {
+            "name": doc.get("name") or "",
+            "items": doc.get("items") or [],
+            "purl": doc.get("purl"),
+            "pcid": doc.get("pcid"),
+            "pmid": doc.get("pmid"),
+        }
+
+    async def rm_playlist(self, token):
+        if self._return:
+            return
+        await self.db.playlists[_part()].delete_one({"_id": token})
 
     async def get_pm_uids(self):
         if self._return:

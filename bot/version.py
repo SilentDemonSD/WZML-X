@@ -1,7 +1,7 @@
 def get_version() -> str:
     MAJOR = "3"
     MINOR = "1"
-    PATCH = "8"
+    PATCH = "9"
     STATE = "x"
     return f"v{MAJOR}.{MINOR}.{PATCH}-{STATE}"
 

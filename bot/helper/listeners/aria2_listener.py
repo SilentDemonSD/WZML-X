@@ -89,7 +89,7 @@ async def _on_download_complete(api, data):
             if Config.BASE_URL and task.listener.select:
                 if not task.queued:
                     await api.forcePause(new_gid)
-                SBUTTONS = bt_selection_buttons(new_gid)
+                SBUTTONS = bt_selection_buttons(new_gid, task.listener.message)
                 msg = "<b>Download Paused!</b>\n\n<i>Select your files &amp; press <b>Done Selecting</b> to start.</i>"
                 await send_message(task.listener.message, msg, SBUTTONS)
     elif "bittorrent" in download:
