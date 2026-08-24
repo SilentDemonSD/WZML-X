@@ -1242,6 +1242,11 @@
 
         class LibmediaVideoElement extends CustomVideoElement {
             static tagName = "libmedia-video";
+
+            static preload() {
+                return loadAVPlayer().catch(() => { });
+            }
+
             static observedAttributes = [
                 ...(CustomVideoElement.observedAttributes || []), "src"
             ];
@@ -2311,6 +2316,23 @@
                 }
             }
 
+            function nativeHopeless() {
+                if (!MIME) return false;
+                try {
+                    return document.createElement("video")
+                        .canPlayType(MIME) === "";
+                } catch (e) {
+                    return false;
+                }
+            }
+
+            function warmDecoder() {
+                customElements.whenDefined("libmedia-video").then(function () {
+                    var maker = customElements.get("libmedia-video");
+                    if (maker && maker.preload) maker.preload();
+                }).catch(lmErr);
+            }
+
             function dropArt() {
                 document.documentElement.style.removeProperty("--art");
             }
@@ -2380,8 +2402,15 @@
                     }
                 });
 
-                if (MIME) vid.setAttribute("type", MIME);
-                vid.src = STREAM;
+                if (nativeHopeless()) {
+                    lmLog("native cannot open " + MIME + ", decoding directly");
+                    warmDecoder();
+                    el("loadingText").textContent = "Starting the decoder";
+                    startLibmedia(0);
+                } else {
+                    vid.setAttribute("type", MIME);
+                    vid.src = STREAM;
+                }
 
                 setTimeout(function () {
                     if (!el("loading").classList.contains("gone")) {
