@@ -1,4 +1,5 @@
 from html import escape
+from re import compile as re_compile
 from secrets import token_urlsafe
 from time import time
 
@@ -11,6 +12,7 @@ from ..helper.ext_utils.db_handler import database
 from ..helper.ext_utils.links_utils import is_telegram_link, is_url
 from ..helper.telegram_helper.bot_commands import BotCommands
 from ..helper.telegram_helper.button_build import ButtonMaker
+from ..helper.telegram_helper.filters import CustomFilters
 from ..helper.telegram_helper.message_utils import (
     delete_links,
     edit_message,
@@ -28,6 +30,21 @@ _PLAYABLE = ("video/", "audio/")
 _MAX_BATCH = 50
 _MAX_BUTTONS = 20
 _LABEL = 22
+_TOKEN_OK = re_compile(r"^[A-Za-z0-9_-]{4,32}$")
+_OFF = (
+    "<b>Streaming is disabled.</b>\n\n<i>The bot owner turned it off in "
+    "Module Settings.</i>"
+)
+
+
+def token_of(value):
+    if not value:
+        return None
+    part = value.split("?", 1)[0].split("#", 1)[0].rstrip("/")
+    part = part.rsplit("/", 1)[-1]
+    if "." in part:
+        return None
+    return part if _TOKEN_OK.match(part) else None
 
 
 async def _mint_token(chat_id, msg_id, poster=None, exp=None, pl=None, pi=0):
@@ -88,8 +105,10 @@ def parse_stream_args(parts):
     poster = None
     link = None
     playlist = False
+    drop = False
     ttl = 0
     words = []
+    urls = []
     want = None
     for part in parts:
         if want == "poster":
@@ -112,18 +131,24 @@ def parse_stream_args(parts):
         if part in ("-pl", "-playlist"):
             playlist = True
             continue
+        if part in ("-d", "-del", "-delete"):
+            drop = True
+            continue
         if is_telegram_link(part):
             if link is None:
                 link = part
             continue
         if is_url(part):
+            urls.append(part)
             continue
         words.append(part)
     return {
         "link": link,
         "poster": poster,
         "playlist": playlist,
+        "delete": drop,
         "ttl": ttl,
+        "urls": urls,
         "name": " ".join(words).strip(),
     }
 
@@ -160,10 +185,7 @@ async def _register(message, poster=None, exp=None, pl=None, pi=0):
 
 def _ready():
     if Config.DISABLE_STREAM:
-        return (
-            "<b>Streaming is disabled.</b>\n\n<i>The bot owner turned it off in "
-            "Module Settings.</i>"
-        )
+        return _OFF
     if not (TgClient.stream_bots or TgClient.helper_bots):
         return (
             "<b>No streaming clients are running.</b>\n\n<i>Add STREAM_TOKENS or "
@@ -197,6 +219,9 @@ def _usage():
 
 <b>Self expiring links:</b>
 <code>/{one} -ttl [1d2h3m] [link]</code>
+
+<b>Delete a link (owner or sudo):</b>
+<code>/{one} [stream or playlist link] -d</code>
 """
 
 
@@ -213,15 +238,84 @@ def _done(line):
     return "〶 <b><u>Action Performed :</u></b>\n" + f"⋗ <i>{line}</i>\n"
 
 
+async def _delete_link(message, args):
+    if not await CustomFilters.sudo("", message):
+        await send_message(
+            message,
+            "<b>Not allowed.</b>\n\n<i>Only the owner or a sudo user can "
+            "delete stream links.</i>",
+        )
+        await delete_links(message)
+        return
+
+    target = None
+    for cand in args["urls"]:
+        target = token_of(cand)
+        if target:
+            break
+    if not target and args["name"]:
+        for word in args["name"].split():
+            target = token_of(word)
+            if target:
+                break
+    if not target:
+        await send_message(
+            message,
+            "<b>Pass the link to delete</b>\n\n"
+            f"<code>/{BotCommands.StreamCommand[0]} [stream or playlist link] -d</code>",
+        )
+        await delete_links(message)
+        return
+
+    from ..core.stream_server import forget
+
+    tag = message.from_user.mention if message.from_user else "N/A"
+    listing = await database.get_playlist(target)
+    if listing:
+        for tok in listing["items"]:
+            await database.rm_stream(tok)
+            forget(tok)
+        await database.rm_playlist(target)
+        forget(target)
+        rows = [
+            ("Type", "Playlist"),
+            ("Links Removed", str(len(listing["items"]))),
+        ]
+        msg = _head(listing["name"] or target, rows, tag)
+        msg += _done("Playlist and every link inside it are gone")
+        await send_message(message, msg)
+        await delete_links(message)
+        return
+
+    found = await database.get_stream(target)
+    await database.rm_stream(target)
+    forget(target)
+    if found:
+        msg = _head(target, [("Type", "Stream link")], tag)
+        msg += _done("Link is gone, it will no longer play")
+    else:
+        msg = _head(target, [("Type", "Nothing found")], tag)
+        msg += _done("No such link, it may already be deleted or expired")
+    await send_message(message, msg)
+    await delete_links(message)
+
+
 async def stream_links(_, message):
+    parts = (message.text or message.caption or "").split()[1:]
+    args = parse_stream_args(parts)
+    reply = message.reply_to_message
+
+    if args["delete"]:
+        if Config.DISABLE_STREAM:
+            await send_message(message, _OFF)
+            return
+        await _delete_link(message, args)
+        return
+
     blocked = _ready()
     if blocked:
         await send_message(message, blocked)
         return
-
-    parts = (message.text or message.caption or "").split()[1:]
-    args = parse_stream_args(parts)
-    reply = message.reply_to_message
 
     if not args["link"] and not reply:
         await send_message(message, _usage())
