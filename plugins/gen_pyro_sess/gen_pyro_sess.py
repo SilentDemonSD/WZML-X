@@ -3,7 +3,7 @@ from os.path import exists as path_exists
 
 from aiofiles.os import remove as aioremove
 from pyrogram import Client, __version__ as wzgram_version
-from ..version import get_version
+from bot.version import get_version
 from pyrogram.enums import ChatType
 from pyrogram.filters import create, user, text, private
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
@@ -16,12 +16,12 @@ from pyrogram.errors import (
     PhoneCodeExpired,
 )
 
-from ..core.tg_client import TgClient
-from ..core.config_manager import Config
-from ..helper.ext_utils.bot_utils import new_task
-from ..helper.ext_utils.status_utils import get_readable_time
-from ..helper.telegram_helper.button_build import ButtonMaker
-from ..helper.telegram_helper.message_utils import (
+from bot.core.tg_client import TgClient
+from bot.core.config_manager import Config
+from bot.helper.ext_utils.bot_utils import new_task
+from bot.helper.ext_utils.status_utils import get_readable_time
+from bot.helper.telegram_helper.button_build import ButtonMaker
+from bot.helper.telegram_helper.message_utils import (
     send_message,
     edit_message,
     delete_message,

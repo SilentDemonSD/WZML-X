@@ -1,0 +1,16 @@
+name: gen_pyro_sess
+version: "1.0.0"
+author: WZML-X
+description: Generate a Pyrogram string session step by step
+icon: "🔐"
+license: MIT
+repository: https://github.com/SilentDemonSD/WZML-X
+tags: [utility, session]
+min_bot_version: "3.1.9"
+entry: gen_pyro_sess.py
+commands:
+  - name: exportsession
+    handler: gen_pyro_string
+    description: "[SUDO] Generate Pyrogram String Session"
+    usage: "/exportsession"
+    access: sudo

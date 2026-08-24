@@ -348,6 +348,42 @@ class DbManager:
             return
         await self.db.playlists[_part()].delete_one({"_id": token})
 
+    async def save_plugin(self, name, state):
+        if self._return:
+            return
+        doc = {k: v for k, v in (state or {}).items() if k != "_id"}
+        await self.db.plugins[_part()].update_one(
+            {"_id": name}, {"$set": doc}, upsert=True
+        )
+
+    async def get_plugins(self):
+        if self._return:
+            return {}
+        out = {}
+        async for doc in self.db.plugins[_part()].find({}):
+            name = doc.pop("_id")
+            out[name] = doc
+        return out
+
+    async def set_plugin_enabled(self, name, enabled):
+        if self._return:
+            return
+        await self.db.plugins[_part()].update_one(
+            {"_id": name}, {"$set": {"enabled": bool(enabled)}}, upsert=True
+        )
+
+    async def save_plugin_config(self, name, config):
+        if self._return:
+            return
+        await self.db.plugins[_part()].update_one(
+            {"_id": name}, {"$set": {"config": config or {}}}, upsert=True
+        )
+
+    async def rm_plugin(self, name):
+        if self._return:
+            return
+        await self.db.plugins[_part()].delete_one({"_id": name})
+
     async def get_pm_uids(self):
         if self._return:
             return

@@ -3,13 +3,13 @@ from xml.etree import ElementTree as ET
 
 from aiohttp import ClientSession, ClientTimeout
 
-from .. import LOGGER
-from ..core.config_manager import Config
-from ..helper.ext_utils.bot_utils import new_task
-from ..helper.ext_utils.status_utils import get_readable_file_size
-from ..helper.ext_utils.telegraph_helper import telegraph
-from ..helper.telegram_helper.button_build import ButtonMaker
-from ..helper.telegram_helper.message_utils import edit_message, send_message
+from bot import LOGGER
+from bot.core.config_manager import Config
+from bot.helper.ext_utils.bot_utils import new_task
+from bot.helper.ext_utils.status_utils import get_readable_file_size
+from bot.helper.ext_utils.telegraph_helper import telegraph
+from bot.helper.telegram_helper.button_build import ButtonMaker
+from bot.helper.telegram_helper.message_utils import edit_message, send_message
 
 
 @new_task

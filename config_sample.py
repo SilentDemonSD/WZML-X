@@ -53,6 +53,10 @@ DISABLE_RSS = False
 DISABLE_SEARCH = False
 DISABLE_STREAM = False
 DISABLE_YTDLP = False
+DISABLE_PLUGINS = False
+
+# Plugins
+PLUGIN_INDEXES = []
 
 # Telegraph
 AUTHOR_NAME = "WZML-X"

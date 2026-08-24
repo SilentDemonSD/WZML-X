@@ -100,6 +100,7 @@ BOOL_VARS = [
     "DISABLE_TORRENTS",
     "DISABLE_YTDLP",
     "DISABLE_MEGA",
+    "DISABLE_PLUGINS",
     "EQUAL_SPLITS",
     "INC_TASK_NOTIFY",
     "INC_TASK_RESUME",
@@ -139,6 +140,7 @@ DEFAULT_DESP = {
     "DISABLE_SEED": "Disable seeding after torrent download. Default: False.",
     "DISABLE_FF_MODE": "Disable FFmpeg processing mode. Default: False.",
     "DISABLE_MEGA": "Disable Mega Processor for bot. Default: False.",
+    "DISABLE_PLUGINS": "Disable the plugin system. Unloads every plugin and stops loading them at boot. Default: False.",
     "DISABLE_JD": "Disable JDownloader downloads. Saves ~256-500MB RAM. Default: False.",
     "DISABLE_NZB": "Disable SABnzbd/Usenet downloads. Saves ~100-200MB RAM. Default: False.",
     "DISABLE_RSS": "Disable RSS feed monitoring. Saves CPU cycles. Default: False.",
@@ -293,6 +295,7 @@ ONOFF_VARS = [
     "DISABLE_SEED",
     "DISABLE_FF_MODE",
     "DISABLE_MEGA",
+    "DISABLE_PLUGINS",
     "DISABLE_JD",
     "DISABLE_NZB",
     "DISABLE_RSS",
@@ -779,6 +782,16 @@ async def _handle_service_toggle(key, disabled):
                     LOGGER.info("RSS Scheduler started via Module Settings")
                 except Exception:
                     pass
+    elif key == "DISABLE_PLUGINS":
+        from ..core.plugin_manager import get_plugin_manager
+
+        manager = get_plugin_manager()
+        if disabled:
+            await manager.unload_all()
+            LOGGER.info("Plugins unloaded via Module Settings")
+        else:
+            await manager.boot()
+            LOGGER.info("Plugins loaded via Module Settings")
 
 
 @new_task

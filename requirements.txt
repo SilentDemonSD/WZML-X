@@ -27,6 +27,7 @@ pymongo
 wzgram
 python-magic
 pytz
+pyyaml
 qbittorrent-api
 niquests
 speedtest-cli

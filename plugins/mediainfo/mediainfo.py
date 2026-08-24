@@ -6,12 +6,12 @@ from aiofiles import open as aiopen
 from aiofiles.os import mkdir, path as aiopath, remove as aioremove
 from aiohttp import ClientSession
 
-from .. import LOGGER
-from ..core.tg_client import TgClient
-from ..helper.ext_utils.bot_utils import cmd_exec
-from ..helper.ext_utils.telegraph_helper import telegraph
-from ..helper.telegram_helper.bot_commands import BotCommands
-from ..helper.telegram_helper.message_utils import send_message, edit_message
+from bot import LOGGER
+from bot.core.tg_client import TgClient
+from bot.helper.ext_utils.bot_utils import cmd_exec
+from bot.helper.ext_utils.telegraph_helper import telegraph
+from bot.core.config_manager import Config
+from bot.helper.telegram_helper.message_utils import send_message, edit_message
 
 
 async def gen_mediainfo(message, link=None, media=None, mmsg=None):
@@ -91,12 +91,14 @@ def parseinfo(out, size):
 
 async def mediainfo(_, message):
     rply = message.reply_to_message
+    cmd = f"mediainfo{Config.CMD_SUFFIX}"
+    alias = f"mi{Config.CMD_SUFFIX}"
     help_msg = f"""
 <b>By replying to media:</b>
-<code>/{BotCommands.MediaInfoCommand[0]} or /{BotCommands.MediaInfoCommand[1]} [media]</code>
+<code>/{cmd} or /{alias} [media]</code>
 
 <b>By reply/sending download link:</b>
-<code>/{BotCommands.MediaInfoCommand[0]} or /{BotCommands.MediaInfoCommand[1]} [link]</code>
+<code>/{cmd} or /{alias} [link]</code>
 """
     if len(message.command) > 1 or rply and rply.text:
         link = rply.text if rply else message.command[1]

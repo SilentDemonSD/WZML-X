@@ -293,16 +293,6 @@ async def add_handlers():
     )
     TgClient.bot.add_handler(
         MessageHandler(
-            imdb_search,
-            filters=command(BotCommands.IMDBCommand, case_sensitive=True)
-            & CustomFilters.authorized,
-        )
-    )
-    TgClient.bot.add_handler(
-        CallbackQueryHandler(imdb_callback, filters=regex("^imdb"))
-    )
-    TgClient.bot.add_handler(
-        MessageHandler(
             ping,
             filters=command(BotCommands.PingCommand, case_sensitive=True)
             & CustomFilters.authorized,
@@ -312,13 +302,6 @@ async def add_handlers():
         MessageHandler(
             bot_help,
             filters=command(BotCommands.HelpCommand, case_sensitive=True)
-            & CustomFilters.authorized,
-        )
-    )
-    TgClient.bot.add_handler(
-        MessageHandler(
-            mediainfo,
-            filters=command(BotCommands.MediaInfoCommand, case_sensitive=True)
             & CustomFilters.authorized,
         )
     )
@@ -406,20 +389,6 @@ async def add_handlers():
             ytdl_leech,
             filters=command(BotCommands.YtdlLeechCommand, case_sensitive=True)
             & CustomFilters.authorized,
-        )
-    )
-    TgClient.bot.add_handler(
-        MessageHandler(
-            hydra_search,
-            filters=command(BotCommands.NzbSearchCommand, case_sensitive=True)
-            & CustomFilters.authorized,
-        )
-    )
-    TgClient.bot.add_handler(
-        MessageHandler(
-            gen_pyro_string,
-            filters=command(BotCommands.GenPyroSessCommand, case_sensitive=True)
-            & CustomFilters.sudo,
         )
     )
     TgClient.bot.add_handler(
