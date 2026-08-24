@@ -343,6 +343,28 @@ class PluginManager:
                 found.append(entry.name)
         return found
 
+    def disk_manifest(self, name):
+        try:
+            return read_manifest(self.dir_of(name))
+        except Exception as err:
+            LOGGER.error(f"plugin {name}: cannot read manifest: {err}")
+            return None
+
+    def available(self):
+        """On disk, carrying a manifest, but not loaded right now."""
+        return [name for name in self.discover() if name not in self.records]
+
+    async def set_autoload(self, name, value):
+        state = dict(self.states.get(name) or {})
+        state["autoload"] = bool(value)
+        self.states[name] = state
+        try:
+            from ..helper.ext_utils.db_handler import database
+
+            await database.save_plugin(name, state)
+        except Exception as err:
+            LOGGER.error(f"plugin {name}: could not persist autoload: {err}")
+
     def list_plugins(self):
         return list(self.records.values())
 
@@ -679,6 +701,7 @@ class PluginManager:
         if rec is not None:
             state.update(
                 {
+                    "autoload": True,
                     "version": rec.version,
                     "source": rec.source,
                     "url": rec.url,
@@ -820,6 +843,9 @@ class PluginManager:
                     if state is None:
                         await self._store(name, enabled=True, source="bundled")
                         state = self.states[name]
+                    if not state.get("autoload", True):
+                        LOGGER.info(f"plugin {name} left unloaded")
+                        continue
                     ok, err = await self._do_load(
                         name,
                         enabled=state.get("enabled", True),
@@ -835,7 +861,11 @@ class PluginManager:
                 self._quiet = False
             self._refresh_commands()
             if found:
-                LOGGER.info(f"Plugins: {loaded}/{len(found)} loaded")
+                LOGGER.info(
+                    f"Plugins: {loaded}/{len(found)} loaded"
+                    + (f", {len(self.available())} left unloaded"
+                       if self.available() else "")
+                )
 
 
 plugin_manager = PluginManager(None)

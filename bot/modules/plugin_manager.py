@@ -69,9 +69,11 @@ async def build_menu(user_id, view="main", arg=""):
 
     if view == "main":
         records = manager.list_plugins()
+        idle = manager.available()
         on = len([r for r in records if r.enabled])
+        total = len(records) + len(idle)
         buttons.data_button(
-            f"Installed ({len(records)})", f"plugins {user_id} list", position="header"
+            f"Installed ({total})", f"plugins {user_id} list", position="header"
         )
         buttons.data_button("Marketplace", f"plugins {user_id} mkt 0")
         if owner:
@@ -81,8 +83,10 @@ async def build_menu(user_id, view="main", arg=""):
         )
         text = (
             "⌬ <b><u>Plugin Manager</u></b>\n│\n"
-            f"┟ <b>Installed</b> → {len(records)}\n"
+            f"┟ <b>Installed</b> → {total}\n"
             f"┠ <b>Enabled</b> → {on}\n"
+            f"┠ <b>Disabled</b> → {len(records) - on}\n"
+            f"┠ <b>Unloaded</b> → {len(idle)}\n"
             f"┖ <b>Folder</b> → <code>plugins/</code>"
         )
         if Config.DISABLE_PLUGINS:
@@ -91,23 +95,23 @@ async def build_menu(user_id, view="main", arg=""):
 
     if view == "list":
         records = sorted(manager.list_plugins(), key=lambda r: r.name)
+        idle = sorted(manager.available())
         for rec in records:
             buttons.data_button(_tag(rec), f"plugins {user_id} view {rec.name}")
+        for name in idle:
+            buttons.data_button(f"⚪ {name}", f"plugins {user_id} dview {name}")
         buttons.data_button("Back", f"plugins {user_id} main", position="footer")
         buttons.data_button(
             "Close", f"plugins {user_id} close", position="footer", style=ButtonStyle.DANGER
         )
-        if records:
-            text = "⌬ <b><u>Installed Plugins</u></b>\n\n<i>Pick one to manage it.</i>"
+        if records or idle:
+            text = (
+                "⌬ <b><u>Installed Plugins</u></b>\n\n"
+                "✅ enabled · ⛔ disabled · ⚪ unloaded\n\n"
+                "<i>Pick one to manage it.</i>"
+            )
         else:
-            broken = manager.discover()
-            text = "⌬ <b><u>Installed Plugins</u></b>\n\n<i>Nothing loaded yet.</i>"
-            if broken:
-                text += (
-                    "\n\n<b>On disk but not loaded:</b> "
-                    + ", ".join(f"<code>{b}</code>" for b in broken)
-                    + "\n<i>Check the logs for why.</i>"
-                )
+            text = "⌬ <b><u>Installed Plugins</u></b>\n\n<i>Nothing installed yet.</i>"
         return text, buttons.build_menu(2)
 
     if view == "view":
@@ -122,6 +126,7 @@ async def build_menu(user_id, view="main", arg=""):
                     "Enable", f"plugins {user_id} on {arg}", style=ButtonStyle.PRIMARY
                 )
             buttons.data_button("Reload", f"plugins {user_id} reload {arg}")
+            buttons.data_button("Unload", f"plugins {user_id} unload {arg}")
             if rec.manifest.config_schema:
                 buttons.data_button("Settings", f"plugins {user_id} cfg {arg}")
             if rec.source in ("github", "market", "url"):
@@ -134,6 +139,42 @@ async def build_menu(user_id, view="main", arg=""):
             "Close", f"plugins {user_id} close", position="footer", style=ButtonStyle.DANGER
         )
         return _plugin_text(rec), buttons.build_menu(2)
+
+    if view == "dview":
+        man = manager.disk_manifest(arg)
+        if owner:
+            buttons.data_button(
+                "Load", f"plugins {user_id} load {arg}", style=ButtonStyle.PRIMARY
+            )
+            buttons.data_button(
+                "Uninstall", f"plugins {user_id} rmask {arg}", style=ButtonStyle.DANGER
+            )
+        buttons.data_button("Back", f"plugins {user_id} list", position="footer")
+        buttons.data_button(
+            "Close", f"plugins {user_id} close", position="footer", style=ButtonStyle.DANGER
+        )
+        if man is None:
+            return (
+                f"⌬ <b>{arg}</b>\n\n<i>On disk, but its manifest cannot be read. "
+                "Check the log.</i>",
+                buttons.build_menu(2),
+            )
+        lines = [f"⌬ <b><u>{man.icon + ' ' if man.icon else ''}{man.name}</u></b>", "│"]
+        lines.append(f"┟ <b>Version</b> → <code>{man.version}</code>")
+        lines.append("┠ <b>State</b> → Unloaded")
+        if man.author:
+            lines.append(f"┠ <b>Author</b> → {man.author}")
+        if man.command_names():
+            lines.append(
+                "┠ <b>Commands</b> → "
+                + ", ".join(f"/{c}" for c in man.command_names())
+            )
+        if man.python_dependencies:
+            lines.append("┠ <b>Requires</b> → " + ", ".join(man.python_dependencies))
+        lines.append(f"┖ <b>About</b> → <i>{man.description or 'No description'}</i>")
+        lines.append("")
+        lines.append("<i>Its code is not in memory and its commands are inactive.</i>")
+        return "\n".join(lines), buttons.build_menu(2)
 
     if view == "mkt":
         page = int(arg or 0)
@@ -456,7 +497,7 @@ async def edit_plugins_menu(client, query):
     installer = get_installer()
 
     mutating = {
-        "on", "off", "reload", "rm", "rmask", "get", "update",
+        "on", "off", "load", "unload", "reload", "rm", "rmask", "get", "update",
         "install", "upload", "github", "deps_ok", "deps_no",
         "cfge", "cfgr",
     }
@@ -483,7 +524,7 @@ async def edit_plugins_menu(client, query):
         text, markup = await build_menu(user_id, action)
         return await edit_message(query.message, text, markup)
 
-    if action in ("view", "show", "mkt", "rmask", "cfg"):
+    if action in ("view", "show", "mkt", "rmask", "cfg", "dview"):
         await query.answer()
         text, markup = await build_menu(user_id, action, arg)
         return await edit_message(query.message, text, markup)
@@ -495,6 +536,26 @@ async def edit_plugins_menu(client, query):
         except Exception as err:
             LOGGER.error(f"index refresh failed: {err}")
         text, markup = await build_menu(user_id, "mkt", "0")
+        return await edit_message(query.message, text, markup)
+
+    if action == "load":
+        await query.answer(f"Loading {arg}...")
+        ok, err = await manager.load(arg)
+        if ok:
+            await manager.set_autoload(arg, True)
+        text, markup = await build_menu(user_id, "view" if ok else "dview", arg)
+        if not ok:
+            text = f"<b>Load failed:</b> <i>{err}</i>\n\n{text}"
+        return await edit_message(query.message, text, markup)
+
+    if action == "unload":
+        await query.answer(f"Unloading {arg}...")
+        ok, err = await manager.unload(arg)
+        if ok:
+            await manager.set_autoload(arg, False)
+        text, markup = await build_menu(user_id, "dview" if ok else "view", arg)
+        if not ok:
+            text = f"<b>Unload failed:</b> <i>{err}</i>\n\n{text}"
         return await edit_message(query.message, text, markup)
 
     if action in ("on", "off", "reload"):

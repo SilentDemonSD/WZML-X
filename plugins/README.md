@@ -366,21 +366,42 @@ Positions are `default`, `header`, `f_body`, `l_body`, `footer`.
 
 ## Load and unload semantics
 
-Knowing exactly what each action does saves a lot of confusion:
+A plugin has three states, and `/plugins → Installed` marks each one:
+
+| | State | Meaning |
+| --- | --- | --- |
+| ✅ | loaded, enabled | In memory, commands live. |
+| ⛔ | loaded, disabled | In memory, commands off. |
+| ⚪ | unloaded | Not in memory at all. Files still on disk. |
+
+Every action and exactly what it touches:
 
 | Action | Handlers | Module in memory | Files on disk | DB record |
 | --- | --- | --- | --- | --- |
-| **load** | attached if enabled | imported | kept | read |
-| **disable** | detached | **kept** | kept | `enabled: false` |
+| **load** | attached if enabled | imported | kept | `autoload: true` |
 | **enable** | attached | reused | kept | `enabled: true` |
-| **reload** | rebuilt | re-imported from disk | kept | kept |
-| **unload** | detached | purged | kept | kept |
+| **disable** | detached | **kept** | kept | `enabled: false` |
+| **reload** | rebuilt | re-imported from disk | kept | unchanged |
+| **unload** | detached | purged | kept | `autoload: false` |
 | **uninstall** | detached | purged | **deleted** | **deleted** |
 
-So: **disable is cheap and reversible** — the code stays loaded, only the
-handlers come off, so `/yourcommand` stops answering instantly and re-enabling is
-immediate. **Reload is what you want after editing a file** — it re-reads from
-disk, including your sibling modules.
+**Disable is cheap and reversible** — the code stays in memory, only the handlers
+come off, so `/yourcommand` stops answering instantly and re-enabling is
+immediate.
+
+**Unload goes further** — the module and all its submodules are dropped from
+`sys.modules` and the plugin releases whatever it was holding. Use it to free
+memory, or to force a genuinely clean import next time. An unloaded plugin still
+appears in the list, marked ⚪, with a **Load** button and its manifest read
+straight from disk, so you can see what it would add before bringing it back.
+
+**Both choices persist.** Unload something and it stays unloaded across
+restarts; the bot logs `plugin <name> left unloaded` at boot. Only unloading from
+the menu does this — the internal unloads that reload and upgrade perform never
+mark a plugin as unloaded.
+
+**Reload is what you want after editing a file** — it re-reads from disk,
+including your sibling modules, without changing either stored choice.
 
 Everything above is serialized behind a lock, so two people mashing buttons in
 `/plugins` cannot interleave a disable with a reload and leave a handler
@@ -522,5 +543,5 @@ These ship with the bot and are ordinary plugins — read them as worked example
 | `nzb_search` | `/nzbsearch`, `/ns` | — | aiohttp, reading `Config` |
 | `gen_pyro_sess` | `/exportsession` | — | its own runtime handlers and client |
 
-Disable or uninstall any of them from `/plugins`; the choice is stored per bot
-and survives a restart.
+Disable, unload or uninstall any of them from `/plugins`; the choice is stored
+per bot and survives a restart.
