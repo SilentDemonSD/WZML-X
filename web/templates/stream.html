@@ -1856,6 +1856,48 @@
             var subTimer = null;
             var subTrack = "-1";
             var cueStore = {};
+            var subsBox = el("subs");
+            var subsLine = el("subsText");
+            var subsHome = null;
+            var subsStyle = null;
+
+            var SUBS_CSS = ".subs{position:absolute;left:0;right:0;"
+                + "bottom:var(--sub-pos,8%);display:none;justify-content:center;"
+                + "padding:0 6%;pointer-events:none;z-index:2147483647}"
+                + ".subs.on{display:flex}"
+                + ".subs span{font-family:var(--sans);font-weight:600;"
+                + "font-size:var(--sub-size,1.4rem);line-height:1.35;"
+                + "letter-spacing:.01em;color:#fff;text-align:center;"
+                + "background:rgba(0,0,0,.62);padding:.16em .5em;"
+                + "border-radius:.3em;text-shadow:0 2px 6px rgba(0,0,0,.9);"
+                + "white-space:pre-wrap}";
+
+            function fullscreenRoot() {
+                return document.fullscreenElement
+                    || document.webkitFullscreenElement
+                    || null;
+            }
+
+            function relocateSubs() {
+                var root = fullscreenRoot();
+                if (root && root !== document.documentElement
+                    && !root.contains(subsBox)) {
+                    if (!subsHome) subsHome = subsBox.parentNode;
+                    if (!subsStyle) {
+                        subsStyle = document.createElement("style");
+                        subsStyle.textContent = SUBS_CSS;
+                    }
+                    root.appendChild(subsStyle);
+                    root.appendChild(subsBox);
+                } else if (!root && subsHome
+                    && subsBox.parentNode !== subsHome) {
+                    if (subsStyle && subsStyle.parentNode) subsStyle.remove();
+                    subsHome.appendChild(subsBox);
+                }
+            }
+
+            document.addEventListener("fullscreenchange", relocateSubs);
+            document.addEventListener("webkitfullscreenchange", relocateSubs);
 
             var SUB_SIZES = [["Small", "1.05rem"], ["Medium", "1.4rem"],
                 ["Large", "1.85rem"], ["Huge", "2.4rem"]];
@@ -1923,13 +1965,12 @@
                 }
                 if (hit === cueAt) return;
                 cueAt = hit;
-                var box = el("subs");
                 if (hit === -1) {
-                    box.classList.remove("on");
-                    el("subsText").textContent = "";
+                    subsBox.classList.remove("on");
+                    subsLine.textContent = "";
                 } else {
-                    el("subsText").textContent = cues[hit].t;
-                    box.classList.add("on");
+                    subsLine.textContent = cues[hit].t;
+                    subsBox.classList.add("on");
                 }
             }
 
@@ -1938,8 +1979,8 @@
                 subTimer = null;
                 cues = [];
                 cueAt = -2;
-                el("subs").classList.remove("on");
-                el("subsText").textContent = "";
+                subsBox.classList.remove("on");
+                subsLine.textContent = "";
             }
 
             function setSubtitleTrack(value, label) {

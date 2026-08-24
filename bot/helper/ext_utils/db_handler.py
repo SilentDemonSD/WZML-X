@@ -260,6 +260,9 @@ class DbManager:
         doc = await self.db.streams[_part()].find_one({"_id": token})
         if not doc:
             return None
+        if _expired(doc):
+            await self.rm_stream(token)
+            return None
         if doc.get("purl"):
             return ("url", doc["purl"])
         if doc.get("pcid") and doc.get("pmid"):
@@ -270,6 +273,9 @@ class DbManager:
         if self._return:
             return None
         doc = await self.db.streams[_part()].find_one({"_id": token})
+        if doc and _expired(doc):
+            await self.rm_stream(token)
+            return None
         if doc and doc.get("pl"):
             return (doc["pl"], int(doc.get("pi") or 0))
         owner = await self.db.playlists[_part()].find_one({"items": token})

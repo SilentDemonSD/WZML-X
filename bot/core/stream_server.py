@@ -176,31 +176,36 @@ async def _neighbours(token):
     nav = await database.get_stream_nav(token)
     if not nav:
         return None
-    body = await _playlist_body(nav[0])
-    if not body or not body["items"]:
+    doc = await database.get_playlist(nav[0])
+    if not doc:
         return None
-    tokens = [i["token"] for i in body["items"]]
-    idx = tokens.index(token) if token in tokens else nav[1]
-    if idx < 0 or idx >= len(tokens):
+    items = doc["items"]
+    if not items:
+        return None
+    idx = items.index(token) if token in items else nav[1]
+    if idx < 0 or idx >= len(items):
         return None
     out = {
         "token": nav[0],
-        "name": body["name"],
+        "name": doc["name"] or "Playlist",
         "index": idx + 1,
-        "total": len(tokens),
+        "total": len(items),
         "prev": None,
         "next": None,
     }
-    if idx > 0:
-        out["prev"] = {
-            "token": tokens[idx - 1],
-            "name": body["items"][idx - 1]["name"],
-        }
-    if idx + 1 < len(tokens):
-        out["next"] = {
-            "token": tokens[idx + 1],
-            "name": body["items"][idx + 1]["name"],
-        }
+    for key, at in (("prev", idx - 1), ("next", idx + 1)):
+        if at < 0 or at >= len(items):
+            continue
+        tok = items[at]
+        found = await database.get_stream(tok)
+        if not found:
+            continue
+        try:
+            info = await probe(found[0], found[1])
+        except Exception as e:
+            LOGGER.debug(f"neighbour probe failed for {tok}: {e}")
+            continue
+        out[key] = {"token": tok, "name": info.get("name") or "Untitled"}
     return out
 
 
@@ -413,13 +418,15 @@ def _vtt_reply(request, key, data):
 
 
 async def _playlist_body(token):
+    doc = await database.get_playlist(token)
+    if not doc:
+        _list_cache.pop(token, None)
+        _poster_cache.pop(token, None)
+        return None
     hit = _list_cache.get(token)
     if hit is not None:
         _list_cache.move_to_end(token)
         return hit
-    doc = await database.get_playlist(token)
-    if not doc:
-        return None
     items = []
     for tok in doc["items"]:
         found = await database.get_stream(tok)
@@ -536,6 +543,11 @@ async def _playlist(request):
             "ETag": tag,
         },
     )
+
+
+def forget(token):
+    _list_cache.pop(token, None)
+    _poster_cache.pop(token, None)
 
 
 def purge_vtt(cid, mid):
