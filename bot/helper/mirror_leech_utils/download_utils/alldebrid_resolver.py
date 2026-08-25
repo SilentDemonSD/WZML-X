@@ -18,7 +18,6 @@ _USER_AGENT = (
 )
 
 _MAGNET_POLL_INTERVAL_S = 5
-_MAGNET_NO_SEED_TIMEOUT_S = 180
 _MAGNET_MAX_DURATION_S = 7200
 _MAGNET_UNLOCK_CONCURRENCY = 3
 
@@ -374,7 +373,7 @@ async def _wait_and_resolve(
     progress_callback=None,
     is_cancelled=None,
     poll_interval=_MAGNET_POLL_INTERVAL_S,
-    no_seed_timeout=_MAGNET_NO_SEED_TIMEOUT_S,
+    no_seed_timeout=None,
     max_duration=_MAGNET_MAX_DURATION_S,
 ):
     """Poll AllDebrid until the torrent is ready, then unlock every file.
@@ -382,8 +381,11 @@ async def _wait_and_resolve(
     Shared by the magnet and .torrent routes. The magnet is removed from
     the AllDebrid history if anything fails.
     """
+    if no_seed_timeout is None:
+        no_seed_timeout = Config.ALLDEBRID_NO_SEED_TIMEOUT
     try:
         no_seed_since = 0
+        last_downloaded = 0
         loop = get_event_loop()
         start_time = loop.time()
 
@@ -412,7 +414,13 @@ async def _wait_and_resolve(
                 )
 
             now = loop.time()
-            if seeders == 0:
+            downloaded = int(status.get("downloaded", 0) or 0)
+            if (
+                no_seed_timeout > 0
+                and status_code == 1
+                and seeders == 0
+                and downloaded <= last_downloaded
+            ):
                 if no_seed_since == 0:
                     no_seed_since = now
                 elif now - no_seed_since >= no_seed_timeout:
@@ -421,6 +429,7 @@ async def _wait_and_resolve(
                     )
             else:
                 no_seed_since = 0
+            last_downloaded = downloaded
 
             if now - start_time >= max_duration:
                 raise DirectDownloadLinkException(

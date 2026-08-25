@@ -131,6 +131,7 @@ DEFAULT_DESP = {
     "DELETE_LINKS": "Auto-delete source links/messages on task start. Default: False.",
     "DEBRID_LINK_API": "Debrid-link.com API key for premium hoster support.",
     "ALLDEBRID_API_KEY": "AllDebrid API key, used by the -ad flag to unlock links/magnets.",
+    "ALLDEBRID_NO_SEED_TIMEOUT": "Seconds a -ad magnet may stall with no seeders before aborting. 0 = no limit. Default: 180.",
     "DISABLE_TORRENTS": "Disable all torrent downloads. Default: False.",
     "DISABLE_LEECH": "Disable all leech (download to Telegram) tasks. Default: False.",
     "DISABLE_MIRROR": "Disable all mirror (upload to cloud) tasks. Default: False.",
@@ -635,6 +636,17 @@ async def edit_variable(_, message, pre_message, key):
         value = str(value)
     elif key == "ALLDEBRID_API_KEY":
         value = str(value)
+    elif key == "ALLDEBRID_NO_SEED_TIMEOUT":
+        try:
+            value = int(value)
+            if value < 0:
+                raise ValueError
+        except ValueError:
+            await send_message(
+                message,
+                "Invalid value! ALLDEBRID_NO_SEED_TIMEOUT must be 0 (no limit) or seconds.",
+            )
+            return await update_buttons(pre_message, "var")
     elif value.isdigit():
         value = int(value)
     elif value.startswith("[") and value.endswith("]"):

@@ -6,6 +6,7 @@ from wz_bin import bin_name
 
 class Config:
     ALLDEBRID_API_KEY = ""
+    ALLDEBRID_NO_SEED_TIMEOUT = 180
     AS_DOCUMENT = False
     AUTHORIZED_CHATS = ""
     BASE_URL = ""
