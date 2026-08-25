@@ -55,8 +55,8 @@ def _clip(text, limit):
 
 def anime_fields(media, description_limit=500):
     trailer = media.get("trailer") or {}
-    if trailer.get("site") == "youtube":
-        trailer = f"https://youtu.be/{trailer.get('id')}"
+    if trailer.get("site") == "youtube" and trailer.get("id"):
+        trailer = f"https://youtu.be/{trailer['id']}"
     else:
         trailer = ""
 

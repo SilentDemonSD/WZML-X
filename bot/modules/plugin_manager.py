@@ -17,7 +17,7 @@ from ..core.plugin_installer import (
     official_index_url,
     official_repo_spec,
 )
-from ..core.plugin_manager import get_plugin_manager
+from ..core.plugin_manager import _version_tuple, get_plugin_manager
 from ..helper.ext_utils.bot_utils import new_task
 from ..helper.telegram_helper.button_build import ButtonMaker
 from ..helper.telegram_helper.filters import CustomFilters
@@ -81,6 +81,22 @@ def _wz(title, rows, note=""):
         lines.append("")
         lines.append(f"<i>{note}</i>")
     return "\n".join(lines)
+
+
+def _newer(rec):
+    entry = get_installer().index_entry(rec.name)
+    if not entry:
+        return ""
+    remote = str(entry.get("version") or "").strip()
+    if not remote:
+        return ""
+    if _version_tuple(remote) > _version_tuple(rec.version):
+        return remote
+    return ""
+
+
+def _var(name):
+    return str(name).upper()
 
 
 def _state_of(rec):
@@ -172,6 +188,7 @@ async def build_menu(user_id, view="main", arg=""):
         rec = manager.get(arg)
         if rec is None:
             return "<i>That plugin is not loaded any more.</i>", buttons.build_menu(1)
+        newer = _newer(rec)
         if owner:
             if rec.enabled:
                 buttons.data_button(
@@ -181,11 +198,15 @@ async def build_menu(user_id, view="main", arg=""):
                 buttons.data_button(
                     "Enable", f"plugins {user_id} on {arg}", style=ButtonStyle.SUCCESS
                 )
+            if newer:
+                buttons.data_button(
+                    f"Update to {newer}",
+                    f"plugins {user_id} update {arg}",
+                    position="header",
+                    style=ButtonStyle.PRIMARY,
+                )
             if rec.manifest.config_schema:
                 buttons.data_button("Settings", f"plugins {user_id} cfg {arg}")
-            buttons.data_button(
-                "Update", f"plugins {user_id} update {arg}", style=ButtonStyle.PRIMARY
-            )
             buttons.data_button(
                 "Uninstall", f"plugins {user_id} rmask {arg}", style=ButtonStyle.DANGER
             )
@@ -194,7 +215,10 @@ async def build_menu(user_id, view="main", arg=""):
             "Close", f"plugins {user_id} close", position="footer", style=ButtonStyle.DANGER
         )
         man = rec.manifest
-        rows = [("Version", f"<code>{man.version}</code>"), ("State", _state_of(rec))]
+        version = f"<code>{man.version}</code>"
+        if newer:
+            version += f" → <code>{newer}</code> available"
+        rows = [("Version", version), ("State", _state_of(rec))]
         if man.author:
             rows.append(("Author", man.author))
         rows.append(("Source", rec.source))
@@ -302,7 +326,7 @@ async def build_menu(user_id, view="main", arg=""):
                 "zip or a GitHub repo, or point PLUGIN_INDEXES at your own index."
             )
         return _wz("Plugin Marketplace", rows, note), buttons.build_menu(
-            1, fb_cols=8, lb_cols=1
+            2, fb_cols=8, lb_cols=1
         )
 
     if view == "show":
@@ -415,20 +439,24 @@ async def build_menu(user_id, view="main", arg=""):
             return "<i>That plugin is not loaded any more.</i>", buttons.build_menu(1)
         items = manager.schema_items(arg)
         current = manager.effective_config(arg)
+        stored = rec.config or {}
         rows = []
         for index, (key, spec) in enumerate(items):
             value = current.get(key)
-            rows.append((key, f"<code>{'not set' if value is None else value}</code>"))
+            shown = "not set" if value in (None, "") else value
+            label = _var(key)
+            mark = "" if key in stored else " (default)"
+            rows.append((label, f"<code>{shown}</code>{mark}"))
             if owner:
                 kind = str((spec or {}).get("type") or "string").lower()
                 if kind in ("bool", "boolean"):
                     buttons.data_button(
-                        key,
+                        label,
                         f"plugins {user_id} cfge {arg} {index}",
                         style=ButtonStyle.SUCCESS if value else ButtonStyle.DANGER,
                     )
                 else:
-                    buttons.data_button(key, f"plugins {user_id} cfge {arg} {index}")
+                    buttons.data_button(label, f"plugins {user_id} cfge {arg} {index}")
         if owner and items:
             buttons.data_button(
                 "Reset All", f"plugins {user_id} cfgr {arg}", position="l_body"
@@ -438,7 +466,7 @@ async def build_menu(user_id, view="main", arg=""):
             "Close", f"plugins {user_id} close", position="footer", style=ButtonStyle.DANGER
         )
         note = "" if items else "This plugin has no settings."
-        return _wz(f"{arg} Settings", rows, note), buttons.build_menu(2, lb_cols=1)
+        return _wz(f"{_var(arg)} Settings", rows, note), buttons.build_menu(2, lb_cols=1)
 
     if view == "rmask":
         buttons.data_button(
@@ -852,12 +880,21 @@ async def edit_plugins_menu(client, query):
             bounds.append(f"max {spec['max']}")
         if (spec or {}).get("choices"):
             bounds.append("one of " + ", ".join(str(c) for c in spec["choices"]))
-        rows = [("Setting", f"<code>{key}</code>"), ("Type", kind)]
+        current = manager.effective_config(arg).get(key)
+        rows = [
+            ("Variable", f"<code>{_var(key)}</code>"),
+            ("Type", kind),
+            ("Current", f"<code>{'not set' if current in (None, '') else current}</code>"),
+        ]
         if bounds:
             rows.append(("Limits", ", ".join(bounds)))
         if (spec or {}).get("description"):
             rows.append(("About", f"<i>{spec['description']}</i>"))
-        prompt = _wz(f"{arg} Settings", rows, "Send the new value.")
+        prompt = (
+            _wz(f"{_var(arg)} Settings", rows)
+            + f"\n\n<i>Send a valid value for <code>{_var(key)}</code>.</i>"
+            + f"\n┖ <b>Time Left :</b> <code>{INPUT_TIMEOUT} sec</code>"
+        )
         return await _ask(
             client, query, prompt, partial(_on_config, plugin=arg, key=key, spec=spec)
         )
