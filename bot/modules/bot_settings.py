@@ -4,6 +4,16 @@ from asyncio import (
 )
 from ast import literal_eval
 from pyrogram.enums import ButtonStyle
+from pyrogram.types import (
+    InputRichBlockDetails,
+    InputRichBlockList,
+    InputRichBlockListItem,
+    InputRichBlockParagraph,
+    InputRichBlockSectionHeading,
+    InputRichBlockTable,
+    InputRichBlockTableCell,
+    InputRichMessage,
+)
 from functools import partial
 from io import BytesIO
 from os import getcwd, getenv
@@ -471,32 +481,59 @@ async def get_buttons(key=None, edit_type=None, edit_mode=False):
             "Close", "botset close", position="footer", style=ButtonStyle.DANGER
         )
         rows = [
-            (
-                k.removesuffix("_LIMIT").replace("_", " "),
-                f"{v}{LIMIT_UNITS.get(k, ' GB')}" if (v := Config.get(k)) else "∞",
-            )
-            for k in LIMIT_VARS
+            [
+                InputRichBlockTableCell("Limit", header=True),
+                InputRichBlockTableCell("Value", header=True, align_right=True),
+            ]
         ]
-        active = sum(1 for k in LIMIT_VARS if Config.get(k))
-        nw = max(len(n) for n, _ in rows)
-        vw = max(len(v) for _, v in rows)
-        table = "\n".join(f"{n.ljust(nw)}  {v.rjust(vw)}" for n, v in rows)
-        head = f"{'LIMIT'.ljust(nw)}  {'VALUE'.rjust(vw)}"
-        note = (
-            "Tap any button below to change that limit.\n"
-            "Send <code>0</code> to remove a limit and make it unlimited.\n"
-            "Sizes are in GB unless the table shows another unit.\n"
-            "<code>∞</code> means no limit is applied."
+        active = 0
+        for k in LIMIT_VARS:
+            v = Config.get(k)
+            if v:
+                active += 1
+            rows.append(
+                [
+                    InputRichBlockTableCell(k.removesuffix("_LIMIT").replace("_", " ")),
+                    InputRichBlockTableCell(
+                        f"{v}{LIMIT_UNITS.get(k, ' GB')}" if v else "Unlimited",
+                        align_right=True,
+                    ),
+                ]
+            )
+        msg = InputRichMessage(
+            blocks=[
+                InputRichBlockSectionHeading(text="Limit Settings", size=3),
+                InputRichBlockParagraph(
+                    text=f"{active} of {len(LIMIT_VARS)} limits are active."
+                ),
+                InputRichBlockTable(
+                    title="Current limits",
+                    rows=rows,
+                    bordered=True,
+                    striped=True,
+                    compact=True,
+                ),
+                InputRichBlockDetails(
+                    summary="Note",
+                    blocks=[
+                        InputRichBlockList(
+                            items=[
+                                InputRichBlockListItem(
+                                    text="Tap any button below to change that limit."
+                                ),
+                                InputRichBlockListItem(
+                                    text="Send 0 to remove a limit and make it unlimited."
+                                ),
+                                InputRichBlockListItem(
+                                    text="Sizes are in GB unless the table shows another unit."
+                                ),
+                            ],
+                            ordered=False,
+                        )
+                    ],
+                ),
+            ]
         )
-        msg = f"""⌬ <b>Limit Settings</b>
-┖ <b>Active :</b> <code>{active}</code> / <code>{len(rows)}</code>
-
-<code>{head}
-{"─" * (nw + vw + 2)}
-{table}</code>
-
-<blockquote expandable><b>Note</b>
-{note}</blockquote>"""
     elif key == "private":
         if edit_mode:
             buttons.data_button("Stop Invoke File", "botset private stop", "header")
