@@ -148,6 +148,7 @@ class Mirror(TaskListener):
             "-ut": False,
             "-ad": False,
             "-yt": False,
+            "-seedr": False,
             "-i": 0,
             "-sp": 0,
             "link": "",
@@ -220,7 +221,12 @@ class Mirror(TaskListener):
         self.bot_trans = args["-bt"]
         self.user_trans = args["-ut"]
         self.is_alldebrid = args["-ad"]
+        self.is_seedr = args["-seedr"] or self.is_seedr
         self.is_yt = args["-yt"]
+
+        if self.is_seedr and not await seedr_guard(self.message, self.user_id):
+            return
+
         self.metadata_dict = self.default_metadata_dict.copy()
         self.audio_metadata_dict = self.audio_metadata_dict.copy()
         self.video_metadata_dict = self.video_metadata_dict.copy()
@@ -658,72 +664,31 @@ def _seedr_creds(user_id):
     return email, password
 
 
-@new_task
-async def seedr_clear(client, message):
-    email, password = _seedr_creds(message.from_user.id)
-    msg = await send_message(message, "<i>Clearing Seedr Cloud Storage...</i>")
-    try:
-        t_count, f_count = await clear_seedr_account(email, password)
-        await edit_message(
-            msg,
-            f"<b>Seedr Storage Cleared!</b>\nRemoved <b>{t_count}</b> active torrent(s) and <b>{f_count}</b> folder(s).",
-        )
-    except Exception as e:
-        await edit_message(
-            msg, f"<b>Failed to clear Seedr account:</b> {escape(str(e))}"
-        )
-
-
-async def _seedr_guard(message, check_leech=False):
+async def seedr_guard(message, user_id):
     if Config.DISABLE_SEEDR:
-        await message.reply("Seedr is currently disabled by the Bot Owner.")
+        await send_message(message, "Seedr is currently disabled by the Bot Owner.")
         return False
-    if check_leech and Config.DISABLE_LEECH:
-        await message.reply("The Leech command is currently disabled.")
-        return False
-    email, password = _seedr_creds(message.from_user.id)
+    email, password = _seedr_creds(user_id)
     if not email or not password:
         uset_cmd = (
             f"/{BotCommands.UserSetCommand[0]}"
             if isinstance(BotCommands.UserSetCommand, list)
             else f"/{BotCommands.UserSetCommand}"
         )
-        await message.reply(
-            f"Seedr credentials are not configured! Please set SEEDR_EMAIL and SEEDR_PASSWORD in {uset_cmd} or bot config."
+        await send_message(
+            message,
+            f"Seedr credentials are not configured! Please set SEEDR_EMAIL and SEEDR_PASSWORD in {uset_cmd} or bot config.",
         )
         return False
     return True
 
 
-async def seedr(client, message):
-    if not await _seedr_guard(message):
-        return
-    args = message.text.split(maxsplit=1)
-    if len(args) > 1 and args[1].strip().lower() in (
-        "clear",
-        "clean",
-        "delete",
-        "-clear",
-        "-delete",
-    ):
-        await seedr_clear(client, message)
-        return
-    bot_loop.create_task(Mirror(client, message, is_seedr=True).new_event())
-
-
-async def seedr_leech(client, message):
-    if not await _seedr_guard(message, check_leech=True):
-        return
-    bot_loop.create_task(
-        Mirror(client, message, is_leech=True, is_seedr=True).new_event()
-    )
-
-
 @new_task
 async def seedr_link(client, message):
-    if not await _seedr_guard(message):
+    user_id = message.from_user.id
+    if not await seedr_guard(message, user_id):
         return
-    email, password = _seedr_creds(message.from_user.id)
+    email, password = _seedr_creds(user_id)
     seedrlink_cmd = (
         f"/{BotCommands.SeedrLinkCommand[0]}"
         if isinstance(BotCommands.SeedrLinkCommand, list)

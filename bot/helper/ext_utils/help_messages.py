@@ -266,6 +266,16 @@ entirely so dead torrents finish faster on a debrid plan.
 
 Requires <code>ALLDEBRID_API_KEY</code> in the bot configuration."""
 
+seedr_arg = """<b>Seedr Cloud</b>: -seedr
+
+/cmd magnet -seedr
+Sends the magnet to your Seedr.cc cloud account, waits for it to
+finish there, then downloads the finished files over plain HTTP.
+Useful when the torrent is slow or blocked on your server.
+
+Only works with magnet links and .torrent URLs.
+Set SEEDR_EMAIL and SEEDR_PASSWORD in /usetting or the bot config."""
+
 metadata = """<b>Metadata</b>: -meta
 
 Apply custom metadata to media files using pipe (|) separator.
@@ -353,6 +363,7 @@ MIRROR_HELP_DICT = {
     "FFmpeg-Cmds": ffmpeg_cmds,
     "Metadata": metadata,
     "AllDebrid": alldebrid_arg,
+    "Seedr": seedr_arg,
 }
 
 CLONE_HELP_DICT = {
@@ -470,8 +481,6 @@ def get_help_string():
             help_lines.append(f"{cmd_str}: Start Mirroring to cloud using JDownloader.")
         elif key == "NzbMirror":
             help_lines.append(f"{cmd_str}: Start Mirroring to cloud using Sabnzbd.")
-        elif key == "SeedrMirror":
-            help_lines.append(f"{cmd_str}: Start Mirroring to cloud using Seedr.")
         elif key == "Ytdl":
             help_lines.append(f"{cmd_str}: Mirror yt-dlp supported link.")
         elif key == "UpHoster":
@@ -484,8 +493,6 @@ def get_help_string():
             help_lines.append(f"{cmd_str}: Start leeching using JDownloader.")
         elif key == "NzbLeech":
             help_lines.append(f"{cmd_str}: Start leeching using Sabnzbd.")
-        elif key == "SeedrLeech":
-            help_lines.append(f"{cmd_str}: Start leeching using Seedr.")
         elif key == "SeedrLink":
             help_lines.append(f"{cmd_str}: Get direct Seedr HTTP download links.")
         elif key == "YtdlLeech":
