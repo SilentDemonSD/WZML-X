@@ -497,7 +497,8 @@ async def get_buttons(key=None, edit_type=None, edit_mode=False):
         )
         msg = "⌬ <b><u>On/Off Settings</u></b>"
     elif key == "setlimit":
-        for k in LIMIT_VARS:
+        page_vars = LIMIT_VARS[start : 8 + start]
+        for k in page_vars:
             buttons.data_button(
                 k.removesuffix("_LIMIT").replace("_", " "), f"botset editvar {k}"
             )
@@ -505,30 +506,23 @@ async def get_buttons(key=None, edit_type=None, edit_mode=False):
         buttons.data_button(
             "Close", "botset close", position="footer", style=ButtonStyle.DANGER
         )
+        for x in range(0, len(LIMIT_VARS), 8):
+            buttons.data_button(
+                f"{int(x / 8) + 1}", f"botset start setlimit {x}", position="footer"
+            )
         rows = [
             [
-                InputRichBlockTableCell(rich_text(("b", "Limit")), header=True),
                 InputRichBlockTableCell(
-                    rich_text(("b", "Value")), header=True, align_right=True
+                    rich_text(k.removesuffix("_LIMIT").replace("_", " "))
+                ),
+                InputRichBlockTableCell(
+                    rich_text(("c", f"{v}{LIMIT_UNITS.get(k, ' GB')}")),
+                    align_right=True,
                 ),
             ]
+            for k in LIMIT_VARS
+            if (v := Config.get(k))
         ]
-        active = 0
-        for k in LIMIT_VARS:
-            v = Config.get(k)
-            if v:
-                active += 1
-                value = rich_text(("c", f"{v}{LIMIT_UNITS.get(k, ' GB')}"))
-            else:
-                value = rich_text(("i", "unlimited"))
-            rows.append(
-                [
-                    InputRichBlockTableCell(
-                        rich_text(k.removesuffix("_LIMIT").replace("_", " "))
-                    ),
-                    InputRichBlockTableCell(value, align_right=True),
-                ]
-            )
         msg = InputRichMessage(
             blocks=[
                 InputRichBlockSectionHeading(
@@ -536,17 +530,21 @@ async def get_buttons(key=None, edit_type=None, edit_mode=False):
                 ),
                 InputRichBlockParagraph(
                     text=rich_text(
-                        ("m", f" {active} of {len(LIMIT_VARS)} active "),
+                        ("m", f" {len(rows)} of {len(LIMIT_VARS)} active "),
                         "  ",
-                        ("i", "tap a button below to change one"),
+                        ("i", f"page {int(start / 8) + 1}"),
                     )
                 ),
                 InputRichBlockTable(
-                    title=rich_text(("b", "Current limits")),
+                    title=rich_text(("b", "Active limits")),
                     rows=rows,
                     bordered=True,
                     striped=True,
                     compact=True,
+                )
+                if rows
+                else InputRichBlockParagraph(
+                    text=rich_text(("i", "No limits set, everything is unlimited."))
                 ),
                 InputRichBlockDivider(),
                 InputRichBlockDetails(
@@ -1327,7 +1325,7 @@ async def edit_bot_settings(client, query):
     ] or data[
         1
     ].startswith("nzbser"):
-        if data[1] == "nzbserver":
+        if data[1] in ("nzbserver", "setlimit"):
             globals()["start"] = 0
         await query.answer()
         await update_buttons(message, data[1])
