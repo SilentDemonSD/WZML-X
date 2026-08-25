@@ -438,9 +438,17 @@ async def get_buttons(key=None, edit_type=None, edit_mode=False):
             val = Config.get(k)
             label = k.removeprefix("DISABLE_")
             if not val:
-                buttons.data_button(f"✓ {label}", f"botset toggleonoff {k} on")
+                buttons.data_button(
+                    f"✓ {label}",
+                    f"botset toggleonoff {k} on",
+                    style=ButtonStyle.PRIMARY,
+                )
             else:
-                buttons.data_button(label, f"botset toggleonoff {k} off")
+                buttons.data_button(
+                    label,
+                    f"botset toggleonoff {k} off",
+                    style=ButtonStyle.DANGER,
+                )
         buttons.data_button("Back", "botset back setonoff", position="footer")
         buttons.data_button(
             "Close", "botset close", position="footer", style=ButtonStyle.DANGER
