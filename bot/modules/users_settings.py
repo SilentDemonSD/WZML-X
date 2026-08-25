@@ -17,6 +17,7 @@ from pyrogram.handlers import MessageHandler
 
 from .. import auth_chats, excluded_extensions, sudo_users, user_data
 from ..core.config_manager import Config
+from ..core.seedr_client import SeedrClient
 from ..core.tg_client import TgClient
 from ..helper.ext_utils.bot_utils import (
     get_size_bytes,
@@ -75,6 +76,7 @@ advanced_options = [
 ]
 yt_options = ["YT_DESP", "YT_TAGS", "YT_CATEGORY_ID", "YT_PRIVACY_STATUS"]
 mega_options = ["MEGA_EMAIL", "MEGA_PASSWORD"]
+seedr_options = ["SEEDR_EMAIL", "SEEDR_PASSWORD", "SEEDR_DELETE_FOLDER"]
 
 user_settings_text = {
     "THUMBNAIL": (
@@ -841,6 +843,8 @@ async def get_user_settings(from_user, stype="main"):
 
         buttons.data_button("YT Up Tools", f"userset {user_id} yttools")
         buttons.data_button("Mega Tools", f"userset {user_id} mega")
+        if not Config.DISABLE_SEEDR:
+            buttons.data_button("Seedr Tools", f"userset {user_id} seedr")
         if Config.DRIVE_CATEGORY_MODE:
             dc_enabled = user_dict.get("drive_cat_mode", False)
             buttons.data_button(
@@ -901,6 +905,68 @@ async def get_user_settings(from_user, stype="main"):
 ┃
 ┠ <b>Mega Email</b> → <code>{email_display}</code>
 ┠ <b>Mega Password</b> → <code>{pass_display}</code>
+┖ <b>Account</b> → {account_status}"""
+
+    elif stype == "seedr":
+        seedr_email = user_dict.get("SEEDR_EMAIL", "")
+        seedr_password = user_dict.get("SEEDR_PASSWORD", "")
+        seedr_delete = (
+            user_dict.get("SEEDR_DELETE_FOLDER")
+            if "SEEDR_DELETE_FOLDER" in user_dict
+            else Config.SEEDR_DELETE_FOLDER
+        )
+        has_creds = bool(seedr_email and seedr_password)
+        masked_pass = (
+            (
+                seedr_password[:2]
+                + "*" * (len(seedr_password) - 4)
+                + seedr_password[-2:]
+                if len(seedr_password) > 6
+                else "****"
+            )
+            if seedr_password
+            else ""
+        )
+
+        buttons.data_button("Seedr Email", f"userset {user_id} menu SEEDR_EMAIL")
+        if seedr_email:
+            buttons.data_button(
+                "Seedr Password", f"userset {user_id} menu SEEDR_PASSWORD"
+            )
+
+        buttons.data_button(
+            f"Delete Folder: {'ON' if seedr_delete else 'OFF'}",
+            f"userset {user_id} tog SEEDR_DELETE_FOLDER {'f' if seedr_delete else 't'}",
+        )
+
+        if has_creds:
+            buttons.data_button(
+                "Clear Storage",
+                f"userset {user_id} clear_seedr",
+                position="l_body",
+            )
+            buttons.data_button(
+                "Remove Account",
+                f"userset {user_id} remove SEEDR_EMAIL",
+                position="l_body",
+            )
+
+        buttons.data_button("Back", f"userset {user_id} back mirror", "footer")
+        buttons.data_button(
+            "Close", f"userset {user_id} close", "footer", style=ButtonStyle.DANGER
+        )
+        btns = buttons.build_menu(1)
+
+        email_display = seedr_email or "Not Set"
+        pass_display = masked_pass if seedr_password else "Not Set"
+        account_status = "✓ Configured" if has_creds else "❌ Not Configured"
+        delete_display = "Enabled" if seedr_delete else "Disabled"
+        text = f"""⌬ <b>Seedr Tools :</b>
+┟ <b>Name</b> → {user_name}
+┃
+┠ <b>Seedr Email</b> → <code>{email_display}</code>
+┠ <b>Seedr Password</b> → <code>{pass_display}</code>
+┠ <b>Delete Folder</b> → {delete_display}
 ┖ <b>Account</b> → {account_status}"""
 
     elif stype == "ffset":
@@ -1348,6 +1414,8 @@ async def get_menu(option, message, user_id):
         back_to = option.split("_")[0].lower()
     elif option in mega_options:
         back_to = "mega"
+    elif option in seedr_options:
+        back_to = "seedr"
     else:
         back_to = "back"
     buttons.data_button("Back", f"userset {user_id} {back_to}", "footer")
@@ -1508,6 +1576,36 @@ async def edit_user_settings(client, query):
             info_text = await get_mega_account_info(mega_email, mega_password)
             msg += f"\n\n{info_text}"
             await edit_message(message, msg, button)
+    elif data[2] == "seedr":
+        await query.answer()
+        msg, button = await get_user_settings(query.from_user, "seedr")
+        await edit_message(message, msg, button)
+        seedr_email = user_dict.get("SEEDR_EMAIL") or Config.SEEDR_EMAIL
+        seedr_password = user_dict.get("SEEDR_PASSWORD") or Config.SEEDR_PASSWORD
+        if seedr_email and seedr_password:
+            try:
+                sc = SeedrClient(seedr_email, seedr_password)
+                await sc.login()
+                space_max, space_used = await sc.get_space()
+                msg += f"\n\n<b>Seedr Space</b> → <code>{get_readable_file_size(space_used)} / {get_readable_file_size(space_max)}</code>"
+            except Exception as e:
+                msg += f"\n\n<b>Seedr Login Failed:</b> {escape(str(e))}"
+            await edit_message(message, msg, button)
+    elif data[2] == "clear_seedr":
+        await query.answer("Clearing Seedr Storage...", show_alert=False)
+        seedr_email = user_dict.get("SEEDR_EMAIL") or Config.SEEDR_EMAIL
+        seedr_password = user_dict.get("SEEDR_PASSWORD") or Config.SEEDR_PASSWORD
+        if seedr_email and seedr_password:
+            try:
+                from .mirror_leech import clear_seedr_account
+
+                t_c, f_c = await clear_seedr_account(seedr_email, seedr_password)
+                await query.answer(
+                    f"Removed {t_c} torrent(s) and {f_c} folder(s)!", show_alert=True
+                )
+            except Exception as e:
+                await query.answer(f"Failed: {e}"[:180], show_alert=True)
+        await update_user_settings(query, "seedr")
     elif data[2] == "yttools":
         await query.answer()
         await update_user_settings(query, data[2])
@@ -1572,6 +1670,8 @@ async def edit_user_settings(client, query):
             back_to = "general"
         elif data[3] == "GOFILE_AUTO_CREATE_FOLDER":
             back_to = "gofile"
+        elif data[3] == "SEEDR_DELETE_FOLDER":
+            back_to = "seedr"
         else:
             back_to = "leech"
         await update_user_settings(query, stype=back_to)
@@ -1645,6 +1745,8 @@ async def edit_user_settings(client, query):
             update_user_ldata(user_id, data[3], "")
             if data[3] == "MEGA_EMAIL":
                 update_user_ldata(user_id, "MEGA_PASSWORD", "")
+            elif data[3] == "SEEDR_EMAIL":
+                update_user_ldata(user_id, "SEEDR_PASSWORD", "")
             await database.update_user_data(user_id)
         await get_menu(data[3], message, user_id)
     elif data[2] == "reset":
