@@ -497,7 +497,7 @@ async def get_buttons(key=None, edit_type=None, edit_mode=False):
         )
         msg = "⌬ <b><u>On/Off Settings</u></b>"
     elif key == "setlimit":
-        page_vars = LIMIT_VARS[start : 8 + start]
+        page_vars = LIMIT_VARS[start : 10 + start]
         for k in page_vars:
             buttons.data_button(
                 k.removesuffix("_LIMIT").replace("_", " "),
@@ -508,9 +508,9 @@ async def get_buttons(key=None, edit_type=None, edit_mode=False):
         buttons.data_button(
             "Close", "botset close", position="footer", style=ButtonStyle.DANGER
         )
-        for x in range(0, len(LIMIT_VARS), 8):
+        for x in range(0, len(LIMIT_VARS), 10):
             buttons.data_button(
-                f"{int(x / 8) + 1}", f"botset start setlimit {x}", position="l_body"
+                f"{int(x / 10) + 1}", f"botset start setlimit {x}", position="l_body"
             )
         rows = [
             [
@@ -589,8 +589,8 @@ async def get_buttons(key=None, edit_type=None, edit_mode=False):
                 InputRichBlockFooter(
                     text=rich_text(
                         ("i", "Page "),
-                        ("b", f"{int(start / 8) + 1}"),
-                        ("i", f" of {-(-len(LIMIT_VARS) // 8)}"),
+                        ("b", f"{int(start / 10) + 1}"),
+                        ("i", f" of {-(-len(LIMIT_VARS) // 10)}"),
                     )
                 ),
             ]
