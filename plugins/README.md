@@ -382,11 +382,16 @@ Every action and exactly what it touches:
 | **enable** | attached | reused | kept | `enabled: true` |
 | **disable** | detached | **kept** | kept | `enabled: false` |
 | **rescan** | attached for anything new | imported | kept | seeded if new |
+| **update** | rebuilt | re-imported | replaced | version bumped |
 | **uninstall** | detached | purged | **deleted** | **deleted** |
 
 **Disable is cheap and reversible** — the code stays in memory, only the handlers
 come off, so `/yourcommand` stops answering instantly and re-enabling is
 immediate. Both the enabled and disabled choices persist across restarts.
+
+Every installed plugin has an **Update** button. If it came from GitHub, the
+marketplace or a URL it re-fetches that source; a bundled or hand-copied one
+re-fetches from your upstream repo and branch, picking the folder by name.
 
 Plugins are loaded at boot. **Rescan** picks up a folder you dropped in while the
 bot was running, and reports how many it found and how many were newly loaded.
@@ -446,7 +451,11 @@ hello.zip                       hello.zip
 ```
 
 **GitHub** — send `owner/repo`, `owner/repo@branch`, or a full GitHub URL. The
-manifest may sit at the repo root or one or two folders down.
+bot finds **every** plugin folder in the archive, not just the first, and shows
+them as a list: green means it is not installed yet, blue means you already have
+it and pressing it just says "Already Added". Pick one and it installs; the
+download is kept so you can install several from the same repo without fetching
+it again.
 
 **Marketplace** — entries come from an index file. The official index is read
 from your configured upstream:
@@ -456,9 +465,15 @@ https://raw.githubusercontent.com/<UPSTREAM_REPO>/<UPSTREAM_BRANCH>/plugins/inde
 ```
 
 so a fork with `UPSTREAM_REPO` and `UPSTREAM_BRANCH` set gets its own list
-automatically. Add more with `PLUGIN_INDEXES` (a list of URLs) in bot settings.
+automatically — you do not need to configure anything. `PLUGIN_INDEXES` is only
+for **extra** indexes; set it to a list of URLs. The exact URL in use is shown on
+the Marketplace page.
 
-An index looks like:
+> `index.schema.json` is the JSON-Schema that *describes* the format.
+> It is **not an index** — do not put it in `PLUGIN_INDEXES`. The bot detects
+> that mistake and says so on the Marketplace page.
+
+An entry names its download one of two ways:
 
 ```json
 {
@@ -467,15 +482,24 @@ An index looks like:
       "id": "hello",
       "name": "Hello",
       "version": "1.0.0",
-      "author": "You",
       "description": "Say hello",
       "tags": ["utility"],
       "url": "https://example.com/hello-1.0.0.zip",
       "sha256": "9f3c…"
+    },
+    {
+      "id": "goodbye",
+      "version": "1.0.0",
+      "repo": "someone/their-bot@main"
     }
   ]
 }
 ```
+
+Use `url` for a standalone archive of the plugin folder. Use `repo` when the
+plugin lives inside a bigger repository — the bot downloads the repo archive and
+picks out the folder whose manifest `name` matches the entry's `id`. That is how
+the bundled plugins are listed.
 
 `sha256` is optional. When present the download is refused on any mismatch.
 

@@ -43,6 +43,11 @@ def upstream_slug():
     return f"{parts[1]}/{parts[2]}"
 
 
+def official_repo_spec():
+    branch = str(Config.UPSTREAM_BRANCH or "").strip() or DEFAULT_BRANCH
+    return f"{upstream_slug()}@{branch}"
+
+
 def official_index_url():
     branch = str(Config.UPSTREAM_BRANCH or "").strip() or DEFAULT_BRANCH
     return f"https://raw.githubusercontent.com/{upstream_slug()}/{branch}/{INDEX_PATH}"
@@ -118,21 +123,29 @@ def extract_archive(archive, dest):
     return dest
 
 
-def find_plugin_root(folder):
+def find_plugin_roots(folder):
     folder = Path(folder)
+    found = []
     queue = [(folder, 0)]
     while queue:
         current, depth = queue.pop(0)
         if any((current / name).is_file() for name in MANIFEST_NAMES):
-            return current
+            found.append(current)
+            continue
         if depth >= MANIFEST_DEPTH:
             continue
         for child in sorted(current.iterdir()):
             if child.is_dir() and not child.name.startswith((".", "__")):
                 queue.append((child, depth + 1))
-    raise InstallError(
-        "no wzml_plugin.yml found in the archive; a plugin must ship a manifest"
-    )
+    if not found:
+        raise InstallError(
+            "no wzml_plugin.yml found in the archive; a plugin must ship a manifest"
+        )
+    return found
+
+
+def find_plugin_root(folder):
+    return find_plugin_roots(folder)[0]
 
 
 def digest(path):
@@ -340,7 +353,7 @@ class PluginInstaller:
             current = current.parent
         return current
 
-    async def stage_archive(self, archive, expect_sha=None):
+    async def stage_archive(self, archive, expect_sha=None, pick=None):
         if expect_sha:
             got = digest(archive)
             if got.lower() != str(expect_sha).lower():
@@ -350,8 +363,7 @@ class PluginInstaller:
         folder = self._fresh_stage()
         try:
             extract_archive(archive, folder)
-            root = find_plugin_root(folder)
-            manifest = read_manifest(root)
+            roots = find_plugin_roots(folder)
         except InstallError:
             shutil.rmtree(folder, ignore_errors=True)
             raise
@@ -359,35 +371,55 @@ class PluginInstaller:
             shutil.rmtree(folder, ignore_errors=True)
             raise InstallError(str(err)) from err
 
+        found = []
+        for root in roots:
+            try:
+                found.append((root, read_manifest(root)))
+            except Exception as err:
+                LOGGER.warning(f"skipping {root.name} in archive: {err}")
+        if not found:
+            shutil.rmtree(folder, ignore_errors=True)
+            raise InstallError("no readable manifest in the archive")
+
+        found.sort(key=lambda pair: pair[1].name)
+        if pick:
+            found = [pair for pair in found if pair[1].name == pick]
+            if not found:
+                shutil.rmtree(folder, ignore_errors=True)
+                raise InstallError(f"{pick} is not in that archive")
+        return folder, found
+
+    def check(self, manifest):
         from ..version import get_version
         from .plugin_manager import missing_dependencies
 
         problem = manifest.version_error(get_version())
         if problem:
-            shutil.rmtree(folder, ignore_errors=True)
             raise InstallError(problem)
-
         clash = self.manager.taken_commands(skip=manifest.name)
         for item in manifest.command_names():
             if item in clash:
-                shutil.rmtree(folder, ignore_errors=True)
                 raise InstallError(f"/{item} is already used by {clash[item]}")
+        return missing_dependencies(manifest.python_dependencies)
 
-        return root, manifest, missing_dependencies(manifest.python_dependencies)
-
-    async def stage_url(self, url, expect_sha=None):
+    async def stage_url(self, url, expect_sha=None, pick=None):
         folder = self._fresh_stage()
         archive = folder / "download.bin"
         try:
             await download(url, archive)
-            return await self.stage_archive(archive, expect_sha)
+            return await self.stage_archive(archive, expect_sha, pick)
         finally:
             shutil.rmtree(folder, ignore_errors=True)
 
-    async def stage_github(self, spec):
-        return await self.stage_url(github_archive_url(spec))
+    async def stage_github(self, spec, pick=None):
+        return await self.stage_url(github_archive_url(spec), pick=pick)
 
-    async def finalize(self, staged_root, manifest, source="local", url=""):
+    async def stage_entry(self, item, pick=None):
+        if item.get("repo"):
+            return await self.stage_github(item["repo"], pick=pick or item["id"])
+        return await self.stage_url(item["url"], item.get("sha256"), pick=pick)
+
+    async def finalize(self, staged_root, manifest, source="local", url="", cleanup=True):
         name = manifest.name
         target = self.manager.dir_of(name)
 
@@ -412,7 +444,8 @@ class PluginInstaller:
                 await self.manager.load(name)
             raise InstallError(str(err)) from err
         finally:
-            shutil.rmtree(self._stage_root_of(staged_root), ignore_errors=True)
+            if cleanup:
+                shutil.rmtree(self._stage_root_of(staged_root), ignore_errors=True)
 
         if backup is not None:
             shutil.rmtree(backup, ignore_errors=True)
@@ -451,6 +484,8 @@ def get_installer():
 
 __all__ = [
     "InstallError",
+    "find_plugin_roots",
+    "official_repo_spec",
     "index_problem",
     "official_index_url",
     "upstream_slug",

@@ -14,6 +14,8 @@ from ..core.plugin_installer import (
     InstallError,
     get_installer,
     install_dependencies,
+    official_index_url,
+    official_repo_spec,
 )
 from ..core.plugin_manager import get_plugin_manager
 from ..helper.ext_utils.bot_utils import new_task
@@ -43,7 +45,7 @@ OWNER_ONLY = {
     "cfge",
     "cfgr",
 }
-SUDO_ALLOWED = {"install", "upload", "github"}
+SUDO_ALLOWED = {"install", "upload", "github", "pick", "dup"}
 MUTATING = OWNER_ONLY | SUDO_ALLOWED
 
 
@@ -182,8 +184,9 @@ async def build_menu(user_id, view="main", arg=""):
                 )
             if rec.manifest.config_schema:
                 buttons.data_button("Settings", f"plugins {user_id} cfg {arg}")
-            if rec.source in ("github", "market", "url"):
-                buttons.data_button("Update", f"plugins {user_id} update {arg}")
+            buttons.data_button(
+                "Update", f"plugins {user_id} update {arg}", style=ButtonStyle.PRIMARY
+            )
             buttons.data_button(
                 "Uninstall", f"plugins {user_id} rmask {arg}", style=ButtonStyle.DANGER
             )
@@ -285,6 +288,7 @@ async def build_menu(user_id, view="main", arg=""):
 
         rows = [
             ("Listed", str(total)),
+            ("Official", f"<code>{official_index_url()}</code>"),
             ("Sources", str(len(installer.index_urls()))),
         ]
         for url, why in getattr(installer, "problems", [])[:3]:
@@ -343,6 +347,37 @@ async def build_menu(user_id, view="main", arg=""):
                 "Plugin code runs with full access to this bot. Only install what "
                 "you trust.",
             ),
+            buttons.build_menu(2),
+        )
+
+    if view == "pick":
+        state = pending.get(user_id)
+        if not state or not state.get("items"):
+            return "<i>That request expired.</i>", buttons.build_menu(1)
+        rows = []
+        for index, (_, man) in enumerate(state["items"]):
+            here = manager.get(man.name)
+            if here:
+                buttons.data_button(
+                    man.name,
+                    f"plugins {user_id} dup {man.name}",
+                    style=ButtonStyle.PRIMARY,
+                )
+                rows.append((man.name, f"installed <code>{here.version}</code>"))
+            else:
+                buttons.data_button(
+                    man.name,
+                    f"plugins {user_id} pick {index}",
+                    style=ButtonStyle.SUCCESS,
+                )
+                rows.append((man.name, f"<code>{man.version}</code>"))
+        buttons.data_button("Back", f"plugins {user_id} install", position="footer")
+        buttons.data_button(
+            "Close", f"plugins {user_id} close", position="footer", style=ButtonStyle.DANGER
+        )
+        head = [("Source", f"<code>{state.get('label') or state.get('url')}</code>")]
+        return (
+            _wz("Plugins Found", head + rows, "Pick one to install."),
             buttons.build_menu(2),
         )
 
@@ -450,16 +485,43 @@ async def _ask(client, query, prompt, handler):
         waiting.pop(user_id, None)
 
 
-async def _stage_done(query, staged, manifest, missing, source, url):
+async def _offer(query, stage, found, source, url, label=""):
     user_id = query.from_user.id
+    pending[user_id] = {
+        "stage": stage,
+        "items": found,
+        "source": source,
+        "url": url,
+        "label": label or url,
+    }
+    if len(found) == 1:
+        return await _stage_done(query, found[0][0], found[0][1], source, url)
+    text, markup = await build_menu(user_id, "pick")
+    await edit_message(query.message, text, markup)
+
+
+async def _stage_done(query, staged, manifest, source, url):
+    user_id = query.from_user.id
+    installer = get_installer()
+    try:
+        missing = installer.check(manifest)
+    except InstallError as err:
+        text, markup = await build_menu(user_id, "install")
+        return await edit_message(
+            query.message, f"<b>Rejected</b> → <i>{err}</i>\n\n{text}", markup
+        )
     if missing:
-        pending[user_id] = {
-            "staged": staged,
-            "manifest": manifest,
-            "missing": missing,
-            "source": source,
-            "url": url,
-        }
+        state = dict(pending.get(user_id) or {})
+        state.update(
+            {
+                "staged": staged,
+                "manifest": manifest,
+                "missing": missing,
+                "source": source,
+                "url": url,
+            }
+        )
+        pending[user_id] = state
         text, markup = await build_menu(user_id, "deps")
         await edit_message(query.message, text, markup)
         return
@@ -469,20 +531,25 @@ async def _stage_done(query, staged, manifest, missing, source, url):
 async def _finish(query, staged, manifest, source, url):
     user_id = query.from_user.id
     installer = get_installer()
+    state = pending.get(user_id) or {}
+    more = len(state.get("items") or []) > 1
     try:
-        await installer.finalize(staged, manifest, source=source, url=url)
+        await installer.finalize(
+            staged, manifest, source=source, url=url, cleanup=not more
+        )
     except InstallError as err:
         text, markup = await build_menu(user_id, "install")
         await edit_message(
             query.message, f"<b>Install failed</b> → <i>{err}</i>\n\n{text}", markup
         )
         return
-    text, markup = await build_menu(user_id, "view", manifest.name)
-    await edit_message(
-        query.message,
-        f"<b>Installed</b> → {manifest.name} <code>{manifest.version}</code>\n\n{text}",
-        markup,
-    )
+    head = f"<b>Installed</b> → {manifest.name} <code>{manifest.version}</code>"
+    if more:
+        text, markup = await build_menu(user_id, "pick")
+    else:
+        pending.pop(user_id, None)
+        text, markup = await build_menu(user_id, "view", manifest.name)
+    await edit_message(query.message, f"{head}\n\n{text}", markup)
 
 
 @new_task
@@ -656,30 +723,62 @@ async def edit_plugins_menu(client, query):
             text = f"<b>Uninstall failed</b> → <i>{err}</i>\n\n{text}"
         return await edit_message(query.message, text, markup)
 
+    if action == "dup":
+        return await query.answer("Already Added", show_alert=True)
+
+    if action == "pick":
+        state = pending.get(user_id)
+        index = int(arg) if arg.isdigit() else -1
+        if not state or not 0 <= index < len(state.get("items") or []):
+            return await query.answer("That request expired.", show_alert=True)
+        root, manifest = state["items"][index]
+        if manager.get(manifest.name):
+            return await query.answer("Already Added", show_alert=True)
+        await query.answer(f"Installing {manifest.name}…")
+        return await _stage_done(query, root, manifest, state["source"], state["url"])
+
     if action in ("get", "update"):
         await query.answer("Fetching…")
         if action == "get":
             item = installer.index_entry(arg)
             if item is None:
                 return await query.answer("Not in the index any more.", show_alert=True)
-            url, sha, source = item["url"], item.get("sha256"), "market"
+            source = "github" if item.get("repo") else "market"
+            url = item.get("repo") or item["url"]
+            fetch = partial(installer.stage_entry, item)
         else:
             rec = manager.get(arg)
-            if rec is None or not rec.url:
-                return await query.answer("No source to update from.", show_alert=True)
-            url, sha, source = rec.url, None, rec.source
+            if rec is not None and rec.url and rec.source in ("github", "market", "url"):
+                source, url = rec.source, rec.url
+                fetch = partial(
+                    installer.stage_github if source == "github" else installer.stage_url,
+                    url,
+                    pick=arg,
+                )
+            else:
+                source, url = "github", official_repo_spec()
+                fetch = partial(installer.stage_github, url, pick=arg)
         await edit_message(query.message, f"<i>Downloading {arg}…</i>")
         try:
-            if source == "github":
-                staged, manifest, missing = await installer.stage_github(url)
-            else:
-                staged, manifest, missing = await installer.stage_url(url, sha)
+            stage, found = await fetch()
         except InstallError as err:
-            text, markup = await build_menu(user_id, "mkt", "0")
+            back = "view" if action == "update" and manager.get(arg) else "mkt"
+            text, markup = await build_menu(
+                user_id, back, arg if back == "view" else "0"
+            )
             return await edit_message(
                 query.message, f"<b>Rejected</b> → <i>{err}</i>\n\n{text}", markup
             )
-        return await _stage_done(query, staged, manifest, missing, source, url)
+        if action == "update":
+            pending[user_id] = {
+                "stage": stage,
+                "items": found[:1],
+                "source": source,
+                "url": url,
+                "label": url,
+            }
+            return await _stage_done(query, found[0][0], found[0][1], source, url)
+        return await _offer(query, stage, found, source, url, url)
 
     if action == "deps_ok":
         state = pending.pop(user_id, None)
