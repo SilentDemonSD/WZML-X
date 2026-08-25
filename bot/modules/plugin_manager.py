@@ -487,8 +487,16 @@ async def _ask(client, query, prompt, handler):
         waiting.pop(user_id, None)
 
 
+def _forget(user_id):
+    state = pending.pop(user_id, None)
+    if state and state.get("stage"):
+        get_installer().drop_stage(state["stage"])
+    return state
+
+
 async def _offer(query, stage, found, source, url, label=""):
     user_id = query.from_user.id
+    _forget(user_id)
     pending[user_id] = {
         "stage": stage,
         "items": found,
@@ -549,7 +557,7 @@ async def _finish(query, staged, manifest, source, url):
     if more:
         text, markup = await build_menu(user_id, "pick")
     else:
-        pending.pop(user_id, None)
+        _forget(user_id)
         text, markup = await build_menu(user_id, "view", manifest.name)
     await edit_message(query.message, f"{head}\n\n{text}", markup)
 
@@ -669,12 +677,14 @@ async def edit_plugins_menu(client, query):
         )
 
     if action == "close":
+        _forget(user_id)
         await query.answer()
         await delete_message(query.message.reply_to_message)
         return await delete_message(query.message)
 
     if action == "stop":
         waiting[user_id] = False
+        _forget(user_id)
         await query.answer("Cancelled")
         text, markup = await build_menu(user_id, "install")
         return await edit_message(query.message, text, markup)
@@ -787,8 +797,8 @@ async def edit_plugins_menu(client, query):
         return await _offer(query, stage, found, source, url, url)
 
     if action == "deps_ok":
-        state = pending.pop(user_id, None)
-        if not state:
+        state = pending.get(user_id)
+        if not state or not state.get("manifest"):
             return await query.answer("That request expired.", show_alert=True)
         await query.answer("Installing packages…")
         await edit_message(
@@ -797,7 +807,7 @@ async def edit_plugins_menu(client, query):
         )
         ok, err = await install_dependencies(state["missing"])
         if not ok:
-            installer.clear_staging()
+            _forget(user_id)
             text, markup = await build_menu(user_id, "install")
             return await edit_message(
                 query.message,
@@ -809,8 +819,7 @@ async def edit_plugins_menu(client, query):
         )
 
     if action == "deps_no":
-        pending.pop(user_id, None)
-        installer.clear_staging()
+        _forget(user_id)
         await query.answer("Cancelled")
         text, markup = await build_menu(user_id, "install")
         return await edit_message(query.message, text, markup)

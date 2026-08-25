@@ -21,6 +21,7 @@ MAX_UNPACKED = 48 * 1024 * 1024
 MAX_MEMBERS = 512
 MANIFEST_DEPTH = 3
 INDEX_TTL = 900
+STAGE_TTL = 900
 
 
 class InstallError(Exception):
@@ -342,9 +343,36 @@ class PluginInstaller:
 
     def _fresh_stage(self):
         self.staging_dir.mkdir(parents=True, exist_ok=True)
+        self.sweep_staging()
         folder = self.staging_dir / uuid4().hex
         folder.mkdir()
         return folder
+
+    def drop_stage(self, path):
+        if not path:
+            return
+        try:
+            target = self._stage_root_of(path)
+        except Exception:
+            return
+        if target != self.staging_dir.resolve():
+            shutil.rmtree(target, ignore_errors=True)
+
+    def sweep_staging(self, older_than=STAGE_TTL):
+        if not self.staging_dir.is_dir():
+            return 0
+        cutoff = time() - older_than
+        dropped = 0
+        for entry in self.staging_dir.iterdir():
+            try:
+                if entry.is_dir() and entry.stat().st_mtime < cutoff:
+                    shutil.rmtree(entry, ignore_errors=True)
+                    dropped += 1
+            except OSError:
+                continue
+        if dropped:
+            LOGGER.info(f"cleared {dropped} abandoned plugin staging folder(s)")
+        return dropped
 
     def clear_staging(self):
         shutil.rmtree(self.staging_dir, ignore_errors=True)
@@ -468,6 +496,7 @@ class PluginInstaller:
         if target.is_dir():
             shutil.rmtree(target, ignore_errors=True)
         self.manager.states.pop(name, None)
+        self.manager.errors.pop(name, None)
         try:
             from ..helper.ext_utils.db_handler import database
 

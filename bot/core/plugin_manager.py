@@ -840,26 +840,35 @@ class PluginManager:
         return self.states
 
     async def rescan(self):
-        before = set(self.records)
-        if not self.plugins_dir.is_dir():
-            self.plugins_dir = self._resolve_dir()
-        found = self.discover()
-        for name in found:
-            if name in self.records:
-                continue
-            state = self.states.get(name) or {}
-            if not state.get("autoload", True):
-                continue
-            ok, err = await self.load(
-                name,
-                enabled=state.get("enabled", True),
-                source=state.get("source", "local"),
-                url=state.get("url", ""),
-                config=state.get("config") or {},
-            )
-            if not ok:
-                LOGGER.error(f"plugin {name} not loaded: {err}")
-        return found, sorted(set(self.records) - before)
+        async with self._lock:
+            before = set(self.records)
+            if not self.plugins_dir.is_dir():
+                self.plugins_dir = self._resolve_dir()
+            found = self.discover()
+            self._quiet = True
+            try:
+                for name in found:
+                    if name in self.records:
+                        continue
+                    state = self.states.get(name) or {}
+                    if not state.get("autoload", True):
+                        continue
+                    ok, err = await self._do_load(
+                        name,
+                        enabled=state.get("enabled", True),
+                        source=state.get("source", "local"),
+                        url=state.get("url", ""),
+                        config=state.get("config") or {},
+                    )
+                    if ok:
+                        self.errors.pop(name, None)
+                    else:
+                        self.errors[name] = err
+                        LOGGER.error(f"plugin {name} not loaded: {err}")
+            finally:
+                self._quiet = False
+            self._refresh_commands()
+            return found, sorted(set(self.records) - before)
 
     async def unload_all(self):
         async with self._lock:
