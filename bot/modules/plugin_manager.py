@@ -578,7 +578,7 @@ async def _on_upload(client, message, query):
     await edit_message(query.message, "<i>Downloading the archive…</i>")
     await message.download(file_name=target)
     try:
-        staged, manifest, missing = await installer.stage_archive(target)
+        stage, found = await installer.stage_archive(target)
     except InstallError as err:
         text, markup = await build_menu(user_id, "install")
         await edit_message(
@@ -590,7 +590,7 @@ async def _on_upload(client, message, query):
             await remove(target)
         except OSError:
             pass
-    await _stage_done(query, staged, manifest, missing, "upload", doc.file_name or "")
+    await _offer(query, stage, found, "upload", "", doc.file_name or "upload")
 
 
 @new_task
@@ -602,14 +602,14 @@ async def _on_github(client, message, query):
     await delete_message(message)
     await edit_message(query.message, f"<i>Fetching {spec}…</i>")
     try:
-        staged, manifest, missing = await installer.stage_github(spec)
+        stage, found = await installer.stage_github(spec)
     except InstallError as err:
         text, markup = await build_menu(user_id, "install")
         await edit_message(
             query.message, f"<b>Rejected</b> → <i>{err}</i>\n\n{text}", markup
         )
         return
-    await _stage_done(query, staged, manifest, missing, "github", spec)
+    await _offer(query, stage, found, "github", spec, spec)
 
 
 @new_task
