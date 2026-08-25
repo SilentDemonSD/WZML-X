@@ -470,17 +470,33 @@ async def get_buttons(key=None, edit_type=None, edit_mode=False):
         buttons.data_button(
             "Close", "botset close", position="footer", style=ButtonStyle.DANGER
         )
-        active = [(k, Config.get(k)) for k in LIMIT_VARS if Config.get(k)]
-        txt = "\n┠ ".join(
-            f"<b>{k.removesuffix('_LIMIT').replace('_', ' ')} :</b> <code>{v}{LIMIT_UNITS.get(k, ' GB')}</code>"
-            for k, v in active
+        rows = [
+            (
+                k.removesuffix("_LIMIT").replace("_", " "),
+                f"{v}{LIMIT_UNITS.get(k, ' GB')}" if (v := Config.get(k)) else "∞",
+            )
+            for k in LIMIT_VARS
+        ]
+        active = sum(1 for k in LIMIT_VARS if Config.get(k))
+        nw = max(len(n) for n, _ in rows)
+        vw = max(len(v) for _, v in rows)
+        table = "\n".join(f"{n.ljust(nw)}  {v.rjust(vw)}" for n, v in rows)
+        head = f"{'LIMIT'.ljust(nw)}  {'VALUE'.rjust(vw)}"
+        note = (
+            "Tap any button below to change that limit.\n"
+            "Send <code>0</code> to remove a limit and make it unlimited.\n"
+            "Sizes are in GB unless the table shows another unit.\n"
+            "<code>∞</code> means no limit is applied."
         )
         msg = f"""⌬ <b>Limit Settings</b>
-┠ <b>Active :</b> <code>{len(active)}</code> / <code>{len(LIMIT_VARS)}</code>
-┃
-┠ {txt if active else "<i>No limits set, everything unlimited.</i>"}
-┃
-┖ <b>Note:</b> Unlisted limits are unlimited. Tap any button to set a value, <code>0</code> to remove it."""
+┖ <b>Active :</b> <code>{active}</code> / <code>{len(rows)}</code>
+
+<code>{head}
+{"─" * (nw + vw + 2)}
+{table}</code>
+
+<blockquote expandable><b>Note</b>
+{note}</blockquote>"""
     elif key == "private":
         if edit_mode:
             buttons.data_button("Stop Invoke File", "botset private stop", "header")
