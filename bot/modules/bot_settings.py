@@ -469,7 +469,9 @@ async def get_buttons(key=None, edit_type=None, edit_mode=False):
         msg = f"⌬ <b><u>Config Variables</u></b> | <b><u>Page: {int(start / 10) + 1}</b></u>"
     elif key == "setonoff":
         buttons.data_button("On/Off Settings", "botset settoggle")
-        buttons.data_button("Limit Settings", "botset setlimit")
+        buttons.data_button(
+            "Limit Settings", "botset setlimit", style=ButtonStyle.PRIMARY
+        )
         buttons.data_button("Back", "botset back", position="footer")
         buttons.data_button(
             "Close", "botset close", position="footer", style=ButtonStyle.DANGER
@@ -508,7 +510,7 @@ async def get_buttons(key=None, edit_type=None, edit_mode=False):
         )
         for x in range(0, len(LIMIT_VARS), 8):
             buttons.data_button(
-                f"{int(x / 8) + 1}", f"botset start setlimit {x}", position="footer"
+                f"{int(x / 8) + 1}", f"botset start setlimit {x}", position="l_body"
             )
         rows = [
             [
@@ -531,8 +533,6 @@ async def get_buttons(key=None, edit_type=None, edit_mode=False):
                 InputRichBlockParagraph(
                     text=rich_text(
                         ("m", f" {len(rows)} of {len(LIMIT_VARS)} active "),
-                        "  ",
-                        ("i", f"page {int(start / 8) + 1}"),
                     )
                 ),
                 InputRichBlockTable(
@@ -587,7 +587,11 @@ async def get_buttons(key=None, edit_type=None, edit_mode=False):
                     ],
                 ),
                 InputRichBlockFooter(
-                    text=rich_text(("i", "WZML-X"), " · ", ("i", "Bot Settings"))
+                    text=rich_text(
+                        ("i", "Page "),
+                        ("b", f"{int(start / 8) + 1}"),
+                        ("i", f" of {-(-len(LIMIT_VARS) // 8)}"),
+                    )
                 ),
             ]
         )
@@ -716,7 +720,7 @@ async def get_buttons(key=None, edit_type=None, edit_mode=False):
     else:
         msg = "Unknown option"
 
-    return msg, buttons.build_menu(1 if key is None else 2)
+    return msg, buttons.build_menu(1 if key is None else 2, lb_cols=8)
 
 
 async def update_buttons(message, key=None, edit_type=None, edit_mode=False):
