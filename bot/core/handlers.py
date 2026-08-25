@@ -82,6 +82,18 @@ async def add_handlers():
     )
     TgClient.bot.add_handler(
         MessageHandler(
+            memory_stats,
+            filters=command(BotCommands.MemoryCommand, case_sensitive=True)
+            & CustomFilters.sudo,
+        )
+    )
+    TgClient.bot.add_handler(
+        CallbackQueryHandler(
+            memory_callback, filters=regex("^mem") & CustomFilters.sudo
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
             cancel,
             filters=regex(rf"^/{BotCommands.CancelTaskCommand[1]}?(?:_\w+).*$")
             & CustomFilters.authorized,

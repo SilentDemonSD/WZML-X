@@ -421,6 +421,7 @@ def get_bot_commands():
         "Help": "Detailed help usage of the WZ Bot",
         "BotSet": "[SUDO] Bot Management Settings",
         "Log": "[SUDO] Get Bot Logs for Internal Working",
+        "Memory": "[SUDO] Memory usage, caches and an allocation profiler",
         "Restart": "[SUDO] Reboot bot",
         "RestartSessions": "[SUDO] Reboot User Sessions",
     }

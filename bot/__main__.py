@@ -167,6 +167,10 @@ plugin_manager.bot = TgClient.bot
 register_plugin_commands()
 bot_loop.run_until_complete(plugin_manager.boot())
 
+from .helper.ext_utils.mem_guard import monitor as memory_monitor
+
+memory_monitor.start()
+
 from pyrogram.filters import regex
 from pyrogram.handlers import CallbackQueryHandler
 

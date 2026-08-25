@@ -1,4 +1,5 @@
 from .bot_settings import send_bot_settings, edit_bot_settings
+from .memory import memory_stats, memory_callback
 from .cancel_task import cancel, cancel_multi, cancel_all_buttons, cancel_all_update
 from .chat_permission import (
     authorize,
@@ -49,6 +50,8 @@ from .users_settings import get_users_settings, edit_user_settings, send_user_se
 from .ytdlp import ytdl, ytdl_leech
 
 __all__ = [
+    "memory_stats",
+    "memory_callback",
     "send_bot_settings",
     "edit_bot_settings",
     "cancel",

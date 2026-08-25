@@ -58,6 +58,10 @@ DISABLE_PLUGINS = False
 # Plugins
 PLUGIN_INDEXES = []
 
+# Memory
+MEM_BUDGET = 0
+MEM_DEEP_STATS = False
+
 # Telegraph
 AUTHOR_NAME = "WZML-X"
 AUTHOR_URL = "https://t.me/WZML_X"

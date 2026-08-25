@@ -55,6 +55,7 @@ class BotCommands:
         "CategorySelect": ["category", "ctsel"],
         "GDClean": ["gdclean", "gdc"],
         "Plugins": "plugins",
+        "Memory": ["memory", "mem"],
     }
 
     @classmethod

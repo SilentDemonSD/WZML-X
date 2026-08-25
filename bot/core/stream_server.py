@@ -18,6 +18,7 @@ from aiohttp import web
 from .. import LOGGER, bot_loop, service_cores
 from .config_manager import BinConfig
 from ..helper.ext_utils.db_handler import database
+from ..helper.ext_utils.mem_guard import register_cache
 from ..helper.telegram_helper.tg_stream import (
     FULL,
     NoClientAvailable,
@@ -50,6 +51,37 @@ _VTT_TOTAL_MAX = 48 * 1024 * 1024
 _VTT_ENTRY_MAX = 6 * 1024 * 1024
 _vtt_cache = OrderedDict()
 _vtt_bytes = 0
+
+
+def _cache_bytes():
+    total = _vtt_bytes
+    for value in _poster_cache.values():
+        body = value[0] if isinstance(value, tuple) else value
+        total += len(body) if isinstance(body, (bytes, bytearray)) else 0
+    return total
+
+
+def _cache_trim(aggressive=False):
+    global _vtt_bytes
+    if aggressive:
+        _vtt_cache.clear()
+        _vtt_bytes = 0
+        _poster_cache.clear()
+        _list_cache.clear()
+        _probe_cache.clear()
+        return
+    keep = max(1, len(_vtt_cache) // 2)
+    while len(_vtt_cache) > keep:
+        _, dropped = _vtt_cache.popitem(last=False)
+        body = dropped[0] if isinstance(dropped, tuple) else dropped
+        _vtt_bytes -= len(body) if isinstance(body, (bytes, bytearray)) else 0
+    _vtt_bytes = max(0, _vtt_bytes)
+    keep = max(1, len(_poster_cache) // 2)
+    while len(_poster_cache) > keep:
+        _poster_cache.popitem(last=False)
+
+
+register_cache("stream", _cache_bytes, _cache_trim)
 _vtt_inflight = {}
 _LANG = {
     "eng": "English", "jpn": "Japanese", "spa": "Spanish", "fre": "French",
