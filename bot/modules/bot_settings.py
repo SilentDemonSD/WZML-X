@@ -302,6 +302,27 @@ ONOFF_VARS = [
     "DISABLE_YTDLP",
 ]
 
+LIMIT_VARS = [
+    "DIRECT_LIMIT",
+    "MEGA_LIMIT",
+    "TORRENT_LIMIT",
+    "GD_DL_LIMIT",
+    "RC_DL_LIMIT",
+    "CLONE_LIMIT",
+    "JD_LIMIT",
+    "NZB_LIMIT",
+    "YTDLP_LIMIT",
+    "PLAYLIST_LIMIT",
+    "LEECH_LIMIT",
+    "EXTRACT_LIMIT",
+    "ARCHIVE_LIMIT",
+    "STORAGE_LIMIT",
+    "CPU_LIMIT",
+    "RSS_SIZE_LIMIT",
+    "SEARCH_LIMIT",
+    "STATUS_LIMIT",
+]
+
 
 async def get_buttons(key=None, edit_type=None, edit_mode=False):
     buttons = ButtonMaker()
@@ -359,7 +380,11 @@ async def get_buttons(key=None, edit_type=None, edit_mode=False):
             buttons.data_button(
                 "View Value", f"botset showvar {key}", position="header"
             )
-            buttons.data_button("Back", "botset back var", position="footer")
+            buttons.data_button(
+                "Back",
+                f"botset back {'setlimit' if key in LIMIT_VARS else 'var'}",
+                position="footer",
+            )
             if key not in BOOL_VARS:
                 if not edit_mode:
                     buttons.data_button(
@@ -386,7 +411,9 @@ async def get_buttons(key=None, edit_type=None, edit_mode=False):
                 msg += "<i>Send a valid value for the above Var.</i>\n┖ <b>Time Left :</b> <code>60 sec</code>"
     elif key == "var":
         conf_dict = {
-            k: v for k, v in Config.get_all().items() if not k.startswith("DISABLE_")
+            k: v
+            for k, v in Config.get_all().items()
+            if not k.startswith("DISABLE_") and k not in LIMIT_VARS
         }
         all_keys = list(conf_dict.keys())
         for k in all_keys[start : 10 + start]:
@@ -399,6 +426,14 @@ async def get_buttons(key=None, edit_type=None, edit_mode=False):
             )
         msg = f"⌬ <b><u>Config Variables</u></b> | <b><u>Page: {int(start / 10) + 1}</b></u>"
     elif key == "setonoff":
+        buttons.data_button("On/Off Settings", "botset settoggle")
+        buttons.data_button("Limit Settings", "botset setlimit")
+        buttons.data_button("Back", "botset back", position="footer")
+        buttons.data_button(
+            "Close", "botset close", position="footer", style=ButtonStyle.DANGER
+        )
+        msg = "⌬ <b><u>Module Settings</u></b>"
+    elif key == "settoggle":
         for k in ONOFF_VARS:
             val = Config.get(k)
             label = k.removeprefix("DISABLE_")
@@ -406,11 +441,19 @@ async def get_buttons(key=None, edit_type=None, edit_mode=False):
                 buttons.data_button(f"✓ {label}", f"botset toggleonoff {k} on")
             else:
                 buttons.data_button(label, f"botset toggleonoff {k} off")
-        buttons.data_button("Back", "botset back", position="footer")
+        buttons.data_button("Back", "botset back setonoff", position="footer")
         buttons.data_button(
             "Close", "botset close", position="footer", style=ButtonStyle.DANGER
         )
-        msg = "⌬ <b><u>Module Settings</u></b>"
+        msg = "⌬ <b><u>On/Off Settings</u></b>"
+    elif key == "setlimit":
+        for k in LIMIT_VARS:
+            buttons.data_button(k.removesuffix("_LIMIT"), f"botset editvar {k}")
+        buttons.data_button("Back", "botset back setonoff", position="footer")
+        buttons.data_button(
+            "Close", "botset close", position="footer", style=ButtonStyle.DANGER
+        )
+        msg = "⌬ <b><u>Limit Settings</u></b>\n\n<i>Sizes in GB. 0 = unlimited.</i>"
     elif key == "private":
         if edit_mode:
             buttons.data_button("Stop Invoke File", "botset private stop", "header")
@@ -716,7 +759,7 @@ async def toggle_onoff_var(_, query, pre_message, key, value):
     Config.set(key, bool_value)
     await database.update_config({key: bool_value})
     await _handle_service_toggle(key, bool_value)
-    await update_buttons(pre_message, "setonoff")
+    await update_buttons(pre_message, "settoggle")
 
 
 async def _handle_service_toggle(key, disabled):
@@ -1133,7 +1176,16 @@ async def edit_bot_settings(client, query):
             show_alert=True,
         )
         await sync_jdownloader()
-    elif data[1] in ["var", "aria", "qbit", "nzb", "nzbserver", "setonoff"] or data[
+    elif data[1] in [
+        "var",
+        "aria",
+        "qbit",
+        "nzb",
+        "nzbserver",
+        "setonoff",
+        "settoggle",
+        "setlimit",
+    ] or data[
         1
     ].startswith("nzbser"):
         if data[1] == "nzbserver":
