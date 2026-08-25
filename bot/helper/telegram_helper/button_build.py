@@ -1,13 +1,8 @@
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from pyrogram.enums import ButtonStyle
 
-from ...core.config_manager import Config
-
-
 def _btn_style(style=None):
-    if Config.COLORED_BTNS and style:
-        return style
-    return ButtonStyle.DEFAULT
+    return style or ButtonStyle.DEFAULT
 
 
 class ButtonMaker:

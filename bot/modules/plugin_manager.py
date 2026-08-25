@@ -114,13 +114,12 @@ async def build_menu(user_id, view="main", arg=""):
         buttons.data_button(
             "Close", f"plugins {user_id} close", position="footer", style=ButtonStyle.DANGER
         )
-        rows = [
-            ("Installed", str(total)),
-            ("Enabled", str(on)),
-            ("Disabled", str(len(records) - on)),
-            ("Not Loaded", str(len(idle))),
-            ("Folder", f"<code>{manager.plugins_dir}</code>"),
-        ]
+        rows = [("Installed", str(total)), ("Enabled", str(on))]
+        if len(records) - on:
+            rows.append(("Disabled", str(len(records) - on)))
+        if idle:
+            rows.append(("Not Loaded", str(len(idle))))
+        rows.append(("Folder", f"<code>{manager.plugins_dir}</code>"))
         note = ""
         if Config.DISABLE_PLUGINS:
             note = "Plugins are switched off in Module Settings."
@@ -286,19 +285,22 @@ async def build_menu(user_id, view="main", arg=""):
             "Close", f"plugins {user_id} close", position="footer", style=ButtonStyle.DANGER
         )
 
-        rows = [
-            ("Listed", str(total)),
-            ("Official", f"<code>{official_index_url()}</code>"),
-            ("Sources", str(len(installer.index_urls()))),
-        ]
+        installed = len([e for e in entries if manager.get(e["id"])])
+        extra = len(installer.index_urls()) - 1
+        rows = [("Available", str(total))]
+        if installed:
+            rows.append(("Already Installed", f"{installed} of {total}"))
+        if extra:
+            rows.append(("Sources", f"official + {extra} custom"))
+        rows.append(("Official", f"<code>{official_index_url()}</code>"))
         for url, why in getattr(installer, "problems", [])[:3]:
             rows.append((url.rsplit("/", 3)[-1] or "index", f"<i>{why}</i>"))
-        note = (
-            ""
-            if total
-            else "Add your own with PLUGIN_INDEXES in bot settings. It must be a "
-            "JSON file holding a plugins list."
-        )
+        note = ""
+        if not total:
+            note = (
+                "Nothing to install from here yet. Use Install to add one from a "
+                "zip or a GitHub repo, or point PLUGIN_INDEXES at your own index."
+            )
         return _wz("Plugin Marketplace", rows, note), buttons.build_menu(
             1, fb_cols=8, lb_cols=1
         )
@@ -697,30 +699,34 @@ async def edit_plugins_menu(client, query):
         return await edit_message(query.message, text, markup)
 
     if action == "rescan":
-        await query.answer("Rescanning the folder…")
         found, fresh = await manager.rescan()
+        if fresh:
+            said = f"Loaded {', '.join(fresh)}."
+        elif found:
+            said = f"{len(found)} plugin folder(s), all already loaded."
+        else:
+            said = f"No plugin folders in {manager.plugins_dir}."
+        await query.answer(said, show_alert=True)
         text, markup = await build_menu(user_id, "list")
-        head = f"<b>Scan</b> → {len(found)} folder(s)"
-        head += f", {len(fresh)} newly loaded" if fresh else ", nothing new"
-        return await edit_message(query.message, f"{head}\n\n{text}", markup)
+        return await edit_message(query.message, text, markup)
 
     if action in ("on", "off"):
-        await query.answer("Working…")
         if action == "on":
             ok, err = await manager.enable(arg)
+            said = f"{arg} enabled."
         else:
             ok, err = await manager.disable(arg)
+            said = f"{arg} disabled."
+        await query.answer(said if ok else (err or "Failed."), show_alert=not ok)
         text, markup = await build_menu(user_id, "view" if ok else "list", arg)
-        if not ok:
-            text = f"<b>Failed</b> → <i>{err}</i>\n\n{text}"
         return await edit_message(query.message, text, markup)
 
     if action == "rm":
-        await query.answer("Removing…")
         ok, err = await installer.uninstall(arg)
+        await query.answer(
+            f"Removed {arg}." if ok else (err or "Failed."), show_alert=True
+        )
         text, markup = await build_menu(user_id, "list")
-        if not ok:
-            text = f"<b>Uninstall failed</b> → <i>{err}</i>\n\n{text}"
         return await edit_message(query.message, text, markup)
 
     if action == "dup":

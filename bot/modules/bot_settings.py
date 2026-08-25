@@ -83,7 +83,6 @@ DEFAULT_VALUES = {
 BOOL_VARS = [
     "AS_DOCUMENT",
     "BOT_PM",
-    "COLORED_BTNS",
     "DELETE_LINKS",
     "DRIVE_CATEGORY_MODE",
     "DISABLE_BULK",
@@ -125,7 +124,6 @@ DEFAULT_DESP = {
     "BOT_MAX_TASKS": "Max tasks (including queued) the bot runs in parallel. 0 = unlimited.",
     "BOT_PM": "Send files/links to bot owner PM. Default: False.",
     "CMD_SUFFIX": "Text appended to all bot commands. Useful for running multiple bot instances.",
-    "COLORED_BTNS": "Use colored inline buttons. Default: False.",
     "DEFAULT_LANG": "Default bot language code. Default: en.",
     "DATABASE_URL": "MongoDB connection string for persistent storage.",
     "DEFAULT_UPLOAD": "Default upload destination: gd (Google Drive) or rc (rclone). Default: rc.",

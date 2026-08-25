@@ -318,7 +318,12 @@ class PluginInstaller:
                     if not isinstance(item, dict):
                         continue
                     name = str(item.get("id") or item.get("name") or "").strip()
-                    if not name or name in seen or not item.get("url"):
+                    if not name or name in seen:
+                        continue
+                    if not (item.get("url") or item.get("repo")):
+                        LOGGER.warning(
+                            f"plugin index {url}: {name} has neither url nor repo"
+                        )
                         continue
                     seen.add(name)
                     item["id"] = name
