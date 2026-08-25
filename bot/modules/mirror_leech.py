@@ -683,8 +683,13 @@ async def _seedr_guard(message, check_leech=False):
         return False
     email, password = _seedr_creds(message.from_user.id)
     if not email or not password:
+        uset_cmd = (
+            f"/{BotCommands.UserSetCommand[0]}"
+            if isinstance(BotCommands.UserSetCommand, list)
+            else f"/{BotCommands.UserSetCommand}"
+        )
         await message.reply(
-            "Seedr credentials are not configured! Please set SEEDR_EMAIL and SEEDR_PASSWORD in bot config."
+            f"Seedr credentials are not configured! Please set SEEDR_EMAIL and SEEDR_PASSWORD in {uset_cmd} or bot config."
         )
         return False
     return True
