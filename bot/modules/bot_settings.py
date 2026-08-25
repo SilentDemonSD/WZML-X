@@ -323,6 +323,13 @@ LIMIT_VARS = [
     "STATUS_LIMIT",
 ]
 
+LIMIT_UNITS = {
+    "CPU_LIMIT": "%",
+    "PLAYLIST_LIMIT": " items",
+    "SEARCH_LIMIT": " results",
+    "STATUS_LIMIT": " msgs",
+}
+
 
 async def get_buttons(key=None, edit_type=None, edit_mode=False):
     buttons = ButtonMaker()
@@ -456,12 +463,24 @@ async def get_buttons(key=None, edit_type=None, edit_mode=False):
         msg = "⌬ <b><u>On/Off Settings</u></b>"
     elif key == "setlimit":
         for k in LIMIT_VARS:
-            buttons.data_button(k.removesuffix("_LIMIT"), f"botset editvar {k}")
+            buttons.data_button(
+                k.removesuffix("_LIMIT").replace("_", " "), f"botset editvar {k}"
+            )
         buttons.data_button("Back", "botset back setonoff", position="footer")
         buttons.data_button(
             "Close", "botset close", position="footer", style=ButtonStyle.DANGER
         )
-        msg = "⌬ <b><u>Limit Settings</u></b>\n\n<i>Sizes in GB. 0 = unlimited.</i>"
+        active = [(k, Config.get(k)) for k in LIMIT_VARS if Config.get(k)]
+        txt = "\n┠ ".join(
+            f"<b>{k.removesuffix('_LIMIT').replace('_', ' ')} :</b> <code>{v}{LIMIT_UNITS.get(k, ' GB')}</code>"
+            for k, v in active
+        )
+        msg = f"""⌬ <b>Limit Settings</b>
+┠ <b>Active :</b> <code>{len(active)}</code> / <code>{len(LIMIT_VARS)}</code>
+┃
+┠ {txt if active else "<i>No limits set, everything unlimited.</i>"}
+┃
+┖ <b>Note:</b> Unlisted limits are unlimited. Tap any button to set a value, <code>0</code> to remove it."""
     elif key == "private":
         if edit_mode:
             buttons.data_button("Stop Invoke File", "botset private stop", "header")
