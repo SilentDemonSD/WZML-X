@@ -502,7 +502,7 @@ async def get_buttons(key=None, edit_type=None, edit_mode=False):
             buttons.data_button(
                 k.removesuffix("_LIMIT").replace("_", " "),
                 f"botset editvar {k}",
-                style=ButtonStyle.PRIMARY if Config.get(k) else None,
+                style=ButtonStyle.SUCCESS if Config.get(k) else None,
             )
         buttons.data_button("Back", "botset back setonoff", position="footer")
         buttons.data_button(
