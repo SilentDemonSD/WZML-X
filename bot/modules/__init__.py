@@ -32,6 +32,9 @@ from .mirror_leech import (
     jd_mirror,
     nzb_leech,
     nzb_mirror,
+    seedr,
+    seedr_leech,
+    seedr_link,
     uphoster,
 )
 from .restart import (
@@ -88,6 +91,9 @@ __all__ = [
     "jd_mirror",
     "nzb_leech",
     "nzb_mirror",
+    "seedr",
+    "seedr_leech",
+    "seedr_link",
     "restart_bot",
     "restart_notification",
     "confirm_restart",

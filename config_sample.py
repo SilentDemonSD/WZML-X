@@ -49,6 +49,7 @@ DISABLE_SEED = False
 DISABLE_FF_MODE = False
 DISABLE_JD = False
 DISABLE_NZB = False
+DISABLE_SEEDR = False
 DISABLE_RSS = False
 DISABLE_SEARCH = False
 DISABLE_STREAM = False
@@ -75,6 +76,7 @@ RC_DL_LIMIT = 0
 CLONE_LIMIT = 0
 JD_LIMIT = 0
 NZB_LIMIT = 0
+SEEDR_LIMIT = 0
 YTDLP_LIMIT = 0
 PLAYLIST_LIMIT = 0
 LEECH_LIMIT = 0
@@ -231,3 +233,8 @@ SEARCH_PLUGINS = [
     "https://raw.githubusercontent.com/msagca/qbittorrent_plugins/main/uniondht.py",
     "https://raw.githubusercontent.com/khensolomon/leyts/master/yts.py",
 ]
+
+# Seedr (magnet mirroring via seedr.cc)
+SEEDR_EMAIL = ""
+SEEDR_PASSWORD = ""
+SEEDR_DELETE_FOLDER = False

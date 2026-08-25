@@ -1,5 +1,7 @@
 from ast import literal_eval
+from asyncio import sleep
 from base64 import b64encode
+from html import escape
 from os import path as ospath
 from re import match as re_match
 
@@ -7,13 +9,16 @@ from aiofiles import open as aiopen
 from aiofiles.os import path as aiopath
 from bot.core.config_manager import Config
 
-from .. import DOWNLOAD_DIR, LOGGER, bot_loop, task_dict_lock
+from .. import DOWNLOAD_DIR, LOGGER, bot_loop, task_dict_lock, user_data
+from ..core.seedr_client import SeedrClient
 from ..helper.ext_utils.bot_utils import (
     COMMAND_USAGE,
     arg_parser,
     get_content_type,
+    new_task,
     sync_to_async,
 )
+from ..helper.ext_utils.status_utils import get_readable_file_size
 from ..helper.ext_utils.exceptions import DirectDownloadLinkException
 from ..helper.ext_utils.links_utils import (
     is_gdrive_id,
@@ -48,12 +53,19 @@ from ..helper.mirror_leech_utils.download_utils.qbit_download import add_qb_torr
 from ..helper.mirror_leech_utils.download_utils.rclone_download import (
     add_rclone_download,
 )
+from ..helper.mirror_leech_utils.download_utils.seedr_download import (
+    _build_contents,
+    add_seedr_download,
+)
 from ..helper.mirror_leech_utils.download_utils.telegram_download import (
     TelegramDownloadHelper,
 )
+from ..helper.telegram_helper.button_build import ButtonMaker
+from ..helper.telegram_helper.bot_commands import BotCommands
 from ..helper.telegram_helper.message_utils import (
     auto_delete_message,
     delete_links,
+    edit_message,
     get_tg_link_message,
     send_message,
 )
@@ -68,6 +80,7 @@ class Mirror(TaskListener):
         is_leech=False,
         is_jd=False,
         is_nzb=False,
+        is_seedr=False,
         is_uphoster=False,
         same_dir=None,
         bulk=None,
@@ -90,6 +103,7 @@ class Mirror(TaskListener):
         self.is_leech = is_leech
         self.is_jd = is_jd
         self.is_nzb = is_nzb
+        self.is_seedr = is_seedr
         self.is_uphoster = is_uphoster
 
     async def new_event(self):
@@ -333,6 +347,7 @@ class Mirror(TaskListener):
                 self.is_leech,
                 self.is_jd,
                 self.is_nzb,
+                self.is_seedr,
                 self.is_uphoster,
                 self.same_dir,
                 self.bulk,
@@ -444,6 +459,7 @@ class Mirror(TaskListener):
             isinstance(self.link, str)
             and not self.is_jd
             and not self.is_nzb
+            and not self.is_seedr
             and not self.is_qbit
             and not is_magnet(self.link)
             and not is_rclone_path(self.link)
@@ -509,6 +525,8 @@ class Mirror(TaskListener):
             await add_qb_torrent(self, path, ratio, seed_time)
         elif self.is_nzb:
             await add_nzb(self, path)
+        elif self.is_seedr:
+            await add_seedr_download(self, path)
         elif is_rclone_path(self.link):
             await add_rclone_download(self, f"{path}/")
         elif is_gdrive_link(self.link) or is_gdrive_id(self.link):
@@ -604,3 +622,213 @@ async def uphoster(client, message):
     if nzb_id:
         mirror_task.nzb_id = nzb_id
     bot_loop.create_task(mirror_task.new_event())
+
+
+async def clear_seedr_account(email, password):
+    client = SeedrClient(email, password)
+    await client.login()
+    res = await client.list_contents("0")
+    if not isinstance(res, dict):
+        return 0, 0
+    t_count = 0
+    f_count = 0
+    for t in res.get("torrents", []):
+        t_id = t.get("id") or t.get("user_torrent_id")
+        if t_id:
+            try:
+                await client.delete("torrent", t_id)
+                t_count += 1
+            except Exception:
+                pass
+    for f in res.get("folders", []):
+        f_id = f.get("id")
+        if f_id:
+            try:
+                await client.delete("folder", f_id)
+                f_count += 1
+            except Exception:
+                pass
+    return t_count, f_count
+
+
+def _seedr_creds(user_id):
+    user_dict = user_data.get(user_id, {})
+    email = user_dict.get("SEEDR_EMAIL") or Config.SEEDR_EMAIL
+    password = user_dict.get("SEEDR_PASSWORD") or Config.SEEDR_PASSWORD
+    return email, password
+
+
+@new_task
+async def seedr_clear(client, message):
+    email, password = _seedr_creds(message.from_user.id)
+    msg = await send_message(message, "<i>Clearing Seedr Cloud Storage...</i>")
+    try:
+        t_count, f_count = await clear_seedr_account(email, password)
+        await edit_message(
+            msg,
+            f"<b>Seedr Storage Cleared!</b>\nRemoved <b>{t_count}</b> active torrent(s) and <b>{f_count}</b> folder(s).",
+        )
+    except Exception as e:
+        await edit_message(
+            msg, f"<b>Failed to clear Seedr account:</b> {escape(str(e))}"
+        )
+
+
+async def _seedr_guard(message, check_leech=False):
+    if Config.DISABLE_SEEDR:
+        await message.reply("Seedr is currently disabled by the Bot Owner.")
+        return False
+    if check_leech and Config.DISABLE_LEECH:
+        await message.reply("The Leech command is currently disabled.")
+        return False
+    email, password = _seedr_creds(message.from_user.id)
+    if not email or not password:
+        await message.reply(
+            "Seedr credentials are not configured! Please set SEEDR_EMAIL and SEEDR_PASSWORD in bot config."
+        )
+        return False
+    return True
+
+
+async def seedr(client, message):
+    if not await _seedr_guard(message):
+        return
+    args = message.text.split(maxsplit=1)
+    if len(args) > 1 and args[1].strip().lower() in (
+        "clear",
+        "clean",
+        "delete",
+        "-clear",
+        "-delete",
+    ):
+        await seedr_clear(client, message)
+        return
+    bot_loop.create_task(Mirror(client, message, is_seedr=True).new_event())
+
+
+async def seedr_leech(client, message):
+    if not await _seedr_guard(message, check_leech=True):
+        return
+    bot_loop.create_task(
+        Mirror(client, message, is_leech=True, is_seedr=True).new_event()
+    )
+
+
+@new_task
+async def seedr_link(client, message):
+    if not await _seedr_guard(message):
+        return
+    email, password = _seedr_creds(message.from_user.id)
+    seedrlink_cmd = (
+        f"/{BotCommands.SeedrLinkCommand[0]}"
+        if isinstance(BotCommands.SeedrLinkCommand, list)
+        else f"/{BotCommands.SeedrLinkCommand}"
+    )
+
+    link = ""
+    args = message.text.split(maxsplit=1)
+    if len(args) > 1:
+        link = args[1].strip()
+    elif reply_to := message.reply_to_message:
+        if reply_to.text:
+            link = reply_to.text.split("\n", 1)[0].strip()
+
+    if not link or not (is_magnet(link) or is_url(link) or link.endswith(".torrent")):
+        await message.reply(
+            f"Please provide a valid magnet link or .torrent URL!\n\n<b>Usage:</b> <code>{seedrlink_cmd} magnet:...</code> or <code>{seedrlink_cmd} https://.../file.torrent</code>"
+        )
+        return
+
+    msg = await send_message(message, "<i>Processing Seedr Magnet Link...</i>")
+    seedr_client = SeedrClient(email, password)
+
+    try:
+        await seedr_client.login()
+        log_link = f"{link[:60]}..." if is_magnet(link) else link
+        LOGGER.info(f"SeedrLink: Adding magnet: {log_link}")
+        result = await seedr_client.add_torrent(link)
+        torrent_id = result.get("torrent_id") or result.get("user_torrent_id")
+        title = result.get("title") or ""
+
+        if not torrent_id:
+            raise ValueError("Failed to obtain Seedr torrent ID!")
+
+        if title:
+            await edit_message(
+                msg,
+                f"<b>Added to Seedr Cloud!</b>\n\n<b>Title:</b> <code>{escape(title)}</code>\n<i>Fetching cloud progress...</i>",
+            )
+
+        folder_id = None
+        not_found_count = 0
+        last_progress = ""
+
+        while True:
+            await sleep(3)
+            res = await seedr_client.list_contents("0")
+            torrent = next(
+                (
+                    t
+                    for t in res.get("torrents", [])
+                    if t.get("id") == torrent_id
+                    or t.get("user_torrent_id") == torrent_id
+                ),
+                None,
+            )
+            folder = next(
+                (f for f in res.get("folders", []) if title and f.get("name") == title),
+                None,
+            )
+
+            if torrent is not None:
+                not_found_count = 0
+                prog = float(torrent.get("progress", 0) or 0)
+                name_str = torrent.get("name") or title or "Torrent"
+                prog_str = f"<b>Seedr Cloud Download...</b>\n\n<b>Name:</b> <code>{escape(name_str)}</code>\n<b>Progress:</b> <code>{round(prog, 2)}%</code>"
+                if prog_str != last_progress:
+                    last_progress = prog_str
+                    await edit_message(msg, prog_str)
+
+            if folder is not None:
+                folder_contents = await seedr_client.list_contents(folder["id"])
+                if folder_contents.get("files"):
+                    folder_id = folder["id"]
+                    break
+            else:
+                not_found_count += 1
+                if not_found_count >= 36:
+                    raise ValueError("Torrent not found on Seedr account!")
+
+        await edit_message(msg, "<i>Generating Seedr Direct Download Links...</i>")
+        contents, total_size = await _build_contents(seedr_client, folder_id)
+        if not contents:
+            raise ValueError("No downloadable files found in Seedr folder!")
+
+        buttons = ButtonMaker()
+        text_lines = [
+            "<b><u>Seedr Direct Links:</u></b>",
+            f"<b>Title:</b> <code>{escape(title or contents[0]['filename'])}</code>",
+            f"<b>Total Size:</b> <code>{get_readable_file_size(total_size)}</code>\n",
+        ]
+
+        for idx, item in enumerate(contents, start=1):
+            fname = item["filename"]
+            furl = item["url"]
+            fsize = get_readable_file_size(item["size"])
+            text_lines.append(
+                f"{idx}. <a href='{furl}'>{escape(fname)}</a> (<code>{fsize}</code>)"
+            )
+            buttons.url_button(f"Download #{idx}", furl)
+
+        out_text = "\n".join(text_lines)
+        if len(out_text) > 4000:
+            out_text = (
+                out_text[:3900]
+                + "\n\n<i>(Links truncated due to length. Use buttons below)</i>"
+            )
+
+        await edit_message(msg, out_text, buttons.build_menu(2))
+
+    except Exception as e:
+        LOGGER.error(f"SeedrLink error: {e}")
+        await edit_message(msg, f"<b>Seedr Link Failed:</b> {escape(str(e))}")

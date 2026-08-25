@@ -470,6 +470,8 @@ def get_help_string():
             help_lines.append(f"{cmd_str}: Start Mirroring to cloud using JDownloader.")
         elif key == "NzbMirror":
             help_lines.append(f"{cmd_str}: Start Mirroring to cloud using Sabnzbd.")
+        elif key == "SeedrMirror":
+            help_lines.append(f"{cmd_str}: Start Mirroring to cloud using Seedr.")
         elif key == "Ytdl":
             help_lines.append(f"{cmd_str}: Mirror yt-dlp supported link.")
         elif key == "UpHoster":
@@ -482,6 +484,10 @@ def get_help_string():
             help_lines.append(f"{cmd_str}: Start leeching using JDownloader.")
         elif key == "NzbLeech":
             help_lines.append(f"{cmd_str}: Start leeching using Sabnzbd.")
+        elif key == "SeedrLeech":
+            help_lines.append(f"{cmd_str}: Start leeching using Seedr.")
+        elif key == "SeedrLink":
+            help_lines.append(f"{cmd_str}: Get direct Seedr HTTP download links.")
         elif key == "YtdlLeech":
             help_lines.append(f"{cmd_str}: Leech yt-dlp supported link.")
         elif key == "Clone":
