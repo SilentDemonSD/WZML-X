@@ -3,9 +3,12 @@ from asyncio import (
     sleep,
 )
 from ast import literal_eval
+from pyrogram import raw
 from pyrogram.enums import ButtonStyle
 from pyrogram.types import (
     InputRichBlockDetails,
+    InputRichBlockDivider,
+    InputRichBlockFooter,
     InputRichBlockList,
     InputRichBlockListItem,
     InputRichBlockParagraph,
@@ -340,6 +343,28 @@ LIMIT_UNITS = {
     "STATUS_LIMIT": " msgs",
 }
 
+RICH_STYLES = {
+    "b": raw.types.TextBold,
+    "i": raw.types.TextItalic,
+    "u": raw.types.TextUnderline,
+    "c": raw.types.TextFixed,
+    "m": raw.types.TextMarked,
+    "s": raw.types.TextStrike,
+}
+
+
+def rich_text(*parts):
+    texts = []
+    for part in parts:
+        if isinstance(part, str):
+            texts.append(raw.types.TextPlain(text=part))
+        else:
+            style, value = part
+            texts.append(
+                RICH_STYLES[style](text=raw.types.TextPlain(text=value))
+            )
+    return raw.types.TextConcat(texts=texts)
+
 
 async def get_buttons(key=None, edit_type=None, edit_mode=False):
     buttons = ButtonMaker()
@@ -482,8 +507,10 @@ async def get_buttons(key=None, edit_type=None, edit_mode=False):
         )
         rows = [
             [
-                InputRichBlockTableCell("Limit", header=True),
-                InputRichBlockTableCell("Value", header=True, align_right=True),
+                InputRichBlockTableCell(rich_text(("b", "Limit")), header=True),
+                InputRichBlockTableCell(
+                    rich_text(("b", "Value")), header=True, align_right=True
+                ),
             ]
         ]
         active = 0
@@ -491,46 +518,78 @@ async def get_buttons(key=None, edit_type=None, edit_mode=False):
             v = Config.get(k)
             if v:
                 active += 1
+                value = rich_text(("c", f"{v}{LIMIT_UNITS.get(k, ' GB')}"))
+            else:
+                value = rich_text(("i", "unlimited"))
             rows.append(
                 [
-                    InputRichBlockTableCell(k.removesuffix("_LIMIT").replace("_", " ")),
                     InputRichBlockTableCell(
-                        f"{v}{LIMIT_UNITS.get(k, ' GB')}" if v else "Unlimited",
-                        align_right=True,
+                        rich_text(k.removesuffix("_LIMIT").replace("_", " "))
                     ),
+                    InputRichBlockTableCell(value, align_right=True),
                 ]
             )
         msg = InputRichMessage(
             blocks=[
-                InputRichBlockSectionHeading(text="Limit Settings", size=3),
+                InputRichBlockSectionHeading(
+                    text=rich_text(("u", "Limit Settings")), size=3
+                ),
                 InputRichBlockParagraph(
-                    text=f"{active} of {len(LIMIT_VARS)} limits are active."
+                    text=rich_text(
+                        ("m", f" {active} of {len(LIMIT_VARS)} active "),
+                        "  ",
+                        ("i", "tap a button below to change one"),
+                    )
                 ),
                 InputRichBlockTable(
-                    title="Current limits",
+                    title=rich_text(("b", "Current limits")),
                     rows=rows,
                     bordered=True,
                     striped=True,
                     compact=True,
                 ),
+                InputRichBlockDivider(),
                 InputRichBlockDetails(
-                    summary="Note",
+                    summary=rich_text(("b", "How this works")),
                     blocks=[
                         InputRichBlockList(
                             items=[
                                 InputRichBlockListItem(
-                                    text="Tap any button below to change that limit."
+                                    text=rich_text(
+                                        "Send ",
+                                        ("c", "0"),
+                                        " to clear a limit and make it ",
+                                        ("i", "unlimited"),
+                                        ".",
+                                    )
                                 ),
                                 InputRichBlockListItem(
-                                    text="Send 0 to remove a limit and make it unlimited."
+                                    text=rich_text(
+                                        "Sizes are in ",
+                                        ("b", "GB"),
+                                        " unless the table shows another unit.",
+                                    )
                                 ),
                                 InputRichBlockListItem(
-                                    text="Sizes are in GB unless the table shows another unit."
+                                    text=rich_text(
+                                        ("c", "CPU_LIMIT"),
+                                        " is a percentage, ",
+                                        ("c", "STATUS_LIMIT"),
+                                        " counts messages.",
+                                    )
+                                ),
+                                InputRichBlockListItem(
+                                    text=rich_text(
+                                        "Limits apply per task, not per user."
+                                    )
                                 ),
                             ],
                             ordered=False,
                         )
                     ],
+                ),
+                InputRichBlockFooter(
+                    text=rich_text(("i", "WZML-X"), " · ", ("i", "Bot Settings"))
                 ),
             ]
         )
