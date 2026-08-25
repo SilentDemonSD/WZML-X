@@ -508,9 +508,13 @@ async def get_buttons(key=None, edit_type=None, edit_mode=False):
         buttons.data_button(
             "Close", "botset close", position="footer", style=ButtonStyle.DANGER
         )
-        for x in range(0, len(LIMIT_VARS), 10):
+        if start:
             buttons.data_button(
-                f"{int(x / 10) + 1}", f"botset start setlimit {x}", position="l_body"
+                "⫷", f"botset start setlimit {start - 10}", position="l_body"
+            )
+        if start + 10 < len(LIMIT_VARS):
+            buttons.data_button(
+                "⫸", f"botset start setlimit {start + 10}", position="l_body"
             )
         rows = [
             [
