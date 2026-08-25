@@ -1,7 +1,6 @@
 from speedtest import ConfigRetrievalError, Speedtest
 
 from bot import LOGGER
-from bot.core.plugin_manager import PluginBase
 from bot.helper.ext_utils.bot_utils import new_task, sync_to_async
 from bot.helper.telegram_helper.message_utils import (
     delete_message,
@@ -10,12 +9,6 @@ from bot.helper.telegram_helper.message_utils import (
 )
 
 from .render import format_result
-
-
-class SpeedtestPlugin(PluginBase):
-    async def on_load(self):
-        LOGGER.info("speedtest plugin ready")
-        return True
 
 
 @new_task

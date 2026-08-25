@@ -138,7 +138,7 @@ class PluginManifest:
             if isinstance(item, str):
                 item = {"name": item}
             if not isinstance(item, dict) or not item.get("name"):
-                LOGGER.warning(f"plugin {name}: skipping malformed command entry {item!r}")
+                LOGGER.warning(f"Plugin {name}: skipping malformed command entry {item!r}")
                 continue
             commands.append(
                 PluginCommand(
@@ -154,7 +154,7 @@ class PluginManifest:
         callbacks = []
         for item in src.pop("callbacks", None) or []:
             if not isinstance(item, dict) or not item.get("pattern"):
-                LOGGER.warning(f"plugin {name}: skipping malformed callback entry {item!r}")
+                LOGGER.warning(f"Plugin {name}: skipping malformed callback entry {item!r}")
                 continue
             callbacks.append(
                 PluginCallback(
@@ -180,8 +180,7 @@ class PluginManifest:
         }
         fields = {k: src.pop(k) for k in list(src) if k in known}
         if src:
-            LOGGER.warning(
-                f"plugin {name}: ignoring unknown manifest keys {sorted(src)}"
+            LOGGER.warning(f"Plugin {name}: ignoring unknown manifest keys {sorted(src)}"
             )
 
         return cls(
@@ -230,8 +229,7 @@ def _access_of(item, plugin_name):
         else:
             value = "authorized"
     if value not in ACCESS:
-        LOGGER.warning(
-            f"plugin {plugin_name}: unknown access {value!r}, falling back to authorized"
+        LOGGER.warning(f"Plugin {plugin_name}: unknown access {value!r}, falling back to authorized"
         )
         value = "authorized"
     return value
@@ -323,7 +321,7 @@ class PluginManager:
         try:
             self.plugins_dir.mkdir(exist_ok=True)
         except OSError as err:
-            LOGGER.error(f"cannot create plugins dir: {err}")
+            LOGGER.error(f"Plugins folder not usable: {err}")
 
     @staticmethod
     def _resolve_dir():
@@ -332,7 +330,7 @@ class PluginManager:
             return beside
         here = Path.cwd() / "plugins"
         if here.is_dir():
-            LOGGER.warning(f"using {here} for plugins, not {beside}")
+            LOGGER.warning(f"Using {here} for plugins, not {beside}")
             return here
         return beside
 
@@ -345,7 +343,7 @@ class PluginManager:
     def discover(self):
         found = []
         if not self.plugins_dir.is_dir():
-            LOGGER.error(f"plugins folder not found at {self.plugins_dir}")
+            LOGGER.error(f"Plugins folder not found at {self.plugins_dir}")
             return found
         for entry in sorted(self.plugins_dir.iterdir()):
             if not entry.is_dir() or entry.name.startswith((".", "__")):
@@ -364,7 +362,7 @@ class PluginManager:
         try:
             return read_manifest(self.dir_of(name))
         except Exception as err:
-            LOGGER.error(f"plugin {name}: cannot read manifest: {err}")
+            LOGGER.error(f"Plugin {name}: cannot read manifest: {err}")
             return None
 
     def available(self):
@@ -379,7 +377,7 @@ class PluginManager:
 
             await database.save_plugin(name, state)
         except Exception as err:
-            LOGGER.error(f"plugin {name}: could not persist autoload: {err}")
+            LOGGER.error(f"Plugin {name}: could not persist autoload: {err}")
 
     def list_plugins(self):
         return list(self.records.values())
@@ -458,7 +456,7 @@ class PluginManager:
                 if help_page_mod is not None and hasattr(help_page_mod, "help_string"):
                     help_page_mod.help_string = help_mod.help_string
         except Exception as err:
-            LOGGER.error(f"error refreshing commands: {err}", exc_info=True)
+            LOGGER.error(f"Plugin commands not refreshed: {err}", exc_info=True)
 
     def _filter_for(self, access):
         return getattr(CustomFilters, ACCESS.get(access, "authorized"))
@@ -473,8 +471,7 @@ class PluginManager:
         for cmd in rec.manifest.commands:
             func = getattr(module, cmd.handler, None)
             if not callable(func):
-                LOGGER.error(
-                    f"plugin {rec.name}: handler {cmd.handler!r} for /{cmd.name} is missing"
+                LOGGER.error(f"Plugin {rec.name}: handler {cmd.handler!r} for /{cmd.name} is missing"
                 )
                 continue
             built.append(
@@ -492,8 +489,7 @@ class PluginManager:
         for cb in rec.manifest.callbacks:
             func = getattr(module, cb.handler, None) if cb.handler else None
             if not callable(func):
-                LOGGER.error(
-                    f"plugin {rec.name}: callback handler {cb.handler!r} is missing"
+                LOGGER.error(f"Plugin {rec.name}: callback handler {cb.handler!r} is missing"
                 )
                 continue
             built.append(
@@ -512,18 +508,13 @@ class PluginManager:
             return True
         if self.bot is None:
             rec.error = "bot client is not ready"
-            LOGGER.error(f"plugin {rec.name}: {rec.error}")
+            LOGGER.error(f"Plugin {rec.name}: {rec.error}")
             return False
         handlers = self._build_handlers(rec)
         for handler, group in handlers:
             self.bot.add_handler(handler, group)
         rec.handlers = handlers
         rec.registered = True
-        if handlers:
-            LOGGER.info(
-                f"plugin {rec.name}: registered {len(handlers)} handler(s) "
-                f"for {', '.join('/' + c for c in rec.commands) or 'callbacks only'}"
-            )
         return True
 
     def _detach(self, rec):
@@ -533,13 +524,13 @@ class PluginManager:
             try:
                 self.bot.remove_handler(handler, group)
             except Exception as err:
-                LOGGER.warning(f"plugin {rec.name}: error removing handler: {err}")
+                LOGGER.warning(f"Plugin {rec.name}: could not remove a handler: {err}")
         rec.handlers = []
         rec.registered = False
 
     async def _do_load(self, name, enabled=None, source=None, url=None, config=None):
         if name in self.records:
-            LOGGER.warning(f"plugin {name} is already loaded")
+            LOGGER.warning(f"Plugin {name} is already loaded")
             return False, "already loaded"
         try:
             plugin_dir = self.dir_of(name)
@@ -551,7 +542,7 @@ class PluginManager:
         try:
             manifest = read_manifest(plugin_dir)
         except Exception as err:
-            LOGGER.error(f"plugin {name}: bad manifest: {err}")
+            LOGGER.error(f"Plugin {name}: bad manifest: {err}")
             return False, f"bad manifest: {err}"
 
         if manifest.name != name:
@@ -576,7 +567,7 @@ class PluginManager:
         try:
             module = self._import(name, manifest, plugin_dir)
         except Exception as err:
-            LOGGER.error(f"plugin {name}: import failed: {err}", exc_info=True)
+            LOGGER.error(f"Plugin {name}: import failed: {err}", exc_info=True)
             return False, f"import failed: {err}"
 
         instance = None
@@ -605,7 +596,7 @@ class PluginManager:
                     self._purge_modules(name)
                     return False, "on_load returned False"
             except Exception as err:
-                LOGGER.error(f"plugin {name}: on_load failed: {err}", exc_info=True)
+                LOGGER.error(f"Plugin {name}: on_load failed: {err}", exc_info=True)
                 self._purge_modules(name)
                 return False, f"on_load failed: {err}"
 
@@ -617,11 +608,10 @@ class PluginManager:
                 try:
                     await instance.on_unload()
                 except Exception as err:
-                    LOGGER.error(f"plugin {name}: on_unload failed: {err}")
+                    LOGGER.error(f"Plugin {name}: on_unload failed: {err}")
             self._purge_modules(name)
             return False, reason
         self._refresh_commands()
-        LOGGER.info(f"plugin {name} v{manifest.version} loaded")
         return True, ""
 
     async def _do_unload(self, name):
@@ -633,11 +623,10 @@ class PluginManager:
             try:
                 await rec.instance.on_unload()
             except Exception as err:
-                LOGGER.error(f"plugin {name}: on_unload failed: {err}", exc_info=True)
+                LOGGER.error(f"Plugin {name}: on_unload failed: {err}", exc_info=True)
         self.records.pop(name, None)
         self._purge_modules(name)
         self._refresh_commands()
-        LOGGER.info(f"plugin {name} unloaded")
         return True, ""
 
     async def load(self, name, **kwargs):
@@ -688,14 +677,14 @@ class PluginManager:
                 if not await rec.instance.on_enable():
                     return False, "on_enable returned False"
             except Exception as err:
-                LOGGER.error(f"plugin {name}: on_enable failed: {err}", exc_info=True)
+                LOGGER.error(f"Plugin {name}: on_enable failed: {err}", exc_info=True)
                 return False, f"on_enable failed: {err}"
         if not self._attach(rec):
             return False, rec.error or "could not register handlers"
         rec.enabled = True
         self._refresh_commands()
         await self._store(name, enabled=True)
-        LOGGER.info(f"plugin {name} enabled")
+        LOGGER.info(f"Plugin {name} enabled")
         return True, ""
 
     async def _do_disable(self, name):
@@ -707,13 +696,13 @@ class PluginManager:
                 if not await rec.instance.on_disable():
                     return False, "on_disable returned False"
             except Exception as err:
-                LOGGER.error(f"plugin {name}: on_disable failed: {err}", exc_info=True)
+                LOGGER.error(f"Plugin {name}: on_disable failed: {err}", exc_info=True)
                 return False, f"on_disable failed: {err}"
         self._detach(rec)
         rec.enabled = False
         self._refresh_commands()
         await self._store(name, enabled=False)
-        LOGGER.info(f"plugin {name} disabled")
+        LOGGER.info(f"Plugin {name} disabled")
         return True, ""
 
     async def _store(self, name, **changes):
@@ -737,7 +726,7 @@ class PluginManager:
 
             await database.save_plugin(name, state)
         except Exception as err:
-            LOGGER.error(f"plugin {name}: could not persist state: {err}")
+            LOGGER.error(f"Plugin {name}: could not persist state: {err}")
 
     def schema_items(self, name):
         rec = self.records.get(name)
@@ -802,14 +791,14 @@ class PluginManager:
                 try:
                     await rec.instance.on_configure(dict(rec.config))
                 except Exception as err:
-                    LOGGER.error(f"plugin {name}: on_configure failed: {err}")
+                    LOGGER.error(f"Plugin {name}: on_configure failed: {err}")
             await self._store(name)
             try:
                 from ..helper.ext_utils.db_handler import database
 
                 await database.save_plugin_config(name, rec.config)
             except Exception as err:
-                LOGGER.error(f"plugin {name}: could not save settings: {err}")
+                LOGGER.error(f"Plugin {name}: could not save settings: {err}")
             return True, ""
 
     async def reset_config(self, name):
@@ -826,7 +815,7 @@ class PluginManager:
 
                 await database.save_plugin_config(name, {})
             except Exception as err:
-                LOGGER.error(f"plugin {name}: could not clear settings: {err}")
+                LOGGER.error(f"Plugin {name}: could not clear settings: {err}")
             return True, ""
 
     async def load_states(self):
@@ -835,7 +824,7 @@ class PluginManager:
 
             self.states = await database.get_plugins() or {}
         except Exception as err:
-            LOGGER.error(f"could not read plugin states: {err}")
+            LOGGER.error(f"Plugin states not read: {err}")
             self.states = {}
         return self.states
 
@@ -864,7 +853,6 @@ class PluginManager:
                         self.errors.pop(name, None)
                     else:
                         self.errors[name] = err
-                        LOGGER.error(f"plugin {name} not loaded: {err}")
             finally:
                 self._quiet = False
             self._refresh_commands()
@@ -882,11 +870,10 @@ class PluginManager:
 
     async def boot(self):
         if Config.DISABLE_PLUGINS:
-            LOGGER.info("Plugins are disabled, skipping plugin boot")
+            LOGGER.info("Plugins are disabled. Skipping plugin load.")
             return
         async with self._lock:
             await self.load_states()
-            LOGGER.info(f"Plugins folder: {self.plugins_dir}")
             found = self.discover()
             self.errors.clear()
             self._quiet = True
@@ -898,7 +885,6 @@ class PluginManager:
                         await self._store(name, enabled=True, source="bundled")
                         state = self.states[name]
                     if not state.get("autoload", True):
-                        LOGGER.info(f"plugin {name} left unloaded")
                         continue
                     ok, err = await self._do_load(
                         name,
@@ -911,16 +897,18 @@ class PluginManager:
                         loaded += 1
                     else:
                         self.errors[name] = err
-                        LOGGER.error(f"plugin {name} not loaded: {err}")
             finally:
                 self._quiet = False
             self._refresh_commands()
             if found:
-                LOGGER.info(
-                    f"Plugins: {loaded}/{len(found)} loaded"
-                    + (f", {len(self.available())} left unloaded"
-                       if self.available() else "")
-                )
+                names = ", ".join(sorted(self.records))
+                line = f"Plugins Loaded [{loaded}/{len(found)}]"
+                if names:
+                    line += f": {names}"
+                idle = self.available()
+                if idle:
+                    line += f" | Skipped: {', '.join(sorted(idle))}"
+                LOGGER.info(line)
 
 
 plugin_manager = PluginManager(None)

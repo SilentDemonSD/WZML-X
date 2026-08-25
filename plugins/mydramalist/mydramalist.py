@@ -62,7 +62,6 @@ def cache_clear(aggressive=False):
 class MyDramaListPlugin(PluginBase):
     async def on_load(self):
         register_cache("mydramalist", cache_bytes, cache_clear)
-        LOGGER.info("mydramalist plugin ready")
         return True
 
     async def on_unload(self):

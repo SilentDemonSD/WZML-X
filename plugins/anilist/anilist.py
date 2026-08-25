@@ -2,7 +2,6 @@ from urllib.parse import quote
 
 from markdown import markdown
 
-from bot import LOGGER
 from bot.core.plugin_manager import PluginBase, get_plugin_manager
 from bot.helper.ext_utils.bot_utils import new_task
 from bot.helper.ext_utils.mem_guard import register_cache
@@ -20,7 +19,6 @@ CHARACTER_LIMIT = 700
 class AniListPlugin(PluginBase):
     async def on_load(self):
         register_cache("anilist", cache_bytes, cache_clear)
-        LOGGER.info("anilist plugin ready")
         return True
 
     async def on_unload(self):

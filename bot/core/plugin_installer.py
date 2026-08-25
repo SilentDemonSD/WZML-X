@@ -216,7 +216,6 @@ async def install_dependencies(specs):
 
     last = ""
     for cmd in attempts:
-        LOGGER.info(f"installing plugin dependencies: {' '.join(specs)}")
         _, err, code = await cmd_exec(cmd)
         if code == 0:
             return True, ""
@@ -371,8 +370,7 @@ class PluginInstaller:
             except OSError:
                 continue
         if dropped:
-            LOGGER.info(f"cleared {dropped} abandoned plugin staging folder(s)")
-        return dropped
+            return dropped
 
     def clear_staging(self):
         shutil.rmtree(self.staging_dir, ignore_errors=True)
@@ -483,7 +481,7 @@ class PluginInstaller:
         if backup is not None:
             shutil.rmtree(backup, ignore_errors=True)
         await self.manager._store(name, source=source, url=url)
-        LOGGER.info(f"plugin {name} v{manifest.version} installed from {source}")
+        LOGGER.info(f"Plugin {name} v{manifest.version} installed from {source}")
         return True
 
     async def uninstall(self, name):
@@ -503,7 +501,7 @@ class PluginInstaller:
             await database.rm_plugin(name)
         except Exception as err:
             LOGGER.error(f"plugin {name}: could not clear the database record: {err}")
-        LOGGER.info(f"plugin {name} uninstalled")
+        LOGGER.info(f"Plugin {name} uninstalled")
         return True, ""
 
 

@@ -35,7 +35,6 @@ async def hydra_search(_, message):
 
     if not items:
         await edit_message(message, "No results found.")
-        LOGGER.info(f"No results found for search query: {query}")
         return
 
     try:
