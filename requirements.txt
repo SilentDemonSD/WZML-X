@@ -18,6 +18,7 @@ langcodes
 language-data
 jinja2
 lxml
+markdown
 natsort
 par2cmdline-turbo
 pillow

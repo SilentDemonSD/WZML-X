@@ -550,6 +550,8 @@ These ship with the bot and are ordinary plugins — read them as worked example
 
 | Plugin | Commands | Needs | Shows off |
 | --- | --- | --- | --- |
+| `anilist` | `/anime`, `/character`, `/manga`, `/animehelp` | markdown, pycountry | four commands, two callbacks, a TTL cache |
+| `mydramalist` | `/mdl`, `/mydramalist` | pycountry | search then pick, settings-driven template |
 | `speedtest` | `/speedtest`, `/spt` | speedtest-cli | multi-file, `sync_to_async` |
 | `imdb` | `/imdb` | imdbio, pycountry | a callback handler |
 | `mediainfo` | `/mediainfo`, `/mi` | — | telegraph output, `cmd_exec` |
