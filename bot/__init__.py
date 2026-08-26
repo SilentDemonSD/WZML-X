@@ -21,12 +21,12 @@ from logging import (
     basicConfig,
     getLogger,
 )
-from os import cpu_count
 from time import time
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from .core.config_manager import Config
+from .core.cpu import cpu_layout
 from sabnzbdapi import SabnzbdClient
 
 getLogger("niquests").setLevel(WARNING)
@@ -46,14 +46,7 @@ basicConfig(
 )
 
 LOGGER = getLogger(__name__)
-cpu_no = cpu_count() or 1
-threads = max(1, cpu_no // 2)
-cores = ",".join(str(i) for i in range(threads))
-
-if cpu_no <= 1 or cpu_no == 2:
-    service_cores = ""
-else:
-    service_cores = ",".join(str(i) for i in range(threads, cpu_no))
+cpu_no, threads, cores, service_cores = cpu_layout()
 
 bot_cache = {}
 DOWNLOAD_DIR = "/usr/src/app/downloads/"

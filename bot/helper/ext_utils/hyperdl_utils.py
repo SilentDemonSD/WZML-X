@@ -13,7 +13,6 @@ from asyncio import (
 )
 from datetime import datetime
 from mimetypes import guess_extension
-from os import cpu_count
 from pathlib import Path
 from re import sub
 from sys import argv
@@ -37,6 +36,7 @@ from pyrogram.session import Session
 
 from ... import LOGGER
 from ...core.config_manager import Config
+from ...core.cpu import allowed_cpus
 from .mem_guard import budget
 from ...core.tg_client import TgClient
 from ..telegram_helper.tg_transfer import MB, HypertgTransfer, media_of
@@ -60,7 +60,7 @@ class HypertgDownload(HypertgTransfer):
     _MIN_PIPELINE = 4
     _MAX_PIPELINE_MULT = 4
     _LOW_WORKERS = 2
-    _HIGH_WORKERS = max(8, (cpu_count() or 4) * 2)
+    _HIGH_WORKERS = max(8, len(allowed_cpus()) * 2)
     _MAX_RETRIES = 4
 
     def __init__(self, obj):
