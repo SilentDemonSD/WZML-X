@@ -327,6 +327,16 @@ Here I will explain how to use mltb.* which is reference to files you want to wo
         "Your Mega.nz account password for per-user Mega downloads & uploads.",
         "<i>Send your Mega.nz account password.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     ),
+    "SEEDR_EMAIL": (
+        "String",
+        "Your Seedr.cc account email for per-user Seedr cloud downloads.",
+        "<i>Send your Seedr.cc email address.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
+    ),
+    "SEEDR_PASSWORD": (
+        "String",
+        "Your Seedr.cc account password for per-user Seedr cloud downloads.",
+        "<i>Send your Seedr.cc account password.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
+    ),
     "DRIVE_CAT": (
         "Dict",
         'User-defined GDrive categories (name → drive_id). Format: {"name": "drive_id|index_link"}.',

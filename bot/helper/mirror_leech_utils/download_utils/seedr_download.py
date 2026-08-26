@@ -9,7 +9,7 @@ from ...ext_utils.task_manager import (
     stop_duplicate_check,
     limit_checker,
 )
-from ...ext_utils.links_utils import is_magnet
+from ...ext_utils.links_utils import is_magnet, is_url
 from ...listeners.direct_listener import DirectListener
 from ...mirror_leech_utils.status_utils.direct_status import DirectStatus
 from ...mirror_leech_utils.status_utils.queue_status import QueueStatus
@@ -54,6 +54,13 @@ async def _delete_seedr_folder(seedr_client, torrent_download_dir):
 
 
 async def add_seedr_download(listener, path):
+    if not isinstance(listener.link, str) or not (
+        is_magnet(listener.link) or is_url(listener.link)
+    ):
+        await listener.on_download_error(
+            "Seedr only accepts magnet links or .torrent URLs!"
+        )
+        return
     torrent_id = None
     torrent_download_dir = None
     gid = token_hex(5)
