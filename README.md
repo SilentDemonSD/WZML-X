@@ -236,6 +236,11 @@ Then tune the optional behavior from `config_sample.py`.
      torrent to AllDebrid, waits for it to finish there, then downloads every
      file from AllDebrid's CDN — aria2/qBittorrent are bypassed entirely.
 
+   `ALLDEBRID_NO_SEED_TIMEOUT` (default: `180`) caps how many seconds a magnet may
+   stall with no seeders and no download progress before the task is aborted.
+   Set it to `0` to disable the check and rely on AllDebrid's own dead-torrent
+   reporting instead.
+
    The flag is documented in the mirror help menu under the **AllDebrid** button.
    Without a key the task fails with `ALLDEBRID_API_KEY is not configured`;
    without `-ad` nothing changes. Magnets stop after 3 min with no seeders and
