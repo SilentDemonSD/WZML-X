@@ -55,6 +55,7 @@ from ..helper.mirror_leech_utils.download_utils.rclone_download import (
 )
 from ..helper.mirror_leech_utils.download_utils.seedr_download import (
     _build_contents,
+    _match_folder,
     add_seedr_download,
 )
 from ..helper.mirror_leech_utils.download_utils.telegram_download import (
@@ -729,6 +730,11 @@ async def seedr_link(client, message):
                 f"<b>Added to Seedr Cloud!</b>\n\n<b>Title:</b> <code>{escape(title)}</code>\n<i>Fetching cloud progress...</i>",
             )
 
+        known_folders = {
+            f.get("id")
+            for f in (await seedr_client.list_contents("0")).get("folders", [])
+        }
+        folder_names = {title} if title else set()
         folder_id = None
         not_found_count = 0
         last_progress = ""
@@ -745,19 +751,23 @@ async def seedr_link(client, message):
                 ),
                 None,
             )
-            folder = next(
-                (f for f in res.get("folders", []) if title and f.get("name") == title),
-                None,
-            )
-
             if torrent is not None:
                 not_found_count = 0
                 prog = float(torrent.get("progress", 0) or 0)
                 name_str = torrent.get("name") or title or "Torrent"
+                if torrent.get("name"):
+                    folder_names.add(torrent["name"])
                 prog_str = f"<b>Seedr Cloud Download...</b>\n\n<b>Name:</b> <code>{escape(name_str)}</code>\n<b>Progress:</b> <code>{round(prog, 2)}%</code>"
                 if prog_str != last_progress:
                     last_progress = prog_str
                     await edit_message(msg, prog_str)
+
+            folder = _match_folder(
+                res.get("folders", []),
+                folder_names,
+                known_folders,
+                torrent is None,
+            )
 
             if folder is not None:
                 folder_contents = await seedr_client.list_contents(folder["id"])

@@ -17,6 +17,16 @@ from ...mirror_leech_utils.status_utils.seedr_status import SeedrStatus
 from ...telegram_helper.message_utils import send_status_message
 
 
+def _match_folder(folders, names, known_ids, torrent_gone):
+    new_folders = [f for f in folders if f.get("id") not in known_ids]
+    for folder in new_folders:
+        if folder.get("name") in names:
+            return folder
+    if torrent_gone and len(new_folders) == 1:
+        return new_folders[0]
+    return None
+
+
 async def _build_contents(seedr_client, torrent_download_dir):
     contents = []
     total_size = 0
@@ -90,6 +100,11 @@ async def add_seedr_download(listener, path):
         if listener.multi <= 1 and not listener.is_rss:
             await send_status_message(listener.message)
 
+        known_folders = {
+            f.get("id")
+            for f in (await seedr_client.list_contents("0")).get("folders", [])
+        }
+        folder_names = {title} if title else set()
         torrent_download_dir = None
         not_found_count = 0
         while not listener.is_cancelled:
@@ -105,15 +120,6 @@ async def add_seedr_download(listener, path):
                 ),
                 None,
             )
-            folder = next(
-                (
-                    f
-                    for f in result.get("folders", [])
-                    if title and f.get("name") == title
-                ),
-                None,
-            )
-
             if torrent is not None:
                 not_found_count = 0
                 status._info.update(
@@ -126,8 +132,17 @@ async def add_seedr_download(listener, path):
                         "status": torrent.get("status", ""),
                     }
                 )
+                if torrent.get("name"):
+                    folder_names.add(torrent["name"])
                 if torrent.get("error"):
                     raise ValueError(f"Seedr torrent error: {torrent['error']}")
+
+            folder = _match_folder(
+                result.get("folders", []),
+                folder_names,
+                known_folders,
+                torrent is None,
+            )
 
             if folder is not None:
                 not_found_count = 0
