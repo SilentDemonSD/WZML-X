@@ -23,6 +23,7 @@ from ..ext_utils.media_utils import (
     get_multiple_frames_thumbnail,
     get_video_thumbnail,
 )
+from ..ext_utils.tmdb_utils import get_auto_thumbnail
 
 
 class HypertgUpload(HypertgTransfer):
@@ -64,6 +65,19 @@ class HypertgUpload(HypertgTransfer):
                 thumb = thumb_path.replace("/yt-dlp-thumb", "")
             elif is_audio and not is_video:
                 thumb = await get_audio_thumbnail(file_path)
+
+        if not is_image and thumb is None and user_thumb is None:
+            user_dict = self._listener.user_dict
+            if user_dict.get("AUTO_THUMBNAIL") or (
+                "AUTO_THUMBNAIL" not in user_dict and Config.AUTO_THUMBNAIL
+            ):
+                try:
+                    thumb = await get_auto_thumbnail(
+                        self._up_file or self._listener.name,
+                        force_document or self._listener.as_doc,
+                    )
+                except Exception as e:
+                    LOGGER.warning(f"Auto thumbnail failed: {e}")
 
         duration = 0
         width = 480

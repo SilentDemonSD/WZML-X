@@ -371,6 +371,7 @@ async def get_user_settings(from_user, stype="main"):
             + [
                 "USER_TOKENS",
                 "AS_DOCUMENT",
+                "AUTO_THUMBNAIL",
                 "EQUAL_SPLITS",
                 "MEDIA_GROUP",
                 "STOP_DUPLICATE",
@@ -520,6 +521,20 @@ async def get_user_settings(from_user, stype="main"):
                 "Enable Media Group", f"userset {user_id} tog MEDIA_GROUP t"
             )
             media_group = "Disabled"
+        if (
+            user_dict.get("AUTO_THUMBNAIL", False)
+            or "AUTO_THUMBNAIL" not in user_dict
+            and Config.AUTO_THUMBNAIL
+        ):
+            buttons.data_button(
+                "Disable Auto Thumbnail", f"userset {user_id} tog AUTO_THUMBNAIL f"
+            )
+            auto_thumb = "Enabled"
+        else:
+            buttons.data_button(
+                "Enable Auto Thumbnail", f"userset {user_id} tog AUTO_THUMBNAIL t"
+            )
+            auto_thumb = "Disabled"
         buttons.data_button(
             "Thumbnail Layout", f"userset {user_id} menu THUMBNAIL_LAYOUT"
         )
@@ -548,7 +563,8 @@ async def get_user_settings(from_user, stype="main"):
 ┠ Leech Suffix → <code>{escape(lsuffix)}</code>
 ┠ Leech Caption → <code>{escape(lcap)}</code>
 ┠ Leech Destination → <code>{leech_dest}</code>
-┖ Thumbnail Layout → <b>{thumb_layout}</b>
+┠ Thumbnail Layout → <b>{thumb_layout}</b>
+┖ Auto Thumbnail → <b>{auto_thumb}</b>
 """
 
     elif stype == "uphoster":

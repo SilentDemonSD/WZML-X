@@ -95,6 +95,7 @@ DEFAULT_VALUES = {
 
 BOOL_VARS = [
     "AS_DOCUMENT",
+    "AUTO_THUMBNAIL",
     "BOT_PM",
     "DELETE_LINKS",
     "DRIVE_CATEGORY_MODE",
@@ -217,6 +218,8 @@ DEFAULT_DESP = {
     "LINKS_LOG_ID": "Chat ID for link logging.",
     "MIRROR_LOG_ID": "Chat ID(s) for mirror logs. Space-separated for multiple.",
     "LEECH_PREFIX": "Prefix added to leeched file names.",
+    "TMDB_ACCESS_TOKEN": "TMDb API key (v3) or Read Access Token (v4), used by AUTO_THUMBNAIL.",
+    "AUTO_THUMBNAIL": "Fetch a poster from TMDb as thumbnail when no other thumbnail exists. Default: False.",
     "LEECH_CAPTION": "Custom caption for leeched files. Supports HTML.",
     "LEECH_SUFFIX": "Suffix added to leeched file names.",
     "LEECH_FONT": "Font style for captions: b, i, u, s, code, spoiler.",
