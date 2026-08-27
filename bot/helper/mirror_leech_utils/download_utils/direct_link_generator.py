@@ -184,6 +184,8 @@ def direct_link_generator(link):
         return mediafire(link)
     elif "osdn.net" in domain:
         return osdn(link)
+    elif "sourceforge.net" in domain:
+        return sourceforge(link)
     elif "github.com" in domain:
         return github(link)
     elif "transfer.it" in domain:
@@ -368,6 +370,28 @@ def get_captcha_token(session, params):
     res = session.post(f"{recaptcha_api}/reload", params=params)
     if token := findall(r'"rresp","(.*?)"', res.text):
         return token[0]
+
+
+def sourceforge(url):
+    if not url.rstrip("/").endswith("/download"):
+        url = f"{url.rstrip('/')}/download"
+    with CurlSession(impersonate="chrome") as session:
+        res = session.get(url, headers={"Referer": url.rsplit("/", 2)[0] + "/"})
+        meta = [
+            x
+            for x in HTML(res.text).xpath("//meta[@http-equiv]/@content")
+            if "url=http" in x
+        ]
+        if not meta:
+            raise DirectDownloadLinkException("ERROR: File Not Found")
+        res = session.get(
+            meta[0].split("url=", 1)[1],
+            headers={"Referer": url},
+            allow_redirects=False,
+        )
+    if not (durl := res.headers.get("location", "")):
+        raise DirectDownloadLinkException("ERROR: File Not Found")
+    return durl
 
 
 def transfer_it(url):
