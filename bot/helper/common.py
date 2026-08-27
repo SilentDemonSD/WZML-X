@@ -333,14 +333,20 @@ class TaskConfig:
                 ffmpeg_dict = Config.FFMPEG_CMDS
             else:
                 ffmpeg_dict = {}
-            valid = {
-                key: cmds for key, cmds in ffmpeg_dict.items() if isinstance(cmds, list)
-            }
+            valid = (
+                {
+                    key: cmds
+                    for key, cmds in ffmpeg_dict.items()
+                    if isinstance(cmds, list)
+                }
+                if isinstance(ffmpeg_dict, dict)
+                else {}
+            )
             keys = list(self.ffmpeg_cmds)
             if missing := [key for key in keys if key not in valid]:
                 await send_message(
                     self.message,
-                    f"Unknown FFmpeg Cmds key(s): {', '.join(missing)}. Check FF Media Settings in /usetting.",
+                    f"Unknown FFmpeg Cmds key(s): {', '.join(map(str, missing))}. Check FF Media Settings in /usetting.",
                 )
             self.ffmpeg_cmds = [
                 value for key in keys if key in valid for value in valid[key]
