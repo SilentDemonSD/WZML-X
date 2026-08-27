@@ -22,6 +22,9 @@ def _match_folder(folders, names, known_ids, torrent_gone):
     for folder in new_folders:
         if folder.get("name") in names:
             return folder
+    for folder in folders:
+        if folder.get("name") in names:
+            return folder
     if torrent_gone and len(new_folders) == 1:
         return new_folders[0]
     return None
@@ -145,9 +148,8 @@ async def add_seedr_download(listener, path):
             )
 
             if folder is not None:
-                not_found_count = 0
                 folder_contents = await seedr_client.list_contents(folder["id"])
-                if folder_contents.get("files"):
+                if folder_contents.get("files") or folder_contents.get("folders"):
                     torrent_download_dir = folder["id"]
                     status._info.update(
                         {
@@ -157,7 +159,7 @@ async def add_seedr_download(listener, path):
                         }
                     )
                     break
-            else:
+            if torrent is None:
                 not_found_count += 1
                 if not_found_count >= 36:
                     raise ValueError("Seedr torrent not found in the account!")
@@ -218,7 +220,7 @@ async def add_seedr_download(listener, path):
 
         await directListener.download(contents)
 
-        if delete_folder and not listener.is_cancelled:
+        if delete_folder or listener.is_cancelled:
             await _delete_seedr_folder(seedr_client, torrent_download_dir)
     except Exception as e:
         if torrent_id:
