@@ -337,7 +337,7 @@ class TaskConfig:
                 {
                     key: cmds
                     for key, cmds in ffmpeg_dict.items()
-                    if isinstance(cmds, list)
+                    if isinstance(cmds, (list, tuple))
                 }
                 if isinstance(ffmpeg_dict, dict)
                 else {}

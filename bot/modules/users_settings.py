@@ -1009,7 +1009,7 @@ async def get_user_settings(from_user, stype="main"):
         if isinstance(ffc, dict):
             ffc = "\n" + "\n".join(
                 [
-                    f"{no}. <b>{escape(str(key))}</b>: <code>{escape(str(value[0] if isinstance(value, list) and value else value))}</code>"
+                    f"{no}. <b>{escape(str(key))}</b>: <code>{escape(str(value[0] if isinstance(value, (list, tuple)) and value else value))}</code>"
                     for no, (key, value) in enumerate(ffc.items(), start=1)
                 ]
             )
@@ -1228,7 +1228,7 @@ async def add_file(_, message, ftype, rfunc):
 
 def validate_ffmpeg_cmds(value):
     for key, cmds in value.items():
-        if not isinstance(cmds, list) or not cmds:
+        if not isinstance(cmds, (list, tuple)) or not cmds:
             raise ValueError(f"'{key}' must be a non-empty list of command strings")
         for cmd in cmds:
             if not isinstance(cmd, str) or not cmd.strip():
