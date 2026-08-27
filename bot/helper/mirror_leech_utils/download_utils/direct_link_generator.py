@@ -166,6 +166,8 @@ def direct_link_generator(link):
         return buzzheavier(link)
     elif "gdflix" in domain:
         return gdflix(link)
+    elif "hubdrive" in domain:
+        return hubdrive(link)
     elif "devuploads" in domain:
         return devuploads(link)
     elif "lulacloud.com" in domain:
@@ -372,6 +374,25 @@ def transfer_it(url):
         return resp.json()["url"]
     else:
         raise DirectDownloadLinkException("ERROR: File Expired or File Not Found")
+
+
+def hubdrive(url):
+    if not (file_id := url.rstrip("/").rsplit("/", 1)[-1]).isdigit():
+        raise DirectDownloadLinkException("ERROR: Invalid hubdrive link")
+    with CurlSession(impersonate="chrome") as session:
+        session.get(url)
+        res = session.post(
+            f"{urlparse(url).scheme}://{urlparse(url).netloc}/ajax.php?ajax=direct-download",
+            data={"id": file_id},
+            headers={"X-Requested-With": "XMLHttpRequest", "Referer": url},
+        )
+    try:
+        data = res.json()["data"]
+    except Exception as e:
+        raise DirectDownloadLinkException("ERROR: Unexpected response") from e
+    if not (durl := data.get("gd")):
+        raise DirectDownloadLinkException("ERROR: File Not Found or Expired")
+    return durl
 
 
 def gdflix(url):
