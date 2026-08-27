@@ -1,4 +1,5 @@
 from asyncio import sleep, TimeoutError
+from time import time
 from aiohttp.client_exceptions import ClientError
 
 from ... import LOGGER
@@ -12,6 +13,7 @@ class DirectListener:
         self._a2c_opt = a2c_opt
         self._proc_bytes = 0
         self._failed = 0
+        self._start_time = time()
         self.download_task = None
         self.name = self.listener.name
 
@@ -25,11 +27,11 @@ class DirectListener:
 
     @property
     def speed(self):
-        return (
-            int(self.download_task.get("downloadSpeed", "0"))
-            if self.download_task
-            else 0
-        )
+        if self.download_task and (
+            speed := int(self.download_task.get("downloadSpeed", "0"))
+        ):
+            return speed
+        return self.processed_bytes / max(time() - self._start_time, 1)
 
     async def download(self, contents):
         self.is_downloading = True
