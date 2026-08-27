@@ -164,6 +164,8 @@ def direct_link_generator(link):
         return yandex_disk(link)
     elif "buzzheavier.com" in domain:
         return buzzheavier(link)
+    elif "gdflix" in domain:
+        return gdflix(link)
     elif "devuploads" in domain:
         return devuploads(link)
     elif "lulacloud.com" in domain:
@@ -370,6 +372,19 @@ def transfer_it(url):
         return resp.json()["url"]
     else:
         raise DirectDownloadLinkException("ERROR: File Expired or File Not Found")
+
+
+def gdflix(url):
+    with CurlSession(impersonate="chrome") as session:
+        tree = HTML(session.get(url).text)
+        if not (instant := tree.xpath("//a[contains(@href, 'instant')]/@href")):
+            raise DirectDownloadLinkException("ERROR: Instant DL link not found")
+        res = session.get(instant[0], allow_redirects=False)
+        if not (loc := res.headers.get("location", "").strip()):
+            raise DirectDownloadLinkException("ERROR: File Not Found or Expired")
+        if durl := parse_qs(urlparse(loc).query).get("url"):
+            return durl[0]
+        return loc
 
 
 def buzzheavier(url):
