@@ -105,13 +105,15 @@ class GoogleDriveSearch(GoogleDriveHelper):
             drives = [
                 (
                     "From Owner",
-                    target_id.replace("tp:", "", 1),
+                    target_id.replace("sa:", "", 1).replace("tp:", "", 1),
                     index_urls[0] if index_urls else "",
                 )
             ]
         else:
             drives = zip(drives_names, drives_ids, index_urls)
-        if (
+        if target_id.startswith("sa:"):
+            self.use_sa = True
+        elif (
             not target_id.startswith("mtp:")
             and len(drives_ids) > 1
             or target_id.startswith("tp:")

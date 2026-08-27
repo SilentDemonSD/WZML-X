@@ -202,8 +202,8 @@ class TaskConfig:
     def get_token_path(self, dest):
         if dest.startswith("mtp:"):
             return f"tokens/{self.user_id}.pickle"
-        elif Config.USE_SERVICE_ACCOUNTS and (
-            dest.startswith("sa:") or not dest.startswith("tp:")
+        elif dest.startswith("sa:") or (
+            Config.USE_SERVICE_ACCOUNTS and not dest.startswith("tp:")
         ):
             return "accounts"
         else:

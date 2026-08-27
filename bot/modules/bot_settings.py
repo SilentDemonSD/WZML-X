@@ -1207,6 +1207,9 @@ async def update_private_file(_, message, pre_message, key, new_file=False):
                 ["7z", "x", "-o.", "-aoa", "accounts.zip", "accounts/*.json"]
             )
             await cmd_exec(["chmod", "-R", "777", "accounts"])
+            if await aiopath.exists("accounts"):
+                Config.USE_SERVICE_ACCOUNTS = True
+                await database.update_config({"USE_SERVICE_ACCOUNTS": True})
         elif file_name in [".netrc", "netrc"]:
             if file_name == "netrc":
                 await rename("netrc", ".netrc")
