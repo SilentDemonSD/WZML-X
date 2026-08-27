@@ -162,7 +162,7 @@ def direct_link_generator(link):
         return debrid_link(link)
     elif "yadi.sk" in link or "disk.yandex." in link:
         return yandex_disk(link)
-    elif "buzzheavier.com" in domain:
+    elif any(x in domain for x in ("buzzheavier.com", "bzzhr.co", "bzzhr.to")):
         return buzzheavier(link)
     elif "gdflix" in domain:
         return gdflix(link)
@@ -420,7 +420,7 @@ def _first_alive(session, links):
     for durl in links:
         try:
             if "bzzhr.co" in durl:
-                return buzzheavier(durl.replace("bzzhr.co", "buzzheavier.com"))
+                return buzzheavier(durl)
             res = session.head(durl, timeout=20)
             if inner := parse_qs(urlparse(res.url).query).get("link"):
                 durl = inner[0]
@@ -484,9 +484,10 @@ def buzzheavier(url):
     @param link: URL from buzzheavier
     @return: Direct download link
     """
-    pattern = r"^https?://buzzheavier\.com/[a-zA-Z0-9]+$"
+    pattern = r"^https?://(?:buzzheavier\.com|bzzhr\.(?:co|to))/[a-zA-Z0-9]+$"
     if not match(pattern, url):
         return url
+    host = f"https://{urlparse(url).netloc}"
 
     def _bhscraper(session, url):
         if "/download" not in url:
@@ -506,7 +507,7 @@ def buzzheavier(url):
         tree = HTML(response.text)
         if link := tree.xpath("//a[contains(@hx-get, 'download')]"):
             hx_get = link[0].attrib.get("hx-get", "").strip()
-            return _bhscraper(session, f"https://buzzheavier.com{hx_get}")
+            return _bhscraper(session, f"{host}{hx_get}")
         elif folders := tree.xpath("//tbody[@id='tbody']/tr"):
             details = {"contents": [], "title": "", "total_size": 0}
             for data in folders:
@@ -514,7 +515,7 @@ def buzzheavier(url):
                     filename = data.xpath(".//a")[0].text.strip()
                     _id = data.xpath(".//a")[0].attrib.get("href", "").strip()
                     size = data.xpath(".//td[@class='text-center']/text()")[0].strip()
-                    url = buzzheavier(f"https://buzzheavier.com{_id}")
+                    url = buzzheavier(f"{host}{_id}")
                     if not url:
                         raise DirectDownloadLinkException(
                             "ERROR: No download link found"
