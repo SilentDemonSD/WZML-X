@@ -168,6 +168,8 @@ def direct_link_generator(link):
         return gdflix(link)
     elif "hubdrive" in domain:
         return hubdrive(link)
+    elif "hubcloud" in domain:
+        return hubcloud(link)
     elif "devuploads" in domain:
         return devuploads(link)
     elif "lulacloud.com" in domain:
@@ -376,23 +378,68 @@ def transfer_it(url):
         raise DirectDownloadLinkException("ERROR: File Expired or File Not Found")
 
 
-def hubdrive(url):
-    if not (file_id := url.rstrip("/").rsplit("/", 1)[-1]).isdigit():
-        raise DirectDownloadLinkException("ERROR: Invalid hubdrive link")
-    with CurlSession(impersonate="chrome") as session:
-        session.get(url)
-        res = session.post(
-            f"{urlparse(url).scheme}://{urlparse(url).netloc}/ajax.php?ajax=direct-download",
-            data={"id": file_id},
-            headers={"X-Requested-With": "XMLHttpRequest", "Referer": url},
-        )
+def _hubcloud_links(session, url):
     try:
-        data = res.json()["data"]
-    except Exception as e:
-        raise DirectDownloadLinkException("ERROR: Unexpected response") from e
-    if not (durl := data.get("gd")):
-        raise DirectDownloadLinkException("ERROR: File Not Found or Expired")
-    return durl
+        tree = HTML(session.get(url).text)
+        if gen := tree.xpath("//a[@id='download']/@href"):
+            tree = HTML(session.get(gen[0]).text)
+        return [
+            h
+            for h in tree.xpath("//a[contains(@class, 'btn-lg')]/@href")
+            if h.startswith("http") and "vdplay" not in h
+        ]
+    except Exception:
+        return []
+
+
+def _first_alive(session, links):
+    fallback = ""
+    for durl in links:
+        try:
+            if "bzzhr.co" in durl:
+                return buzzheavier(durl.replace("bzzhr.co", "buzzheavier.com"))
+            res = session.head(durl, timeout=20)
+            if inner := parse_qs(urlparse(res.url).query).get("link"):
+                durl = inner[0]
+                res = session.head(durl, timeout=20)
+            if res.status_code < 400 and "text/html" not in res.headers.get(
+                "content-type", ""
+            ):
+                return durl
+            fallback = fallback or durl
+        except Exception:
+            continue
+    return fallback
+
+
+def hubcloud(url):
+    with CurlSession(impersonate="chrome") as session:
+        if durl := _first_alive(session, _hubcloud_links(session, url)):
+            return durl
+    raise DirectDownloadLinkException("ERROR: File Not Found or Expired")
+
+
+def hubdrive(url):
+    parsed = urlparse(url)
+    file_id = parsed.path.rstrip("/").rsplit("/", 1)[-1]
+    links = []
+    with CurlSession(impersonate="chrome") as session:
+        tree = HTML(session.get(url).text)
+        try:
+            res = session.post(
+                f"{parsed.scheme}://{parsed.netloc}/ajax.php?ajax=direct-download",
+                data={"id": file_id},
+                headers={"X-Requested-With": "XMLHttpRequest", "Referer": url},
+            )
+            if gd := res.json().get("data", {}).get("gd"):
+                links.append(gd)
+        except Exception:
+            pass
+        if mirror := tree.xpath("//a[contains(@href, 'hubcloud')]/@href"):
+            links += _hubcloud_links(session, mirror[0])
+        if durl := _first_alive(session, links):
+            return durl
+    raise DirectDownloadLinkException("ERROR: File Not Found or Expired")
 
 
 def gdflix(url):
