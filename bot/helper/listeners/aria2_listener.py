@@ -59,6 +59,9 @@ async def _on_download_started(api, data):
             await task.listener.on_download_error(msg, button)
             return
 
+        if task.listener.select and not task.listener.files_selected:
+            return
+
         task.listener.size = int(download.get("totalLength", "0"))
         mmsg = await limit_checker(task.listener)
         if mmsg:

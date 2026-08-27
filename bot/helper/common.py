@@ -133,6 +133,7 @@ class TaskConfig:
         self.extract = False
         self.compress = False
         self.select = False
+        self.files_selected = False
         self.seed = False
         self.join = False
         self.private_link = False
