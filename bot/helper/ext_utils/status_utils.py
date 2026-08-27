@@ -37,6 +37,7 @@ class MirrorStatus:
     STATUS_FFMPEG = "FFmpeg"
     STATUS_YT = "YouTube"
     STATUS_METADATA = "Metadata"
+    STATUS_SEEDR = "Seedr"
 
 
 class EngineStatus:

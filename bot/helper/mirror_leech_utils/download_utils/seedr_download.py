@@ -127,15 +127,15 @@ async def add_seedr_download(listener, path):
                         "name": torrent.get("name", listener.name),
                         "size": torrent.get("size", 0) or 0,
                         "progress": float(torrent.get("progress", 0) or 0),
-                        "speed": float(torrent.get("speed", 0) or 0) * 1024,
-                        "eta": torrent.get("eta", 0) or 0,
-                        "status": torrent.get("status", ""),
+                        "speed": float(torrent.get("download_rate", 0) or 0),
+                        "stopped": int(torrent.get("stopped", 0) or 0),
                     }
                 )
                 if torrent.get("name"):
                     folder_names.add(torrent["name"])
-                if torrent.get("error"):
-                    raise ValueError(f"Seedr torrent error: {torrent['error']}")
+                warn = str(torrent.get("warnings") or "").strip()
+                if warn and warn not in ("[]", "{}"):
+                    LOGGER.warning(f"Seedr torrent {torrent_id} warning: {warn}")
 
             folder = _match_folder(
                 result.get("folders", []),
