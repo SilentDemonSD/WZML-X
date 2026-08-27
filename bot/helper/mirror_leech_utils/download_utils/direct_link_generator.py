@@ -469,12 +469,40 @@ def hubcloud(url):
 def hubdrive(url):
     parsed = urlparse(url)
     file_id = parsed.path.rstrip("/").rsplit("/", 1)[-1]
+    host = f"{parsed.scheme}://{parsed.netloc}"
     links = []
     with CurlSession(impersonate="chrome") as session:
         tree = HTML(session.get(url).text)
+        if "/packs/" in url:
+            details = {
+                "contents": [],
+                "title": (tree.xpath("//title/text()") or [""])[0]
+                .split("|")[-1]
+                .strip(),
+                "total_size": 0,
+            }
+            for row in tree.xpath("//div[contains(@class, 'pack-clean-file')]"):
+                name = row.xpath(".//div[contains(@class, 'pack-clean-title')]/text()")
+                size = row.xpath(".//div[contains(@class, 'pack-clean-size')]/text()")
+                item = row.xpath(".//a[contains(@class, 'pack-clean-link')]/@href")
+                if not name or not item:
+                    continue
+                details["contents"].append(
+                    {
+                        "path": "",
+                        "filename": name[0].strip(),
+                        "url": hubdrive(f"{host}{item[0]}"),
+                    }
+                )
+                details["total_size"] += speed_string_to_bytes(
+                    size[0].strip() if size else "0b"
+                )
+            if not details["contents"]:
+                raise DirectDownloadLinkException("ERROR: No files found in pack")
+            return details
         try:
             res = session.post(
-                f"{parsed.scheme}://{parsed.netloc}/ajax.php?ajax=direct-download",
+                f"{host}/ajax.php?ajax=direct-download",
                 data={"id": file_id},
                 headers={"X-Requested-With": "XMLHttpRequest", "Referer": url},
             )
@@ -491,7 +519,30 @@ def hubdrive(url):
 
 def gdflix(url):
     with CurlSession(impersonate="chrome") as session:
-        tree = HTML(session.get(url).text)
+        res = session.get(url)
+        tree = HTML(res.text)
+        if "/pack/" in url:
+            host = f"https://{urlparse(res.url).netloc}"
+            details = {
+                "contents": [],
+                "title": (tree.xpath("//title/text()") or [""])[0]
+                .split("|")[-1]
+                .strip(),
+                "total_size": 0,
+            }
+            for link in tree.xpath("//a[starts-with(@href, '/file/')]"):
+                name, _, size = " ".join(link.itertext()).strip().rpartition("[")
+                details["contents"].append(
+                    {
+                        "path": "",
+                        "filename": name.strip(),
+                        "url": gdflix(f"{host}{link.attrib['href']}"),
+                    }
+                )
+                details["total_size"] += speed_string_to_bytes(size.strip("] "))
+            if not details["contents"]:
+                raise DirectDownloadLinkException("ERROR: No files found in pack")
+            return details
         if not (instant := tree.xpath("//a[contains(@href, 'instant')]/@href")):
             raise DirectDownloadLinkException("ERROR: Instant DL link not found")
         res = session.get(instant[0], allow_redirects=False)
