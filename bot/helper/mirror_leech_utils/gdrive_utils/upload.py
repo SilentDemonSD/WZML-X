@@ -208,6 +208,7 @@ class GoogleDriveUpload(GoogleDriveHelper):
                                 return
                             self.switch_service_account()
                             LOGGER.info(f"Got: {reason}, Trying Again...")
+                            self.proc_bytes -= self.file_processed_bytes
                             self.file_processed_bytes = 0
                             self.status = None
                             return self._upload_file(

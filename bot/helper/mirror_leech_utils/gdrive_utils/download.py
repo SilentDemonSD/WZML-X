@@ -142,6 +142,10 @@ class GoogleDriveDownload(GoogleDriveHelper):
                         .get("reason")
                     )
                     if "fileNotDownloadable" in reason and "document" in mime_type:
+                        fh.close()
+                        self.proc_bytes -= self.file_processed_bytes
+                        self.file_processed_bytes = 0
+                        self.status = None
                         return self._download_file(
                             file_id, path, filename, mime_type, True
                         )
@@ -162,6 +166,7 @@ class GoogleDriveDownload(GoogleDriveHelper):
                             self.switch_service_account()
                             LOGGER.info(f"Got: {reason}, Trying Again...")
                             fh.close()
+                            self.proc_bytes -= self.file_processed_bytes
                             self.file_processed_bytes = 0
                             self.status = None
                             return self._download_file(
