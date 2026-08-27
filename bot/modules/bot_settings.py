@@ -55,6 +55,7 @@ from ..helper.ext_utils.bot_utils import (
     SetInterval,
     cmd_exec,
     new_task,
+    parse_dest,
 )
 from ..core.config_manager import Config
 from ..core.tg_client import TgClient, db_partition_id
@@ -214,7 +215,7 @@ DEFAULT_DESP = {
     "EXTRACT_LIMIT": "Extracted file size limit in GB. 0 = unlimited.",
     "ARCHIVE_LIMIT": "Archive (zip) size limit in GB. 0 = unlimited.",
     "STORAGE_LIMIT": "Minimum free storage to maintain in GB. Downloads cancelled if exceeded.",
-    "LEECH_DUMP_CHAT": "Chat ID (integer) to dump all leeched files. Leave empty to disable.",
+    "LEECH_DUMP_CHAT": "Chat ID to dump all leeched files, or chat_id|topic_id for a forum topic. Leave empty to disable.",
     "LINKS_LOG_ID": "Chat ID for link logging.",
     "MIRROR_LOG_ID": "Chat ID(s) for mirror logs. Space-separated for multiple.",
     "LEECH_PREFIX": "Prefix added to leeched file names.",
@@ -806,14 +807,15 @@ async def edit_variable(_, message, pre_message, key):
                 return await update_buttons(pre_message, "var")
     elif key == "LEECH_DUMP_CHAT":
         if value.strip():
-            try:
-                value = int(value.strip())
-            except ValueError:
+            chat, thread = parse_dest(value.strip())
+            if not isinstance(chat, int) or ("|" in value and thread is None):
                 await send_message(
                     message,
-                    "Invalid value! LEECH_DUMP_CHAT must be a valid integer chat ID.",
+                    "Invalid value! LEECH_DUMP_CHAT must be a chat ID, "
+                    "optionally with a topic id as chat_id|topic_id.",
                 )
                 return await update_buttons(pre_message, "var")
+            value = value.strip() if thread else chat
     elif key == "AUTHORIZED_CHATS":
         aid = value.split()
         auth_chats.clear()

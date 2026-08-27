@@ -30,6 +30,7 @@ from .ext_utils.bot_utils import (
     fetch_drive_cat,
     get_size_bytes,
     new_task,
+    parse_dest,
     sync_to_async,
 )
 from .ext_utils.bulk_links import extract_bulk_links
@@ -96,6 +97,8 @@ class TaskConfig:
         self.drive_id = ""
         self.leech_dest = ""
         self.cmd_up_dest = ""
+        self.cmd_thread_id = None
+        self.leech_thread_id = None
         self.rc_flags = ""
         self.tag = ""
         self.name = ""
@@ -463,7 +466,9 @@ class TaskConfig:
                 ) != self.get_config_path(self.up_dest):
                     raise ValueError("You must use the same config to clone!")
         else:
-            self.leech_dest = self.user_dict.get("LEECH_DUMP_CHAT")
+            self.leech_dest, self.leech_thread_id = parse_dest(
+                self.user_dict.get("LEECH_DUMP_CHAT")
+            )
 
             self.cmd_up_dest = self.up_dest
             if self.cmd_up_dest:
@@ -477,17 +482,11 @@ class TaskConfig:
                     elif self.cmd_up_dest.startswith("h:"):
                         self.cmd_up_dest = self.cmd_up_dest.replace("h:", "", 1)
                         self.transmission_mode = "both"
-                    if "|" in str(self.cmd_up_dest):
-                        self.cmd_up_dest, _ = list(
-                            map(
-                                lambda x: int(x) if x.lstrip("-").isdigit() else x,
-                                self.cmd_up_dest.split("|", 1),
-                            )
-                        )
-                    elif str(self.cmd_up_dest).lstrip("-").isdigit():
-                        self.cmd_up_dest = int(self.cmd_up_dest)
-                    elif str(self.cmd_up_dest).lower() == "pm":
+                    if str(self.cmd_up_dest).lower() == "pm":
                         self.cmd_up_dest = self.user_id
+                    else:
+                        chat, self.cmd_thread_id = parse_dest(self.cmd_up_dest)
+                        self.cmd_up_dest = chat
 
             self.transmission_mode = Config.TRANSMISSION_MODE
             if self.bot_trans:
@@ -500,15 +499,7 @@ class TaskConfig:
             self.up_dest = Config.LEECH_DUMP_CHAT
             if self.up_dest:
                 if not isinstance(self.up_dest, int):
-                    if "|" in str(self.up_dest):
-                        self.up_dest, self.chat_thread_id = list(
-                            map(
-                                lambda x: int(x) if x.lstrip("-").isdigit() else x,
-                                self.up_dest.split("|", 1),
-                            )
-                        )
-                    elif str(self.up_dest).lstrip("-").isdigit():
-                        self.up_dest = int(self.up_dest)
+                    self.up_dest, self.chat_thread_id = parse_dest(self.up_dest)
 
                 if self.transmission_mode in ("user", "both"):
                     if not TgClient.user:
