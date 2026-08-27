@@ -329,22 +329,22 @@ class TaskConfig:
         if self.ffmpeg_cmds and not isinstance(self.ffmpeg_cmds, list):
             if self.user_dict.get("FFMPEG_CMDS", None):
                 ffmpeg_dict = self.user_dict["FFMPEG_CMDS"]
-                self.ffmpeg_cmds = [
-                    value
-                    for key in list(self.ffmpeg_cmds)
-                    if key in ffmpeg_dict
-                    for value in ffmpeg_dict[key]
-                ]
             elif "FFMPEG_CMDS" not in self.user_dict and Config.FFMPEG_CMDS:
                 ffmpeg_dict = Config.FFMPEG_CMDS
-                self.ffmpeg_cmds = [
-                    value
-                    for key in list(self.ffmpeg_cmds)
-                    if key in ffmpeg_dict
-                    for value in ffmpeg_dict[key]
-                ]
             else:
-                self.ffmpeg_cmds = None
+                ffmpeg_dict = {}
+            valid = {
+                key: cmds for key, cmds in ffmpeg_dict.items() if isinstance(cmds, list)
+            }
+            keys = list(self.ffmpeg_cmds)
+            if missing := [key for key in keys if key not in valid]:
+                await send_message(
+                    self.message,
+                    f"Unknown FFmpeg Cmds key(s): {', '.join(missing)}. Check FF Media Settings in /usetting.",
+                )
+            self.ffmpeg_cmds = [
+                value for key in keys if key in valid for value in valid[key]
+            ] or None
 
         self.metadata_title = self.user_dict.get("METADATA")
 
@@ -845,6 +845,9 @@ class TaskConfig:
                     delete_files = True
                 else:
                     delete_files = False
+                if "-i" not in cmd:
+                    LOGGER.error(f"Skipping ffmpeg cmd without -i: {ffmpeg_cmd}")
+                    continue
                 index = cmd.index("-i")
                 input_file = cmd[index + 1]
                 if input_file.strip().endswith(".video"):
@@ -860,15 +863,15 @@ class TaskConfig:
                     if not is_video and not is_audio:
                         break
                     elif is_video and ext == "audio":
-                        break
+                        continue
                     elif is_audio and not is_video and ext == "video":
-                        break
+                        continue
                     elif ext not in [
                         "all",
                         "audio",
                         "video",
                     ] and not dl_path.strip().lower().endswith(ext):
-                        break
+                        continue
                     new_folder = ospath.splitext(dl_path)[0]
                     if await aiopath.isfile(new_folder):
                         new_folder = f"{new_folder}_temp"

@@ -1009,7 +1009,7 @@ async def get_user_settings(from_user, stype="main"):
         if isinstance(ffc, dict):
             ffc = "\n" + "\n".join(
                 [
-                    f"{no}. <b>{key}</b>: <code>{escape(str(value[0]))}</code>"
+                    f"{no}. <b>{escape(str(key))}</b>: <code>{escape(str(value[0] if isinstance(value, list) and value else value))}</code>"
                     for no, (key, value) in enumerate(ffc.items(), start=1)
                 ]
             )
@@ -1226,6 +1226,17 @@ async def add_file(_, message, ftype, rfunc):
     await database.update_user_doc(user_id, ftype, des_dir)
 
 
+def validate_ffmpeg_cmds(value):
+    for key, cmds in value.items():
+        if not isinstance(cmds, list) or not cmds:
+            raise ValueError(f"'{key}' must be a non-empty list of command strings")
+        for cmd in cmds:
+            if not isinstance(cmd, str) or not cmd.strip():
+                raise ValueError(f"'{key}' has an empty or non-string command")
+            if "-i" not in cmd.split():
+                raise ValueError(f"'{key}' has a command without an -i input: {cmd}")
+
+
 @new_task
 async def add_one(_, message, option, rfunc):
     user_id = message.from_user.id
@@ -1249,6 +1260,8 @@ async def add_one(_, message, option, rfunc):
                     ilink = parts[1].strip() if len(parts) > 1 else ""
                     parsed[k.strip()] = {"drive_id": did, "index_link": ilink}
                 value = parsed
+            elif option == "FFMPEG_CMDS":
+                validate_ffmpeg_cmds(value)
             if user_dict.get(option):
                 user_dict[option].update(value)
             else:
@@ -1269,10 +1282,11 @@ async def remove_one(_, message, option, rfunc):
     user_id = message.from_user.id
     handler_dict[user_id] = False
     user_dict = user_data.get(user_id, {})
-    names = message.text.split("/")
-    for name in names:
-        if name in user_dict[option]:
-            del user_dict[option][name]
+    names = [name.strip() for name in message.text.split("/") if name.strip()]
+    opt_dict = user_dict.get(option)
+    if isinstance(opt_dict, dict):
+        for name in names:
+            opt_dict.pop(name, None)
     await delete_message(message)
     await rfunc()
     await database.update_user_data(user_id)
@@ -1375,6 +1389,8 @@ async def set_option(_, message, option, rfunc):
                         ilink = parts[1].strip() if len(parts) > 1 else ""
                         parsed[k.strip()] = {"drive_id": did, "index_link": ilink}
                     value = parsed
+                elif option == "FFMPEG_CMDS":
+                    validate_ffmpeg_cmds(value)
             except Exception as e:
                 await send_message(message, str(e))
                 return
@@ -1487,6 +1503,9 @@ async def get_menu(option, message, user_id):
             val = "\n   ".join(lines)
         elif not val:
             val = "<b>Not Exists</b>"
+
+    elif option in ["FFMPEG_CMDS", "YT_DLP_OPTIONS", "UPLOAD_PATHS"]:
+        val = f"<code>{escape(str(val))}</code>" if val else "<b>Not Exists</b>"
 
     if option == "METADATA":
         text = f"""⌬ <b><u>Menu Settings :</u></b>
