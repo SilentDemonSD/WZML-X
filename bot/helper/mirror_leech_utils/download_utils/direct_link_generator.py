@@ -9,7 +9,7 @@ from re import findall, fullmatch, match, search, sub
 from niquests import Session, post, get
 from niquests.adapters import HTTPAdapter
 from time import sleep, time
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, quote, urlparse
 from niquests.packages.urllib3.util.retry import Retry
 from uuid import uuid4
 from base64 import b64decode, b64encode
@@ -371,11 +371,34 @@ def get_captcha_token(session, params):
 
 
 def transfer_it(url):
-    resp = post("https://transfer-it-henna.vercel.app/post", json={"url": url})
-    if resp.status_code == 200:
-        return resp.json()["url"]
-    else:
+    xh = urlparse(url).path.rstrip("/").rsplit("/", 1)[-1]
+    api = "https://g.api.mega.co.nz/cs"
+    with CurlSession(impersonate="chrome") as session:
+        try:
+            info = session.post(api, params={"x": xh}, json=[{"a": "xi", "xh": xh}]).json()[0]
+            name = b64decode(
+                info["t"].replace("-", "+").replace("_", "/") + "=="
+            ).decode()
+            if info["size"][1] == 1:
+                nodes = session.post(
+                    api, params={"x": xh}, json=[{"a": "f", "c": 1, "r": 1}]
+                ).json()[0]["f"]
+                handle = next(n["h"] for n in nodes if not n["t"])
+            else:
+                handle = info["z"]
+                name = f"{xh}{handle}.zip"
+        except Exception as e:
+            raise DirectDownloadLinkException(
+                "ERROR: File Expired or File Not Found"
+            ) from e
+        res = session.get(
+            f"https://bt7.api.mega.co.nz/cs/g?x={xh}&n={handle}&fn={quote(name)}",
+            headers={"Referer": "https://transfer.it/"},
+            allow_redirects=False,
+        )
+    if "userstorage" not in (durl := res.headers.get("location", "")):
         raise DirectDownloadLinkException("ERROR: File Expired or File Not Found")
+    return durl
 
 
 def _hubcloud_links(session, url):
