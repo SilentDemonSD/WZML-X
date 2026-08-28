@@ -4,6 +4,7 @@ from base64 import b64encode
 from html import escape
 from os import path as ospath
 from re import match as re_match
+from time import time
 
 from aiofiles import open as aiopen
 from aiofiles.os import path as aiopath
@@ -18,7 +19,10 @@ from ..helper.ext_utils.bot_utils import (
     new_task,
     sync_to_async,
 )
-from ..helper.ext_utils.status_utils import get_readable_file_size
+from ..helper.ext_utils.status_utils import (
+    get_readable_file_size,
+    get_readable_time,
+)
 from ..helper.ext_utils.exceptions import DirectDownloadLinkException
 from ..helper.ext_utils.links_utils import (
     is_gdrive_id,
@@ -691,6 +695,7 @@ async def seedr_link(client, message):
     if not await seedr_guard(message, user_id):
         return
     email, password = _seedr_creds(user_id)
+    tag = message.from_user.mention if message.from_user else "N/A"
     seedrlink_cmd = (
         f"/{BotCommands.SeedrLinkCommand[0]}"
         if isinstance(BotCommands.SeedrLinkCommand, list)
@@ -796,9 +801,13 @@ async def seedr_link(client, message):
 
         buttons = ButtonMaker()
         text_lines = [
-            "<b><u>Seedr Direct Links:</u></b>",
-            f"<b>Title:</b> <code>{escape(title or contents[0]['filename'])}</code>",
-            f"<b>Total Size:</b> <code>{get_readable_file_size(total_size)}</code>\n",
+            f"<b><i>{escape(title or contents[0]['filename'])}</i></b>\n│",
+            f"┟ <b>Task Size</b> → {get_readable_file_size(total_size)}",
+            f"┠ <b>Time Taken</b> → {get_readable_time(time() - message.date.timestamp())}",
+            "┠ <b>In Mode</b> → Seedr Cloud",
+            f"┠ <b>Total Files</b> → {len(contents)}",
+            f"┖ <b>Task By</b> → {tag}\n",
+            "〶 <b><u>Files List :</u></b>",
         ]
 
         for idx, item in enumerate(contents, start=1):
@@ -827,4 +836,12 @@ async def seedr_link(client, message):
             except Exception:
                 pass
         await _delete_seedr_folder(seedr_client, folder_id)
-        await edit_message(msg, f"<b>Seedr Link Failed:</b> {escape(str(e))}")
+        await edit_message(
+            msg,
+            "<i><b>〶 Seedr Link Stopped!</b></i>"
+            "\n│"
+            f"\n┟ <b>Due To</b> → {escape(str(e))}"
+            f"\n┠ <b>Time Taken</b> → {get_readable_time(time() - message.date.timestamp())}"
+            "\n┠ <b>In Mode</b> → Seedr Cloud"
+            f"\n┖ <b>Task By</b> → {tag}",
+        )
