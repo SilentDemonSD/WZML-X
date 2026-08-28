@@ -622,18 +622,18 @@ async def edit_variable(_, message, pre_message, key):
                     value = literal_eval(value)
                 except Exception:
                     await send_message(message, "Invalid dict format!")
-                    return
+                    return await update_buttons(pre_message, "var")
             else:
                 await send_message(
                     message,
                     'LEECH_DUMP_CHATS must be a dict. Format: {"A": -100123456}',
                 )
-                return
+                return await update_buttons(pre_message, "var")
         if not isinstance(value, dict):
             await send_message(
                 message, 'LEECH_DUMP_CHATS must be a dict. Format: {"A": -100123456}'
             )
-            return
+            return await update_buttons(pre_message, "var")
     elif key == "AUTHORIZED_CHATS":
         aid = value.split()
         auth_chats.clear()

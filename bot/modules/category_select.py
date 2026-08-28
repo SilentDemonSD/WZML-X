@@ -175,17 +175,19 @@ async def confirm_dump_chat(client, query):
     elif data[3] == "scancel":
         bot_cache[cache_key][2] = True
         return
-    await query.answer()
     dump_chats = Config.LEECH_DUMP_CHATS or {}
-    dump_name = data[3].replace("_", " ")
-    if dump_name not in dump_chats:
-        return
+    dump_names = list(dump_chats)
+    try:
+        dump_name = dump_names[int(data[3])]
+    except (ValueError, IndexError):
+        return await query.answer(text="Unknown dump chat!", show_alert=True)
+    await query.answer()
     bot_cache[cache_key][0] = dump_chats[dump_name]
     buttons = ButtonMaker()
-    for name in dump_chats:
+    for i, name in enumerate(dump_names):
         buttons.data_button(
             f"{'✓️' if dump_name == name else ''} {name}",
-            f"sdump {user_id} {msg_id} {name.replace(' ', '_')}",
+            f"sdump {user_id} {msg_id} {i}",
         )
     buttons.data_button(
         "Cancel",

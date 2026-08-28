@@ -81,6 +81,12 @@ when you should use b:(leech by bot)? When your default settings is leech by use
 -up h:id/@username(hybrid leech) h: to upload files by bot and user based on file size.
 -up id/@username|topic_id(leech in specific chat and topic) add | without space and write topic id after chat id or username.
 
+<b>Named dump chats</b>: -ud
+-ud name (picks a chat from LEECH_DUMP_CHATS set by the owner, e.g. -ud A)
+-ud id/@username (raw chat id or username works too)
+If the name is not configured, buttons are shown to pick one of the configured dumps.
+The chosen chat becomes the upload destination for that task, overriding LEECH_LOG_CHAT.
+
 In case you want to specify whether using token.pickle or service accounts you can add tp:gdrive_id (using token.pickle) or sa:gdrive_id (using service accounts) or mtp:gdrive_id (using token.pickle uploaded from usetting).
 DEFAULT_UPLOAD doesn't affect on leech cmds.
 """

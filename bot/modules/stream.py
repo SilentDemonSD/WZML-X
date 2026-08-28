@@ -83,7 +83,7 @@ async def gen_stream_link(chat_id, msg_id):
 
 
 async def _dump_copy(message):
-    dump = Config.LEECH_DUMP_CHAT
+    dump = Config.LEECH_LOG_CHAT
     if not dump:
         return message.chat.id, message.id
     try:

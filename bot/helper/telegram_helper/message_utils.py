@@ -593,7 +593,7 @@ async def open_dump_chat_btns(message, dump_chats, invalid_name=None):
     for i, name in enumerate(dump_names):
         buttons.data_button(
             f"{'✓️' if i == 0 else ''} {name}",
-            f"sdump {user_id} {msg_id} {name.replace(' ', '_')}",
+            f"sdump {user_id} {msg_id} {i}",
         )
     buttons.data_button(
         "Cancel",
