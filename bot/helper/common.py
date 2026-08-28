@@ -65,6 +65,7 @@ from .telegram_helper.bot_commands import BotCommands
 from .telegram_helper.message_utils import (
     get_tg_link_message,
     open_category_btns,
+    open_dump_chat_btns,
     send_message,
     send_status_message,
 )
@@ -96,6 +97,7 @@ class TaskConfig:
         self.drive_id = ""
         self.leech_dest = ""
         self.cmd_up_dest = ""
+        self.dump_dest = ""
         self.rc_flags = ""
         self.tag = ""
         self.name = ""
@@ -496,7 +498,29 @@ class TaskConfig:
             if self.hybrid_leech:
                 self.transmission_mode = "both"
 
-            self.up_dest = Config.LEECH_DUMP_CHAT
+            self.up_dest = Config.LEECH_LOG_CHAT
+            if self.dump_dest:
+                dump_chats = Config.LEECH_DUMP_CHATS or {}
+                self.up_dest = dump_chats.get(self.dump_dest)
+                if self.up_dest is None:
+                    raw_id = str(self.dump_dest).lstrip("-").isdigit()
+                    if raw_id or self.dump_dest.startswith("@"):
+                        self.up_dest = self.dump_dest
+                    elif dump_chats:
+                        up_dest, is_cancelled = await open_dump_chat_btns(
+                            self.message, dump_chats, self.dump_dest
+                        )
+                        if is_cancelled:
+                            self.is_cancelled = True
+                            return
+                        if not up_dest:
+                            raise ValueError("No dump chat selected!")
+                        self.up_dest = up_dest
+                    else:
+                        raise ValueError(
+                            f"Unknown dump chat '{self.dump_dest}'! "
+                            f"Configured dumps: none"
+                        )
             if self.up_dest:
                 if not isinstance(self.up_dest, int):
                     if "|" in str(self.up_dest):

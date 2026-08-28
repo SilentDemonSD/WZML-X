@@ -183,7 +183,14 @@ LEECH_CAPTION = ""
 THUMBNAIL_LAYOUT = ""
 
 # Log Channels
-LEECH_DUMP_CHAT = ""
+LEECH_LOG_CHAT = ""
+# Named leech dump chats, selectable per task with the -ud flag.
+# The chosen chat becomes the primary upload destination for the task.
+# Format: {"name": chat_id}
+LEECH_DUMP_CHATS = {
+    # "A": -1001234567890,
+    # "B": -1009876543210,
+}
 LINKS_LOG_ID = ""
 MIRROR_LOG_ID = ""
 

@@ -441,8 +441,8 @@ async def get_user_settings(from_user, stype="main"):
         )
         if user_dict.get("LEECH_DUMP_CHAT", False):
             leech_dest = user_dict["LEECH_DUMP_CHAT"]
-        elif "LEECH_DUMP_CHAT" not in user_dict and Config.LEECH_DUMP_CHAT:
-            leech_dest = Config.LEECH_DUMP_CHAT
+        elif "LEECH_DUMP_CHAT" not in user_dict and Config.LEECH_LOG_CHAT:
+            leech_dest = Config.LEECH_LOG_CHAT
         else:
             leech_dest = "None"
         buttons.data_button("Leech Prefix", f"userset {user_id} menu LEECH_PREFIX")
