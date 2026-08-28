@@ -55,6 +55,7 @@ from ..helper.mirror_leech_utils.download_utils.rclone_download import (
 )
 from ..helper.mirror_leech_utils.download_utils.seedr_download import (
     _build_contents,
+    _delete_seedr_folder,
     _match_folder,
     add_seedr_download,
 )
@@ -712,6 +713,8 @@ async def seedr_link(client, message):
 
     msg = await send_message(message, "<i>Processing Seedr Magnet Link...</i>")
     seedr_client = SeedrClient(email, password)
+    torrent_id = None
+    folder_id = None
 
     try:
         await seedr_client.login()
@@ -735,12 +738,16 @@ async def seedr_link(client, message):
             for f in (await seedr_client.list_contents("0")).get("folders", [])
         }
         folder_names = {title} if title else set()
-        folder_id = None
         not_found_count = 0
         last_progress = ""
+        last_prog_value = -1.0
+        stall_count = 0
 
         while True:
             await sleep(3)
+            stall_count += 1
+            if stall_count >= 400:
+                raise ValueError("Seedr cloud download stalled with no progress!")
             res = await seedr_client.list_contents("0")
             torrent = next(
                 (
@@ -754,6 +761,9 @@ async def seedr_link(client, message):
             if torrent is not None:
                 not_found_count = 0
                 prog = float(torrent.get("progress", 0) or 0)
+                if prog != last_prog_value:
+                    last_prog_value = prog
+                    stall_count = 0
                 name_str = torrent.get("name") or title or "Torrent"
                 if torrent.get("name"):
                     folder_names.add(torrent["name"])
@@ -771,7 +781,7 @@ async def seedr_link(client, message):
 
             if folder is not None:
                 folder_contents = await seedr_client.list_contents(folder["id"])
-                if folder_contents.get("files"):
+                if folder_contents.get("files") or folder_contents.get("folders"):
                     folder_id = folder["id"]
                     break
             else:
@@ -811,4 +821,10 @@ async def seedr_link(client, message):
 
     except Exception as e:
         LOGGER.error(f"SeedrLink error: {e}")
+        if torrent_id:
+            try:
+                await seedr_client.delete("torrent", torrent_id)
+            except Exception:
+                pass
+        await _delete_seedr_folder(seedr_client, folder_id)
         await edit_message(msg, f"<b>Seedr Link Failed:</b> {escape(str(e))}")
