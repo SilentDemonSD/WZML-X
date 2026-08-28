@@ -6,6 +6,7 @@ from wz_bin import bin_name
 
 class Config:
     ALLDEBRID_API_KEY = ""
+    ALLDEBRID_NO_SEED_TIMEOUT = 180
     AS_DOCUMENT = False
     AUTHORIZED_CHATS = ""
     BASE_URL = ""
@@ -93,7 +94,8 @@ class Config:
     EXTRACT_LIMIT = 0
     ARCHIVE_LIMIT = 0
     STORAGE_LIMIT = 0
-    LEECH_DUMP_CHAT = ""
+    LEECH_LOG_CHAT = ""
+    LEECH_DUMP_CHATS = {}
     LINKS_LOG_ID = ""
     MIRROR_LOG_ID = ""
     LEECH_PREFIX = ""
@@ -226,6 +228,12 @@ class Config:
                     except Exception:
                         continue
                 setattr(cls, attr, value)
+        if hasattr(settings, "LEECH_DUMP_CHAT"):
+            legacy_value = getattr(settings, "LEECH_DUMP_CHAT")
+            if legacy_value and not cls.LEECH_LOG_CHAT:
+                if isinstance(legacy_value, str):
+                    legacy_value = legacy_value.strip()
+                cls.LEECH_LOG_CHAT = legacy_value
         for key in ["BOT_TOKEN", "OWNER_ID", "TELEGRAM_API", "TELEGRAM_HASH"]:
             value = getattr(cls, key)
             if isinstance(value, str):
@@ -235,6 +243,11 @@ class Config:
 
     @classmethod
     def load_env(cls):
+        legacy_dump_chat = getenv("LEECH_DUMP_CHAT")
+        if legacy_dump_chat is not None and getenv("LEECH_LOG_CHAT") is None:
+            cls.LEECH_LOG_CHAT = cls._convert_env_type(
+                "LEECH_LOG_CHAT", legacy_dump_chat
+            )
         config_vars = cls.get_all()
         for key in config_vars:
             env_value = getenv(key)
@@ -314,6 +327,10 @@ class Config:
                         value = []
                 value = cls._convert_env_type(key, value)
                 setattr(cls, key, value)
+        if config_dict.get("LEECH_DUMP_CHAT") and not cls.LEECH_LOG_CHAT:
+            cls.LEECH_LOG_CHAT = cls._convert_env_type(
+                "LEECH_LOG_CHAT", config_dict["LEECH_DUMP_CHAT"]
+            )
         for key in ["BOT_TOKEN", "OWNER_ID", "TELEGRAM_API", "TELEGRAM_HASH"]:
             value = getattr(cls, key)
             if isinstance(value, str):

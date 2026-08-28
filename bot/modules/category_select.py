@@ -157,3 +157,54 @@ async def confirm_category(client, query):
         f"<b>Timeout:</b> 60 sec",
         buttons.build_menu(3),
     )
+
+
+@new_task
+async def confirm_dump_chat(client, query):
+    user_id = query.from_user.id
+    data = query.data.split(maxsplit=3)
+    msg_id = int(data[2])
+    cache_key = f"sdump_{msg_id}"
+    if cache_key not in bot_cache:
+        return await edit_message(query.message, "<b>Old Task</b>")
+    elif user_id != int(data[1]) and not await CustomFilters.sudo("", query):
+        return await query.answer(text="This task is not for you!", show_alert=True)
+    elif data[3] == "sdone":
+        bot_cache[cache_key][1] = True
+        return
+    elif data[3] == "scancel":
+        bot_cache[cache_key][2] = True
+        return
+    dump_chats = Config.LEECH_DUMP_CHATS or {}
+    dump_names = list(dump_chats)
+    try:
+        dump_name = dump_names[int(data[3])]
+    except (ValueError, IndexError):
+        return await query.answer(text="Unknown dump chat!", show_alert=True)
+    await query.answer()
+    bot_cache[cache_key][0] = dump_chats[dump_name]
+    buttons = ButtonMaker()
+    for i, name in enumerate(dump_names):
+        buttons.data_button(
+            f"{'✓️' if dump_name == name else ''} {name}",
+            f"sdump {user_id} {msg_id} {i}",
+        )
+    buttons.data_button(
+        "Cancel",
+        f"sdump {user_id} {msg_id} scancel",
+        "footer",
+        style=ButtonStyle.DANGER,
+    )
+    buttons.data_button(
+        f"Done ({get_readable_time(60 - (time() - bot_cache[cache_key][3]))})",
+        f"sdump {user_id} {msg_id} sdone",
+        "footer",
+        style=ButtonStyle.SUCCESS,
+    )
+    await edit_message(
+        query.message,
+        f"<b>Select the dump chat for this task</b>\n\n"
+        f"<i><b>Dump Chat:</b></i> <code>{dump_name}</code>\n\n"
+        f"<b>Timeout:</b> 60 sec",
+        buttons.build_menu(3),
+    )

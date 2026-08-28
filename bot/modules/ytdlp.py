@@ -321,6 +321,7 @@ class YtDlp(TaskListener):
             "-opt": {},
             "-n": "",
             "-up": "",
+            "-ud": "",
             "-gc": "",
             "-rcf": "",
             "-t": "",
@@ -366,6 +367,7 @@ class YtDlp(TaskListener):
         self.select = args["-s"]
         self.name = args["-n"]
         self.up_dest = args["-up"]
+        self.dump_dest = args["-ud"]
         self.category = args["-gc"]
         self.rc_flags = args["-rcf"]
         self.link = args["link"]

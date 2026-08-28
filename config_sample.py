@@ -18,6 +18,7 @@ STATUS_UPDATE_INTERVAL = 15
 FILELION_API = ""
 STREAMWISH_API = ""
 ALLDEBRID_API_KEY = ""
+ALLDEBRID_NO_SEED_TIMEOUT = 180
 EXCLUDED_EXTENSIONS = ""
 INC_TASK_NOTIFY = False
 YT_DLP_OPTIONS = ""
@@ -199,7 +200,14 @@ TMDB_ACCESS_TOKEN = ""
 AUTO_THUMBNAIL = False
 
 # Log Channels
-LEECH_DUMP_CHAT = ""
+LEECH_LOG_CHAT = ""
+# Named leech dump chats, selectable per task with the -ud flag.
+# The chosen chat becomes the primary upload destination for the task.
+# Format: {"name": chat_id}
+LEECH_DUMP_CHATS = {
+    # "A": -1001234567890,
+    # "B": -1009876543210,
+}
 LINKS_LOG_ID = ""
 MIRROR_LOG_ID = ""
 

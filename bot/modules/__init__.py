@@ -21,7 +21,7 @@ from .gd_search import gdrive_search, select_type
 from .help import arg_usage, bot_help
 from .images import picture_add, pictures, pics_callback
 from .stream import stream_links
-from .category_select import change_category, confirm_category
+from .category_select import change_category, confirm_category, confirm_dump_chat
 from .broadcast import broadcast
 from .mirror_leech import (
     mirror,
@@ -110,6 +110,7 @@ __all__ = [
     "broadcast",
     "change_category",
     "confirm_category",
+    "confirm_dump_chat",
     "ping",
     "log",
     "log_cb",

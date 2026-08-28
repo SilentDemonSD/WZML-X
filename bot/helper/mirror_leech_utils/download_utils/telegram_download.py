@@ -36,7 +36,7 @@ class TelegramDownloadHelper:
         tm = self._listener.transmission_mode
         self._hyper_dl = (
             Config.USE_HYPER
-            and Config.LEECH_DUMP_CHAT
+            and (Config.LEECH_LOG_CHAT or self._listener.up_dest)
             and (
                 (tm in ("bot", "both") and len(TgClient.helper_bots) != 0)
                 or (
@@ -103,7 +103,7 @@ class TelegramDownloadHelper:
                     download = await self._hyper_dl_instance.download_media(
                         message,
                         file_name=path,
-                        dump_chat=Config.LEECH_DUMP_CHAT,
+                        dump_chat=self._listener.up_dest or Config.LEECH_LOG_CHAT,
                     )
                     if (
                         self._hyper_dl_instance is not None
