@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/SilentDemonSD/WZML-X/wzv3-dev/plugins/index.schema.json",
+  "title": "WZML-X plugin index",
+  "description": "Describes a plugin index file. This document is the schema, not an index -- point PLUGIN_INDEXES at a file shaped like index.json instead.",
+  "type": "object",
+  "required": [
+    "plugins"
+  ],
+  "properties": {
+    "updated": {
+      "type": "string",
+      "description": "When the index was last edited, YYYY-MM-DD."
+    },
+    "plugins": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "version"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{1,31}$",
+            "description": "Must match the plugin's manifest name and folder."
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name."
+          },
+          "version": {
+            "type": "string"
+          },
+          "author": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "string",
+            "description": "One emoji."
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Direct link to a zip or tar.gz. Use repo instead when the plugin lives inside a larger repository."
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{64}$",
+            "description": "Optional. When present the download is refused on any mismatch."
+          },
+          "min_bot_version": {
+            "type": "string"
+          },
+          "repository": {
+            "type": "string",
+            "format": "uri"
+          },
+          "repo": {
+            "type": "string",
+            "description": "owner/repo or owner/repo@branch. The plugin folder is picked out of the repo archive by its id. Use this instead of url when the plugin lives inside a larger repo."
+          }
+        },
+        "additionalProperties": true,
+        "anyOf": [
+          {
+            "required": [
+              "url"
+            ]
+          },
+          {
+            "required": [
+              "repo"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "additionalProperties": true
+}

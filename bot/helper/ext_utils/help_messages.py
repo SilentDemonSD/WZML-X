@@ -272,6 +272,16 @@ entirely so dead torrents finish faster on a debrid plan.
 
 Requires <code>ALLDEBRID_API_KEY</code> in the bot configuration."""
 
+seedr_arg = """<b>Seedr Cloud</b>: -seedr
+
+/cmd magnet -seedr
+Sends the magnet to your Seedr.cc cloud account, waits for it to
+finish there, then downloads the finished files over plain HTTP.
+Useful when the torrent is slow or blocked on your server.
+
+Only works with magnet links and .torrent URLs.
+Set SEEDR_EMAIL and SEEDR_PASSWORD in /usetting or the bot config."""
+
 metadata = """<b>Metadata</b>: -meta
 
 Apply custom metadata to media files using pipe (|) separator.
@@ -359,6 +369,7 @@ MIRROR_HELP_DICT = {
     "FFmpeg-Cmds": ffmpeg_cmds,
     "Metadata": metadata,
     "AllDebrid": alldebrid_arg,
+    "Seedr": seedr_arg,
 }
 
 CLONE_HELP_DICT = {
@@ -418,20 +429,18 @@ def get_bot_commands():
         "Count": "[link] Count no. of files/folders in GDrive",
         "List": "[query] Search any Text which is available in GDrive",
         "Search": "[query] Search torrents via Qbit Plugins",
-        "MediaInfo": "[reply/link] Get MediaInfo of the Target Media",
         "Select": "[gid/reply] Select files for NZB, Aria2, Qbit Tasks",
         "Ping": "Ping Bot to test Response Speed",
         "Status": "[id/me] Tasks Status of Bot",
         "Stats": "Bot, OS, Repo & System full Statistics",
         "Rss": "User RSS Management Settings",
-        "IMDB": "[query] or ttxxxxxx Get IMDB info",
         "CancelAll": "Cancel all Tasks on the Bot",
         "Help": "Detailed help usage of the WZ Bot",
         "BotSet": "[SUDO] Bot Management Settings",
         "Log": "[SUDO] Get Bot Logs for Internal Working",
+        "Memory": "[SUDO] Memory usage, caches and an allocation profiler",
         "Restart": "[SUDO] Reboot bot",
         "RestartSessions": "[SUDO] Reboot User Sessions",
-        "GenPyroSess": "[SUDO] Generate Pyrogram String Session",
     }
 
     commands = static_commands.copy()
@@ -490,6 +499,8 @@ def get_help_string():
             help_lines.append(f"{cmd_str}: Start leeching using JDownloader.")
         elif key == "NzbLeech":
             help_lines.append(f"{cmd_str}: Start leeching using Sabnzbd.")
+        elif key == "SeedrLink":
+            help_lines.append(f"{cmd_str}: Get direct Seedr HTTP download links.")
         elif key == "YtdlLeech":
             help_lines.append(f"{cmd_str}: Leech yt-dlp supported link.")
         elif key == "Clone":
@@ -522,8 +533,6 @@ def get_help_string():
             help_lines.append(f"{cmd_str} [query]: Search in Google Drive(s).")
         elif key == "Search":
             help_lines.append(f"{cmd_str} [query]: Search for torrents with API.")
-        elif key == "MediaInfo":
-            help_lines.append(f"{cmd_str} [query]: Get media info.")
         elif key == "Status":
             help_lines.append(f"{cmd_str}: Shows a status of all the downloads.")
         elif key == "Stats":
@@ -582,10 +591,6 @@ def get_help_string():
             )
         elif key == "Rss":
             help_lines.append(f"/{BotCommands.RssCommand}: RSS Menu.")
-        elif key == "GenPyroSess":
-            help_lines.append(
-                f"/{BotCommands.GenPyroSessCommand}: Generate Pyrogram String Session (Only Owner & Sudo)."
-            )
         elif key in BOT_COMMANDS:
             help_lines.append(f"{cmd_str}: {BOT_COMMANDS[key]}")
 

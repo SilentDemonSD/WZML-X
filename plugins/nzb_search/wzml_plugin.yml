@@ -1,0 +1,16 @@
+name: nzb_search
+version: "1.0.0"
+author: WZML-X
+description: Search Usenet indexers through Hydra
+license: MIT
+repository: https://github.com/SilentDemonSD/WZML-X
+tags: [usenet, search]
+min_bot_version: "3.1.9"
+entry: nzb_search.py
+commands:
+  - name: nzbsearch
+    handler: hydra_search
+    description: "[query] Search Usenet indexers"
+    usage: "/nzbsearch <query>"
+    aliases: [ns]
+    access: authorized

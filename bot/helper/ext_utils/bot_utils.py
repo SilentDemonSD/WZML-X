@@ -250,6 +250,7 @@ def arg_parser(items, arg_base):
         "-bt",
         "-yt",
         "-ad",
+        "-seedr",
     }
     if Config.DISABLE_BULK and "-b" in items:
         arg_base["-b"] = False
@@ -411,6 +412,17 @@ def safe_int(value, default=0):
         return int(value)
     except (ValueError, TypeError):
         return default
+
+
+def parse_dest(value):
+    if isinstance(value, int) or not value:
+        return value, None
+    chat, _, thread = str(value).partition("|")
+    chat = chat.strip()
+    thread = thread.strip()
+    if chat.lstrip("-").isdigit():
+        chat = int(chat)
+    return chat, int(thread) if thread.isdigit() else None
 
 
 class GitInfo:

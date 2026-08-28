@@ -1,5 +1,7 @@
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+from json import loads as json_loads
 from logging import getLogger, ERROR
 from os import path as ospath, listdir
 from pickle import load as pload
@@ -70,12 +72,15 @@ class GoogleDriveHelper:
     def authorize(self):
         credentials = None
         if self.use_sa:
-            json_files = listdir("accounts")
+            json_files = sorted(f for f in listdir("accounts") if f.endswith(".json"))
             self.sa_number = len(json_files)
             if self.sa_number == 0:
                 LOGGER.error("No service account files found in accounts/")
                 raise ValueError("No service account files found")
-            self.sa_index = randrange(self.sa_number)
+            if self.service is None:
+                self.sa_index = randrange(self.sa_number)
+            elif self.sa_index >= self.sa_number:
+                self.sa_index = 0
             LOGGER.info(f"Authorizing with {json_files[self.sa_index]} service account")
             credentials = service_account.Credentials.from_service_account_file(
                 f"accounts/{json_files[self.sa_index]}", scopes=self._OAUTH_SCOPE
@@ -100,6 +105,29 @@ class GoogleDriveHelper:
         self.sa_count += 1
         LOGGER.info(f"Switching to {self.sa_index} index")
         self.service = self.authorize()
+
+    def _sa_quota_switch(self, err):
+        if not self.use_sa or self.sa_count >= self.sa_number:
+            return False
+        if not err.resp.get("content-type", "").startswith("application/json"):
+            return False
+        try:
+            reason = json_loads(err.content)["error"]["errors"][0]["reason"]
+        except Exception:
+            return False
+        if reason not in ("userRateLimitExceeded", "dailyLimitExceeded"):
+            return False
+        self.switch_service_account()
+        LOGGER.info(f"Got: {reason}, Trying Again...")
+        return True
+
+    def _execute(self, build_request):
+        while True:
+            try:
+                return build_request().execute()
+            except HttpError as err:
+                if not self._sa_quota_switch(err):
+                    raise
 
     def get_id_from_url(self, link, user_id=""):
         if user_id and link.startswith("mtp:"):
@@ -135,10 +163,10 @@ class GoogleDriveHelper:
             "value": None,
             "withLink": True,
         }
-        return (
-            self.service.permissions()
-            .create(fileId=file_id, body=permissions, supportsAllDrives=True)
-            .execute()
+        return self._execute(
+            lambda: self.service.permissions().create(
+                fileId=file_id, body=permissions, supportsAllDrives=True
+            )
         )
 
     @retry(
@@ -152,15 +180,13 @@ class GoogleDriveHelper:
             "type": "user",
             "emailAddress": email,
         }
-        return (
-            self.service.permissions()
-            .create(
+        return self._execute(
+            lambda: self.service.permissions().create(
                 fileId=file_id,
                 body=permissions,
                 supportsAllDrives=True,
                 sendNotificationEmail=False,
             )
-            .execute()
         )
 
     @retry(
@@ -169,14 +195,12 @@ class GoogleDriveHelper:
         retry=retry_if_exception_type(Exception),
     )
     def get_file_metadata(self, file_id):
-        return (
-            self.service.files()
-            .get(
+        return self._execute(
+            lambda: self.service.files().get(
                 fileId=file_id,
                 supportsAllDrives=True,
                 fields="name, id, mimeType, size",
             )
-            .execute()
         )
 
     @retry(
@@ -194,9 +218,8 @@ class GoogleDriveHelper:
         else:
             q = f"'{folder_id}' in parents and mimeType != '{self.G_DRIVE_DIR_MIME_TYPE}' and trashed = false"
         while True:
-            response = (
-                self.service.files()
-                .list(
+            response = self._execute(
+                lambda: self.service.files().list(
                     supportsAllDrives=True,
                     includeItemsFromAllDrives=True,
                     q=q,
@@ -206,7 +229,6 @@ class GoogleDriveHelper:
                     orderBy="folder, name",
                     pageToken=page_token,
                 )
-                .execute()
             )
             files.extend(response.get("files", []))
             page_token = response.get("nextPageToken")
@@ -227,10 +249,10 @@ class GoogleDriveHelper:
         }
         if dest_id is not None:
             file_metadata["parents"] = [dest_id]
-        file = (
-            self.service.files()
-            .create(body=file_metadata, supportsAllDrives=True)
-            .execute()
+        file = self._execute(
+            lambda: self.service.files().create(
+                body=file_metadata, supportsAllDrives=True
+            )
         )
         file_id = file.get("id")
         if not Config.IS_TEAM_DRIVE:

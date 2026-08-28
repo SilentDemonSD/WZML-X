@@ -1,0 +1,54 @@
+name: anilist
+version: "1.0.0"
+author: WZML-X
+description: Search AniList for anime, characters and manga
+license: MIT
+repository: https://github.com/SilentDemonSD/WZML-X
+tags: [anime, lookup]
+min_bot_version: "3.1.10"
+entry: anilist.py
+python_dependencies:
+  - markdown
+  - pycountry
+commands:
+  - name: anime
+    handler: anime_command
+    description: "[query] Search AniList for an anime"
+    usage: "/anime <name or id>"
+    aliases: [anilist]
+    access: authorized
+  - name: character
+    handler: character_command
+    description: "[query] Search AniList for a character"
+    usage: "/character <name>"
+    access: authorized
+  - name: manga
+    handler: manga_command
+    description: "[query] Search AniList for a manga"
+    usage: "/manga <name>"
+    access: authorized
+  - name: animehelp
+    handler: animehelp_command
+    description: How to use the anime commands
+    usage: "/animehelp"
+    access: authorized
+callbacks:
+  - pattern: "^anime"
+    handler: anime_callback
+    description: Anime detail sections
+    access: authorized
+  - pattern: "^cha"
+    handler: character_callback
+    description: Character spoiler toggle
+    access: authorized
+config_schema:
+  anime_template:
+    type: string
+    default: ""
+    description: HTML caption template. Leave empty for the built-in one.
+  description_limit:
+    type: integer
+    default: 500
+    min: 100
+    max: 2000
+    description: How much of the synopsis to keep

@@ -1,0 +1,18 @@
+name: speedtest
+version: "1.0.0"
+author: WZML-X
+description: Measure the server's network speed
+license: MIT
+repository: https://github.com/SilentDemonSD/WZML-X
+tags: [utility, network]
+min_bot_version: "3.1.9"
+entry: speedtest.py
+python_dependencies:
+  - speedtest-cli>=2.1.3
+commands:
+  - name: speedtest
+    handler: speedtest_command
+    description: Run a network speed test
+    usage: "/speedtest"
+    aliases: [spt]
+    access: authorized

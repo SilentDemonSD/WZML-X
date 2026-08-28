@@ -20,7 +20,8 @@ from aioshutil import rmtree
 from langcodes import Language
 from niquests import AsyncSession
 
-from ... import LOGGER, DOWNLOAD_DIR, threads, cores
+from ... import LOGGER, DOWNLOAD_DIR
+from ...core.cpu import ffmpeg_layout
 from ...core.config_manager import BinConfig
 from .bot_utils import cmd_exec, sync_to_async
 from .files_utils import get_mime_type, is_archive, is_archive_split
@@ -258,6 +259,7 @@ async def get_streams(file):
 
 
 async def take_ss(video_file, ss_nb) -> bool:
+    cores, threads = ffmpeg_layout()
     duration = (await get_media_info(video_file))[0]
     if duration != 0:
         dirpath, name = video_file.rsplit("/", 1)
@@ -312,6 +314,7 @@ async def take_ss(video_file, ss_nb) -> bool:
 
 
 async def get_audio_thumbnail(audio_file):
+    cores, threads = ffmpeg_layout()
     output_dir = f"{DOWNLOAD_DIR}thumbnails"
     await makedirs(output_dir, exist_ok=True)
     output = ospath.join(output_dir, f"{time()}.jpg")
@@ -348,6 +351,7 @@ async def get_audio_thumbnail(audio_file):
 
 
 async def get_video_thumbnail(video_file, duration):
+    cores, threads = ffmpeg_layout()
     output_dir = f"{DOWNLOAD_DIR}thumbnails"
     await makedirs(output_dir, exist_ok=True)
     output = ospath.join(output_dir, f"{time()}.jpg")
@@ -394,6 +398,7 @@ async def get_video_thumbnail(video_file, duration):
 
 
 async def get_multiple_frames_thumbnail(video_file, layout, keep_screenshots):
+    cores, threads = ffmpeg_layout()
     layout = re.sub(r"(\d+)\D+(\d+)", r"\1x\2", layout)
     ss_nb = layout.split("x")
     if len(ss_nb) != 2 or not ss_nb[0].isdigit() or not ss_nb[1].isdigit():
@@ -602,6 +607,7 @@ class FFMpeg:
             return False
 
     async def convert_video(self, video_file, ext, retry=False):
+        cores, threads = ffmpeg_layout()
         self.clear()
         self._total_time = (await get_media_info(video_file))[0]
         base_name = ospath.splitext(video_file)[0]
@@ -686,6 +692,7 @@ class FFMpeg:
         return False
 
     async def convert_audio(self, audio_file, ext):
+        cores, threads = ffmpeg_layout()
         self.clear()
         self._total_time = (await get_media_info(audio_file))[0]
         base_name = ospath.splitext(audio_file)[0]
@@ -734,6 +741,7 @@ class FFMpeg:
         return False
 
     async def sample_video(self, video_file, sample_duration, part_duration):
+        cores, threads = ffmpeg_layout()
         self.clear()
         self._total_time = sample_duration
         dir, name = video_file.rsplit("/", 1)
@@ -818,6 +826,7 @@ class FFMpeg:
             return False
 
     async def split(self, f_path, file_, parts, split_size):
+        cores, threads = ffmpeg_layout()
         self.clear()
         multi_streams = True
         self._total_time = duration = (await get_media_info(f_path))[0]

@@ -1,0 +1,97 @@
+{
+  "$schema": "https://raw.githubusercontent.com/SilentDemonSD/WZML-X/wzv3-dev/plugins/index.schema.json",
+  "updated": "2026-08-25",
+  "plugins": [
+    {
+      "id": "anilist",
+      "name": "AniList",
+      "version": "1.0.0",
+      "author": "WZML-X",
+      "description": "Search AniList for anime, characters and manga",
+      "tags": [
+        "anime",
+        "lookup"
+      ],
+      "repo": "SilentDemonSD/WZML-X@wzv3-dev",
+      "min_bot_version": "3.1.10"
+    },
+    {
+      "id": "gen_pyro_sess",
+      "name": "Session Generator",
+      "version": "1.0.0",
+      "author": "WZML-X",
+      "description": "Generate a Pyrogram string session step by step",
+      "tags": [
+        "utility",
+        "session"
+      ],
+      "repo": "SilentDemonSD/WZML-X@wzv3-dev",
+      "min_bot_version": "3.1.9"
+    },
+    {
+      "id": "imdb",
+      "name": "IMDB",
+      "version": "1.0.0",
+      "author": "WZML-X",
+      "description": "Search IMDB for titles and post a formatted card",
+      "tags": [
+        "media",
+        "lookup"
+      ],
+      "repo": "SilentDemonSD/WZML-X@wzv3-dev",
+      "min_bot_version": "3.1.9"
+    },
+    {
+      "id": "mediainfo",
+      "name": "MediaInfo",
+      "version": "1.0.0",
+      "author": "WZML-X",
+      "description": "Read MediaInfo of a replied media or a direct link",
+      "tags": [
+        "media",
+        "utility"
+      ],
+      "repo": "SilentDemonSD/WZML-X@wzv3-dev",
+      "min_bot_version": "3.1.9"
+    },
+    {
+      "id": "mydramalist",
+      "name": "MyDramaList",
+      "version": "1.0.0",
+      "author": "WZML-X",
+      "description": "Search MyDramaList for dramas and movies",
+      "tags": [
+        "media",
+        "lookup"
+      ],
+      "repo": "SilentDemonSD/WZML-X@wzv3-dev",
+      "min_bot_version": "3.1.10"
+    },
+    {
+      "id": "nzb_search",
+      "name": "NZB Search",
+      "version": "1.0.0",
+      "author": "WZML-X",
+      "description": "Search Usenet indexers through Hydra",
+      "tags": [
+        "usenet",
+        "search"
+      ],
+      "repo": "SilentDemonSD/WZML-X@wzv3-dev",
+      "min_bot_version": "3.1.9"
+    },
+    {
+      "id": "speedtest",
+      "name": "Speedtest",
+      "version": "1.0.0",
+      "author": "WZML-X",
+      "description": "Measure the server's network speed",
+      "tags": [
+        "utility",
+        "network"
+      ],
+      "repo": "SilentDemonSD/WZML-X@wzv3-dev",
+      "min_bot_version": "3.1.9"
+    }
+  ]
+}

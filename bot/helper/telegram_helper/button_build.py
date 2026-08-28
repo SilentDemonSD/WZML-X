@@ -1,13 +1,23 @@
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 from pyrogram.enums import ButtonStyle
 
-from ...core.config_manager import Config
+URL_SCHEMES = ("http://", "https://", "tg://")
 
 
 def _btn_style(style=None):
-    if Config.COLORED_BTNS and style:
-        return style
-    return ButtonStyle.DEFAULT
+    return style or ButtonStyle.DEFAULT
+
+
+def valid_url(link):
+    text = str(link or "").strip()
+    if not text.lower().startswith(URL_SCHEMES):
+        return ""
+    rest = text.split("://", 1)[1]
+    if not rest or rest.startswith(("/", "?", "#")):
+        return ""
+    if any(ch.isspace() for ch in text):
+        return ""
+    return text
 
 
 class ButtonMaker:
@@ -21,8 +31,14 @@ class ButtonMaker:
         }
 
     def url_button(self, key, link, position=None, style=None):
+        safe = valid_url(link)
+        if not safe:
+            from ... import LOGGER
+
+            LOGGER.warning(f"dropping button {key!r} with unusable url {link!r}")
+            return
         self.buttons[position if position in self.buttons else "default"].append(
-            InlineKeyboardButton(text=key, url=link, style=_btn_style(style))
+            InlineKeyboardButton(text=key, url=safe, style=_btn_style(style))
         )
 
     def web_app_button(self, key, link, position=None, style=None):

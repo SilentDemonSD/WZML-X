@@ -1,0 +1,16 @@
+name: mediainfo
+version: "1.0.0"
+author: WZML-X
+description: Read MediaInfo of a replied media or a direct link
+license: MIT
+repository: https://github.com/SilentDemonSD/WZML-X
+tags: [media, utility]
+min_bot_version: "3.1.9"
+entry: mediainfo.py
+commands:
+  - name: mediainfo
+    handler: mediainfo
+    description: "[reply/link] Get MediaInfo of the Target Media"
+    usage: "/mediainfo <reply|link>"
+    aliases: [mi]
+    access: authorized

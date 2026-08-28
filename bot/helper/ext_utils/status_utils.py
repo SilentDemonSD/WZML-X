@@ -37,6 +37,7 @@ class MirrorStatus:
     STATUS_FFMPEG = "FFmpeg"
     STATUS_YT = "YouTube"
     STATUS_METADATA = "Metadata"
+    STATUS_SEEDR = "Seedr"
 
 
 class EngineStatus:
@@ -58,6 +59,7 @@ class EngineStatus:
         self.STATUS_YT = "Youtube-Api"
         self.STATUS_METADATA = "Metadata"
         self.STATUS_UPHOSTER = "Uphoster"
+        self.STATUS_SEEDR = "Seedr"
 
 
 STATUSES = {

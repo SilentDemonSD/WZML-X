@@ -516,8 +516,8 @@ class YtDlp(TaskListener):
         playlist = "entries" in result
 
         ydl = YoutubeDLHelper(self)
-        await delete_links(self.message)
         await ydl.add_download(path, qual, playlist, opt)
+        await delete_links(self.message)
 
 
 async def ytdl(client, message):

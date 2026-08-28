@@ -17,6 +17,7 @@ from pyrogram.handlers import MessageHandler
 
 from .. import auth_chats, excluded_extensions, sudo_users, user_data
 from ..core.config_manager import Config
+from ..core.seedr_client import SeedrClient
 from ..core.tg_client import TgClient
 from ..helper.ext_utils.bot_utils import (
     get_size_bytes,
@@ -75,6 +76,7 @@ advanced_options = [
 ]
 yt_options = ["YT_DESP", "YT_TAGS", "YT_CATEGORY_ID", "YT_PRIVACY_STATUS"]
 mega_options = ["MEGA_EMAIL", "MEGA_PASSWORD"]
+seedr_options = ["SEEDR_EMAIL", "SEEDR_PASSWORD", "SEEDR_DELETE_FOLDER"]
 
 user_settings_text = {
     "THUMBNAIL": (
@@ -325,6 +327,16 @@ Here I will explain how to use mltb.* which is reference to files you want to wo
         "Your Mega.nz account password for per-user Mega downloads & uploads.",
         "<i>Send your Mega.nz account password.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     ),
+    "SEEDR_EMAIL": (
+        "String",
+        "Your Seedr.cc account email for per-user Seedr cloud downloads.",
+        "<i>Send your Seedr.cc email address.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
+    ),
+    "SEEDR_PASSWORD": (
+        "String",
+        "Your Seedr.cc account password for per-user Seedr cloud downloads.",
+        "<i>Send your Seedr.cc account password.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
+    ),
     "DRIVE_CAT": (
         "Dict",
         'User-defined GDrive categories (name → drive_id). Format: {"name": "drive_id|index_link"}.',
@@ -359,6 +371,7 @@ async def get_user_settings(from_user, stype="main"):
             + [
                 "USER_TOKENS",
                 "AS_DOCUMENT",
+                "AUTO_THUMBNAIL",
                 "EQUAL_SPLITS",
                 "MEDIA_GROUP",
                 "STOP_DUPLICATE",
@@ -508,6 +521,20 @@ async def get_user_settings(from_user, stype="main"):
                 "Enable Media Group", f"userset {user_id} tog MEDIA_GROUP t"
             )
             media_group = "Disabled"
+        if (
+            user_dict.get("AUTO_THUMBNAIL", False)
+            or "AUTO_THUMBNAIL" not in user_dict
+            and Config.AUTO_THUMBNAIL
+        ):
+            buttons.data_button(
+                "Disable Auto Thumbnail", f"userset {user_id} tog AUTO_THUMBNAIL f"
+            )
+            auto_thumb = "Enabled"
+        else:
+            buttons.data_button(
+                "Enable Auto Thumbnail", f"userset {user_id} tog AUTO_THUMBNAIL t"
+            )
+            auto_thumb = "Disabled"
         buttons.data_button(
             "Thumbnail Layout", f"userset {user_id} menu THUMBNAIL_LAYOUT"
         )
@@ -536,7 +563,8 @@ async def get_user_settings(from_user, stype="main"):
 ┠ Leech Suffix → <code>{escape(lsuffix)}</code>
 ┠ Leech Caption → <code>{escape(lcap)}</code>
 ┠ Leech Destination → <code>{leech_dest}</code>
-┖ Thumbnail Layout → <b>{thumb_layout}</b>
+┠ Thumbnail Layout → <b>{thumb_layout}</b>
+┖ Auto Thumbnail → <b>{auto_thumb}</b>
 """
 
     elif stype == "uphoster":
@@ -841,6 +869,8 @@ async def get_user_settings(from_user, stype="main"):
 
         buttons.data_button("YT Up Tools", f"userset {user_id} yttools")
         buttons.data_button("Mega Tools", f"userset {user_id} mega")
+        if not Config.DISABLE_SEEDR:
+            buttons.data_button("Seedr Tools", f"userset {user_id} seedr")
         if Config.DRIVE_CATEGORY_MODE:
             dc_enabled = user_dict.get("drive_cat_mode", False)
             buttons.data_button(
@@ -903,6 +933,68 @@ async def get_user_settings(from_user, stype="main"):
 ┠ <b>Mega Password</b> → <code>{pass_display}</code>
 ┖ <b>Account</b> → {account_status}"""
 
+    elif stype == "seedr":
+        seedr_email = user_dict.get("SEEDR_EMAIL", "")
+        seedr_password = user_dict.get("SEEDR_PASSWORD", "")
+        seedr_delete = (
+            user_dict.get("SEEDR_DELETE_FOLDER")
+            if "SEEDR_DELETE_FOLDER" in user_dict
+            else Config.SEEDR_DELETE_FOLDER
+        )
+        has_creds = bool(seedr_email and seedr_password)
+        masked_pass = (
+            (
+                seedr_password[:2]
+                + "*" * (len(seedr_password) - 4)
+                + seedr_password[-2:]
+                if len(seedr_password) > 6
+                else "****"
+            )
+            if seedr_password
+            else ""
+        )
+
+        buttons.data_button("Seedr Email", f"userset {user_id} menu SEEDR_EMAIL")
+        if seedr_email:
+            buttons.data_button(
+                "Seedr Password", f"userset {user_id} menu SEEDR_PASSWORD"
+            )
+
+        buttons.data_button(
+            f"Delete Folder: {'ON' if seedr_delete else 'OFF'}",
+            f"userset {user_id} tog SEEDR_DELETE_FOLDER {'f' if seedr_delete else 't'}",
+        )
+
+        if has_creds:
+            buttons.data_button(
+                "Clear Storage",
+                f"userset {user_id} clear_seedr",
+                position="l_body",
+            )
+            buttons.data_button(
+                "Remove Account",
+                f"userset {user_id} remove SEEDR_EMAIL",
+                position="l_body",
+            )
+
+        buttons.data_button("Back", f"userset {user_id} back mirror", "footer")
+        buttons.data_button(
+            "Close", f"userset {user_id} close", "footer", style=ButtonStyle.DANGER
+        )
+        btns = buttons.build_menu(1)
+
+        email_display = seedr_email or "Not Set"
+        pass_display = masked_pass if seedr_password else "Not Set"
+        account_status = "✓ Configured" if has_creds else "❌ Not Configured"
+        delete_display = "Enabled" if seedr_delete else "Disabled"
+        text = f"""⌬ <b>Seedr Tools :</b>
+┟ <b>Name</b> → {user_name}
+┃
+┠ <b>Seedr Email</b> → <code>{email_display}</code>
+┠ <b>Seedr Password</b> → <code>{pass_display}</code>
+┠ <b>Delete Folder</b> → {delete_display}
+┖ <b>Account</b> → {account_status}"""
+
     elif stype == "ffset":
         buttons.data_button(
             "FFmpeg Cmds", f"userset {user_id} menu FFMPEG_CMDS", "header"
@@ -917,7 +1009,7 @@ async def get_user_settings(from_user, stype="main"):
         if isinstance(ffc, dict):
             ffc = "\n" + "\n".join(
                 [
-                    f"{no}. <b>{key}</b>: <code>{escape(str(value[0]))}</code>"
+                    f"{no}. <b>{escape(str(key))}</b>: <code>{escape(str(value[0] if isinstance(value, (list, tuple)) and value else value))}</code>"
                     for no, (key, value) in enumerate(ffc.items(), start=1)
                 ]
             )
@@ -1134,6 +1226,17 @@ async def add_file(_, message, ftype, rfunc):
     await database.update_user_doc(user_id, ftype, des_dir)
 
 
+def validate_ffmpeg_cmds(value):
+    for key, cmds in value.items():
+        if not isinstance(cmds, (list, tuple)) or not cmds:
+            raise ValueError(f"'{key}' must be a non-empty list of command strings")
+        for cmd in cmds:
+            if not isinstance(cmd, str) or not cmd.strip():
+                raise ValueError(f"'{key}' has an empty or non-string command")
+            if "-i" not in cmd.split():
+                raise ValueError(f"'{key}' has a command without an -i input: {cmd}")
+
+
 @new_task
 async def add_one(_, message, option, rfunc):
     user_id = message.from_user.id
@@ -1157,6 +1260,8 @@ async def add_one(_, message, option, rfunc):
                     ilink = parts[1].strip() if len(parts) > 1 else ""
                     parsed[k.strip()] = {"drive_id": did, "index_link": ilink}
                 value = parsed
+            elif option == "FFMPEG_CMDS":
+                validate_ffmpeg_cmds(value)
             if user_dict.get(option):
                 user_dict[option].update(value)
             else:
@@ -1177,10 +1282,11 @@ async def remove_one(_, message, option, rfunc):
     user_id = message.from_user.id
     handler_dict[user_id] = False
     user_dict = user_data.get(user_id, {})
-    names = message.text.split("/")
-    for name in names:
-        if name in user_dict[option]:
-            del user_dict[option][name]
+    names = [name.strip() for name in message.text.split("/") if name.strip()]
+    opt_dict = user_dict.get(option)
+    if isinstance(opt_dict, dict):
+        for name in names:
+            opt_dict.pop(name, None)
     await delete_message(message)
     await rfunc()
     await database.update_user_data(user_id)
@@ -1283,6 +1389,8 @@ async def set_option(_, message, option, rfunc):
                         ilink = parts[1].strip() if len(parts) > 1 else ""
                         parsed[k.strip()] = {"drive_id": did, "index_link": ilink}
                     value = parsed
+                elif option == "FFMPEG_CMDS":
+                    validate_ffmpeg_cmds(value)
             except Exception as e:
                 await send_message(message, str(e))
                 return
@@ -1348,6 +1456,8 @@ async def get_menu(option, message, user_id):
         back_to = option.split("_")[0].lower()
     elif option in mega_options:
         back_to = "mega"
+    elif option in seedr_options:
+        back_to = "seedr"
     else:
         back_to = "back"
     buttons.data_button("Back", f"userset {user_id} {back_to}", "footer")
@@ -1393,6 +1503,9 @@ async def get_menu(option, message, user_id):
             val = "\n   ".join(lines)
         elif not val:
             val = "<b>Not Exists</b>"
+
+    elif option in ["FFMPEG_CMDS", "YT_DLP_OPTIONS", "UPLOAD_PATHS"]:
+        val = f"<code>{escape(str(val))}</code>" if val else "<b>Not Exists</b>"
 
     if option == "METADATA":
         text = f"""⌬ <b><u>Menu Settings :</u></b>
@@ -1508,6 +1621,36 @@ async def edit_user_settings(client, query):
             info_text = await get_mega_account_info(mega_email, mega_password)
             msg += f"\n\n{info_text}"
             await edit_message(message, msg, button)
+    elif data[2] == "seedr":
+        await query.answer()
+        msg, button = await get_user_settings(query.from_user, "seedr")
+        await edit_message(message, msg, button)
+        seedr_email = user_dict.get("SEEDR_EMAIL") or Config.SEEDR_EMAIL
+        seedr_password = user_dict.get("SEEDR_PASSWORD") or Config.SEEDR_PASSWORD
+        if seedr_email and seedr_password:
+            try:
+                sc = SeedrClient(seedr_email, seedr_password)
+                await sc.login()
+                space_max, space_used = await sc.get_space()
+                msg += f"\n\n<b>Seedr Space</b> → <code>{get_readable_file_size(space_used)} / {get_readable_file_size(space_max)}</code>"
+            except Exception as e:
+                msg += f"\n\n<b>Seedr Login Failed:</b> {escape(str(e))}"
+            await edit_message(message, msg, button)
+    elif data[2] == "clear_seedr":
+        await query.answer("Clearing Seedr Storage...", show_alert=False)
+        seedr_email = user_dict.get("SEEDR_EMAIL") or Config.SEEDR_EMAIL
+        seedr_password = user_dict.get("SEEDR_PASSWORD") or Config.SEEDR_PASSWORD
+        if seedr_email and seedr_password:
+            try:
+                from .mirror_leech import clear_seedr_account
+
+                t_c, f_c = await clear_seedr_account(seedr_email, seedr_password)
+                await query.answer(
+                    f"Removed {t_c} torrent(s) and {f_c} folder(s)!", show_alert=True
+                )
+            except Exception as e:
+                await query.answer(f"Failed: {e}"[:180], show_alert=True)
+        await update_user_settings(query, "seedr")
     elif data[2] == "yttools":
         await query.answer()
         await update_user_settings(query, data[2])
@@ -1572,6 +1715,8 @@ async def edit_user_settings(client, query):
             back_to = "general"
         elif data[3] == "GOFILE_AUTO_CREATE_FOLDER":
             back_to = "gofile"
+        elif data[3] == "SEEDR_DELETE_FOLDER":
+            back_to = "seedr"
         else:
             back_to = "leech"
         await update_user_settings(query, stype=back_to)
@@ -1645,6 +1790,8 @@ async def edit_user_settings(client, query):
             update_user_ldata(user_id, data[3], "")
             if data[3] == "MEGA_EMAIL":
                 update_user_ldata(user_id, "MEGA_PASSWORD", "")
+            elif data[3] == "SEEDR_EMAIL":
+                update_user_ldata(user_id, "SEEDR_PASSWORD", "")
             await database.update_user_data(user_id)
         await get_menu(data[3], message, user_id)
     elif data[2] == "reset":

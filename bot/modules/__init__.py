@@ -1,4 +1,5 @@
 from .bot_settings import send_bot_settings, edit_bot_settings
+from .memory import memory_stats, memory_callback
 from .cancel_task import cancel, cancel_multi, cancel_all_buttons, cancel_all_update
 from .chat_permission import (
     authorize,
@@ -19,7 +20,6 @@ from .gd_clean import drive_clean, confirm_drive_clean_cb
 from .gd_search import gdrive_search, select_type
 from .help import arg_usage, bot_help
 from .images import picture_add, pictures, pics_callback
-from .mediainfo import mediainfo
 from .stream import stream_links
 from .category_select import change_category, confirm_category, confirm_dump_chat
 from .broadcast import broadcast
@@ -32,6 +32,7 @@ from .mirror_leech import (
     jd_mirror,
     nzb_leech,
     nzb_mirror,
+    seedr_link,
     uphoster,
 )
 from .restart import (
@@ -40,19 +41,18 @@ from .restart import (
     confirm_restart,
     restart_sessions,
 )
-from .imdb import imdb_search, imdb_callback
 from .rss import get_rss_menu, rss_listener
 from .search import torrent_search, torrent_search_update, initiate_search_tools
-from .nzb_search import hydra_search
 from .services import start, start_cb, login, ping, log, log_cb
 from .shell import run_shell
 from .stats import bot_stats, stats_pages, get_packages_version
 from .status import task_status, status_pages
 from .users_settings import get_users_settings, edit_user_settings, send_user_settings
-from .gen_pyro_sess import gen_pyro_string
 from .ytdlp import ytdl, ytdl_leech
 
 __all__ = [
+    "memory_stats",
+    "memory_callback",
     "send_bot_settings",
     "edit_bot_settings",
     "cancel",
@@ -69,7 +69,6 @@ __all__ = [
     "clone_node",
     "aioexecute",
     "execute",
-    "hydra_search",
     "clear",
     "select",
     "confirm_selection",
@@ -90,12 +89,11 @@ __all__ = [
     "jd_mirror",
     "nzb_leech",
     "nzb_mirror",
+    "seedr_link",
     "restart_bot",
     "restart_notification",
     "confirm_restart",
     "restart_sessions",
-    "imdb_search",
-    "imdb_callback",
     "get_rss_menu",
     "rss_listener",
     "torrent_search",
@@ -108,7 +106,6 @@ __all__ = [
     "picture_add",
     "pictures",
     "pics_callback",
-    "mediainfo",
     "stream_links",
     "broadcast",
     "change_category",
@@ -126,7 +123,6 @@ __all__ = [
     "get_users_settings",
     "edit_user_settings",
     "send_user_settings",
-    "gen_pyro_string",
     "ytdl",
     "ytdl_leech",
 ]

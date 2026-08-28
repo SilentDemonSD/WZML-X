@@ -82,6 +82,18 @@ async def add_handlers():
     )
     TgClient.bot.add_handler(
         MessageHandler(
+            memory_stats,
+            filters=command(BotCommands.MemoryCommand, case_sensitive=True)
+            & CustomFilters.sudo,
+        )
+    )
+    TgClient.bot.add_handler(
+        CallbackQueryHandler(
+            memory_callback, filters=regex("^mem") & CustomFilters.sudo
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
             cancel,
             filters=regex(rf"^/{BotCommands.CancelTaskCommand[1]}?(?:_\w+).*$")
             & CustomFilters.authorized,
@@ -228,6 +240,13 @@ async def add_handlers():
     )
     TgClient.bot.add_handler(
         MessageHandler(
+            seedr_link,
+            filters=command(BotCommands.SeedrLinkCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
+        MessageHandler(
             uphoster,
             filters=command(BotCommands.UpHosterCommand, case_sensitive=True)
             & CustomFilters.authorized,
@@ -293,16 +312,6 @@ async def add_handlers():
     )
     TgClient.bot.add_handler(
         MessageHandler(
-            imdb_search,
-            filters=command(BotCommands.IMDBCommand, case_sensitive=True)
-            & CustomFilters.authorized,
-        )
-    )
-    TgClient.bot.add_handler(
-        CallbackQueryHandler(imdb_callback, filters=regex("^imdb"))
-    )
-    TgClient.bot.add_handler(
-        MessageHandler(
             ping,
             filters=command(BotCommands.PingCommand, case_sensitive=True)
             & CustomFilters.authorized,
@@ -312,13 +321,6 @@ async def add_handlers():
         MessageHandler(
             bot_help,
             filters=command(BotCommands.HelpCommand, case_sensitive=True)
-            & CustomFilters.authorized,
-        )
-    )
-    TgClient.bot.add_handler(
-        MessageHandler(
-            mediainfo,
-            filters=command(BotCommands.MediaInfoCommand, case_sensitive=True)
             & CustomFilters.authorized,
         )
     )
@@ -410,20 +412,6 @@ async def add_handlers():
     )
     TgClient.bot.add_handler(
         MessageHandler(
-            hydra_search,
-            filters=command(BotCommands.NzbSearchCommand, case_sensitive=True)
-            & CustomFilters.authorized,
-        )
-    )
-    TgClient.bot.add_handler(
-        MessageHandler(
-            gen_pyro_string,
-            filters=command(BotCommands.GenPyroSessCommand, case_sensitive=True)
-            & CustomFilters.sudo,
-        )
-    )
-    TgClient.bot.add_handler(
-        MessageHandler(
             change_category,
             filters=command(BotCommands.CategorySelectCommand)
             & CustomFilters.authorized,
@@ -477,6 +465,14 @@ async def add_handlers():
                 "NzbLeech",
                 "[nzb] Leech files to Upload to Telegram using Sabnzbd",
                 6,
+            )
+
+        if not Config.DISABLE_SEEDR:
+            BOT_COMMANDS = insert_at(
+                BOT_COMMANDS,
+                "SeedrLink",
+                "[magnet] Get direct Seedr HTTP download links",
+                9,
             )
 
         if Config.LOGIN_PASS:

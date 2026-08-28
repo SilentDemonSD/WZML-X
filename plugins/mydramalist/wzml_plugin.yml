@@ -1,0 +1,40 @@
+name: mydramalist
+version: "1.0.0"
+author: WZML-X
+description: Search MyDramaList for dramas and movies
+license: MIT
+repository: https://github.com/SilentDemonSD/WZML-X
+tags: [media, lookup]
+min_bot_version: "3.1.10"
+entry: mydramalist.py
+python_dependencies:
+  - pycountry
+commands:
+  - name: mdl
+    handler: mydramalist_command
+    description: "[query] Search MyDramaList"
+    usage: "/mdl <drama or movie name>"
+    aliases: [mydramalist]
+    access: authorized
+callbacks:
+  - pattern: "^mdl"
+    handler: mydramalist_callback
+    description: Pick a drama from the results
+    access: authorized
+config_schema:
+  template:
+    type: string
+    default: ""
+    description: HTML caption template. Leave empty for the built-in one.
+  synopsis_limit:
+    type: integer
+    default: 300
+    min: 100
+    max: 1200
+    description: How much of the story line to keep
+  results:
+    type: integer
+    default: 8
+    min: 3
+    max: 20
+    description: How many search results to list

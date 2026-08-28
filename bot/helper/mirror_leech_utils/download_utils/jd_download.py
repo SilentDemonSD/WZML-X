@@ -310,6 +310,28 @@ async def add_jd_download(listener, path):
             async with jd_listener_lock:
                 jd_downloads[gid]["ids"] = online_packages
 
+        if listener.name and listener.name != name:
+            grabbed_links = await jdownloader.device.linkgrabber.query_links(
+                [{"packageUUIDs": online_packages}]
+            )
+            if len(grabbed_links) == 1:
+                old_name = grabbed_links[0].get("name", "")
+                ext = old_name.rsplit(".", 1)[-1] if "." in old_name else ""
+                new_name = listener.name
+                if ext and not new_name.lower().endswith(f".{ext.lower()}"):
+                    new_name = f"{new_name}.{ext}"
+                await jdownloader.device.linkgrabber.rename_link(
+                    grabbed_links[0]["uuid"], new_name
+                )
+            else:
+                for pack_id in online_packages:
+                    await jdownloader.device.linkgrabber.rename_package(
+                        pack_id, listener.name
+                    )
+                    await jdownloader.device.linkgrabber.set_download_directory(
+                        f"{path}/{listener.name}", [pack_id]
+                    )
+
         await jdownloader.device.linkgrabber.move_to_downloadlist(
             package_ids=online_packages
         )

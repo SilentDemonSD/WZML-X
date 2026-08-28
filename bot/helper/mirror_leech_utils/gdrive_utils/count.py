@@ -21,9 +21,9 @@ class GoogleDriveCount(GoogleDriveHelper):
                 None,
                 None,
             )
-        self.service = self.authorize()
         LOGGER.info(f"File ID: {file_id}")
         try:
+            self.service = self.authorize()
             return self._proceed_count(file_id)
         except Exception as err:
             if isinstance(err, RetryError):
@@ -35,6 +35,10 @@ class GoogleDriveCount(GoogleDriveHelper):
                     self.alt_auth = True
                     self.use_sa = False
                     LOGGER.error("File not found. Trying with token.pickle...")
+                    self.total_files = 0
+                    self.total_folders = 0
+                    self.proc_bytes = 0
+                    self.sa_count = 1
                     return self.count(link, user_id)
                 msg = "File not found."
             else:

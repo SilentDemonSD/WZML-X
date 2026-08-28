@@ -162,6 +162,14 @@ async def send_message(message, text, buttons=None, block=True, photo=None, **kw
 
 async def edit_message(message, text, buttons=None, block=True, photo=None):
     try:
+        if not isinstance(text, str):
+            return await TgClient.bot.edit_message_text(
+                message.chat.id,
+                message.id,
+                "",
+                rich_text=text,
+                reply_markup=buttons,
+            )
         if message.media:
             if photo:
                 if photo == "IMAGES":

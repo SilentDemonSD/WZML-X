@@ -71,8 +71,12 @@ async def _stop_duplicate(tor):
 
 
 @new_task
-async def _size_check(tor):
+async def _size_check(tor, tag):
     if task := await get_task_by_gid(tor.hash[:12]):
+        if task.listener.select and not task.listener.files_selected:
+            if tag in qb_torrents:
+                qb_torrents[tag]["size_check"] = False
+            return
         task.listener.size = tor.size
         mmsg = await limit_checker(task.listener)
         if mmsg:
@@ -159,7 +163,7 @@ async def _qb_listener():
                             await _stop_duplicate(tor_info)
                         if not qb_torrents[tag]["size_check"]:
                             qb_torrents[tag]["size_check"] = True
-                            await _size_check(tor_info)
+                            await _size_check(tor_info, tag)
                     elif state == "stalledDL":
                         if (
                             not qb_torrents[tag]["rechecked"]

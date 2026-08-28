@@ -3,7 +3,20 @@ from asyncio import (
     sleep,
 )
 from ast import literal_eval
+from pyrogram import raw
 from pyrogram.enums import ButtonStyle
+from pyrogram.types import (
+    InputRichBlockDetails,
+    InputRichBlockDivider,
+    InputRichBlockFooter,
+    InputRichBlockList,
+    InputRichBlockListItem,
+    InputRichBlockParagraph,
+    InputRichBlockSectionHeading,
+    InputRichBlockTable,
+    InputRichBlockTableCell,
+    InputRichMessage,
+)
 from functools import partial
 from io import BytesIO
 from os import getcwd, getenv
@@ -42,6 +55,7 @@ from ..helper.ext_utils.bot_utils import (
     SetInterval,
     cmd_exec,
     new_task,
+    parse_dest,
 )
 from ..core.config_manager import Config
 from ..core.tg_client import TgClient, db_partition_id
@@ -82,8 +96,8 @@ DEFAULT_VALUES = {
 
 BOOL_VARS = [
     "AS_DOCUMENT",
+    "AUTO_THUMBNAIL",
     "BOT_PM",
-    "COLORED_BTNS",
     "DELETE_LINKS",
     "DRIVE_CATEGORY_MODE",
     "DISABLE_BULK",
@@ -93,6 +107,7 @@ BOOL_VARS = [
     "DISABLE_MIRROR",
     "DISABLE_MULTI",
     "DISABLE_NZB",
+    "DISABLE_SEEDR",
     "DISABLE_RSS",
     "DISABLE_SEARCH",
     "DISABLE_SEED",
@@ -100,12 +115,14 @@ BOOL_VARS = [
     "DISABLE_TORRENTS",
     "DISABLE_YTDLP",
     "DISABLE_MEGA",
+    "DISABLE_PLUGINS",
     "EQUAL_SPLITS",
     "INC_TASK_NOTIFY",
     "INC_TASK_RESUME",
     "IS_TEAM_DRIVE",
     "MEDIA_GROUP",
     "MEDIA_STORE",
+    "SEEDR_DELETE_FOLDER",
     "SET_COMMANDS",
     "SHOW_CLOUD_LINK",
     "STOP_DUPLICATE",
@@ -120,11 +137,13 @@ DEFAULT_DESP = {
     "BASE_URL": "Public URL for torrent web file selection. Format: http://ip or http://ip:port.",
     "BOT_TOKEN": "Telegram Bot Token from @BotFather.",
     "HELPER_TOKENS": "Additional bot tokens for parallel task handling.",
+    "HELPER_STRINGS": "Extra user session strings for parallel task handling. Space-separated.",
+    "HELPER_BOT_PROXIES": "One proxy dict per line, matching HELPER_TOKENS order. Empty line = no proxy for that bot.",
+    "HELPER_USER_PROXIES": "One proxy dict per line, matching HELPER_STRINGS order. Empty line = no proxy for that user.",
     "STREAM_TOKENS": "Bot tokens dedicated to /stream and /dl. If set, streaming uses these and is isolated from mirror/leech load. Falls back to HELPER_TOKENS.",
     "BOT_MAX_TASKS": "Max tasks (including queued) the bot runs in parallel. 0 = unlimited.",
     "BOT_PM": "Send files/links to bot owner PM. Default: False.",
     "CMD_SUFFIX": "Text appended to all bot commands. Useful for running multiple bot instances.",
-    "COLORED_BTNS": "Use colored inline buttons. Default: False.",
     "DEFAULT_LANG": "Default bot language code. Default: en.",
     "DATABASE_URL": "MongoDB connection string for persistent storage.",
     "DEFAULT_UPLOAD": "Default upload destination: gd (Google Drive) or rc (rclone). Default: rc.",
@@ -140,8 +159,10 @@ DEFAULT_DESP = {
     "DISABLE_SEED": "Disable seeding after torrent download. Default: False.",
     "DISABLE_FF_MODE": "Disable FFmpeg processing mode. Default: False.",
     "DISABLE_MEGA": "Disable Mega Processor for bot. Default: False.",
+    "DISABLE_PLUGINS": "Disable the plugin system. Unloads every plugin and stops loading them at boot. Default: False.",
     "DISABLE_JD": "Disable JDownloader downloads. Saves ~256-500MB RAM. Default: False.",
     "DISABLE_NZB": "Disable SABnzbd/Usenet downloads. Saves ~100-200MB RAM. Default: False.",
+    "DISABLE_SEEDR": "Disable Seedr downloads. Default: False.",
     "DISABLE_RSS": "Disable RSS feed monitoring. Saves CPU cycles. Default: False.",
     "DISABLE_SEARCH": "Disable torrent search plugins. Saves network I/O. Default: False.",
     "DISABLE_STREAM": "Disable streaming. Stops /stream and the stream server. Default: False.",
@@ -154,6 +175,7 @@ DEFAULT_DESP = {
     "FORCE_SUB_IDS": "Channel/Group IDs for force subscription. Space-separated.",
     "GOFILE_API": "Gofile.io API token for file uploads.",
     "GOFILE_FOLDER_ID": "Gofile.io folder ID for uploads.",
+    "GOFILE_AUTO_CREATE_FOLDER": "With no GOFILE_FOLDER_ID, make a folder per upload instead of using the account root. Default: False.",
     "PIXELDRAIN_KEY": "PixelDrain API key for uploads.",
     "PROTECTED_API": "ProtectedFiles.cc API key.",
     "BUZZHEAVIER_API": "BuzzHeavier API key for uploads.",
@@ -162,6 +184,8 @@ DEFAULT_DESP = {
     "VIKINGFILE_HASH": "VikingFile.to hash for uploads.",
     "VIKINGFILE_FOLDER": "VikingFile.to folder ID.",
     "GDRIVE_ID": "Google Drive folder/TeamDrive ID for uploads.",
+    "DRIVE_CATEGORY_MODE": "Let users set their own Drive upload categories in /usettings. Default: False.",
+    "DRIVE_CATEGORY_SA": "Email given reader access on uploads that go outside GDRIVE_ID. Empty = skip.",
     "GD_DESP": "Description for Google Drive uploads. Default: Uploaded with WZ Bot.",
     "AUTHOR_NAME": "Author name shown on Telegraph pages.",
     "AUTHOR_URL": "Author URL for Telegraph pages. Use channel URL for join button.",
@@ -180,6 +204,9 @@ DEFAULT_DESP = {
     "JD_PASS": "JDownloader account password.",
     "MEGA_EMAIL": "Mega.nz account email for premium.",
     "MEGA_PASSWORD": "Mega.nz account password.",
+    "SEEDR_EMAIL": "Seedr account email for magnet mirroring.",
+    "SEEDR_PASSWORD": "Seedr account password.",
+    "SEEDR_DELETE_FOLDER": "Delete folder from Seedr after downloading locally. Default: False.",
     "DIRECT_LIMIT": "Direct link download size limit in GB. 0 = unlimited.",
     "MEGA_LIMIT": "Mega download size limit in GB. 0 = unlimited.",
     "TORRENT_LIMIT": "Torrent download size limit in GB. 0 = unlimited.",
@@ -188,17 +215,20 @@ DEFAULT_DESP = {
     "CLONE_LIMIT": "Google Drive clone size limit in GB. 0 = unlimited.",
     "JD_LIMIT": "JDownloader download size limit in GB. 0 = unlimited.",
     "NZB_LIMIT": "Usenet download size limit in GB. 0 = unlimited.",
+    "SEEDR_LIMIT": "Seedr download size limit in GB. 0 = unlimited.",
     "YTDLP_LIMIT": "yt-dlp download size limit in GB. 0 = unlimited.",
     "PLAYLIST_LIMIT": "Max items to download from a playlist. 0 = unlimited.",
     "LEECH_LIMIT": "Leech (Telegram upload) size limit in GB. 0 = unlimited.",
     "EXTRACT_LIMIT": "Extracted file size limit in GB. 0 = unlimited.",
     "ARCHIVE_LIMIT": "Archive (zip) size limit in GB. 0 = unlimited.",
     "STORAGE_LIMIT": "Minimum free storage to maintain in GB. Downloads cancelled if exceeded.",
-    "LEECH_LOG_CHAT": "Chat ID (integer) for leech log messages. Leave empty to disable.",
+    "LEECH_LOG_CHAT": "Chat ID to dump all leeched files, or chat_id|topic_id for a forum topic. Leave empty to disable.",
     "LEECH_DUMP_CHATS": 'Named leech dump chats selectable per task via -ud flag. Dict format: {"name": chat_id}. Example: {"A": -100123}.',
     "LINKS_LOG_ID": "Chat ID for link logging.",
     "MIRROR_LOG_ID": "Chat ID(s) for mirror logs. Space-separated for multiple.",
     "LEECH_PREFIX": "Prefix added to leeched file names.",
+    "TMDB_ACCESS_TOKEN": "TMDb API key (v3) or Read Access Token (v4), used by AUTO_THUMBNAIL.",
+    "AUTO_THUMBNAIL": "Fetch a poster from TMDb as thumbnail when no other thumbnail exists. Default: False.",
     "LEECH_CAPTION": "Custom caption for leeched files. Supports HTML.",
     "LEECH_SUFFIX": "Suffix added to leeched file names.",
     "LEECH_FONT": "Font style for captions: b, i, u, s, code, spoiler.",
@@ -212,7 +242,10 @@ DEFAULT_DESP = {
     "STREAM_CHUNK": "Streaming chunk size in bytes, capped at 1 MiB. Default: 1048576.",
     "STREAM_PER_CLIENT": "Concurrent playback streams allowed per bot. Raise for more simultaneous viewers, lower if Telegram floods. Default: 6.",
     "STREAM_GATE": "Process-wide ceiling on concurrent GetFile calls. Default: 96.",
+    "MEM_BUDGET": "Memory ceiling for transfer buffers in MB. 0 = auto (15% of the container limit).",
+    "MEM_DEEP_STATS": "Add object counts to /memory. Costs a full GC scan per call. Default: False.",
     "CPU_LIMIT": "CPU limit percentage for background services (SABnzbd, JDownloader). Default: 20.",
+    "FFMPEG_CORES": "CPUs given to FFmpeg. auto = 60% of them, all/0 = every CPU, a count (5), a percentage (75%), or a taskset list (0-4). Services take the rest.",
     "THROTTLE_SERVICES": "Pause services during heavy ops (FFmpeg). auto=low-end only, always, never.",
     "HYDRA_IP": "Hydra API IP address for search.",
     "HYDRA_API_KEY": "Hydra API key for search.",
@@ -263,6 +296,8 @@ DEFAULT_DESP = {
     "YT_DESP": "Description for YouTube uploads. Default: Uploaded with WZML-X bot.",
     "YT_TAGS": "Tags for YouTube uploads. List format.",
     "YT_CATEGORY_ID": "YouTube video category ID. Default: 22 (People & Blogs).",
+    "PLUGIN_INDEXES": "Extra plugin index URLs on top of the official one. Each must be a JSON file holding a plugins list.",
+    "ENABLE_TELEMETRY": "Send crash reports to telemetry.wzmlx.com to help fix bugs. Default: True.",
     "YT_PRIVACY_STATUS": "YouTube upload privacy: public, unlisted, or private.",
 }
 
@@ -295,13 +330,66 @@ ONOFF_VARS = [
     "DISABLE_SEED",
     "DISABLE_FF_MODE",
     "DISABLE_MEGA",
+    "DISABLE_PLUGINS",
     "DISABLE_JD",
     "DISABLE_NZB",
+    "DISABLE_SEEDR",
     "DISABLE_RSS",
     "DISABLE_SEARCH",
     "DISABLE_STREAM",
     "DISABLE_YTDLP",
 ]
+
+LIMIT_VARS = [
+    "DIRECT_LIMIT",
+    "MEGA_LIMIT",
+    "TORRENT_LIMIT",
+    "GD_DL_LIMIT",
+    "RC_DL_LIMIT",
+    "CLONE_LIMIT",
+    "JD_LIMIT",
+    "NZB_LIMIT",
+    "SEEDR_LIMIT",
+    "YTDLP_LIMIT",
+    "PLAYLIST_LIMIT",
+    "LEECH_LIMIT",
+    "EXTRACT_LIMIT",
+    "ARCHIVE_LIMIT",
+    "STORAGE_LIMIT",
+    "CPU_LIMIT",
+    "RSS_SIZE_LIMIT",
+    "SEARCH_LIMIT",
+    "STATUS_LIMIT",
+]
+
+LIMIT_UNITS = {
+    "CPU_LIMIT": "%",
+    "PLAYLIST_LIMIT": " items",
+    "SEARCH_LIMIT": " results",
+    "STATUS_LIMIT": " msgs",
+}
+
+RICH_STYLES = {
+    "b": raw.types.TextBold,
+    "i": raw.types.TextItalic,
+    "u": raw.types.TextUnderline,
+    "c": raw.types.TextFixed,
+    "m": raw.types.TextMarked,
+    "s": raw.types.TextStrike,
+}
+
+
+def rich_text(*parts):
+    texts = []
+    for part in parts:
+        if isinstance(part, str):
+            texts.append(raw.types.TextPlain(text=part))
+        else:
+            style, value = part
+            texts.append(
+                RICH_STYLES[style](text=raw.types.TextPlain(text=value))
+            )
+    return raw.types.TextConcat(texts=texts)
 
 
 async def get_buttons(key=None, edit_type=None, edit_mode=False):
@@ -360,7 +448,11 @@ async def get_buttons(key=None, edit_type=None, edit_mode=False):
             buttons.data_button(
                 "View Value", f"botset showvar {key}", position="header"
             )
-            buttons.data_button("Back", "botset back var", position="footer")
+            buttons.data_button(
+                "Back",
+                f"botset back {'setlimit' if key in LIMIT_VARS else 'var'}",
+                position="footer",
+            )
             if key not in BOOL_VARS:
                 if not edit_mode:
                     buttons.data_button(
@@ -387,7 +479,9 @@ async def get_buttons(key=None, edit_type=None, edit_mode=False):
                 msg += "<i>Send a valid value for the above Var.</i>\n┖ <b>Time Left :</b> <code>60 sec</code>"
     elif key == "var":
         conf_dict = {
-            k: v for k, v in Config.get_all().items() if not k.startswith("DISABLE_")
+            k: v
+            for k, v in Config.get_all().items()
+            if not k.startswith("DISABLE_") and k not in LIMIT_VARS
         }
         all_keys = list(conf_dict.keys())
         for k in all_keys[start : 10 + start]:
@@ -400,18 +494,137 @@ async def get_buttons(key=None, edit_type=None, edit_mode=False):
             )
         msg = f"⌬ <b><u>Config Variables</u></b> | <b><u>Page: {int(start / 10) + 1}</b></u>"
     elif key == "setonoff":
-        for k in ONOFF_VARS:
-            val = Config.get(k)
-            label = k.removeprefix("DISABLE_")
-            if not val:
-                buttons.data_button(f"✓ {label}", f"botset toggleonoff {k} on")
-            else:
-                buttons.data_button(label, f"botset toggleonoff {k} off")
+        buttons.data_button("On/Off Settings", "botset settoggle")
+        buttons.data_button("Limit Settings", "botset setlimit")
         buttons.data_button("Back", "botset back", position="footer")
         buttons.data_button(
             "Close", "botset close", position="footer", style=ButtonStyle.DANGER
         )
         msg = "⌬ <b><u>Module Settings</u></b>"
+    elif key == "settoggle":
+        for k in ONOFF_VARS:
+            val = Config.get(k)
+            label = k.removeprefix("DISABLE_")
+            if not val:
+                buttons.data_button(
+                    f"✓ {label}",
+                    f"botset toggleonoff {k} on",
+                    style=ButtonStyle.PRIMARY,
+                )
+            else:
+                buttons.data_button(
+                    label,
+                    f"botset toggleonoff {k} off",
+                    style=ButtonStyle.DANGER,
+                )
+        buttons.data_button("Back", "botset back setonoff", position="footer")
+        buttons.data_button(
+            "Close", "botset close", position="footer", style=ButtonStyle.DANGER
+        )
+        msg = "⌬ <b><u>On/Off Settings</u></b>"
+    elif key == "setlimit":
+        page_vars = LIMIT_VARS[start : 10 + start]
+        for k in page_vars:
+            buttons.data_button(
+                k.removesuffix("_LIMIT").replace("_", " "),
+                f"botset editvar {k}",
+                style=ButtonStyle.SUCCESS if Config.get(k) else None,
+            )
+        buttons.data_button("Back", "botset back setonoff", position="footer")
+        buttons.data_button(
+            "Close", "botset close", position="footer", style=ButtonStyle.DANGER
+        )
+        if start:
+            buttons.data_button(
+                "⫷", f"botset start setlimit {start - 10}", position="l_body"
+            )
+        if start + 10 < len(LIMIT_VARS):
+            buttons.data_button(
+                "⫸", f"botset start setlimit {start + 10}", position="l_body"
+            )
+        rows = [
+            [
+                InputRichBlockTableCell(
+                    rich_text(k.removesuffix("_LIMIT").replace("_", " "))
+                ),
+                InputRichBlockTableCell(
+                    rich_text(("c", f"{v}{LIMIT_UNITS.get(k, ' GB')}")),
+                    align_right=True,
+                ),
+            ]
+            for k in LIMIT_VARS
+            if (v := Config.get(k))
+        ]
+        msg = InputRichMessage(
+            blocks=[
+                InputRichBlockSectionHeading(
+                    text=rich_text(("u", "Limit Settings")), size=3
+                ),
+                InputRichBlockParagraph(
+                    text=rich_text(
+                        ("m", f" {len(rows)} of {len(LIMIT_VARS)} active "),
+                    )
+                ),
+                InputRichBlockTable(
+                    title=rich_text(("b", "Active limits")),
+                    rows=rows,
+                    bordered=True,
+                    striped=True,
+                    compact=True,
+                )
+                if rows
+                else InputRichBlockParagraph(
+                    text=rich_text(("i", "No limits set, everything is unlimited."))
+                ),
+                InputRichBlockDivider(),
+                InputRichBlockDetails(
+                    summary=rich_text(("b", "How this works")),
+                    blocks=[
+                        InputRichBlockList(
+                            items=[
+                                InputRichBlockListItem(
+                                    text=rich_text(
+                                        "Send ",
+                                        ("c", "0"),
+                                        " to clear a limit and make it ",
+                                        ("i", "unlimited"),
+                                        ".",
+                                    )
+                                ),
+                                InputRichBlockListItem(
+                                    text=rich_text(
+                                        "Sizes are in ",
+                                        ("b", "GB"),
+                                        " unless the table shows another unit.",
+                                    )
+                                ),
+                                InputRichBlockListItem(
+                                    text=rich_text(
+                                        ("c", "CPU_LIMIT"),
+                                        " is a percentage, ",
+                                        ("c", "STATUS_LIMIT"),
+                                        " counts messages.",
+                                    )
+                                ),
+                                InputRichBlockListItem(
+                                    text=rich_text(
+                                        "Limits apply per task, not per user."
+                                    )
+                                ),
+                            ],
+                            ordered=False,
+                        )
+                    ],
+                ),
+                InputRichBlockFooter(
+                    text=rich_text(
+                        ("i", "Page "),
+                        ("b", f"{int(start / 10) + 1}"),
+                        ("i", f" of {-(-len(LIMIT_VARS) // 10)}"),
+                    )
+                ),
+            ]
+        )
     elif key == "private":
         if edit_mode:
             buttons.data_button("Stop Invoke File", "botset private stop", "header")
@@ -537,7 +750,7 @@ async def get_buttons(key=None, edit_type=None, edit_mode=False):
     else:
         msg = "Unknown option"
 
-    return msg, buttons.build_menu(1 if key is None else 2)
+    return msg, buttons.build_menu(1 if key is None else 2, lb_cols=8)
 
 
 async def update_buttons(message, key=None, edit_type=None, edit_mode=False):
@@ -607,14 +820,15 @@ async def edit_variable(_, message, pre_message, key):
                 return await update_buttons(pre_message, "var")
     elif key == "LEECH_LOG_CHAT":
         if value.strip():
-            try:
-                value = int(value.strip())
-            except ValueError:
+            chat, thread = parse_dest(value.strip())
+            if not isinstance(chat, int) or ("|" in value and thread is None):
                 await send_message(
                     message,
-                    "Invalid value! LEECH_LOG_CHAT must be a valid integer chat ID.",
+                    "Invalid value! LEECH_LOG_CHAT must be a chat ID, "
+                    "optionally with a topic id as chat_id|topic_id.",
                 )
                 return await update_buttons(pre_message, "var")
+            value = value.strip() if thread else chat
     elif key == "LEECH_DUMP_CHATS":
         if isinstance(value, str):
             if value.startswith("{") and value.endswith("}"):
@@ -747,7 +961,7 @@ async def toggle_onoff_var(_, query, pre_message, key, value):
     Config.set(key, bool_value)
     await database.update_config({key: bool_value})
     await _handle_service_toggle(key, bool_value)
-    await update_buttons(pre_message, "setonoff")
+    await update_buttons(pre_message, "settoggle")
 
 
 async def _handle_service_toggle(key, disabled):
@@ -811,6 +1025,16 @@ async def _handle_service_toggle(key, disabled):
                     LOGGER.info("RSS Scheduler started via Module Settings")
                 except Exception:
                     pass
+    elif key == "DISABLE_PLUGINS":
+        from ..core.plugin_manager import get_plugin_manager
+
+        manager = get_plugin_manager()
+        if disabled:
+            await manager.unload_all()
+            LOGGER.info("Plugins unloaded via Module Settings")
+        else:
+            await manager.boot()
+            LOGGER.info("Plugins loaded via Module Settings")
 
 
 @new_task
@@ -1028,6 +1252,9 @@ async def update_private_file(_, message, pre_message, key, new_file=False):
                 ["7z", "x", "-o.", "-aoa", "accounts.zip", "accounts/*.json"]
             )
             await cmd_exec(["chmod", "-R", "777", "accounts"])
+            if await aiopath.exists("accounts"):
+                Config.USE_SERVICE_ACCOUNTS = True
+                await database.update_config({"USE_SERVICE_ACCOUNTS": True})
         elif file_name in [".netrc", "netrc"]:
             if file_name == "netrc":
                 await rename("netrc", ".netrc")
@@ -1154,10 +1381,19 @@ async def edit_bot_settings(client, query):
             show_alert=True,
         )
         await sync_jdownloader()
-    elif data[1] in ["var", "aria", "qbit", "nzb", "nzbserver", "setonoff"] or data[
+    elif data[1] in [
+        "var",
+        "aria",
+        "qbit",
+        "nzb",
+        "nzbserver",
+        "setonoff",
+        "settoggle",
+        "setlimit",
+    ] or data[
         1
     ].startswith("nzbser"):
-        if data[1] == "nzbserver":
+        if data[1] in ("nzbserver", "setlimit"):
             globals()["start"] = 0
         await query.answer()
         await update_buttons(message, data[1])

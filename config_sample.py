@@ -50,10 +50,19 @@ DISABLE_SEED = False
 DISABLE_FF_MODE = False
 DISABLE_JD = False
 DISABLE_NZB = False
+DISABLE_SEEDR = False
 DISABLE_RSS = False
 DISABLE_SEARCH = False
 DISABLE_STREAM = False
 DISABLE_YTDLP = False
+DISABLE_PLUGINS = False
+
+# Plugins
+PLUGIN_INDEXES = []
+
+# Memory
+MEM_BUDGET = 0
+MEM_DEEP_STATS = False
 
 # Telegraph
 AUTHOR_NAME = "WZML-X"
@@ -68,6 +77,7 @@ RC_DL_LIMIT = 0
 CLONE_LIMIT = 0
 JD_LIMIT = 0
 NZB_LIMIT = 0
+SEEDR_LIMIT = 0
 YTDLP_LIMIT = 0
 PLAYLIST_LIMIT = 0
 LEECH_LIMIT = 0
@@ -77,6 +87,11 @@ STORAGE_LIMIT = 0
 
 # CPU limit for background services (SABnzbd, JDownloader). Default: 20
 CPU_LIMIT = 20
+
+# CPUs given to FFmpeg. auto=60% of them, all/0=every CPU, a count like 5,
+# a percentage like 75%, or an explicit taskset list like 0-4 / 0,1,2,3.
+# Background services get whatever is left over.
+FFMPEG_CORES = "auto"
 
 # Throttle services during heavy ops (FFmpeg). auto=low-end only, always, never
 THROTTLE_SERVICES = "auto"
@@ -181,6 +196,8 @@ LEECH_SUFFIX = ""
 LEECH_FONT = ""
 LEECH_CAPTION = ""
 THUMBNAIL_LAYOUT = ""
+TMDB_ACCESS_TOKEN = ""
+AUTO_THUMBNAIL = False
 
 # Log Channels
 LEECH_LOG_CHAT = ""
@@ -231,3 +248,8 @@ SEARCH_PLUGINS = [
     "https://raw.githubusercontent.com/msagca/qbittorrent_plugins/main/uniondht.py",
     "https://raw.githubusercontent.com/khensolomon/leyts/master/yts.py",
 ]
+
+# Seedr (magnet mirroring via seedr.cc)
+SEEDR_EMAIL = ""
+SEEDR_PASSWORD = ""
+SEEDR_DELETE_FOLDER = False

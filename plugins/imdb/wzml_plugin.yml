@@ -1,0 +1,23 @@
+name: imdb
+version: "1.0.0"
+author: WZML-X
+description: Search IMDB for titles and post a formatted card
+license: MIT
+repository: https://github.com/SilentDemonSD/WZML-X
+tags: [media, lookup]
+min_bot_version: "3.1.9"
+entry: imdb.py
+python_dependencies:
+  - imdbio
+  - pycountry
+commands:
+  - name: imdb
+    handler: imdb_search
+    description: "[query] or ttxxxxxx Get IMDB info"
+    usage: "/imdb <query|ttxxxxxxx>"
+    access: authorized
+callbacks:
+  - pattern: "^imdb"
+    handler: imdb_callback
+    description: IMDB result navigation
+    access: authorized

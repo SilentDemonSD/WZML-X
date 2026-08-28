@@ -316,6 +316,7 @@ async def _runtime_reload():
         "bot.helper.telegram_helper.filters",
         "bot.helper.telegram_helper.bot_commands",
         "bot.modules.bot_settings",
+        "bot.modules.plugin_manager",
         "bot.modules.cancel_task",
         "bot.modules.chat_permission",
         "bot.modules.clone",
@@ -328,21 +329,17 @@ async def _runtime_reload():
         "bot.modules.gd_search",
         "bot.modules.help",
         "bot.modules.images",
-        "bot.modules.mediainfo",
         "bot.modules.category_select",
         "bot.modules.broadcast",
         "bot.modules.mirror_leech",
         "bot.modules.restart",
-        "bot.modules.imdb",
         "bot.modules.rss",
         "bot.modules.search",
-        "bot.modules.nzb_search",
         "bot.modules.services",
         "bot.modules.shell",
         "bot.modules.stats",
         "bot.modules.status",
         "bot.modules.users_settings",
-        "bot.modules.gen_pyro_sess",
         "bot.modules.ytdlp",
     ]
 
@@ -385,6 +382,21 @@ async def _runtime_reload():
             TgClient.bot.dispatcher.handlers[group] = TgClient.bot.dispatcher.handlers[
                 group
             ][old_count:]
+
+    try:
+        from bot.core.plugin_manager import get_plugin_manager
+        from bot.modules.plugin_manager import register_plugin_commands
+
+        manager = get_plugin_manager()
+        manager.bot = TgClient.bot
+        register_plugin_commands()
+        for rec in manager.list_plugins():
+            rec.handlers = []
+            rec.registered = False
+            if rec.enabled:
+                manager._attach(rec)
+    except Exception as e:
+        LOGGER.error(f"Plugin re-registration failed: {e}")
 
 
 async def _background_cleanup():

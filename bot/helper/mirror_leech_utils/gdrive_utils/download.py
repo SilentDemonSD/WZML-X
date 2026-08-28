@@ -29,9 +29,9 @@ class GoogleDriveDownload(GoogleDriveHelper):
 
     def download(self):
         file_id = self.get_id_from_url(self.listener.link, self.listener.user_id)
-        self.service = self.authorize()
         self._updater = SetInterval(self.update_interval, self.progress)
         try:
+            self.service = self.authorize()
             meta = self.get_file_metadata(file_id)
             if meta.get("mimeType") == self.G_DRIVE_DIR_MIME_TYPE:
                 self._download_folder(file_id, self._path, self.listener.name)
@@ -89,6 +89,7 @@ class GoogleDriveDownload(GoogleDriveHelper):
             ) and not filename.strip().lower().endswith(
                 tuple(self.listener.excluded_extensions)
             ):
+                self.sa_count = 1
                 self._download_file(file_id, path, filename, mime_type)
             if self.listener.is_cancelled:
                 break
@@ -141,6 +142,10 @@ class GoogleDriveDownload(GoogleDriveHelper):
                         .get("reason")
                     )
                     if "fileNotDownloadable" in reason and "document" in mime_type:
+                        fh.close()
+                        self.proc_bytes -= self.file_processed_bytes
+                        self.file_processed_bytes = 0
+                        self.status = None
                         return self._download_file(
                             file_id, path, filename, mime_type, True
                         )
@@ -160,6 +165,10 @@ class GoogleDriveDownload(GoogleDriveHelper):
                                 return
                             self.switch_service_account()
                             LOGGER.info(f"Got: {reason}, Trying Again...")
+                            fh.close()
+                            self.proc_bytes -= self.file_processed_bytes
+                            self.file_processed_bytes = 0
+                            self.status = None
                             return self._download_file(
                                 file_id, path, filename, mime_type
                             )

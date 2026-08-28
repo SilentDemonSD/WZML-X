@@ -21,6 +21,7 @@ class GoogleDriveClone(GoogleDriveHelper):
     def __init__(self, listener):
         self.listener = listener
         self._start_time = time()
+        self._dir_id = None
         super().__init__()
         self.is_cloning = True
         self.user_setting()
@@ -52,14 +53,15 @@ class GoogleDriveClone(GoogleDriveHelper):
                 None,
                 None,
             )
-        self.service = self.authorize()
         msg = ""
         LOGGER.info(f"File ID: {file_id}")
         try:
+            self.service = self.authorize()
             meta = self.get_file_metadata(file_id)
             mime_type = meta.get("mimeType")
             if mime_type == self.G_DRIVE_DIR_MIME_TYPE:
                 dir_id = self.create_directory(meta.get("name"), self.listener.up_dest)
+                self._dir_id = dir_id
                 self._clone_folder(meta.get("name"), meta.get("id"), dir_id)
                 durl = self.G_DRIVE_DIR_BASE_DOWNLOAD_URL.format(dir_id)
                 if self.listener.is_cancelled:
@@ -96,12 +98,28 @@ class GoogleDriveClone(GoogleDriveHelper):
                     self.alt_auth = True
                     self.use_sa = False
                     LOGGER.error("File not found. Trying with token.pickle...")
+                    self._reset_clone_state()
                     return self.clone()
                 msg = "File not found."
             else:
                 msg = f"Error.\n{err}"
             async_to_sync(self.listener.on_upload_error, msg)
             return None, None, None, None, None
+
+    def _reset_clone_state(self):
+        if self._dir_id:
+            try:
+                self.service.files().delete(
+                    fileId=self._dir_id, supportsAllDrives=True
+                ).execute()
+            except Exception:
+                pass
+            self._dir_id = None
+        self.total_files = 0
+        self.total_folders = 0
+        self.proc_bytes = 0
+        self.sa_count = 1
+        self._start_time = time()
 
     def _clone_folder(self, folder_name, folder_id, dest_id):
         LOGGER.info(f"Syncing: {folder_name}")
@@ -121,6 +139,7 @@ class GoogleDriveClone(GoogleDriveHelper):
                 .endswith(tuple(self.listener.excluded_extensions))
             ):
                 self.total_files += 1
+                self.sa_count = 1
                 self._copy_file(file.get("id"), dest_id)
                 self.proc_bytes += int(file.get("size", 0))
                 self.total_time = int(time() - self._start_time)

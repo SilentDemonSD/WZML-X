@@ -13,7 +13,6 @@ from asyncio import (
 )
 from datetime import datetime
 from mimetypes import guess_extension
-from os import cpu_count
 from pathlib import Path
 from re import sub
 from sys import argv
@@ -37,6 +36,8 @@ from pyrogram.session import Session
 
 from ... import LOGGER
 from ...core.config_manager import Config
+from ...core.cpu import allowed_cpus
+from .mem_guard import budget
 from ...core.tg_client import TgClient
 from ..telegram_helper.tg_transfer import MB, HypertgTransfer, media_of
 
@@ -59,7 +60,7 @@ class HypertgDownload(HypertgTransfer):
     _MIN_PIPELINE = 4
     _MAX_PIPELINE_MULT = 4
     _LOW_WORKERS = 2
-    _HIGH_WORKERS = max(8, (cpu_count() or 4) * 2)
+    _HIGH_WORKERS = max(8, len(allowed_cpus()) * 2)
     _MAX_RETRIES = 4
 
     def __init__(self, obj):
@@ -271,7 +272,28 @@ class HypertgDownload(HypertgTransfer):
         pipe_timeouts = 0
         bot_down = False
 
+        held = 0
+
+        async def _hold():
+            nonlocal held
+            await budget.reserve(csz)
+            held += 1
+
+        async def _drop(count=1):
+            nonlocal held
+            count = min(count, held)
+            if count <= 0:
+                return
+            held -= count
+            await budget.release(csz * count)
+
         async def _write(roff, chunk):
+            try:
+                await _write_body(roff, chunk)
+            finally:
+                await _drop()
+
+        async def _write_body(roff, chunk):
             if roff == first_off and roff + csz >= end:
                 chunk = chunk[first_trim : last_byte - roff + 1]
                 await self._pwrite(fd, chunk, start)
@@ -404,11 +426,13 @@ class HypertgDownload(HypertgTransfer):
                                 s, roff, chunk = f.result()
                                 if not chunk:
                                     failed_offsets.add(roff)
+                                    await _drop()
                                     continue
                                 await _queue_write(roff, chunk)
                             except CancelledError:
                                 raise
                             except Exception:
+                                await _drop()
                                 if known is not None:
                                     failed_offsets.add(known)
                     c = cur
@@ -419,6 +443,7 @@ class HypertgDownload(HypertgTransfer):
                 while len(inflight) < window and cur <= last_byte:
                     if self._cancel.is_set():
                         raise CancelledError
+                    await _hold()
                     f = ensure_future(_req(cur, seq))
                     _inflight_offsets[f] = cur
                     inflight.add(f)
@@ -432,6 +457,7 @@ class HypertgDownload(HypertgTransfer):
                     s, roff, chunk = f.result()
                     if not chunk:
                         failed_offsets.add(roff)
+                        await _drop()
                         continue
                     ok_count += 1
                     if ok_count >= window:
@@ -447,17 +473,23 @@ class HypertgDownload(HypertgTransfer):
             LOGGER.error(f"HypertgDL pipeline fail client={cname}: {e}")
             raise
         finally:
+            cancelled = 0
             for f in inflight:
                 if not f.done():
                     f.cancel()
+                    cancelled += 1
             inflight.clear()
             _inflight_offsets.clear()
+            if cancelled:
+                await _drop(cancelled)
             if write_tasks:
                 write_results = await gather(*write_tasks, return_exceptions=True)
                 write_errors += sum(
                     1 for r in write_results if isinstance(r, BaseException)
                 )
                 write_tasks.clear()
+            if held:
+                await _drop(held)
             if write_errors:
                 LOGGER.warning(
                     f"HypertgDL {write_errors} write tasks failed client={cname}"

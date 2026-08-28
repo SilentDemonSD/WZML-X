@@ -23,6 +23,8 @@ from ..ext_utils.media_utils import (
     get_multiple_frames_thumbnail,
     get_video_thumbnail,
 )
+from ..ext_utils.bot_utils import parse_dest
+from ..ext_utils.tmdb_utils import get_auto_thumbnail
 
 
 class HypertgUpload(HypertgTransfer):
@@ -64,6 +66,19 @@ class HypertgUpload(HypertgTransfer):
                 thumb = thumb_path.replace("/yt-dlp-thumb", "")
             elif is_audio and not is_video:
                 thumb = await get_audio_thumbnail(file_path)
+
+        if not is_image and thumb is None and user_thumb is None:
+            user_dict = self._listener.user_dict
+            if user_dict.get("AUTO_THUMBNAIL") or (
+                "AUTO_THUMBNAIL" not in user_dict and Config.AUTO_THUMBNAIL
+            ):
+                try:
+                    thumb = await get_auto_thumbnail(
+                        self._up_file or self._listener.name,
+                        force_document or self._listener.as_doc,
+                    )
+                except Exception as e:
+                    LOGGER.warning(f"Auto thumbnail failed: {e}")
 
         duration = 0
         width = 480
@@ -114,11 +129,13 @@ class HypertgUpload(HypertgTransfer):
                 user_session = False
         else:
             use_hyper = Config.USE_HYPER and self.clients and up_size > 10 * 1024 * 1024
-        upload_chat_id = (
-            self._listener.up_dest
-            if self._listener.up_dest
-            else (Config.LEECH_LOG_CHAT or reply_target.chat.id)
-        )
+        if self._listener.up_dest:
+            upload_chat_id = self._listener.up_dest
+            thread_id = self._listener.chat_thread_id
+        elif Config.LEECH_LOG_CHAT:
+            upload_chat_id, thread_id = parse_dest(Config.LEECH_LOG_CHAT)
+        else:
+            upload_chat_id, thread_id = reply_target.chat.id, None
         try:
             if use_hyper:
                 hyper_rply = (
@@ -133,6 +150,7 @@ class HypertgUpload(HypertgTransfer):
                     cap_mono,
                     upload_chat_id,
                     hyper_rply,
+                    thread_id,
                     duration=duration,
                     width=width,
                     height=height,
@@ -153,6 +171,7 @@ class HypertgUpload(HypertgTransfer):
                     cap_mono,
                     upload_chat_id,
                     direct_rply,
+                    thread_id,
                     duration=duration,
                     width=width,
                     height=height,
@@ -215,6 +234,7 @@ class HypertgUpload(HypertgTransfer):
         cap_mono,
         chat_id,
         reply_to_message_id,
+        thread_id=None,
         duration=0,
         width=0,
         height=0,
@@ -244,6 +264,8 @@ class HypertgUpload(HypertgTransfer):
                 kwargs["caption"] = cap_mono
             if reply_to_message_id:
                 kwargs["reply_to_message_id"] = reply_to_message_id
+            elif thread_id:
+                kwargs["message_thread_id"] = thread_id
 
             if key == "videos":
                 if duration:
@@ -287,6 +309,7 @@ class HypertgUpload(HypertgTransfer):
         cap_mono,
         chat_id,
         reply_to_message_id,
+        thread_id=None,
         duration=0,
         width=0,
         height=0,
@@ -307,6 +330,8 @@ class HypertgUpload(HypertgTransfer):
             kwargs["caption"] = cap_mono
         if reply_to_message_id:
             kwargs["reply_to_message_id"] = reply_to_message_id
+        elif thread_id:
+            kwargs["message_thread_id"] = thread_id
 
         if key == "videos":
             if thumb:

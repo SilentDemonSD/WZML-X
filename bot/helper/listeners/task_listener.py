@@ -133,6 +133,13 @@ class TaskListener(TaskConfig):
             )
 
     async def on_download_complete(self):
+        try:
+            await self._on_download_complete()
+        except Exception as err:
+            LOGGER.error(f"Post-download failure: {err}", exc_info=True)
+            await self.on_upload_error(f"Post-download failure: {err}")
+
+    async def _on_download_complete(self):
         await sleep(2)
         if self.is_cancelled:
             return

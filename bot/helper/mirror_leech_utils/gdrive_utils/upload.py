@@ -42,11 +42,11 @@ class GoogleDriveUpload(GoogleDriveHelper):
 
     def upload(self):
         self.user_setting()
-        self.service = self.authorize()
         LOGGER.info(f"Uploading: {self._path}")
         self._updater = SetInterval(self.update_interval, self.progress)
         dir_id = None
         try:
+            self.service = self.authorize()
             if ospath.isfile(self._path):
                 mime_type = get_mime_type(self._path)
                 link = self._upload_file(
@@ -129,6 +129,7 @@ class GoogleDriveUpload(GoogleDriveHelper):
             else:
                 mime_type = get_mime_type(current_file_name)
                 file_name = current_file_name.split("/")[-1]
+                self.sa_count = 1
                 self._upload_file(current_file_name, file_name, mime_type, dest_id)
                 self.total_files += 1
                 new_id = dest_id
@@ -207,6 +208,9 @@ class GoogleDriveUpload(GoogleDriveHelper):
                                 return
                             self.switch_service_account()
                             LOGGER.info(f"Got: {reason}, Trying Again...")
+                            self.proc_bytes -= self.file_processed_bytes
+                            self.file_processed_bytes = 0
+                            self.status = None
                             return self._upload_file(
                                 file_path,
                                 file_name,
