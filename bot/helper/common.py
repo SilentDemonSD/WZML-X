@@ -15,7 +15,6 @@ from .. import (
     DOWNLOAD_DIR,
     LOGGER,
     categories_dict,
-    cores,
     excluded_extensions,
     intervals,
     multi_tags,
@@ -24,6 +23,7 @@ from .. import (
     user_data,
 )
 from ..core.config_manager import Config, BinConfig
+from ..core.cpu import ffmpeg_layout
 from ..core.tg_client import TgClient
 from ..helper.ext_utils.bot_lock import ff_lock
 from .ext_utils.bot_utils import (
@@ -825,6 +825,7 @@ class TaskConfig:
         return t_path if self.is_file and code == 0 else dl_path
 
     async def proceed_ffmpeg(self, dl_path, gid):
+        cores, _ = ffmpeg_layout()
         checked = False
         lock_acquired = False
         cmds = [

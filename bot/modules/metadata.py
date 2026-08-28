@@ -8,7 +8,7 @@ from aioshutil import move
 from .. import LOGGER, task_dict, task_dict_lock
 from ..helper.ext_utils.bot_lock import ff_lock
 from ..core.config_manager import BinConfig
-from ..core.cpu import allowed_cpus
+from ..core.cpu import ffmpeg_layout
 from ..helper.ext_utils.bot_utils import sync_to_async
 from ..helper.ext_utils.files_utils import get_path_size
 from ..helper.ext_utils.media_utils import (
@@ -157,7 +157,7 @@ async def apply_metadata_title(
                 met_cmd.append(item)
             for k, v_ in meta["global"].items():
                 met_cmd += ["-metadata", f"{k}={v_}"]
-            met_cmd += ["-threads", str(max(1, len(allowed_cpus()) // 2)), temp_out]
+            met_cmd += ["-threads", str(ffmpeg_layout()[1]), temp_out]
 
             ffmpeg.clear()
             media_info = await get_media_info(file_path)

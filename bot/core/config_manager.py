@@ -113,6 +113,7 @@ class Config:
     STREAM_PER_CLIENT = 6
     STREAM_GATE = 96
     CPU_LIMIT = 20
+    FFMPEG_CORES = "auto"
     THROTTLE_SERVICES = "auto"
     HYDRA_IP = ""
     HYDRA_API_KEY = ""

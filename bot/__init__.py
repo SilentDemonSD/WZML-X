@@ -26,7 +26,6 @@ from time import time
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from .core.config_manager import Config
-from .core.cpu import cpu_layout
 from sabnzbdapi import SabnzbdClient
 
 getLogger("niquests").setLevel(WARNING)
@@ -46,7 +45,6 @@ basicConfig(
 )
 
 LOGGER = getLogger(__name__)
-cpu_no, threads, cores, service_cores = cpu_layout()
 
 bot_cache = {}
 DOWNLOAD_DIR = "/usr/src/app/downloads/"

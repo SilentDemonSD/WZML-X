@@ -15,7 +15,8 @@ from urllib.parse import quote
 
 from aiohttp import web
 
-from .. import LOGGER, bot_loop, service_cores
+from .. import LOGGER, bot_loop
+from .cpu import service_cores
 from .config_manager import BinConfig
 from ..helper.ext_utils.db_handler import database
 from ..helper.ext_utils.mem_guard import register_cache
@@ -363,8 +364,9 @@ async def _drain_stderr(proc, what):
 
 
 def _nice(args):
-    if service_cores:
-        return ["taskset", "-c", service_cores] + args
+    svc_cores = service_cores()
+    if svc_cores:
+        return ["taskset", "-c", svc_cores] + args
     return args
 
 

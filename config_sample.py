@@ -87,6 +87,11 @@ STORAGE_LIMIT = 0
 # CPU limit for background services (SABnzbd, JDownloader). Default: 20
 CPU_LIMIT = 20
 
+# CPUs given to FFmpeg. auto=60% of them, all/0=every CPU, a count like 5,
+# a percentage like 75%, or an explicit taskset list like 0-4 / 0,1,2,3.
+# Background services get whatever is left over.
+FFMPEG_CORES = "auto"
+
 # Throttle services during heavy ops (FFmpeg). auto=low-end only, always, never
 THROTTLE_SERVICES = "auto"
 
