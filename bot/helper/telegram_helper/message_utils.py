@@ -581,3 +581,52 @@ async def open_drive_clean(message):
         await edit_message(prompt, "<b>Task Cancelled</b>")
     del bot_cache[msg_id]
     return drive_id, is_cancelled, cat_name
+
+
+async def open_dump_chat_btns(message, dump_chats, invalid_name=None):
+    user_id = message.from_user.id
+    msg_id = message.id
+    cache_key = f"sdump_{msg_id}"
+    buttons = ButtonMaker()
+    dump_names = list(dump_chats)
+    selected_name = dump_names[0] if dump_names else None
+    for i, name in enumerate(dump_names):
+        buttons.data_button(
+            f"{'✓️' if i == 0 else ''} {name}",
+            f"sdump {user_id} {msg_id} {name.replace(' ', '_')}",
+        )
+    buttons.data_button(
+        "Cancel",
+        f"sdump {user_id} {msg_id} scancel",
+        "footer",
+        style=ButtonStyle.DANGER,
+    )
+    buttons.data_button(
+        "Done (60)",
+        f"sdump {user_id} {msg_id} sdone",
+        "footer",
+        style=ButtonStyle.SUCCESS,
+    )
+    invalid_hint = (
+        f"\n\n<b>Unknown dump:</b> <code>{invalid_name}</code>" if invalid_name else ""
+    )
+    prompt = await send_message(
+        message,
+        f"<b>Select the dump chat for this task</b>{invalid_hint}\n\n"
+        f"<i><b>Dump Chat:</b></i> <code>{selected_name or 'None'}</code>\n\n"
+        f"<b>Timeout:</b> 60 sec",
+        buttons.build_menu(3),
+    )
+    start_time = time()
+    bot_cache[cache_key] = [dump_chats.get(selected_name), False, False, start_time]
+    while time() - start_time <= 60:
+        await sleep(0.5)
+        if bot_cache[cache_key][1] or bot_cache[cache_key][2]:
+            break
+    up_dest, _, is_cancelled, __ = bot_cache[cache_key]
+    if not is_cancelled:
+        await delete_message(prompt)
+    else:
+        await edit_message(prompt, "<b>Task Cancelled</b>")
+    del bot_cache[cache_key]
+    return up_dest, is_cancelled

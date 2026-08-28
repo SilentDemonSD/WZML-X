@@ -117,7 +117,7 @@ class HypertgUpload(HypertgTransfer):
         upload_chat_id = (
             self._listener.up_dest
             if self._listener.up_dest
-            else (Config.LEECH_DUMP_CHAT or reply_target.chat.id)
+            else (Config.LEECH_LOG_CHAT or reply_target.chat.id)
         )
         try:
             if use_hyper:
