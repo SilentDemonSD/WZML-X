@@ -475,6 +475,14 @@ async def add_handlers():
                 9,
             )
 
+        if not Config.DISABLE_STREAM:
+            BOT_COMMANDS = insert_at(
+                BOT_COMMANDS,
+                "Stream",
+                "[link/file] Stream or get playlist download links",
+                10,
+            )
+
         if Config.LOGIN_PASS:
             BOT_COMMANDS = insert_at(
                 BOT_COMMANDS, "Login", "[password] Login to Bot", 14
