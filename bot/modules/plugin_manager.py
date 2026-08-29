@@ -224,7 +224,7 @@ async def build_menu(user_id, view="main", arg=""):
         rows.append(("Source", rec.source))
         if rec.commands:
             rows.append(
-                ("Commands", ", ".join(f"/{c}" for c in rec.commands))
+                ("Commands", ", ".join(f"/{c}{Config.CMD_SUFFIX}" for c in rec.commands))
             )
         if man.callbacks:
             rows.append(("Callbacks", str(len(man.callbacks))))
@@ -263,7 +263,7 @@ async def build_menu(user_id, view="main", arg=""):
             rows.append(("Author", man.author))
         if man.command_names():
             rows.append(
-                ("Commands", ", ".join(f"/{c}" for c in man.command_names()))
+                ("Commands", ", ".join(f"/{c}{Config.CMD_SUFFIX}" for c in man.command_names()))
             )
         if man.python_dependencies:
             rows.append(("Requires", ", ".join(man.python_dependencies)))
