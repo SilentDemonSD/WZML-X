@@ -488,6 +488,14 @@ async def add_handlers():
                 BOT_COMMANDS, "Login", "[password] Login to Bot", 14
             )
 
+        if not Config.DISABLE_PLUGINS:
+            BOT_COMMANDS = insert_at(
+                BOT_COMMANDS,
+                "Plugins",
+                "[SUDO] Manage user plugins",
+                len(BOT_COMMANDS),
+            )
+
         await TgClient.bot.set_bot_commands(
             [
                 BotCommand(
