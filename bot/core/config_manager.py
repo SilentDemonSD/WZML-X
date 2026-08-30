@@ -339,6 +339,9 @@ class Config:
                 raise ValueError(f"{key} variable is missing!")
 
 
+DEFAULT_CONFIG = Config.get_all()
+
+
 class BinConfig:
     ARIA2_NAME = bin_name(0)
     QBIT_NAME = bin_name(1)
