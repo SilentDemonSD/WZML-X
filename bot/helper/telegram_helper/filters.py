@@ -8,6 +8,23 @@ from ...core.config_manager import Config
 from .tg_utils import chat_info
 
 
+def _source_message(update):
+    return getattr(update, "message", None) or update
+
+
+def _chat_context(update):
+    message = _source_message(update)
+    chat = getattr(message, "chat", None)
+    if chat is None:
+        return None, None
+    thread_id = (
+        message.message_thread_id
+        if getattr(message, "is_topic_message", False)
+        else None
+    )
+    return chat.id, thread_id
+
+
 class CustomFilters:
     async def owner_filter(self, _, update):
         user = update.from_user or update.sender_chat
@@ -17,8 +34,7 @@ class CustomFilters:
 
     async def authorized_user(self, _, update):
         uid = (update.from_user or update.sender_chat).id
-        chat_id = update.chat.id
-        thread_id = update.message_thread_id if update.is_topic_message else None
+        chat_id, thread_id = _chat_context(update)
         return bool(
             uid == Config.OWNER_ID
             or (
@@ -54,7 +70,9 @@ class CustomFilters:
         is_exists = False
         if await CustomFilters.authorized("", update):
             is_exists = True
-        elif update.chat.type == ChatType.PRIVATE:
+        elif (chat := getattr(_source_message(update), "chat", None)) and (
+            chat.type == ChatType.PRIVATE
+        ):
             for channel_id in user_data:
                 if not (
                     user_data[channel_id].get("is_auth")
