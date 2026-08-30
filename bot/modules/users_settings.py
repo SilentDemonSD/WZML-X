@@ -1625,8 +1625,8 @@ async def edit_user_settings(client, query):
         await query.answer()
         msg, button = await get_user_settings(query.from_user, "seedr")
         await edit_message(message, msg, button)
-        seedr_email = user_dict.get("SEEDR_EMAIL") or Config.SEEDR_EMAIL
-        seedr_password = user_dict.get("SEEDR_PASSWORD") or Config.SEEDR_PASSWORD
+        seedr_email = user_dict.get("SEEDR_EMAIL", "")
+        seedr_password = user_dict.get("SEEDR_PASSWORD", "")
         if seedr_email and seedr_password:
             try:
                 sc = SeedrClient(seedr_email, seedr_password)
@@ -1638,8 +1638,8 @@ async def edit_user_settings(client, query):
             await edit_message(message, msg, button)
     elif data[2] == "clear_seedr":
         await query.answer("Clearing Seedr Storage...", show_alert=False)
-        seedr_email = user_dict.get("SEEDR_EMAIL") or Config.SEEDR_EMAIL
-        seedr_password = user_dict.get("SEEDR_PASSWORD") or Config.SEEDR_PASSWORD
+        seedr_email = user_dict.get("SEEDR_EMAIL", "")
+        seedr_password = user_dict.get("SEEDR_PASSWORD", "")
         if seedr_email and seedr_password:
             try:
                 from .mirror_leech import clear_seedr_account
