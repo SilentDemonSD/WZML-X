@@ -549,7 +549,7 @@ async def imdb_callback(_, query):
 
         template = Config.IMDB_TEMPLATE
         if template:
-            cap = template.format(**imdb, **locals())
+            cap = template.format(**{**imdb, **locals()})
             if poster:
                 try:
                     await TgClient.bot.send_photo(
