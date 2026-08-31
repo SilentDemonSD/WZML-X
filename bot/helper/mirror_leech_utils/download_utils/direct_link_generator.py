@@ -5,7 +5,7 @@ from http.cookiejar import MozillaCookieJar
 from json import loads
 from lxml.etree import HTML
 from os import path as ospath
-from re import findall, fullmatch, match, search, sub
+from re import findall, match, search, sub
 from niquests import Session, post, get
 from niquests.adapters import HTTPAdapter
 from time import sleep, time
@@ -1664,23 +1664,8 @@ def _gofile_salt(_slot):
     try:
         js = get("https://gofile.io/js/wt.obf.js", timeout=15).text
         js = sub(r"\\x([0-9a-f]{2})", lambda m: chr(int(m[1], 16)), js)
-        strings = findall(r"'([^']*)'", search(r"\[((?:'[^']*',?)+)\]", js)[1])
-        keys = set(findall(r",'([^']{4})'\)", js))
-        for raw in (b64decode(x.swapcase() + "===") for x in strings):
-            for key in keys:
-                box, j = list(range(256)), 0
-                for i in range(256):
-                    j = (j + box[i] + ord(key[i % 4])) % 256
-                    box[i], box[j] = box[j], box[i]
-                i = j = 0
-                out = bytearray()
-                for c in raw:
-                    i = (i + 1) % 256
-                    j = (j + box[i]) % 256
-                    box[i], box[j] = box[j], box[i]
-                    out.append(c ^ box[(box[i] + box[j]) % 256])
-                if fullmatch(rb"[0-9a-f]{14}", out):
-                    return out.decode()
+        if salt := search(r"'([0-9a-f]{14})'", js[js.index("generateWT") :]):
+            return salt[1]
     except Exception:
         pass
     return "12af056dacea0b"
