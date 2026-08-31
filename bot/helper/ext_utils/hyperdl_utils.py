@@ -40,6 +40,7 @@ from ...core.cpu import allowed_cpus
 from .mem_guard import budget
 from ...core.tg_client import TgClient
 from ..telegram_helper.tg_transfer import MB, HypertgTransfer, media_of
+from .bot_utils import parse_dest
 
 _load_lock = Lock()
 
@@ -674,8 +675,7 @@ class HypertgDownload(HypertgTransfer):
             use_clients = self.clients
 
         if not use_clients:
-            LOGGER.error(f"HypertgDL no clients for mode {mode}")
-            return None
+            raise RuntimeError(f"HypertgDL no clients for mode {mode}")
 
         use_count = min(self.num_parts, len(use_clients))
 
@@ -700,21 +700,17 @@ class HypertgDownload(HypertgTransfer):
 
         unique_clients = set(assigns)
         fid_map = {}
+        self._tasks = []
         try:
             for ci in unique_clients:
                 fid_map[ci] = await self._fetch_ref(ci, self.clients[ci])
-        except Exception as e:
-            LOGGER.error(f"HypertgDL ref fail: {e}")
-            return None
 
-        first_fid = fid_map[assigns[0]]
-        try:
-            await self._warmup(unique_clients, first_fid.dc_id)
-        except Exception as e:
-            LOGGER.warning(f"HypertgDL warmup err: {e}")
+            first_fid = fid_map[assigns[0]]
+            try:
+                await self._warmup(unique_clients, first_fid.dc_id)
+            except Exception as e:
+                LOGGER.warning(f"HypertgDL warmup err: {e}")
 
-        self._tasks = []
-        try:
             fd = await to_thread(os.open, final, os.O_WRONLY | os.O_CREAT)
             try:
                 await to_thread(os.ftruncate, fd, self.file_size)
@@ -771,7 +767,7 @@ class HypertgDownload(HypertgTransfer):
             return None
         except Exception as e:
             LOGGER.error(f"HypertgDL: {e}")
-            return None
+            raise
         finally:
             self._cancel.set()
             for t in self._tasks:
@@ -795,9 +791,8 @@ class HypertgDownload(HypertgTransfer):
     async def download_media(self, message, file_name="downloads/", dump_chat=None):
         try:
             if dump_chat and not isinstance(dump_chat, int):
-                try:
-                    dump_chat = int(dump_chat)
-                except (ValueError, TypeError):
+                dump_chat, _ = parse_dest(dump_chat)
+                if not isinstance(dump_chat, int):
                     dump_chat = None
             if dump_chat and dump_chat == message.chat.id:
                 dump_chat = None

@@ -114,8 +114,11 @@ class TelegramDownloadHelper:
                         self._listener.dump_chat = self._hyper_dl_instance.dump_chat
                         self._listener.dump_msg_id = self._hyper_dl_instance.message.id
                     self._hyper_dl_instance = None
-                except Exception:
+                except Exception as e:
+                    LOGGER.warning(f"Hyper download failed, using normal: {e}")
+                    self._hyper_dl_instance = None
                     if self._listener.transmission_mode in ("user", "both"):
+                        self.session = "user"
                         try:
                             user_message = await TgClient.user.get_messages(
                                 chat_id=message.chat.id, message_ids=message.id
@@ -128,6 +131,7 @@ class TelegramDownloadHelper:
                                 file_name=path, progress=self._on_download_progress
                             )
                     else:
+                        self.session = "bot"
                         download = await message.download(
                             file_name=path, progress=self._on_download_progress
                         )
