@@ -793,7 +793,7 @@ class HypertgDownload(HypertgTransfer):
             if dump_chat and not isinstance(dump_chat, int):
                 dump_chat, _ = parse_dest(dump_chat)
                 if not isinstance(dump_chat, int):
-                    dump_chat = None
+                    raise RuntimeError(f"Invalid dump chat: {dump_chat}")
             if dump_chat and dump_chat == message.chat.id:
                 dump_chat = None
             if dump_chat:
