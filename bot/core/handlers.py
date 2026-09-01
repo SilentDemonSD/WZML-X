@@ -475,9 +475,25 @@ async def add_handlers():
                 9,
             )
 
+        if not Config.DISABLE_STREAM:
+            BOT_COMMANDS = insert_at(
+                BOT_COMMANDS,
+                "Stream",
+                "[link/file] Stream or get playlist download links",
+                10,
+            )
+
         if Config.LOGIN_PASS:
             BOT_COMMANDS = insert_at(
                 BOT_COMMANDS, "Login", "[password] Login to Bot", 14
+            )
+
+        if not Config.DISABLE_PLUGINS:
+            BOT_COMMANDS = insert_at(
+                BOT_COMMANDS,
+                "Plugins",
+                "[SUDO] Manage user plugins",
+                len(BOT_COMMANDS),
             )
 
         await TgClient.bot.set_bot_commands(
