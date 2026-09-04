@@ -628,16 +628,15 @@ async def playlist_page(token: str, request: Request):
     return response
 
 
-@app.get("/api/playlist/{token}")
-async def playlist_api(token: str, request: Request):
+async def _json_proxy(token: str, upstream_path: str):
     if not _SAFE_TOKEN.match(token or ""):
         raise HTTPException(status_code=404, detail="Unknown link")
     try:
-        async with http_session.get(f"{STREAM_BASE}/_playlist/{token}") as upstream:
-            body = await upstream.read()
-            cache = upstream.headers.get("Cache-Control", "no-store")
-            tag = upstream.headers.get("ETag")
-            status = upstream.status
+        async with http_session.get(f"{STREAM_BASE}{upstream_path}/{token}") as up:
+            body = await up.read()
+            cache = up.headers.get("Cache-Control", "no-store")
+            tag = up.headers.get("ETag")
+            status = up.status
     except ClientError as e:
         raise _stream_offline() from e
     headers = {"Cache-Control": cache, "Referrer-Policy": "no-referrer"}
@@ -649,6 +648,16 @@ async def playlist_api(token: str, request: Request):
         media_type="application/json",
         headers=headers,
     )
+
+
+@app.get("/api/playlist/{token}")
+async def playlist_api(token: str, request: Request):
+    return await _json_proxy(token, "/_playlist")
+
+
+@app.get("/api/merge/{token}")
+async def merge_api(token: str, request: Request):
+    return await _json_proxy(token, "/_merge")
 
 
 @app.get("/poster/{token}")
@@ -752,23 +761,57 @@ async def subs_route(token: str, track: str, request: Request):
 
 @app.get("/api/tracks/{token}")
 async def tracks_route(token: str, request: Request):
+    return await _json_proxy(token, "/_tracks")
+
+
+def _one_line(text):
+    return "".join(" " if ord(c) < 32 or ord(c) == 127 else c for c in text)
+
+
+@app.get("/m3u/{token}")
+async def m3u_route(token: str, request: Request):
     if not _SAFE_TOKEN.match(token or ""):
         raise HTTPException(status_code=404, detail="Unknown link")
-    try:
-        async with http_session.get(f"{STREAM_BASE}/_tracks/{token}") as upstream:
-            body = await upstream.read()
-            cache = upstream.headers.get("Cache-Control", "no-store")
-            tag = upstream.headers.get("ETag")
-    except ClientError as e:
-        raise _stream_offline() from e
-    headers = {"Cache-Control": cache}
-    if tag:
-        headers["ETag"] = tag
+    listing = None
+    for path in ("/_merge", "/_playlist"):
+        try:
+            async with http_session.get(f"{STREAM_BASE}{path}/{token}") as upstream:
+                if upstream.status != 200:
+                    continue
+                listing = await upstream.json(content_type=None)
+        except ClientError as e:
+            raise _stream_offline() from e
+        except ValueError:
+            continue
+        if listing:
+            break
+    if not listing:
+        raise HTTPException(status_code=404, detail="Unknown link")
+
+    base = str(request.base_url).rstrip("/")
+    entries = listing.get("parts") or listing.get("items") or []
+    lines = ["#EXTM3U"]
+    for one in entries:
+        if not one.get("token"):
+            continue
+        if "playable" in one and not one["playable"]:
+            continue
+        secs = int(one.get("dur") or 0) or -1
+        name = _one_line(one.get("name") or "Part")
+        lines.append(f"#EXTINF:{secs},{name}")
+        lines.append(f"{base}/stream/{one['token']}")
+    if len(lines) < 3:
+        raise HTTPException(status_code=404, detail="Nothing playable")
+
+    title = _one_line(listing.get("name") or token).replace('"', "")
     return Response(
-        content=body,
-        status_code=upstream.status,
-        media_type="application/json",
-        headers=headers,
+        content="\n".join(lines) + "\n",
+        media_type="application/x-mpegurl",
+        headers={
+            "Cache-Control": "private, max-age=300",
+            "Referrer-Policy": "no-referrer",
+            "Content-Disposition": f'inline; filename="{title}.m3u"',
+        },
     )
 
 

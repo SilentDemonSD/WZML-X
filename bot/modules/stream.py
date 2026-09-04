@@ -1,5 +1,5 @@
 from html import escape
-from re import compile as re_compile
+from re import IGNORECASE, compile as re_compile
 from secrets import token_urlsafe
 from time import time
 
@@ -31,6 +31,7 @@ _MAX_BATCH = 50
 _MAX_BUTTONS = 20
 _LABEL = 22
 _TOKEN_OK = re_compile(r"^[A-Za-z0-9_-]{4,32}$")
+_PART_RE = re_compile(r"^(.*)\.part(\d{1,4})(\.[A-Za-z0-9]+)$", IGNORECASE)
 _OFF = (
     "<b>Streaming is disabled.</b>\n\n<i>The bot owner turned it off in "
     "Module Settings.</i>"
@@ -105,6 +106,7 @@ def parse_stream_args(parts):
     poster = None
     link = None
     playlist = False
+    merge = False
     drop = False
     ttl = 0
     words = []
@@ -131,6 +133,9 @@ def parse_stream_args(parts):
         if part in ("-pl", "-playlist"):
             playlist = True
             continue
+        if part in ("-m", "-merge"):
+            merge = True
+            continue
         if part in ("-d", "-del", "-delete"):
             drop = True
             continue
@@ -146,6 +151,7 @@ def parse_stream_args(parts):
         "link": link,
         "poster": poster,
         "playlist": playlist,
+        "merge": merge,
         "delete": drop,
         "ttl": ttl,
         "urls": urls,
@@ -176,6 +182,72 @@ def _playable(media):
 def _short(name, limit=_LABEL):
     name = name or "File"
     return name if len(name) <= limit else name[: limit - 1] + "…"
+
+
+def _part_key(name):
+    found = _PART_RE.match(name or "")
+    if not found:
+        return None
+    return found.group(1), int(found.group(2)), found.group(3).lower()
+
+
+def _order(picked):
+    keys = [_part_key(getattr(m, "file_name", "")) for _msg, m in picked]
+    if any(k is None for k in keys):
+        return picked
+    if len({(k[0], k[2]) for k in keys}) != 1:
+        return picked
+    nums = sorted(k[1] for k in keys)
+    if nums != list(range(nums[0], nums[0] + len(nums))):
+        return picked
+    return [pair for _k, pair in sorted(zip(keys, picked), key=lambda kp: kp[0][1])]
+
+
+def _timeline(durs):
+    starts = []
+    at = 0
+    for one in durs:
+        starts.append(at)
+        at += max(0, int(one or 0))
+    return starts, at
+
+
+def _merge_title(name):
+    found = _part_key(name)
+    return f"{found[0]}{found[2]}" if found else (name or "")
+
+
+def _merge_blocker(picked, asked):
+    if len(picked) != asked:
+        return (
+            "<b>That range is incomplete.</b>\n\n<i>Only "
+            f"{len(picked)} of {asked} messages carried media, so parts "
+            "would be missing from the middle of the video. Use <code>-pl</code> "
+            "for a playlist page instead.</i>"
+        )
+    kinds = set()
+    for _msg, media in picked:
+        name = escape(getattr(media, "file_name", "") or "file")
+        mime = (getattr(media, "mime_type", "") or "").lower()
+        if not _playable(media):
+            return (
+                f"<b>{name} cannot be played.</b>\n\n<i>Type is "
+                f"{escape(mime or 'unknown')}. Every part must be audio or "
+                "video to play as one continuous video.</i>"
+            )
+        if not (getattr(media, "duration", 0) or 0):
+            return (
+                f"<b>{name} carries no duration.</b>\n\n<i>Telegram sent it "
+                "as a document, so its runtime is unknown and the parts "
+                "cannot share one timeline. Use <code>-pl</code> instead.</i>"
+            )
+        kinds.add(mime.split("/", 1)[0])
+    if len(kinds) > 1:
+        return (
+            "<b>Those files are not one video.</b>\n\n<i>The range mixes "
+            "audio and video files. Use <code>-pl</code> instead.</i>"
+        )
+    return None
 
 
 async def _register(message, poster=None, exp=None, pl=None, pi=0):
@@ -213,6 +285,11 @@ def _usage():
 
 <b>As one playlist page:</b>
 <code>/{one} -pl [name] [link range]</code>
+
+<b>As one continuous video:</b>
+<code>/{one} -m [name] [link range]</code>
+<i>Split parts play back to back on a single timeline.
+Unrelated to -m in /mirror and /leech.</i>
 
 <b>With cover art:</b>
 <code>/{one} -t [photo link] [link]</code>
@@ -277,12 +354,13 @@ async def _delete_link(message, args):
             forget(tok)
         await database.rm_playlist(target)
         forget(target)
+        kind = "Merged video" if listing.get("merged") else "Playlist"
         rows = [
-            ("Type", "Playlist"),
+            ("Type", kind),
             ("Links Removed", str(len(listing["items"]))),
         ]
         msg = _head(listing["name"] or target, rows, tag)
-        msg += _done("Playlist and every link inside it are gone")
+        msg += _done(f"{kind} and every link inside it are gone")
         await send_message(message, msg)
         await delete_links(message)
         return
@@ -345,6 +423,14 @@ async def stream_links(_, message):
         await edit_message(status, "<b>No playable media found in that link.</b>")
         return
 
+    merge = args["merge"] and len(picked) > 1
+    if merge:
+        blocker = _merge_blocker(picked, asked)
+        if blocker:
+            await edit_message(status, blocker)
+            return
+        picked = _order(picked)
+
     poster = None
     if args["poster"]:
         if is_telegram_link(args["poster"]):
@@ -361,7 +447,7 @@ async def stream_links(_, message):
     exp = int(time() + ttl) if ttl else None
 
     pl_token = None
-    if args["playlist"]:
+    if args["playlist"] or merge:
         pl_token = await _reserve_playlist()
         if not pl_token:
             await edit_message(
@@ -384,10 +470,48 @@ async def stream_links(_, message):
         await edit_message(status, "<b>Could not allocate links. Try again.</b>")
         return
 
+    if merge and len(minted) < 2:
+        merge = False
+
     base = Config.BASE_URL.rstrip("/")
     tag = message.from_user.mention if message.from_user else "N/A"
     total = sum(getattr(m, "file_size", 0) or 0 for _t, m in minted)
     buttons = ButtonMaker()
+
+    if merge:
+        durs = [int(getattr(m, "duration", 0) or 0) for _t, m in minted]
+        _starts, runtime = _timeline(durs)
+        title = (
+            args["name"]
+            or _merge_title(getattr(minted[0][1], "file_name", ""))
+            or "Merged Video"
+        )
+        await database.add_playlist(
+            pl_token,
+            title,
+            [t for t, _m in minted],
+            poster,
+            exp,
+            merged=True,
+            durs=durs,
+            trims=[0] * len(minted),
+        )
+        rows = [
+            ("Task Size", get_readable_file_size(total)),
+            ("Total Files", f"{len(minted)} of {asked}"),
+            ("Runtime", get_readable_time(runtime)),
+        ]
+        if ttl:
+            rows.append(("Expires In", get_readable_time(ttl)))
+        watch = f"{base}/xstrm/{pl_token}"
+        msg = _head(title, rows, tag)
+        msg += _done(f"All {len(minted)} parts play as one continuous video")
+        buttons.url_button("▶️ Play All", watch, style=ButtonStyle.PRIMARY)
+        buttons.url_button("🧩 Parts", f"{base}/playlist/{pl_token}")
+        buttons.url_button("🔗 Share", f"https://t.me/share/url?url={watch}")
+        await edit_message(status, msg, buttons.build_menu(2))
+        await delete_links(message)
+        return
 
     if args["playlist"]:
         title = args["name"] or (

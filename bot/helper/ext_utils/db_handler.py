@@ -311,10 +311,23 @@ class DbManager:
             return
         await self.db.streams[_part()].delete_one({"_id": token})
 
-    async def add_playlist(self, token, name, items, poster=None, exp=None):
+    async def add_playlist(
+        self,
+        token,
+        name,
+        items,
+        poster=None,
+        exp=None,
+        merged=False,
+        durs=None,
+        trims=None,
+    ):
         if self._return:
             return
         doc = {"name": name or "", "items": list(items)}
+        doc["merged"] = bool(merged)
+        doc["durs"] = [int(one or 0) for one in (durs or [])]
+        doc["trims"] = [int(one or 0) for one in (trims or [])]
         doc["purl"] = poster if isinstance(poster, str) else None
         doc["pcid"] = int(poster[0]) if poster and not isinstance(poster, str) else None
         doc["pmid"] = int(poster[1]) if poster and not isinstance(poster, str) else None
@@ -341,6 +354,9 @@ class DbManager:
             "purl": doc.get("purl"),
             "pcid": doc.get("pcid"),
             "pmid": doc.get("pmid"),
+            "merged": bool(doc.get("merged")),
+            "durs": doc.get("durs") or [],
+            "trims": doc.get("trims") or [],
         }
 
     async def rm_playlist(self, token):

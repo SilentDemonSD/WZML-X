@@ -1605,6 +1605,593 @@
         if (!customElements.get("libmedia-video")) {
             customElements.define("libmedia-video", LibmediaVideoElement);
         }
+
+        const MERGE_NOISE = [
+            "durationchange", "emptied", "abort", "loadstart",
+            "suspend", "canplaythrough"
+        ];
+        const PRELOAD_LEAD = 15;
+        const MAX_RELOADS = 2;
+
+        class MergedVideoElement extends CustomVideoElement {
+            static tagName = "merged-video";
+
+            static observedAttributes = [
+                ...(CustomVideoElement.observedAttributes || [])
+            ];
+
+            #parts = [];
+            #i = 0;
+            #total = 0;
+            #kind = "native";
+            #live = null;
+            #idle = null;
+            #idleAt = -1;
+            #wantPlay = false;
+            #announced = false;
+            #mounted = false;
+            #vol = 1;
+            #muted = false;
+            #rate = 1;
+            #streams = [];
+            #audioNth = null;
+            #retried = {};
+            #reloads = {};
+            #busy = false;
+            #fellBack = false;
+            #setMedia = null;
+            #unsub = null;
+
+            #mount() {
+                if (this.#mounted) return;
+                const root = this.shadowRoot;
+                if (!root) return;
+                this.#mounted = true;
+                const css = document.createElement("style");
+                css.textContent = ":host{display:block;position:relative;"
+                    + "width:100%;height:100%}"
+                    + "video,libmedia-video{position:absolute;inset:0;"
+                    + "width:100%!important;height:100%!important;"
+                    + "object-fit:contain;background:#000105}"
+                    + ".mv-idle{visibility:hidden;pointer-events:none;z-index:0}"
+                    + ".mv-live{visibility:visible;z-index:1}";
+                root.appendChild(css);
+                const base = root.querySelector("video");
+                if (base) base.style.display = "none";
+                root.addEventListener("context-request", (ev) => {
+                    if (ev.contextTarget !== this) ev.stopPropagation();
+                }, true);
+            }
+
+            connectedCallback() {
+                try { super.connectedCallback(); } catch (e) { }
+                this.#mount();
+                this.#claimPlayer();
+            }
+
+            #claimPlayer() {
+                const self = this;
+                this.dispatchEvent(new ContextEvent(
+                    MEDIA_CONTEXT,
+                    this,
+                    function (value, unsubscribe) {
+                        if (unsubscribe) self.#unsub = unsubscribe;
+                        self.#setMedia = (value && value.setMedia) || null;
+                        if (self.isConnected && self.#setMedia) {
+                            self.#setMedia(self);
+                        }
+                    },
+                    true
+                ));
+            }
+
+            disconnectedCallback() {
+                try { this.#setMedia && this.#setMedia(null); } catch (e) { }
+                try { this.#unsub && this.#unsub(); } catch (e) { }
+                this.#unsub = null;
+                this.#setMedia = null;
+                this.#drop(this.#idle);
+                this.#drop(this.#live);
+                this.#idle = null;
+                this.#live = null;
+                try { super.disconnectedCallback(); } catch (e) { }
+            }
+
+
+            #recount() {
+                let at = 0;
+                for (const p of this.#parts) {
+                    p.start = at;
+                    p.span = Math.max(0, (p.dur || 0) - (p.trim || 0));
+                    if (!p.dead) at += p.span;
+                }
+                this.#total = at;
+            }
+
+            setParts(parts, atGlobal, kind) {
+                this.#mount();
+                this.#kind = kind === "avp" ? "avp" : "native";
+                this.#parts = (parts || []).map((p) => ({
+                    url: location.origin + "/stream/"
+                        + encodeURIComponent(p.token),
+                    token: p.token,
+                    name: p.name || "",
+                    dur: Number(p.dur) || 0,
+                    trim: Number(p.trim) || 0,
+                    start: 0,
+                    span: 0,
+                    dead: false
+                }));
+                this.#recount();
+                const at = Math.max(0, Number(atGlobal) || 0);
+                const seat = this.#locate(at);
+                return this.#goto(seat.index, seat.local, false);
+            }
+
+            useAdvanced(atGlobal, wantAudioNth) {
+                if (typeof wantAudioNth === "number") {
+                    this.#audioNth = wantAudioNth;
+                }
+                if (this.#kind === "avp") return Promise.resolve(true);
+                this.#kind = "avp";
+                const at = typeof atGlobal === "number"
+                    ? atGlobal : this.currentTime;
+                const seat = this.#locate(Math.max(0, at || 0));
+                this.#drop(this.#idle);
+                this.#idle = null;
+                this.#idleAt = -1;
+                return this.#goto(seat.index, seat.local, this.#wantPlay);
+            }
+
+            #locate(global) {
+                let index = 0;
+                for (let k = 0; k < this.#parts.length; k++) {
+                    if (this.#parts[k].dead) continue;
+                    if (this.#parts[k].start <= global) index = k;
+                }
+                const p = this.#parts[index];
+                if (!p) return { index: 0, local: 0 };
+                return { index, local: (p.trim || 0) + (global - p.start) };
+            }
+
+            #nextIndex(from) {
+                for (let k = from + 1; k < this.#parts.length; k++) {
+                    if (!this.#parts[k].dead) return k;
+                }
+                return -1;
+            }
+
+
+            #make(index, cacheBust) {
+                const part = this.#parts[index];
+                let node;
+                if (this.#kind === "avp") {
+                    node = document.createElement("libmedia-video");
+                    node.setAttribute("playsinline", "");
+                    node.addEventListener("libmediastreams", (ev) => {
+                        this.#onStreams(node, ev.detail || []);
+                    });
+                } else {
+                    node = document.createElement("video");
+                    node.preload = "auto";
+                    node.setAttribute("playsinline", "");
+                }
+                node.setAttribute("crossorigin", "anonymous");
+                node.className = "mv-idle";
+                node.dataset.part = String(index);
+                this.shadowRoot.appendChild(node);
+                this.#apply(node);
+                node.src = cacheBust
+                    ? part.url + "?r=" + cacheBust
+                    : part.url;
+                return node;
+            }
+
+            #drop(node) {
+                if (!node) return;
+                try { node.pause(); } catch (e) { }
+                if (node.localName === "video") {
+                    try {
+                        node.removeAttribute("src");
+                        node.load();
+                    } catch (e) { }
+                }
+                try { node.remove(); } catch (e) { }
+            }
+
+            #apply(node) {
+                try { node.volume = this.#vol; } catch (e) { }
+                try { node.muted = this.#muted; } catch (e) { }
+                try { node.playbackRate = this.#rate; } catch (e) { }
+            }
+
+            #ready(node) {
+                return node && Number(node.readyState || 0) >= 1;
+            }
+
+            #settle(node, local) {
+                const seek = () => {
+                    if (local > 0.05) {
+                        try { node.currentTime = local; } catch (e) { }
+                    }
+                };
+                if (this.#ready(node)) {
+                    seek();
+                    return Promise.resolve(true);
+                }
+                return new Promise((done) => {
+                    let settled = false;
+                    const ok = () => {
+                        if (settled) return;
+                        settled = true;
+                        clearTimeout(timer);
+                        node.removeEventListener("loadedmetadata", ok);
+                        node.removeEventListener("error", bad);
+                        seek();
+                        done(true);
+                    };
+                    const bad = () => {
+                        if (settled) return;
+                        settled = true;
+                        clearTimeout(timer);
+                        node.removeEventListener("loadedmetadata", ok);
+                        node.removeEventListener("error", bad);
+                        done(false);
+                    };
+                    const timer = setTimeout(bad, 45000);
+                    node.addEventListener("loadedmetadata", ok);
+                    node.addEventListener("error", bad);
+                });
+            }
+
+            #promote(node, index) {
+                const old = this.#live;
+                this.#live = node;
+                this.#i = index;
+                this.nativeEl = node;
+                node.className = "mv-live";
+                this.#apply(node);
+                if (this.#kind === "avp") {
+                    this.#onStreams(node, node.streams || []);
+                }
+                if (old && old !== node) this.#drop(old);
+                this.#onReady(node);
+                if (!this.#announced) {
+                    this.#announced = true;
+                    this.dispatchEvent(new Event("durationchange"));
+                    this.dispatchEvent(new Event("loadedmetadata"));
+                    this.dispatchEvent(new Event("loadeddata"));
+                    this.dispatchEvent(new Event("canplay"));
+                }
+                if (this.#wantPlay && node.paused) this.#start();
+                this.dispatchEvent(new Event("timeupdate"));
+            }
+
+            #goto(index, local, play) {
+                const part = this.#parts[index];
+                if (!part || this.#busy) return Promise.resolve(false);
+                this.#busy = true;
+                return this.#swap(index, local, play).then(
+                    (ok) => { this.#busy = false; return ok; },
+                    (e) => { this.#busy = false; throw e; }
+                );
+            }
+
+            #swap(index, local, play) {
+                if (this.#idle && this.#idleAt === index) {
+                    const node = this.#idle;
+                    this.#idle = null;
+                    this.#idleAt = -1;
+                    return this.#settle(node, local).then((ok) => {
+                        if (!ok) {
+                            this.#drop(node);
+                            return this.#fail(index, local, play);
+                        }
+                        this.#promote(node, index);
+                        if (play) this.#start();
+                        return true;
+                    });
+                }
+                this.#drop(this.#idle);
+                this.#idle = null;
+                this.#idleAt = -1;
+                const node = this.#make(index, this.#retried[index]);
+                return this.#settle(node, local).then((ok) => {
+                    if (!ok) {
+                        this.#drop(node);
+                        return this.#fail(index, local, play);
+                    }
+                    this.#promote(node, index);
+                    if (play) this.#start();
+                    return true;
+                });
+            }
+
+            #start() {
+                if (!this.#live) return;
+                this.#wantPlay = true;
+                try {
+                    const done = this.#live.play();
+                    if (done && done.catch) done.catch(() => { });
+                } catch (e) { }
+            }
+
+            #notice(text) {
+                this.dispatchEvent(new CustomEvent("mergednotice", {
+                    detail: text, bubbles: true, composed: true
+                }));
+            }
+
+            #fail(index, local, play) {
+                if (!this.#retried[index]) {
+                    this.#retried[index] = Date.now();
+                    return this.#swap(index, local, play);
+                }
+                if (this.#kind === "native" && !this.#fellBack) {
+                    this.#fellBack = true;
+                    this.#kind = "avp";
+                    this.#retried = {};
+                    this.#notice("Switching to the advanced decoder");
+                    return this.#swap(index, local, play);
+                }
+                this.#parts[index].dead = true;
+                this.#recount();
+                this.#notice("Part " + (index + 1)
+                    + " could not be loaded, skipping it");
+                const next = this.#nextIndex(index);
+                if (next < 0) {
+                    if (this.#parts.every((p) => p.dead)) {
+                        this.dispatchEvent(new Event("error"));
+                    } else {
+                        this.dispatchEvent(new Event("ended"));
+                    }
+                    return Promise.resolve(false);
+                }
+                this.dispatchEvent(new Event("durationchange"));
+                return this.#swap(next, this.#parts[next].trim || 0, play);
+            }
+
+
+            #preload() {
+                if (this.#idle || !this.#live) return;
+                if (document.visibilityState !== "visible") return;
+                const conn = navigator.connection;
+                if (conn && conn.saveData) return;
+                const next = this.#nextIndex(this.#i);
+                if (next < 0) return;
+                const part = this.#parts[this.#i];
+                let span = part.dur || Number(this.#live.duration) || 0;
+                if (!isFinite(span) || span <= 0) return;
+                const at = Number(this.#live.currentTime) || 0;
+                if (span - at > PRELOAD_LEAD) return;
+                const node = this.#make(next, this.#retried[next]);
+                try { node.muted = true; } catch (e) { }
+                this.#idle = node;
+                this.#idleAt = next;
+                this.#settle(node, this.#parts[next].trim || 0)
+                    .then((ok) => {
+                        if (this.#idle !== node) return;
+                        if (ok) return;
+                        this.#drop(node);
+                        this.#idle = null;
+                        this.#idleAt = -1;
+                    });
+            }
+
+            #onEnded() {
+                const next = this.#nextIndex(this.#i);
+                if (next < 0) {
+                    this.dispatchEvent(new Event("ended"));
+                    return;
+                }
+                this.#goto(next, this.#parts[next].trim || 0, true);
+            }
+
+            #onReady(node) {
+                if (node !== this.#live) return;
+                const part = this.#parts[this.#i];
+                if (!part) return;
+                const found = Number(node.duration);
+                if (!isFinite(found) || found <= 0) return;
+                if (Math.abs(found - part.dur) <= 0.5) return;
+                part.dur = found;
+                this.#recount();
+                this.dispatchEvent(new Event("durationchange"));
+            }
+
+            #onStreams(node, list) {
+                if (node !== this.#live) return;
+                if (!list || !list.length) return;
+                this.#streams = list;
+                this.#restoreAudio(node);
+                this.dispatchEvent(new CustomEvent("libmediastreams", {
+                    detail: list, bubbles: true
+                }));
+            }
+
+            #restoreAudio(node) {
+                if (this.#audioNth === null) return;
+                const list = (node.streams || []).filter(
+                    (t) => t && t.mediaType === "audio");
+                const pick = list[this.#audioNth];
+                if (pick && node.selectAudio) {
+                    try { node.selectAudio(pick.id); } catch (e) { }
+                }
+            }
+
+            handleEvent(ev) {
+                if (ev.target !== this.nativeEl) return;
+                const type = ev.type;
+                if (type === "ended") { this.#onEnded(); return; }
+                if (type === "timeupdate") this.#preload();
+                if (type === "loadedmetadata") {
+                    this.#onReady(ev.target);
+                    return;
+                }
+                if (type === "loadeddata" || type === "canplay") return;
+                if (type === "error") {
+                    if (this.#busy) return;
+                    const tries = this.#reloads[this.#i] || 0;
+                    if (tries >= MAX_RELOADS) {
+                        super.handleEvent(ev);
+                        return;
+                    }
+                    this.#reloads[this.#i] = tries + 1;
+                    this.#retried[this.#i] = Date.now();
+                    this.#goto(this.#i, this.#localNow(), this.#wantPlay);
+                    return;
+                }
+                if (MERGE_NOISE.indexOf(type) !== -1) return;
+                super.handleEvent(ev);
+            }
+
+            #localNow() {
+                const part = this.#parts[this.#i];
+                if (!part || !this.#live) return 0;
+                return Number(this.#live.currentTime) || part.trim || 0;
+            }
+
+
+            get parts() { return this.#parts; }
+            get partIndex() { return this.#i; }
+            get audioIndex() { return this.#audioNth; }
+            get streams() {
+                return this.#live && this.#live.streams
+                    ? this.#live.streams : this.#streams;
+            }
+
+            get duration() { return this.#total || NaN; }
+
+            get currentTime() {
+                const part = this.#parts[this.#i];
+                if (!part || !this.#live) return 0;
+                const at = Number(this.#live.currentTime) || 0;
+                return part.start + Math.max(0, at - (part.trim || 0));
+            }
+
+            set currentTime(value) {
+                const want = Number(value);
+                if (!isFinite(want) || want < 0) return;
+                const cap = Math.max(0, this.#total - 0.25);
+                const seat = this.#locate(Math.min(want, cap));
+                if (seat.index === this.#i && this.#live) {
+                    try { this.#live.currentTime = seat.local; } catch (e) { }
+                    return;
+                }
+                this.#goto(seat.index, seat.local,
+                    this.#wantPlay || (this.#live && !this.#live.paused));
+            }
+
+            get ended() {
+                return this.#nextIndex(this.#i) < 0 && !!this.#live
+                    && !!this.#live.ended;
+            }
+
+            get paused() { return this.#live ? !!this.#live.paused : true; }
+            get seeking() { return this.#live ? !!this.#live.seeking : false; }
+            get readyState() {
+                return this.#live ? Number(this.#live.readyState || 0) : 0;
+            }
+            get error() { return this.#live ? this.#live.error : null; }
+            get videoWidth() { return this.#live ? this.#live.videoWidth : 0; }
+            get videoHeight() { return this.#live ? this.#live.videoHeight : 0; }
+
+            get seekable() {
+                const self = this;
+                return {
+                    get length() { return self.#total > 0 ? 1 : 0; },
+                    start: function () { return 0; },
+                    end: function () { return self.#total; }
+                };
+            }
+
+            get buffered() {
+                const part = this.#parts[this.#i];
+                const live = this.#live;
+                const shift = part ? part.start - (part.trim || 0) : 0;
+                const rng = live && live.buffered ? live.buffered : null;
+                const count = rng ? rng.length : 0;
+                const self = this;
+                return {
+                    get length() { return count; },
+                    start: function (n) {
+                        return Math.max(0, rng.start(n) + shift);
+                    },
+                    end: function (n) {
+                        return Math.min(self.#total, rng.end(n) + shift);
+                    }
+                };
+            }
+
+            play() {
+                this.#wantPlay = true;
+                if (!this.#live || this.#busy) return Promise.resolve();
+                try {
+                    const done = this.#live.play();
+                    return done && done.then ? done : Promise.resolve();
+                } catch (e) {
+                    return Promise.resolve();
+                }
+            }
+
+            pause() {
+                this.#wantPlay = false;
+                if (this.#live) {
+                    try { this.#live.pause(); } catch (e) { }
+                }
+            }
+
+            load() { }
+
+            get volume() { return this.#vol; }
+            set volume(value) {
+                this.#vol = Math.max(0, Math.min(1, Number(value)));
+                if (this.#live) {
+                    try { this.#live.volume = this.#vol; } catch (e) { }
+                }
+            }
+
+            get muted() { return this.#muted; }
+            set muted(value) {
+                this.#muted = !!value;
+                if (this.#live) {
+                    try { this.#live.muted = this.#muted; } catch (e) { }
+                }
+            }
+
+            get playbackRate() { return this.#rate; }
+            set playbackRate(value) {
+                this.#rate = Number(value) || 1;
+                if (this.#live) {
+                    try { this.#live.playbackRate = this.#rate; } catch (e) { }
+                }
+                if (this.#idle) {
+                    try { this.#idle.playbackRate = this.#rate; } catch (e) { }
+                }
+            }
+
+            selectAudio(id) {
+                const list = (this.streams || []).filter(
+                    (t) => t && t.mediaType === "audio");
+                const at = list.findIndex((t) => t.id === id);
+                if (at >= 0) this.#audioNth = at;
+                if (this.#live && this.#live.selectAudio) {
+                    return Promise.resolve(this.#live.selectAudio(id));
+                }
+                return Promise.resolve();
+            }
+
+            selectSubtitle(id) {
+                if (this.#live && this.#live.selectSubtitle) {
+                    return Promise.resolve(this.#live.selectSubtitle(id));
+                }
+                return Promise.resolve();
+            }
+        }
+
+        if (!customElements.get("merged-video")) {
+            customElements.define("merged-video", MergedVideoElement);
+        }
     </script>
 
     <script>
@@ -1622,6 +2209,10 @@
             var vid = el("player");
             var FILE = "Video";
             var MIME = "";
+
+            var MERGE = null;
+            var TRACK_TOKEN = TOKEN;
+            var APP_SRC = STREAM;
 
             function store(k, v) { try { localStorage.setItem(k, v); } catch (e) { } }
             function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -1768,17 +2359,20 @@
             }
 
             function m3u() {
+                if (MERGE) {
+                    return location.origin + "/m3u/" + encodeURIComponent(TOKEN);
+                }
                 var text = "#EXTM3U\n#EXTINF:-1," + FILE + "\n" + STREAM + "\n";
                 return "data:audio/x-mpegurl;charset=utf-8," + encodeURIComponent(text);
             }
 
             function intent(pkg) {
-                return "intent:" + STREAM + "#Intent;package=" + pkg +
+                return "intent:" + APP_SRC + "#Intent;package=" + pkg +
                     ";type=video/*;S.title=" + encodeURIComponent(FILE) + ";end";
             }
 
             function catalogue() {
-                var enc = encodeURIComponent(STREAM);
+                var enc = encodeURIComponent(APP_SRC);
                 return {
                     android: [
                         ["VLC", intent("org.videolan.vlc")],
@@ -1788,31 +2382,31 @@
                         ["Just Player", intent("com.brouken.player")],
                         ["Kodi", intent("org.xbmc.kodi")],
                         ["Web Video Cast", intent("com.instantbits.cast.webvideo")],
-                        ["Any player", "intent:" + STREAM + "#Intent;type=video/*;end"]
+                        ["Any player", "intent:" + APP_SRC + "#Intent;type=video/*;end"]
                     ],
                     ios: [
                         ["Infuse", "infuse://x-callback-url/play?url=" + enc],
                         ["VLC", "vlc-x-callback://x-callback-url/stream?url=" + enc],
-                        ["nPlayer", "nplayer-" + STREAM],
-                        ["Outplayer", "outplayer://" + STREAM],
+                        ["nPlayer", "nplayer-" + APP_SRC],
+                        ["Outplayer", "outplayer://" + APP_SRC],
                         ["SenPlayer", "senplayer://x-callback-url/play?url=" + enc],
                         ["VidHub", "open-vidhub://x-callback-url/open?url=" + enc],
-                        ["KMPlayer", "kmplayer://" + STREAM],
-                        ["PlayerXtreme", "playerxtreme://" + STREAM]
+                        ["KMPlayer", "kmplayer://" + APP_SRC],
+                        ["PlayerXtreme", "playerxtreme://" + APP_SRC]
                     ],
                     mac: [
                         ["IINA", "iina://weblink?url=" + enc],
-                        ["VLC", "vlc://" + STREAM],
+                        ["VLC", "vlc://" + APP_SRC],
                         ["Infuse", "infuse://x-callback-url/play?url=" + enc],
-                        ["nPlayer", "nplayer-" + STREAM],
+                        ["nPlayer", "nplayer-" + APP_SRC],
                         ["VidHub", "open-vidhub://x-callback-url/open?url=" + enc],
                         ["Playlist file", m3u()]
                     ],
                     desktop: [
-                        ["VLC", "vlc://" + STREAM],
-                        ["PotPlayer", "potplayer://" + STREAM],
-                        ["MPC-HC", "mpc-hc://" + STREAM],
-                        ["Kodi", "kodi://" + STREAM],
+                        ["VLC", "vlc://" + APP_SRC],
+                        ["PotPlayer", "potplayer://" + APP_SRC],
+                        ["MPC-HC", "mpc-hc://" + APP_SRC],
+                        ["Kodi", "kodi://" + APP_SRC],
                         ["Playlist file", m3u()]
                     ]
                 };
@@ -1861,6 +2455,8 @@
             var subTimer = null;
             var subTrack = "-1";
             var cueStore = {};
+            var subDone = {};
+            var subPart = -1;
             var subsBox = el("subs");
             var subsLine = el("subsText");
             var subsHome = null;
@@ -1958,8 +2554,56 @@
                 return out;
             }
 
+            function subUrl(token, idx) {
+                return "/subs/" + encodeURIComponent(token) + "/"
+                    + encodeURIComponent(idx) + ".vtt";
+            }
+
+            function fetchSubs(token, idx) {
+                return fetch(subUrl(token, idx), { cache: "force-cache" })
+                    .then(function (r) {
+                        if (!r.ok) throw new Error("vtt " + r.status);
+                        return r.text();
+                    })
+                    .then(parseVtt);
+            }
+
+            function ensurePartSubs(index) {
+                if (!MERGE || subTrack === "-1") return;
+                var part = (vid.parts || [])[index];
+                if (!part) return;
+                var key = subTrack + ":" + index;
+                if (subDone[key]) return;
+                subDone[key] = true;
+                var track = subTrack;
+                fetchSubs(part.token, track).then(function (found) {
+                    if (track !== subTrack || !found.length) return;
+                    var shift = part.start - (part.trim || 0);
+                    for (var i = 0; i < found.length; i++) {
+                        cues.push({
+                            s: found[i].s + shift,
+                            e: found[i].e + shift,
+                            t: found[i].t
+                        });
+                    }
+                    cues.sort(function (a, b) { return a.s - b.s; });
+                    cueStore[track] = cues;
+                    cueAt = -2;
+                }).catch(function (e) {
+                    subDone[key] = false;
+                    lmErr(e);
+                });
+            }
+
             function paintCue() {
                 if (!vid) return;
+                if (MERGE) {
+                    var now = vid.partIndex || 0;
+                    if (now !== subPart) {
+                        subPart = now;
+                        ensurePartSubs(now);
+                    }
+                }
                 var t = vid.currentTime || 0;
                 var lo = 0, hi = cues.length - 1, hit = -1;
                 while (lo <= hi) {
@@ -1984,6 +2628,7 @@
                 subTimer = null;
                 cues = [];
                 cueAt = -2;
+                subPart = -1;
                 subsBox.classList.remove("on");
                 subsLine.textContent = "";
             }
@@ -1996,6 +2641,19 @@
                     return;
                 }
                 var held = cueStore[subTrack];
+                if (MERGE) {
+                    cues = held || [];
+                    applySubStyle();
+                    if (!held) {
+                        toast("Extracting subtitles, this can take a moment");
+                    }
+                    ensurePartSubs(vid.partIndex || 0);
+                    subPart = vid.partIndex || 0;
+                    subTimer = setInterval(paintCue, 200);
+                    paintCue();
+                    if (held) toast((label || "Subtitles") + " on");
+                    return;
+                }
                 if (held) {
                     cues = held;
                     applySubStyle();
@@ -2005,15 +2663,10 @@
                     return;
                 }
                 toast("Extracting subtitles, this can take a moment");
-                fetch("/subs/" + encodeURIComponent(TOKEN) + "/"
-                    + encodeURIComponent(subTrack) + ".vtt", { cache: "force-cache" })
-                    .then(function (r) {
-                        if (!r.ok) throw new Error("vtt " + r.status);
-                        return r.text();
-                    })
-                    .then(function (txt) {
+                fetchSubs(TOKEN, subTrack)
+                    .then(function (found) {
                         if (subTrack === "-1") return;
-                        cues = parseVtt(txt);
+                        cues = found;
                         if (!cues.length) {
                             toast("That subtitle track is empty");
                             return;
@@ -2122,6 +2775,10 @@
                 var auds = lmByType("audio"), subs = lmByType("subtitle");
                 if (auds.length > 1) {
                     if (lmCurAudio === null) lmCurAudio = auds[0].id;
+                    if (MERGE && typeof vid.audioIndex === "number"
+                        && auds[vid.audioIndex]) {
+                        lmCurAudio = auds[vid.audioIndex].id;
+                    }
                     dropdown(el("audDd"), "Audio",
                         [{ items: auds.map(function (t, i) {
                             return { label: lmLabel(t, i, "audio"),
@@ -2136,6 +2793,13 @@
             }
 
             function startLibmedia(atSec, wantAudioNth) {
+                if (MERGE) {
+                    lmEl = vid;
+                    return Promise.resolve(
+                        vid.useAdvanced(atSec, wantAudioNth)
+                    ).then(function () { return true; })
+                        .catch(function (e) { lmErr(e); return false; });
+                }
                 var gesture = typeof wantAudioNth === "number";
                 if (lmEl) {
                     if (typeof wantAudioNth === "number") {
@@ -2234,7 +2898,8 @@
             }
 
             function loadTracks() {
-                fetch("/api/tracks/" + encodeURIComponent(TOKEN), { cache: "no-store" })
+                fetch("/api/tracks/" + encodeURIComponent(TRACK_TOKEN),
+                    { cache: "no-store" })
                     .then(function (r) { return r.ok ? r.json() : null; })
                     .then(function (t) { if (t) applyTracks(t); })
                     .catch(function () { });
@@ -2369,7 +3034,61 @@
                 }
             }
 
+            function bootMerged() {
+                return customElements.whenDefined("merged-video").then(function () {
+                    var skin = vid.parentNode;
+                    var node = document.createElement("merged-video");
+                    node.setAttribute("playsinline", "");
+                    node.addEventListener("libmediastreams", function (ev) {
+                        lmStreams = ev.detail || [];
+                        lmRebuildMenus();
+                        el("loading").classList.add("gone");
+                        clearStall();
+                    });
+                    node.addEventListener("mergednotice", function (ev) {
+                        toast(String(ev.detail || ""));
+                    });
+                    node.addEventListener("error", function () {
+                        el("loading").classList.add("gone");
+                        stall("Playback stopped",
+                            "A part could not be loaded after several tries. "
+                            + "Reload the page, open the parts page below, or "
+                            + "pick a player.");
+                    });
+
+                    try { vid.pause(); } catch (e) { }
+                    vid.removeAttribute("src");
+                    try { vid.load(); } catch (e) { }
+                    skin.replaceChild(node, vid);
+                    vid = node;
+                    bindMedia(node, false);
+
+                    var kind = nativeHopeless() ? "avp" : "native";
+                    if (kind === "avp") {
+                        lmEl = node;
+                        warmDecoder();
+                        el("loadingText").textContent = "Starting the decoder";
+                    }
+                    return node.setParts(MERGE.parts, 0, kind);
+                }).catch(function (e) {
+                    lmErr(e);
+                    stall("Cannot play these parts",
+                        "The merged player could not start. Open the parts "
+                        + "page below, or pick a player.");
+                    return false;
+                });
+            }
+
             function start(info) {
+                var set = info.merge;
+                if (set && set.parts && set.parts.length > 1) {
+                    MERGE = set;
+                    TRACK_TOKEN = set.parts[0].token;
+                    APP_SRC = location.origin + "/m3u/"
+                        + encodeURIComponent(TOKEN);
+                    DIRECT = location.origin + "/playlist/"
+                        + encodeURIComponent(TOKEN);
+                }
                 FILE = info.name || "Untitled";
                 MIME = info.mime || "";
                 document.title = FILE + " · WZML-X";
@@ -2377,39 +3096,57 @@
                 el("title").title = FILE;
                 el("now").textContent = FILE;
                 el("dl").href = DIRECT;
-                el("dl").setAttribute("download", FILE);
+                if (MERGE) {
+                    el("dl").removeAttribute("download");
+                    el("dl").title = "Open the parts page";
+                    var label = el("dl").lastChild;
+                    if (label && label.nodeType === 3) {
+                        label.nodeValue = label.nodeValue.replace(
+                            "Download", "All Parts");
+                    }
+                } else {
+                    el("dl").setAttribute("download", FILE);
+                }
                 buildApps();
                 applySubStyle();
                 showArt();
                 loadTracks();
                 addMeta(bytes(info.size));
                 if (MIME) addMeta(MIME);
+                if (MERGE) addMeta(MERGE.count + " parts");
                 wireNav(info.playlist);
 
-                bindMedia(vid, true);
-                vid.addEventListener("error", function () {
-                    el("loading").classList.add("gone");
-                    var e = vid.error;
-                    if (e && e.code === 4) {
-                        stall("Switching decoder",
-                            "This browser cannot decode the file natively. Loading "
-                            + "the advanced decoder.");
-                        startLibmedia(Math.max(0, vid.currentTime || 0));
-                    } else {
-                        stall("Playback stopped",
-                            "The connection dropped or the link expired. Reload " +
-                            "the page, or pick a player below.");
+                if (MERGE) {
+                    if (MERGE.partial) {
+                        toast("Some parts are missing, playing the rest");
                     }
-                });
-
-                if (nativeHopeless()) {
-                    lmLog("native cannot open " + MIME + ", decoding directly");
-                    warmDecoder();
-                    el("loadingText").textContent = "Starting the decoder";
-                    startLibmedia(0);
+                    bootMerged();
                 } else {
-                    vid.setAttribute("type", MIME);
-                    vid.src = STREAM;
+                    bindMedia(vid, true);
+                    vid.addEventListener("error", function () {
+                        el("loading").classList.add("gone");
+                        var e = vid.error;
+                        if (e && e.code === 4) {
+                            stall("Switching decoder",
+                                "This browser cannot decode the file natively. Loading "
+                                + "the advanced decoder.");
+                            startLibmedia(Math.max(0, vid.currentTime || 0));
+                        } else {
+                            stall("Playback stopped",
+                                "The connection dropped or the link expired. Reload " +
+                                "the page, or pick a player below.");
+                        }
+                    });
+
+                    if (nativeHopeless()) {
+                        lmLog("native cannot open " + MIME + ", decoding directly");
+                        warmDecoder();
+                        el("loadingText").textContent = "Starting the decoder";
+                        startLibmedia(0);
+                    } else {
+                        vid.setAttribute("type", MIME);
+                        vid.src = STREAM;
+                    }
                 }
 
                 setTimeout(function () {
@@ -2484,7 +3221,10 @@
             };
             el("copyDl").onclick = function () {
                 navigator.clipboard.writeText(DIRECT).then(
-                    function () { toast("Direct link copied"); },
+                    function () {
+                        toast(MERGE ? "Parts page link copied"
+                            : "Direct link copied");
+                    },
                     function () { toast("Copy failed"); });
             };
 

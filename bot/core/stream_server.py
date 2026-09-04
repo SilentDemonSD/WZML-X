@@ -45,6 +45,9 @@ _probe_cache = OrderedDict()
 _LIST_KEEP = 64
 _list_cache = OrderedDict()
 
+_MERGE_KEEP = 64
+_merge_cache = OrderedDict()
+
 _POSTER_KEEP = 256
 _poster_cache = OrderedDict()
 
@@ -69,6 +72,7 @@ def _cache_trim(aggressive=False):
         _vtt_bytes = 0
         _poster_cache.clear()
         _list_cache.clear()
+        _merge_cache.clear()
         _probe_cache.clear()
         return
     keep = max(1, len(_vtt_cache) // 2)
@@ -210,7 +214,7 @@ async def _neighbours(token):
     if not nav:
         return None
     doc = await database.get_playlist(nav[0])
-    if not doc:
+    if not doc or doc.get("merged"):
         return None
     items = doc["items"]
     if not items:
@@ -243,7 +247,29 @@ async def _neighbours(token):
 
 
 async def _meta(request):
-    token, cid, mid = await _resolve(request)
+    token = request.match_info.get("token", "")
+    if not _TOKEN_RE.match(token):
+        raise web.HTTPNotFound(text="unknown link")
+    found = await database.get_stream(token)
+    if not found:
+        try:
+            body = await _merge_body(token)
+        except NoClientAvailable as e:
+            raise web.HTTPServiceUnavailable(text=str(e)) from None
+        if not body:
+            raise web.HTTPNotFound(text="unknown link")
+        return web.json_response(
+            {
+                "name": body["name"],
+                "size": body["size"],
+                "mime": body["mime"],
+                "unique_id": "",
+                "playable": True,
+                "duration": body["duration"],
+                "merge": body,
+            }
+        )
+    cid, mid = found
     try:
         info = await probe(cid, mid)
     except StreamGone:
@@ -497,6 +523,94 @@ async def _playlist_body(token):
     return body
 
 
+async def _merge_body(token):
+    doc = await database.get_playlist(token)
+    if not doc or not doc.get("merged"):
+        _merge_cache.pop(token, None)
+        return None
+    hit = _merge_cache.get(token)
+    if hit is not None:
+        _merge_cache.move_to_end(token)
+        return hit
+    items = doc["items"]
+    durs = doc.get("durs") or []
+    trims = doc.get("trims") or []
+    parts = []
+    at = 0
+    size = 0
+    partial = False
+    for index, tok in enumerate(items):
+        found = await database.get_stream(tok)
+        if not found:
+            partial = True
+            continue
+        try:
+            info = await probe(found[0], found[1])
+        except StreamGone:
+            purge_fid(found[0], found[1])
+            partial = True
+            continue
+        except NoClientAvailable:
+            raise
+        except Exception as e:
+            LOGGER.error(f"merge probe failed for {tok}: {e}")
+            partial = True
+            continue
+        dur = int(durs[index] if index < len(durs) else 0)
+        trim = int(trims[index] if index < len(trims) else 0)
+        span = max(0, dur - trim)
+        size += info.get("size") or 0
+        parts.append(
+            {
+                "token": tok,
+                "name": info.get("name") or "Untitled",
+                "size": info.get("size") or 0,
+                "mime": info.get("mime") or "",
+                "dur": dur,
+                "trim": trim,
+                "start": at,
+                "span": span,
+            }
+        )
+        at += span
+    if not parts:
+        return None
+    body = {
+        "token": token,
+        "name": doc["name"] or parts[0]["name"],
+        "mime": parts[0]["mime"],
+        "size": size,
+        "duration": at,
+        "count": len(parts),
+        "partial": partial,
+        "parts": parts,
+    }
+    _merge_cache[token] = body
+    while len(_merge_cache) > _MERGE_KEEP:
+        _merge_cache.popitem(last=False)
+    return body
+
+
+async def _merge(request):
+    token = request.match_info.get("token", "")
+    if not _TOKEN_RE.match(token):
+        raise web.HTTPNotFound(text="unknown link")
+    try:
+        body = await _merge_body(token)
+    except NoClientAvailable as e:
+        raise web.HTTPServiceUnavailable(text=str(e)) from None
+    if body is None:
+        raise web.HTTPNotFound(text="unknown link")
+    tag = '"merge-%s-%d"' % (token, body["count"])
+    return web.json_response(
+        body,
+        headers={
+            "Cache-Control": "private, max-age=300",
+            "ETag": tag,
+        },
+    )
+
+
 async def _poster_source(token):
     doc = await database.get_playlist(token)
     if doc:
@@ -581,6 +695,7 @@ async def _playlist(request):
 
 def forget(token):
     _list_cache.pop(token, None)
+    _merge_cache.pop(token, None)
     _poster_cache.pop(token, None)
 
 
@@ -716,6 +831,7 @@ def build_app():
     app.router.add_route("GET", "/_meta/{token}", _meta)
     app.router.add_route("GET", "/_tracks/{token}", _tracks)
     app.router.add_route("GET", "/_playlist/{token}", _playlist)
+    app.router.add_route("GET", "/_merge/{token}", _merge)
     app.router.add_route("GET", "/_poster/{token}", _poster)
     app.router.add_route("GET", "/_subs/{token}/{idx}", _subs)
     app.router.add_route("*", "/_stream/{token}", _stream)
