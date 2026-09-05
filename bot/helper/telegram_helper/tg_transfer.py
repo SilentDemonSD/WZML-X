@@ -13,6 +13,10 @@ MB = 1024 * 1024
 
 _global_work_loads = None
 
+
+class NoHelperClient(Exception):
+    pass
+
 _MEDIA_ATTRS = (
     "audio",
     "document",
@@ -40,12 +44,11 @@ def media_of(message):
 def get_global_work_loads():
     global _global_work_loads
     if _global_work_loads is None:
-        _global_work_loads = dict(TgClient.helper_loads)
-        if TgClient.helper_users:
-            for no, load in TgClient.helper_user_loads.items():
-                _global_work_loads[-no] = load
-        if TgClient.user:
-            _global_work_loads[-(len(TgClient.helper_users) + 1)] = 0
+        _global_work_loads = {}
+    for no in TgClient.helper_loads:
+        _global_work_loads.setdefault(no, 0)
+    for no in TgClient.helper_user_loads:
+        _global_work_loads.setdefault(-no, 0)
     return _global_work_loads
 
 
@@ -174,6 +177,8 @@ class HypertgTransfer:
             self.clients[key] = TgClient.user
             self.client_ids.append(key)
         self.num_clients = len(self.clients)
+        for i in self.client_ids:
+            self.work_loads.setdefault(i, 0)
         self._pool = MtprotoPool(self.clients)
         self._cancel = Event()
         self._tasks = []
@@ -183,7 +188,11 @@ class HypertgTransfer:
         )
 
     def _pick_client(self):
-        return min(self.work_loads, key=self.work_loads.get)
+        if not self.client_ids:
+            raise NoHelperClient("no helper clients are configured")
+        for i in self.client_ids:
+            self.work_loads.setdefault(i, 0)
+        return min(self.client_ids, key=lambda i: self.work_loads[i])
 
     def _client_idx(self, client):
         for i, c in self.clients.items():

@@ -54,6 +54,7 @@ _merge_cache = OrderedDict()
 
 _PARTIAL_TTL = 60
 _body_inflight = {}
+_side_tasks = set()
 
 _POSTER_KEEP = 256
 _POSTER_MISS_TTL = 300
@@ -157,6 +158,13 @@ async def _probe(cid, mid):
     return await _once(("probe", cid, mid), lambda: _build_probe(cid, mid))
 
 
+def _aside(coro):
+    task = ensure_future(coro)
+    _side_tasks.add(task)
+    task.add_done_callback(_side_tasks.discard)
+    return task
+
+
 def _reap_proc(proc):
     if proc.returncode is not None:
         return
@@ -164,7 +172,7 @@ def _reap_proc(proc):
         proc.kill()
     except Exception:
         return
-    ensure_future(_wait_quietly(proc))
+    _aside(_wait_quietly(proc))
 
 
 async def _wait_quietly(proc):
@@ -566,7 +574,7 @@ async def _spawn_ffmpeg(args, what):
         raise web.HTTPServiceUnavailable(
             text=f"{BinConfig.FFMPEG_NAME} is not installed"
         ) from None
-    ensure_future(_drain_stderr(proc, what))
+    _aside(_drain_stderr(proc, what))
     return proc
 
 
@@ -588,16 +596,10 @@ async def _tracks(request):
         raise web.HTTPServiceUnavailable(text=str(e)) from None
     except Exception as e:
         LOGGER.error(f"track probe failed for {cid}/{mid}: {e}")
-        return web.json_response({"audio": [], "subtitle": []})
-
-
-async def _pump(st, resp, start, end):
-    gen = st.iter_range(start, end)
-    try:
-        async for piece in gen:
-            await resp.write(piece)
-    finally:
-        await gen.aclose()
+        return web.json_response(
+            {"audio": [], "subtitle": []},
+            headers={"Cache-Control": "no-store"},
+        )
 
 
 def _vtt_keep(key, data):
@@ -1046,14 +1048,18 @@ async def start_stream_server():
     if _runner is not None:
         return
     port = stream_port()
+    _runner = web.AppRunner(build_app(), access_log=None)
     try:
-        _runner = web.AppRunner(build_app(), access_log=None)
         await _runner.setup()
         await web.TCPSite(_runner, "127.0.0.1", port).start()
         start_reaper()
         LOGGER.info(f"Stream server listening on 127.0.0.1:{port}")
     except Exception as e:
-        _runner = None
+        stale, _runner = _runner, None
+        try:
+            await stale.cleanup()
+        except Exception:
+            pass
         LOGGER.error(f"Failed to start stream server on {port}: {e}")
 
 
@@ -1069,4 +1075,7 @@ async def stop_stream_server():
 
 
 def spawn_stream_server():
-    bot_loop.create_task(start_stream_server())
+    task = bot_loop.create_task(start_stream_server())
+    _side_tasks.add(task)
+    task.add_done_callback(_side_tasks.discard)
+    return task

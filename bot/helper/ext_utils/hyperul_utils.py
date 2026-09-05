@@ -243,7 +243,9 @@ class HypertgUpload(HypertgTransfer):
         user_only=False,
     ):
         if user_only:
-            candidates = {k: self.work_loads[k] for k in self.clients if k < 0}
+            candidates = {
+                k: self.work_loads.get(k, 0) for k in self.clients if k < 0
+            }
             if not candidates:
                 idx = self._pick_client()
             else:

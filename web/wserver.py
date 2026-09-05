@@ -36,7 +36,7 @@ from sabnzbdapi import SabnzbdClient
 from aioqbt.exc import AQError
 
 from web.nodes import extract_file_ids, make_tree
-from aiohttp import ClientSession
+from aiohttp import ClientSession, ClientTimeout
 
 getLogger("niquests").setLevel(WARNING)
 getLogger("aiohttp").setLevel(WARNING)
@@ -196,7 +196,12 @@ async def lifespan(app: FastAPI):
     global aria2, qbittorrent, http_session
     aria2 = Aria2HttpClient("http://localhost:6800/jsonrpc")
     qbittorrent = await create_client("http://localhost:8090/api/v2/")
-    http_session = ClientSession(auto_decompress=True)
+    http_session = ClientSession(
+        auto_decompress=True,
+        timeout=ClientTimeout(
+            total=None, connect=15, sock_connect=15, sock_read=300
+        ),
+    )
     yield
     await aria2.close()
     await qbittorrent.close()
@@ -798,7 +803,7 @@ async def m3u_route(token: str, request: Request):
             continue
         if "playable" in one and not one["playable"]:
             continue
-        secs = int(one.get("dur") or 0) or -1
+        secs = int(one.get("span") or one.get("dur") or 0) or -1
         name = _one_line(one.get("name") or "Part")
         lines.append(f"#EXTINF:{secs},{name}")
         lines.append(f"{base}/stream/{one['token']}")

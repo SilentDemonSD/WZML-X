@@ -2078,6 +2078,7 @@
                     .then((ok) => {
                         if (this.#idle !== node) return false;
                         if (!ok) return false;
+                        this.#restoreAudio(node);
                         return this.#warm(node);
                     })
                     .then((ok) => {
@@ -3030,8 +3031,7 @@
             }
 
             function loadTracks() {
-                fetch("/api/tracks/" + encodeURIComponent(TRACK_TOKEN),
-                    { cache: "no-store" })
+                fetch("/api/tracks/" + encodeURIComponent(TRACK_TOKEN))
                     .then(function (r) { return r.ok ? r.json() : null; })
                     .then(function (t) { if (t) applyTracks(t); })
                     .catch(function () { });
