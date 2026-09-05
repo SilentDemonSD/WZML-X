@@ -214,6 +214,33 @@ app = FastAPI(lifespan=lifespan)
 templates = Jinja2Templates(directory="web/templates/")
 
 
+_page_tags = {}
+
+
+def _page_tag(name, body):
+    from hashlib import md5
+
+    known = _page_tags.get(name)
+    if known is None or known[0] != len(body):
+        known = (len(body), '"%s"' % md5(body).hexdigest()[:16])
+        _page_tags[name] = known
+    return known[1]
+
+
+def _static_page(request: Request, name: str):
+    tag = _page_tag(name, templates.get_template(name).render().encode("utf-8"))
+    shelf = {
+        "ETag": tag,
+        "Cache-Control": "no-cache, must-revalidate",
+        "Referrer-Policy": "no-referrer",
+    }
+    if request.headers.get("if-none-match") == tag:
+        return Response(status_code=304, headers=shelf)
+    response = templates.TemplateResponse(request, name)
+    response.headers.update(shelf)
+    return response
+
+
 def _client_ip(request: Request):
     fwd = request.headers.get("x-forwarded-for", "")
     if fwd:
@@ -607,7 +634,7 @@ async def stream_proxy(
 
     async def _pump():
         try:
-            async for chunk in upstream.content.iter_chunked(262144):
+            async for chunk in upstream.content.iter_any():
                 yield chunk
         finally:
             upstream.release()
@@ -629,10 +656,7 @@ async def download_route(token: str, request: Request):
 async def playlist_page(token: str, request: Request):
     if not _SAFE_TOKEN.match(token or ""):
         raise HTTPException(status_code=404, detail="Unknown link")
-    response = templates.TemplateResponse(request, "playlist.html")
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    response.headers["Referrer-Policy"] = "no-referrer"
-    return response
+    return _static_page(request, "playlist.html")
 
 
 async def _json_proxy(token: str, upstream_path: str):
@@ -714,10 +738,7 @@ async def poster_route(token: str, request: Request):
 async def xstrm_page(token: str, request: Request):
     if not _SAFE_TOKEN.match(token or ""):
         raise HTTPException(status_code=404, detail="Unknown link")
-    response = templates.TemplateResponse(request, "stream.html")
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    response.headers["Referrer-Policy"] = "no-referrer"
-    return response
+    return _static_page(request, "stream.html")
 
 
 @app.get("/subs/{token}/{track}")
@@ -753,7 +774,7 @@ async def subs_route(token: str, track: str, request: Request):
 
     async def _pump():
         try:
-            async for chunk in upstream.content.iter_chunked(16384):
+            async for chunk in upstream.content.iter_any():
                 yield chunk
         finally:
             upstream.release()

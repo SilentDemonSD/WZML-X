@@ -9,6 +9,9 @@ from asyncio import (
 from collections import OrderedDict
 from json import loads
 from os import getenv
+from os.path import join as pathjoin
+from shutil import rmtree
+from tempfile import mkdtemp
 from re import compile as re_compile
 from subprocess import PIPE
 from time import monotonic, time
@@ -41,6 +44,7 @@ _TOKEN_RE = re_compile(r"^[A-Za-z0-9_-]{4,32}$")
 _PLAYABLE = ("video/", "audio/")
 _runner = None
 
+_PROBE_FIRST = 1024 * 1024
 _PROBE_BYTES = 6 * 1024 * 1024
 _PROBE_TIMEOUT = 45
 _PROBE_KEEP = 128
@@ -60,6 +64,7 @@ _POSTER_KEEP = 256
 _POSTER_MISS_TTL = 300
 _poster_cache = OrderedDict()
 
+_VTT_SIDECARS = 8
 _VTT_TOTAL_MAX = 48 * 1024 * 1024
 _VTT_ENTRY_MAX = 6 * 1024 * 1024
 _vtt_cache = OrderedDict()
@@ -139,7 +144,7 @@ def _title(stream, n):
 
 async def _prefix(cid, mid, size):
     st = await open_stream(cid, mid, "probe")
-    end = min(size, _PROBE_BYTES) - 1
+    end = max(0, size - 1)
     gen = st.iter_range(0, end)
     buf = bytearray()
     try:
@@ -182,13 +187,7 @@ async def _wait_quietly(proc):
         pass
 
 
-async def _build_probe(cid, mid):
-    key = (cid, mid)
-    if key in _probe_cache:
-        _probe_cache.move_to_end(key)
-        return _probe_cache[key]
-    info = await probe(cid, mid)
-    raw = await _prefix(cid, mid, info["size"] or _PROBE_BYTES)
+async def _ffprobe(raw):
     proc = await create_subprocess_exec(
         *_nice(["ffprobe", "-hide_banner", "-loglevel", "error",
                 "-print_format", "json", "-show_streams", "-"]),
@@ -201,11 +200,22 @@ async def _build_probe(cid, mid):
             out = b""
     finally:
         _reap_proc(proc)
-    streams = []
     try:
-        streams = loads(out)["streams"]
+        return loads(out)["streams"] or []
     except Exception:
-        streams = []
+        return []
+
+
+async def _build_probe(cid, mid):
+    key = (cid, mid)
+    if key in _probe_cache:
+        _probe_cache.move_to_end(key)
+        return _probe_cache[key]
+    info = await probe(cid, mid)
+    size = info["size"] or _PROBE_BYTES
+    streams = await _ffprobe(await _prefix(cid, mid, min(size, _PROBE_FIRST)))
+    if not streams and size > _PROBE_FIRST:
+        streams = await _ffprobe(await _prefix(cid, mid, min(size, _PROBE_BYTES)))
     audio, subtitle = [], []
     for st_ in streams:
         kind = st_.get("codec_type")
@@ -903,6 +913,35 @@ def purge_vtt(cid, mid):
         _vtt_bytes -= len(_vtt_cache.pop(key))
 
 
+async def _spare_tracks(cid, mid, idx):
+    try:
+        info = await _probe(cid, mid)
+    except Exception:
+        return []
+    total = len(info.get("subtitle") or [])
+    spare = [
+        j
+        for j in range(total)
+        if j != idx and (cid, mid, j) not in _vtt_cache
+    ]
+    return spare[:_VTT_SIDECARS]
+
+
+def _harvest(cid, mid, stage, spare):
+    if not stage:
+        return
+    for j in spare:
+        path = pathjoin(stage, f"{j}.vtt")
+        try:
+            with open(path, "rb") as fh:
+                data = fh.read(_VTT_ENTRY_MAX + 1)
+        except OSError:
+            continue
+        if data and len(data) <= _VTT_ENTRY_MAX:
+            _vtt_keep((cid, mid, j), data)
+    LOGGER.info(f"subtitle sidecars cached: {cid}/{mid} ({len(spare)} tracks)")
+
+
 async def _subs(request):
     _, cid, mid, _exp = await _resolve(request)
     try:
@@ -936,17 +975,22 @@ async def _subs(request):
     except NoClientAvailable as e:
         raise web.HTTPServiceUnavailable(text=str(e)) from None
 
+    spare = await _spare_tracks(cid, mid, idx)
+    stage = mkdtemp(prefix="wzx-vtt-") if spare else None
+    args = [
+        BinConfig.FFMPEG_NAME, "-hide_banner", "-loglevel", "error",
+        "-threads", "1", "-vn", "-an",
+        "-i", "pipe:0", "-map", f"0:s:{idx}",
+        "-f", "webvtt", "-flush_packets", "1", "pipe:1",
+    ]
+    for j in spare:
+        args += ["-map", f"0:s:{j}", "-f", "webvtt", pathjoin(stage, f"{j}.vtt")]
+
     try:
-        proc = await _spawn_ffmpeg(
-            [
-                BinConfig.FFMPEG_NAME, "-hide_banner", "-loglevel", "error",
-                "-threads", "1", "-vn", "-an",
-                "-i", "pipe:0", "-map", f"0:s:{idx}",
-                "-f", "webvtt", "-flush_packets", "1", "pipe:1",
-            ],
-            "subtitle extraction",
-        )
+        proc = await _spawn_ffmpeg(args, "subtitle extraction")
     except BaseException:
+        if stage:
+            rmtree(stage, ignore_errors=True)
         await shield(st._release())
         raise
 
@@ -963,6 +1007,8 @@ async def _subs(request):
         await resp.prepare(request)
     except BaseException:
         _reap_proc(proc)
+        if stage:
+            rmtree(stage, ignore_errors=True)
         await shield(st._release())
         raise
 
@@ -1005,6 +1051,8 @@ async def _subs(request):
             rc = await wait_for(proc.wait(), timeout=10)
         except Exception:
             rc = None
+        if rc == 0:
+            _harvest(cid, mid, stage, spare)
         if rc == 0 and buf:
             data = b"".join(buf)
             _vtt_keep(key, data)
@@ -1022,6 +1070,8 @@ async def _subs(request):
             del _vtt_inflight[key]
         pusher.cancel()
         _reap_proc(proc)
+        if stage:
+            rmtree(stage, ignore_errors=True)
     return resp
 
 
