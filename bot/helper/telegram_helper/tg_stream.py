@@ -119,6 +119,18 @@ def profile(name):
                 max_per_client=2,
                 retries=2,
             ),
+            StreamProfile(
+                name="probe",
+                first_chunk=bulk_chunk,
+                max_chunk=bulk_chunk,
+                window=max(2, bulk_window // 2),
+                clients=1,
+                invoke_timeout=15.0,
+                sleep_threshold=10,
+                cdn=True,
+                max_per_client=2,
+                retries=1,
+            ),
         ):
             _PROFILE_CACHE[p.name] = p
     return _PROFILE_CACHE[name]
@@ -200,18 +212,84 @@ async def get_fid(ci, client, chat_id, msg_id, force=False):
         msg = await client.get_messages(chat_id, msg_id)
         if msg is None or getattr(msg, "empty", False):
             _fid_cache.pop(key, None)
+            _fid_locks.pop(key, None)
             raise StreamGone(f"msg {msg_id} missing from {chat_id}")
-        media = media_of(msg)
-        fid = FileId.decode(media.file_id)
-        fid.file_size = getattr(media, "file_size", 0)
-        fid.mime_type = getattr(media, "mime_type", "") or ""
-        fid.file_name = getattr(media, "file_name", "") or ""
-        fid.unique_id = getattr(media, "file_unique_id", "") or ""
+        try:
+            fid = _fid_of(msg)
+        except ValueError:
+            _fid_cache.pop(key, None)
+            _fid_locks.pop(key, None)
+            raise StreamGone(f"msg {msg_id} carries no media") from None
         _fid_cache[key] = (fid, monotonic())
-        if len(_fid_cache) > _FID_MAX:
-            old, _ = _fid_cache.popitem(last=False)
-            _fid_locks.pop(old, None)
+        _evict_fids()
         return fid
+
+
+def _fid_of(msg):
+    media = media_of(msg)
+    fid = FileId.decode(media.file_id)
+    fid.file_size = getattr(media, "file_size", 0)
+    fid.mime_type = getattr(media, "mime_type", "") or ""
+    fid.file_name = getattr(media, "file_name", "") or ""
+    fid.unique_id = getattr(media, "file_unique_id", "") or ""
+    return fid
+
+
+def _evict_fids():
+    while len(_fid_cache) > _FID_MAX:
+        old, _ = _fid_cache.popitem(last=False)
+        _fid_locks.pop(old, None)
+    if len(_fid_locks) > _FID_MAX * 2:
+        for key in [k for k in _fid_locks if k not in _fid_cache]:
+            _fid_locks.pop(key, None)
+
+
+_PREFETCH_BLOCK = 100
+
+
+async def _prime(ci, client, chat_id, msg_ids):
+    want = []
+    now = monotonic()
+    for mid in msg_ids:
+        hit = _fid_cache.get((ci, chat_id, mid))
+        if hit and now - hit[1] < _FID_TTL:
+            continue
+        want.append(mid)
+    if len(want) < 2:
+        return
+    for at in range(0, len(want), _PREFETCH_BLOCK):
+        block = want[at : at + _PREFETCH_BLOCK]
+        try:
+            msgs = await client.get_messages(chat_id, block)
+        except Exception as e:
+            LOGGER.debug(f"fid prefetch failed for {chat_id}: {e}")
+            return
+        if not isinstance(msgs, list):
+            msgs = [msgs]
+        stamp = monotonic()
+        for msg in msgs:
+            if msg is None or getattr(msg, "empty", False):
+                continue
+            try:
+                fid = _fid_of(msg)
+            except ValueError:
+                continue
+            _fid_cache[(ci, chat_id, int(msg.id))] = (fid, stamp)
+    _evict_fids()
+
+
+async def prefetch(pairs):
+    clients, _, _ = POOL.resolve()
+    if not clients:
+        return
+    POOL.ensure_pool(clients)
+    ci = next(iter(clients))
+    client = clients[ci]
+    groups = {}
+    for cid, mid in pairs:
+        groups.setdefault(int(cid), set()).add(int(mid))
+    for cid, mids in groups.items():
+        await _prime(ci, client, cid, sorted(mids))
 
 
 def purge_fid(chat_id, msg_id):
@@ -221,6 +299,23 @@ def purge_fid(chat_id, msg_id):
 
 
 _BG = set()
+
+
+def _background(coro):
+    task = ensure_future(coro)
+    _BG.add(task)
+    task.add_done_callback(_BG.discard)
+    return task
+
+
+def _retire(pool):
+    async def _shut():
+        try:
+            await pool.stop()
+        except Exception as e:
+            LOGGER.warning(f"stream session pool retire: {e}")
+
+    _background(_shut())
 
 
 def _drain_in_background(inflight, timeout):
@@ -235,9 +330,7 @@ def _drain_in_background(inflight, timeout):
         except Exception:
             pass
 
-    t = ensure_future(_drain())
-    _BG.add(t)
-    t.add_done_callback(_BG.discard)
+    _background(_drain())
 
 
 class StreamPool:
@@ -256,8 +349,12 @@ class StreamPool:
 
     def ensure_pool(self, clients):
         if self._pool is None or self._clients.keys() != clients.keys():
+            old = self._pool
             self._pool = MtprotoPool(clients)
             self._clients = clients
+            self._touched.clear()
+            if old is not None:
+                _retire(old)
         return self._pool
 
     async def acquire(self, prof, n=1, sticky_key=None):
@@ -278,7 +375,7 @@ class StreamPool:
                 ):
                     loads[got[0]] = loads.get(got[0], 0) + 1
                     self._sticky[sticky_key] = (got[0], now + _STICKY_TTL)
-                    return [got[0]]
+                    return [got[0]], loads
             cand = [
                 i
                 for i in clients
@@ -294,13 +391,12 @@ class StreamPool:
                 loads[i] = loads.get(i, 0) + 1
             if sticky_key is not None:
                 self._sticky[sticky_key] = (picked[0], now + _STICKY_TTL)
-            return picked
+            return picked, loads
 
-    async def release(self, idxs):
-        _, loads, _ = self.resolve()
+    async def release(self, booked):
         async with self._lock:
-            for i in idxs:
-                loads[i] = max(0, loads.get(i, 0) - 1)
+            for ci, loads in booked:
+                loads[ci] = max(0, loads.get(ci, 0) - 1)
 
     def cool(self, ci, seconds):
         self._cooldown[ci] = monotonic() + seconds
@@ -350,6 +446,7 @@ class HypertgStream:
         self.mime = ""
         self.unique_id = ""
         self._idxs = []
+        self._book = []
         self._loc = {}
         self._dc = {}
         self._dead = False
@@ -357,7 +454,11 @@ class HypertgStream:
 
     async def open(self):
         key = (self.chat_id, self.msg_id, self.viewer) if self.viewer else None
-        self._idxs = await POOL.acquire(self.prof, self.prof.clients, sticky_key=key)
+        picked, loads = await POOL.acquire(
+            self.prof, self.prof.clients, sticky_key=key
+        )
+        self._idxs = picked
+        self._book = [(ci, loads) for ci in picked]
         try:
             for ci in self._idxs:
                 fid = await get_fid(ci, POOL.client(ci), self.chat_id, self.msg_id)
@@ -370,10 +471,10 @@ class HypertgStream:
                     self.name = getattr(fid, "file_name", "") or ""
                     self.unique_id = getattr(fid, "unique_id", "") or ""
         except BaseException:
-            await self._release()
+            await shield(self._release())
             raise
         if not self.size:
-            await self._release()
+            await shield(self._release())
             raise StreamGone("media has no size")
         return self
 
@@ -381,8 +482,9 @@ class HypertgStream:
         if self._released:
             return
         self._released = True
-        if self._idxs:
-            await POOL.release(self._idxs)
+        if self._book:
+            booked, self._book = self._book, []
+            await POOL.release(booked)
 
     async def _refresh_loc(self, ci, seen_gen):
         cur_gen, _ = self._loc[ci]
@@ -398,6 +500,9 @@ class HypertgStream:
         if shared is not None:
             try:
                 return await shield(shared)
+            except CancelledError:
+                if not shared.cancelled():
+                    raise
             except Exception:
                 pass
         fut = get_running_loop().create_future()
@@ -408,6 +513,10 @@ class HypertgStream:
             if not fut.done():
                 fut.set_result(data)
             return data
+        except CancelledError:
+            if not fut.done():
+                fut.cancel()
+            raise
         except BaseException as e:
             if not fut.done():
                 fut.set_exception(e)
@@ -420,22 +529,26 @@ class HypertgStream:
 
     async def _swap_client(self, ci):
         try:
-            picked = await POOL.acquire(self.prof, 1)
+            picked, loads = await POOL.acquire(self.prof, 1)
         except NoClientAvailable:
             return None
         new = picked[0]
         if new == ci:
-            await POOL.release([new])
+            await POOL.release([(new, loads)])
             return None
         try:
             fid = await get_fid(new, POOL.client(new), self.chat_id, self.msg_id)
         except Exception:
-            await POOL.release([new])
+            await POOL.release([(new, loads)])
             return None
         self._loc[new] = (0, HypertgTransfer._location(fid))
         self._dc[new] = fid.dc_id
         self._idxs = [new if x == ci else x for x in self._idxs]
-        await POOL.release([ci])
+        held = [b for b in self._book if b[0] == ci][:1]
+        self._book = [b for b in self._book if b[0] != ci]
+        self._book.append((new, loads))
+        if held:
+            await POOL.release(held)
         LOGGER.info(f"HypertgStream failed over from client {ci} to {new}")
         return new
 
@@ -550,7 +663,29 @@ class HypertgStream:
             self._dead = True
             _drain_in_background(inflight, self.prof.invoke_timeout)
             ready.clear()
-            await self._release()
+            await shield(self._release())
+
+
+_REAP_EVERY = 300
+_reaper = None
+
+
+async def _reap_loop():
+    while True:
+        await sleep(_REAP_EVERY)
+        try:
+            await POOL.reap_idle()
+        except CancelledError:
+            raise
+        except Exception as e:
+            LOGGER.warning(f"idle session reaper: {e}")
+
+
+def start_reaper():
+    global _reaper
+    if _reaper is None or _reaper.done():
+        _reaper = ensure_future(_reap_loop())
+    return _reaper
 
 
 async def open_stream(chat_id, msg_id, kind, viewer=None):
@@ -605,6 +740,11 @@ async def poster_bytes(chat_id, msg_id):
 
 
 async def shutdown():
+    global _reaper
+    if _reaper is not None:
+        _reaper.cancel()
+        await gather(_reaper, return_exceptions=True)
+        _reaper = None
     pending = [t for t in _BG if not t.done()]
     for t in pending:
         t.cancel()

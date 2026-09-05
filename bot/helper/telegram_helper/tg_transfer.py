@@ -1,4 +1,4 @@
-from asyncio import Event, gather, sleep
+from asyncio import Event, Lock, gather, sleep
 
 from pyrogram import raw, utils
 from pyrogram.errors import AuthBytesInvalid
@@ -82,7 +82,7 @@ class MtprotoPool:
         if s and s.is_started.is_set():
             return s
         if cache_key not in self._locks:
-            self._locks[cache_key] = __import__("asyncio").Lock()
+            self._locks[cache_key] = Lock()
         async with self._locks[cache_key]:
             s = self._sessions.get(cache_key)
             if s and s.is_started.is_set():
@@ -99,22 +99,30 @@ class MtprotoPool:
             )
             await s.start()
             if is_cross:
-                for attempt in range(6):
-                    try:
-                        e = await client.invoke(
-                            raw.functions.auth.ExportAuthorization(dc_id=dc_id)
-                        )
-                        await s.invoke(
-                            raw.functions.auth.ImportAuthorization(
-                                id=e.id, bytes=e.bytes
+                try:
+                    for attempt in range(6):
+                        try:
+                            e = await client.invoke(
+                                raw.functions.auth.ExportAuthorization(dc_id=dc_id)
                             )
+                            await s.invoke(
+                                raw.functions.auth.ImportAuthorization(
+                                    id=e.id, bytes=e.bytes
+                                )
+                            )
+                            break
+                        except AuthBytesInvalid:
+                            await sleep(1)
+                    else:
+                        raise RuntimeError(
+                            f"Auth export/import failed for DC {dc_id}"
                         )
-                        break
-                    except AuthBytesInvalid:
-                        await sleep(1)
-                else:
-                    await s.stop()
-                    raise RuntimeError(f"Auth export/import failed for DC {dc_id}")
+                except BaseException:
+                    try:
+                        await s.stop()
+                    except Exception:
+                        pass
+                    raise
             self._sessions[cache_key] = s
         return s
 
@@ -122,6 +130,9 @@ class MtprotoPool:
         ck = self._resolve_key(client_key)
         cache_key = (ck, dc_id)
         s = self._sessions.pop(cache_key, None)
+        lock = self._locks.get(cache_key)
+        if lock is not None and not lock.locked():
+            self._locks.pop(cache_key, None)
         if s:
             try:
                 await s.stop()
@@ -135,6 +146,7 @@ class MtprotoPool:
             except Exception:
                 pass
         self._sessions.clear()
+        self._locks.clear()
 
 
 class HypertgTransfer:

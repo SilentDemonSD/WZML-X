@@ -1,5 +1,5 @@
 from html import escape
-from re import IGNORECASE, compile as re_compile
+from re import compile as re_compile
 from secrets import token_urlsafe
 from time import time
 
@@ -10,6 +10,7 @@ from ..core.config_manager import Config
 from ..core.tg_client import TgClient
 from ..helper.ext_utils.db_handler import database
 from ..helper.ext_utils.links_utils import is_telegram_link, is_url
+from ..helper.ext_utils.split_parts import part_key, part_series, split_trims
 from ..helper.telegram_helper.bot_commands import BotCommands
 from ..helper.telegram_helper.button_build import ButtonMaker
 from ..helper.telegram_helper.filters import CustomFilters
@@ -31,7 +32,6 @@ _MAX_BATCH = 50
 _MAX_BUTTONS = 20
 _LABEL = 22
 _TOKEN_OK = re_compile(r"^[A-Za-z0-9_-]{4,32}$")
-_PART_RE = re_compile(r"^(.*)\.part(\d{1,4})(\.[A-Za-z0-9]+)$", IGNORECASE)
 _OFF = (
     "<b>Streaming is disabled.</b>\n\n<i>The bot owner turned it off in "
     "Module Settings.</i>"
@@ -184,36 +184,30 @@ def _short(name, limit=_LABEL):
     return name if len(name) <= limit else name[: limit - 1] + "…"
 
 
-def _part_key(name):
-    found = _PART_RE.match(name or "")
-    if not found:
-        return None
-    return found.group(1), int(found.group(2)), found.group(3).lower()
-
-
 def _order(picked):
-    keys = [_part_key(getattr(m, "file_name", "")) for _msg, m in picked]
-    if any(k is None for k in keys):
-        return picked
-    if len({(k[0], k[2]) for k in keys}) != 1:
-        return picked
+    names = [getattr(m, "file_name", "") for _msg, m in picked]
+    keys = part_series(names)
+    if keys is None:
+        return picked, False
     nums = sorted(k[1] for k in keys)
     if nums != list(range(nums[0], nums[0] + len(nums))):
-        return picked
-    return [pair for _k, pair in sorted(zip(keys, picked), key=lambda kp: kp[0][1])]
+        return picked, False
+    ordered = [pair for _k, pair in sorted(zip(keys, picked), key=lambda kp: kp[0][1])]
+    return ordered, True
 
 
-def _timeline(durs):
+def _timeline(durs, trims=None):
     starts = []
     at = 0
-    for one in durs:
+    for index, one in enumerate(durs):
         starts.append(at)
-        at += max(0, int(one or 0))
+        cut = int(trims[index]) if trims and index < len(trims) else 0
+        at += max(0, int(one or 0) - max(0, cut))
     return starts, at
 
 
 def _merge_title(name):
-    found = _part_key(name)
+    found = part_key(name)
     return f"{found[0]}{found[2]}" if found else (name or "")
 
 
@@ -350,9 +344,8 @@ async def _delete_link(message, args):
     listing = await database.get_playlist(target)
     if listing:
         for tok in listing["items"]:
-            await database.rm_stream(tok)
             forget(tok)
-        await database.rm_playlist(target)
+        await database.rm_playlist(target, listing["items"])
         forget(target)
         kind = "Merged video" if listing.get("merged") else "Playlist"
         rows = [
@@ -366,8 +359,11 @@ async def _delete_link(message, args):
         return
 
     found = await database.get_stream(target)
+    owner = await database.get_stream_nav(target)
     await database.rm_stream(target)
     forget(target)
+    if owner:
+        forget(owner[0])
     if found:
         msg = _head(target, [("Type", "Stream link")], tag)
         msg += _done("Link is gone, it will no longer play")
@@ -424,12 +420,13 @@ async def stream_links(_, message):
         return
 
     merge = args["merge"] and len(picked) > 1
+    is_split = False
     if merge:
         blocker = _merge_blocker(picked, asked)
         if blocker:
             await edit_message(status, blocker)
             return
-        picked = _order(picked)
+        picked, is_split = _order(picked)
 
     poster = None
     if args["poster"]:
@@ -480,7 +477,12 @@ async def stream_links(_, message):
 
     if merge:
         durs = [int(getattr(m, "duration", 0) or 0) for _t, m in minted]
-        _starts, runtime = _timeline(durs)
+        trims = [0] * len(minted)
+        if is_split:
+            found = split_trims([getattr(m, "file_name", "") for _t, m in minted])
+            if found:
+                trims = found
+        _starts, runtime = _timeline(durs, trims)
         title = (
             args["name"]
             or _merge_title(getattr(minted[0][1], "file_name", ""))
@@ -494,7 +496,7 @@ async def stream_links(_, message):
             exp,
             merged=True,
             durs=durs,
-            trims=[0] * len(minted),
+            trims=trims,
         )
         rows = [
             ("Task Size", get_readable_file_size(total)),

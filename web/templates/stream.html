@@ -1266,6 +1266,7 @@
             #mounted = false;
             #loaded = false;
             #started = false;
+            #primed = false;
             #pendingSeek = null;
             #subsOn = false;
             #queue = Promise.resolve();
@@ -1361,6 +1362,7 @@
                 this.#starting = true;
                 this.#loaded = false;
                 this.#started = false;
+                this.#primed = false;
                 this.#pendingSeek = null;
                 this.#emit("loadstart");
                 try {
@@ -1413,6 +1415,35 @@
                 } finally {
                     this.#starting = false;
                 }
+            }
+
+            prime() {
+                if (this.#primed) return Promise.resolve(true);
+                if (!this.#loaded) return Promise.resolve(false);
+                this.#primed = true;
+                const self = this;
+                return new Promise(function (done) {
+                    let settled = false;
+                    const stop = function (ok) {
+                        if (settled) return;
+                        settled = true;
+                        clearTimeout(timer);
+                        self.removeEventListener("timeupdate", tick);
+                        self.removeEventListener("error", bad);
+                        try { self.pause(); } catch (e) { }
+                        done(ok);
+                    };
+                    const tick = function () { stop(true); };
+                    const bad = function () { stop(false); };
+                    const timer = setTimeout(function () { stop(false); }, 20000);
+                    self.addEventListener("timeupdate", tick);
+                    self.addEventListener("error", bad);
+                    try {
+                        self.muted = true;
+                        const p = self.play();
+                        if (p && p.catch) p.catch(function () { stop(false); });
+                    } catch (e) { stop(false); }
+                });
             }
 
             #run(fn) {
@@ -1612,6 +1643,9 @@
         ];
         const PRELOAD_LEAD = 15;
         const MAX_RELOADS = 2;
+        const SWITCH_LEAD = 0.35;
+        const PRELOAD_COOLDOWN = 8000;
+        const RETIRE_DELAY = 80;
 
         class MergedVideoElement extends CustomVideoElement {
             static tagName = "merged-video";
@@ -1638,6 +1672,10 @@
             #retried = {};
             #reloads = {};
             #busy = false;
+            #queued = null;
+            #warmed = {};
+            #cold = {};
+            #retiring = new Set();
             #fellBack = false;
             #setMedia = null;
             #unsub = null;
@@ -1692,6 +1730,8 @@
                 this.#setMedia = null;
                 this.#drop(this.#idle);
                 this.#drop(this.#live);
+                for (const node of this.#retiring) this.#drop(node);
+                this.#retiring.clear();
                 this.#idle = null;
                 this.#live = null;
                 try { super.disconnectedCallback(); } catch (e) { }
@@ -1723,6 +1763,8 @@
                     dead: false
                 }));
                 this.#recount();
+                this.#warmed = {};
+                this.#cold = {};
                 const at = Math.max(0, Number(atGlobal) || 0);
                 const seat = this.#locate(at);
                 return this.#goto(seat.index, seat.local, false);
@@ -1740,6 +1782,8 @@
                 this.#drop(this.#idle);
                 this.#idle = null;
                 this.#idleAt = -1;
+                this.#warmed = {};
+                this.#cold = {};
                 return this.#goto(seat.index, seat.local, this.#wantPlay);
             }
 
@@ -1809,9 +1853,35 @@
                 return node && Number(node.readyState || 0) >= 1;
             }
 
+            #warm(node) {
+                if (node.localName === "libmedia-video" && node.prime) {
+                    return node.prime();
+                }
+                if (Number(node.readyState || 0) >= 3) {
+                    return Promise.resolve(true);
+                }
+                return new Promise((done) => {
+                    let settled = false;
+                    const stop = (ok) => {
+                        if (settled) return;
+                        settled = true;
+                        clearTimeout(timer);
+                        node.removeEventListener("canplay", good);
+                        node.removeEventListener("error", bad);
+                        done(ok);
+                    };
+                    const good = () => stop(true);
+                    const bad = () => stop(false);
+                    const timer = setTimeout(() => stop(false), 30000);
+                    node.addEventListener("canplay", good);
+                    node.addEventListener("error", bad);
+                });
+            }
+
             #settle(node, local) {
                 const seek = () => {
-                    if (local > 0.05) {
+                    const now = Number(node.currentTime) || 0;
+                    if (local > 0.05 && Math.abs(now - local) > 0.25) {
                         try { node.currentTime = local; } catch (e) { }
                     }
                 };
@@ -1854,7 +1924,6 @@
                 if (this.#kind === "avp") {
                     this.#onStreams(node, node.streams || []);
                 }
-                if (old && old !== node) this.#drop(old);
                 this.#onReady(node);
                 if (!this.#announced) {
                     this.#announced = true;
@@ -1864,17 +1933,39 @@
                     this.dispatchEvent(new Event("canplay"));
                 }
                 if (this.#wantPlay && node.paused) this.#start();
+                if (old && old !== node) this.#retire(old);
                 this.dispatchEvent(new Event("timeupdate"));
+            }
+
+            #retire(old) {
+                try { old.muted = true; } catch (e) { }
+                try { old.pause(); } catch (e) { }
+                this.#retiring.add(old);
+                setTimeout(() => {
+                    this.#retiring.delete(old);
+                    this.#drop(old);
+                }, RETIRE_DELAY);
             }
 
             #goto(index, local, play) {
                 const part = this.#parts[index];
-                if (!part || this.#busy) return Promise.resolve(false);
+                if (!part) return Promise.resolve(false);
+                if (this.#busy) {
+                    this.#queued = { index, local, play };
+                    return Promise.resolve(false);
+                }
                 this.#busy = true;
                 return this.#swap(index, local, play).then(
-                    (ok) => { this.#busy = false; return ok; },
-                    (e) => { this.#busy = false; throw e; }
+                    (ok) => { this.#busy = false; return this.#drain(ok); },
+                    (e) => { this.#busy = false; this.#drain(false); throw e; }
                 );
+            }
+
+            #drain(ok) {
+                const q = this.#queued;
+                this.#queued = null;
+                if (!q) return ok;
+                return this.#goto(q.index, q.local, q.play);
             }
 
             #swap(index, local, play) {
@@ -1952,15 +2043,26 @@
             }
 
 
+            #span(index) {
+                const part = this.#parts[index];
+                if (!part) return 0;
+                if (index === this.#i && this.#live) {
+                    const live = Number(this.#live.duration);
+                    if (isFinite(live) && live > 0) return live;
+                }
+                return part.dur || 0;
+            }
+
             #preload() {
-                if (this.#idle || !this.#live) return;
+                if (this.#idle || this.#busy || !this.#live) return;
                 if (document.visibilityState !== "visible") return;
                 const conn = navigator.connection;
                 if (conn && conn.saveData) return;
                 const next = this.#nextIndex(this.#i);
                 if (next < 0) return;
-                const part = this.#parts[this.#i];
-                let span = part.dur || Number(this.#live.duration) || 0;
+                const chilled = this.#cold[next] || 0;
+                if (chilled && Date.now() - chilled < PRELOAD_COOLDOWN) return;
+                const span = this.#span(this.#i);
                 if (!isFinite(span) || span <= 0) return;
                 const at = Number(this.#live.currentTime) || 0;
                 if (span - at > PRELOAD_LEAD) return;
@@ -1968,14 +2070,41 @@
                 try { node.muted = true; } catch (e) { }
                 this.#idle = node;
                 this.#idleAt = next;
+                this.#warmed[next] = false;
+                this.dispatchEvent(new CustomEvent("mergedpreload", {
+                    detail: next, bubbles: true, composed: true
+                }));
                 this.#settle(node, this.#parts[next].trim || 0)
                     .then((ok) => {
+                        if (this.#idle !== node) return false;
+                        if (!ok) return false;
+                        return this.#warm(node);
+                    })
+                    .then((ok) => {
                         if (this.#idle !== node) return;
-                        if (ok) return;
+                        if (ok) {
+                            this.#warmed[next] = true;
+                            return;
+                        }
+                        this.#cold[next] = Date.now();
                         this.#drop(node);
                         this.#idle = null;
                         this.#idleAt = -1;
                     });
+            }
+
+            #handoff() {
+                if (this.#busy || !this.#live || this.#live.paused) return;
+                const next = this.#nextIndex(this.#i);
+                if (next < 0) return;
+                if (!this.#idle || this.#idleAt !== next) return;
+                if (!this.#warmed[next]) return;
+                if (!(this.#parts[next].trim > 0)) return;
+                const span = this.#span(this.#i);
+                if (!isFinite(span) || span <= 0) return;
+                const at = Number(this.#live.currentTime) || 0;
+                if (span - at > SWITCH_LEAD) return;
+                this.#goto(next, this.#parts[next].trim || 0, true);
             }
 
             #onEnded() {
@@ -2023,7 +2152,10 @@
                 if (ev.target !== this.nativeEl) return;
                 const type = ev.type;
                 if (type === "ended") { this.#onEnded(); return; }
-                if (type === "timeupdate") this.#preload();
+                if (type === "timeupdate") {
+                    this.#preload();
+                    this.#handoff();
+                }
                 if (type === "loadedmetadata") {
                     this.#onReady(ev.target);
                     return;
@@ -2941,6 +3073,7 @@
             }
 
             var metaShown = false;
+            var resumeOn = null;
 
             function bindMedia(m, watchNative) {
                 var p = prefs();
@@ -2961,12 +3094,16 @@
                 });
                 m.addEventListener("loadedmetadata", function () {
                     el("loading").classList.add("gone");
-                    if (metaShown) return;
-                    metaShown = true;
-                    if (isFinite(m.duration) && m.duration > 0) {
-                        addMeta(clock(m.duration));
+                    if (!metaShown) {
+                        metaShown = true;
+                        if (isFinite(m.duration) && m.duration > 0) {
+                            addMeta(clock(m.duration));
+                        }
                     }
-                    wireResume(m);
+                    if (resumeOn !== m) {
+                        resumeOn = m;
+                        wireResume(m);
+                    }
                 });
                 m.addEventListener("playing", clearStall);
                 m.addEventListener("playing", dropArt);
@@ -3047,6 +3184,9 @@
                     });
                     node.addEventListener("mergednotice", function (ev) {
                         toast(String(ev.detail || ""));
+                    });
+                    node.addEventListener("mergedpreload", function (ev) {
+                        ensurePartSubs(Number(ev.detail) || 0);
                     });
                     node.addEventListener("error", function () {
                         el("loading").classList.add("gone");

@@ -49,11 +49,19 @@ class DbManager:
             )
             self.db = self._conn.wzmlx
             self._return = False
+            await self._index_streams()
         except PyMongoError as e:
             LOGGER.error(f"Error in DB connection: {e}")
             self.db = None
             self._return = True
             self._conn = None
+
+    async def _index_streams(self):
+        try:
+            await self.db.streams[_part()].create_index([("cid", 1), ("mid", 1)])
+            await self.db.playlists[_part()].create_index([("items", 1)])
+        except PyMongoError as e:
+            LOGGER.warning(f"Could not index stream collections: {e}")
 
     async def disconnect(self):
         self._return = True
@@ -282,7 +290,7 @@ class DbManager:
         if not owner:
             return None
         if _expired(owner):
-            await self.rm_playlist(owner["_id"])
+            await self.rm_playlist(owner["_id"], owner.get("items") or [])
             return None
         items = owner.get("items") or []
         return (owner["_id"], items.index(token) if token in items else 0)
@@ -291,7 +299,14 @@ class DbManager:
         if self._return:
             return None
         doc = await self.db.streams[_part()].find_one(
-            {"cid": int(chat_id), "mid": int(msg_id), "exp": {"$exists": False}}
+            {
+                "cid": int(chat_id),
+                "mid": int(msg_id),
+                "exp": {"$exists": False},
+                "pl": {"$exists": False},
+                "purl": {"$exists": False},
+                "pcid": {"$exists": False},
+            }
         )
         return doc["_id"] if doc else None
 
@@ -304,7 +319,25 @@ class DbManager:
         if _expired(doc):
             await self.rm_stream(token)
             return None
-        return (doc["cid"], doc["mid"])
+        return (doc["cid"], doc["mid"], doc.get("exp"))
+
+    async def get_streams(self, tokens):
+        if self._return:
+            return {}
+        tokens = [t for t in tokens if t]
+        if not tokens:
+            return {}
+        out = {}
+        stale = []
+        cursor = self.db.streams[_part()].find({"_id": {"$in": tokens}})
+        async for doc in cursor:
+            if _expired(doc):
+                stale.append(doc["_id"])
+                continue
+            out[doc["_id"]] = (doc["cid"], doc["mid"])
+        for token in stale:
+            await self.rm_stream(token)
+        return out
 
     async def rm_stream(self, token):
         if self._return:
@@ -346,7 +379,7 @@ class DbManager:
         if not doc:
             return None
         if _expired(doc):
-            await self.rm_playlist(token)
+            await self.rm_playlist(token, doc.get("items") or [])
             return None
         return {
             "name": doc.get("name") or "",
@@ -359,9 +392,16 @@ class DbManager:
             "trims": doc.get("trims") or [],
         }
 
-    async def rm_playlist(self, token):
+    async def rm_playlist(self, token, items=None):
         if self._return:
             return
+        if items is None:
+            doc = await self.db.playlists[_part()].find_one(
+                {"_id": token}, {"items": 1}
+            )
+            items = (doc or {}).get("items") or []
+        if items:
+            await self.db.streams[_part()].delete_many({"_id": {"$in": list(items)}})
         await self.db.playlists[_part()].delete_one({"_id": token})
 
     async def save_plugin(self, name, state):

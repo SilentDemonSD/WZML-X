@@ -566,8 +566,10 @@ async def stream_proxy(
     rng = request.headers.get("range")
     if rng:
         headers["Range"] = rng
-    if inm := request.headers.get("if-range"):
-        headers["If-Range"] = inm
+    if ifr := request.headers.get("if-range"):
+        headers["If-Range"] = ifr
+    if inm := request.headers.get("if-none-match"):
+        headers["If-None-Match"] = inm
     headers["X-Viewer"] = _client_ip(request)
 
     try:
@@ -578,7 +580,7 @@ async def stream_proxy(
             params=params or None,
             allow_redirects=False,
         )
-    except ClientError as e:
+    except (ClientError, TimeoutError) as e:
         raise _stream_offline() from e
 
     out = {
@@ -637,7 +639,7 @@ async def _json_proxy(token: str, upstream_path: str):
             cache = up.headers.get("Cache-Control", "no-store")
             tag = up.headers.get("ETag")
             status = up.status
-    except ClientError as e:
+    except (ClientError, TimeoutError) as e:
         raise _stream_offline() from e
     headers = {"Cache-Control": cache, "Referrer-Policy": "no-referrer"}
     if tag:
@@ -692,7 +694,7 @@ async def poster_route(token: str, request: Request):
             if etag := upstream.headers.get("ETag"):
                 out["ETag"] = etag
             ctype = upstream.headers.get("Content-Type", "image/jpeg")
-    except ClientError as e:
+    except (ClientError, TimeoutError) as e:
         raise _stream_offline() from e
     if status not in (200, 304):
         raise HTTPException(status_code=404, detail="No artwork")
@@ -729,7 +731,7 @@ async def subs_route(token: str, track: str, request: Request):
         upstream = await http_session.get(
             f"{STREAM_BASE}/_subs/{token}/{idx}", headers=forward
         )
-    except ClientError as e:
+    except (ClientError, TimeoutError) as e:
         raise _stream_offline() from e
     if upstream.status not in (200, 304):
         upstream.release()
@@ -779,7 +781,7 @@ async def m3u_route(token: str, request: Request):
                 if upstream.status != 200:
                     continue
                 listing = await upstream.json(content_type=None)
-        except ClientError as e:
+        except (ClientError, TimeoutError) as e:
             raise _stream_offline() from e
         except ValueError:
             continue
@@ -823,7 +825,7 @@ async def stream_meta(token: str, request: Request):
         async with http_session.get(f"{STREAM_BASE}/_meta/{token}") as upstream:
             body = await upstream.read()
             status = upstream.status
-    except ClientError as e:
+    except (ClientError, TimeoutError) as e:
         raise _stream_offline() from e
     return Response(
         content=body,
