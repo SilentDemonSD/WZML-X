@@ -282,7 +282,7 @@ class Clone(TaskListener):
             "dests": len(self.clone_dests),
             "dropped": self.clone_dropped,
             "restricted": worker.restricted,
-            "failed": worker.failed,
+            "failed": worker.failures,
             "dead": worker.dead_dests,
             "link": self.link,
             "floods": worker.floods,

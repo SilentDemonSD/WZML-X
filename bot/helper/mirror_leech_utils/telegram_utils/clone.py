@@ -25,6 +25,7 @@ RESTRICTED_STREAK = 3
 PACE_MAX = 4.0
 PACE_STEP = 0.25
 PACE_COOL = 20
+FAILED_KEEP = 200
 
 DEST_FATAL = (
     ChatWriteForbidden,
@@ -138,6 +139,7 @@ class TelegramClone:
         self.processed_bytes = 0
         self.restricted = []
         self.failed = []
+        self.failures = 0
         self.dead_dests = []
         self.first_link = ""
 
@@ -203,7 +205,9 @@ class TelegramClone:
                 self._kill_dest(seat, type(err).__name__)
                 continue
             except Exception as err:
-                self.failed.append((unit[0].id, str(err)))
+                self.failures += 1
+                if len(self.failed) < FAILED_KEEP:
+                    self.failed.append((unit[0].id, str(err)))
                 LOGGER.error(f"clone failed at {unit[0].id}: {err}")
                 return False
             landed += 1

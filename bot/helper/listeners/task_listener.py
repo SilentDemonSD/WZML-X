@@ -448,7 +448,7 @@ class TaskListener(TaskConfig):
             if stats["dropped"]:
                 msg += f"\n┠ <b>Filtered Out</b> → {stats['dropped']}"
             if stats["failed"]:
-                msg += f"\n┠ <b>Failed</b> → {len(stats['failed'])}"
+                msg += f"\n┠ <b>Failed</b> → {stats['failed']}"
             if stats["dead"]:
                 msg += f"\n┠ <b>Skipped Chats</b> → {len(stats['dead'])}"
             if stats["restricted"]:
