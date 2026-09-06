@@ -2164,6 +2164,18 @@
                 if (type === "loadeddata" || type === "canplay") return;
                 if (type === "error") {
                     if (this.#busy) return;
+                    const why = ev.target.error;
+                    const code = why ? Number(why.code) : 0;
+                    if ((code === 3 || code === 4)
+                        && this.#kind === "native") {
+                        this.#fellBack = true;
+                        this.#reloads = {};
+                        this.#retried = {};
+                        this.#notice("Switching to the advanced decoder");
+                        Promise.resolve(this.useAdvanced(this.currentTime))
+                            .catch(() => { });
+                        return;
+                    }
                     const tries = this.#reloads[this.#i] || 0;
                     if (tries >= MAX_RELOADS) {
                         super.handleEvent(ev);
@@ -2710,7 +2722,11 @@
                 subDone[key] = true;
                 var track = subTrack;
                 fetchSubs(part.token, track).then(function (found) {
-                    if (track !== subTrack || !found.length) return;
+                    if (track !== subTrack) {
+                        subDone[key] = false;
+                        return;
+                    }
+                    if (!found.length) return;
                     var shift = part.start - (part.trim || 0);
                     for (var i = 0; i < found.length; i++) {
                         cues.push({
@@ -3266,7 +3282,7 @@
                     vid.addEventListener("error", function () {
                         el("loading").classList.add("gone");
                         var e = vid.error;
-                        if (e && e.code === 4) {
+                        if (e && (e.code === 3 || e.code === 4)) {
                             stall("Switching decoder",
                                 "This browser cannot decode the file natively. Loading "
                                 + "the advanced decoder.");

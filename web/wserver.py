@@ -17,7 +17,7 @@ from importlib import import_module
 from os import environ
 from re import compile as re_compile
 from html import escape
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 from contextlib import asynccontextmanager
 from logging import INFO, WARNING, FileHandler, StreamHandler, basicConfig, getLogger
 
@@ -838,7 +838,9 @@ async def m3u_route(token: str, request: Request):
         headers={
             "Cache-Control": "private, max-age=300",
             "Referrer-Policy": "no-referrer",
-            "Content-Disposition": f'inline; filename="{title}.m3u"',
+            "Content-Disposition": (
+                "inline; filename*=UTF-8''%s.m3u" % quote(title, safe="")
+            ),
         },
     )
 

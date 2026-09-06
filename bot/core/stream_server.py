@@ -217,6 +217,7 @@ async def _build_probe(cid, mid):
     if not streams and size > _PROBE_FIRST:
         streams = await _ffprobe(await _prefix(cid, mid, min(size, _PROBE_BYTES)))
     audio, subtitle = [], []
+    seats = 0
     for st_ in streams:
         kind = st_.get("codec_type")
         if kind == "audio":
@@ -228,11 +229,13 @@ async def _build_probe(cid, mid):
                 }
             )
         elif kind == "subtitle":
+            seat = seats
+            seats += 1
             codec = (st_.get("codec_name") or "").lower()
             if codec in ("dvd_subtitle", "hdmv_pgs_subtitle", "dvb_subtitle"):
                 continue
             subtitle.append(
-                {"index": len(subtitle), "title": _title(st_, len(subtitle))}
+                {"index": seat, "title": _title(st_, len(subtitle))}
             )
     result = {"audio": audio, "subtitle": subtitle}
     _probe_cache[key] = result
@@ -248,6 +251,7 @@ def purge_probe(cid, mid):
 def _gone(cid, mid):
     purge_fid(cid, mid)
     purge_probe(cid, mid)
+    purge_vtt(cid, mid)
 
 
 def _cached(store, token):
@@ -500,7 +504,7 @@ async def _serve(request, kind):
 
     rng = parse_range(request.headers.get("Range"), st.size)
     if rng is None:
-        await st._release()
+        await shield(st._release())
         return web.Response(
             status=416,
             headers={
@@ -600,7 +604,6 @@ async def _tracks(request):
         )
     except StreamGone:
         _gone(cid, mid)
-        purge_vtt(cid, mid)
         raise web.HTTPNotFound(text="file is gone") from None
     except NoClientAvailable as e:
         raise web.HTTPServiceUnavailable(text=str(e)) from None
@@ -918,11 +921,10 @@ async def _spare_tracks(cid, mid, idx):
         info = await _probe(cid, mid)
     except Exception:
         return []
-    total = len(info.get("subtitle") or [])
     spare = [
-        j
-        for j in range(total)
-        if j != idx and (cid, mid, j) not in _vtt_cache
+        seat
+        for seat in (int(t.get("index", -1)) for t in info.get("subtitle") or [])
+        if seat >= 0 and seat != idx and (cid, mid, seat) not in _vtt_cache
     ]
     return spare[:_VTT_SIDECARS]
 
@@ -970,7 +972,6 @@ async def _subs(request):
         st = await open_stream(cid, mid, "bulk")
     except StreamGone:
         _gone(cid, mid)
-        purge_vtt(cid, mid)
         raise web.HTTPNotFound(text="file is gone") from None
     except NoClientAvailable as e:
         raise web.HTTPServiceUnavailable(text=str(e)) from None
