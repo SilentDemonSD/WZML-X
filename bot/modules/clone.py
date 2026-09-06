@@ -13,6 +13,7 @@ from ..helper.ext_utils.bot_utils import (
     sync_to_async,
 )
 from ..core.tg_client import TgClient
+from ..helper.ext_utils.session_vault import UserSession
 from ..helper.ext_utils.exceptions import (
     DirectDownloadLinkException,
     TgLinkException,
@@ -54,6 +55,8 @@ from ..helper.mirror_leech_utils.telegram_utils.clone import (
     TelegramClone,
     build_units,
 )
+from ..helper.telegram_helper.button_build import ButtonMaker
+from ..helper.telegram_helper.prompt import PromptUnreachable
 from ..helper.telegram_helper.message_utils import (
     TgSource,
     auto_delete_message,
@@ -62,6 +65,12 @@ from ..helper.telegram_helper.message_utils import (
     send_message,
     send_status_message,
 )
+
+
+def _pm_button():
+    btns = ButtonMaker()
+    btns.url_button("Open in PM", f"https://t.me/{TgClient.BNAME}")
+    return btns.build_menu(1)
 
 
 class Clone(TaskListener):
@@ -182,15 +191,30 @@ class Clone(TaskListener):
         await delete_links(self.message)
 
     async def _proceed_tg_clone(self):
+        if UserSession.exists(self.user_id):
+            try:
+                await UserSession.unlock(self.user_id)
+            except TgLinkException as e:
+                await send_message(self.message, f"ERROR: {e}")
+                return
+            except PromptUnreachable as e:
+                await send_message(self.message, f"ERROR: {e}", _pm_button())
+                return
+            async with UserSession.borrow(self.user_id) as mine:
+                await self._relay_from(mine)
+            return
+        await self._relay_from(None)
+
+    async def _relay_from(self, mine):
         try:
             messages, asked, _session, source = await TgSource.resolve(
-                self.link, MAX_CLONE_MESSAGES
+                self.link, MAX_CLONE_MESSAGES, extra=mine
             )
         except TgLinkException as e:
             await send_message(self.message, f"ERROR: {e}")
             return
         self.clone_source = source
-        client = TgClient.user if _session == "user" else TgClient.bot
+        client = {"bot": TgClient.bot, "user": TgClient.user, "usess": mine}[_session]
         units = await build_units(client, source.chat, messages)
         kept = []
         dropped = 0

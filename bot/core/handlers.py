@@ -394,6 +394,13 @@ async def add_handlers():
         )
     )
     TgClient.bot.add_handler(
+        MessageHandler(
+            lock_my_session,
+            filters=command(BotCommands.LockSessionCommand, case_sensitive=True)
+            & CustomFilters.authorized,
+        )
+    )
+    TgClient.bot.add_handler(
         CallbackQueryHandler(edit_user_settings, filters=regex("^userset"))
     )
     TgClient.bot.add_handler(

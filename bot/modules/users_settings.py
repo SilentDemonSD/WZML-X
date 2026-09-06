@@ -12,6 +12,7 @@ from aiofiles.os import makedirs, remove
 from aiofiles.os import path as aiopath
 from langcodes import Language
 from pyrogram.filters import create
+from pyrogram.enums import ChatType
 from pyrogram.handlers import MessageHandler
 
 
@@ -27,8 +28,15 @@ from ..helper.ext_utils.bot_utils import (
 from ..helper.ext_utils.db_handler import database
 from ..helper.ext_utils.mega_utils import get_mega_account_info
 from ..helper.ext_utils.media_utils import create_thumb
-from ..helper.ext_utils.status_utils import get_readable_file_size
+from ..helper.ext_utils.filter_utils import compile_pattern
+from ..helper.ext_utils.session_crypt import SessionCrypt
+from ..helper.ext_utils.session_vault import UserSession, vault
+from ..helper.ext_utils.status_utils import (
+    get_readable_file_size,
+    get_readable_time,
+)
 from ..helper.telegram_helper.button_build import ButtonMaker
+from ..helper.telegram_helper.prompt import STOP, ask_in_pm
 from ..helper.telegram_helper.message_utils import (
     delete_message,
     edit_message,
@@ -37,6 +45,14 @@ from ..helper.telegram_helper.message_utils import (
 )
 
 handler_dict = {}
+
+clone_options = [
+    "USER_SESSION",
+    "CLONE_DUMP_CHATS",
+    "CLONE_CONTENT_TYPE",
+    "CLONE_EXCLUDED_EXTENSIONS",
+    "CLONE_FILTERS",
+]
 
 leech_options = [
     "THUMBNAIL",
@@ -98,6 +114,43 @@ user_settings_text = {
         "",
         "",
         f"Send Leech split size in bytes or use gb or mb. Example: 40000000 or 2.5gb or 1000mb. PREMIUM_USER: {TgClient.IS_PREMIUM_USER}.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
+    ),
+    "USER_SESSION": (
+        "String Session",
+        "Your own telegram session, sealed with a passphrase you choose. The bot "
+        "stores only the ciphertext, salt and nonce, never the passphrase and never "
+        "the derived key, so a database dump carries nothing usable. After one "
+        "unlock the key is held in memory for 12h and is lost on restart. An owner "
+        "who patches the running bot can read the plaintext during that window. If "
+        "that is not acceptable to you, do not use this.",
+        """<i>Send your Pyrogram V2 string session. Generate one with /exportsession.
+The message is deleted the moment it arrives.</i>
+┖ <b>Time Left :</b> <code>60 sec</code>""",
+    ),
+    "CLONE_DUMP_CHATS": (
+        "Dict",
+        "Default destinations for /clone when -ud is not given.",
+        """<i>Send a dict of name to chat id. Example: {'Movies': -1001234567890}</i>
+┖ <b>Time Left :</b> <code>60 sec</code>""",
+    ),
+    "CLONE_CONTENT_TYPE": (
+        "doc | med | all",
+        "Restrict /clone to documents only, media only, or everything.",
+        """<i>Send one of: <code>doc</code>, <code>med</code>, <code>all</code></i>
+┖ <b>Time Left :</b> <code>60 sec</code>""",
+    ),
+    "CLONE_EXCLUDED_EXTENSIONS": (
+        "Space separated extensions",
+        "Extensions skipped by /clone only. Independent of the leech list.",
+        """<i>Send extensions separated by space. Example: mkv srt txt</i>
+┖ <b>Time Left :</b> <code>60 sec</code>""",
+    ),
+    "CLONE_FILTERS": (
+        "Dict",
+        "Regex applied to every /clone task. mn keeps matching names, xn drops "
+        "them, mc and xc do the same against the caption.",
+        """<i>Send a dict. Example: {'mn': '1080p', 'xc': 'sample'}</i>
+┖ <b>Time Left :</b> <code>60 sec</code>""",
     ),
     "LEECH_DUMP_CHAT": (
         "",
@@ -361,6 +414,7 @@ async def get_user_settings(from_user, stype="main"):
         buttons.data_button("Leech Settings", f"userset {user_id} leech")
         buttons.data_button("Uphoster Settings", f"userset {user_id} uphoster")
         buttons.data_button("FF Media Settings", f"userset {user_id} ffset")
+        buttons.data_button("Clone Settings", f"userset {user_id} clone")
         buttons.data_button(
             "Misc Settings", f"userset {user_id} advanced", position="l_body"
         )
@@ -995,6 +1049,50 @@ async def get_user_settings(from_user, stype="main"):
 ┠ <b>Delete Folder</b> → {delete_display}
 ┖ <b>Account</b> → {account_status}"""
 
+    elif stype == "clone":
+        sealed = user_dict.get("USER_SESSION")
+        buttons.data_button(
+            "User Session", f"userset {user_id} menu USER_SESSION", "header"
+        )
+        if sealed and vault.has(user_id):
+            buttons.data_button(
+                "Lock Now",
+                f"userset {user_id} sesslock",
+                style=ButtonStyle.DANGER,
+            )
+            lock_state = f"Unlocked ({get_readable_time(vault.ttl_left(user_id))} left)"
+        else:
+            lock_state = "Locked"
+        buttons.data_button("Destinations", f"userset {user_id} menu CLONE_DUMP_CHATS")
+        buttons.data_button(
+            "Content Type", f"userset {user_id} menu CLONE_CONTENT_TYPE"
+        )
+        buttons.data_button(
+            "Excluded Ext", f"userset {user_id} menu CLONE_EXCLUDED_EXTENSIONS"
+        )
+        buttons.data_button("Regex Filters", f"userset {user_id} menu CLONE_FILTERS")
+        buttons.data_button("Back", f"userset {user_id} back", "footer")
+        buttons.data_button(
+            "Close", f"userset {user_id} close", "footer", style=ButtonStyle.DANGER
+        )
+
+        dests = user_dict.get("CLONE_DUMP_CHATS") or {}
+        dests = ", ".join(dests) if dests else "None"
+        exts = user_dict.get("CLONE_EXCLUDED_EXTENSIONS") or []
+        exts = ", ".join(exts) if exts else "None"
+        rules = user_dict.get("CLONE_FILTERS") or {}
+        rules = ", ".join(k for k, v in rules.items() if v) or "None"
+        ctype = user_dict.get("CLONE_CONTENT_TYPE") or Config.CLONE_CONTENT_TYPE
+        text = f"""⌬ <b>Clone Settings :</b>
+┟ <b>Name</b> → {user_name}
+┃
+┠ <b>User Session</b> → <b>{"Exists 🔐" if sealed else "Not Exists 🔓"}</b>
+┠ <b>Key State</b> → <b>{lock_state}</b>
+┠ <b>Destinations</b> → <code>{escape(dests)}</code>
+┠ <b>Content Type</b> → <b>{ctype}</b>
+┠ <b>Excluded Ext</b> → <code>{escape(exts)}</code>
+┖ <b>Regex Filters</b> → <code>{escape(rules)}</code>"""
+
     elif stype == "ffset":
         buttons.data_button(
             "FFmpeg Cmds", f"userset {user_id} menu FFMPEG_CMDS", "header"
@@ -1302,6 +1400,45 @@ async def set_option(_, message, option, rfunc):
             value = get_size_bytes(value)
         value = min(int(value), TgClient.MAX_SPLIT_SIZE)
     # elif option == "LEECH_DUMP_CHAT": # TODO: Add
+    elif option == "CLONE_CONTENT_TYPE":
+        value = value.strip().lower()
+        if value in ("media", "medias"):
+            value = "med"
+        if value not in ("doc", "med", "all"):
+            await send_message(message, "Must be one of: doc, med, all")
+            return
+    elif option == "CLONE_EXCLUDED_EXTENSIONS":
+        value = [x.lstrip(".").strip().lower() for x in value.split() if x.strip()]
+    elif option == "CLONE_DUMP_CHATS":
+        try:
+            value = eval(value)
+            if not isinstance(value, dict):
+                raise TypeError
+        except Exception:
+            await send_message(
+                message, "Must be a dict. Example: {'Movies': -1001234567890}"
+            )
+            return
+    elif option == "CLONE_FILTERS":
+        try:
+            value = eval(value)
+            if not isinstance(value, dict):
+                raise TypeError
+        except Exception:
+            await send_message(message, "Must be a dict. Example: {'mn': '1080p'}")
+            return
+        bad = set(value) - {"mn", "xn", "mc", "xc"}
+        if bad:
+            await send_message(
+                message, f"Unknown keys: {', '.join(sorted(bad))}. Use mn, xn, mc, xc"
+            )
+            return
+        for key, pattern in value.items():
+            try:
+                compile_pattern(pattern, f"-{key}")
+            except ValueError as err:
+                await send_message(message, str(err))
+                return
     elif option == "EXCLUDED_EXTENSIONS":
         fx = value.split()
         value = ["aria2", "!qB"]
@@ -1417,6 +1554,8 @@ async def get_menu(option, message, user_id):
     buttons = ButtonMaker()
     if option in ["THUMBNAIL", "RCLONE_CONFIG", "TOKEN_PICKLE", "USER_COOKIE_FILE"]:
         key = "file"
+    elif option == "USER_SESSION":
+        key = "sesset"
     else:
         key = "set"
     buttons.data_button(
@@ -1458,6 +1597,8 @@ async def get_menu(option, message, user_id):
         back_to = "mega"
     elif option in seedr_options:
         back_to = "seedr"
+    elif option in clone_options:
+        back_to = "clone"
     else:
         back_to = "back"
     buttons.data_button("Back", f"userset {user_id} {back_to}", "footer")
@@ -1465,7 +1606,9 @@ async def get_menu(option, message, user_id):
         "Close", f"userset {user_id} close", "footer", style=ButtonStyle.DANGER
     )
     val = user_dict.get(option)
-    if option in file_dict and await aiopath.exists(file_dict[option]):
+    if option == "USER_SESSION":
+        val = "<b>Exists</b>" if val else None
+    elif option in file_dict and await aiopath.exists(file_dict[option]):
         val = "<b>Exists</b>"
     elif option == "LEECH_SPLIT_SIZE":
         val = get_readable_file_size(val)
@@ -1575,6 +1718,65 @@ async def event_handler(client, query, pfunc, rfunc, photo=False, document=False
     client.remove_handler(*handler)
 
 
+_USERS_DUMP_SKIP = {
+    "USER_SESSION",
+    "usess",
+    "VERIFY_TOKEN",
+    "MEGA_PASSWORD",
+    "SEEDR_PASSWORD",
+}
+
+
+@new_task
+async def set_user_session(client, query):
+    user_id = query.from_user.id
+    handler_dict[user_id] = False
+    phrase = await ask_in_pm(
+        user_id,
+        "⌬ <b><u>Step 1 of 2 — Passphrase</u></b>\n│\n"
+        "┟ <i>Choose a passphrase, at least 8 characters.</i>\n"
+        "┠ <i>It is never stored. Lose it and the session is unrecoverable.</i>\n"
+        "┖ <b>Timeout:</b> <code>120 sec</code>",
+    )
+    if phrase is None or phrase == STOP:
+        await update_user_settings(query, "clone")
+        return
+    if len(phrase) < 8:
+        await send_message(user_id, "Passphrase must be at least 8 characters.")
+        await update_user_settings(query, "clone")
+        return
+    session = await ask_in_pm(
+        user_id,
+        "⌬ <b><u>Step 2 of 2 — Session</u></b>\n│\n"
+        "┟ <i>Send your Pyrogram V2 string session.</i>\n"
+        "┠ <i>The message is deleted the moment it arrives.</i>\n"
+        "┖ <b>Timeout:</b> <code>120 sec</code>",
+    )
+    if session is None or session == STOP:
+        await update_user_settings(query, "clone")
+        return
+    session = session.strip()
+    if len(session) < 300:
+        await send_message(user_id, "That does not look like a string session.")
+        await update_user_settings(query, "clone")
+        return
+    record, key = await SessionCrypt.seal(phrase, user_id, session)
+    session = phrase = None
+    update_user_ldata(user_id, "USER_SESSION", record)
+    vault.put(user_id, key, SessionCrypt.salt_of(record))
+    await database.update_user_data(user_id)
+    await send_message(user_id, "Session sealed and unlocked.")
+    await update_user_settings(query, "clone")
+
+
+@new_task
+async def lock_my_session(_, message):
+    await UserSession.forget(message.from_user.id)
+    await send_message(
+        message, "Session key purged from memory. Any running task will finish."
+    )
+
+
 @new_task
 async def edit_user_settings(client, query):
     from_user = query.from_user
@@ -1608,6 +1810,7 @@ async def edit_user_settings(client, query):
         "advanced",
         "gdrive",
         "rclone",
+        "clone",
     ]:
         await query.answer()
         await update_user_settings(query, data[2])
@@ -1701,6 +1904,18 @@ async def edit_user_settings(client, query):
 
         text = """⌬ <b>Select Uphoster Destinations :</b>"""
         await edit_message(message, text, buttons.build_menu(2))
+    elif data[2] == "sesslock":
+        await UserSession.forget(user_id)
+        await query.answer("Session key purged from memory.", show_alert=True)
+        await update_user_settings(query, "clone")
+    elif data[2] == "sesset":
+        if query.message.chat.type != ChatType.PRIVATE:
+            await query.answer(
+                "Open the bot in private chat to set a session.", show_alert=True
+            )
+            return
+        await query.answer()
+        await set_user_session(client, query)
     elif data[2] == "menu":
         await query.answer()
         await get_menu(data[3], message, user_id)
@@ -1853,7 +2068,9 @@ async def get_users_settings(_, message):
         for u, d in user_data.items():
             kmsg = f"\n<b>{u}:</b>\n"
             if vmsg := "".join(
-                f"{k}: <code>{v or None}</code>\n" for k, v in d.items()
+                f"{k}: <code>{v or None}</code>\n"
+                for k, v in d.items()
+                if k not in _USERS_DUMP_SKIP
             ):
                 msg += kmsg + vmsg
         if not msg:

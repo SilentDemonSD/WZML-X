@@ -443,15 +443,17 @@ class TgSource:
     CHUNK = 200
 
     @classmethod
-    async def _probe(cls, chat, msg_id):
-        for name in ("bot", "user"):
-            client = getattr(TgClient, name)
+    async def _probe(cls, chat, msg_id, extra=None):
+        seats = [("bot", TgClient.bot), ("user", TgClient.user)]
+        if extra is not None:
+            seats.append(("usess", extra))
+        for name, client in seats:
             if client is None:
                 continue
             try:
                 found = await client.get_messages(chat_id=chat, message_ids=msg_id)
             except Exception as err:
-                if name == "user":
+                if name == seats[-1][0]:
                     raise TgLinkException(
                         f"You don't have access to this chat!. ERROR: {err}"
                     ) from None
@@ -472,7 +474,7 @@ class TgSource:
         return out
 
     @classmethod
-    async def resolve(cls, link, limit=0, cap=0):
+    async def resolve(cls, link, limit=0, cap=0, extra=None):
         parsed = TgLink.parse(link)
         if parsed is None:
             raise TgLinkException("That is not a telegram message link!")
@@ -486,7 +488,7 @@ class TgSource:
         wanted = parsed.ids()
         if cap:
             wanted = wanted[:cap]
-        session, client = await cls._probe(parsed.chat, parsed.start_id)
+        session, client = await cls._probe(parsed.chat, parsed.start_id, extra)
         found = await cls._fetch(client, parsed.chat, wanted)
         found.sort(key=lambda m: m.id)
         return found, asked, session, parsed
