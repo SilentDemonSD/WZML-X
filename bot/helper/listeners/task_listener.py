@@ -45,6 +45,7 @@ from ..ext_utils.task_manager import check_running_tasks, start_from_queued
 from ..mirror_leech_utils.uphoster_utils.multi_upload import MultiUphosterUpload
 from ..mirror_leech_utils.gdrive_utils.upload import GoogleDriveUpload
 from ..mirror_leech_utils.rclone_utils.transfer import RcloneTransferHelper
+from ..mirror_leech_utils.telegram_utils.clone import restricted_runs
 from ..mirror_leech_utils.upload_utils.mega_upload import add_mega_upload
 from ..mirror_leech_utils.status_utils.uphoster_status import UphosterStatus
 from ..mirror_leech_utils.status_utils.gdrive_status import (
@@ -439,7 +440,49 @@ class TaskListener(TaskConfig):
             f"\n┠ <b>Out Mode</b> → {self.mode[1]}"
         )
         LOGGER.info(f"Task Done: {self.name}")
-        if self.is_yt:
+        if self.is_tg_clone:
+            stats = self.clone_stats
+            buttons = ButtonMaker()
+            msg += f"\n┃\n┟ <b>Copied</b> → {stats['copied']} of {stats['asked']}"
+            msg += f"\n┠ <b>Destinations</b> → {stats['dests']}"
+            if stats["dropped"]:
+                msg += f"\n┠ <b>Filtered Out</b> → {stats['dropped']}"
+            if stats["failed"]:
+                msg += f"\n┠ <b>Failed</b> → {len(stats['failed'])}"
+            if stats["dead"]:
+                msg += f"\n┠ <b>Skipped Chats</b> → {len(stats['dead'])}"
+            if stats["restricted"]:
+                msg += f"\n┠ <b>Restricted</b> → {len(stats['restricted'])}"
+            msg += f"\n┖ <b>Task By</b> → {self.tag}"
+            msg += "\n\n〶 <b><u>Action Performed :</u></b>"
+            if stats["copied"]:
+                msg += (
+                    f"\n⋗ <i>Messages relayed to {stats['dests']} "
+                    f"{'chats' if stats['dests'] != 1 else 'chat'}</i>"
+                )
+            else:
+                msg += (
+                    "\n⋗ <i>Nothing could be copied, the source chat "
+                    "restricts forwarding</i>"
+                )
+            if stats["restricted"]:
+                runs, total = restricted_runs(stats["restricted"])
+                msg += (
+                    f"\n\n⚠️ <i>{len(stats['restricted'])} messages have "
+                    "forwarding restricted and were skipped. Fetch them with:</i>"
+                )
+                base = stats["link"].rsplit("/", 1)[0]
+                for lo, hi in runs:
+                    span = f"{lo}" if lo == hi else f"{lo}-{hi}"
+                    msg += f"\n<code>/leech {base}/{span}</code>"
+                if total > len(runs):
+                    msg += f"\n<i>and {total - len(runs)} more ranges</i>"
+            if link:
+                buttons.url_button("🔗 View Copy", link, style=ButtonStyle.PRIMARY)
+            await send_message(self.message, msg, buttons.build_menu(1))
+            if self.pm_msg:
+                await delete_message(self.pm_msg)
+        elif self.is_yt:
             buttons = ButtonMaker()
             if mime_type == "Folder/Playlist":
                 msg += "\n┠ <b>Type</b> → Playlist"

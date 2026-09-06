@@ -33,6 +33,7 @@ from .ext_utils.bot_utils import (
     parse_dest,
     sync_to_async,
 )
+from .ext_utils.filter_utils import MessageFilter
 from .ext_utils.bulk_links import extract_bulk_links
 from .ext_utils.files_utils import (
     SevenZ,
@@ -124,6 +125,7 @@ class TaskConfig:
         self.is_seedr = False
         self.is_jd = False
         self.is_clone = False
+        self.is_tg_clone = False
         self.is_uphoster = False
         self.is_gdrive = False
         self.is_rclone = False
@@ -164,6 +166,14 @@ class TaskConfig:
         self.subproc = None
         self.thumb = None
         self.excluded_extensions = []
+        self.clone_dests = []
+        self.clone_content_type = ""
+        self.clone_excluded = ""
+        self.clone_regex = {}
+        self.clone_filter = None
+        self.clone_forward = False
+        self.clone_source = None
+        self.clone_stats = {}
         self.files_to_proceed = []
         self.is_super_chat = self.message.chat.type in [
             ChatType.SUPERGROUP,
@@ -201,7 +211,7 @@ class TaskConfig:
         self.is_gdrive = is_gdrive_link(self.source_url) if self.source_url else False
         self.is_mega = is_mega_link(self.link) if self.source_url else False
 
-        in_mode = f"#{'Seedr' if self.is_seedr else 'Mega' if self.is_mega else 'qBit' if self.is_qbit else 'SABnzbd' if self.is_nzb else 'JDown' if self.is_jd else 'RCloneDL' if self.is_rclone else 'ytdlp' if self.is_ytdlp else 'GDrive' if (self.is_clone or self.is_gdrive) else 'Aria2' if (self.source_url and self.source_url != self.message.link) else 'TgMedia'}"
+        in_mode = f"#{'Seedr' if self.is_seedr else 'Mega' if self.is_mega else 'qBit' if self.is_qbit else 'SABnzbd' if self.is_nzb else 'JDown' if self.is_jd else 'RCloneDL' if self.is_rclone else 'ytdlp' if self.is_ytdlp else 'TgMedia' if self.is_tg_clone else 'GDrive' if (self.is_clone or self.is_gdrive) else 'Aria2' if (self.source_url and self.source_url != self.message.link) else 'TgMedia'}"
 
         self.mode = (in_mode, out_mode)
 
@@ -239,6 +249,65 @@ class TaskConfig:
             if not await aiopath.exists(token_path):
                 raise ValueError(f"NO TOKEN! {token_path} not Exists!")
 
+    async def _set_clone_options(self):
+        picked = (
+            self.clone_content_type
+            or self.user_dict.get("CLONE_CONTENT_TYPE")
+            or Config.CLONE_CONTENT_TYPE
+        )
+        exts = (
+            self.clone_excluded
+            or self.user_dict.get("CLONE_EXCLUDED_EXTENSIONS")
+            or Config.CLONE_EXCLUDED_EXTENSIONS
+        )
+        saved = self.user_dict.get("CLONE_FILTERS") or Config.CLONE_FILTERS or {}
+        patterns = {
+            key: self.clone_regex.get(key) or saved.get(key)
+            for key in ("mn", "xn", "mc", "xc")
+        }
+        self.clone_filter = MessageFilter(picked, exts, patterns)
+        self.clone_dests = await self.resolve_clone_dests()
+
+    async def resolve_dump_dest(self, wanted):
+        dump_chats = Config.LEECH_DUMP_CHATS or {}
+        found = dump_chats.get(wanted)
+        if found is not None:
+            return found
+        if str(wanted).lstrip("-").isdigit() or str(wanted).startswith("@"):
+            return wanted
+        if not dump_chats:
+            raise ValueError(f"Unknown dump chat '{wanted}'! Configured dumps: none")
+        picked, is_cancelled = await open_dump_chat_btns(
+            self.message, dump_chats, wanted
+        )
+        if is_cancelled:
+            self.is_cancelled = True
+            return None
+        if not picked:
+            raise ValueError("No dump chat selected!")
+        return picked
+
+    async def resolve_clone_dests(self):
+        wanted = (self.dump_dest or "").split()
+        if not wanted:
+            saved = self.user_dict.get("CLONE_DUMP_CHATS") or {}
+            wanted = list(saved.values()) or (
+                [Config.LEECH_LOG_CHAT] if Config.LEECH_LOG_CHAT else []
+            )
+        if not wanted:
+            raise ValueError(
+                "No clone destination! Use -ud, or set one in Clone Settings."
+            )
+        seats = []
+        for one in wanted:
+            found = await self.resolve_dump_dest(one)
+            if self.is_cancelled:
+                return []
+            seat = parse_dest(found)
+            if seat not in seats:
+                seats.append(seat)
+        return seats
+
     async def before_start(self):
         self.name_swap = (
             self.name_swap
@@ -252,6 +321,9 @@ class TaskConfig:
             if "EXCLUDED_EXTENSIONS" not in self.user_dict
             else ["aria2", "!qB"]
         )
+        if self.is_tg_clone:
+            await self._set_clone_options()
+            return
         if not self.rc_flags:
             if self.user_dict.get("RCLONE_FLAGS"):
                 self.rc_flags = self.user_dict["RCLONE_FLAGS"]
@@ -507,27 +579,9 @@ class TaskConfig:
 
             self.up_dest = Config.LEECH_LOG_CHAT
             if self.dump_dest:
-                dump_chats = Config.LEECH_DUMP_CHATS or {}
-                self.up_dest = dump_chats.get(self.dump_dest)
-                if self.up_dest is None:
-                    raw_id = str(self.dump_dest).lstrip("-").isdigit()
-                    if raw_id or self.dump_dest.startswith("@"):
-                        self.up_dest = self.dump_dest
-                    elif dump_chats:
-                        up_dest, is_cancelled = await open_dump_chat_btns(
-                            self.message, dump_chats, self.dump_dest
-                        )
-                        if is_cancelled:
-                            self.is_cancelled = True
-                            return
-                        if not up_dest:
-                            raise ValueError("No dump chat selected!")
-                        self.up_dest = up_dest
-                    else:
-                        raise ValueError(
-                            f"Unknown dump chat '{self.dump_dest}'! "
-                            f"Configured dumps: none"
-                        )
+                self.up_dest = await self.resolve_dump_dest(self.dump_dest)
+                if self.is_cancelled:
+                    return
             if self.up_dest:
                 if not isinstance(self.up_dest, int):
                     self.up_dest, self.chat_thread_id = parse_dest(self.up_dest)

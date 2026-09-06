@@ -84,6 +84,10 @@ class Config:
     TORRENT_LIMIT = 0
     GD_DL_LIMIT = 0
     RC_DL_LIMIT = 0
+    CLONE_CONTENT_TYPE = "all"
+    CLONE_DUMP_CHATS = {}
+    CLONE_EXCLUDED_EXTENSIONS = ""
+    CLONE_FILTERS = {}
     CLONE_LIMIT = 0
     JD_LIMIT = 0
     NZB_LIMIT = 0

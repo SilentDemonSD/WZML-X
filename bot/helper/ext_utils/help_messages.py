@@ -19,8 +19,48 @@ yt = """<b>Send link along with command line</b>:
 Check here all supported <a href='https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md'>SITES</a>
 Check all yt-dlp api options from this <a href='https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L212'>FILE</a> or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to convert cli arguments to api options."""
 
-clone = """Send Gdrive|Gdot|Filepress|Filebee|Appdrive|Gdflix link or rclone path along with command or by replying to the link/rc_path by command.
-Use -sync to use sync method in rclone. Example: /cmd rcl/rclone_path -up rcl/rclone_path/rc -sync"""
+clone = """Send a Gdrive|Gdot|Filepress|Filebee|Appdrive|Gdflix link, an rclone path, or a telegram message link, along with the command or by replying to it.
+Use -sync to use sync method in rclone. Example: /cmd rcl/rclone_path -up rcl/rclone_path/rc -sync
+A t.me link copies messages between chats instead, see the Telegram page."""
+
+tg_clone = """<b>Telegram Clone</b>
+Send a telegram message link to copy it into one or more chats. No download,
+nothing touches disk.
+
+/cmd https://t.me/c/1234567/120 -ud A
+/cmd https://t.me/c/1234567/120-260 -ud A B -100987654321
+/cmd https://t.me/channel/55-90 -ud A -ct med -xn sample
+
+<b>Destinations</b>: -ud
+Space separated. Each one is looked up in LEECH_DUMP_CHATS by name first,
+then treated as a raw id, @username, or id|topic_id. Duplicates are dropped.
+With no -ud the clone destinations from your user settings are used.
+
+<b>Content type</b>: -ct doc | med | all
+doc keeps documents only, med keeps video/audio/photo/animation/voice only.
+Note this is not -doc/-med, which control how a leech is uploaded.
+
+<b>Excluded extensions</b>: -ex mkv srt
+Separate from the leech EXCLUDED_EXTENSIONS, so filtering a clone never
+changes what a leech skips.
+
+<b>Regex</b>: -mn -xn -mc -xc
+-mn keeps names matching, -xn drops names matching, -mc and -xc do the same
+against the caption. All four are case insensitive and are anded together.
+A message with no filename never matches -mn, so an include pattern drops
+photos and text.
+Arguments are joined by single spaces, so write \\s+ rather than a run of
+spaces, and wrap a pattern containing a flag lookalike in brackets:
+-mn [S01 -e 720p]
+
+<b>Forward</b>: -fwd
+Forward instead of copy, keeping the "forwarded from" header. Ranges are
+sent in batches of 100, so this is much cheaper for a large set.
+
+<b>Restricted content</b>
+Chats that forbid forwarding are skipped and tallied, and the report tells
+you which ranges to fetch with /leech instead. A range is capped at 500
+messages."""
 
 new_name = """<b>New Name</b>: -n
 
@@ -378,6 +418,7 @@ CLONE_HELP_DICT = {
     "Bulk": bulk,
     "Gdrive": gdrive,
     "Rclone": rclone_cl,
+    "Telegram": tg_clone,
 }
 
 RSS_HELP_MESSAGE = """

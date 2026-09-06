@@ -161,9 +161,7 @@ def parse_stream_args(parts):
 
 
 async def _expand(link):
-    found, asked, _session, _parsed = await TgSource.resolve(
-        link, cap=_MAX_BATCH
-    )
+    found, asked, _session, _parsed = await TgSource.resolve(link, cap=_MAX_BATCH)
     return found, asked
 
 
