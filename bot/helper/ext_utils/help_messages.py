@@ -60,7 +60,10 @@ sent in batches of 100, so this is much cheaper for a large set.
 <b>Restricted content</b>
 Chats that forbid forwarding are skipped and tallied, and the report tells
 you which ranges to fetch with /leech instead. Three restricted messages in
-a row stops the task rather than burning the rest of the range on it.
+a row stops the task only while nothing has copied yet, so a chat that
+forbids forwarding outright costs three calls rather than the whole range.
+Once anything has copied the rest of the range is always walked, since a
+protected message there is a per message setting, not a chat wide one.
 
 <b>Large ranges</b>
 Messages are fetched 200 at a time and copied as they arrive, so a range of

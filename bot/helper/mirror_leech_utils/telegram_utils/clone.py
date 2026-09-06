@@ -14,6 +14,7 @@ from .... import LOGGER
 from ....core.config_manager import Config
 from ...ext_utils.filter_utils import file_name_of, size_of
 from ...telegram_helper.tg_copy import (
+    FORWARD_BATCH,
     CopyAborted,
     CopyRestricted,
     TgCopier,
@@ -181,7 +182,11 @@ class TelegramClone:
         return self._copier.floods
 
     @staticmethod
-    def _label(unit):
+    def _label(units):
+        if len(units) > 1:
+            span = sum(len(unit) for unit in units)
+            return f"batch of {span}"
+        unit = units[0]
         if len(unit) > 1:
             return f"album of {len(unit)}"
         return file_name_of(unit[0]) or f"message {unit[0].id}"
@@ -214,15 +219,21 @@ class TelegramClone:
         if self._pace:
             await sleep(self._pace)
 
-    async def _fan_out(self, unit):
+    async def _fan_out(self, units):
         landed = 0
+        ids = [one.id for unit in units for one in unit]
+        source = units[0][0].chat.id
         for seat in list(self._dests):
             if self.listener.is_cancelled:
                 return False
             try:
-                sent = await self._copier.send(seat[0], unit, seat[1])
+                if len(units) > 1:
+                    sent = await self._copier.batch(seat[0], source, ids, seat[1])
+                    sent = sent[0] if sent else None
+                else:
+                    sent = await self._copier.send(seat[0], units[0], seat[1])
             except CopyRestricted:
-                self.restricted.extend(one.id for one in unit)
+                self.restricted.extend(ids)
                 return False
             except CopyAborted:
                 raise
@@ -232,49 +243,79 @@ class TelegramClone:
             except Exception as err:
                 self.failures += 1
                 if len(self.failed) < FAILED_KEEP:
-                    self.failed.append((unit[0].id, str(err)))
-                LOGGER.error(f"clone failed at {unit[0].id}: {err}")
+                    self.failed.append((ids[0], str(err)))
+                LOGGER.error(f"clone failed at {ids[0]}: {err}")
                 return False
             landed += 1
             if not self.first_link:
                 self.first_link = message_link(sent)
         return landed > 0
 
+    async def _jobs(self):
+        if not self._copier.forward:
+            async for unit in self._stream.units():
+                yield [unit]
+            return
+        held = []
+        count = 0
+        async for unit in self._stream.units():
+            if self._protected(unit):
+                if held:
+                    yield held
+                    held, count = [], 0
+                yield [unit]
+                continue
+            if held and count + len(unit) > FORWARD_BATCH:
+                yield held
+                held, count = [], 0
+            held.append(unit)
+            count += len(unit)
+        if held:
+            yield held
+
     async def relay(self):
         streak = 0
-        async for unit in self._stream.units():
-            if self.listener.is_cancelled or not self._dests:
-                break
-            self.units += 1
-            self.planned += self._bytes(unit)
-            self.listener.size = self.planned
-            self.listener.subname = self._label(unit)
-            self.listener.subsize = self._bytes(unit)
-            if self._protected(unit):
-                self.restricted.extend(one.id for one in unit)
-                self.seen += len(unit)
+        jobs = self._jobs()
+        try:
+            async for units in jobs:
+                if self.listener.is_cancelled or not self._dests:
+                    break
+                span = sum(len(unit) for unit in units)
+                weight = sum(self._bytes(unit) for unit in units)
+                self.units += len(units)
+                self.planned += weight
+                self.listener.size = self.planned
+                self.listener.subname = self._label(units)
+                self.listener.subsize = weight
+                if self._protected(units[0]):
+                    self.restricted.extend(one.id for unit in units for one in unit)
+                    self.seen += span
+                    self.listener.proceed_count = self.seen
+                    streak += 1
+                    if streak >= RESTRICTED_STREAK and not self.copied:
+                        LOGGER.info(
+                            "clone stopped early, the source forbids forwarding"
+                        )
+                        break
+                    continue
+                try:
+                    sent = await self._fan_out(units)
+                except CopyAborted:
+                    break
+                if sent:
+                    streak = 0
+                    self.copied += span
+                    self.processed_bytes += weight
+                else:
+                    streak += 1
+                    if streak >= RESTRICTED_STREAK and not self.copied:
+                        LOGGER.info("clone stopped early, nothing is copyable")
+                        break
+                self.seen += span
                 self.listener.proceed_count = self.seen
-                streak += 1
-                if streak >= RESTRICTED_STREAK:
-                    LOGGER.info("clone stopped early, the source restricts forwarding")
-                    break
-                continue
-            try:
-                sent = await self._fan_out(unit)
-            except CopyAborted:
-                break
-            if sent:
-                streak = 0
-                self.copied += len(unit)
-                self.processed_bytes += self._bytes(unit)
-            else:
-                streak += 1
-                if streak >= RESTRICTED_STREAK and not self.copied:
-                    LOGGER.info("clone stopped early, nothing is copyable")
-                    break
-            self.seen += len(unit)
-            self.listener.proceed_count = self.seen
-            await self._breathe()
+                await self._breathe()
+        finally:
+            await jobs.aclose()
         return self.copied
 
     def task(self):

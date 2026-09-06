@@ -515,7 +515,6 @@ class TgSource:
         wanted = parsed.ids(cap)
         session, client = await cls._probe(parsed.chat, parsed.start_id, extra)
         found = await cls._fetch(client, parsed.chat, wanted)
-        found.sort(key=lambda m: m.id)
         return found, asked, session, parsed
 
 
