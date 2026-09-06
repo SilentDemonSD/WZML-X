@@ -19,6 +19,7 @@ from magic import Magic
 from ... import DOWNLOAD_DIR, LOGGER
 from ...core.torrent_manager import TorrentManager
 from .bot_utils import cmd_exec, sync_to_async
+from .filter_utils import matches_extension
 from .exceptions import NotSupportedExtractionArchive
 
 ARCH_EXT = [
@@ -219,7 +220,7 @@ async def remove_excluded_files(fpath, ee):
         if root.strip().endswith("/yt-dlp-thumb"):
             continue
         for f in files:
-            if f.strip().lower().endswith(tuple(ee)):
+            if matches_extension(f, ee):
                 await remove(ospath.join(root, f))
 
 

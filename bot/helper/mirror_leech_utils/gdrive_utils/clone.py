@@ -12,6 +12,7 @@ from tenacity import (
 from time import time
 
 from ...ext_utils.bot_utils import async_to_sync
+from ...ext_utils.filter_utils import matches_extension
 from ...mirror_leech_utils.gdrive_utils.helper import GoogleDriveHelper
 
 LOGGER = getLogger(__name__)
@@ -132,11 +133,8 @@ class GoogleDriveClone(GoogleDriveHelper):
                 file_path = ospath.join(folder_name, file.get("name"))
                 current_dir_id = self.create_directory(file.get("name"), dest_id)
                 self._clone_folder(file_path, file.get("id"), current_dir_id)
-            elif (
-                not file.get("name")
-                .strip()
-                .lower()
-                .endswith(tuple(self.listener.excluded_extensions))
+            elif not matches_extension(
+                file.get("name"), self.listener.excluded_extensions
             ):
                 self.total_files += 1
                 self.sa_count = 1

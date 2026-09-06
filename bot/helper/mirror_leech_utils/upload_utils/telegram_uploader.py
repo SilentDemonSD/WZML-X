@@ -35,18 +35,10 @@ from ...ext_utils.status_utils import get_readable_file_size, get_readable_time
 
 from ...ext_utils.media_utils import get_md5_hash, get_media_info
 from ...telegram_helper.message_utils import delete_message
+from ...telegram_helper.tg_copy import call_with_flood_retry as _call_with_flood_retry
 from ...ext_utils.hyperul_utils import HypertgUpload
 
 LOGGER = getLogger(__name__)
-
-
-async def _call_with_flood_retry(method, *args, **kwargs):
-    while True:
-        try:
-            return await method(*args, **kwargs)
-        except (FloodWait, FloodPremiumWait) as f:
-            LOGGER.warning(f"FloodWait {f.value}s, retrying {method.__name__}")
-            await sleep(f.value + 1)
 
 
 class TelegramUploader:
