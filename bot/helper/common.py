@@ -174,6 +174,7 @@ class TaskConfig:
         self.clone_forward = False
         self.clone_source = None
         self.clone_stats = {}
+        self.clone_dropped = 0
         self.files_to_proceed = []
         self.is_super_chat = self.message.chat.type in [
             ChatType.SUPERGROUP,

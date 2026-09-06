@@ -89,6 +89,7 @@ class Config:
     CLONE_EXCLUDED_EXTENSIONS = ""
     CLONE_FILTERS = {}
     CLONE_LIMIT = 0
+    CLONE_TG_LIMIT = 10000
     JD_LIMIT = 0
     NZB_LIMIT = 0
     SEEDR_LIMIT = 0

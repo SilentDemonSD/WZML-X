@@ -59,8 +59,16 @@ sent in batches of 100, so this is much cheaper for a large set.
 
 <b>Restricted content</b>
 Chats that forbid forwarding are skipped and tallied, and the report tells
-you which ranges to fetch with /leech instead. A range is capped at 500
-messages."""
+you which ranges to fetch with /leech instead. Three restricted messages in
+a row stops the task rather than burning the rest of the range on it.
+
+<b>Large ranges</b>
+Messages are fetched 200 at a time and copied as they arrive, so a range of
+any size uses the same memory and starts moving immediately. The cap is
+CLONE_TG_LIMIT, 10000 by default, 0 for no cap. After a flood wait the task
+slows itself down and speeds back up once Telegram stops complaining.
+-fwd is far cheaper for a big set: it sends 100 ids per call rather than
+one call per message."""
 
 new_name = """<b>New Name</b>: -n
 

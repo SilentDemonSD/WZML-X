@@ -18,7 +18,7 @@ from ..helper.ext_utils.exceptions import (
     DirectDownloadLinkException,
     TgLinkException,
 )
-from ..helper.ext_utils.filter_utils import file_name_of, size_of
+from ..helper.ext_utils.filter_utils import size_of
 from ..helper.ext_utils.links_utils import (
     is_gdrive_id,
     is_telegram_link,
@@ -51,9 +51,9 @@ from ..helper.mirror_leech_utils.status_utils.tg_clone_status import (
     TelegramCloneStatus,
 )
 from ..helper.mirror_leech_utils.telegram_utils.clone import (
-    MAX_CLONE_MESSAGES,
     TelegramClone,
-    build_units,
+    UnitStream,
+    clone_limit,
 )
 from ..helper.telegram_helper.button_build import ButtonMaker
 from ..helper.telegram_helper.prompt import PromptUnreachable
@@ -205,56 +205,40 @@ class Clone(TaskListener):
             return
         await self._relay_from(None)
 
+    async def _sieve(self, batches):
+        async for batch in batches:
+            self.clone_dropped += len(batch)
+            passed = [one for one in batch if self.clone_filter.keep(one)]
+            self.clone_dropped -= len(passed)
+            self.size += sum(size_of(one) for one in passed)
+            if passed:
+                yield passed
+
     async def _relay_from(self, mine):
         try:
-            messages, asked, _session, source = await TgSource.resolve(
-                self.link, MAX_CLONE_MESSAGES, extra=mine
+            source, session, client = await TgSource.open(
+                self.link, clone_limit(), extra=mine
             )
         except TgLinkException as e:
             await send_message(self.message, f"ERROR: {e}")
             return
         self.clone_source = source
-        client = {"bot": TgClient.bot, "user": TgClient.user, "usess": mine}[_session]
-        units = await build_units(client, source.chat, messages)
-        kept = []
-        dropped = 0
-        for unit in units:
-            passed = [one for one in unit if self.clone_filter.keep(one)]
-            if not passed:
-                dropped += len(unit)
-                continue
-            if len(passed) == len(unit):
-                kept.append(unit)
-            else:
-                dropped += len(unit) - len(passed)
-                kept.extend([[one] for one in passed])
-        if not kept:
-            await send_message(
-                self.message, "No messages matched the filters, nothing to clone."
-            )
-            return
-
-        self.size = sum(size_of(one) for unit in kept for one in unit)
+        asked = source.count
         if not self.name:
             self.name = (
                 f"{source.chat} [{source.start_id}-{source.end_id}]"
                 if asked > 1
-                else file_name_of(kept[0][0]) or f"message {source.start_id}"
+                else f"message {source.start_id}"
             )
-        if limit_exceeded := await limit_checker(self):
-            await send_message(
-                self.message,
-                f"""〶 <b><i><u>Limit Breached:</u></i></b>
-│
-┟ <b>Task Size</b> → {get_readable_file_size(self.size)}
-┠ <b>In Mode</b> → {self.mode[0]}
-┠ <b>Out Mode</b> → {self.mode[1]}
-{limit_exceeded}""",
-            )
-            return
+
+        batches = TgSource.stream(client, source.chat, source.ids())
+        kept = self._sieve(batches)
+        stream = UnitStream(client, source.chat, kept)
 
         gid = token_hex(5)
-        worker = TelegramClone(self, client, kept, self.clone_dests, self.clone_forward)
+        worker = TelegramClone(
+            self, client, stream, self.clone_dests, asked, self.clone_forward
+        )
         add_to_queue, event = await check_running_tasks(self, "up")
         await start_from_queued()
         if add_to_queue:
@@ -276,21 +260,32 @@ class Clone(TaskListener):
             await send_status_message(self.message)
 
         LOGGER.info(
-            f"Clone Started: {self.name} - {len(kept)} units "
+            f"Clone Started: {self.name} - up to {asked} messages "
             f"to {len(self.clone_dests)} chats"
         )
-        await worker.relay()
+        try:
+            await worker.relay()
+        except Exception as err:
+            LOGGER.error(f"clone relay failed: {err}")
+            await self.on_upload_error(f"Clone failed: {err}")
+            return
         if self.is_cancelled:
+            return
+        if not worker.units:
+            await self.on_upload_error(
+                "No messages matched the filters, nothing to clone."
+            )
             return
         self.clone_stats = {
             "copied": worker.copied,
             "asked": asked,
             "dests": len(self.clone_dests),
-            "dropped": dropped + (asked - len(messages)),
+            "dropped": self.clone_dropped,
             "restricted": worker.restricted,
             "failed": worker.failed,
             "dead": worker.dead_dests,
             "link": self.link,
+            "floods": worker.floods,
         }
         await self.on_upload_complete(
             worker.first_link, worker.copied, len(worker._dests), "Telegram"

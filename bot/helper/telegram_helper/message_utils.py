@@ -435,8 +435,11 @@ class TgLink:
     def count(self):
         return self.end_id - self.start_id + 1
 
-    def ids(self):
-        return list(range(self.start_id, self.end_id + 1))
+    def ids(self, cap=0):
+        end = self.end_id
+        if cap and self.count > cap:
+            end = self.start_id + cap - 1
+        return range(self.start_id, end + 1)
 
 
 class TgSource:
@@ -465,13 +468,37 @@ class TgSource:
     @classmethod
     async def _fetch(cls, client, chat, ids):
         out = []
-        for at in range(0, len(ids), cls.CHUNK):
-            batch = ids[at : at + cls.CHUNK]
-            found = await client.get_messages(chat_id=chat, message_ids=batch)
+        async for batch in cls.stream(client, chat, ids):
+            out.extend(batch)
+        return out
+
+    @classmethod
+    async def stream(cls, client, chat, ids, chunk=0):
+        ids = list(ids)
+        step = chunk or cls.CHUNK
+        for at in range(0, len(ids), step):
+            found = await client.get_messages(
+                chat_id=chat, message_ids=ids[at : at + step]
+            )
             if not isinstance(found, list):
                 found = [found]
-            out.extend(m for m in found if m is not None and not m.empty)
-        return out
+            alive = [m for m in found if m is not None and not m.empty]
+            alive.sort(key=lambda m: m.id)
+            yield alive
+
+    @classmethod
+    async def open(cls, link, limit=0, extra=None):
+        parsed = TgLink.parse(link)
+        if parsed is None:
+            raise TgLinkException("That is not a telegram message link!")
+        if parsed.private and TgClient.user is None:
+            raise TgLinkException("USER_SESSION_STRING required for this private link!")
+        if limit and parsed.count > limit:
+            raise TgLinkException(
+                f"That range is {parsed.count} messages, the limit is {limit}."
+            )
+        session, client = await cls._probe(parsed.chat, parsed.start_id, extra)
+        return parsed, session, client
 
     @classmethod
     async def resolve(cls, link, limit=0, cap=0, extra=None):
@@ -485,9 +512,7 @@ class TgSource:
             raise TgLinkException(
                 f"That range is {asked} messages, the limit is {limit}."
             )
-        wanted = parsed.ids()
-        if cap:
-            wanted = wanted[:cap]
+        wanted = parsed.ids(cap)
         session, client = await cls._probe(parsed.chat, parsed.start_id, extra)
         found = await cls._fetch(client, parsed.chat, wanted)
         found.sort(key=lambda m: m.id)

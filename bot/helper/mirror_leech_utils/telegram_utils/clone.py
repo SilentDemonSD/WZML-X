@@ -1,3 +1,4 @@
+from asyncio import sleep
 from time import time
 
 from pyrogram.errors import (
@@ -10,6 +11,7 @@ from pyrogram.errors import (
 )
 
 from .... import LOGGER
+from ....core.config_manager import Config
 from ...ext_utils.filter_utils import file_name_of, size_of
 from ...telegram_helper.tg_copy import (
     CopyAborted,
@@ -18,9 +20,11 @@ from ...telegram_helper.tg_copy import (
     message_link,
 )
 
-MAX_CLONE_MESSAGES = 500
 MAX_FLOOD_WAIT = 600
 RESTRICTED_STREAK = 3
+PACE_MAX = 4.0
+PACE_STEP = 0.25
+PACE_COOL = 20
 
 DEST_FATAL = (
     ChatWriteForbidden,
@@ -30,6 +34,10 @@ DEST_FATAL = (
     ChatAdminRequired,
     UserBannedInChannel,
 )
+
+
+def clone_limit():
+    return Config.CLONE_TG_LIMIT or 0
 
 
 def restricted_runs(ids, cap=3):
@@ -45,7 +53,7 @@ def restricted_runs(ids, cap=3):
     return [(lo, hi) for lo, hi in runs[:cap]], len(runs)
 
 
-async def build_units(client, chat_id, messages):
+def group_runs(messages):
     units = []
     for message in messages:
         group = getattr(message, "media_group_id", None)
@@ -53,31 +61,67 @@ async def build_units(client, chat_id, messages):
             units[-1].append(message)
         else:
             units.append([message])
-    if not messages:
-        return units
-    first_id = messages[0].id
-    last_id = messages[-1].id
-    checked = []
-    for unit in units:
-        if len(unit) > 1 and (unit[0].id == first_id or unit[-1].id == last_id):
-            try:
-                whole = await client.get_media_group(chat_id, unit[0].id)
-            except Exception as err:
-                LOGGER.debug(f"media group check failed for {unit[0].id}: {err}")
-                whole = unit
-            if len(whole) != len(unit):
-                checked.extend([[one] for one in unit])
-                continue
-        checked.append(unit)
-    return checked
+    return units
+
+
+class UnitStream:
+    def __init__(self, client, chat, batches):
+        self._client = client
+        self._chat = chat
+        self._batches = batches
+        self._first_done = False
+        self.fetched = 0
+
+    async def _whole(self, unit):
+        if len(unit) < 2:
+            return [unit]
+        try:
+            whole = await self._client.get_media_group(self._chat, unit[0].id)
+        except Exception as err:
+            LOGGER.debug(f"media group check failed for {unit[0].id}: {err}")
+            return [[one] for one in unit]
+        if len(whole) != len(unit):
+            return [[one] for one in unit]
+        return [unit]
+
+    async def _emit(self, unit, last):
+        edge = last or not self._first_done
+        self._first_done = True
+        if edge:
+            return await self._whole(unit)
+        return [unit]
+
+    async def units(self):
+        held = None
+        carry = []
+        async for batch in self._batches:
+            self.fetched += len(batch)
+            runs = group_runs(carry + batch)
+            carry = []
+            if runs and getattr(runs[-1][0], "media_group_id", None):
+                carry = runs.pop()
+            for run in runs:
+                if held is not None:
+                    for one in await self._emit(held, False):
+                        yield one
+                held = run
+        if carry:
+            if held is not None:
+                for one in await self._emit(held, False):
+                    yield one
+            held = carry
+        if held is not None:
+            for one in await self._emit(held, True):
+                yield one
 
 
 class TelegramClone:
-    def __init__(self, listener, client, units, dests, forward=False):
+    def __init__(self, listener, client, stream, dests, total, forward=False):
         self.listener = listener
         self._client = client
-        self._units = units
+        self._stream = stream
         self._dests = list(dests)
+        self._total = max(1, total)
         self._copier = TgCopier(
             client,
             cancel=lambda: self.listener.is_cancelled,
@@ -85,6 +129,11 @@ class TelegramClone:
             forward=forward,
         )
         self._start = time()
+        self._pace = 0.0
+        self._clean = 0
+        self._flooded_at = 0
+        self.seen = 0
+        self.units = 0
         self.copied = 0
         self.processed_bytes = 0
         self.restricted = []
@@ -94,11 +143,15 @@ class TelegramClone:
 
     @property
     def total_units(self):
-        return len(self._units)
+        return self._total
 
     @property
     def live_dests(self):
         return len(self._dests)
+
+    @property
+    def floods(self):
+        return self._copier.floods
 
     @staticmethod
     def _label(unit):
@@ -118,6 +171,21 @@ class TelegramClone:
         self._dests.remove(seat)
         self.dead_dests.append((chat_id, reason))
         LOGGER.warning(f"clone destination dropped {chat_id}: {reason}")
+
+    async def _breathe(self):
+        seen = self._copier.floods
+        if seen > self._flooded_at:
+            self._flooded_at = seen
+            self._pace = min(PACE_MAX, self._pace + PACE_STEP)
+            self._clean = 0
+            LOGGER.info(f"clone pacing raised to {self._pace:.2f}s after a flood wait")
+        elif self._pace:
+            self._clean += 1
+            if self._clean >= PACE_COOL:
+                self._clean = 0
+                self._pace = max(0.0, self._pace - PACE_STEP)
+        if self._pace:
+            await sleep(self._pace)
 
     async def _fan_out(self, unit):
         landed = 0
@@ -145,15 +213,16 @@ class TelegramClone:
 
     async def relay(self):
         streak = 0
-        self.listener.files_to_proceed = self._units
-        for done, unit in enumerate(self._units):
+        async for unit in self._stream.units():
             if self.listener.is_cancelled or not self._dests:
                 break
-            self.listener.proceed_count = done
+            self.units += 1
             self.listener.subname = self._label(unit)
             self.listener.subsize = self._bytes(unit)
             if self._protected(unit):
                 self.restricted.extend(one.id for one in unit)
+                self.seen += len(unit)
+                self.listener.proceed_count = self.seen
                 streak += 1
                 if streak >= RESTRICTED_STREAK:
                     LOGGER.info("clone stopped early, the source restricts forwarding")
@@ -172,7 +241,9 @@ class TelegramClone:
                 if streak >= RESTRICTED_STREAK and not self.copied:
                     LOGGER.info("clone stopped early, nothing is copyable")
                     break
-            self.listener.proceed_count = done + 1
+            self.seen += len(unit)
+            self.listener.proceed_count = self.seen
+            await self._breathe()
         return self.copied
 
     def task(self):

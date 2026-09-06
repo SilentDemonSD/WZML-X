@@ -17,7 +17,7 @@ class TelegramCloneStatus:
 
     @property
     def _total(self):
-        return max(1, self._obj.total_units)
+        return self._obj.total_units
 
     @property
     def _done(self):

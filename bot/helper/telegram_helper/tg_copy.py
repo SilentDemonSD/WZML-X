@@ -21,11 +21,15 @@ class CopyAborted(Exception):
     pass
 
 
-async def call_with_flood_retry(method, *args, _cancel=None, _max_wait=0, **kwargs):
+async def call_with_flood_retry(
+    method, *args, _cancel=None, _max_wait=0, _on_flood=None, **kwargs
+):
     while True:
         try:
             return await method(*args, **kwargs)
         except (FloodWait, FloodPremiumWait, SlowmodeWait) as f:
+            if _on_flood is not None:
+                _on_flood(f.value)
             if _max_wait and f.value > _max_wait:
                 raise
             LOGGER.warning(f"FloodWait {f.value}s, retrying {method.__name__}")
@@ -43,11 +47,21 @@ class TgCopier:
         self._cancel = cancel
         self._max_wait = max_wait
         self.forward = forward
+        self.floods = 0
+        self.flood_seconds = 0
+
+    def _flooded(self, seconds):
+        self.floods += 1
+        self.flood_seconds += seconds
 
     async def _call(self, method, **kwargs):
         try:
             return await call_with_flood_retry(
-                method, _cancel=self._cancel, _max_wait=self._max_wait, **kwargs
+                method,
+                _cancel=self._cancel,
+                _max_wait=self._max_wait,
+                _on_flood=self._flooded,
+                **kwargs,
             )
         except ChatForwardsRestricted:
             raise CopyRestricted("the source chat restricts forwarding") from None
