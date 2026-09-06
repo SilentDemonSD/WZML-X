@@ -1,11 +1,14 @@
 from ast import literal_eval
 from pyrogram import Client, enums
 from pyrogram.errors import FloodWait
-from asyncio import Lock, gather, sleep
+from asyncio import Lock, gather, get_running_loop, shield, sleep
+from contextlib import asynccontextmanager
 from hashlib import sha256
 from inspect import signature
+from time import monotonic
 
 from .. import LOGGER, bot_loop
+from ..helper.ext_utils.exceptions import TgLinkException
 from .config_manager import Config
 
 _DB_PARTITION_SALT = b"wzmlx_v3_db_partition_salt"
@@ -345,6 +348,7 @@ class TgClient:
                 cls.stream_bots = {}
             if clients:
                 await gather(*clients, return_exceptions=True)
+            await UserSessionPool.stop_all()
             LOGGER.info("All Client(s) stopped")
 
     @classmethod
@@ -361,4 +365,174 @@ class TgClient:
                 )
             if cls.stream_bots:
                 await gather(*[s_bot.restart() for s_bot in cls.stream_bots.values()])
+            await UserSessionPool.stop_all()
             LOGGER.info("All Client(s) restarted")
+
+
+class SessionLease:
+    __slots__ = ("client", "refs", "touched", "closing")
+
+    def __init__(self, client):
+        self.client = client
+        self.refs = 0
+        self.touched = monotonic()
+        self.closing = False
+
+
+class UserSessionPool:
+    _lock = Lock()
+    _leases = {}
+    _starting = {}
+
+    @staticmethod
+    def _fail_and_consume(waiter, err):
+        waiter.set_exception(err)
+        waiter.exception()
+
+    @classmethod
+    def idle_limit(cls):
+        return Config.USER_SESSION_IDLE or 600
+
+    @classmethod
+    def max_clients(cls):
+        return Config.USER_SESSION_MAX_CLIENTS or 8
+
+    @classmethod
+    def active(cls):
+        return len(cls._leases)
+
+    @classmethod
+    async def _build(cls, user_id, session_string):
+        client = TgClient.wztgClient(
+            f"WZ-USess{user_id}",
+            session_string=session_string,
+            no_updates=True,
+            sleep_threshold=60,
+        )
+        try:
+            await client.start()
+        except BaseException:
+            try:
+                await client.stop()
+            except Exception:
+                pass
+            raise
+        return client
+
+    @staticmethod
+    async def _stop_lease(lease):
+        try:
+            await lease.client.stop()
+        except Exception:
+            pass
+
+    @classmethod
+    async def _make_room(cls):
+        while len(cls._leases) >= cls.max_clients():
+            idle = [
+                (lease.touched, uid)
+                for uid, lease in cls._leases.items()
+                if lease.refs == 0
+            ]
+            if not idle:
+                raise TgLinkException(
+                    "Too many user sessions are active, try again shortly"
+                )
+            idle.sort()
+            await cls._stop_lease(cls._leases.pop(idle[0][1]))
+
+    @classmethod
+    async def acquire(cls, user_id, session_cb):
+        while True:
+            async with cls._lock:
+                lease = cls._leases.get(user_id)
+                if lease is not None and not lease.closing:
+                    lease.refs += 1
+                    lease.touched = monotonic()
+                    return lease
+                pending = cls._starting.get(user_id)
+                mine = pending is None
+                if mine:
+                    pending = cls._starting[user_id] = (
+                        get_running_loop().create_future()
+                    )
+            if not mine:
+                await shield(pending)
+                continue
+            try:
+                async with cls._lock:
+                    await cls._make_room()
+                client = await cls._build(user_id, await session_cb())
+                async with cls._lock:
+                    lease = SessionLease(client)
+                    lease.refs = 1
+                    cls._leases[user_id] = lease
+            except BaseException as err:
+                cls._fail_and_consume(pending, err)
+                async with cls._lock:
+                    cls._starting.pop(user_id, None)
+                raise
+            pending.set_result(True)
+            async with cls._lock:
+                cls._starting.pop(user_id, None)
+            return lease
+
+    @classmethod
+    async def release(cls, user_id, lease):
+        async with cls._lock:
+            lease.refs = max(0, lease.refs - 1)
+            lease.touched = monotonic()
+            retired = cls._leases.get(user_id) is not lease
+            done = lease.refs == 0 and (retired or lease.closing)
+            if done and not retired:
+                cls._leases.pop(user_id, None)
+        if done:
+            await cls._stop_lease(lease)
+
+    @classmethod
+    @asynccontextmanager
+    async def borrow(cls, user_id, session_cb):
+        lease = await cls.acquire(user_id, session_cb)
+        try:
+            yield lease.client
+        finally:
+            await cls.release(user_id, lease)
+
+    @classmethod
+    async def drop(cls, user_id, force=False):
+        async with cls._lock:
+            lease = cls._leases.get(user_id)
+            if lease is None:
+                return False
+            lease.closing = True
+            now = force or lease.refs == 0
+            if now:
+                cls._leases.pop(user_id, None)
+        if now:
+            await cls._stop_lease(lease)
+        return True
+
+    @classmethod
+    async def reap_idle(cls):
+        cutoff = monotonic() - cls.idle_limit()
+        async with cls._lock:
+            stale = [
+                uid
+                for uid, lease in cls._leases.items()
+                if lease.refs == 0 and lease.touched <= cutoff
+            ]
+            leases = [cls._leases.pop(uid) for uid in stale]
+        for lease in leases:
+            await cls._stop_lease(lease)
+        return len(leases)
+
+    @classmethod
+    async def stop_all(cls):
+        async with cls._lock:
+            leases = list(cls._leases.values())
+            cls._leases = {}
+        if leases:
+            await gather(
+                *[lease.client.stop() for lease in leases], return_exceptions=True
+            )
+        return len(leases)
