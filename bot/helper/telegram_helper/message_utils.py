@@ -1,6 +1,6 @@
 from asyncio import sleep, gather
 from random import choice
-from re import match as re_match
+from re import compile as re_compile, match as re_match
 from time import time
 
 from pyrogram.types import Message, InputMediaPhoto, ReplyParameters
@@ -386,6 +386,110 @@ async def get_tg_link_message(link):
             return (links, "user") if links else (user_message, "user")
     else:
         raise TgLinkException("Private: Please report!")
+    raise TgLinkException("Message not found or has been deleted!")
+
+
+_TG_HOSTS = r"t\.me|telegram\.me|telegram\.dog|telegram\.space"
+_TG_PUBLIC = re_compile(
+    rf"^https://(?:{_TG_HOSTS})/(?:c/(\d+)|(?!c/)([^/?#]+))"
+    r"(?:/(\d+))?/(\d+)(?:-(\d+))?/?$"
+)
+_TG_PRIVATE = re_compile(
+    r"^tg://openmessage\?user_id=(\d+)&message_id=(\d+)(?:-(\d+))?$"
+)
+
+
+class TgLink:
+    __slots__ = ("chat", "thread_id", "start_id", "end_id", "private")
+
+    def __init__(self, chat, thread_id, start_id, end_id, private):
+        self.chat = chat
+        self.thread_id = thread_id
+        self.start_id = start_id
+        self.end_id = end_id
+        self.private = private
+
+    @classmethod
+    def parse(cls, link):
+        link = (link or "").strip()
+        found = _TG_PRIVATE.match(link)
+        if found:
+            start = int(found[2])
+            end = int(found[3]) if found[3] else start
+            return cls(int(found[1]), None, *sorted((start, end)), True)
+        found = _TG_PUBLIC.match(link)
+        if not found:
+            return None
+        if found[1]:
+            chat = int(f"-100{found[1]}")
+        else:
+            chat = found[2]
+            if chat.isdigit():
+                chat = int(chat)
+        thread_id = int(found[3]) if found[3] else None
+        start = int(found[4])
+        end = int(found[5]) if found[5] else start
+        return cls(chat, thread_id, *sorted((start, end)), False)
+
+    @property
+    def count(self):
+        return self.end_id - self.start_id + 1
+
+    def ids(self):
+        return list(range(self.start_id, self.end_id + 1))
+
+
+class TgSource:
+    CHUNK = 200
+
+    @classmethod
+    async def _probe(cls, chat, msg_id):
+        for name in ("bot", "user"):
+            client = getattr(TgClient, name)
+            if client is None:
+                continue
+            try:
+                found = await client.get_messages(chat_id=chat, message_ids=msg_id)
+            except Exception as err:
+                if name == "user":
+                    raise TgLinkException(
+                        f"You don't have access to this chat!. ERROR: {err}"
+                    ) from None
+                continue
+            if found is not None and not found.empty:
+                return name, client
+        raise TgLinkException("You don't have access to this chat!")
+
+    @classmethod
+    async def _fetch(cls, client, chat, ids):
+        out = []
+        for at in range(0, len(ids), cls.CHUNK):
+            batch = ids[at : at + cls.CHUNK]
+            found = await client.get_messages(chat_id=chat, message_ids=batch)
+            if not isinstance(found, list):
+                found = [found]
+            out.extend(m for m in found if m is not None and not m.empty)
+        return out
+
+    @classmethod
+    async def resolve(cls, link, limit=0, cap=0):
+        parsed = TgLink.parse(link)
+        if parsed is None:
+            raise TgLinkException("That is not a telegram message link!")
+        if parsed.private and TgClient.user is None:
+            raise TgLinkException("USER_SESSION_STRING required for this private link!")
+        asked = parsed.count
+        if limit and asked > limit:
+            raise TgLinkException(
+                f"That range is {asked} messages, the limit is {limit}."
+            )
+        wanted = parsed.ids()
+        if cap:
+            wanted = wanted[:cap]
+        session, client = await cls._probe(parsed.chat, parsed.start_id)
+        found = await cls._fetch(client, parsed.chat, wanted)
+        found.sort(key=lambda m: m.id)
+        return found, asked, session, parsed
 
 
 async def update_status_message(sid, force=False):

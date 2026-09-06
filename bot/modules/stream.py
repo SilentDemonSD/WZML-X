@@ -18,6 +18,7 @@ from ..helper.telegram_helper.message_utils import (
     delete_links,
     edit_message,
     get_tg_link_message,
+    TgSource,
     send_message,
 )
 from ..helper.ext_utils.status_utils import (
@@ -160,19 +161,10 @@ def parse_stream_args(parts):
 
 
 async def _expand(link):
-    payload, _ = await get_tg_link_message(link)
-    if not isinstance(payload, list):
-        return ([payload] if payload else []), 1
-    found = []
-    for one in payload[:_MAX_BATCH]:
-        try:
-            msg, _s = await get_tg_link_message(one)
-        except Exception as e:
-            LOGGER.debug(f"stream batch skipped {one}: {e}")
-            continue
-        if msg and not isinstance(msg, list):
-            found.append(msg)
-    return found, len(payload)
+    found, asked, _session, _parsed = await TgSource.resolve(
+        link, cap=_MAX_BATCH
+    )
+    return found, asked
 
 
 def _playable(media):
