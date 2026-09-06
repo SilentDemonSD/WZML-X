@@ -116,6 +116,30 @@ class UnitStream:
                 yield one
 
 
+class FilteredStream:
+    def __init__(self, stream, keep):
+        self._stream = stream
+        self._keep = keep
+        self.dropped = 0
+
+    @property
+    def fetched(self):
+        return self._stream.fetched
+
+    async def units(self):
+        async for unit in self._stream.units():
+            passed = [one for one in unit if self._keep(one)]
+            if not passed:
+                self.dropped += len(unit)
+                continue
+            if len(passed) == len(unit):
+                yield unit
+                continue
+            self.dropped += len(unit) - len(passed)
+            for one in passed:
+                yield [one]
+
+
 class TelegramClone:
     def __init__(self, listener, client, stream, dests, total, forward=False):
         self.listener = listener
@@ -135,6 +159,7 @@ class TelegramClone:
         self._flooded_at = 0
         self.seen = 0
         self.units = 0
+        self.planned = 0
         self.copied = 0
         self.processed_bytes = 0
         self.restricted = []
@@ -221,6 +246,8 @@ class TelegramClone:
             if self.listener.is_cancelled or not self._dests:
                 break
             self.units += 1
+            self.planned += self._bytes(unit)
+            self.listener.size = self.planned
             self.listener.subname = self._label(unit)
             self.listener.subsize = self._bytes(unit)
             if self._protected(unit):

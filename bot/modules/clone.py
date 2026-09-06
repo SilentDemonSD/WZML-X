@@ -18,7 +18,6 @@ from ..helper.ext_utils.exceptions import (
     DirectDownloadLinkException,
     TgLinkException,
 )
-from ..helper.ext_utils.filter_utils import size_of
 from ..helper.ext_utils.links_utils import (
     is_gdrive_id,
     is_telegram_link,
@@ -51,6 +50,7 @@ from ..helper.mirror_leech_utils.status_utils.tg_clone_status import (
     TelegramCloneStatus,
 )
 from ..helper.mirror_leech_utils.telegram_utils.clone import (
+    FilteredStream,
     TelegramClone,
     UnitStream,
     clone_limit,
@@ -205,15 +205,6 @@ class Clone(TaskListener):
             return
         await self._relay_from(None)
 
-    async def _sieve(self, batches):
-        async for batch in batches:
-            self.clone_dropped += len(batch)
-            passed = [one for one in batch if self.clone_filter.keep(one)]
-            self.clone_dropped -= len(passed)
-            self.size += sum(size_of(one) for one in passed)
-            if passed:
-                yield passed
-
     async def _relay_from(self, mine):
         try:
             source, session, client = await TgSource.open(
@@ -232,8 +223,9 @@ class Clone(TaskListener):
             )
 
         batches = TgSource.stream(client, source.chat, source.ids())
-        kept = self._sieve(batches)
-        stream = UnitStream(client, source.chat, kept)
+        raw = UnitStream(client, source.chat, batches)
+        stream = FilteredStream(raw, self.clone_filter.keep)
+        self.files_to_proceed = range(asked)
 
         gid = token_hex(5)
         worker = TelegramClone(
@@ -280,7 +272,7 @@ class Clone(TaskListener):
             "copied": worker.copied,
             "asked": asked,
             "dests": len(self.clone_dests),
-            "dropped": self.clone_dropped,
+            "dropped": stream.dropped + max(0, asked - raw.fetched),
             "restricted": worker.restricted,
             "failed": worker.failures,
             "dead": worker.dead_dests,

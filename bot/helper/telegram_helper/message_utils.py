@@ -474,11 +474,11 @@ class TgSource:
 
     @classmethod
     async def stream(cls, client, chat, ids, chunk=0):
-        ids = list(ids)
         step = chunk or cls.CHUNK
-        for at in range(0, len(ids), step):
+        total = len(ids)
+        for at in range(0, total, step):
             found = await client.get_messages(
-                chat_id=chat, message_ids=ids[at : at + step]
+                chat_id=chat, message_ids=list(ids[at : at + step])
             )
             if not isinstance(found, list):
                 found = [found]
