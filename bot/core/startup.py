@@ -27,11 +27,8 @@ from .. import (
     sabnzbd_client,
     sudo_users,
 )
-from ..helper.ext_utils.bot_utils import (
-    cmd_exec,
-    derive_service_password,
-    migrate_leech_dump,
-)
+from ..helper.ext_utils.bot_utils import cmd_exec, derive_service_password
+from ..helper.ext_utils.deprecations import Deprecations
 from ..helper.ext_utils.db_handler import database
 from .config_manager import Config, BinConfig
 from .tg_client import TgClient, db_partition_id
@@ -239,16 +236,17 @@ async def load_settings():
                     if row.get(key):
                         await save_file(path, row[key])
                         row[key] = path
-                if migrate_leech_dump(row):
-                    migrated.append(uid)
+                if dead := Deprecations.migrate_user(row):
+                    migrated.append((uid, dead))
                 user_data[uid] = row
             LOGGER.info("Users Data has been imported from MongoDB")
-            for uid in migrated:
+            for uid, dead in migrated:
                 await database.update_user_data(uid)
-                await database.update_user_doc(uid, "LEECH_DUMP_CHAT")
+                for key in dead:
+                    await database.update_user_doc(uid, key)
             if migrated:
                 LOGGER.info(
-                    f"Moved the old leech destination into Leech Dump Chats for {len(migrated)} user(s)"
+                    f"Cleared deprecated settings for {len(migrated)} user(s)"
                 )
 
         if rss_exists:

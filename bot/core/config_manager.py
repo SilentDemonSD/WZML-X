@@ -3,6 +3,8 @@ from importlib import import_module
 from os import getenv
 from wz_bin import bin_name
 
+from ..helper.ext_utils.deprecations import Deprecations
+
 
 class Config:
     ALLDEBRID_API_KEY = ""
@@ -236,12 +238,9 @@ class Config:
                     except Exception:
                         continue
                 setattr(cls, attr, value)
-        if hasattr(settings, "LEECH_DUMP_CHAT"):
-            legacy_value = getattr(settings, "LEECH_DUMP_CHAT")
-            if legacy_value and not cls.LEECH_LOG_CHAT:
-                if isinstance(legacy_value, str):
-                    legacy_value = legacy_value.strip()
-                cls.LEECH_LOG_CHAT = legacy_value
+        Deprecations.adopt_owner(
+            cls, "LEECH_DUMP_CHAT", getattr(settings, "LEECH_DUMP_CHAT", None)
+        )
         for key in ["BOT_TOKEN", "OWNER_ID", "TELEGRAM_API", "TELEGRAM_HASH"]:
             value = getattr(cls, key)
             if isinstance(value, str):
@@ -251,11 +250,13 @@ class Config:
 
     @classmethod
     def load_env(cls):
-        legacy_dump_chat = getenv("LEECH_DUMP_CHAT")
-        if legacy_dump_chat is not None and getenv("LEECH_LOG_CHAT") is None:
-            cls.LEECH_LOG_CHAT = cls._convert_env_type(
-                "LEECH_LOG_CHAT", legacy_dump_chat
-            )
+        Deprecations.adopt_owner(
+            cls,
+            "LEECH_DUMP_CHAT",
+            getenv("LEECH_DUMP_CHAT"),
+            cls._convert_env_type,
+            shadowed=getenv("LEECH_LOG_CHAT") is not None,
+        )
         config_vars = cls.get_all()
         for key in config_vars:
             env_value = getenv(key)
@@ -335,10 +336,12 @@ class Config:
                         value = []
                 value = cls._convert_env_type(key, value)
                 setattr(cls, key, value)
-        if config_dict.get("LEECH_DUMP_CHAT") and not cls.LEECH_LOG_CHAT:
-            cls.LEECH_LOG_CHAT = cls._convert_env_type(
-                "LEECH_LOG_CHAT", config_dict["LEECH_DUMP_CHAT"]
-            )
+        Deprecations.adopt_owner(
+            cls,
+            "LEECH_DUMP_CHAT",
+            config_dict.get("LEECH_DUMP_CHAT"),
+            cls._convert_env_type,
+        )
         for key in ["BOT_TOKEN", "OWNER_ID", "TELEGRAM_API", "TELEGRAM_HASH"]:
             value = getattr(cls, key)
             if isinstance(value, str):

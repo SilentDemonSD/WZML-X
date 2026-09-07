@@ -30,8 +30,9 @@ from ..helper.ext_utils.db_handler import database
 from ..helper.ext_utils.mega_utils import get_mega_account_info
 from ..helper.ext_utils.media_utils import create_thumb
 from ..helper.ext_utils.filter_utils import compile_pattern
-from ..helper.ext_utils.session_crypt import SessionCrypt
+from ..helper.ext_utils.session_crypt import SessionCrypt, SessionCryptError
 from ..helper.ext_utils.session_vault import UserSession, vault
+from ..helper.ext_utils.settings_portal import PortalError, SettingsPortal
 from ..helper.ext_utils.status_utils import (
     get_readable_file_size,
     get_readable_time,
@@ -47,6 +48,10 @@ from ..helper.telegram_helper.message_utils import (
 )
 
 handler_dict = {}
+
+LOGO = "⌬"
+END = "┖"
+
 
 clone_options = [
     "USER_SESSION",
@@ -87,11 +92,16 @@ ffset_options = [
 advanced_options = [
     "EXCLUDED_EXTENSIONS",
     "NAME_SWAP",
-    "YT_DLP_OPTIONS",
     "UPLOAD_PATHS",
-    "USER_COOKIE_FILE",
 ]
-yt_options = ["YT_DESP", "YT_TAGS", "YT_CATEGORY_ID", "YT_PRIVACY_STATUS"]
+ytdlp_options = [
+    "YT_DLP_OPTIONS",
+    "USER_COOKIE_FILE",
+    "YT_DESP",
+    "YT_TAGS",
+    "YT_CATEGORY_ID",
+    "YT_PRIVACY_STATUS",
+]
 mega_options = ["MEGA_EMAIL", "MEGA_PASSWORD"]
 seedr_options = ["SEEDR_EMAIL", "SEEDR_PASSWORD", "SEEDR_DELETE_FOLDER"]
 
@@ -102,18 +112,18 @@ user_settings_text = {
         "<i>Send a photo to save it as custom thumbnail.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     ),
     "RCLONE_CONFIG": (
-        "",
-        "",
+        "rclone.conf file",
+        "Your own rclone config. Used whenever the task runs in USER mode, or when the path starts with <code>mrcc:</code>.",
         "<i>Send your <code>rclone.conf</code> file to use as your Upload Dest to RClone.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     ),
     "TOKEN_PICKLE": (
-        "",
-        "",
+        "token.pickle file",
+        "Your own Google Drive token. Used in USER mode, or when the id starts with <code>mtp:</code>.",
         "<i>Send your <code>token.pickle</code> to use as your Upload Dest to GDrive</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     ),
     "LEECH_SPLIT_SIZE": (
-        "",
-        "",
+        "Size, e.g. 2GB",
+        "Where a file is cut before upload. Capped at what your account allows, so a bigger number is silently clamped.",
         f"Send Leech split size in bytes or use gb or mb. Example: 40000000 or 2.5gb or 1000mb. PREMIUM_USER: {TgClient.IS_PREMIUM_USER}.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     ),
     "USER_SESSION": (
@@ -154,48 +164,48 @@ The message is deleted the moment it arrives.</i>
 ┖ <b>Time Left :</b> <code>60 sec</code>""",
     ),
     "LEECH_PREFIX": (
-        "",
-        "",
+        "Text, HTML allowed",
+        "Goes in front of every leeched name. HTML is kept in the caption and stripped from the filename. Write <code>\\s</code> for a space.",
         "Send Leech Filename Prefix. You can add HTML tags. Example: <code>@mychannel</code>.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     ),
     "LEECH_SUFFIX": (
-        "",
-        "",
+        "Text, HTML allowed",
+        "Goes after the name, before the extension. Same HTML and <code>\\s</code> rules as the prefix.",
         "Send Leech Filename Suffix. You can add HTML tags. Example: <code>@mychannel</code>.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     ),
     "LEECH_CAPTION": (
-        "",
-        "",
+        "Template, HTML allowed",
+        "Replaces the whole caption. Fill in <code>{filename} {size} {duration} {quality} {languages} {subtitles} {md5_hash} {mime_type} {prefilename} {precaption}</code>, then add <code>|find:replace</code> parts to patch the result. Escape a real one with <code>\\|</code> <code>\\{</code> <code>\\}</code>.",
         "Send Leech Caption. You can add HTML tags. Example: <code>@mychannel</code>.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     ),
     "THUMBNAIL_LAYOUT": (
-        "",
-        "",
+        "Grid, e.g. 3x3",
+        "Grabs frames spread across the video and tiles them into one thumbnail. <code>2x2</code> is 4 frames, <code>3x3</code> is 9.",
         "Send thumbnail layout (widthxheight, 2x2, 3x3, 2x4, 4x4, ...). Example: 3x3.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     ),
     "RCLONE_PATH": (
-        "",
-        "",
+        "remote:folder",
+        "Default rclone destination. Prefix with <code>mrcc:</code> to force your own config instead of the owner's.",
         "Send Rclone Path. If you want to use your rclone config edit using owner/user config from usetting or add mrcc: before rclone path. Example mrcc:remote:folder. </i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     ),
     "RCLONE_FLAGS": (
-        "",
-        "",
+        "key:value|key",
+        "Extra flags passed to every rclone call. Separate them with <code>|</code>, and drop the value for a switch.",
         "key:value|key|key|key:value . Check here all <a href='https://rclone.org/flags/'>RcloneFlags</a>\nEx: --buffer-size:8M|--drive-starred-only",
     ),
     "GDRIVE_ID": (
-        "",
-        "",
+        "Folder or Drive id",
+        "Default Google Drive destination. Prefix with <code>mtp:</code> for your own token, <code>tp:</code> for the owner's, <code>sa:</code> for service accounts.",
         "Send Gdrive ID. If you want to use your token.pickle edit using owner/user token from usetting or add mtp: before the id. Example: mtp:F435RGGRDXXXXXX . </i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     ),
     "INDEX_URL": (
-        "",
-        "",
+        "https:// link",
+        "Your index for the drive above. When set, finished tasks also report a direct index link.",
         "Send Index URL for your gdrive option. </i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     ),
     "UPLOAD_PATHS": (
-        "",
-        "",
+        "Dict of aliases",
+        "Short names for long destinations. Once set, <code>-up name</code> is swapped for the real path, id or chat behind it.",
         "Send Dict of keys that have path values. Example: {'path 1': 'remote:rclonefolder', 'path 2': 'gdrive1 id', 'path 3': 'tg chat id', 'path 4': 'mrcc:remote:', 'path 5': b:@username} . </i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     ),
     "LEECH_DUMP_CHATS": (
@@ -211,21 +221,21 @@ A dict works too: <code>{'Movies': -1001234567890}</code></i>
 ┖ <b>Time Left :</b> <code>60 sec</code>""",
     ),
     "EXCLUDED_EXTENSIONS": (
-        "",
-        "",
+        "Space separated",
+        "Extensions never uploaded, written without the dot. <code>aria2</code> and <code>!qB</code> are always kept on top of yours. Applies to leech and mirror, not to /clone.",
         "Send excluded extensions separated by space without dot at beginning. </i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     ),
     "NAME_SWAP": (
-        "",
-        "",
+        "pattern:replace|...",
+        "Regex rewrites run on every filename before upload, in order. Each rule is <code>pattern:replace:count:flag</code> where count 0 means every match and flag is a name like <code>IGNORECASE</code>. Chain rules with <code>|</code>.",
         """<i>Send your Name Swap. You can add pattern instead of normal text according to the format.</i>
 <b>Full Documentation Guide</b> <a href="https://t.me/WZML_X/77">Click Here</a>
 ┖ <b>Time Left :</b> <code>60 sec</code>
 """,
     ),
     "YT_DLP_OPTIONS": (
-        "",
-        "",
+        "Dict of options",
+        "Passed straight into yt-dlp for every yt task. API option names, not command line flags.",
         """Format: {key: value, key: value, key: value}.
 Example: {"format": "bv*+mergeall[vcodec=none]", "nocheckcertificate": True, "playliststart": 10, "fragment_retries": float("inf"), "matchtitle": "S13", "writesubtitles": True, "live_from_start": True, "postprocessor_args": {"ffmpeg": ["-threads", "4"]}, "wait_for_video": (5, 100), "download_ranges": [{"start_time": 0, "end_time": 10}]}
 Check all yt-dlp api options from this <a href='https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L184'>FILE</a> or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to convert cli arguments to api options.
@@ -233,8 +243,8 @@ Check all yt-dlp api options from this <a href='https://github.com/yt-dlp/yt-dlp
 <i>Send dict of YT-DLP Options according to format.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>""",
     ),
     "FFMPEG_CMDS": (
-        "",
-        "",
+        "Dict of lists",
+        "Named ffmpeg runs applied before upload, picked per task with <code>-ff</code>. Start at the arguments, never at the word ffmpeg, and every command needs an <code>-i</code>.",
         """Dict of list values of ffmpeg commands. You can set multiple ffmpeg commands for all files before upload. Don't write ffmpeg at beginning, start directly with the arguments.
 Examples: {"subtitle": ["-i mltb.mkv -c copy -c:s srt mltb.mkv", "-i mltb.video -c copy -c:s srt mltb"], "convert": ["-i mltb.m4a -c:a libmp3lame -q:a 2 mltb.mp3", "-i mltb.audio -c:a libmp3lame -q:a 2 mltb.mp3"], extract: ["-i mltb -map 0:a -c copy mltb.mka -map 0:s -c copy mltb.srt"]}
 Notes:
@@ -250,8 +260,8 @@ Here I will explain how to use mltb.* which is reference to files you want to wo
 """,
     ),
     "METADATA_CMDS": (
-        "",
-        "",
+        "Legacy",
+        "Replaced by Metadata in FF Media Settings.",
         """<i>Send your Meta data. You can set it according to the format title="Join @WZML_X".</i>
 <b>Full Documentation Guide</b> <a href="https://t.me/WZML_X/">Click Here</a>
 ┖ <b>Time Left :</b> <code>60 sec</code>
@@ -393,6 +403,12 @@ Here I will explain how to use mltb.* which is reference to files you want to wo
         "Your Seedr.cc account password for per-user Seedr cloud downloads.",
         "<i>Send your Seedr.cc account password.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
     ),
+    "SEEDR_DELETE_FOLDER": (
+        "On or Off",
+        "Removes the folder from Seedr once the download finishes, so the "
+        "account does not fill up. Toggled from the Seedr Tools panel.",
+        "<i>Toggle it from the Seedr Tools panel.</i>",
+    ),
     "DRIVE_CAT": (
         "Dict",
         'User-defined GDrive categories (name → drive_id). Format: {"name": "drive_id|index_link"}.',
@@ -420,9 +436,12 @@ async def get_user_settings(from_user, stype="main"):
         buttons.data_button("Uphoster Settings", f"userset {user_id} uphoster")
         buttons.data_button("FF Media Settings", f"userset {user_id} ffset")
         buttons.data_button("Clone Settings", f"userset {user_id} clone")
+        buttons.data_button("YT-DLP Settings", f"userset {user_id} ytdlp")
         buttons.data_button(
             "Misc Settings", f"userset {user_id} advanced", position="l_body"
         )
+        buttons.data_button("Export", f"userset {user_id} export", "footer")
+        buttons.data_button("Import", f"userset {user_id} import", "footer")
 
         if user_dict and any(
             key in user_dict
@@ -481,20 +500,13 @@ async def get_user_settings(from_user, stype="main"):
             "Close", f"userset {user_id} close", "footer", style=ButtonStyle.DANGER
         )
 
-        def_cookies = user_dict.get("USE_DEFAULT_COOKIE", False)
-        cookie_mode = "Owner's Cookie" if def_cookies else "User's Cookie"
-        buttons.data_button(
-            f"Swap to {'OWNER' if not def_cookies else 'USER'}'s Cookie File",
-            f"userset {user_id} tog USE_DEFAULT_COOKIE {'f' if def_cookies else 't'}",
-        )
         btns = buttons.build_menu(2)
 
         text = f"""⌬ <b>General Settings :</b>
 ┟ <b>Name</b> → {user_name}
 ┃
 ┠ <b>Default Upload Package</b> → <b>{du}</b>
-┠ <b>Default Usage Mode</b> → <b>{tr}'s</b> token/config
-┖ <b>YT Cookies Mode</b> → <b>{cookie_mode}</b>
+┖ <b>Default Usage Mode</b> → <b>{tr}'s</b> token/config
 """
 
     elif stype == "leech":
@@ -942,7 +954,6 @@ async def get_user_settings(from_user, stype="main"):
         else:
             sd_msg = "Disabled"
 
-        buttons.data_button("YT Up Tools", f"userset {user_id} yttools")
         buttons.data_button("Mega Tools", f"userset {user_id} mega")
         if not Config.DISABLE_SEEDR:
             buttons.data_button("Seedr Tools", f"userset {user_id} seedr")
@@ -1213,14 +1224,6 @@ async def get_user_settings(from_user, stype="main"):
         )
         buttons.data_button("Name Swap", f"userset {user_id} menu NAME_SWAP")
 
-        buttons.data_button("YT-DLP Options", f"userset {user_id} menu YT_DLP_OPTIONS")
-        if user_dict.get("YT_DLP_OPTIONS", False):
-            ytopt = user_dict["YT_DLP_OPTIONS"]
-        elif "YT_DLP_OPTIONS" not in user_dict and Config.YT_DLP_OPTIONS:
-            ytopt = Config.YT_DLP_OPTIONS
-        else:
-            ytopt = "None"
-
         if user_dict.get("UPLOAD_PATHS", False):
             upload_paths = user_dict["UPLOAD_PATHS"]
         elif "UPLOAD_PATHS" not in user_dict and Config.UPLOAD_PATHS:
@@ -1228,14 +1231,6 @@ async def get_user_settings(from_user, stype="main"):
         else:
             upload_paths = "None"
         buttons.data_button("Upload Paths", f"userset {user_id} menu UPLOAD_PATHS")
-
-        yt_cookie_path = f"cookies/{user_id}/cookies.txt"
-        user_cookie_msg = (
-            "Exists" if await aiopath.exists(yt_cookie_path) else "Not Exists"
-        )
-        buttons.data_button(
-            "YT Cookie File", f"userset {user_id} menu USER_COOKIE_FILE"
-        )
 
         buttons.data_button("Back", f"userset {user_id} back", "footer")
         buttons.data_button(
@@ -1248,10 +1243,30 @@ async def get_user_settings(from_user, stype="main"):
 ┃
 ┠ <b>Auto Name Swaps</b> → {ns_msg}
 ┠ <b>Excluded Extensions</b> → <code>{ex_ex}</code>
-┠ <b>Upload Paths</b> → <b>{upload_paths}</b>
-┠ <b>YT-DLP Options</b> → <code>{ytopt}</code>
-┖ <b>YT User Cookie File</b> → <b>{user_cookie_msg}</b>"""
-    elif stype == "yttools":
+┖ <b>Upload Paths</b> → <b>{upload_paths}</b>"""
+    elif stype == "ytdlp":
+        buttons.data_button(
+            "YT-DLP Options", f"userset {user_id} menu YT_DLP_OPTIONS", "header"
+        )
+        if user_dict.get("YT_DLP_OPTIONS", False):
+            ytopt = user_dict["YT_DLP_OPTIONS"]
+        elif "YT_DLP_OPTIONS" not in user_dict and Config.YT_DLP_OPTIONS:
+            ytopt = Config.YT_DLP_OPTIONS
+        else:
+            ytopt = "None"
+
+        yt_cookie_path = f"cookies/{user_id}/cookies.txt"
+        user_cookie_msg = (
+            "Exists" if await aiopath.exists(yt_cookie_path) else "Not Exists"
+        )
+        buttons.data_button("Cookie File", f"userset {user_id} menu USER_COOKIE_FILE")
+        def_cookies = user_dict.get("USE_DEFAULT_COOKIE", False)
+        cookie_mode = "Owner's" if def_cookies else "Yours"
+        buttons.data_button(
+            f"Use {'YOUR' if def_cookies else 'OWNER'} Cookie",
+            f"userset {user_id} tog USE_DEFAULT_COOKIE {'f' if def_cookies else 't'}",
+        )
+
         buttons.data_button("YT Description", f"userset {user_id} menu YT_DESP")
         yt_desp_val = user_dict.get(
             "YT_DESP",
@@ -1288,19 +1303,23 @@ async def get_user_settings(from_user, stype="main"):
             ),
         )
 
-        buttons.data_button("Back", f"userset {user_id} back mirror", "footer")
+        buttons.data_button("Back", f"userset {user_id} back", "footer")
         buttons.data_button(
             "Close", f"userset {user_id} close", "footer", style=ButtonStyle.DANGER
         )
         btns = buttons.build_menu(2)
 
-        text = f"""⌬ <b>YouTube Tools Settings:</b>
+        text = f"""⌬ <b>YT-DLP Settings :</b>
 ┟ <b>Name</b> → {user_name}
 ┃
-┠ <b>YT Description</b> → <code>{escape(str(yt_desp_val))}</code>
-┠ <b>YT Tags</b> → <code>{escape(str(yt_tags_val))}</code>
-┠ <b>YT Category ID</b> → <code>{escape(str(yt_cat_id_val))}</code>
-┖ <b>YT Privacy Status</b> → <code>{escape(str(yt_privacy_val))}</code>"""
+┠ <b>YT-DLP Options</b> → <code>{ytopt}</code>
+┠ <b>Cookie File</b> → <b>{user_cookie_msg}</b>
+┠ <b>Cookie In Use</b> → <b>{cookie_mode}</b>
+┃
+┠ <b>Upload Description</b> → <code>{escape(str(yt_desp_val))}</code>
+┠ <b>Upload Tags</b> → <code>{escape(str(yt_tags_val))}</code>
+┠ <b>Upload Category</b> → <code>{escape(str(yt_cat_id_val))}</code>
+┖ <b>Upload Privacy</b> → <code>{escape(str(yt_privacy_val))}</code>"""
 
     return text, btns
 
@@ -1317,6 +1336,66 @@ async def send_user_settings(_, message):
     handler_dict[from_user.id] = False
     msg, button = await get_user_settings(from_user)
     await send_message(message, msg, button)
+
+
+@new_task
+async def do_export(_, message, rfunc):
+    user_id = message.from_user.id
+    handler_dict[user_id] = False
+    phrase = message.text
+    await delete_message(message)
+    try:
+        blob, count = await SettingsPortal.export(user_id, phrase)
+    except (PortalError, SessionCryptError) as err:
+        await send_message(message, str(err))
+        await rfunc()
+        return
+    finally:
+        phrase = None
+    with BytesIO(blob) as out:
+        out.name = f"wzmlx-settings-{user_id}.json"
+        await send_file(
+            message,
+            out,
+            f"<b>{count} setting(s) exported.</b> Import needs the same "
+            "passphrase, so keep it somewhere safe.",
+        )
+    await rfunc()
+
+
+@new_task
+async def do_import(_, message, rfunc):
+    user_id = message.from_user.id
+    handler_dict[user_id] = False
+    phrase = (message.caption or "").strip()
+    doc = message.document
+    if not phrase:
+        await delete_message(message)
+        await send_message(
+            message, "Send the file again with the passphrase as its caption."
+        )
+        await rfunc()
+        return
+    if doc.file_size > SettingsPortal.MAX_BYTES:
+        await delete_message(message)
+        await send_message(message, "That file is too big to be a settings export.")
+        await rfunc()
+        return
+    blob = await message.download(in_memory=True)
+    await delete_message(message)
+    try:
+        taken, refused = await SettingsPortal.restore(user_id, blob.getvalue(), phrase)
+    except (PortalError, SessionCryptError) as err:
+        await send_message(message, str(err))
+        await rfunc()
+        return
+    finally:
+        phrase = None
+    note = f"<b>Restored {taken} setting(s).</b>"
+    if refused:
+        note += f"\nIgnored: <code>{escape(', '.join(refused))}</code>"
+    await send_message(message, note)
+    await rfunc()
 
 
 @new_task
@@ -1675,8 +1754,8 @@ async def get_menu(option, message, user_id):
         back_to = "rclone"
     elif option in gdrive_options:
         back_to = "gdrive"
-    elif option in yt_options:
-        back_to = "yttools"
+    elif option in ytdlp_options:
+        back_to = "ytdlp"
     elif option in ffset_options:
         back_to = "ffset"
     elif option in advanced_options:
@@ -1911,6 +1990,7 @@ async def edit_user_settings(client, query):
         "rclone",
         "clone",
         "thumb",
+        "ytdlp",
     ]:
         await query.answer()
         await update_user_settings(query, data[2])
@@ -1954,9 +2034,6 @@ async def edit_user_settings(client, query):
             except Exception as e:
                 await query.answer(f"Failed: {e}"[:180], show_alert=True)
         await update_user_settings(query, "seedr")
-    elif data[2] == "yttools":
-        await query.answer()
-        await update_user_settings(query, data[2])
     elif data[2] == "uphoster_destinations":
         await query.answer()
         user_dict = user_data.get(user_id, {})
@@ -2016,6 +2093,36 @@ async def edit_user_settings(client, query):
             return
         await query.answer()
         await set_user_session(client, query)
+    elif data[2] in ["export", "import"]:
+        await query.answer()
+        buttons = ButtonMaker()
+        buttons.data_button("Back", f"userset {user_id} back", "footer")
+        buttons.data_button(
+            "Close", f"userset {user_id} close", "footer", style=ButtonStyle.DANGER
+        )
+        if data[2] == "export":
+            body = (
+                "<i>Send a passphrase to lock the file with. "
+                "You need the same one to import it again, and nobody can "
+                "recover it for you.</i>"
+            )
+            func = do_export
+        else:
+            body = (
+                "<i>Send the exported file with its passphrase as the caption. "
+                "Privileges, uploaded files and login state are never "
+                "restored.</i>"
+            )
+            func = do_import
+        await edit_message(
+            message,
+            f"{LOGO} <b>{data[2].title()} Settings</b>\n\n{body}\n"
+            f"{END} <b>Time Left :</b> <code>60 sec</code>",
+            buttons.build_menu(1),
+        )
+        rfunc = partial(update_user_settings, query, "main")
+        pfunc = partial(func, rfunc=rfunc)
+        await event_handler(client, query, pfunc, rfunc, document=data[2] == "import")
     elif data[2] == "menu":
         await query.answer()
         await get_menu(data[3], message, user_id)
@@ -2026,8 +2133,10 @@ async def edit_user_settings(client, query):
             back_to = "gdrive"
         elif data[3] == "drive_cat_mode":
             back_to = "mirror"
-        elif data[3] in ["USER_TOKENS", "USE_DEFAULT_COOKIE"]:
+        elif data[3] == "USER_TOKENS":
             back_to = "general"
+        elif data[3] == "USE_DEFAULT_COOKIE":
+            back_to = "ytdlp"
         elif data[3] == "GOFILE_AUTO_CREATE_FOLDER":
             back_to = "gofile"
         elif data[3] == "SEEDR_DELETE_FOLDER":

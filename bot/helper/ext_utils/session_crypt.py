@@ -27,12 +27,15 @@ class SessionCrypt:
     SALT_LEN = 16
     NONCE_LEN = 12
     AAD_PREFIX = b"wzmlx.usess.v1:"
+    AAD_EXPORT = b"wzmlx.usettings.v1"
 
     _gate = Semaphore(2)
 
     @classmethod
-    def aad(cls, user_id):
-        return cls.AAD_PREFIX + str(int(user_id)).encode()
+    def aad(cls, scope):
+        if isinstance(scope, (bytes, bytearray)):
+            return bytes(scope)
+        return cls.AAD_PREFIX + str(int(scope)).encode()
 
     @staticmethod
     def salt_of(record):
@@ -73,9 +76,9 @@ class SessionCrypt:
         return await cls.derive_async(passphrase, cls.salt_of(record), n, r, p)
 
     @classmethod
-    def seal_with(cls, key, user_id, plaintext, salt):
+    def seal_with(cls, key, scope, plaintext, salt):
         nonce = urandom(cls.NONCE_LEN)
-        ct = AESGCM(bytes(key)).encrypt(nonce, plaintext.encode(), cls.aad(user_id))
+        ct = AESGCM(bytes(key)).encrypt(nonce, plaintext.encode(), cls.aad(scope))
         return {
             "v": cls.VERSION,
             "kdf": "scrypt",
@@ -88,24 +91,24 @@ class SessionCrypt:
         }
 
     @classmethod
-    def open_with(cls, key, user_id, record):
+    def open_with(cls, key, scope, record):
         try:
             raw = AESGCM(bytes(key)).decrypt(
                 b64decode(record["nonce"]),
                 b64decode(record["ct"]),
-                cls.aad(user_id),
+                cls.aad(scope),
             )
         except (InvalidTag, KeyError, TypeError, ValueError):
             raise BadPassphrase("Wrong passphrase or corrupted record") from None
         return raw.decode()
 
     @classmethod
-    async def seal(cls, passphrase, user_id, plaintext):
+    async def seal(cls, passphrase, scope, plaintext):
         salt = urandom(cls.SALT_LEN)
         key = await cls.derive_async(passphrase, salt)
-        return cls.seal_with(key, user_id, plaintext, salt), key
+        return cls.seal_with(key, scope, plaintext, salt), key
 
     @classmethod
-    async def unseal(cls, passphrase, user_id, record):
+    async def unseal(cls, passphrase, scope, record):
         key = await cls.derive_for(passphrase, record)
-        return cls.open_with(key, user_id, record), key
+        return cls.open_with(key, scope, record), key

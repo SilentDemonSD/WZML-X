@@ -427,19 +427,6 @@ def parse_dest(value):
     return chat, int(thread) if thread.isdigit() else None
 
 
-def migrate_leech_dump(row):
-    if "LEECH_DUMP_CHAT" not in row:
-        return False
-    legacy = str(row.pop("LEECH_DUMP_CHAT") or "").strip()
-    for tag in ("b:", "u:", "h:"):
-        if legacy.startswith(tag):
-            legacy = legacy[len(tag) :].strip()
-            break
-    if legacy and legacy.casefold() != "pm" and not row.get("LEECH_DUMP_CHATS"):
-        row["LEECH_DUMP_CHATS"] = {"Default": legacy}
-    return True
-
-
 def dump_chats_for(user_id):
     owned = Config.LEECH_DUMP_CHATS or {}
     mine = user_data.get(user_id, {}).get("LEECH_DUMP_CHATS")
