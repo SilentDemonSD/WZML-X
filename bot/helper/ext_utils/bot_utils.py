@@ -427,6 +427,14 @@ def parse_dest(value):
     return chat, int(thread) if thread.isdigit() else None
 
 
+def dump_chats_for(user_id):
+    owned = Config.LEECH_DUMP_CHATS or {}
+    mine = user_data.get(user_id, {}).get("LEECH_DUMP_CHATS")
+    if not isinstance(mine, dict) or not mine:
+        return dict(owned)
+    return {**owned, **mine}
+
+
 class GitInfo:
     def __init__(self):
         self._hash = ""

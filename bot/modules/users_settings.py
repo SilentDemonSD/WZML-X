@@ -23,6 +23,7 @@ from ..core.tg_client import TgClient
 from ..helper.ext_utils.bot_utils import (
     get_size_bytes,
     new_task,
+    parse_dest,
     update_user_ldata,
 )
 from ..helper.ext_utils.db_handler import database
@@ -37,6 +38,7 @@ from ..helper.ext_utils.status_utils import (
 )
 from ..helper.telegram_helper.button_build import ButtonMaker
 from ..helper.telegram_helper.prompt import STOP, ask_in_pm
+from ..helper.telegram_helper.tg_utils import chat_info
 from ..helper.telegram_helper.message_utils import (
     delete_message,
     edit_message,
@@ -84,6 +86,7 @@ ffset_options = [
     "SUBTITLE_METADATA",
 ]
 advanced_options = [
+    "LEECH_DUMP_CHATS",
     "EXCLUDED_EXTENSIONS",
     "NAME_SWAP",
     "YT_DLP_OPTIONS",
@@ -206,6 +209,16 @@ The message is deleted the moment it arrives.</i>
         "",
         "",
         "Send Dict of keys that have path values. Example: {'path 1': 'remote:rclonefolder', 'path 2': 'gdrive1 id', 'path 3': 'tg chat id', 'path 4': 'mrcc:remote:', 'path 5': b:@username} . </i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
+    ),
+    "LEECH_DUMP_CHATS": (
+        "Name and chat id per line",
+        "Your own named dump chats, selectable per task with -ud. Merged over "
+        "the owner's list, and your name wins on a clash. Every chat is checked "
+        "at set time, so the bot must already be an admin there.",
+        """<i>One per line: <code>Movies -1001234567890</code>
+Add a topic with a pipe: <code>Movies -1001234567890|12</code>
+A dict works too: <code>{'Movies': -1001234567890}</code></i>
+┖ <b>Time Left :</b> <code>60 sec</code>""",
     ),
     "EXCLUDED_EXTENSIONS": (
         "",
@@ -405,6 +418,8 @@ async def get_user_settings(from_user, stype="main"):
     rclone_conf = f"rclone/{user_id}.conf"
     token_pickle = f"tokens/{user_id}.pickle"
     user_dict = user_data.get(user_id, {})
+    text = f"⌬ <b>User Settings :</b>\n┖ <b>Unknown page</b> → <code>{escape(str(stype))}</code>"
+    btns = None
 
     if stype == "main":
         buttons.data_button(
@@ -1075,6 +1090,7 @@ async def get_user_settings(from_user, stype="main"):
         buttons.data_button(
             "Close", f"userset {user_id} close", "footer", style=ButtonStyle.DANGER
         )
+        btns = buttons.build_menu(2)
 
         dests = user_dict.get("CLONE_DUMP_CHATS") or {}
         dests = ", ".join(dests) if dests else "None"
@@ -1172,6 +1188,15 @@ async def get_user_settings(from_user, stype="main"):
 
     elif stype == "advanced":
         buttons.data_button(
+            "Leech Dump Chats", f"userset {user_id} menu LEECH_DUMP_CHATS"
+        )
+        my_dumps = user_dict.get("LEECH_DUMP_CHATS") or {}
+        owner_dumps = Config.LEECH_DUMP_CHATS or {}
+        dump_msg = ", ".join(my_dumps) if my_dumps else "None"
+        if extra := len(set(owner_dumps) - set(my_dumps)):
+            dump_msg += f" (+{extra} from owner)"
+
+        buttons.data_button(
             "Excluded Extensions", f"userset {user_id} menu EXCLUDED_EXTENSIONS"
         )
         if user_dict.get("EXCLUDED_EXTENSIONS", False):
@@ -1224,6 +1249,7 @@ async def get_user_settings(from_user, stype="main"):
         text = f"""⌬ <b>Advanced Settings :</b>
 ┟ <b>Name</b> → {user_name}
 ┃
+┠ <b>Leech Dump Chats</b> → <code>{escape(dump_msg)}</code>
 ┠ <b>Auto Name Swaps</b> → {ns_msg}
 ┠ <b>Excluded Extensions</b> → <code>{ex_ex}</code>
 ┠ <b>Upload Paths</b> → <b>{upload_paths}</b>
@@ -1335,13 +1361,70 @@ def validate_ffmpeg_cmds(value):
                 raise ValueError(f"'{key}' has a command without an -i input: {cmd}")
 
 
+async def verify_dump_chats(message, pairs):
+    chats = {}
+    for name, dest in pairs:
+        chat, thread = parse_dest(str(dest).strip())
+        found = await chat_info(chat)
+        if not found:
+            await send_message(
+                message,
+                f"Cannot reach <code>{escape(str(chat))}</code>. "
+                "Add the bot there as an admin first.",
+            )
+            return None
+        chats[str(name).strip()] = f"{found.id}|{thread}" if thread else found.id
+    if not chats:
+        await send_message(message, "Nothing to set!")
+        return None
+    return chats
+
+
+async def parse_dump_chats(message, text):
+    text = text.strip()
+    if text.startswith("{") and text.endswith("}"):
+        try:
+            raw = literal_eval(text)
+            if not isinstance(raw, dict):
+                raise ValueError
+        except Exception:
+            await send_message(
+                message, "Must be a dict. Example: {'Movies': -1001234567890}"
+            )
+            return None
+        return await verify_dump_chats(message, raw.items())
+    pairs = []
+    for line in text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        name, _, dest = line.rpartition(" ")
+        if not name or not dest:
+            await send_message(
+                message,
+                f"Bad entry: <code>{escape(line)}</code>\n"
+                "Use: <code>Movies -1001234567890</code>",
+            )
+            return None
+        pairs.append((name, dest))
+    return await verify_dump_chats(message, pairs)
+
+
 @new_task
 async def add_one(_, message, option, rfunc):
     user_id = message.from_user.id
     handler_dict[user_id] = False
     user_dict = user_data.get(user_id, {})
     value = message.text
-    if value.startswith("{") and value.endswith("}"):
+    if option == "LEECH_DUMP_CHATS":
+        value = await parse_dump_chats(message, value)
+        if value is None:
+            return
+        if user_dict.get(option):
+            user_dict[option].update(value)
+        else:
+            update_user_ldata(user_id, option, value)
+    elif value.startswith("{") and value.endswith("}"):
         try:
             value = literal_eval(value)
             if not isinstance(value, dict):
@@ -1399,7 +1482,10 @@ async def set_option(_, message, option, rfunc):
         if not value.isdigit():
             value = get_size_bytes(value)
         value = min(int(value), TgClient.MAX_SPLIT_SIZE)
-    # elif option == "LEECH_DUMP_CHAT": # TODO: Add
+    elif option == "LEECH_DUMP_CHATS":
+        value = await parse_dump_chats(message, value)
+        if value is None:
+            return
     elif option == "CLONE_CONTENT_TYPE":
         value = value.strip().lower()
         if value in ("media", "medias"):
@@ -1567,7 +1653,13 @@ async def get_menu(option, message, user_id):
             buttons.data_button(
                 "View Thumb", f"userset {user_id} view THUMBNAIL", "header"
             )
-        elif option in ["YT_DLP_OPTIONS", "FFMPEG_CMDS", "UPLOAD_PATHS", "DRIVE_CAT"]:
+        elif option in [
+            "YT_DLP_OPTIONS",
+            "FFMPEG_CMDS",
+            "UPLOAD_PATHS",
+            "DRIVE_CAT",
+            "LEECH_DUMP_CHATS",
+        ]:
             buttons.data_button(
                 "Add One", f"userset {user_id} addone {option}", "header"
             )
@@ -1645,6 +1737,15 @@ async def get_menu(option, message, user_id):
                 )
             val = "\n   ".join(lines)
         elif not val:
+            val = "<b>Not Exists</b>"
+
+    elif option == "LEECH_DUMP_CHATS":
+        if isinstance(val, dict) and val:
+            val = "\n   " + "\n   ".join(
+                f"  <b>{escape(str(name))}</b>: <code>{escape(str(dest))}</code>"
+                for name, dest in val.items()
+            )
+        else:
             val = "<b>Not Exists</b>"
 
     elif option in ["FFMPEG_CMDS", "YT_DLP_OPTIONS", "UPLOAD_PATHS"]:

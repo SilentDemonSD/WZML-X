@@ -32,8 +32,9 @@ nothing touches disk.
 /cmd https://t.me/channel/55-90 -ud A -ct med -xn sample
 
 <b>Destinations</b>: -ud
-Space separated. Each one is looked up in LEECH_DUMP_CHATS by name first,
-then treated as a raw id, @username, or id|topic_id. Duplicates are dropped.
+Space separated. Each one is looked up by name in your own Leech Dump Chats
+(Misc Settings) and then the owner's LEECH_DUMP_CHATS, before being treated as a
+raw id, @username, or id|topic_id. Duplicates are dropped.
 With no -ud the clone destinations from your user settings are used.
 
 <b>Content type</b>: -ct doc | med | all
@@ -133,8 +134,10 @@ when you should use b:(leech by bot)? When your default settings is leech by use
 -up id/@username|topic_id(leech in specific chat and topic) add | without space and write topic id after chat id or username.
 
 <b>Named dump chats</b>: -ud
--ud name (picks a chat from LEECH_DUMP_CHATS set by the owner, e.g. -ud A)
+-ud name (picks a chat by name, e.g. -ud A)
 -ud id/@username (raw chat id or username works too)
+Names come from your own Leech Dump Chats in Misc Settings, merged over the owner's
+LEECH_DUMP_CHATS. On a clash your own wins.
 If the name is not configured, buttons are shown to pick one of the configured dumps.
 The chosen chat becomes the upload destination for that task, overriding LEECH_LOG_CHAT.
 

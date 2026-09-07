@@ -27,6 +27,7 @@ from ..core.cpu import ffmpeg_layout
 from ..core.tg_client import TgClient
 from ..helper.ext_utils.bot_lock import ff_lock
 from .ext_utils.bot_utils import (
+    dump_chats_for,
     fetch_drive_cat,
     get_size_bytes,
     new_task,
@@ -270,7 +271,7 @@ class TaskConfig:
         self.clone_dests = await self.resolve_clone_dests()
 
     async def resolve_dump_dest(self, wanted):
-        dump_chats = Config.LEECH_DUMP_CHATS or {}
+        dump_chats = dump_chats_for(self.user_id)
         found = dump_chats.get(wanted)
         if found is not None:
             return found

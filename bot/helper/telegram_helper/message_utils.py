@@ -756,12 +756,18 @@ async def open_dump_chat_btns(message, dump_chats, invalid_name=None):
         buttons.build_menu(3),
     )
     start_time = time()
-    bot_cache[cache_key] = [dump_chats.get(selected_name), False, False, start_time]
+    bot_cache[cache_key] = [
+        dump_chats.get(selected_name),
+        False,
+        False,
+        start_time,
+        dump_chats,
+    ]
     while time() - start_time <= 60:
         await sleep(0.5)
         if bot_cache[cache_key][1] or bot_cache[cache_key][2]:
             break
-    up_dest, _, is_cancelled, __ = bot_cache[cache_key]
+    up_dest, _, is_cancelled, _start, _chats = bot_cache[cache_key]
     if not is_cancelled:
         await delete_message(prompt)
     else:
