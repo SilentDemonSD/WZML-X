@@ -98,10 +98,9 @@ class TaskConfig:
         self.link = ""
         self.up_dest = ""
         self.drive_id = ""
-        self.leech_dest = ""
+        self.leech_dests = []
         self.cmd_up_dest = ""
         self.cmd_thread_id = None
-        self.leech_thread_id = None
         self.dump_dest = ""
         self.rc_flags = ""
         self.tag = ""
@@ -269,6 +268,17 @@ class TaskConfig:
         }
         self.clone_filter = MessageFilter(picked, exts, patterns)
         self.clone_dests = await self.resolve_clone_dests()
+
+    def own_leech_dests(self):
+        mine = self.user_dict.get("LEECH_DUMP_CHATS")
+        if not isinstance(mine, dict):
+            return []
+        seats = []
+        for one in mine.values():
+            seat = parse_dest(one)
+            if seat[0] and seat not in seats:
+                seats.append(seat)
+        return seats
 
     async def resolve_dump_dest(self, wanted):
         dump_chats = dump_chats_for(self.user_id)
@@ -549,9 +559,7 @@ class TaskConfig:
                 ) != self.get_config_path(self.up_dest):
                     raise ValueError("You must use the same config to clone!")
         else:
-            self.leech_dest, self.leech_thread_id = parse_dest(
-                self.user_dict.get("LEECH_DUMP_CHAT")
-            )
+            self.leech_dests = self.own_leech_dests()
 
             self.cmd_up_dest = self.up_dest
             if self.cmd_up_dest:

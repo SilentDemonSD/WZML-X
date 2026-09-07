@@ -33,7 +33,7 @@ nothing touches disk.
 
 <b>Destinations</b>: -ud
 Space separated. Each one is looked up by name in your own Leech Dump Chats
-(Misc Settings) and then the owner's LEECH_DUMP_CHATS, before being treated as a
+(Leech Settings) and then the owner's LEECH_DUMP_CHATS, before being treated as a
 raw id, @username, or id|topic_id. Duplicates are dropped.
 With no -ud the clone destinations from your user settings are used.
 
@@ -136,7 +136,7 @@ when you should use b:(leech by bot)? When your default settings is leech by use
 <b>Named dump chats</b>: -ud
 -ud name (picks a chat by name, e.g. -ud A)
 -ud id/@username (raw chat id or username works too)
-Names come from your own Leech Dump Chats in Misc Settings, merged over the owner's
+Names come from your own Leech Dump Chats in Leech Settings, merged over the owner's
 LEECH_DUMP_CHATS. On a clash your own wins.
 If the name is not configured, buttons are shown to pick one of the configured dumps.
 The chosen chat becomes the upload destination for that task, overriding LEECH_LOG_CHAT.

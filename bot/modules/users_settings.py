@@ -57,14 +57,13 @@ clone_options = [
 ]
 
 leech_options = [
-    "THUMBNAIL",
     "LEECH_SPLIT_SIZE",
-    "LEECH_DUMP_CHAT",
+    "LEECH_DUMP_CHATS",
     "LEECH_PREFIX",
     "LEECH_SUFFIX",
     "LEECH_CAPTION",
-    "THUMBNAIL_LAYOUT",
 ]
+thumb_options = ["THUMBNAIL", "THUMBNAIL_LAYOUT"]
 uphoster_options = [
     "GOFILE_TOKEN",
     "GOFILE_FOLDER_ID",
@@ -86,7 +85,6 @@ ffset_options = [
     "SUBTITLE_METADATA",
 ]
 advanced_options = [
-    "LEECH_DUMP_CHATS",
     "EXCLUDED_EXTENSIONS",
     "NAME_SWAP",
     "YT_DLP_OPTIONS",
@@ -155,16 +153,6 @@ The message is deleted the moment it arrives.</i>
         """<i>Send a dict. Example: {'mn': '1080p', 'xc': 'sample'}</i>
 ┖ <b>Time Left :</b> <code>60 sec</code>""",
     ),
-    "LEECH_DUMP_CHAT": (
-        "",
-        "",
-        """Send leech destination ID/USERNAME/PM. 
-* b:id/@username/pm (b: means leech by bot) (id or username of the chat or write pm means private message so bot will send the files in private to you) when you should use b:(leech by bot)? When your default settings is leech by user and you want to leech by bot for specific task.
-* u:id/@username(u: means leech by user) This in case OWNER added USER_STRING_SESSION.
-* h:id/@username(hybrid leech) h: to upload files by bot and user based on file size.
-* id/@username|topic_id(leech in specific chat and topic) add | without space and write topic id after chat id or username.
-┖ <b>Time Left :</b> <code>60 sec</code>""",
-    ),
     "LEECH_PREFIX": (
         "",
         "",
@@ -212,9 +200,11 @@ The message is deleted the moment it arrives.</i>
     ),
     "LEECH_DUMP_CHATS": (
         "Name and chat id per line",
-        "Your own named dump chats, selectable per task with -ud. Merged over "
-        "the owner's list, and your name wins on a clash. Every chat is checked "
-        "at set time, so the bot must already be an admin there.",
+        "Your own leech dump chats. Every leech gets copied to all of them, and "
+        "each is selectable per task by name with -ud. Names are merged over the "
+        "owner's list and yours wins a clash. Independent of the clone "
+        "destinations. Every chat is checked at set time, so the bot must already "
+        "be an admin there.",
         """<i>One per line: <code>Movies -1001234567890</code>
 Add a topic with a pipe: <code>Movies -1001234567890|12</code>
 A dict works too: <code>{'Movies': -1001234567890}</code></i>
@@ -508,9 +498,9 @@ async def get_user_settings(from_user, stype="main"):
 """
 
     elif stype == "leech":
-        thumbpath = f"thumbnails/{user_id}.jpg"
-        buttons.data_button("Thumbnail", f"userset {user_id} menu THUMBNAIL")
-        thumbmsg = "Exists" if await aiopath.exists(thumbpath) else "Not Exists"
+        buttons.data_button(
+            "Thumbnail Settings", f"userset {user_id} thumb", position="header"
+        )
         buttons.data_button(
             "Leech Split Size", f"userset {user_id} menu LEECH_SPLIT_SIZE"
         )
@@ -519,14 +509,12 @@ async def get_user_settings(from_user, stype="main"):
         else:
             split_size = Config.LEECH_SPLIT_SIZE
         buttons.data_button(
-            "Leech Destination", f"userset {user_id} menu LEECH_DUMP_CHAT"
+            "Leech Dump Chats", f"userset {user_id} menu LEECH_DUMP_CHATS"
         )
-        if user_dict.get("LEECH_DUMP_CHAT", False):
-            leech_dest = user_dict["LEECH_DUMP_CHAT"]
-        elif "LEECH_DUMP_CHAT" not in user_dict and Config.LEECH_LOG_CHAT:
-            leech_dest = Config.LEECH_LOG_CHAT
-        else:
-            leech_dest = "None"
+        my_dumps = user_dict.get("LEECH_DUMP_CHATS") or {}
+        leech_dest = ", ".join(my_dumps) if my_dumps else "None"
+        if extra := len(set(Config.LEECH_DUMP_CHATS or {}) - set(my_dumps)):
+            leech_dest += f" (+{extra} owner named)"
         buttons.data_button("Leech Prefix", f"userset {user_id} menu LEECH_PREFIX")
         if user_dict.get("LEECH_PREFIX", False):
             lprefix = user_dict["LEECH_PREFIX"]
@@ -590,6 +578,35 @@ async def get_user_settings(from_user, stype="main"):
                 "Enable Media Group", f"userset {user_id} tog MEDIA_GROUP t"
             )
             media_group = "Disabled"
+        buttons.data_button("Back", f"userset {user_id} back", "footer")
+        buttons.data_button(
+            "Close", f"userset {user_id} close", "footer", style=ButtonStyle.DANGER
+        )
+        btns = buttons.build_menu(2)
+
+        text = f"""⌬ <b>Leech Settings :</b>
+┟ <b>Name</b> → {user_name}
+┃
+┠ Leech Type → <b>{ltype}</b>
+┠ Leech Split Size → <b>{get_readable_file_size(split_size)}</b>
+┠ Equal Splits → <b>{equal_splits}</b>
+┠ Media Group → <b>{media_group}</b>
+┠ Leech Prefix → <code>{escape(lprefix)}</code>
+┠ Leech Suffix → <code>{escape(lsuffix)}</code>
+┠ Leech Caption → <code>{escape(lcap)}</code>
+┖ Leech Dump Chats → <code>{escape(leech_dest)}</code>
+"""
+
+    elif stype == "thumb":
+        thumbpath = f"thumbnails/{user_id}.jpg"
+        thumbmsg = "Exists" if await aiopath.exists(thumbpath) else "Not Exists"
+        buttons.data_button(
+            "Custom Thumbnail", f"userset {user_id} menu THUMBNAIL", position="header"
+        )
+        if await aiopath.exists(thumbpath):
+            buttons.data_button(
+                "View Thumb", f"userset {user_id} view THUMBNAIL", "header"
+            )
         if (
             user_dict.get("AUTO_THUMBNAIL", False)
             or "AUTO_THUMBNAIL" not in user_dict
@@ -604,36 +621,25 @@ async def get_user_settings(from_user, stype="main"):
                 "Enable Auto Thumbnail", f"userset {user_id} tog AUTO_THUMBNAIL t"
             )
             auto_thumb = "Disabled"
-        buttons.data_button(
-            "Thumbnail Layout", f"userset {user_id} menu THUMBNAIL_LAYOUT"
-        )
+        buttons.data_button("Layout", f"userset {user_id} menu THUMBNAIL_LAYOUT")
         if user_dict.get("THUMBNAIL_LAYOUT", False):
             thumb_layout = user_dict["THUMBNAIL_LAYOUT"]
         elif "THUMBNAIL_LAYOUT" not in user_dict and Config.THUMBNAIL_LAYOUT:
             thumb_layout = Config.THUMBNAIL_LAYOUT
         else:
             thumb_layout = "None"
-
-        buttons.data_button("Back", f"userset {user_id} back", "footer")
+        buttons.data_button("Back", f"userset {user_id} back leech", "footer")
         buttons.data_button(
             "Close", f"userset {user_id} close", "footer", style=ButtonStyle.DANGER
         )
         btns = buttons.build_menu(2)
 
-        text = f"""⌬ <b>Leech Settings :</b>
+        text = f"""⌬ <b>Thumbnail Settings :</b>
 ┟ <b>Name</b> → {user_name}
 ┃
-┠ Leech Type → <b>{ltype}</b>
-┠ Leech Thumbnail → <b>{thumbmsg}</b>
-┠ Leech Split Size → <b>{get_readable_file_size(split_size)}</b>
-┠ Equal Splits → <b>{equal_splits}</b>
-┠ Media Group → <b>{media_group}</b>
-┠ Leech Prefix → <code>{escape(lprefix)}</code>
-┠ Leech Suffix → <code>{escape(lsuffix)}</code>
-┠ Leech Caption → <code>{escape(lcap)}</code>
-┠ Leech Destination → <code>{leech_dest}</code>
-┠ Thumbnail Layout → <b>{thumb_layout}</b>
-┖ Auto Thumbnail → <b>{auto_thumb}</b>
+┠ <b>Custom Thumbnail</b> → <b>{thumbmsg}</b>
+┠ <b>Auto Thumbnail</b> → <b>{auto_thumb}</b>
+┖ <b>Layout</b> → <b>{thumb_layout}</b>
 """
 
     elif stype == "uphoster":
@@ -1188,15 +1194,6 @@ async def get_user_settings(from_user, stype="main"):
 
     elif stype == "advanced":
         buttons.data_button(
-            "Leech Dump Chats", f"userset {user_id} menu LEECH_DUMP_CHATS"
-        )
-        my_dumps = user_dict.get("LEECH_DUMP_CHATS") or {}
-        owner_dumps = Config.LEECH_DUMP_CHATS or {}
-        dump_msg = ", ".join(my_dumps) if my_dumps else "None"
-        if extra := len(set(owner_dumps) - set(my_dumps)):
-            dump_msg += f" (+{extra} from owner)"
-
-        buttons.data_button(
             "Excluded Extensions", f"userset {user_id} menu EXCLUDED_EXTENSIONS"
         )
         if user_dict.get("EXCLUDED_EXTENSIONS", False):
@@ -1249,7 +1246,6 @@ async def get_user_settings(from_user, stype="main"):
         text = f"""⌬ <b>Advanced Settings :</b>
 ┟ <b>Name</b> → {user_name}
 ┃
-┠ <b>Leech Dump Chats</b> → <code>{escape(dump_msg)}</code>
 ┠ <b>Auto Name Swaps</b> → {ns_msg}
 ┠ <b>Excluded Extensions</b> → <code>{ex_ex}</code>
 ┠ <b>Upload Paths</b> → <b>{upload_paths}</b>
@@ -1671,7 +1667,9 @@ async def get_menu(option, message, user_id):
             buttons.data_button("Reset", f"userset {user_id} reset {option}")
         elif await aiopath.exists(file_dict[option]):
             buttons.data_button("Remove", f"userset {user_id} remove {option}")
-    if option in leech_options:
+    if option in thumb_options:
+        back_to = "thumb"
+    elif option in leech_options:
         back_to = "leech"
     elif option in rclone_options:
         back_to = "rclone"
@@ -1912,6 +1910,7 @@ async def edit_user_settings(client, query):
         "gdrive",
         "rclone",
         "clone",
+        "thumb",
     ]:
         await query.answer()
         await update_user_settings(query, data[2])
@@ -2033,6 +2032,8 @@ async def edit_user_settings(client, query):
             back_to = "gofile"
         elif data[3] == "SEEDR_DELETE_FOLDER":
             back_to = "seedr"
+        elif data[3] == "AUTO_THUMBNAIL":
+            back_to = "thumb"
         else:
             back_to = "leech"
         await update_user_settings(query, stype=back_to)
