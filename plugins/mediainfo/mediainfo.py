@@ -5,6 +5,7 @@ from shlex import split
 from aiofiles import open as aiopen
 from aiofiles.os import mkdir, path as aiopath, remove as aioremove
 from aiohttp import ClientSession
+from pyrogram.types import LinkPreviewOptions
 
 from bot import LOGGER
 from bot.core.tg_client import TgClient
@@ -58,7 +59,7 @@ async def gen_mediainfo(message, link=None, media=None, mmsg=None):
     link_id = (await telegraph.create_page(title="MediaInfo X", content=tc))["path"]
     await temp_send.edit(
         f"<b>MediaInfo:</b>\n\n➲ <b>Link :</b> https://graph.org/{link_id}",
-        disable_web_page_preview=False,
+        link_preview_options=LinkPreviewOptions(is_disabled=False),
     )
 
 

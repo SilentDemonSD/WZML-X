@@ -6,6 +6,7 @@ from re import IGNORECASE, findall, search
 from imdbio import search_title, get_movie, get_akas, get_media_gallery
 from pycountry import countries as conn
 from pyrogram.errors import MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty
+from pyrogram.types import ReplyParameters
 
 from bot.core.tg_client import TgClient
 from bot.core.config_manager import Config
@@ -556,7 +557,7 @@ async def imdb_callback(_, query):
                         chat_id=reply_to.chat.id,
                         caption=cap,
                         photo=poster,
-                        reply_to_message_id=reply_to.id,
+                        reply_parameters=ReplyParameters(message_id=reply_to.id),
                         reply_markup=buttons,
                     )
                 except (MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty):

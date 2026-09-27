@@ -5,6 +5,7 @@ from aiofiles.os import remove as aioremove
 from pyrogram import Client, __version__ as wzgram_version
 from bot.version import get_version
 from pyrogram.enums import ChatType
+from pyrogram.types import LinkPreviewOptions
 from pyrogram.filters import create, user, text, private
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
 from pyrogram.errors import (
@@ -343,7 +344,7 @@ async def gen_pyro_string(_, message):
             f"<code>{session_string}</code>\n\n"
             f"<b>WZGram v{wzgram_version} | WZML-X {get_version()}</b>\n"
             f"<b>Via <a href='https://github.com/SilentDemonSD/WZML-X'>WZML-X</a> [ @WZML_X ]</b>",
-            disable_web_page_preview=True,
+            link_preview_options=LinkPreviewOptions(is_disabled=True),
         )
         await _safe_disconnect(pyro_client)
         await edit_message(

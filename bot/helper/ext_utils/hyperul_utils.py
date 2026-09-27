@@ -3,6 +3,7 @@ from asyncio import sleep
 from PIL import Image
 from pyrogram import StopTransmission
 from pyrogram.errors import FloodWait, PhotoInvalidDimensions
+from pyrogram.types import ReplyParameters
 
 try:
     from pyrogram.errors import FloodPremiumWait
@@ -44,7 +45,7 @@ class HypertgUpload(HypertgTransfer):
         file_path,
         cap_mono,
         reply_target,
-        reply_to_message_id,
+        reply_msg_id,
         force_document=False,
         user_thumb=None,
         user_session=False,
@@ -139,9 +140,7 @@ class HypertgUpload(HypertgTransfer):
         try:
             if use_hyper:
                 hyper_rply = (
-                    reply_to_message_id
-                    if upload_chat_id == reply_target.chat.id
-                    else None
+                    reply_msg_id if upload_chat_id == reply_target.chat.id else None
                 )
                 sent = await self._hyper_send(
                     file_path,
@@ -160,9 +159,7 @@ class HypertgUpload(HypertgTransfer):
                 )
             else:
                 direct_rply = (
-                    reply_to_message_id
-                    if upload_chat_id == reply_target.chat.id
-                    else None
+                    reply_msg_id if upload_chat_id == reply_target.chat.id else None
                 )
                 sent = await self._direct_send(
                     file_path,
@@ -233,7 +230,7 @@ class HypertgUpload(HypertgTransfer):
         thumb,
         cap_mono,
         chat_id,
-        reply_to_message_id,
+        reply_msg_id,
         thread_id=None,
         duration=0,
         width=0,
@@ -262,8 +259,8 @@ class HypertgUpload(HypertgTransfer):
             }
             if cap_mono:
                 kwargs["caption"] = cap_mono
-            if reply_to_message_id:
-                kwargs["reply_to_message_id"] = reply_to_message_id
+            if reply_msg_id:
+                kwargs["reply_parameters"] = ReplyParameters(message_id=reply_msg_id)
             elif thread_id:
                 kwargs["message_thread_id"] = thread_id
 
@@ -308,7 +305,7 @@ class HypertgUpload(HypertgTransfer):
         thumb,
         cap_mono,
         chat_id,
-        reply_to_message_id,
+        reply_msg_id,
         thread_id=None,
         duration=0,
         width=0,
@@ -328,8 +325,8 @@ class HypertgUpload(HypertgTransfer):
         }
         if cap_mono:
             kwargs["caption"] = cap_mono
-        if reply_to_message_id:
-            kwargs["reply_to_message_id"] = reply_to_message_id
+        if reply_msg_id:
+            kwargs["reply_parameters"] = ReplyParameters(message_id=reply_msg_id)
         elif thread_id:
             kwargs["message_thread_id"] = thread_id
 
