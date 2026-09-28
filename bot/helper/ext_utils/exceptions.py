@@ -1,22 +1,22 @@
 class DirectDownloadLinkException(Exception):
-    """Not method found for extracting direct download link from the http link"""
+    """No method found for extracting direct download link from the HTTP link"""
 
     pass
 
 
 class NotSupportedExtractionArchive(Exception):
-    """The archive format use is trying to extract is not supported"""
-
+    """The archive format being used for extraction is not supported"""
+    
     pass
 
 
 class RssShutdownException(Exception):
-    """This exception should be raised when shutdown is called to stop the montior"""
+    """This exception should be raised when shutdown is called to stop the monitor"""
 
     pass
 
 
 class TgLinkException(Exception):
-    """No Access granted for this chat"""
+    """No access granted for this chat"""
 
     pass
