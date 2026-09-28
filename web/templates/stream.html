@@ -3031,6 +3031,16 @@
                 var subs = (info && info.subtitle) || [];
                 lmLog("probe: " + auds.length + " audio, " + subs.length + " subtitle");
 
+                var codec = auds.length ? auds[0].codec || "" : "";
+                if (codec && !/^(aac|mp3|opus|vorbis|flac|pcm_)/.test(codec)) {
+                    lmLog("native plays " + codec + " silently, decoding directly");
+                    customElements.whenDefined(MERGE ? "merged-video" : "libmedia-video")
+                        .then(function () {
+                            if (lmEl || (MERGE && !vid.useAdvanced)) return;
+                            startLibmedia(Math.max(0, vid.currentTime || 0));
+                        }).catch(lmErr);
+                }
+
                 if (auds.length > 1) {
                     dropdown(el("audDd"), "Audio",
                         [{ items: auds.map(function (t, i) {
