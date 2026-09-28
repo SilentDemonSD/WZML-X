@@ -8,6 +8,7 @@ from aiofiles import open as aiopen
 from aiofiles.os import path as aiopath, remove
 from pytz import timezone
 from pyrogram.enums import ButtonStyle
+from pyrogram.types import LinkPreviewOptions
 
 from bot.version import get_version
 
@@ -75,7 +76,7 @@ async def _send_msg(cid, msg):
         await TgClient.bot.send_message(
             chat_id=cid,
             text=msg,
-            disable_web_page_preview=True,
+            link_preview_options=LinkPreviewOptions(is_disabled=True),
             disable_notification=True,
         )
     except Exception as e:
@@ -110,7 +111,7 @@ async def restart_notification():
                 chat_id=chat_id,
                 message_id=msg_id,
                 text=_restart_header(now, is_restart_chat=True),
-                disable_web_page_preview=True,
+                link_preview_options=LinkPreviewOptions(is_disabled=True),
             )
         except Exception as e:
             LOGGER.error(e)
@@ -208,7 +209,7 @@ async def confirm_restart(_, query):
                     chat_id=restart_msg.chat.id,
                     message_id=restart_msg.id,
                     text=_restart_header(datetime.now(timezone(Config.TIMEZONE))),
-                    disable_web_page_preview=True,
+                    link_preview_options=LinkPreviewOptions(is_disabled=True),
                 )
             except Exception as e:
                 LOGGER.error(e)
