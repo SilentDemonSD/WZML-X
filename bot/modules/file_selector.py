@@ -153,10 +153,9 @@ async def confirm_selection(_, query):
                                     await remove(f_path)
                                 except Exception:
                                     pass
-                tor_info = (
-                    await TorrentManager.qbittorrent.torrents.info(hashes=[id_])
-                )[0]
-                task.listener.size = tor_info.size
+                task.listener.size = sum(
+                    f.size for f in res if f.priority != 0
+                )
                 if await _selection_limit_exceeded(task, message):
                     return
                 if not task.queued:

@@ -77,7 +77,10 @@ async def _size_check(tor, tag):
             if tag in qb_torrents:
                 qb_torrents[tag]["size_check"] = False
             return
-        task.listener.size = tor.size
+        # Don't clobber the selected-files size set in file_selector after
+        # the user picked files; tor.size is the full torrent size.
+        if not task.listener.files_selected:
+            task.listener.size = tor.size
         mmsg = await limit_checker(task.listener)
         if mmsg:
             await _on_download_error(mmsg, tor, is_limit=True)
