@@ -8,6 +8,7 @@ aioaria2
 aioqbt
 imdbio
 cloudscraper
+cryptography==46.0.7
 dnspython
 fastapi
 feedparser

@@ -7,7 +7,7 @@ DATABASE_URL = ""
 
 # OPTIONAL CONFIG
 DEFAULT_LANG = "en"
-TG_PROXY = {}  # {"scheme": ”socks5”, "hostname": ””, "port": 1234, "username": ”user”, "password": ”pass”}
+TG_PROXY = None  # {"scheme": ”socks5”, "hostname": ””, "port": 1234, "username": ”user”, "password": ”pass”}
 USER_SESSION_STRING = ""
 CMD_SUFFIX = ""
 AUTHORIZED_CHATS = ""

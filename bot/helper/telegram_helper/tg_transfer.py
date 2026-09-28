@@ -1,4 +1,4 @@
-from asyncio import Event, gather, sleep
+from asyncio import Event, Lock, gather, sleep
 
 from pyrogram import raw, utils
 from pyrogram.errors import AuthBytesInvalid
@@ -12,6 +12,10 @@ from ...core.tg_client import TgClient
 MB = 1024 * 1024
 
 _global_work_loads = None
+
+
+class NoHelperClient(Exception):
+    pass
 
 _MEDIA_ATTRS = (
     "audio",
@@ -40,12 +44,11 @@ def media_of(message):
 def get_global_work_loads():
     global _global_work_loads
     if _global_work_loads is None:
-        _global_work_loads = dict(TgClient.helper_loads)
-        if TgClient.helper_users:
-            for no, load in TgClient.helper_user_loads.items():
-                _global_work_loads[-no] = load
-        if TgClient.user:
-            _global_work_loads[-(len(TgClient.helper_users) + 1)] = 0
+        _global_work_loads = {}
+    for no in TgClient.helper_loads:
+        _global_work_loads.setdefault(no, 0)
+    for no in TgClient.helper_user_loads:
+        _global_work_loads.setdefault(-no, 0)
     return _global_work_loads
 
 
@@ -82,7 +85,7 @@ class MtprotoPool:
         if s and s.is_started.is_set():
             return s
         if cache_key not in self._locks:
-            self._locks[cache_key] = __import__("asyncio").Lock()
+            self._locks[cache_key] = Lock()
         async with self._locks[cache_key]:
             s = self._sessions.get(cache_key)
             if s and s.is_started.is_set():
@@ -99,22 +102,30 @@ class MtprotoPool:
             )
             await s.start()
             if is_cross:
-                for attempt in range(6):
-                    try:
-                        e = await client.invoke(
-                            raw.functions.auth.ExportAuthorization(dc_id=dc_id)
-                        )
-                        await s.invoke(
-                            raw.functions.auth.ImportAuthorization(
-                                id=e.id, bytes=e.bytes
+                try:
+                    for attempt in range(6):
+                        try:
+                            e = await client.invoke(
+                                raw.functions.auth.ExportAuthorization(dc_id=dc_id)
                             )
+                            await s.invoke(
+                                raw.functions.auth.ImportAuthorization(
+                                    id=e.id, bytes=e.bytes
+                                )
+                            )
+                            break
+                        except AuthBytesInvalid:
+                            await sleep(1)
+                    else:
+                        raise RuntimeError(
+                            f"Auth export/import failed for DC {dc_id}"
                         )
-                        break
-                    except AuthBytesInvalid:
-                        await sleep(1)
-                else:
-                    await s.stop()
-                    raise RuntimeError(f"Auth export/import failed for DC {dc_id}")
+                except BaseException:
+                    try:
+                        await s.stop()
+                    except Exception:
+                        pass
+                    raise
             self._sessions[cache_key] = s
         return s
 
@@ -122,6 +133,9 @@ class MtprotoPool:
         ck = self._resolve_key(client_key)
         cache_key = (ck, dc_id)
         s = self._sessions.pop(cache_key, None)
+        lock = self._locks.get(cache_key)
+        if lock is not None and not lock.locked():
+            self._locks.pop(cache_key, None)
         if s:
             try:
                 await s.stop()
@@ -135,6 +149,7 @@ class MtprotoPool:
             except Exception:
                 pass
         self._sessions.clear()
+        self._locks.clear()
 
 
 class HypertgTransfer:
@@ -162,6 +177,8 @@ class HypertgTransfer:
             self.clients[key] = TgClient.user
             self.client_ids.append(key)
         self.num_clients = len(self.clients)
+        for i in self.client_ids:
+            self.work_loads.setdefault(i, 0)
         self._pool = MtprotoPool(self.clients)
         self._cancel = Event()
         self._tasks = []
@@ -171,7 +188,11 @@ class HypertgTransfer:
         )
 
     def _pick_client(self):
-        return min(self.work_loads, key=self.work_loads.get)
+        if not self.client_ids:
+            raise NoHelperClient("no helper clients are configured")
+        for i in self.client_ids:
+            self.work_loads.setdefault(i, 0)
+        return min(self.client_ids, key=lambda i: self.work_loads[i])
 
     def _client_idx(self, client):
         for i, c in self.clients.items():

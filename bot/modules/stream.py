@@ -10,6 +10,7 @@ from ..core.config_manager import Config
 from ..core.tg_client import TgClient
 from ..helper.ext_utils.db_handler import database
 from ..helper.ext_utils.links_utils import is_telegram_link, is_url
+from ..helper.ext_utils.split_parts import part_key, part_series, split_trims
 from ..helper.telegram_helper.bot_commands import BotCommands
 from ..helper.telegram_helper.button_build import ButtonMaker
 from ..helper.telegram_helper.filters import CustomFilters
@@ -17,6 +18,7 @@ from ..helper.telegram_helper.message_utils import (
     delete_links,
     edit_message,
     get_tg_link_message,
+    TgSource,
     send_message,
 )
 from ..helper.ext_utils.status_utils import (
@@ -105,6 +107,7 @@ def parse_stream_args(parts):
     poster = None
     link = None
     playlist = False
+    merge = False
     drop = False
     ttl = 0
     words = []
@@ -131,6 +134,9 @@ def parse_stream_args(parts):
         if part in ("-pl", "-playlist"):
             playlist = True
             continue
+        if part in ("-m", "-merge"):
+            merge = True
+            continue
         if part in ("-d", "-del", "-delete"):
             drop = True
             continue
@@ -146,6 +152,7 @@ def parse_stream_args(parts):
         "link": link,
         "poster": poster,
         "playlist": playlist,
+        "merge": merge,
         "delete": drop,
         "ttl": ttl,
         "urls": urls,
@@ -154,19 +161,8 @@ def parse_stream_args(parts):
 
 
 async def _expand(link):
-    payload, _ = await get_tg_link_message(link)
-    if not isinstance(payload, list):
-        return ([payload] if payload else []), 1
-    found = []
-    for one in payload[:_MAX_BATCH]:
-        try:
-            msg, _s = await get_tg_link_message(one)
-        except Exception as e:
-            LOGGER.debug(f"stream batch skipped {one}: {e}")
-            continue
-        if msg and not isinstance(msg, list):
-            found.append(msg)
-    return found, len(payload)
+    found, asked, _session, _parsed = await TgSource.resolve(link, cap=_MAX_BATCH)
+    return found, asked
 
 
 def _playable(media):
@@ -176,6 +172,66 @@ def _playable(media):
 def _short(name, limit=_LABEL):
     name = name or "File"
     return name if len(name) <= limit else name[: limit - 1] + "…"
+
+
+def _order(picked):
+    names = [getattr(m, "file_name", "") for _msg, m in picked]
+    keys = part_series(names)
+    if keys is None:
+        return picked, False
+    nums = sorted(k[1] for k in keys)
+    if nums != list(range(nums[0], nums[0] + len(nums))):
+        return picked, False
+    ordered = [pair for _k, pair in sorted(zip(keys, picked), key=lambda kp: kp[0][1])]
+    return ordered, True
+
+
+def _timeline(durs, trims=None):
+    starts = []
+    at = 0
+    for index, one in enumerate(durs):
+        starts.append(at)
+        cut = int(trims[index]) if trims and index < len(trims) else 0
+        at += max(0, int(one or 0) - max(0, cut))
+    return starts, at
+
+
+def _merge_title(name):
+    found = part_key(name)
+    return f"{found[0]}{found[2]}" if found else (name or "")
+
+
+def _merge_blocker(picked, asked):
+    if len(picked) != asked:
+        return (
+            "<b>That range is incomplete.</b>\n\n<i>Only "
+            f"{len(picked)} of {asked} messages carried media, so parts "
+            "would be missing from the middle of the video. Use <code>-pl</code> "
+            "for a playlist page instead.</i>"
+        )
+    kinds = set()
+    for _msg, media in picked:
+        name = escape(getattr(media, "file_name", "") or "file")
+        mime = (getattr(media, "mime_type", "") or "").lower()
+        if not _playable(media):
+            return (
+                f"<b>{name} cannot be played.</b>\n\n<i>Type is "
+                f"{escape(mime or 'unknown')}. Every part must be audio or "
+                "video to play as one continuous video.</i>"
+            )
+        if not (getattr(media, "duration", 0) or 0):
+            return (
+                f"<b>{name} carries no duration.</b>\n\n<i>Telegram sent it "
+                "as a document, so its runtime is unknown and the parts "
+                "cannot share one timeline. Use <code>-pl</code> instead.</i>"
+            )
+        kinds.add(mime.split("/", 1)[0])
+    if len(kinds) > 1:
+        return (
+            "<b>Those files are not one video.</b>\n\n<i>The range mixes "
+            "audio and video files. Use <code>-pl</code> instead.</i>"
+        )
+    return None
 
 
 async def _register(message, poster=None, exp=None, pl=None, pi=0):
@@ -213,6 +269,11 @@ def _usage():
 
 <b>As one playlist page:</b>
 <code>/{one} -pl [name] [link range]</code>
+
+<b>As one continuous video:</b>
+<code>/{one} -m [name] [link range]</code>
+<i>Split parts play back to back on a single timeline.
+Unrelated to -m in /mirror and /leech.</i>
 
 <b>With cover art:</b>
 <code>/{one} -t [photo link] [link]</code>
@@ -273,23 +334,26 @@ async def _delete_link(message, args):
     listing = await database.get_playlist(target)
     if listing:
         for tok in listing["items"]:
-            await database.rm_stream(tok)
             forget(tok)
-        await database.rm_playlist(target)
+        await database.rm_playlist(target, listing["items"])
         forget(target)
+        kind = "Merged video" if listing.get("merged") else "Playlist"
         rows = [
-            ("Type", "Playlist"),
+            ("Type", kind),
             ("Links Removed", str(len(listing["items"]))),
         ]
         msg = _head(listing["name"] or target, rows, tag)
-        msg += _done("Playlist and every link inside it are gone")
+        msg += _done(f"{kind} and every link inside it are gone")
         await send_message(message, msg)
         await delete_links(message)
         return
 
     found = await database.get_stream(target)
+    owner = await database.get_stream_nav(target)
     await database.rm_stream(target)
     forget(target)
+    if owner:
+        forget(owner[0])
     if found:
         msg = _head(target, [("Type", "Stream link")], tag)
         msg += _done("Link is gone, it will no longer play")
@@ -345,6 +409,15 @@ async def stream_links(_, message):
         await edit_message(status, "<b>No playable media found in that link.</b>")
         return
 
+    merge = args["merge"] and len(picked) > 1
+    is_split = False
+    if merge:
+        blocker = _merge_blocker(picked, asked)
+        if blocker:
+            await edit_message(status, blocker)
+            return
+        picked, is_split = _order(picked)
+
     poster = None
     if args["poster"]:
         if is_telegram_link(args["poster"]):
@@ -361,7 +434,7 @@ async def stream_links(_, message):
     exp = int(time() + ttl) if ttl else None
 
     pl_token = None
-    if args["playlist"]:
+    if args["playlist"] or merge:
         pl_token = await _reserve_playlist()
         if not pl_token:
             await edit_message(
@@ -384,10 +457,53 @@ async def stream_links(_, message):
         await edit_message(status, "<b>Could not allocate links. Try again.</b>")
         return
 
+    if merge and len(minted) < 2:
+        merge = False
+
     base = Config.BASE_URL.rstrip("/")
     tag = message.from_user.mention if message.from_user else "N/A"
     total = sum(getattr(m, "file_size", 0) or 0 for _t, m in minted)
     buttons = ButtonMaker()
+
+    if merge:
+        durs = [int(getattr(m, "duration", 0) or 0) for _t, m in minted]
+        trims = [0] * len(minted)
+        if is_split:
+            found = split_trims([getattr(m, "file_name", "") for _t, m in minted])
+            if found:
+                trims = found
+        _starts, runtime = _timeline(durs, trims)
+        title = (
+            args["name"]
+            or _merge_title(getattr(minted[0][1], "file_name", ""))
+            or "Merged Video"
+        )
+        await database.add_playlist(
+            pl_token,
+            title,
+            [t for t, _m in minted],
+            poster,
+            exp,
+            merged=True,
+            durs=durs,
+            trims=trims,
+        )
+        rows = [
+            ("Task Size", get_readable_file_size(total)),
+            ("Total Files", f"{len(minted)} of {asked}"),
+            ("Runtime", get_readable_time(runtime)),
+        ]
+        if ttl:
+            rows.append(("Expires In", get_readable_time(ttl)))
+        watch = f"{base}/xstrm/{pl_token}"
+        msg = _head(title, rows, tag)
+        msg += _done(f"All {len(minted)} parts play as one continuous video")
+        buttons.url_button("▶️ Play All", watch, style=ButtonStyle.PRIMARY)
+        buttons.url_button("🧩 Parts", f"{base}/playlist/{pl_token}")
+        buttons.url_button("🔗 Share", f"https://t.me/share/url?url={watch}")
+        await edit_message(status, msg, buttons.build_menu(2))
+        await delete_links(message)
+        return
 
     if args["playlist"]:
         title = args["name"] or (

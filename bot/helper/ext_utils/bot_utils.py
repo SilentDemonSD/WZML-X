@@ -251,6 +251,7 @@ def arg_parser(items, arg_base):
         "-yt",
         "-ad",
         "-seedr",
+        "-fwd",
     }
     if Config.DISABLE_BULK and "-b" in items:
         arg_base["-b"] = False
@@ -286,6 +287,7 @@ def arg_parser(items, arg_base):
                     "-bt",
                     "-yt",
                     "-ad",
+                    "-fwd",
                 ]
             ):
                 arg_base[part] = True
@@ -423,6 +425,14 @@ def parse_dest(value):
     if chat.lstrip("-").isdigit():
         chat = int(chat)
     return chat, int(thread) if thread.isdigit() else None
+
+
+def dump_chats_for(user_id):
+    owned = Config.LEECH_DUMP_CHATS or {}
+    mine = user_data.get(user_id, {}).get("LEECH_DUMP_CHATS")
+    if not isinstance(mine, dict) or not mine:
+        return dict(owned)
+    return {**owned, **mine}
 
 
 class GitInfo:

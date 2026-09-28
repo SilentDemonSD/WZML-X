@@ -12,9 +12,15 @@ from ..helper.ext_utils.bot_utils import (
     cmd_exec,
     sync_to_async,
 )
-from ..helper.ext_utils.exceptions import DirectDownloadLinkException
+from ..core.tg_client import TgClient
+from ..helper.ext_utils.session_vault import UserSession
+from ..helper.ext_utils.exceptions import (
+    DirectDownloadLinkException,
+    TgLinkException,
+)
 from ..helper.ext_utils.links_utils import (
     is_gdrive_id,
+    is_telegram_link,
     is_gdrive_link,
     is_mega_link,
     is_mega_folder_link,
@@ -22,7 +28,9 @@ from ..helper.ext_utils.links_utils import (
     is_share_link,
 )
 from ..helper.ext_utils.task_manager import (
+    check_running_tasks,
     pre_task_check,
+    start_from_queued,
     stop_duplicate_check,
     limit_checker,
 )
@@ -36,14 +44,33 @@ from ..helper.mirror_leech_utils.gdrive_utils.count import GoogleDriveCount
 from ..helper.mirror_leech_utils.rclone_utils.transfer import RcloneTransferHelper
 from ..helper.mirror_leech_utils.upload_utils.mega_clone import add_mega_clone
 from ..helper.mirror_leech_utils.status_utils.gdrive_status import GoogleDriveStatus
+from ..helper.mirror_leech_utils.status_utils.queue_status import QueueStatus
 from ..helper.mirror_leech_utils.status_utils.rclone_status import RcloneStatus
+from ..helper.mirror_leech_utils.status_utils.tg_clone_status import (
+    TelegramCloneStatus,
+)
+from ..helper.mirror_leech_utils.telegram_utils.clone import (
+    FilteredStream,
+    TelegramClone,
+    UnitStream,
+    clone_limit,
+)
+from ..helper.telegram_helper.button_build import ButtonMaker
+from ..helper.telegram_helper.prompt import PromptUnreachable
 from ..helper.telegram_helper.message_utils import (
+    TgSource,
     auto_delete_message,
     delete_links,
     delete_message,
     send_message,
     send_status_message,
 )
+
+
+def _pm_button():
+    btns = ButtonMaker()
+    btns.url_button("Open in PM", f"https://t.me/{TgClient.BNAME}")
+    return btns.build_menu(1)
 
 
 class Clone(TaskListener):
@@ -88,6 +115,14 @@ class Clone(TaskListener):
             "-gc": "",
             "-rcf": "",
             "-sync": False,
+            "-ud": "",
+            "-ct": "",
+            "-ex": "",
+            "-mn": "",
+            "-xn": "",
+            "-mc": "",
+            "-xc": "",
+            "-fwd": False,
         }
 
         arg_parser(input_list[1:], args)
@@ -102,6 +137,11 @@ class Clone(TaskListener):
         self.rc_flags = args["-rcf"]
         self.link = args["link"]
         self.name = args["-n"]
+        self.dump_dest = args["-ud"]
+        self.clone_content_type = args["-ct"].strip().lower()
+        self.clone_excluded = args["-ex"]
+        self.clone_regex = {key: args[f"-{key}"] for key in ("mn", "xn", "mc", "xc")}
+        self.clone_forward = bool(args["-fwd"])
 
         is_bulk = args["-b"]
         sync = args["-sync"]
@@ -122,7 +162,9 @@ class Clone(TaskListener):
         await self.get_tag(text)
 
         if not self.link and (reply_to := self.message.reply_to_message):
-            self.link = reply_to.text.split("\n", 1)[0].strip()
+            self.link = (reply_to.text or "").split("\n", 1)[0].strip() or (
+                reply_to.link or ""
+            )
 
         await self.run_multi(input_list, Clone)
 
@@ -132,6 +174,7 @@ class Clone(TaskListener):
             )
             await delete_links(self.message)
             return
+        self.is_tg_clone = is_telegram_link(self.link)
         if is_mega_link(self.link) and self.up_dest not in ("mega", "mega:"):
             self.up_dest = "mega:"
         LOGGER.info(self.link)
@@ -147,7 +190,104 @@ class Clone(TaskListener):
         await self._proceed_to_clone(sync)
         await delete_links(self.message)
 
+    async def _proceed_tg_clone(self):
+        if UserSession.exists(self.user_id):
+            try:
+                await UserSession.unlock(self.user_id)
+            except TgLinkException as e:
+                await send_message(self.message, f"ERROR: {e}")
+                return
+            except PromptUnreachable as e:
+                await send_message(self.message, f"ERROR: {e}", _pm_button())
+                return
+            async with UserSession.borrow(self.user_id) as mine:
+                await self._relay_from(mine)
+            return
+        await self._relay_from(None)
+
+    async def _relay_from(self, mine):
+        try:
+            source, session, client = await TgSource.open(
+                self.link, clone_limit(), extra=mine
+            )
+        except TgLinkException as e:
+            await send_message(self.message, f"ERROR: {e}")
+            return
+        self.clone_source = source
+        asked = source.count
+        if not self.name:
+            self.name = (
+                f"{source.chat} [{source.start_id}-{source.end_id}]"
+                if asked > 1
+                else f"message {source.start_id}"
+            )
+
+        batches = TgSource.stream(client, source.chat, source.ids())
+        raw = UnitStream(client, source.chat, batches)
+        stream = FilteredStream(raw, self.clone_filter.keep)
+        self.files_to_proceed = range(asked)
+
+        gid = token_hex(5)
+        worker = TelegramClone(
+            self, client, stream, self.clone_dests, asked, self.clone_forward
+        )
+        add_to_queue, event = await check_running_tasks(self, "up")
+        await start_from_queued()
+        if add_to_queue:
+            LOGGER.info(f"Added to Queue/Clone: {self.name}")
+            async with task_dict_lock:
+                task_dict[self.mid] = QueueStatus(self, gid, "up")
+            await self.on_download_start()
+            if self.multi <= 1:
+                await send_status_message(self.message)
+            await event.wait()
+            if self.is_cancelled:
+                return
+        else:
+            await self.on_download_start()
+
+        async with task_dict_lock:
+            task_dict[self.mid] = TelegramCloneStatus(self, worker, gid)
+        if self.multi <= 1:
+            await send_status_message(self.message)
+
+        LOGGER.info(
+            f"Clone Started: {self.name} - up to {asked} messages "
+            f"to {len(self.clone_dests)} chats"
+        )
+        try:
+            await worker.relay()
+        except Exception as err:
+            LOGGER.error(f"clone relay failed: {err}")
+            await self.on_upload_error(f"Clone failed: {err}")
+            return
+        if self.is_cancelled:
+            return
+        if not worker.units:
+            await self.on_upload_error(
+                "No messages matched the filters, nothing to clone."
+            )
+            return
+        self.clone_stats = {
+            "copied": worker.copied,
+            "asked": asked,
+            "dests": len(self.clone_dests),
+            "dropped": stream.dropped + max(0, asked - raw.fetched),
+            "restricted": worker.restricted,
+            "failed": worker.failures,
+            "dead": worker.dead_dests,
+            "link": self.link,
+            "floods": worker.floods,
+        }
+        await self.on_upload_complete(
+            worker.first_link, worker.copied, len(worker._dests), "Telegram"
+        )
+        LOGGER.info(f"Cloning Done: {self.name}")
+
     async def _proceed_to_clone(self, sync):
+        if self.is_tg_clone:
+            await self._proceed_tg_clone()
+            return
         if is_share_link(self.link):
             try:
                 self.link = await sync_to_async(direct_link_generator, self.link)

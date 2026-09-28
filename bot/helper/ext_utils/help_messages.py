@@ -19,8 +19,60 @@ yt = """<b>Send link along with command line</b>:
 Check here all supported <a href='https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md'>SITES</a>
 Check all yt-dlp api options from this <a href='https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/YoutubeDL.py#L212'>FILE</a> or use this <a href='https://t.me/mltb_official_channel/177'>script</a> to convert cli arguments to api options."""
 
-clone = """Send Gdrive|Gdot|Filepress|Filebee|Appdrive|Gdflix link or rclone path along with command or by replying to the link/rc_path by command.
-Use -sync to use sync method in rclone. Example: /cmd rcl/rclone_path -up rcl/rclone_path/rc -sync"""
+clone = """Send a Gdrive|Gdot|Filepress|Filebee|Appdrive|Gdflix link, an rclone path, or a telegram message link, along with the command or by replying to it.
+Use -sync to use sync method in rclone. Example: /cmd rcl/rclone_path -up rcl/rclone_path/rc -sync
+A t.me link copies messages between chats instead, see the Telegram page."""
+
+tg_clone = """<b>Telegram Clone</b>
+Send a telegram message link to copy it into one or more chats. No download,
+nothing touches disk.
+
+/cmd https://t.me/c/1234567/120 -ud A
+/cmd https://t.me/c/1234567/120-260 -ud A B -100987654321
+/cmd https://t.me/channel/55-90 -ud A -ct med -xn sample
+
+<b>Destinations</b>: -ud
+Space separated. Each one is looked up by name in your own Leech Dump Chats
+(Leech Settings) and then the owner's LEECH_DUMP_CHATS, before being treated as a
+raw id, @username, or id|topic_id. Duplicates are dropped.
+With no -ud the clone destinations from your user settings are used.
+
+<b>Content type</b>: -ct doc | med | all
+doc keeps documents only, med keeps video/audio/photo/animation/voice only.
+Note this is not -doc/-med, which control how a leech is uploaded.
+
+<b>Excluded extensions</b>: -ex mkv srt
+Separate from the leech EXCLUDED_EXTENSIONS, so filtering a clone never
+changes what a leech skips.
+
+<b>Regex</b>: -mn -xn -mc -xc
+-mn keeps names matching, -xn drops names matching, -mc and -xc do the same
+against the caption. All four are case insensitive and are anded together.
+A message with no filename never matches -mn, so an include pattern drops
+photos and text.
+Arguments are joined by single spaces, so write \\s+ rather than a run of
+spaces, and wrap a pattern containing a flag lookalike in brackets:
+-mn [S01 -e 720p]
+
+<b>Forward</b>: -fwd
+Forward instead of copy, keeping the "forwarded from" header. Ranges are
+sent in batches of 100, so this is much cheaper for a large set.
+
+<b>Restricted content</b>
+Chats that forbid forwarding are skipped and tallied, and the report tells
+you which ranges to fetch with /leech instead. Three restricted messages in
+a row stops the task only while nothing has copied yet, so a chat that
+forbids forwarding outright costs three calls rather than the whole range.
+Once anything has copied the rest of the range is always walked, since a
+protected message there is a per message setting, not a chat wide one.
+
+<b>Large ranges</b>
+Messages are fetched 200 at a time and copied as they arrive, so a range of
+any size uses the same memory and starts moving immediately. The cap is
+CLONE_TG_LIMIT, 10000 by default, 0 for no cap. After a flood wait the task
+slows itself down and speeds back up once Telegram stops complaining.
+-fwd is far cheaper for a big set: it sends 100 ids per call rather than
+one call per message."""
 
 new_name = """<b>New Name</b>: -n
 
@@ -82,8 +134,10 @@ when you should use b:(leech by bot)? When your default settings is leech by use
 -up id/@username|topic_id(leech in specific chat and topic) add | without space and write topic id after chat id or username.
 
 <b>Named dump chats</b>: -ud
--ud name (picks a chat from LEECH_DUMP_CHATS set by the owner, e.g. -ud A)
+-ud name (picks a chat by name, e.g. -ud A)
 -ud id/@username (raw chat id or username works too)
+Names come from your own Leech Dump Chats in Leech Settings, merged over the owner's
+LEECH_DUMP_CHATS. On a clash your own wins.
 If the name is not configured, buttons are shown to pick one of the configured dumps.
 The chosen chat becomes the upload destination for that task, overriding LEECH_LOG_CHAT.
 
@@ -378,6 +432,7 @@ CLONE_HELP_DICT = {
     "Bulk": bulk,
     "Gdrive": gdrive,
     "Rclone": rclone_cl,
+    "Telegram": tg_clone,
 }
 
 RSS_HELP_MESSAGE = """

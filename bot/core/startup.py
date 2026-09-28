@@ -28,6 +28,7 @@ from .. import (
     sudo_users,
 )
 from ..helper.ext_utils.bot_utils import cmd_exec, derive_service_password
+from ..helper.ext_utils.deprecations import Deprecations
 from ..helper.ext_utils.db_handler import database
 from .config_manager import Config, BinConfig
 from .tg_client import TgClient, db_partition_id
@@ -204,6 +205,7 @@ async def load_settings():
             LOGGER.info("Loaded.. Sabnzbd Data from MongoDB")
 
         if user_exists:
+            migrated = []
             rows = database.db.users[PART].find({})
             async for row in rows:
                 uid = row["_id"]
@@ -234,8 +236,18 @@ async def load_settings():
                     if row.get(key):
                         await save_file(path, row[key])
                         row[key] = path
+                if dead := Deprecations.migrate_user(row):
+                    migrated.append((uid, dead))
                 user_data[uid] = row
             LOGGER.info("Users Data has been imported from MongoDB")
+            for uid, dead in migrated:
+                await database.update_user_data(uid)
+                for key in dead:
+                    await database.update_user_doc(uid, key)
+            if migrated:
+                LOGGER.info(
+                    f"Cleared deprecated settings for {len(migrated)} user(s)"
+                )
 
         if rss_exists:
             rows = database.db.rss[PART].find({})

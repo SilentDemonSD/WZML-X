@@ -1,8 +1,12 @@
+from aiofiles import open as aiopen
 from aiofiles.os import remove, path as aiopath
+from aiohttp import ClientSession, ClientTimeout
 from asyncio import gather, sleep
+from re import search as re_search, IGNORECASE
 from sabnzbdapi.exception import NotLoggedIn, LoginFailed
 
 from .... import (
+    DOWNLOAD_DIR,
     task_dict,
     task_dict_lock,
     sabnzbd_client,
@@ -67,6 +71,50 @@ async def add_servers():
                 raise e
 
 
+ZERO_WIDTH = str.maketrans("", "", "\u200b\u200c\u200d\ufeff")
+META_NAME_RE = r"<meta[^>]+type=[\"']name[\"'][^>]*>([^<]+)<"
+
+
+def sanitize_nzb_name(name):
+    """Make an indexer supplied name safe to use as a folder name."""
+    name = name.translate(ZERO_WIDTH).replace("/", "-").replace("\\", "-")
+    name = "".join(c for c in name if c.isprintable()).strip()
+    return name.strip(". ")[:200]
+
+
+async def fetch_nzb(listener, url):
+    """Download the NZB ourselves so the indexer API key never reaches SABnzbd.
+
+    Returns (local path, release name), or ("", "") to fall back to a URL add.
+    """
+    try:
+        async with ClientSession(timeout=ClientTimeout(total=60)) as session:
+            async with session.get(url) as resp:
+                if resp.status != 200:
+                    LOGGER.error(f"NZB fetch returned HTTP {resp.status}")
+                    return "", ""
+                content = await resp.read()
+    except Exception as e:
+        LOGGER.error(f"NZB fetch failed: {e}")
+        return "", ""
+    if b"<nzb" not in content[:4096]:
+        LOGGER.error("Fetched file is not an NZB")
+        return "", ""
+    name = ""
+    if m := re_search(
+        META_NAME_RE, content[:65536].decode("utf-8", "ignore"), IGNORECASE
+    ):
+        name = sanitize_nzb_name(m.group(1))
+    nzbpath = f"{DOWNLOAD_DIR}{listener.mid}.nzb"
+    try:
+        async with aiopen(nzbpath, "wb") as f:
+            await f.write(content)
+    except Exception as e:
+        LOGGER.error(f"Failed to save NZB: {e}")
+        return "", ""
+    return nzbpath, name
+
+
 async def add_nzb(listener, path):
     if Config.DISABLE_NZB:
         await listener.on_download_error(
@@ -87,13 +135,20 @@ async def add_nzb(listener, path):
     if await aiopath.exists(listener.link):
         url = None
         nzbpath = listener.link
+    nzb_name = listener.name
+    temp_nzb = ""
+    if url:
+        temp_nzb, meta_name = await fetch_nzb(listener, url)
+        if temp_nzb:
+            url, nzbpath = None, temp_nzb
+            nzb_name = nzb_name or meta_name
     try:
         await sabnzbd_client.create_category(f"{listener.mid}", path)
         add_to_queue, event = await check_running_tasks(listener)
         res = await sabnzbd_client.add_uri(
             url,
             nzbpath,
-            listener.name,
+            nzb_name,
             listener.extract if isinstance(listener.extract, str) else "",
             f"{listener.mid}",
             priority=-2 if add_to_queue else 0,
@@ -129,7 +184,7 @@ async def add_nzb(listener, path):
                     return
                 name = slots[0]["name"]
             else:
-                name = listener.name
+                name = nzb_name
         else:
             name = downloads["queue"]["slots"][0]["filename"]
 
@@ -194,5 +249,7 @@ async def add_nzb(listener, path):
             par2_lock_acquired = False
         await listener.on_download_error(f"{e}")
     finally:
-        if nzbpath and await aiopath.exists(listener.link):
+        if temp_nzb and await aiopath.exists(temp_nzb):
+            await remove(temp_nzb)
+        elif nzbpath and await aiopath.exists(listener.link):
             await remove(listener.link)

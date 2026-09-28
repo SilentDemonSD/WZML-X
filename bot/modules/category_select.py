@@ -175,7 +175,7 @@ async def confirm_dump_chat(client, query):
     elif data[3] == "scancel":
         bot_cache[cache_key][2] = True
         return
-    dump_chats = Config.LEECH_DUMP_CHATS or {}
+    dump_chats = bot_cache[cache_key][4]
     dump_names = list(dump_chats)
     try:
         dump_name = dump_names[int(data[3])]

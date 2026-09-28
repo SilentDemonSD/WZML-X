@@ -9,8 +9,12 @@ from asyncio import (
 from collections import OrderedDict
 from json import loads
 from os import getenv
+from os.path import join as pathjoin
+from shutil import rmtree
+from tempfile import mkdtemp
 from re import compile as re_compile
 from subprocess import PIPE
+from time import monotonic, time
 from urllib.parse import quote
 
 from aiohttp import web
@@ -20,6 +24,7 @@ from .cpu import service_cores
 from .config_manager import BinConfig
 from ..helper.ext_utils.db_handler import database
 from ..helper.ext_utils.mem_guard import register_cache
+from ..helper.ext_utils.split_parts import split_trims
 from ..helper.telegram_helper.tg_stream import (
     FULL,
     NoClientAvailable,
@@ -28,15 +33,18 @@ from ..helper.telegram_helper.tg_stream import (
     open_stream,
     parse_range,
     poster_bytes,
+    prefetch,
     probe,
     purge_fid,
     shutdown,
+    start_reaper,
 )
 
 _TOKEN_RE = re_compile(r"^[A-Za-z0-9_-]{4,32}$")
 _PLAYABLE = ("video/", "audio/")
 _runner = None
 
+_PROBE_FIRST = 1024 * 1024
 _PROBE_BYTES = 6 * 1024 * 1024
 _PROBE_TIMEOUT = 45
 _PROBE_KEEP = 128
@@ -45,9 +53,18 @@ _probe_cache = OrderedDict()
 _LIST_KEEP = 64
 _list_cache = OrderedDict()
 
+_MERGE_KEEP = 64
+_merge_cache = OrderedDict()
+
+_PARTIAL_TTL = 60
+_body_inflight = {}
+_side_tasks = set()
+
 _POSTER_KEEP = 256
+_POSTER_MISS_TTL = 300
 _poster_cache = OrderedDict()
 
+_VTT_SIDECARS = 8
 _VTT_TOTAL_MAX = 48 * 1024 * 1024
 _VTT_ENTRY_MAX = 6 * 1024 * 1024
 _vtt_cache = OrderedDict()
@@ -69,6 +86,7 @@ def _cache_trim(aggressive=False):
         _vtt_bytes = 0
         _poster_cache.clear()
         _list_cache.clear()
+        _merge_cache.clear()
         _probe_cache.clear()
         return
     keep = max(1, len(_vtt_cache) // 2)
@@ -80,6 +98,9 @@ def _cache_trim(aggressive=False):
     keep = max(1, len(_poster_cache) // 2)
     while len(_poster_cache) > keep:
         _poster_cache.popitem(last=False)
+    keep = max(1, len(_probe_cache) // 2)
+    while len(_probe_cache) > keep:
+        _probe_cache.popitem(last=False)
 
 
 register_cache("stream", _cache_bytes, _cache_trim)
@@ -122,8 +143,8 @@ def _title(stream, n):
 
 
 async def _prefix(cid, mid, size):
-    st = await open_stream(cid, mid, "bulk")
-    end = min(size, _PROBE_BYTES) - 1
+    st = await open_stream(cid, mid, "probe")
+    end = max(0, size - 1)
     gen = st.iter_range(0, end)
     buf = bytearray()
     try:
@@ -139,27 +160,64 @@ async def _probe(cid, mid):
     if key in _probe_cache:
         _probe_cache.move_to_end(key)
         return _probe_cache[key]
-    info = await probe(cid, mid)
-    raw = await _prefix(cid, mid, info["size"] or _PROBE_BYTES)
+    return await _once(("probe", cid, mid), lambda: _build_probe(cid, mid))
+
+
+def _aside(coro):
+    task = ensure_future(coro)
+    _side_tasks.add(task)
+    task.add_done_callback(_side_tasks.discard)
+    return task
+
+
+def _reap_proc(proc):
+    if proc.returncode is not None:
+        return
+    try:
+        proc.kill()
+    except Exception:
+        return
+    _aside(_wait_quietly(proc))
+
+
+async def _wait_quietly(proc):
+    try:
+        await wait_for(proc.wait(), timeout=10)
+    except Exception:
+        pass
+
+
+async def _ffprobe(raw):
     proc = await create_subprocess_exec(
-        "ffprobe", "-hide_banner", "-loglevel", "error",
-        "-print_format", "json", "-show_streams", "-",
+        *_nice(["ffprobe", "-hide_banner", "-loglevel", "error",
+                "-print_format", "json", "-show_streams", "-"]),
         stdin=PIPE, stdout=PIPE, stderr=PIPE,
     )
     try:
-        out, _ = await wait_for(proc.communicate(raw), timeout=_PROBE_TIMEOUT)
-    except Exception:
         try:
-            proc.kill()
+            out, _ = await wait_for(proc.communicate(raw), timeout=_PROBE_TIMEOUT)
         except Exception:
-            pass
-        out = b""
-    streams = []
+            out = b""
+    finally:
+        _reap_proc(proc)
     try:
-        streams = loads(out)["streams"]
+        return loads(out)["streams"] or []
     except Exception:
-        streams = []
+        return []
+
+
+async def _build_probe(cid, mid):
+    key = (cid, mid)
+    if key in _probe_cache:
+        _probe_cache.move_to_end(key)
+        return _probe_cache[key]
+    info = await probe(cid, mid)
+    size = info["size"] or _PROBE_BYTES
+    streams = await _ffprobe(await _prefix(cid, mid, min(size, _PROBE_FIRST)))
+    if not streams and size > _PROBE_FIRST:
+        streams = await _ffprobe(await _prefix(cid, mid, min(size, _PROBE_BYTES)))
     audio, subtitle = [], []
+    seats = 0
     for st_ in streams:
         kind = st_.get("codec_type")
         if kind == "audio":
@@ -171,17 +229,92 @@ async def _probe(cid, mid):
                 }
             )
         elif kind == "subtitle":
+            seat = seats
+            seats += 1
             codec = (st_.get("codec_name") or "").lower()
             if codec in ("dvd_subtitle", "hdmv_pgs_subtitle", "dvb_subtitle"):
                 continue
             subtitle.append(
-                {"index": len(subtitle), "title": _title(st_, len(subtitle))}
+                {"index": seat, "title": _title(st_, len(subtitle))}
             )
     result = {"audio": audio, "subtitle": subtitle}
     _probe_cache[key] = result
     while len(_probe_cache) > _PROBE_KEEP:
         _probe_cache.popitem(last=False)
     return result
+
+
+def purge_probe(cid, mid):
+    _probe_cache.pop((cid, mid), None)
+
+
+def _gone(cid, mid):
+    purge_fid(cid, mid)
+    purge_probe(cid, mid)
+    purge_vtt(cid, mid)
+
+
+def _cached(store, token):
+    hit = store.get(token)
+    if hit is None:
+        return None
+    body, until = hit
+    if until is not None and monotonic() >= until:
+        store.pop(token, None)
+        return None
+    store.move_to_end(token)
+    return body
+
+
+def _keep(store, token, body, limit, fresh):
+    store[token] = (body, None if fresh else monotonic() + _PARTIAL_TTL)
+    store.move_to_end(token)
+    while len(store) > limit:
+        store.popitem(last=False)
+
+
+async def _once(key, build):
+    pending = _body_inflight.get(key)
+    if pending is not None:
+        try:
+            return await shield(pending)
+        except CancelledError:
+            if not pending.cancelled():
+                raise
+        except Exception:
+            pass
+    fut = get_running_loop().create_future()
+    fut.add_done_callback(lambda f: None if f.cancelled() else f.exception())
+    _body_inflight[key] = fut
+    try:
+        body = await build()
+        if not fut.done():
+            fut.set_result(body)
+        return body
+    except CancelledError:
+        if not fut.done():
+            fut.cancel()
+        raise
+    except BaseException as e:
+        if not fut.done():
+            fut.set_exception(e)
+        raise
+    finally:
+        if _body_inflight.get(key) is fut:
+            del _body_inflight[key]
+        if not fut.done():
+            fut.cancel()
+
+
+async def _locate(tokens):
+    found = await database.get_streams(tokens)
+    pairs = [found[tok] for tok in tokens if tok in found]
+    if len(pairs) > 1:
+        try:
+            await prefetch(pairs)
+        except Exception as e:
+            LOGGER.debug(f"metadata prefetch failed: {e}")
+    return found
 
 
 def stream_port():
@@ -195,7 +328,7 @@ async def _resolve(request):
     found = await database.get_stream(token)
     if not found:
         raise web.HTTPNotFound(text="unknown link")
-    return token, found[0], found[1]
+    return token, found[0], found[1], found[2] if len(found) > 2 else None
 
 
 def _disposition(name, inline):
@@ -210,7 +343,7 @@ async def _neighbours(token):
     if not nav:
         return None
     doc = await database.get_playlist(nav[0])
-    if not doc:
+    if not doc or doc.get("merged"):
         return None
     items = doc["items"]
     if not items:
@@ -226,15 +359,19 @@ async def _neighbours(token):
         "prev": None,
         "next": None,
     }
+    around = [
+        items[at] for at in (idx - 1, idx + 1) if 0 <= at < len(items)
+    ]
+    found = await _locate(around) if around else {}
     for key, at in (("prev", idx - 1), ("next", idx + 1)):
         if at < 0 or at >= len(items):
             continue
         tok = items[at]
-        found = await database.get_stream(tok)
-        if not found:
+        where = found.get(tok)
+        if not where:
             continue
         try:
-            info = await probe(found[0], found[1])
+            info = await probe(where[0], where[1])
         except Exception as e:
             LOGGER.debug(f"neighbour probe failed for {tok}: {e}")
             continue
@@ -243,11 +380,33 @@ async def _neighbours(token):
 
 
 async def _meta(request):
-    token, cid, mid = await _resolve(request)
+    token = request.match_info.get("token", "")
+    if not _TOKEN_RE.match(token):
+        raise web.HTTPNotFound(text="unknown link")
+    found = await database.get_stream(token)
+    if not found:
+        try:
+            body = await _merge_body(token)
+        except NoClientAvailable as e:
+            raise web.HTTPServiceUnavailable(text=str(e)) from None
+        if not body:
+            raise web.HTTPNotFound(text="unknown link")
+        return web.json_response(
+            {
+                "name": body["name"],
+                "size": body["size"],
+                "mime": body["mime"],
+                "unique_id": "",
+                "playable": True,
+                "duration": body["duration"],
+                "merge": body,
+            }
+        )
+    cid, mid = found[0], found[1]
     try:
         info = await probe(cid, mid)
     except StreamGone:
-        purge_fid(cid, mid)
+        _gone(cid, mid)
         raise web.HTTPNotFound(text="file is gone") from None
     except NoClientAvailable as e:
         raise web.HTTPServiceUnavailable(text=str(e)) from None
@@ -263,17 +422,61 @@ async def _meta(request):
     return web.json_response(info)
 
 
+def _shelf(exp):
+    if not exp:
+        return "private, max-age=86400, immutable"
+    left = int(exp - time())
+    if left <= 0:
+        return "no-store"
+    return f"private, max-age={min(86400, left)}, must-revalidate"
+
+
+def _etag_hit(header, tag):
+    if not header or not tag:
+        return False
+    for part in header.split(","):
+        part = part.strip()
+        if part == "*":
+            return True
+        if part.startswith("W/"):
+            part = part[2:]
+        if part == tag:
+            return True
+    return False
+
+
 async def _serve(request, kind):
-    _, cid, mid = await _resolve(request)
+    _, cid, mid, exp = await _resolve(request)
     inline = kind == "playback"
+    shelf = _shelf(exp)
 
     viewer = request.headers.get("X-Viewer") or request.remote
+    inm = request.headers.get("If-None-Match")
+
+    if inm and not request.headers.get("Range"):
+        try:
+            info = await probe(cid, mid)
+        except StreamGone:
+            _gone(cid, mid)
+            raise web.HTTPNotFound(text="file is gone") from None
+        except NoClientAvailable as e:
+            raise web.HTTPServiceUnavailable(text=str(e)) from None
+        tag = f'"{info["unique_id"]}"'
+        if info["unique_id"] and _etag_hit(inm, tag):
+            return web.Response(
+                status=304,
+                headers={
+                    "ETag": tag,
+                    "Cache-Control": shelf,
+                    "Accept-Ranges": "bytes",
+                },
+            )
 
     if request.method == "HEAD":
         try:
             info = await probe(cid, mid)
         except StreamGone:
-            purge_fid(cid, mid)
+            _gone(cid, mid)
             raise web.HTTPNotFound(text="file is gone") from None
         except NoClientAvailable as e:
             raise web.HTTPServiceUnavailable(text=str(e)) from None
@@ -284,7 +487,7 @@ async def _serve(request, kind):
                 "Content-Type": info["mime"] or "application/octet-stream",
                 "Accept-Ranges": "bytes",
                 "Content-Disposition": _disposition(info["name"], inline),
-                "Cache-Control": "private, max-age=86400, immutable",
+                "Cache-Control": shelf,
                 "ETag": f'"{info["unique_id"]}"',
             },
         )
@@ -292,7 +495,7 @@ async def _serve(request, kind):
     try:
         st = await open_stream(cid, mid, kind, viewer=viewer)
     except StreamGone:
-        purge_fid(cid, mid)
+        _gone(cid, mid)
         raise web.HTTPNotFound(text="file is gone") from None
     except NoClientAvailable as e:
         raise web.HTTPServiceUnavailable(text=str(e), headers={"Retry-After": "10"})
@@ -301,7 +504,7 @@ async def _serve(request, kind):
 
     rng = parse_range(request.headers.get("Range"), st.size)
     if rng is None:
-        await st._release()
+        await shield(st._release())
         return web.Response(
             status=416,
             headers={
@@ -318,7 +521,7 @@ async def _serve(request, kind):
         "Content-Length": str(end - start + 1),
         "Accept-Ranges": "bytes",
         "Content-Disposition": _disposition(st.name, inline),
-        "Cache-Control": "private, max-age=86400, immutable",
+        "Cache-Control": shelf,
     }
     if st.unique_id:
         headers["ETag"] = f'"{st.unique_id}"'
@@ -327,7 +530,11 @@ async def _serve(request, kind):
 
     resp = web.StreamResponse(status=206 if partial else 200, headers=headers)
     resp.enable_compression(False)
-    await resp.prepare(request)
+    try:
+        await resp.prepare(request)
+    except BaseException:
+        await shield(st._release())
+        raise
 
     gen = st.iter_range(start, end)
     try:
@@ -337,7 +544,7 @@ async def _serve(request, kind):
     except (ConnectionResetError, ConnectionError, CancelledError):
         LOGGER.debug(f"stream aborted by client: {cid}/{mid}")
     except StreamGone:
-        purge_fid(cid, mid)
+        _gone(cid, mid)
     except StreamAbort as e:
         LOGGER.error(f"stream failed {cid}/{mid}: {e}")
     finally:
@@ -381,12 +588,12 @@ async def _spawn_ffmpeg(args, what):
         raise web.HTTPServiceUnavailable(
             text=f"{BinConfig.FFMPEG_NAME} is not installed"
         ) from None
-    ensure_future(_drain_stderr(proc, what))
+    _aside(_drain_stderr(proc, what))
     return proc
 
 
 async def _tracks(request):
-    _, cid, mid = await _resolve(request)
+    _, cid, mid, _exp = await _resolve(request)
     try:
         return web.json_response(
             await _probe(cid, mid),
@@ -396,23 +603,16 @@ async def _tracks(request):
             },
         )
     except StreamGone:
-        purge_fid(cid, mid)
-        purge_vtt(cid, mid)
+        _gone(cid, mid)
         raise web.HTTPNotFound(text="file is gone") from None
     except NoClientAvailable as e:
         raise web.HTTPServiceUnavailable(text=str(e)) from None
     except Exception as e:
         LOGGER.error(f"track probe failed for {cid}/{mid}: {e}")
-        return web.json_response({"audio": [], "subtitle": []})
-
-
-async def _pump(st, resp, start, end):
-    gen = st.iter_range(start, end)
-    try:
-        async for piece in gen:
-            await resp.write(piece)
-    finally:
-        await gen.aclose()
+        return web.json_response(
+            {"audio": [], "subtitle": []},
+            headers={"Cache-Control": "no-store"},
+        )
 
 
 def _vtt_keep(key, data):
@@ -457,24 +657,35 @@ async def _playlist_body(token):
         _list_cache.pop(token, None)
         _poster_cache.pop(token, None)
         return None
-    hit = _list_cache.get(token)
+    hit = _cached(_list_cache, token)
     if hit is not None:
-        _list_cache.move_to_end(token)
         return hit
+    return await _once(("list", token), lambda: _build_playlist(token, doc))
+
+
+async def _build_playlist(token, doc):
+    hit = _cached(_list_cache, token)
+    if hit is not None:
+        return hit
+    found = await _locate(doc["items"])
     items = []
+    whole = True
     for tok in doc["items"]:
-        found = await database.get_stream(tok)
-        if not found:
+        where = found.get(tok)
+        if not where:
+            whole = False
             continue
         try:
-            info = await probe(found[0], found[1])
+            info = await probe(where[0], where[1])
         except StreamGone:
-            purge_fid(found[0], found[1])
+            _gone(where[0], where[1])
+            whole = False
             continue
         except NoClientAvailable:
             raise
         except Exception as e:
             LOGGER.error(f"playlist probe failed for {tok}: {e}")
+            whole = False
             continue
         mime = info.get("mime") or ""
         items.append(
@@ -491,10 +702,115 @@ async def _playlist_body(token):
         "items": items,
         "poster": bool(doc.get("pcid") and doc.get("pmid")) or bool(items),
     }
-    _list_cache[token] = body
-    while len(_list_cache) > _LIST_KEEP:
-        _list_cache.popitem(last=False)
+    _keep(_list_cache, token, body, _LIST_KEEP, whole)
     return body
+
+
+def _trims_for(kept, stored):
+    cuts = []
+    for seat, (index, _tok, _info) in enumerate(kept):
+        cuts.append(int(stored[index]) if index < len(stored) else 0)
+    if any(cuts):
+        return cuts
+    derived = split_trims([i.get("name") or "" for _x, _t, i in kept])
+    return derived or cuts
+
+
+async def _merge_body(token):
+    doc = await database.get_playlist(token)
+    if not doc or not doc.get("merged"):
+        _merge_cache.pop(token, None)
+        return None
+    hit = _cached(_merge_cache, token)
+    if hit is not None:
+        return hit
+    return await _once(("merge", token), lambda: _build_merge(token, doc))
+
+
+async def _build_merge(token, doc):
+    hit = _cached(_merge_cache, token)
+    if hit is not None:
+        return hit
+    items = doc["items"]
+    durs = doc.get("durs") or []
+    trims = doc.get("trims") or []
+    found = await _locate(items)
+    kept = []
+    partial = False
+    for index, tok in enumerate(items):
+        where = found.get(tok)
+        if not where:
+            partial = True
+            continue
+        try:
+            info = await probe(where[0], where[1])
+        except StreamGone:
+            _gone(where[0], where[1])
+            partial = True
+            continue
+        except NoClientAvailable:
+            raise
+        except Exception as e:
+            LOGGER.error(f"merge probe failed for {tok}: {e}")
+            partial = True
+            continue
+        kept.append((index, tok, info))
+    if not kept:
+        return None
+    cuts = _trims_for(kept, trims)
+    parts = []
+    at = 0
+    size = 0
+    for seat, (index, tok, info) in enumerate(kept):
+        dur = int(durs[index] if index < len(durs) else 0)
+        trim = cuts[seat]
+        span = max(0, dur - trim)
+        size += info.get("size") or 0
+        parts.append(
+            {
+                "token": tok,
+                "name": info.get("name") or "Untitled",
+                "size": info.get("size") or 0,
+                "mime": info.get("mime") or "",
+                "dur": dur,
+                "trim": trim,
+                "start": at,
+                "span": span,
+            }
+        )
+        at += span
+    body = {
+        "token": token,
+        "name": doc["name"] or parts[0]["name"],
+        "mime": parts[0]["mime"],
+        "size": size,
+        "duration": at,
+        "count": len(parts),
+        "partial": partial,
+        "parts": parts,
+    }
+    _keep(_merge_cache, token, body, _MERGE_KEEP, not partial)
+    return body
+
+
+async def _merge(request):
+    token = request.match_info.get("token", "")
+    if not _TOKEN_RE.match(token):
+        raise web.HTTPNotFound(text="unknown link")
+    try:
+        body = await _merge_body(token)
+    except NoClientAvailable as e:
+        raise web.HTTPServiceUnavailable(text=str(e)) from None
+    if body is None:
+        raise web.HTTPNotFound(text="unknown link")
+    tag = '"merge-%s-%d"' % (token, body["count"])
+    return web.json_response(
+        body,
+        headers={
+            "Cache-Control": "private, max-age=300",
+            "ETag": tag,
+        },
+    )
 
 
 async def _poster_source(token):
@@ -504,10 +820,10 @@ async def _poster_source(token):
             return ("url", doc["purl"])
         if doc.get("pcid") and doc.get("pmid"):
             return ("tg", (int(doc["pcid"]), int(doc["pmid"])))
+        found = await database.get_streams(doc["items"])
         for tok in doc["items"]:
-            found = await database.get_stream(tok)
-            if found:
-                return ("tg", found)
+            if tok in found:
+                return ("tg", found[tok])
         return None
     art = await database.get_stream_art(token)
     if art:
@@ -527,7 +843,17 @@ async def _poster(request):
     if source[0] == "url":
         raise web.HTTPFound(source[1])
 
-    data = _poster_cache.get(token)
+    hit = _poster_cache.get(token)
+    data = None
+    if isinstance(hit, tuple):
+        if monotonic() < hit[1]:
+            data = hit[0]
+            _poster_cache.move_to_end(token)
+        else:
+            _poster_cache.pop(token, None)
+    elif hit is not None:
+        data = hit
+        _poster_cache.move_to_end(token)
     if data is None:
         try:
             data = await poster_bytes(source[1][0], source[1][1])
@@ -536,11 +862,10 @@ async def _poster(request):
         except Exception as e:
             LOGGER.debug(f"poster unavailable for {token}: {e}")
             data = b""
-        _poster_cache[token] = data
+        _poster_cache[token] = data or (b"", monotonic() + _POSTER_MISS_TTL)
+        _poster_cache.move_to_end(token)
         while len(_poster_cache) > _POSTER_KEEP:
             _poster_cache.popitem(last=False)
-    else:
-        _poster_cache.move_to_end(token)
 
     if not data:
         raise web.HTTPNotFound(text="no artwork")
@@ -581,6 +906,7 @@ async def _playlist(request):
 
 def forget(token):
     _list_cache.pop(token, None)
+    _merge_cache.pop(token, None)
     _poster_cache.pop(token, None)
 
 
@@ -590,8 +916,36 @@ def purge_vtt(cid, mid):
         _vtt_bytes -= len(_vtt_cache.pop(key))
 
 
+async def _spare_tracks(cid, mid, idx):
+    try:
+        info = await _probe(cid, mid)
+    except Exception:
+        return []
+    spare = [
+        seat
+        for seat in (int(t.get("index", -1)) for t in info.get("subtitle") or [])
+        if seat >= 0 and seat != idx and (cid, mid, seat) not in _vtt_cache
+    ]
+    return spare[:_VTT_SIDECARS]
+
+
+def _harvest(cid, mid, stage, spare):
+    if not stage:
+        return
+    for j in spare:
+        path = pathjoin(stage, f"{j}.vtt")
+        try:
+            with open(path, "rb") as fh:
+                data = fh.read(_VTT_ENTRY_MAX + 1)
+        except OSError:
+            continue
+        if data and len(data) <= _VTT_ENTRY_MAX:
+            _vtt_keep((cid, mid, j), data)
+    LOGGER.info(f"subtitle sidecars cached: {cid}/{mid} ({len(spare)} tracks)")
+
+
 async def _subs(request):
-    _, cid, mid = await _resolve(request)
+    _, cid, mid, _exp = await _resolve(request)
     try:
         idx = int(request.match_info.get("idx", "0"))
     except ValueError:
@@ -617,36 +971,51 @@ async def _subs(request):
     try:
         st = await open_stream(cid, mid, "bulk")
     except StreamGone:
-        purge_fid(cid, mid)
-        purge_vtt(cid, mid)
+        _gone(cid, mid)
         raise web.HTTPNotFound(text="file is gone") from None
     except NoClientAvailable as e:
         raise web.HTTPServiceUnavailable(text=str(e)) from None
 
-    proc = await _spawn_ffmpeg(
-        [
-            BinConfig.FFMPEG_NAME, "-hide_banner", "-loglevel", "error",
-            "-threads", "1", "-vn", "-an",
-            "-i", "pipe:0", "-map", f"0:s:{idx}",
-            "-f", "webvtt", "-flush_packets", "1", "pipe:1",
-        ],
-        "subtitle extraction",
-    )
-    done = get_running_loop().create_future()
-    done.add_done_callback(lambda f: f.exception())
-    _vtt_inflight[key] = done
+    spare = await _spare_tracks(cid, mid, idx)
+    stage = mkdtemp(prefix="wzx-vtt-") if spare else None
+    args = [
+        BinConfig.FFMPEG_NAME, "-hide_banner", "-loglevel", "error",
+        "-threads", "1", "-vn", "-an",
+        "-i", "pipe:0", "-map", f"0:s:{idx}",
+        "-f", "webvtt", "-flush_packets", "1", "pipe:1",
+    ]
+    for j in spare:
+        args += ["-map", f"0:s:{j}", "-f", "webvtt", pathjoin(stage, f"{j}.vtt")]
+
+    try:
+        proc = await _spawn_ffmpeg(args, "subtitle extraction")
+    except BaseException:
+        if stage:
+            rmtree(stage, ignore_errors=True)
+        await shield(st._release())
+        raise
 
     resp = web.StreamResponse(
         status=200,
         headers={
             "Content-Type": "text/vtt; charset=utf-8",
-            "Cache-Control": "private, max-age=86400",
-            "ETag": f'"{cid}-{mid}-{idx}-live"',
+            "Cache-Control": "no-store",
             "Access-Control-Allow-Origin": "*",
         },
     )
     resp.enable_compression(False)
-    await resp.prepare(request)
+    try:
+        await resp.prepare(request)
+    except BaseException:
+        _reap_proc(proc)
+        if stage:
+            rmtree(stage, ignore_errors=True)
+        await shield(st._release())
+        raise
+
+    done = get_running_loop().create_future()
+    done.add_done_callback(lambda f: f.exception())
+    _vtt_inflight[key] = done
 
     async def feed():
         gen = st.iter_range(0, st.size - 1)
@@ -683,6 +1052,8 @@ async def _subs(request):
             rc = await wait_for(proc.wait(), timeout=10)
         except Exception:
             rc = None
+        if rc == 0:
+            _harvest(cid, mid, stage, spare)
         if rc == 0 and buf:
             data = b"".join(buf)
             _vtt_keep(key, data)
@@ -699,10 +1070,9 @@ async def _subs(request):
         if _vtt_inflight.get(key) is done:
             del _vtt_inflight[key]
         pusher.cancel()
-        try:
-            proc.kill()
-        except Exception:
-            pass
+        _reap_proc(proc)
+        if stage:
+            rmtree(stage, ignore_errors=True)
     return resp
 
 
@@ -716,6 +1086,7 @@ def build_app():
     app.router.add_route("GET", "/_meta/{token}", _meta)
     app.router.add_route("GET", "/_tracks/{token}", _tracks)
     app.router.add_route("GET", "/_playlist/{token}", _playlist)
+    app.router.add_route("GET", "/_merge/{token}", _merge)
     app.router.add_route("GET", "/_poster/{token}", _poster)
     app.router.add_route("GET", "/_subs/{token}/{idx}", _subs)
     app.router.add_route("*", "/_stream/{token}", _stream)
@@ -728,13 +1099,18 @@ async def start_stream_server():
     if _runner is not None:
         return
     port = stream_port()
+    _runner = web.AppRunner(build_app(), access_log=None)
     try:
-        _runner = web.AppRunner(build_app(), access_log=None)
         await _runner.setup()
         await web.TCPSite(_runner, "127.0.0.1", port).start()
+        start_reaper()
         LOGGER.info(f"Stream server listening on 127.0.0.1:{port}")
     except Exception as e:
-        _runner = None
+        stale, _runner = _runner, None
+        try:
+            await stale.cleanup()
+        except Exception:
+            pass
         LOGGER.error(f"Failed to start stream server on {port}: {e}")
 
 
@@ -750,4 +1126,7 @@ async def stop_stream_server():
 
 
 def spawn_stream_server():
-    bot_loop.create_task(start_stream_server())
+    task = bot_loop.create_task(start_stream_server())
+    _side_tasks.add(task)
+    task.add_done_callback(_side_tasks.discard)
+    return task

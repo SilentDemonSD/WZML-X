@@ -25,7 +25,15 @@ def is_gdrive_link(url: str):
 
 
 def is_telegram_link(url: str):
-    return url.startswith(("https://t.me/", "tg://openmessage?user_id="))
+    return url.startswith(
+        (
+            "https://t.me/",
+            "https://telegram.me/",
+            "https://telegram.dog/",
+            "https://telegram.space/",
+            "tg://openmessage?user_id=",
+        )
+    )
 
 
 def is_mega_link(url: str):
