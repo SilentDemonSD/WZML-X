@@ -144,10 +144,6 @@ def is_image_message(message):
     return bool(mime and mime.lower().startswith("image/"))
 
 
-async def reject_shortcut(message, reason):
-    await send_message(message, f"{reason}\n\n{SHORTCUT_HELP}")
-
-
 user_settings_text = {
     "THUMBNAIL": (
         "Photo or Doc",
@@ -1383,38 +1379,38 @@ async def set_direct_setting(message):
         return
     reply_to = message.reply_to_message
     if not reply_to:
-        await reject_shortcut(
+        await send_message(
             message,
             f"<i>Reply to your own message holding the value to set "
             f"<b>{escape(option)}</b>.</i>",
         )
         return
     if not reply_to.from_user or reply_to.from_user.id != user_id:
-        await reject_shortcut(
+        await send_message(
             message, "<i>Reply to your own message to set a value directly.</i>"
         )
         return
     if option in file_options:
         if option == "THUMBNAIL":
             if not is_image_message(reply_to):
-                await reject_shortcut(
+                await send_message(
                     message, "<i>Reply to a photo or an image document.</i>"
                 )
                 return
         elif not reply_to.document:
-            await reject_shortcut(
+            await send_message(
                 message, f"<i>Reply to the <b>{escape(option)}</b> file.</i>"
             )
             return
         if not await save_uploaded_file(reply_to, option, user_id):
-            await reject_shortcut(
+            await send_message(
                 message,
                 f"<b>{escape(option)}</b> processing failed. Send a valid "
                 "file and try again.",
             )
             return
     elif not reply_to.text:
-        await reject_shortcut(
+        await send_message(
             message,
             f"<i>Reply to a text message to set <b>{escape(option)}</b>.</i>",
         )
