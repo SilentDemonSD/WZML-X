@@ -137,6 +137,17 @@ def resolve_shortcut_option(arg):
     return shortcut_options.get(arg.lower())
 
 
+def is_image_message(message):
+    if message.photo:
+        return True
+    mime = message.document.mime_type if message.document else None
+    return bool(mime and mime.lower().startswith("image/"))
+
+
+async def reject_shortcut(message, reason):
+    await send_message(message, f"{reason}\n\n{SHORTCUT_HELP}")
+
+
 user_settings_text = {
     "THUMBNAIL": (
         "Photo or Doc",
@@ -1372,38 +1383,38 @@ async def set_direct_setting(message):
         return
     reply_to = message.reply_to_message
     if not reply_to:
-        await send_message(
+        await reject_shortcut(
             message,
             f"<i>Reply to your own message holding the value to set "
-            f"<b>{escape(option)}</b>.</i>\n\n{SHORTCUT_HELP}",
+            f"<b>{escape(option)}</b>.</i>",
         )
         return
     if not reply_to.from_user or reply_to.from_user.id != user_id:
-        await send_message(
+        await reject_shortcut(
             message, "<i>Reply to your own message to set a value directly.</i>"
         )
         return
     if option in file_options:
         if option == "THUMBNAIL":
-            if not (reply_to.photo or reply_to.document):
-                await send_message(
+            if not is_image_message(reply_to):
+                await reject_shortcut(
                     message, "<i>Reply to a photo or an image document.</i>"
                 )
                 return
         elif not reply_to.document:
-            await send_message(
+            await reject_shortcut(
                 message, f"<i>Reply to the <b>{escape(option)}</b> file.</i>"
             )
             return
         if not await save_uploaded_file(reply_to, option, user_id):
-            await send_message(
+            await reject_shortcut(
                 message,
                 f"<b>{escape(option)}</b> processing failed. Send a valid "
                 "file and try again.",
             )
             return
     elif not reply_to.text:
-        await send_message(
+        await reject_shortcut(
             message,
             f"<i>Reply to a text message to set <b>{escape(option)}</b>.</i>",
         )
@@ -1519,7 +1530,9 @@ async def save_uploaded_file(message, ftype, user_id):
 @new_task
 async def add_file(_, message, ftype, rfunc):
     handler_dict[message.from_user.id] = False
-    if not await save_uploaded_file(message, ftype, message.from_user.id):
+    if ftype == "THUMBNAIL" and not is_image_message(message):
+        await send_message(message, "<i>Send a photo or an image document.</i>")
+    elif not await save_uploaded_file(message, ftype, message.from_user.id):
         await send_message(
             message,
             f"<b>{ftype}</b> processing failed. Send a valid file and try again.",
