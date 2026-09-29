@@ -232,6 +232,16 @@ class TaskListener(TaskConfig):
             async with queue_dict_lock:
                 if self.mid in non_queued_dl:
                     non_queued_dl.remove(self.mid)
+            # Take our place in the upload order now, before the extract /
+            # ffmpeg / compress / split steps below. They can run for a long
+            # time, and until this call the task held no slot at all, so a
+            # task that finished downloading later could grab the upload slot
+            # and upload ahead of this one. Reserving here does not block the
+            # processing -- we only wait for the event further down, just
+            # before the upload itself, so splitting still overlaps with the
+            # previous task's upload.
+            self._up_queued, self._up_event = await check_running_tasks(self, "up")
+            self._up_slot_taken = True
             await start_from_queued()
 
         if self.join and not self.is_file:
@@ -343,8 +353,11 @@ class TaskListener(TaskConfig):
 
         self.subproc = None
 
-        add_to_queue, event = await check_running_tasks(self, "up")
-        await start_from_queued()
+        if self._up_slot_taken:
+            add_to_queue, event = self._up_queued, self._up_event
+        else:
+            add_to_queue, event = await check_running_tasks(self, "up")
+            await start_from_queued()
         if add_to_queue:
             LOGGER.info(f"Added to Queue/Upload: {self.name}")
             async with task_dict_lock:
