@@ -37,6 +37,7 @@ from ..helper.ext_utils.status_utils import (
     get_readable_file_size,
     get_readable_time,
 )
+from ..helper.telegram_helper.bot_commands import BotCommands
 from ..helper.telegram_helper.button_build import ButtonMaker
 from ..helper.telegram_helper.prompt import STOP, ask_in_pm
 from ..helper.telegram_helper.tg_utils import chat_info
@@ -105,11 +106,42 @@ ytdlp_options = [
 mega_options = ["MEGA_EMAIL", "MEGA_PASSWORD"]
 seedr_options = ["SEEDR_EMAIL", "SEEDR_PASSWORD", "SEEDR_DELETE_FOLDER"]
 
+shortcut_options = {
+    "thumb": "THUMBNAIL",
+    "prefix": "LEECH_PREFIX",
+    "suffix": "LEECH_SUFFIX",
+    "cap": "LEECH_CAPTION",
+    "yt_opt": "YT_DLP_OPTIONS",
+    "dump": "LEECH_DUMP_CHATS",
+}
+file_options = ("THUMBNAIL", "RCLONE_CONFIG", "TOKEN_PICKLE", "USER_COOKIE_FILE")
+
+_uset_cmd = f"/{BotCommands.UserSetCommand[1]}"
+SHORTCUT_HELP = f"""⌬ <b><u>Direct Set Flags :</u></b>
+│
+┠ <i>Reply to your own message holding the value with one of these
+┃ flags to set that option directly, without opening the User Settings menu.</i>
+┃
+┟ <b>Custom Thumbnail</b> → <code>{_uset_cmd} -s thumb</code>
+┟ <b>Leech Filename Prefix</b> → <code>{_uset_cmd} -s prefix</code>
+┟ <b>Leech Filename Suffix</b> → <code>{_uset_cmd} -s suffix</code>
+┟ <b>Leech Filename Caption</b> → <code>{_uset_cmd} -s cap</code>
+┟ <b>YT-DLP Options</b> → <code>{_uset_cmd} -s yt_opt</code>
+┟ <b>Leech Dump Chats</b> → <code>{_uset_cmd} -s dump</code>
+"""
+
+
+def resolve_shortcut_option(arg):
+    if not arg:
+        return None
+    return shortcut_options.get(arg.lower())
+
+
 user_settings_text = {
     "THUMBNAIL": (
         "Photo or Doc",
         "Custom Thumbnail is used as the thumbnail for the files you upload to telegram in media or document mode.",
-        "<i>Send a photo to save it as custom thumbnail.</i> \n┖ <b>Time Left :</b> <code>60 sec</code>",
+        f"<i>Send a photo to save it as custom thumbnail.</i>\n<b>Or:</b> reply to the photo with <code>{_uset_cmd} -s thumb</code> to set it without opening this menu. \n┖ <b>Time Left :</b> <code>60 sec</code>",
     ),
     "RCLONE_CONFIG": (
         "rclone.conf file",
@@ -1330,8 +1362,67 @@ async def update_user_settings(query, stype="main"):
     await edit_message(query.message, msg, button)
 
 
+async def set_direct_setting(message):
+    user_id = message.from_user.id
+    handler_dict[user_id] = False
+    set_arg = message.command[2] if len(message.command) > 2 else ""
+    option = resolve_shortcut_option(set_arg)
+    if not option:
+        await send_message(message, SHORTCUT_HELP, photo="IMAGES")
+        return
+    reply_to = message.reply_to_message
+    if not reply_to:
+        await send_message(
+            message,
+            f"<i>Reply to your own message holding the value to set "
+            f"<b>{escape(option)}</b>.</i>\n\n{SHORTCUT_HELP}",
+        )
+        return
+    if not reply_to.from_user or reply_to.from_user.id != user_id:
+        await send_message(
+            message, "<i>Reply to your own message to set a value directly.</i>"
+        )
+        return
+    if option in file_options:
+        if option == "THUMBNAIL":
+            if not (reply_to.photo or reply_to.document):
+                await send_message(
+                    message, "<i>Reply to a photo or an image document.</i>"
+                )
+                return
+        elif not reply_to.document:
+            await send_message(
+                message, f"<i>Reply to the <b>{escape(option)}</b> file.</i>"
+            )
+            return
+        if not await save_uploaded_file(reply_to, option, user_id):
+            await send_message(
+                message,
+                f"<b>{escape(option)}</b> processing failed. Send a valid "
+                "file and try again.",
+            )
+            return
+    elif not reply_to.text:
+        await send_message(
+            message,
+            f"<i>Reply to a text message to set <b>{escape(option)}</b>.</i>",
+        )
+        return
+    elif not await set_option_value(reply_to, option):
+        return
+    text, btns = await build_menu(option, user_id)
+    await send_message(message, text, btns)
+
+
 @new_task
 async def send_user_settings(_, message):
+    arg = message.command[1] if len(message.command) > 1 else ""
+    if arg in ("-s", "-set"):
+        await set_direct_setting(message)
+        return
+    if arg.startswith("-"):
+        await send_message(message, SHORTCUT_HELP, photo="IMAGES")
+        return
     from_user = message.from_user
     handler_dict[from_user.id] = False
     msg, button = await get_user_settings(from_user)
@@ -1398,12 +1489,11 @@ async def do_import(_, message, rfunc):
     await rfunc()
 
 
-@new_task
-async def add_file(_, message, ftype, rfunc):
-    user_id = message.from_user.id
-    handler_dict[user_id] = False
+async def save_uploaded_file(message, ftype, user_id):
     if ftype == "THUMBNAIL":
         des_dir = await create_thumb(message, user_id)
+        if not des_dir:
+            return None
     elif ftype == "RCLONE_CONFIG":
         rpath = f"{getcwd()}/rclone/"
         await makedirs(rpath, exist_ok=True)
@@ -1419,10 +1509,23 @@ async def add_file(_, message, ftype, rfunc):
         await makedirs(cpath, exist_ok=True)
         des_dir = f"{cpath}/cookies.txt"
         await message.download(file_name=des_dir)
-    await delete_message(message)
+    else:
+        return None
     update_user_ldata(user_id, ftype, des_dir)
-    await rfunc()
     await database.update_user_doc(user_id, ftype, des_dir)
+    return des_dir
+
+
+@new_task
+async def add_file(_, message, ftype, rfunc):
+    handler_dict[message.from_user.id] = False
+    if not await save_uploaded_file(message, ftype, message.from_user.id):
+        await send_message(
+            message,
+            f"<b>{ftype}</b> processing failed. Send a valid file and try again.",
+        )
+    await delete_message(message)
+    await rfunc()
 
 
 def validate_ffmpeg_cmds(value):
@@ -1548,10 +1651,8 @@ async def remove_one(_, message, option, rfunc):
     await database.update_user_data(user_id)
 
 
-@new_task
-async def set_option(_, message, option, rfunc):
+async def set_option_value(message, option):
     user_id = message.from_user.id
-    handler_dict[user_id] = False
     value = message.text
     if option == "LEECH_SPLIT_SIZE":
         if not value.isdigit():
@@ -1696,12 +1797,19 @@ async def set_option(_, message, option, rfunc):
             await send_message(message, "It must be dict!")
             return
     update_user_ldata(user_id, option, value)
-    await delete_message(message)
-    await rfunc()
     await database.update_user_data(user_id)
+    return True
 
 
-async def get_menu(option, message, user_id):
+@new_task
+async def set_option(_, message, option, rfunc):
+    handler_dict[message.from_user.id] = False
+    if await set_option_value(message, option):
+        await delete_message(message)
+        await rfunc()
+
+
+async def build_menu(option, user_id):
     handler_dict[user_id] = False
     user_dict = user_data.get(user_id, {})
 
@@ -1856,7 +1964,12 @@ async def get_menu(option, message, user_id):
 ┠ <b>Default Input Type</b> → {user_settings_text[option][0]}
 ┖ <b>Description</b> → {user_settings_text[option][1]}
 """
-    await edit_message(message, text, buttons.build_menu(2))
+    return text, buttons.build_menu(2)
+
+
+async def get_menu(option, message, user_id):
+    text, btns = await build_menu(option, user_id)
+    await edit_message(message, text, btns)
 
 
 async def event_handler(client, query, pfunc, rfunc, photo=False, document=False):
