@@ -127,7 +127,7 @@ SHORTCUT_HELP = f"""⌬ <b><u>Direct Set Flags :</u></b>
 ┟ <b>Leech Filename Suffix</b> → <code>{_uset_cmd} -s suffix</code>
 ┟ <b>Leech Filename Caption</b> → <code>{_uset_cmd} -s cap</code>
 ┟ <b>YT-DLP Options</b> → <code>{_uset_cmd} -s yt_opt</code>
-┟ <b>Leech Dump Chats</b> → <code>{_uset_cmd} -s dump</code>
+┖ <b>Leech Dump Chats</b> → <code>{_uset_cmd} -s dump</code>
 """
 
 
