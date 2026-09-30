@@ -710,7 +710,8 @@ async def open_drive_clean(message):
         buttons.build_menu(3),
     )
     start_time = time()
-    bot_cache[msg_id] = [None, False, False, start_time, None]
+    first_id = merged.get(first_cat, {}).get("drive_id") if first_cat else None
+    bot_cache[msg_id] = [first_id, False, False, start_time, first_cat]
     while time() - start_time <= 60:
         await sleep(0.5)
         if bot_cache[msg_id][1] or bot_cache[msg_id][2]:

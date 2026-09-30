@@ -343,9 +343,33 @@ class GoogleDriveClean(GoogleDriveHelper):
             await self.list_drives()
 
     async def start(self, link=None, drive_id=None, cat_name=None):
+        self._token_user, self._token_owner, self._sa_owner = await gather(
+            aiopath.exists(self.user_token_path),
+            aiopath.exists("token.pickle"),
+            aiopath.exists("accounts"),
+        )
+        if not self._token_owner and not self._token_user and not self._sa_owner:
+            self._error_msg = "token.pickle or service accounts do not exist!"
+            self.id = self._error_msg
+            self.listener.is_cancelled = True
+            self.event.set()
+            return
+
+        if self._token_owner:
+            self.token_path = "token.pickle"
+            self.use_sa = False
+        elif self._token_user:
+            self.token_path = self.user_token_path
+            self.use_sa = False
+        else:
+            self.token_path = "accounts"
+            self.use_sa = True
+
+        self.service = self.authorize()
+
         if link:
             try:
-                file_id = self.get_id_from_url(link)
+                file_id = self.get_id_from_url(link, self.listener.user_id)
             except (KeyError, IndexError):
                 self._error_msg = (
                     "Google Drive ID could not be found in the provided link"
@@ -381,17 +405,6 @@ class GoogleDriveClean(GoogleDriveHelper):
             await self.get_items()
             await self._event_handler()
         else:
-            self._token_user, self._token_owner, self._sa_owner = await gather(
-                aiopath.exists(self.user_token_path),
-                aiopath.exists("token.pickle"),
-                aiopath.exists("accounts"),
-            )
-            if not self._token_owner and not self._token_user and not self._sa_owner:
-                self._error_msg = "token.pickle or service accounts are not Exists!"
-                self.id = self._error_msg
-                self.listener.is_cancelled = True
-                self.event.set()
-                return
             await self.choose_token()
             await self._event_handler()
         if self._reply_to:
