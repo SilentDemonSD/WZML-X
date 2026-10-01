@@ -119,9 +119,7 @@ file_options = ("THUMBNAIL", "RCLONE_CONFIG", "TOKEN_PICKLE", "USER_COOKIE_FILE"
 _uset_cmd = f"/{BotCommands.UserSetCommand[1]}"
 SHORTCUT_HELP = f"""⌬ <b><u>Direct Set Flags :</u></b>
 │
-┠ <i>Reply to your own message holding the value with one of these
-┃ flags to set that option directly, without opening the User Settings menu.</i>
-┃
+┠ <i>Reply to your own message holding the value with one of these flags to set that option directly, without opening the User Settings menu.</i>
 ┟ <b>Custom Thumbnail</b> → <code>{_uset_cmd} -s thumb</code>
 ┟ <b>Leech Filename Prefix</b> → <code>{_uset_cmd} -s prefix</code>
 ┟ <b>Leech Filename Suffix</b> → <code>{_uset_cmd} -s suffix</code>
