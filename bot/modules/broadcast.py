@@ -162,6 +162,7 @@ async def broadcast(_, message):
     pls_wait = await send_message(message, status.format(t=0, s=0, b=0, d=0, u=0))
     t, s, b, d, u = 0, 0, 0, 0, 0
     for uid in await database.get_pm_uids():
+        bc_msg = None
         try:
             bc_msg = (
                 await rply.forward(uid, disable_notification=quietly)
