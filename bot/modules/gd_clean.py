@@ -111,7 +111,7 @@ async def confirm_drive_clean_cb(_, query):
         selected = cat_name == name
         buttons.data_button(
             f"{'✓️' if selected else ''} {name}",
-            f"gdccat {user_id} {msg_id} {name.replace(' ', '_')}",
+            f"gdccat {user_id} {msg_id} {name}",
         )
     if selected_id:
         buttons.data_button(

@@ -694,7 +694,7 @@ async def open_drive_clean(message):
             first_cat = name
         buttons.data_button(
             f"{'✓️' if i == 0 else ''} {name}",
-            f"gdccat {user_id} {msg_id} {name.replace(' ', '_')}",
+            f"gdccat {user_id} {msg_id} {name}",
         )
     first_id = merged["Default"]["drive_id"]
     if first_id:
