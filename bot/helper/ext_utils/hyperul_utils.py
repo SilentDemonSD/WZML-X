@@ -286,6 +286,8 @@ class HypertgUpload(HypertgTransfer):
                     kwargs["title"] = title
                 if thumb:
                     kwargs["thumb"] = thumb
+            elif key == "documents" and thumb:
+                kwargs["thumb"] = thumb
 
             if key == "videos":
                 kwargs["video"] = file_path
@@ -352,9 +354,8 @@ class HypertgUpload(HypertgTransfer):
                 kwargs["performer"] = artist
             if title:
                 kwargs["title"] = title
-        else:
-            if thumb:
-                kwargs["thumb"] = thumb
+        elif key == "documents" and thumb:
+            kwargs["thumb"] = thumb
 
         if key == "videos":
             kwargs["video"] = file_path
