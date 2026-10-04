@@ -320,16 +320,25 @@ class GoogleDriveClean(GoogleDriveHelper):
             button = buttons.build_menu(2)
             await self._send_list_message(msg, button)
         else:
-            if self._token_owner:
-                self.token_path = "token.pickle"
-                self.use_sa = False
-            elif self._token_user:
-                self.token_path = self.user_token_path
-                self.use_sa = False
-            else:
-                self.token_path = "accounts"
-                self.use_sa = True
+            self._default_token()
             await self.list_drives()
+
+    def _default_token(self):
+        if self._token_owner:
+            self.token_path = "token.pickle"
+            self.use_sa = False
+        elif self._token_user:
+            self.token_path = self.user_token_path
+            self.use_sa = False
+        else:
+            self.token_path = "accounts"
+            self.use_sa = True
+
+    async def _send_error(self, err):
+        await send_message(
+            self.listener.message,
+            f"⌬ <b><i>Drive Clean Error</i></b>\n┖ <b>Error</b> → <code>{err}</code>",
+        )
 
     async def get_pevious_id(self):
         if self.parents:
@@ -349,23 +358,15 @@ class GoogleDriveClean(GoogleDriveHelper):
             aiopath.exists("accounts"),
         )
         if not self._token_owner and not self._token_user and not self._sa_owner:
-            self._error_msg = "token.pickle or service accounts do not exist!"
-            self.id = self._error_msg
-            self.listener.is_cancelled = True
-            self.event.set()
-            return
-
-        if self._token_owner:
-            self.token_path = "token.pickle"
-            self.use_sa = False
-        elif self._token_user:
-            self.token_path = self.user_token_path
-            self.use_sa = False
-        else:
-            self.token_path = "accounts"
-            self.use_sa = True
-
-        self.service = self.authorize()
+            return await self._send_error(
+                "token.pickle or service accounts do not exist!"
+            )
+        if link or drive_id:
+            self._default_token()
+            try:
+                self.service = self.authorize()
+            except Exception as e:
+                return await self._send_error(e)
 
         if link:
             try:
@@ -416,7 +417,4 @@ class GoogleDriveClean(GoogleDriveHelper):
                 f"⌬ <b><i>Drive Cleaned</i></b>\n┟ <b>Category</b> → <code>{display_name}</code>\n┖ <b>Status</b> → <i>Completed</i>",
             )
         elif self._error_msg:
-            await send_message(
-                self.listener.message,
-                f"⌬ <b><i>Drive Clean Error</i></b>\n┖ <b>Error</b> → <code>{self._error_msg}</code>",
-            )
+            await self._send_error(self._error_msg)

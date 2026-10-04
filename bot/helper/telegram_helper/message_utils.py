@@ -696,6 +696,13 @@ async def open_drive_clean(message):
             f"{'✓️' if i == 0 else ''} {name}",
             f"gdccat {user_id} {msg_id} {name.replace(' ', '_')}",
         )
+    first_id = merged["Default"]["drive_id"]
+    if first_id:
+        buttons.data_button(
+            "Start Cleaning",
+            f"gdccat {user_id} {msg_id} cstart",
+            style=ButtonStyle.DANGER,
+        )
     buttons.data_button(
         "Cancel",
         f"gdccat {user_id} {msg_id} ccancel",
@@ -710,13 +717,12 @@ async def open_drive_clean(message):
         buttons.build_menu(3),
     )
     start_time = time()
-    first_id = merged.get(first_cat, {}).get("drive_id") if first_cat else None
     bot_cache[msg_id] = [first_id, False, False, start_time, first_cat]
     while time() - start_time <= 60:
         await sleep(0.5)
         if bot_cache[msg_id][1] or bot_cache[msg_id][2]:
             break
-    drive_id = bot_cache[msg_id][0]
+    drive_id = bot_cache[msg_id][0] if bot_cache[msg_id][2] else None
     is_cancelled = bot_cache[msg_id][1]
     cat_name = bot_cache[msg_id][4]
     if not is_cancelled:
