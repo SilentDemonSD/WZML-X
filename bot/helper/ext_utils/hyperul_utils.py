@@ -55,7 +55,7 @@ class HypertgUpload(HypertgTransfer):
 
         is_video, is_audio, is_image = await get_document_type(file_path)
 
-        thumb = user_thumb if user_thumb and user_thumb != "none" else None
+        thumb = user_thumb or None
 
         if not is_image and thumb is None:
             file_name = ospath.splitext(self._up_file)[0]
