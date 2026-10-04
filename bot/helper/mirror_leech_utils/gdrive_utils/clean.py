@@ -27,13 +27,14 @@ LIST_LIMIT = 6
 
 @new_task
 async def drive_clean_cb(_, query, obj):
-    await query.answer()
     message = query.message
     data = query.data.split()
+    action = data[1]
+    if action not in ("info", "confirm"):
+        await query.answer()
     if obj.query_proc:
         return
     obj.query_proc = True
-    action = data[1]
     if action == "cancel":
         obj.listener.is_cancelled = True
         obj.event.set()
@@ -114,9 +115,9 @@ async def drive_clean_cb(_, query, obj):
         _index, item = obj._pending_del
         file_id = item["id"]
         link = f"https://drive.google.com/file/d/{file_id}"
-        msg = await sync_to_async(
-            GoogleDriveDelete().deletefile, link, query.from_user.id
-        )
+        deleter = GoogleDriveDelete()
+        deleter.token_path, deleter.use_sa = obj.token_path, obj.use_sa
+        msg = await sync_to_async(deleter.deletefile, link, query.from_user.id)
         await query.answer(msg, show_alert=True)
         obj._pending_del = None
         await obj.get_items()
@@ -364,21 +365,17 @@ class GoogleDriveClean(GoogleDriveHelper):
         if link or drive_id:
             self._default_token()
             try:
+                file_id = self.get_id_from_url(link or drive_id, self.listener.user_id)
+            except (KeyError, IndexError):
+                return await self._send_error(
+                    "Google Drive ID could not be found in the provided link"
+                )
+            try:
                 self.service = self.authorize()
             except Exception as e:
                 return await self._send_error(e)
 
         if link:
-            try:
-                file_id = self.get_id_from_url(link, self.listener.user_id)
-            except (KeyError, IndexError):
-                self._error_msg = (
-                    "Google Drive ID could not be found in the provided link"
-                )
-                self.id = self._error_msg
-                self.listener.is_cancelled = True
-                self.event.set()
-                return
             self.id = file_id
             try:
                 meta = self.get_file_metadata(file_id)
@@ -401,8 +398,8 @@ class GoogleDriveClean(GoogleDriveHelper):
                 await self.get_items_buttons()
             await self._event_handler()
         elif drive_id:
-            self.id = drive_id
-            self.parents = [{"id": drive_id, "name": "root"}]
+            self.id = file_id
+            self.parents = [{"id": file_id, "name": "root"}]
             await self.get_items()
             await self._event_handler()
         else:
