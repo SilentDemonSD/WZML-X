@@ -1,8 +1,11 @@
-from asyncio import Semaphore, gather, get_event_loop, sleep
-from re import I as re_I, match as re_match
+from asyncio import Lock, Semaphore, gather, get_event_loop, sleep
+from random import uniform
+from re import I as re_I, compile as re_compile, match as re_match
+from time import monotonic
 from urllib.parse import parse_qs, quote, urlparse
 
 from niquests import AsyncSession
+from niquests.exceptions import ConnectTimeout, ProxyError, RequestException
 
 from .... import LOGGER
 from ....core.config_manager import Config
@@ -20,6 +23,26 @@ _USER_AGENT = (
 _MAGNET_POLL_INTERVAL_S = 5
 _MAGNET_MAX_DURATION_S = 7200
 _MAGNET_UNLOCK_CONCURRENCY = 3
+
+# How long a status check or unlock may keep failing on the network before
+# the task gives up. One dropped connection must not cost a 2 h torrent.
+_MAGNET_POLL_GRACE_S = 300
+_UNLOCK_GRACE_S = 60
+
+# AllDebrid allows 12 requests/s and 600/min. Stay under both across every
+# task at once -- a per-task limit alone lets several magnets burst past it.
+_RATE_PER_S = 8
+_MAX_IN_FLIGHT = 6
+
+_RETRY_ATTEMPTS = 4
+_RETRY_BASE_S = 1.0
+_RETRY_CAP_S = 20.0
+_RETRY_AFTER_CAP_S = 60.0
+_RETRY_STATUSES = {429, 500, 502, 503, 504}
+# 429 and 503 are AllDebrid's documented "too many requests" answers: the
+# request was refused, so resending it is safe even when it is not idempotent.
+_REFUSED_STATUSES = {429, 503}
+_KEY_IN_TEXT = re_compile(r"(?i)(apikey=)[^&\s'\"]+")
 
 _MAGNET_STATUS_READY = 4
 _MAGNET_STATUS_LABELS = {
@@ -74,35 +97,106 @@ def _ensure_api_key():
     raise DirectDownloadLinkException("ERROR: ALLDEBRID_API_KEY is not configured")
 
 
-async def _call_api(method, url, params=None, data=None, files=None):
-    kwargs = {"params": params or {}, "timeout": _TIMEOUT}
-    if data is not None:
-        kwargs["data"] = data
-    if files is not None:
-        kwargs["files"] = files
-    async with AsyncSession(headers={"User-Agent": _USER_AGENT}) as client:
-        try:
-            response = await client.request(method, url, **kwargs)
-            response.raise_for_status()
-        except Exception as e:
-            raise DirectDownloadLinkException(f"ERROR: AllDebrid network error: {e}")
-        try:
-            payload = response.json()
-        except Exception as e:
+class AllDebridNetworkError(DirectDownloadLinkException):
+    """No usable answer from AllDebrid even after retrying; worth trying later."""
+
+
+class _RateLimiter:
+    """Spaces request starts evenly, and makes a 429 slow every task down."""
+
+    def __init__(self, per_second):
+        self._interval = 1 / per_second
+        self._lock = Lock()
+        self._next = 0.0
+
+    async def wait(self):
+        async with self._lock:
+            now = monotonic()
+            start = max(now, self._next)
+            self._next = start + self._interval
+        if start > now:
+            await sleep(start - now)
+
+    async def hold(self, seconds):
+        async with self._lock:
+            self._next = max(self._next, monotonic() + seconds)
+
+
+_limiter = _RateLimiter(_RATE_PER_S)
+_in_flight = Semaphore(_MAX_IN_FLIGHT)
+_session = None
+
+
+def _get_session():
+    # One session for every call, so connections stay open and get reused
+    # instead of paying a TCP + proxy CONNECT + TLS handshake per request.
+    # HTTP/3 is off: QUIC cannot pass through an HTTP proxy, and a long-lived
+    # session would remember Alt-Svc upgrades that go around it.
+    global _session
+    if _session is None:
+        _session = AsyncSession(
+            headers={"User-Agent": _USER_AGENT},
+            disable_http3=True,
+            pool_maxsize=_MAX_IN_FLIGHT,
+        )
+    return _session
+
+
+def _redact(text):
+    text = _KEY_IN_TEXT.sub(r"\1***", str(text))
+    if api_key := (Config.ALLDEBRID_API_KEY or "").strip():
+        text = text.replace(api_key, "***")
+    return text
+
+
+def _backoff(attempt):
+    return min(_RETRY_CAP_S, _RETRY_BASE_S * 2**attempt) * uniform(0.75, 1.25)
+
+
+def _retry_after(response):
+    try:
+        seconds = float(response.headers.get("Retry-After"))
+    except (TypeError, ValueError):
+        return None
+    return min(_RETRY_AFTER_CAP_S, max(0.0, seconds))
+
+
+def _link_of(params, data):
+    if params and params.get("link"):
+        return params["link"]
+    for key, value in data if isinstance(data, list) else ():
+        if key == "link":
+            return value
+    return ""
+
+
+def _parse_payload(response, link):
+    status = response.status_code
+    try:
+        payload = response.json()
+    except Exception as e:
+        if status >= 400:
             raise DirectDownloadLinkException(
-                f"ERROR: AllDebrid returned malformed JSON: {e}"
+                f"ERROR: AllDebrid returned HTTP {status}"
             )
+        raise DirectDownloadLinkException(
+            f"ERROR: AllDebrid returned malformed JSON: {e}"
+        )
 
     if not isinstance(payload, dict):
         raise DirectDownloadLinkException(
             "ERROR: AllDebrid returned an unexpected payload shape"
         )
 
-    if payload.get("status") != "success":
-        error = payload.get("error") or {}
-        raise DirectDownloadLinkException(
-            f"ERROR: {_api_error_message(error, params.get('link', '') if params else '')}"
-        )
+    if payload.get("status") != "success" or status >= 400:
+        error = payload.get("error")
+        if not isinstance(error, dict):
+            if status >= 400:
+                raise DirectDownloadLinkException(
+                    f"ERROR: AllDebrid returned HTTP {status}"
+                )
+            error = {}
+        raise DirectDownloadLinkException(f"ERROR: {_api_error_message(error, link)}")
 
     inner = payload.get("data")
     if not isinstance(inner, dict):
@@ -112,11 +206,67 @@ async def _call_api(method, url, params=None, data=None, files=None):
     return inner
 
 
-async def _post_form(url, fields):
-    api_key = _ensure_api_key()
-    return await _call_api(
-        "POST", url, params={"agent": _AGENT, "apikey": api_key}, data=fields
-    )
+async def _call_api(method, url, params=None, data=None, files=None, idempotent=True):
+    """One AllDebrid API call: shared session, global rate limit, retries.
+
+    The key travels in the Authorization header, never the URL, so it cannot
+    end up in an error message. Calls with idempotent=False (uploads) are only
+    resent when AllDebrid refused them outright or they never left the proxy,
+    because the docs do not say whether a repeated upload is merged or doubled.
+    """
+    headers = {"Authorization": f"Bearer {_ensure_api_key()}"}
+    query = {"agent": _AGENT, **(params or {})}
+    endpoint = urlparse(url).path
+    last_error = ""
+
+    for attempt in range(_RETRY_ATTEMPTS):
+        try:
+            async with _in_flight:
+                await _limiter.wait()
+                response = await _get_session().request(
+                    method,
+                    url,
+                    params=query,
+                    data=data,
+                    files=files,
+                    headers=headers,
+                    timeout=_TIMEOUT,
+                )
+        except (ConnectTimeout, ProxyError) as e:
+            last_error = _redact(e)
+            delay = _backoff(attempt)
+        except (RequestException, OSError) as e:
+            last_error = _redact(e)
+            if not idempotent:
+                break
+            delay = _backoff(attempt)
+        except Exception as e:
+            raise DirectDownloadLinkException(
+                f"ERROR: AllDebrid request failed: {_redact(e)}"
+            )
+        else:
+            status = response.status_code
+            if status not in _RETRY_STATUSES or (
+                not idempotent and status not in _REFUSED_STATUSES
+            ):
+                return _parse_payload(response, _link_of(params, data))
+            last_error = f"HTTP {status}"
+            delay = _retry_after(response) or _backoff(attempt)
+            if status in _REFUSED_STATUSES:
+                await _limiter.hold(delay)
+
+        if attempt + 1 < _RETRY_ATTEMPTS:
+            LOGGER.warning(
+                f"AllDebrid {endpoint}: {last_error} - retry {attempt + 1} of "
+                f"{_RETRY_ATTEMPTS - 1} in {delay:.1f}s"
+            )
+            await sleep(delay)
+
+    raise AllDebridNetworkError(f"ERROR: AllDebrid network error: {last_error}")
+
+
+async def _post_form(url, fields, idempotent=True):
+    return await _call_api("POST", url, data=fields, idempotent=idempotent)
 
 
 def _basename_from_url(link):
@@ -126,11 +276,10 @@ def _basename_from_url(link):
 
 async def alldebrid_resolve(link):
     """Unlock a filehost link. Returns a direct URL or a multi-file dict."""
-    api_key = _ensure_api_key()
     data = await _call_api(
         "GET",
         f"{_API_BASE_V4}/link/unlock",
-        params={"agent": _AGENT, "apikey": api_key, "link": link},
+        params={"link": link},
     )
 
     direct = data.get("link")
@@ -228,7 +377,9 @@ async def upload_magnet(magnet):
     for idx, candidate in enumerate(candidates, start=1):
         try:
             data = await _post_form(
-                f"{_API_BASE_V4}/magnet/upload", [("magnets[]", candidate)]
+                f"{_API_BASE_V4}/magnet/upload",
+                [("magnets[]", candidate)],
+                idempotent=False,
             )
             magnets = data.get("magnets") or []
             if not magnets:
@@ -259,12 +410,11 @@ async def upload_magnet(magnet):
 
 async def upload_torrent(torrent_bytes, filename):
     LOGGER.info(f"Uploading torrent file to AllDebrid: {filename}")
-    api_key = _ensure_api_key()
     data = await _call_api(
         "POST",
         f"{_API_BASE_V4}/magnet/upload/file",
-        params={"agent": _AGENT, "apikey": api_key},
         files={"files[]": (filename, torrent_bytes, "application/x-bittorrent")},
+        idempotent=False,
     )
     items = data.get("files") or []
     if not items:
@@ -320,32 +470,67 @@ async def get_magnet_files(magnet_id):
 
 
 async def _unlock_alldebrid_link(link):
-    api_key = _ensure_api_key()
-    return await _call_api(
-        "POST",
-        f"{_API_BASE_V4}/link/unlock",
-        params={"agent": _AGENT, "apikey": api_key},
-        data=[("link", link)],
-    )
+    return await _post_form(f"{_API_BASE_V4}/link/unlock", [("link", link)])
 
 
-async def _resolve_unlocked_files(raw_files, progress_callback=None):
-    """Unlock every AllDebrid /f/ link with bounded concurrency."""
+async def _keep_trying(
+    call,
+    what,
+    is_cancelled=None,
+    interval=_MAGNET_POLL_INTERVAL_S,
+    grace=_MAGNET_POLL_GRACE_S,
+):
+    """Repeat a read while it keeps failing on the network, for up to `grace` s.
+
+    _call_api has already retried a few times by then; this rides out longer
+    outages -- a VPN reconnect, a proxy restart -- instead of throwing away a
+    magnet that may have been downloading on AllDebrid for an hour.
+    """
+    loop = get_event_loop()
+    started = loop.time()
+    while True:
+        try:
+            return await call()
+        except AllDebridNetworkError as e:
+            if loop.time() - started >= grace:
+                raise
+            if is_cancelled is not None and is_cancelled():
+                raise DirectDownloadLinkException(
+                    "ERROR: AllDebrid magnet cancelled by user"
+                )
+            LOGGER.warning(f"AllDebrid {what} failed, trying again: {e}")
+            await sleep(interval)
+
+
+async def _resolve_unlocked_files(raw_files, progress_callback=None, is_cancelled=None):
+    """Unlock every AllDebrid /f/ link with bounded concurrency.
+
+    Returns (resolved, failed). A file that still fails after retrying lands
+    in `failed` so the user is told, rather than being silently left out.
+    """
     semaphore = Semaphore(_MAGNET_UNLOCK_CONCURRENCY)
     resolved = [None] * len(raw_files)
+    failed = []
 
     async def _unlock(index, file_entry):
         async with semaphore:
             if not file_entry.get("link"):
                 return
+            name = file_entry.get("filename") or "file"
             try:
-                unlocked = await _unlock_alldebrid_link(file_entry["link"])
-            except DirectDownloadLinkException as e:
-                LOGGER.warning(
-                    f"AllDebrid unlock failed for {file_entry.get('filename', '?')}: {e}"
+                unlocked = await _keep_trying(
+                    lambda: _unlock_alldebrid_link(file_entry["link"]),
+                    f"unlock of {name}",
+                    is_cancelled,
+                    grace=_UNLOCK_GRACE_S,
                 )
+            except DirectDownloadLinkException as e:
+                LOGGER.warning(f"AllDebrid unlock failed for {name}: {e}")
+                failed.append((name, str(e).removeprefix("ERROR: ")))
                 return
             if not (direct := unlocked.get("link") or ""):
+                LOGGER.warning(f"AllDebrid returned no direct link for {name}")
+                failed.append((name, "AllDebrid returned no direct link"))
                 return
             resolved[index] = {
                 "filename": unlocked.get("filename")
@@ -363,7 +548,7 @@ async def _resolve_unlocked_files(raw_files, progress_callback=None):
 
     await gather(*(_unlock(idx, entry) for idx, entry in enumerate(raw_files)))
 
-    return [entry for entry in resolved if entry is not None]
+    return [entry for entry in resolved if entry is not None], failed
 
 
 async def _wait_and_resolve(
@@ -395,7 +580,12 @@ async def _wait_and_resolve(
                     "ERROR: AllDebrid magnet cancelled by user"
                 )
 
-            status = await get_magnet_status(magnet_id)
+            status = await _keep_trying(
+                lambda: get_magnet_status(magnet_id),
+                f"status check for magnet {magnet_id}",
+                is_cancelled,
+                poll_interval,
+            )
             status_code = int(status.get("statusCode", 0) or 0)
             seeders = int(status.get("seeders", 0) or 0)
 
@@ -438,18 +628,29 @@ async def _wait_and_resolve(
 
             await sleep(poll_interval)
 
-        raw_files = await get_magnet_files(magnet_id)
+        raw_files = await _keep_trying(
+            lambda: get_magnet_files(magnet_id),
+            f"file list for magnet {magnet_id}",
+            is_cancelled,
+            poll_interval,
+        )
         if not raw_files:
             raise DirectDownloadLinkException(
                 "ERROR: AllDebrid returned no files for the magnet"
             )
 
-        resolved = await _resolve_unlocked_files(
-            raw_files, progress_callback=progress_callback
+        resolved, failed = await _resolve_unlocked_files(
+            raw_files, progress_callback=progress_callback, is_cancelled=is_cancelled
         )
         if not resolved:
+            reason = f": {failed[0][1]}" if failed else ""
             raise DirectDownloadLinkException(
-                "ERROR: AllDebrid could not unlock any of the magnet files"
+                f"ERROR: AllDebrid could not unlock any of the magnet files{reason}"
+            )
+        if failed:
+            LOGGER.warning(
+                f"AllDebrid magnet {magnet_id}: {len(failed)} of "
+                f"{len(failed) + len(resolved)} files could not be unlocked"
             )
 
         return {
@@ -458,6 +659,7 @@ async def _wait_and_resolve(
             "total_size": sum(item.get("size", 0) for item in resolved)
             or int(fallback_size or 0),
             "contents": resolved,
+            "failed_files": [name for name, _ in failed],
         }
     except Exception:
         try:
