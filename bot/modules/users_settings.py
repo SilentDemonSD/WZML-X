@@ -470,8 +470,6 @@ async def get_user_settings(from_user, stype="main"):
         buttons.data_button(
             "Misc Settings", f"userset {user_id} advanced", position="l_body"
         )
-        buttons.data_button("Export", f"userset {user_id} export", "footer")
-        buttons.data_button("Import", f"userset {user_id} import", "footer")
 
         if user_dict and any(
             key in user_dict
@@ -1261,6 +1259,8 @@ async def get_user_settings(from_user, stype="main"):
         else:
             upload_paths = "None"
         buttons.data_button("Upload Paths", f"userset {user_id} menu UPLOAD_PATHS")
+        buttons.data_button("Export", f"userset {user_id} export")
+        buttons.data_button("Import", f"userset {user_id} import")
 
         buttons.data_button("Back", f"userset {user_id} back", "footer")
         buttons.data_button(
@@ -2201,7 +2201,7 @@ async def edit_user_settings(client, query):
     elif data[2] in ["export", "import"]:
         await query.answer()
         buttons = ButtonMaker()
-        buttons.data_button("Back", f"userset {user_id} back", "footer")
+        buttons.data_button("Back", f"userset {user_id} back advanced", "footer")
         buttons.data_button(
             "Close", f"userset {user_id} close", "footer", style=ButtonStyle.DANGER
         )
@@ -2225,7 +2225,7 @@ async def edit_user_settings(client, query):
             f"{END} <b>Time Left :</b> <code>60 sec</code>",
             buttons.build_menu(1),
         )
-        rfunc = partial(update_user_settings, query, "main")
+        rfunc = partial(update_user_settings, query, "advanced")
         pfunc = partial(func, rfunc=rfunc)
         await event_handler(client, query, pfunc, rfunc, document=data[2] == "import")
     elif data[2] == "menu":
