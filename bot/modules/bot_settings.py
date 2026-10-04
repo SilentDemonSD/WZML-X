@@ -180,6 +180,7 @@ DEFAULT_DESP = {
     "GOFILE_API": "Gofile.io API token for file uploads.",
     "GOFILE_FOLDER_ID": "Gofile.io folder ID for uploads.",
     "GOFILE_AUTO_CREATE_FOLDER": "With no GOFILE_FOLDER_ID, make a folder per upload instead of using the account root. Default: False.",
+    "PUBLIC_MODE": "Allow everyone to use the bot in any chat when enabled. Default: False.",
     "PIXELDRAIN_KEY": "PixelDrain API key for uploads.",
     "PROTECTED_API": "ProtectedFiles.cc API key.",
     "BUZZHEAVIER_API": "BuzzHeavier API key for uploads.",
