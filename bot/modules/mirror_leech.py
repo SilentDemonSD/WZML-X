@@ -468,6 +468,18 @@ class Mirror(TaskListener):
                 self.link = resolved
                 self.is_jd = False
                 self.is_qbit = False
+                if failed := resolved.get("failed_files"):
+                    total = len(failed) + len(resolved["contents"])
+                    names = "\n".join(
+                        f"┠ <code>{escape(name)}</code>" for name in failed[:10]
+                    )
+                    if len(failed) > 10:
+                        names += f"\n┠ <i>and {len(failed) - 10} more</i>"
+                    await send_message(
+                        self.message,
+                        f"⚠️ <b>AllDebrid:</b> {len(failed)} of {total} files could "
+                        f"not be unlocked and will be skipped.\n{names}",
+                    )
 
         if (
             isinstance(self.link, str)

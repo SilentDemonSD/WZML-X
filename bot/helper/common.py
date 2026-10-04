@@ -132,6 +132,9 @@ class TaskConfig:
         self.is_ytdlp = False
         self.is_alldebrid = False
         self._alldebrid_magnet_id = 0
+        self._up_slot_taken = False
+        self._up_queued = False
+        self._up_event = None
         self.equal_splits = False
         self.transmission_mode = "bot"
         self.extract = False
