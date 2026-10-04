@@ -243,9 +243,10 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
             msg += f"\n┖ <b>Sub Name</b> → <i>{task.listener.subname}</i>"
         elapsed = time() - task.listener.message.date.timestamp()
 
-        msg += f"\n\n<b>Task By {task.listener.message.from_user.mention(style='html')} </b> ( #ID{task.listener.message.from_user.id} )"
+        user = task.listener.message.from_user
+        msg += f'\n\n<b>Task By <a href="tg://user?id={user.id}">{escape(user.first_name or "Deleted Account")}</a> </b> ( #ID{user.id} )'
         if task.listener.is_super_chat:
-            msg += f" <i>[<a href='{task.listener.message.link}'>Link</a>]</i>"
+            msg += f' <i>[<a href="{task.listener.message.link}">Link</a>]</i>'
 
         if (
             tstatus not in [MirrorStatus.STATUS_SEED, MirrorStatus.STATUS_QUEUEUP]
@@ -297,7 +298,10 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
                 or task.listener.is_qbit
                 or task.listener.is_nzb
             ):
-                msg += f"\n┠ <b>Select</b> → /{BotCommands.SelectCommand[1]}_{task.gid()[:8]}"
+                if rich:
+                    msg += f"\n┠ <b>Select</b> → <tg-button type='callback_data' data='sel select {task.gid()[:12]}' style='primary'>Select</tg-button>"
+                else:
+                    msg += f"\n┠ <b>Select</b> → /{BotCommands.SelectCommand[1]}_{task.gid()[:8]}"
 
         if rich:
             msg += f"\n<b>┖ Stop</b> → <tg-button type='callback_data' data='cancel ask {task.gid()[:12]}' style='danger'>Cancel</tg-button>\n\n"
@@ -337,5 +341,7 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
     msg += f"\n┟ <b>CPU</b> → {cpu_percent()}% | <b>F</b> → {get_readable_file_size(disk_usage(DOWNLOAD_DIR).free)} [{round(100 - disk_usage(DOWNLOAD_DIR).percent, 1)}%]"
     msg += f"\n┖ <b>RAM</b> → {virtual_memory().percent}% | <b>UP</b> → {get_readable_time(time() - bot_start_time)}"
     if rich:
-        return InputRichMessage(html=msg.replace("\n", "<br>")), button
+        return InputRichMessage(
+            html=msg.replace("\n", "<br>"), skip_entity_detection=True
+        ), button
     return msg, button

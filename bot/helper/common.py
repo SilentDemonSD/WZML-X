@@ -741,7 +741,8 @@ class TaskConfig:
             return text
         return InputRichMessage(
             html=f"{escape(text)}<br><tg-button type='callback_data' "
-            f"data='cancel multi {self.multi_tag}' style='danger'>Cancel Multi</tg-button>"
+            f"data='cancel multi {self.multi_tag}' style='danger'>Cancel Multi</tg-button>",
+            skip_entity_detection=True,
         )
 
     @new_task

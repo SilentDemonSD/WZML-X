@@ -1,6 +1,6 @@
 from contextlib import suppress
 from pyrogram import raw
-from pyrogram.enums import ButtonStyle, ParseMode
+from pyrogram.enums import ButtonStyle
 from html import escape
 from re import IGNORECASE, findall, search
 
@@ -12,7 +12,7 @@ from pyrogram.errors import (
     PhotoInvalidDimensions,
     WebpageMediaEmpty,
 )
-from pyrogram.types import InputRichMessageMedia, ReplyParameters
+from pyrogram.types import InputRichMessage, InputRichMessageMedia, ReplyParameters
 
 from bot.core.tg_client import TgClient
 from bot.core.config_manager import Config
@@ -646,9 +646,9 @@ async def imdb_callback(_, query):
 
             await TgClient.bot.send_rich_message(
                 reply_to.chat.id,
-                rich_html,
-                parse_mode=ParseMode.HTML,
-                media=rich_files,
+                InputRichMessage(
+                    html=rich_html, media=rich_files or None, skip_entity_detection=True
+                ),
                 reply_parameters=ReplyParameters(message_id=reply_to.id),
                 reply_markup=buttons,
             )
