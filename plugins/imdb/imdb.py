@@ -1,12 +1,13 @@
 from contextlib import suppress
 from pyrogram import raw
-from pyrogram.enums import ButtonStyle
+from pyrogram.enums import ButtonStyle, ParseMode
+from html import escape
 from re import IGNORECASE, findall, search
 
 from imdbio import search_title, get_movie, get_akas, get_media_gallery
 from pycountry import countries as conn
 from pyrogram.errors import MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty
-from pyrogram.types import ReplyParameters
+from pyrogram.types import InputRichMessageMedia, ReplyParameters
 
 from bot.core.tg_client import TgClient
 from bot.core.config_manager import Config
@@ -373,9 +374,7 @@ async def imdb_callback(_, query):
         await query.answer("Processing...")
         imdb = await sync_to_async(get_poster, query=data[3], id=True)
         if not imdb:
-            await query.answer("Not Found!", show_alert=True)
-            await delete_message(message)
-            return
+            return await edit_message(message, "<i>Not Found</i>")
         reply_to = getattr(message, "reply_to_message", None)
         if not reply_to:
             await delete_message(message)
@@ -396,37 +395,38 @@ async def imdb_callback(_, query):
         )
         buttons = buttons.build_menu(1)
 
-        title = imdb.get("title", "N/A")
-        year = imdb.get("year", "N/A")
-        end_year = imdb.get("end_year", "")
-        aka = imdb.get("aka", "")
-        rating = imdb.get("rating", "N/A")
-        votes = imdb.get("votes", "N/A")
-        metascore = imdb.get("metascore", "")
-        kind = imdb.get("kind", "N/A")
-        runtime = imdb.get("runtime", "N/A")
-        certificate = imdb.get("certificate", "")
-        genres = imdb.get("genres", "N/A")
-        genres_plain = imdb.get("genres_plain", "N/A")
-        release_date = imdb.get("release_date", "N/A")
-        release_country = imdb.get("release_country", "")
-        countries = imdb.get("countries", "N/A")
-        countries_plain = imdb.get("countries_plain", "N/A")
-        languages = imdb.get("languages", "N/A")
-        languages_plain = imdb.get("languages_plain", "N/A")
-        plot = imdb.get("plot", "N/A")
-        plot_full = imdb.get("plot_full", "N/A")
-        director = imdb.get("director", "N/A")
-        creators = imdb.get("creators", "N/A")
-        writer = imdb.get("writer", "N/A")
-        cast = imdb.get("cast", "N/A")
-        production_companies = imdb.get("production_companies", [])
-        budget = imdb.get("budget", "")
-        box_opening = imdb.get("box_opening", "")
-        box_domestic = imdb.get("box_domestic", "")
-        box_office = imdb.get("box_office", "N/A")
-        keywords = imdb.get("keywords", "")
-        url = imdb.get("url", "https://imdb.com/")
+        info = {k: escape(v) if isinstance(v, str) else v for k, v in imdb.items()}
+        title = info.get("title", "N/A")
+        year = info.get("year", "N/A")
+        end_year = info.get("end_year", "")
+        aka = info.get("aka", "")
+        rating = info.get("rating", "N/A")
+        votes = info.get("votes", "N/A")
+        metascore = info.get("metascore", "")
+        kind = info.get("kind", "N/A")
+        runtime = info.get("runtime", "N/A")
+        certificate = info.get("certificate", "")
+        genres = info.get("genres", "N/A")
+        genres_plain = info.get("genres_plain", "N/A")
+        release_date = info.get("release_date", "N/A")
+        release_country = info.get("release_country", "")
+        countries = info.get("countries", "N/A")
+        countries_plain = info.get("countries_plain", "N/A")
+        languages = info.get("languages", "N/A")
+        languages_plain = info.get("languages_plain", "N/A")
+        plot = info.get("plot", "N/A")
+        plot_full = info.get("plot_full", "N/A")
+        director = info.get("director", "N/A")
+        creators = info.get("creators", "N/A")
+        writer = info.get("writer", "N/A")
+        cast = info.get("cast", "N/A")
+        production_companies = info.get("production_companies", [])
+        budget = info.get("budget", "")
+        box_opening = info.get("box_opening", "")
+        box_domestic = info.get("box_domestic", "")
+        box_office = info.get("box_office", "N/A")
+        keywords = info.get("keywords", "")
+        url = f"https://www.imdb.com/title/{imdb['imdb_id']}/"
         poster = imdb.get("poster", "")
 
         year_text = f"{year}{end_year}" if end_year else year
@@ -460,7 +460,7 @@ async def imdb_callback(_, query):
         prod_html = ""
         if production_companies:
             prod_items = "".join(
-                f"<li>{p}</li>" for p in production_companies[:6]
+                f"<li>{escape(p)}</li>" for p in production_companies[:6]
             )
             prod_html = f"""
 <details>
@@ -500,8 +500,7 @@ async def imdb_callback(_, query):
 {info_rows}
 </table>"""
 
-        plot_lines = plot_full.split("\n") if plot_full else [""]
-        plot_formatted = "\n".join(f"> {line}" for line in plot_lines)
+        plot_formatted = plot_full.replace("\n", "<br>")
 
         credits_items = ""
         if director and director != "N/A":
@@ -584,9 +583,9 @@ async def imdb_callback(_, query):
                         )
                     )
                     rich_files.append(
-                        raw.types.InputRichFilePhoto(
+                        InputRichMessageMedia(
                             id=f"img{i}",
-                            photo=raw.types.InputPhoto(
+                            media=raw.types.InputPhoto(
                                 id=uploaded.photo.id,
                                 access_hash=uploaded.photo.access_hash,
                                 file_reference=uploaded.photo.file_reference,
@@ -602,7 +601,7 @@ async def imdb_callback(_, query):
                 )
                 gallery_html = f"<tg-slideshow>\n{slides}\n</tg-slideshow>\n"
 
-            rich_html = f"""<h1>{title}  ({year_text})</h1>
+            rich_html = f"""<h1>{title} ({year_text})</h1>
 <i>{aka}</i>
 
 {gallery_html}
@@ -614,7 +613,7 @@ async def imdb_callback(_, query):
 
 <details>
 <summary><b>Plot (tap to expand — spoilers)</b></summary>
-<aside>{plot_formatted}</aside>
+<blockquote>{plot_formatted}</blockquote>
 </details>
 
 {credits_html}
@@ -629,22 +628,13 @@ async def imdb_callback(_, query):
 
 <a href="{url}">Open on IMDb</a>"""
 
-            await TgClient.bot.invoke(
-                raw.functions.messages.SendMessage(
-                    peer=peer,
-                    message="",
-                    random_id=TgClient.bot.rnd_id(),
-                    reply_to=raw.types.InputReplyToMessage(
-                        reply_to_msg_id=reply_to.id
-                    ),
-                    reply_markup=await buttons.write(TgClient.bot)
-                    if buttons
-                    else None,
-                    rich_message=raw.types.InputRichMessageHTML(
-                        html=rich_html,
-                        files=rich_files or None,
-                    ),
-                )
+            await TgClient.bot.send_rich_message(
+                reply_to.chat.id,
+                rich_html,
+                parse_mode=ParseMode.HTML,
+                media=rich_files,
+                reply_parameters=ReplyParameters(message_id=reply_to.id),
+                reply_markup=buttons,
             )
         await delete_message(message)
     else:
