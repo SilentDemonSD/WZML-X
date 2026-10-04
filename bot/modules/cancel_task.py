@@ -18,6 +18,7 @@ from ..helper.telegram_helper.message_utils import (
     auto_delete_message,
     delete_message,
     edit_message,
+    edit_reply_markup,
 )
 
 
@@ -30,8 +31,12 @@ async def cancel(_, message):
         if len(cmd_data) > 1 and cmd_data[1].strip() != TgClient.BNAME:
             return
         gid = cmd_data[0]
-        if len(gid) == 6:
-            multi_tags.discard(gid)
+        if gid in multi_tags:
+            if multi_tags[gid] != user_id and not await CustomFilters.sudo("", message):
+                await send_message(message, "Not Yours!")
+                return
+            multi_tags.pop(gid, None)
+            await send_message(message, "Multi Task Stopped!")
             return
         else:
             task = await get_task_by_gid(gid)
@@ -64,19 +69,18 @@ async def cancel(_, message):
 
 @new_task
 async def cancel_multi(_, query):
-    data = query.data.split()
-    user_id = query.from_user.id
-    if user_id != int(data[1]) and not await CustomFilters.sudo("", query):
+    tag = query.data.split()[1]
+    if tag not in multi_tags:
+        await query.answer("Already Stopped/Finished!", show_alert=True)
+    elif multi_tags[tag] != query.from_user.id and not await CustomFilters.sudo(
+        "", query
+    ):
         await query.answer("Not Yours!", show_alert=True)
         return
-    tag = int(data[2])
-    if tag in multi_tags:
-        multi_tags.discard(int(data[2]))
-        msg = "Stopped!"
     else:
-        msg = "Already Stopped/Finished!"
-    await query.answer(msg, show_alert=True)
-    await delete_message(query.message, query.message.reply_to_message)
+        multi_tags.pop(tag, None)
+        await query.answer("Stopped!", show_alert=True)
+    await edit_reply_markup(query.message, None)
 
 
 async def cancel_all(status, user_id):

@@ -9,7 +9,7 @@ from shlex import split
 
 from aiofiles.os import listdir, makedirs, remove, path as aiopath
 from aioshutil import move, rmtree
-from pyrogram.enums import ChatAction, ChatType
+from pyrogram.enums import ButtonStyle, ChatAction, ChatType
 
 from .. import (
     DOWNLOAD_DIR,
@@ -64,7 +64,7 @@ from .mirror_leech_utils.gdrive_utils.list import GoogleDriveList
 from .mirror_leech_utils.rclone_utils.list import RcloneList
 from .mirror_leech_utils.status_utils.ffmpeg_status import FFmpegStatus
 from .mirror_leech_utils.status_utils.sevenz_status import SevenZStatus
-from .telegram_helper.bot_commands import BotCommands
+from .telegram_helper.button_build import ButtonMaker
 from .telegram_helper.message_utils import (
     get_tg_link_message,
     open_category_btns,
@@ -736,15 +736,23 @@ class TaskConfig:
             else:
                 self.tag = self.user.title
 
+    def _multi_cancel_button(self, show):
+        if not show:
+            return None
+        buttons = ButtonMaker()
+        buttons.data_button(
+            "Cancel Multi", f"stopm {self.multi_tag}", style=ButtonStyle.DANGER
+        )
+        return buttons.build_menu(1)
+
     @new_task
     async def run_multi(self, input_list, obj):
         await sleep(7)
         if not self.multi_tag and self.multi > 1:
             self.multi_tag = token_hex(3)
-            multi_tags.add(self.multi_tag)
+            multi_tags[self.multi_tag] = self.user_id
         elif self.multi <= 1:
-            if self.multi_tag in multi_tags:
-                multi_tags.discard(self.multi_tag)
+            multi_tags.pop(self.multi_tag, None)
             return
         if self.multi_tag and self.multi_tag not in multi_tags:
             await send_message(
@@ -759,9 +767,9 @@ class TaskConfig:
             msg = input_list[:1]
             msg.append(f"{self.bulk[0]} -i {self.multi - 1} {self.options}")
             msgts = " ".join(msg)
-            if self.multi > 2:
-                msgts += f"\n• <b>Cancel Multi:</b> <i>/{BotCommands.CancelTaskCommand[1]}_{self.multi_tag}</i>"
-            nextmsg = await send_message(self.message, msgts)
+            nextmsg = await send_message(
+                self.message, msgts, self._multi_cancel_button(self.multi > 2)
+            )
         else:
             msg = [s.strip() for s in input_list]
             index = msg.index("-i")
@@ -777,9 +785,9 @@ class TaskConfig:
             if not isinstance(nextmsg, Message):
                 nextmsg = self.message
             msgts = " ".join(msg)
-            if self.multi > 2:
-                msgts += f"\n• <b>Cancel Multi:</b> <i>/{BotCommands.CancelTaskCommand[1]}_{self.multi_tag}</i>"
-            nextmsg = await send_message(nextmsg, msgts)
+            nextmsg = await send_message(
+                nextmsg, msgts, self._multi_cancel_button(self.multi > 2)
+            )
         if not isinstance(nextmsg, Message):
             return
         nextmsg = await self.client.get_messages(
@@ -826,9 +834,10 @@ class TaskConfig:
             msg = " ".join(b_msg)
             if len(self.bulk) > 2:
                 self.multi_tag = token_hex(3)
-                multi_tags.add(self.multi_tag)
-                msg += f"\n• <b>Cancel Multi:</b> <i>/{BotCommands.CancelTaskCommand[1]}_{self.multi_tag}</i>"
-            nextmsg = await send_message(self.message, msg)
+                multi_tags[self.multi_tag] = self.user_id
+            nextmsg = await send_message(
+                self.message, msg, self._multi_cancel_button(len(self.bulk) > 2)
+            )
             if not isinstance(nextmsg, Message):
                 return
             nextmsg = await self.client.get_messages(
