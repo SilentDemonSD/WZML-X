@@ -6,7 +6,12 @@ from re import IGNORECASE, findall, search
 
 from imdbio import search_title, get_movie, get_akas, get_media_gallery
 from pycountry import countries as conn
-from pyrogram.errors import MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty
+from pyrogram.errors import (
+    MediaCaptionTooLong,
+    MediaEmpty,
+    PhotoInvalidDimensions,
+    WebpageMediaEmpty,
+)
 from pyrogram.types import InputRichMessageMedia, ReplyParameters
 
 from bot.core.tg_client import TgClient
@@ -549,7 +554,13 @@ async def imdb_callback(_, query):
 
         template = Config.IMDB_TEMPLATE
         if template:
-            cap = template.format(**{**imdb, **locals()})
+            try:
+                cap = template.format(**{**info, **locals()})
+            except (KeyError, IndexError, ValueError) as e:
+                return await edit_message(
+                    message,
+                    f"<b>IMDB_TEMPLATE error:</b> <code>{escape(repr(e))}</code>",
+                )
             if poster:
                 try:
                     await TgClient.bot.send_photo(
@@ -559,7 +570,12 @@ async def imdb_callback(_, query):
                         reply_parameters=ReplyParameters(message_id=reply_to.id),
                         reply_markup=buttons,
                     )
-                except (MediaEmpty, PhotoInvalidDimensions, WebpageMediaEmpty):
+                except (
+                    MediaEmpty,
+                    PhotoInvalidDimensions,
+                    WebpageMediaEmpty,
+                    MediaCaptionTooLong,
+                ):
                     fallback_poster = poster.replace(".jpg", "._V1_UX360.jpg")
                     await send_message(
                         reply_to, cap, buttons, photo=fallback_poster
@@ -569,7 +585,7 @@ async def imdb_callback(_, query):
                     reply_to,
                     cap,
                     buttons,
-                    "https://telegra.ph/file/5af8d90a479b0d11df298.jpg",
+                    photo="https://telegra.ph/file/5af8d90a479b0d11df298.jpg",
                 )
         else:
             peer = await TgClient.bot.resolve_peer(reply_to.chat.id)
