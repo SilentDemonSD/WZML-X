@@ -104,7 +104,8 @@ async def cancel_button(_, query):
         buttons.data_button("No", f"cancel no {user_id}", style=ButtonStyle.SUCCESS)
         res = await send_message(
             query.message,
-            f"Cancel <code>{escape(task.name())}</code>?",
+            "<b>Are you sure you want to cancel this task?</b>\n\n"
+            f"<code>{escape(task.name())}</code>",
             buttons.build_menu(2),
         )
         await auto_delete_message(res)
