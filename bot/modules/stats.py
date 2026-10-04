@@ -256,8 +256,8 @@ async def get_stats(event, key="home"):
             msg += "┃\n┖ <i>No high usage processes found</i>"
 
         btns.data_button("🔄 Refresh", f"stats {user_id} systasks", "header")
-
-    btns.data_button("Back", f"stats {user_id} home", "footer")
+    if key != "home":
+        btns.data_button("Back", f"stats {user_id} home", "footer")
     btns.data_button(
         "Close", f"stats {user_id} close", "footer", style=ButtonStyle.DANGER
     )
