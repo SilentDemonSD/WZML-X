@@ -1,9 +1,10 @@
 from aioshutil import rmtree as aiormtree, move
-from asyncio import create_subprocess_exec, sleep, wait_for
+from asyncio import create_subprocess_exec, wait_for
 from asyncio.subprocess import PIPE
 from psutil import disk_usage
 from os import path as ospath, readlink, walk
 from re import I, escape, search as re_search, split as re_split
+from shlex import quote
 
 from aiofiles.os import (
     listdir,
@@ -255,7 +256,7 @@ async def join_files(opath):
             exists = True
             final_name = file_.rsplit(".", 1)[0]
             fpath = f"{opath}/{final_name}"
-            cmd = f'cat "{fpath}."* > "{fpath}"'
+            cmd = f"cat {quote(f'{fpath}.')}* > {quote(fpath)}"
             _, stderr, code = await cmd_exec(cmd, True)
             if code != 0:
                 LOGGER.error(f"Failed to join {final_name}, stderr: {stderr}")
@@ -332,7 +333,6 @@ class SevenZ:
             line = line.decode().strip()
             if match := re_search(pattern, line):
                 self._listener.subsize = int(match[1] or match[2])
-            await sleep(0.05)
         s = b""
         while not (
             self._listener.is_cancelled
@@ -340,23 +340,21 @@ class SevenZ:
             or self._listener.subproc.stdout.at_eof()
         ):
             try:
-                char = await wait_for(self._listener.subproc.stdout.read(1), 60)
+                chunk = await wait_for(self._listener.subproc.stdout.read(4096), 60)
             except Exception:
                 break
-            if not char:
+            if not chunk:
                 break
-            s += char
-            if char == b"%":
+            s += chunk
+            if b"%" in s:
+                head, _, s = s.rpartition(b"%")
                 try:
-                    self._percentage = s.decode().rsplit(" ", 1)[-1].strip()
-                    self._processed_bytes = (
-                        int(self._percentage.strip("%")) / 100
-                    ) * self._listener.subsize
+                    pct = head.decode(errors="ignore").rsplit(" ", 1)[-1].strip()
+                    self._percentage = f"{pct}%"
+                    self._processed_bytes = (int(pct) / 100) * self._listener.subsize
                 except Exception:
                     self._processed_bytes = 0
                     self._percentage = "0%"
-                s = b""
-            await sleep(0.05)
 
         self._processed_bytes = 0
         self._percentage = "0%"
@@ -402,7 +400,7 @@ class SevenZ:
     async def zip(self, dl_path, up_path, pswd):
         size = await get_path_size(dl_path)
         if self._listener.equal_splits:
-            parts = -(-size // self._listener.split_size)
+            parts = -(-size // self._listener.split_size) or 1
             split_size = (size // parts) + (size % parts)
         else:
             split_size = self._listener.split_size

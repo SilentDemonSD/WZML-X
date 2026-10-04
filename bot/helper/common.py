@@ -897,6 +897,7 @@ class TaskConfig:
             walk, self.up_dir or self.dir, topdown=False
         ):
             code = 0
+            extracted = False
             for file_ in files:
                 if self.is_cancelled:
                     return False
@@ -910,10 +911,11 @@ class TaskConfig:
                     t_path = get_base_name(f_path) if self.is_file else dirpath
                     if not self.is_file:
                         self.subname = file_
-                    code = await sevenz.extract(f_path, t_path, pswd)
+                    extracted = True
+                    code = await sevenz.extract(f_path, t_path, pswd) or code
             if self.is_cancelled:
                 return code
-            if code == 0:
+            if extracted and code == 0:
                 for file_ in files:
                     if is_archive_split(file_) or is_archive(file_):
                         del_path = ospath.join(dirpath, file_)
