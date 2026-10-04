@@ -48,7 +48,30 @@ from ..ext_utils.status_utils import get_readable_message
 from .button_build import ButtonMaker
 
 
+async def send_rich(message, rich, buttons=None, block=True):
+    is_msg = isinstance(message, Message)
+    try:
+        return await TgClient.bot.send_rich_message(
+            message.chat.id if is_msg else int(message),
+            rich,
+            disable_notification=True,
+            reply_parameters=ReplyParameters(message_id=message.id) if is_msg else None,
+            reply_markup=buttons,
+        )
+    except FloodWait as f:
+        LOGGER.warning(str(f))
+        if not block:
+            return str(f)
+        await sleep(f.value * 1.2)
+        return await send_rich(message, rich, buttons, block)
+    except Exception as e:
+        LOGGER.error(str(e), exc_info=True)
+        return str(e)
+
+
 async def send_message(message, text, buttons=None, block=True, photo=None, **kwargs):
+    if not isinstance(text, str):
+        return await send_rich(message, text, buttons, block)
     try:
         if photo:
             try:
@@ -548,7 +571,7 @@ async def update_status_message(sid, force=False):
                 obj.cancel()
                 del intervals["status"][sid]
             return
-        if text != status_dict[sid]["message"].text:
+        if getattr(text, "html", text) != status_dict[sid]["message"].text:
             message = await edit_message(
                 status_dict[sid]["message"], text, buttons, block=False, photo="IMAGES"
             )
@@ -563,7 +586,7 @@ async def update_status_message(sid, force=False):
                         f"Status with id: {sid} haven't been updated. Error: {message}"
                     )
                 return
-            status_dict[sid]["message"].text = text
+            status_dict[sid]["message"].text = getattr(text, "html", text)
             status_dict[sid]["time"] = time()
 
 
@@ -596,7 +619,7 @@ async def send_status_message(msg, user_id=0):
                 )
                 return
             await delete_message(old_message)
-            message.text = text
+            message.text = getattr(text, "html", text)
             status_dict[sid].update({"message": message, "time": time()})
         else:
             text, buttons = await get_readable_message(sid, is_user)
@@ -610,7 +633,7 @@ async def send_status_message(msg, user_id=0):
                     f"Status with id: {sid} haven't been sent. Error: {message}"
                 )
                 return
-            message.text = text
+            message.text = getattr(text, "html", text)
             status_dict[sid] = {
                 "message": message,
                 "time": time(),

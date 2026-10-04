@@ -1,6 +1,7 @@
 from asyncio import gather, iscoroutinefunction
 from html import escape
 from pyrogram.enums import ButtonStyle
+from pyrogram.types import InputRichMessage
 from re import findall
 from time import time
 
@@ -212,6 +213,7 @@ def get_progress_bar_string(pct):
 async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=1):
     msg = ""
     button = None
+    rich = not (Config.USE_IMAGES and Config.IMAGES)
 
     tasks = await get_specific_tasks(status, sid if is_user else None)
 
@@ -297,7 +299,10 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
             ):
                 msg += f"\n┠ <b>Select</b> → /{BotCommands.SelectCommand[1]}_{task.gid()[:8]}"
 
-        msg += f"\n<b>┖ Stop</b> → <i>/{BotCommands.CancelTaskCommand[1]}_{task.gid()[:8]}</i>\n\n"
+        if rich:
+            msg += f"\n<b>┖ Stop</b> → <tg-button type='callback_data' data='cancel ask {task.gid()[:12]}' style='danger'>Cancel</tg-button>\n\n"
+        else:
+            msg += f"\n<b>┖ Stop</b> → <i>/{BotCommands.CancelTaskCommand[1]}_{task.gid()[:8]}</i>\n\n"
 
     if len(msg) == 0:
         if status == "All":
@@ -331,4 +336,6 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
     button = buttons.build_menu(8)
     msg += f"\n┟ <b>CPU</b> → {cpu_percent()}% | <b>F</b> → {get_readable_file_size(disk_usage(DOWNLOAD_DIR).free)} [{round(100 - disk_usage(DOWNLOAD_DIR).percent, 1)}%]"
     msg += f"\n┖ <b>RAM</b> → {virtual_memory().percent}% | <b>UP</b> → {get_readable_time(time() - bot_start_time)}"
+    if rich:
+        return InputRichMessage(html=msg.replace("\n", "<br>")), button
     return msg, button

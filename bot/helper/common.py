@@ -2,14 +2,15 @@ import re
 from asyncio import gather, sleep
 from contextlib import suppress
 from os import path as ospath, walk
-from pyrogram.types import Message
+from html import escape
+from pyrogram.types import InputRichMessage, Message
 from re import sub
 from secrets import token_hex
 from shlex import split
 
 from aiofiles.os import listdir, makedirs, remove, path as aiopath
 from aioshutil import move, rmtree
-from pyrogram.enums import ButtonStyle, ChatAction, ChatType
+from pyrogram.enums import ChatAction, ChatType
 
 from .. import (
     DOWNLOAD_DIR,
@@ -64,7 +65,6 @@ from .mirror_leech_utils.gdrive_utils.list import GoogleDriveList
 from .mirror_leech_utils.rclone_utils.list import RcloneList
 from .mirror_leech_utils.status_utils.ffmpeg_status import FFmpegStatus
 from .mirror_leech_utils.status_utils.sevenz_status import SevenZStatus
-from .telegram_helper.button_build import ButtonMaker
 from .telegram_helper.message_utils import (
     get_tg_link_message,
     open_category_btns,
@@ -736,14 +736,13 @@ class TaskConfig:
             else:
                 self.tag = self.user.title
 
-    def _multi_cancel_button(self, show):
-        if not show:
-            return None
-        buttons = ButtonMaker()
-        buttons.data_button(
-            "Cancel Multi", f"stopm {self.multi_tag}", style=ButtonStyle.DANGER
+    def _multi_msg(self, text, show_cancel):
+        if not show_cancel:
+            return text
+        return InputRichMessage(
+            html=f"{escape(text)}<br><tg-button type='callback_data' "
+            f"data='cancel multi {self.multi_tag}' style='danger'>Cancel Multi</tg-button>"
         )
-        return buttons.build_menu(1)
 
     @new_task
     async def run_multi(self, input_list, obj):
@@ -768,7 +767,7 @@ class TaskConfig:
             msg.append(f"{self.bulk[0]} -i {self.multi - 1} {self.options}")
             msgts = " ".join(msg)
             nextmsg = await send_message(
-                self.message, msgts, self._multi_cancel_button(self.multi > 2)
+                self.message, self._multi_msg(msgts, self.multi > 2)
             )
         else:
             msg = [s.strip() for s in input_list]
@@ -786,13 +785,14 @@ class TaskConfig:
                 nextmsg = self.message
             msgts = " ".join(msg)
             nextmsg = await send_message(
-                nextmsg, msgts, self._multi_cancel_button(self.multi > 2)
+                nextmsg, self._multi_msg(msgts, self.multi > 2)
             )
         if not isinstance(nextmsg, Message):
             return
         nextmsg = await self.client.get_messages(
             chat_id=self.message.chat.id, message_ids=nextmsg.id
         )
+        nextmsg.text = msgts
         if self.message.from_user:
             nextmsg.from_user = self.user
         else:
@@ -836,13 +836,14 @@ class TaskConfig:
                 self.multi_tag = token_hex(3)
                 multi_tags[self.multi_tag] = self.user_id
             nextmsg = await send_message(
-                self.message, msg, self._multi_cancel_button(len(self.bulk) > 2)
+                self.message, self._multi_msg(msg, len(self.bulk) > 2)
             )
             if not isinstance(nextmsg, Message):
                 return
             nextmsg = await self.client.get_messages(
                 chat_id=self.message.chat.id, message_ids=nextmsg.id
             )
+            nextmsg.text = msg
             if self.message.from_user:
                 nextmsg.from_user = self.user
             else:

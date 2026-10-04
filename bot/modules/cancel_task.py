@@ -1,4 +1,5 @@
 from asyncio import sleep
+from html import escape
 from pyrogram.enums import ButtonStyle
 
 from .. import task_dict, task_dict_lock, user_data, multi_tags
@@ -18,7 +19,6 @@ from ..helper.telegram_helper.message_utils import (
     auto_delete_message,
     delete_message,
     edit_message,
-    edit_reply_markup,
 )
 
 
@@ -68,19 +68,49 @@ async def cancel(_, message):
 
 
 @new_task
-async def cancel_multi(_, query):
-    tag = query.data.split()[1]
-    if tag not in multi_tags:
-        await query.answer("Already Stopped/Finished!", show_alert=True)
-    elif multi_tags[tag] != query.from_user.id and not await CustomFilters.sudo(
-        "", query
-    ):
+async def cancel_button(_, query):
+    data = query.data.split()
+    user_id = query.from_user.id
+    if data[1] == "no":
+        if int(data[2]) != user_id and not await CustomFilters.sudo("", query):
+            await query.answer("Not Yours!", show_alert=True)
+            return
+        await query.answer()
+        await delete_message(query.message)
+        return
+    if data[1] == "multi":
+        tag = data[2]
+        if tag not in multi_tags:
+            await query.answer("Already Stopped/Finished!", show_alert=True)
+        elif multi_tags[tag] != user_id and not await CustomFilters.sudo("", query):
+            await query.answer("Not Yours!", show_alert=True)
+        else:
+            multi_tags.pop(tag, None)
+            await query.answer("Stopped!", show_alert=True)
+        return
+    task = await get_task_by_gid(data[2])
+    if task is None:
+        await query.answer("Task already cancelled or finished!", show_alert=True)
+        if data[1] == "yes":
+            await delete_message(query.message)
+        return
+    if task.listener.user_id != user_id and not await CustomFilters.sudo("", query):
         await query.answer("Not Yours!", show_alert=True)
         return
-    else:
-        multi_tags.pop(tag, None)
-        await query.answer("Stopped!", show_alert=True)
-    await edit_reply_markup(query.message, None)
+    await query.answer()
+    if data[1] == "ask":
+        buttons = button_build.ButtonMaker()
+        buttons.data_button("Yes", f"cancel yes {data[2]}", style=ButtonStyle.DANGER)
+        buttons.data_button("No", f"cancel no {user_id}", style=ButtonStyle.SUCCESS)
+        res = await send_message(
+            query.message,
+            f"Cancel <code>{escape(task.name())}</code>?",
+            buttons.build_menu(2),
+        )
+        await auto_delete_message(res)
+        return
+    await delete_message(query.message)
+    await task.task().cancel_task()
 
 
 async def cancel_all(status, user_id):

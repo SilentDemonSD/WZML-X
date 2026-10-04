@@ -110,7 +110,7 @@ async def add_handlers():
         CallbackQueryHandler(cancel_all_update, filters=regex("^canall"))
     )
     TgClient.bot.add_handler(
-        CallbackQueryHandler(cancel_multi, filters=regex("^stopm"))
+        CallbackQueryHandler(cancel_button, filters=regex("^cancel "))
     )
     TgClient.bot.add_handler(
         MessageHandler(
