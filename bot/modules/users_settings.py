@@ -114,7 +114,6 @@ shortcut_options = {
     "yt_opt": "YT_DLP_OPTIONS",
     "dump": "LEECH_DUMP_CHATS",
 }
-file_options = ("THUMBNAIL", "RCLONE_CONFIG", "TOKEN_PICKLE", "USER_COOKIE_FILE")
 
 _uset_cmd = f"/{BotCommands.UserSetCommand[1]}"
 SHORTCUT_HELP = f"""⌬ <b><u>Direct Set Flags :</u></b>
@@ -127,12 +126,6 @@ SHORTCUT_HELP = f"""⌬ <b><u>Direct Set Flags :</u></b>
 ┟ <b>YT-DLP Options</b> → <code>{_uset_cmd} -s yt_opt</code>
 ┖ <b>Leech Dump Chats</b> → <code>{_uset_cmd} -s dump</code>
 """
-
-
-def resolve_shortcut_option(arg):
-    if not arg:
-        return None
-    return shortcut_options.get(arg.lower())
 
 
 def is_image_message(message):
@@ -1371,7 +1364,7 @@ async def set_direct_setting(message):
     user_id = message.from_user.id
     handler_dict[user_id] = False
     set_arg = message.command[2] if len(message.command) > 2 else ""
-    option = resolve_shortcut_option(set_arg)
+    option = shortcut_options.get(set_arg.lower())
     if not option:
         await send_message(message, SHORTCUT_HELP, photo="IMAGES")
         return
@@ -1388,17 +1381,9 @@ async def set_direct_setting(message):
             message, "<i>Reply to your own message to set a value directly.</i>"
         )
         return
-    if option in file_options:
-        if option == "THUMBNAIL":
-            if not is_image_message(reply_to):
-                await send_message(
-                    message, "<i>Reply to a photo or an image document.</i>"
-                )
-                return
-        elif not reply_to.document:
-            await send_message(
-                message, f"<i>Reply to the <b>{escape(option)}</b> file.</i>"
-            )
+    if option == "THUMBNAIL":
+        if not is_image_message(reply_to):
+            await send_message(message, "<i>Reply to a photo or an image document.</i>")
             return
         if not await save_uploaded_file(reply_to, option, user_id):
             await send_message(
