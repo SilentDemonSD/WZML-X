@@ -3,6 +3,7 @@ from time import time
 from asyncio import gather, iscoroutinefunction
 
 from pyrogram.errors import QueryIdInvalid
+from pyrogram.types import InputRichMessage
 
 from .. import (
     task_dict_lock,
@@ -217,6 +218,10 @@ async def status_pages(_, query):
 """
         button = ButtonMaker()
         button.data_button("Back", f"status {data[1]} ref")
+        if message.rich_message:
+            msg = InputRichMessage(
+                html=msg.replace("\n", "<br>"), skip_entity_detection=True
+            )
         await edit_message(message, msg, button.build_menu())
 
     try:

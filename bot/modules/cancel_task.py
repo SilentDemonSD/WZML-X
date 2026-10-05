@@ -1,4 +1,5 @@
 from asyncio import sleep
+from html import escape
 from pyrogram.enums import ButtonStyle
 
 from .. import task_dict, task_dict_lock, user_data, multi_tags
@@ -30,8 +31,12 @@ async def cancel(_, message):
         if len(cmd_data) > 1 and cmd_data[1].strip() != TgClient.BNAME:
             return
         gid = cmd_data[0]
-        if len(gid) == 6:
-            multi_tags.discard(gid)
+        if gid in multi_tags:
+            if multi_tags[gid] != user_id and not await CustomFilters.sudo("", message):
+                await send_message(message, "Not Yours!")
+                return
+            multi_tags.pop(gid, None)
+            await send_message(message, "Multi Task Stopped!")
             return
         else:
             task = await get_task_by_gid(gid)
@@ -63,20 +68,50 @@ async def cancel(_, message):
 
 
 @new_task
-async def cancel_multi(_, query):
+async def cancel_button(_, query):
     data = query.data.split()
     user_id = query.from_user.id
-    if user_id != int(data[1]) and not await CustomFilters.sudo("", query):
+    if data[1] == "no":
+        if int(data[2]) != user_id and not await CustomFilters.sudo("", query):
+            await query.answer("Not Yours!", show_alert=True)
+            return
+        await query.answer()
+        await delete_message(query.message)
+        return
+    if data[1] == "multi":
+        tag = data[2]
+        if tag not in multi_tags:
+            await query.answer("Already Stopped/Finished!", show_alert=True)
+        elif multi_tags[tag] != user_id and not await CustomFilters.sudo("", query):
+            await query.answer("Not Yours!", show_alert=True)
+        else:
+            multi_tags.pop(tag, None)
+            await query.answer("Stopped!", show_alert=True)
+        return
+    task = await get_task_by_gid(data[2])
+    if task is None:
+        await query.answer("Task already cancelled or finished!", show_alert=True)
+        if data[1] == "yes":
+            await delete_message(query.message)
+        return
+    if task.listener.user_id != user_id and not await CustomFilters.sudo("", query):
         await query.answer("Not Yours!", show_alert=True)
         return
-    tag = int(data[2])
-    if tag in multi_tags:
-        multi_tags.discard(int(data[2]))
-        msg = "Stopped!"
-    else:
-        msg = "Already Stopped/Finished!"
-    await query.answer(msg, show_alert=True)
-    await delete_message(query.message, query.message.reply_to_message)
+    await query.answer()
+    if data[1] == "ask":
+        buttons = button_build.ButtonMaker()
+        buttons.data_button("Yes", f"cancel yes {data[2]}", style=ButtonStyle.DANGER)
+        buttons.data_button("No", f"cancel no {user_id}", style=ButtonStyle.SUCCESS)
+        res = await send_message(
+            query.message,
+            "<b>Are you sure you want to cancel this task?</b>\n\n"
+            f"<code>{escape(task.name())}</code>",
+            buttons.build_menu(2),
+        )
+        await auto_delete_message(res)
+        return
+    await delete_message(query.message)
+    await task.task().cancel_task()
 
 
 async def cancel_all(status, user_id):

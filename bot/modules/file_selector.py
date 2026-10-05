@@ -67,22 +67,21 @@ async def select(_, message):
     ):
         await send_message(message, "This task is not for you!")
         return
+    if err := await _start_select(message, task):
+        await send_message(message, err)
+
+
+async def _start_select(message, task):
     if not iscoroutinefunction(task.status):
-        await send_message(message, "The task has finished the download stage!")
-        return
+        return "The task has finished the download stage!"
     if await task.status() not in [
         MirrorStatus.STATUS_DOWNLOAD,
         MirrorStatus.STATUS_PAUSED,
         MirrorStatus.STATUS_QUEUEDL,
     ]:
-        await send_message(
-            message,
-            "Task should be in download or pause (in case message was deleted by mistake) or queued status (in case you have used torrent or nzb file)!",
-        )
-        return
+        return "Task should be in download or pause (in case message was deleted by mistake) or queued status (in case you have used torrent or nzb file)!"
     if task.name().startswith("[METADATA]") or task.name().startswith("Trying"):
-        await send_message(message, "Try after downloading metadata finished!")
-        return
+        return "Try after downloading metadata finished!"
 
     try:
         await task.update()
@@ -101,8 +100,7 @@ async def select(_, message):
                     )
         task.listener.select = True
     except Exception:
-        await send_message(message, "This is not a bittorrent or sabnzbd task!")
-        return
+        return "This is not a bittorrent or sabnzbd task!"
 
     SBUTTONS = bt_selection_buttons(id_, message)
     msg = "<b>Download Paused!</b>\n\n<i>Select your files &amp; press <b>Done Selecting</b> to start.</i>"
@@ -127,10 +125,17 @@ async def confirm_selection(_, query):
     task = await get_task_by_gid(data[2])
     if task is None:
         await query.answer("This task has been cancelled!", show_alert=True)
-        await delete_message(message)
+        if data[1] != "select":
+            await delete_message(message)
         return
     if user_id != task.listener.user_id:
         await query.answer("This task is not for you!", show_alert=True)
+    elif data[1] == "select":
+        if not Config.BASE_URL:
+            await query.answer("Base URL not defined!", show_alert=True)
+            return
+        err = await _start_select(message, task)
+        await query.answer(err, show_alert=bool(err))
     elif data[1] == "pin":
         await query.answer(data[3], show_alert=True)
     elif data[1] == "done":

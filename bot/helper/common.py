@@ -2,7 +2,8 @@ import re
 from asyncio import gather, sleep
 from contextlib import suppress
 from os import path as ospath, walk
-from pyrogram.types import Message
+from html import escape
+from pyrogram.types import InputRichMessage, Message
 from re import sub
 from secrets import token_hex
 from shlex import split
@@ -64,7 +65,6 @@ from .mirror_leech_utils.gdrive_utils.list import GoogleDriveList
 from .mirror_leech_utils.rclone_utils.list import RcloneList
 from .mirror_leech_utils.status_utils.ffmpeg_status import FFmpegStatus
 from .mirror_leech_utils.status_utils.sevenz_status import SevenZStatus
-from .telegram_helper.bot_commands import BotCommands
 from .telegram_helper.message_utils import (
     get_tg_link_message,
     open_category_btns,
@@ -736,15 +736,23 @@ class TaskConfig:
             else:
                 self.tag = self.user.title
 
+    def _multi_msg(self, text, show_cancel):
+        if not show_cancel:
+            return text
+        return InputRichMessage(
+            html=f"{escape(text)}<br><tg-button type='callback_data' "
+            f"data='cancel multi {self.multi_tag}' style='danger'>Cancel Multi</tg-button>",
+            skip_entity_detection=True,
+        )
+
     @new_task
     async def run_multi(self, input_list, obj):
         await sleep(7)
         if not self.multi_tag and self.multi > 1:
             self.multi_tag = token_hex(3)
-            multi_tags.add(self.multi_tag)
+            multi_tags[self.multi_tag] = self.user_id
         elif self.multi <= 1:
-            if self.multi_tag in multi_tags:
-                multi_tags.discard(self.multi_tag)
+            multi_tags.pop(self.multi_tag, None)
             return
         if self.multi_tag and self.multi_tag not in multi_tags:
             await send_message(
@@ -759,9 +767,9 @@ class TaskConfig:
             msg = input_list[:1]
             msg.append(f"{self.bulk[0]} -i {self.multi - 1} {self.options}")
             msgts = " ".join(msg)
-            if self.multi > 2:
-                msgts += f"\n• <b>Cancel Multi:</b> <i>/{BotCommands.CancelTaskCommand[1]}_{self.multi_tag}</i>"
-            nextmsg = await send_message(self.message, msgts)
+            nextmsg = await send_message(
+                self.message, self._multi_msg(msgts, self.multi > 2)
+            )
         else:
             msg = [s.strip() for s in input_list]
             index = msg.index("-i")
@@ -777,14 +785,15 @@ class TaskConfig:
             if not isinstance(nextmsg, Message):
                 nextmsg = self.message
             msgts = " ".join(msg)
-            if self.multi > 2:
-                msgts += f"\n• <b>Cancel Multi:</b> <i>/{BotCommands.CancelTaskCommand[1]}_{self.multi_tag}</i>"
-            nextmsg = await send_message(nextmsg, msgts)
+            nextmsg = await send_message(
+                nextmsg, self._multi_msg(msgts, self.multi > 2)
+            )
         if not isinstance(nextmsg, Message):
             return
         nextmsg = await self.client.get_messages(
             chat_id=self.message.chat.id, message_ids=nextmsg.id
         )
+        nextmsg.text = msgts
         if self.message.from_user:
             nextmsg.from_user = self.user
         else:
@@ -826,14 +835,16 @@ class TaskConfig:
             msg = " ".join(b_msg)
             if len(self.bulk) > 2:
                 self.multi_tag = token_hex(3)
-                multi_tags.add(self.multi_tag)
-                msg += f"\n• <b>Cancel Multi:</b> <i>/{BotCommands.CancelTaskCommand[1]}_{self.multi_tag}</i>"
-            nextmsg = await send_message(self.message, msg)
+                multi_tags[self.multi_tag] = self.user_id
+            nextmsg = await send_message(
+                self.message, self._multi_msg(msg, len(self.bulk) > 2)
+            )
             if not isinstance(nextmsg, Message):
                 return
             nextmsg = await self.client.get_messages(
                 chat_id=self.message.chat.id, message_ids=nextmsg.id
             )
+            nextmsg.text = msg
             if self.message.from_user:
                 nextmsg.from_user = self.user
             else:
@@ -886,6 +897,7 @@ class TaskConfig:
             walk, self.up_dir or self.dir, topdown=False
         ):
             code = 0
+            extracted = False
             for file_ in files:
                 if self.is_cancelled:
                     return False
@@ -899,10 +911,11 @@ class TaskConfig:
                     t_path = get_base_name(f_path) if self.is_file else dirpath
                     if not self.is_file:
                         self.subname = file_
-                    code = await sevenz.extract(f_path, t_path, pswd)
+                    extracted = True
+                    code = await sevenz.extract(f_path, t_path, pswd) or code
             if self.is_cancelled:
                 return code
-            if code == 0:
+            if extracted and code == 0:
                 for file_ in files:
                     if is_archive_split(file_) or is_archive(file_):
                         del_path = ospath.join(dirpath, file_)

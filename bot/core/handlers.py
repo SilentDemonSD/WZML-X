@@ -110,7 +110,7 @@ async def add_handlers():
         CallbackQueryHandler(cancel_all_update, filters=regex("^canall"))
     )
     TgClient.bot.add_handler(
-        CallbackQueryHandler(cancel_multi, filters=regex("^stopm"))
+        CallbackQueryHandler(cancel_button, filters=regex("^cancel "))
     )
     TgClient.bot.add_handler(
         MessageHandler(
@@ -482,9 +482,25 @@ async def add_handlers():
                 9,
             )
 
+        if not Config.DISABLE_STREAM:
+            BOT_COMMANDS = insert_at(
+                BOT_COMMANDS,
+                "Stream",
+                "[link/file] Stream or get playlist download links",
+                10,
+            )
+
         if Config.LOGIN_PASS:
             BOT_COMMANDS = insert_at(
                 BOT_COMMANDS, "Login", "[password] Login to Bot", 14
+            )
+
+        if not Config.DISABLE_PLUGINS:
+            BOT_COMMANDS = insert_at(
+                BOT_COMMANDS,
+                "Plugins",
+                "[SUDO] Manage user plugins",
+                len(BOT_COMMANDS),
             )
 
         await TgClient.bot.set_bot_commands(

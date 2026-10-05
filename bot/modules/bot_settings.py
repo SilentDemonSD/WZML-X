@@ -489,7 +489,7 @@ async def get_buttons(key=None, edit_type=None, edit_mode=False):
             for k, v in Config.get_all().items()
             if not k.startswith("DISABLE_") and k not in LIMIT_VARS
         }
-        all_keys = list(conf_dict.keys())
+        all_keys = sorted(conf_dict)
         for k in all_keys[start : 10 + start]:
             buttons.data_button(k, f"botset editvar {k}")
         buttons.data_button("Back", "botset back")
