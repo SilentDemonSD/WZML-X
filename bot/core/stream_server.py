@@ -1085,12 +1085,20 @@ def build_app():
     app.router.add_route("GET", "/_ping", _ping)
     app.router.add_route("GET", "/_meta/{token}", _meta)
     app.router.add_route("GET", "/_tracks/{token}", _tracks)
+
+    app.router.add_route("GET", "/playlist/{token}", _playlist)
     app.router.add_route("GET", "/_playlist/{token}", _playlist)
+
     app.router.add_route("GET", "/_merge/{token}", _merge)
     app.router.add_route("GET", "/_poster/{token}", _poster)
     app.router.add_route("GET", "/_subs/{token}/{idx}", _subs)
+
+    app.router.add_route("*", "/xstrm/{token}", _stream)
     app.router.add_route("*", "/_stream/{token}", _stream)
+
+    app.router.add_route("*", "/dl/{token}", _dl)
     app.router.add_route("*", "/_dl/{token}", _dl)
+    
     return app
 
 
