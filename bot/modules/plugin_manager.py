@@ -163,7 +163,7 @@ async def build_menu(user_id, view="main", arg=""):
             rows = [
                 ("Looked In", f"<code>{manager.plugins_dir}</code>"),
                 ("Folder Exists", str(manager.plugins_dir.is_dir())),
-                ("Needs", "a subfolder holding <code>wzml_plugin.yml</code>"),
+                ("Needs", "a subfolder holding <code>borderless_plugin.yml</code>"),
             ]
             return (
                 _wz(
@@ -310,13 +310,15 @@ async def build_menu(user_id, view="main", arg=""):
         )
 
         installed = len([e for e in entries if manager.get(e["id"])])
-        extra = len(installer.index_urls()) - 1
+        sources = len(installer.index_urls())
         rows = [("Available", str(total))]
         if installed:
             rows.append(("Already Installed", f"{installed} of {total}"))
-        if extra:
-            rows.append(("Sources", f"official + {extra} custom"))
-        rows.append(("Official", f"<code>{official_index_url()}</code>"))
+        if sources:
+            rows.append(("Sources", str(sources)))
+        official_url = official_index_url()
+        if official_url:
+            rows.append(("Index", f"<code>{official_url}</code>"))
         for url, why in getattr(installer, "problems", [])[:3]:
             rows.append((url.rsplit("/", 3)[-1] or "index", f"<i>{why}</i>"))
         note = ""
@@ -362,7 +364,7 @@ async def build_menu(user_id, view="main", arg=""):
             "Close", f"plugins {user_id} close", position="footer", style=ButtonStyle.DANGER
         )
         rows = [
-            ("Needs", "a folder with <code>wzml_plugin.yml</code>"),
+            ("Needs", "a folder with <code>borderless_plugin.yml</code>"),
             ("Accepts", "a .zip upload, or <code>owner/repo</code>"),
             ("Limit", f"{MAX_ARCHIVE // (1024 * 1024)} MB"),
         ]
@@ -801,6 +803,11 @@ async def edit_plugins_menu(client, query):
                 )
             else:
                 source, url = "github", official_repo_spec()
+                if not url:
+                    return await query.answer(
+                        "Set an update repository or install from a plugin link.",
+                        show_alert=True,
+                    )
                 fetch = partial(installer.stage_github, url, pick=arg)
         await edit_message(query.message, f"<i>Downloading {arg}…</i>")
         try:
@@ -901,7 +908,7 @@ async def edit_plugins_menu(client, query):
 
     if action == "upload":
         await query.answer()
-        rows = [("Send", "a .zip of the plugin folder"), ("Needs", "wzml_plugin.yml")]
+        rows = [("Send", "a .zip of the plugin folder"), ("Needs", "borderless_plugin.yml")]
         return await _ask(
             client, query, _wz("Upload a Plugin", rows), _on_upload
         )

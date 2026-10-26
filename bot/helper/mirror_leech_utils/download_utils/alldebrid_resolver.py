@@ -10,7 +10,7 @@ from ...ext_utils.exceptions import DirectDownloadLinkException
 
 _API_BASE = "https://api.alldebrid.com/v4.1"
 _API_BASE_V4 = "https://api.alldebrid.com/v4"
-_AGENT = "wzmlx"
+_AGENT = "borderless"
 _TIMEOUT = 30
 _USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "

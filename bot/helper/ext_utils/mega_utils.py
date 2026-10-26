@@ -169,7 +169,7 @@ def _get_mega_account_info_sync(email: str, password: str) -> str:
 
     base_dir = mkdtemp(prefix=".mega_account_")
 
-    api = MegaApi("", base_dir, "WZML-X", 4)
+    api = MegaApi("", base_dir, "Borderless", 4)
     listener = MegaAccountListener()
     api.addListener(listener)
     api._listener_ref = listener

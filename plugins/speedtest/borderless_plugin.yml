@@ -1,9 +1,8 @@
 name: speedtest
 version: "1.0.0"
-author: WZML-X
+author: Borderless
 description: Measure the server's network speed
 license: MIT
-repository: https://github.com/SilentDemonSD/WZML-X
 tags: [utility, network]
 min_bot_version: "3.1.9"
 entry: speedtest.py

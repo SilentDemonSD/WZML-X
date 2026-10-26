@@ -132,7 +132,7 @@ async def add_mega_download(listener, path):
         await makedirs(mega_dir, exist_ok=True)
 
         async_api = AsyncMega()
-        async_api.api = api = MegaApi("", mega_dir, "WZML-X", 4)
+        async_api.api = api = MegaApi("", mega_dir, "Borderless", 4)
         mega_listener = MegaAppListener(async_api, listener)
         async_api._mega_listener = mega_listener
         api.addListener(mega_listener)
@@ -142,7 +142,7 @@ async def add_mega_download(listener, path):
         subfolder_handle = get_mega_subfolder_handle(listener.link)
 
         if is_folder:
-            async_api.folder_api = folder_api = MegaApi("", mega_dir, "WZML-X", 4)
+            async_api.folder_api = folder_api = MegaApi("", mega_dir, "Borderless", 4)
 
             # Authenticate folder API with the configured premium MEGA account.
             if mega_email and mega_password:

@@ -47,7 +47,7 @@ class DbManager:
             self._conn = AsyncMongoClient(
                 Config.DATABASE_URL, server_api=ServerApi("1")
             )
-            self.db = self._conn.wzmlx
+            self.db = self._conn.borderless
             self._return = False
             await self._index_streams()
         except PyMongoError as e:

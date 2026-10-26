@@ -11,7 +11,7 @@ class PortalError(Exception):
 
 class SettingsPortal:
     VERSION = 1
-    KIND = "wzmlx-user-settings"
+    KIND = "borderless-user-settings"
     MAX_BYTES = 512 * 1024
     FILE_BACKED = frozenset(
         ("THUMBNAIL", "RCLONE_CONFIG", "TOKEN_PICKLE", "USER_COOKIE_FILE")

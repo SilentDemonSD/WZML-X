@@ -229,7 +229,7 @@ A dict works too: <code>{'Movies': -1001234567890}</code></i>
         "pattern:replace|...",
         "Regex rewrites run on every filename before upload, in order. Each rule is <code>pattern:replace:count:flag</code> where count 0 means every match and flag is a name like <code>IGNORECASE</code>. Chain rules with <code>|</code>.",
         """<i>Send your Name Swap. You can add pattern instead of normal text according to the format.</i>
-<b>Full Documentation Guide</b> <a href="https://t.me/WZML_X/77">Click Here</a>
+<b>Configuration reference:</b> <code>config_sample.py</code>
 ┖ <b>Time Left :</b> <code>60 sec</code>
 """,
     ),
@@ -262,8 +262,8 @@ Here I will explain how to use mltb.* which is reference to files you want to wo
     "METADATA_CMDS": (
         "Legacy",
         "Replaced by Metadata in FF Media Settings.",
-        """<i>Send your Meta data. You can set it according to the format title="Join @WZML_X".</i>
-<b>Full Documentation Guide</b> <a href="https://t.me/WZML_X/">Click Here</a>
+        """<i>Send your metadata using the format title="Borderless".</i>
+<b>Configuration reference:</b> <code>config_sample.py</code>
 ┖ <b>Time Left :</b> <code>60 sec</code>
 """,
     ),
@@ -1353,7 +1353,7 @@ async def do_export(_, message, rfunc):
     finally:
         phrase = None
     with BytesIO(blob) as out:
-        out.name = f"wzmlx-settings-{user_id}.json"
+        out.name = f"borderless-settings-{user_id}.json"
         await send_file(
             message,
             out,

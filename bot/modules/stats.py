@@ -27,7 +27,6 @@ from ..core.config_manager import Config, BinConfig
 from ..helper.ext_utils.bot_lock import get_system_resources_cached
 from ..helper.ext_utils.bot_utils import (
     cmd_exec,
-    compare_versions,
     git_info,
     new_task,
 )
@@ -162,20 +161,12 @@ async def get_stats(event, key="home"):
         changelog = git_info.commit_msg() or "N/A"
         if git_info.commit_hash() != "unknown":
             changelog += f" | <code>{git_info.commit_hash()}</code>"
-        official_v = (
-            await cmd_exec(
-                f"curl -o latestversion.py https://raw.githubusercontent.com/SilentDemonSD/WZML-X/{Config.UPSTREAM_BRANCH}/bot/version.py -s && python3 latestversion.py && rm latestversion.py",
-                True,
-            )
-        )[0]
         msg = f"""⌬ <b><i>Repo Statistics :</i></b>
 │
 ┟ <b>Bot Updated :</b> {last_commit}
 ┠ <b>Current Version :</b> {get_version()}
-┠ <b>Latest Version :</b> {official_v}
+┠ <b>Latest Version :</b> Use the configured update source
 ┖ <b>Last ChangeLog :</b> {changelog}
-
-⌬ <b>REMARKS :</b> <code>{compare_versions(get_version(), official_v)}</code>
     """
     elif key == "stpkgs":
         ver = bot_cache.get("eng_versions", {})

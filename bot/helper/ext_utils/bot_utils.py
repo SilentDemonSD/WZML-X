@@ -32,8 +32,8 @@ from .help_messages import (
 )
 from .telegraph_helper import telegraph
 
-_SERVICE_PWD_SALT = b"wzmlx_v3_service_pwd_salt"
-_PIN_SALT = b"wzmlx_v3_pin_salt"
+_SERVICE_PWD_SALT = b"borderless_v3_service_pwd_salt"
+_PIN_SALT = b"borderless_v3_pin_salt"
 _PIN_LEN = 4
 _PIN_RATE_LIMIT = 5
 _PIN_RATE_WINDOW = 60

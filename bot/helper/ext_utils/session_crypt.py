@@ -26,8 +26,8 @@ class SessionCrypt:
     MAXMEM = 128 * 1024 * 1024
     SALT_LEN = 16
     NONCE_LEN = 12
-    AAD_PREFIX = b"wzmlx.usess.v1:"
-    AAD_EXPORT = b"wzmlx.usettings.v1"
+    AAD_PREFIX = b"borderless.usess.v1:"
+    AAD_EXPORT = b"borderless.usettings.v1"
 
     _gate = Semaphore(2)
 

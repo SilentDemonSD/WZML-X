@@ -31,7 +31,7 @@ async def add_mega_clone(listener, link, mega_email, mega_password, gid):
     await makedirs(mega_dir, exist_ok=True)
 
     async_api = AsyncMega()
-    async_api.api = api = MegaApi("", mega_dir, "WZML-X", 4)
+    async_api.api = api = MegaApi("", mega_dir, "Borderless", 4)
     await asleep(0.1)
     mega_listener = MegaAppListener(async_api, listener)
     async_api._mega_listener = mega_listener
