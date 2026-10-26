@@ -1,9 +1,8 @@
 name: anilist
 version: "1.0.0"
-author: WZML-X
+author: Borderless
 description: Search AniList for anime, characters and manga
 license: MIT
-repository: https://github.com/SilentDemonSD/WZML-X
 tags: [anime, lookup]
 min_bot_version: "3.1.10"
 entry: anilist.py

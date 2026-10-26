@@ -1,7 +1,6 @@
 from ast import literal_eval
 from importlib import import_module
 from os import getenv
-from wz_bin import bin_name
 
 from ..helper.ext_utils.deprecations import Deprecations
 
@@ -60,9 +59,9 @@ class Config:
     VIKINGFILE_HASH = ""
     VIKINGFILE_FOLDER = ""
     GDRIVE_ID = ""
-    GD_DESP = "Uploaded with WZ Bot"
-    AUTHOR_NAME = "WZML-X"
-    AUTHOR_URL = "https://t.me/WZML_X"
+    GD_DESP = "Uploaded with Borderless"
+    AUTHOR_NAME = "Borderless"
+    AUTHOR_URL = ""
     INSTADL_API = ""
     IMDB_TEMPLATE = ""
     IMAGES = []
@@ -166,7 +165,7 @@ class Config:
     DRIVE_CATEGORY_MODE = False
     DRIVE_CATEGORY_SA = ""
     UPSTREAM_REPO = ""
-    UPSTREAM_BRANCH = "wzv3"
+    UPSTREAM_BRANCH = "main"
     USENET_SERVERS = []
     USER_SESSION_STRING = ""
     USER_SESSION_KEY_TTL = 43200
@@ -174,11 +173,10 @@ class Config:
     USER_SESSION_MAX_CLIENTS = 8
     TRANSMISSION_MODE = "both"
     USE_SERVICE_ACCOUNTS = False
-    ENABLE_TELEMETRY = True
     WEB_ACCESS_PASSWORD = ""
     WEB_PINCODE = True
     YT_DLP_OPTIONS = {}
-    YT_DESP = "Uploaded with WZML-X bot"
+    YT_DESP = "Uploaded with Borderless"
     YT_TAGS = ["telegram", "bot", "youtube"]
     YT_CATEGORY_ID = 22
     YT_PRIVACY_STATUS = "unlisted"
@@ -354,8 +352,8 @@ DEFAULT_CONFIG = Config.get_all()
 
 
 class BinConfig:
-    ARIA2_NAME = bin_name(0)
-    QBIT_NAME = bin_name(1)
-    FFMPEG_NAME = bin_name(2)
-    RCLONE_NAME = bin_name(3)
-    SABNZBD_NAME = bin_name(4)
+    ARIA2_NAME = "aria2c"
+    QBIT_NAME = "qbittorrent-nox"
+    FFMPEG_NAME = "ffmpeg"
+    RCLONE_NAME = "rclone"
+    SABNZBD_NAME = "sabnzbdplus"

@@ -17,7 +17,7 @@ from ..helper.telegram_helper.filters import CustomFilters
 from .config_manager import Config
 
 PKG = "wzplugins"
-MANIFEST_NAMES = ("wzml_plugin.yml", "wzml_plugin.yaml", "plugin.yml", "plugin.yaml")
+MANIFEST_NAMES = ("borderless_plugin.yml", "borderless_plugin.yaml", "plugin.yml", "plugin.yaml")
 NAME_RE = r"^[a-z][a-z0-9_]{1,31}$"
 ACCESS = {
     "authorized": "authorized",
@@ -27,8 +27,6 @@ ACCESS = {
 }
 KEY_ALIASES = {
     "main_file": "entry",
-    "min_wzml_version": "min_bot_version",
-    "max_wzml_version": "max_bot_version",
     "settings_schema": "config_schema",
     "deps": "python_dependencies",
 }

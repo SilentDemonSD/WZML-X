@@ -1,9 +1,8 @@
 name: gen_pyro_sess
 version: "1.0.0"
-author: WZML-X
+author: Borderless
 description: Generate a Pyrogram string session step by step
 license: MIT
-repository: https://github.com/SilentDemonSD/WZML-X
 tags: [utility, session]
 min_bot_version: "3.1.9"
 entry: gen_pyro_sess.py

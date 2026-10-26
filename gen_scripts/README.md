@@ -1,4 +1,4 @@
-# gen_scripts - Setup Scripts for WZML-X
+# gen_scripts - Setup Scripts for Borderless
 
 > Collection of scripts to generate tokens, credentials, and configure Google Drive access for the bot.
 

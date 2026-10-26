@@ -11,7 +11,7 @@ from .. import LOGGER, bot_loop
 from ..helper.ext_utils.exceptions import TgLinkException
 from .config_manager import Config
 
-_DB_PARTITION_SALT = b"wzmlx_v3_db_partition_salt"
+_DB_PARTITION_SALT = b"borderless_v3_db_partition_salt"
 
 
 def db_partition_id(bot_id):
@@ -272,7 +272,7 @@ class TgClient:
                 await sleep(e.value)
         cls.BNAME = cls.bot.me.username
         cls.ID = Config.BOT_TOKEN.split(":", 1)[0]
-        LOGGER.info(f"WZ Bot : [@{cls.BNAME}] Started!")
+        LOGGER.info(f"Borderless : [@{cls.BNAME}] Started!")
 
     @classmethod
     async def _retry_user(cls, delay):
@@ -289,7 +289,7 @@ class TgClient:
             if cls.IS_PREMIUM_USER:
                 cls.MAX_SPLIT_SIZE = 4194304000
             uname = cls.user.me.username or cls.user.me.first_name
-            LOGGER.info(f"WZ User : [{uname}] Started!")
+            LOGGER.info(f"Borderless User : [{uname}] Started!")
         except FloodWait as e:
             LOGGER.warning(f"User client FloodWait: Retrying in {e.value}s...")
             bot_loop.create_task(cls._retry_user(e.value))
@@ -315,7 +315,7 @@ class TgClient:
                 if cls.IS_PREMIUM_USER:
                     cls.MAX_SPLIT_SIZE = 4194304000
                 uname = cls.user.me.username or cls.user.me.first_name
-                LOGGER.info(f"WZ User : [{uname}] Started!")
+                LOGGER.info(f"Borderless User : [{uname}] Started!")
             except FloodWait as e:
                 LOGGER.warning(
                     f"User client FloodWait: Retrying in {e.value}s (non-blocking)..."

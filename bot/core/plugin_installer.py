@@ -13,8 +13,7 @@ from .. import LOGGER
 from .config_manager import Config
 from .plugin_manager import MANIFEST_NAMES, PluginManifest, read_manifest
 
-DEFAULT_SLUG = "SilentDemonSD/WZML-X"
-DEFAULT_BRANCH = "wzv3-dev"
+DEFAULT_BRANCH = "main"
 INDEX_PATH = "plugins/index.json"
 MAX_ARCHIVE = 16 * 1024 * 1024
 MAX_UNPACKED = 48 * 1024 * 1024
@@ -31,7 +30,7 @@ class InstallError(Exception):
 def upstream_slug():
     repo = str(Config.UPSTREAM_REPO or "").strip()
     if not repo:
-        return DEFAULT_SLUG
+        return ""
     text = repo.split("://", 1)[-1]
     if "@" in text:
         text = text.rsplit("@", 1)[1]
@@ -40,18 +39,24 @@ def upstream_slug():
         text = text[:-4]
     parts = [part for part in text.split("/") if part]
     if len(parts) < 3 or "github.com" not in parts[0].lower():
-        return DEFAULT_SLUG
+        return ""
     return f"{parts[1]}/{parts[2]}"
 
 
 def official_repo_spec():
+    slug = upstream_slug()
+    if not slug:
+        return ""
     branch = str(Config.UPSTREAM_BRANCH or "").strip() or DEFAULT_BRANCH
-    return f"{upstream_slug()}@{branch}"
+    return f"{slug}@{branch}"
 
 
 def official_index_url():
+    slug = upstream_slug()
+    if not slug:
+        return ""
     branch = str(Config.UPSTREAM_BRANCH or "").strip() or DEFAULT_BRANCH
-    return f"https://raw.githubusercontent.com/{upstream_slug()}/{branch}/{INDEX_PATH}"
+    return f"https://raw.githubusercontent.com/{slug}/{branch}/{INDEX_PATH}"
 
 
 def safe_target(dest, name):
@@ -140,7 +145,7 @@ def find_plugin_roots(folder):
                 queue.append((child, depth + 1))
     if not found:
         raise InstallError(
-            "no wzml_plugin.yml found in the archive; a plugin must ship a manifest"
+            "no borderless_plugin.yml found in the archive; a plugin must ship a manifest"
         )
     return found
 
@@ -251,7 +256,10 @@ class PluginInstaller:
         return self.manager.plugins_dir / ".staging"
 
     def index_urls(self):
-        urls = [official_index_url()]
+        urls = []
+        official = official_index_url()
+        if official:
+            urls.append(official)
         for url in Config.PLUGIN_INDEXES or []:
             url = str(url).strip()
             if url and url not in urls:

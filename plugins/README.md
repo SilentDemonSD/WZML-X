@@ -1,6 +1,6 @@
-# WZML-X Plugins
+# Borderless Plugins
 
-A plugin is a folder in here holding a `wzml_plugin.yml` manifest and one or more
+A plugin is a folder in here holding a `borderless_plugin.yml` manifest and one or more
 Python files. Manage them from Telegram with `/plugins` — browse the marketplace,
 upload a `.zip`, install from GitHub, and enable or disable anything live without
 restarting the bot.
@@ -35,7 +35,7 @@ restarting the bot.
 
 A working plugin is two files. Create `plugins/hello/`:
 
-**`plugins/hello/wzml_plugin.yml`**
+**`plugins/hello/borderless_plugin.yml`**
 
 ```yaml
 name: hello
@@ -72,7 +72,7 @@ Open `/plugins → Installed`, or restart. `/hello` now works, and it shows up i
 ```
 plugins/
   hello/
-    wzml_plugin.yml      required — the manifest
+    borderless_plugin.yml      required — the manifest
     hello.py             the manifest's `entry`
     helpers.py           optional siblings, imported with `from .helpers import ...`
     assets/              any files you like; they travel with the plugin
@@ -86,7 +86,7 @@ data in `/plugins`.
 
 ## Manifest reference
 
-`wzml_plugin.yml` is the single source of truth. Nothing about a plugin's
+`borderless_plugin.yml` is the single source of truth. Nothing about a plugin's
 commands lives in Python.
 
 ### Top level
@@ -111,8 +111,8 @@ commands lives in Python.
 
 Unknown top-level keys are **ignored with a warning**, never fatal — a manifest
 written for a newer bot still loads on an older one. These older spellings are
-accepted as aliases: `main_file` → `entry`, `min_wzml_version` →
-`min_bot_version`, `max_wzml_version` → `max_bot_version`, `settings_schema` →
+accepted as aliases: `main_file` → `entry`, `min_bot_version` →
+`min_bot_version`, `max_bot_version` → `max_bot_version`, `settings_schema` →
 `config_schema`, `deps` → `python_dependencies`.
 
 ### `commands[]`
@@ -445,8 +445,8 @@ Three routes, all owner-only, all from `/plugins → Install`:
 
 ```
 hello.zip                       hello.zip
-  wzml_plugin.yml                 hello/
-  hello.py                          wzml_plugin.yml
+  borderless_plugin.yml                 hello/
+  hello.py                          borderless_plugin.yml
                                     hello.py
 ```
 
@@ -457,17 +457,13 @@ it and pressing it just says "Already Added". Pick one and it installs; the
 download is kept so you can install several from the same repo without fetching
 it again.
 
-**Marketplace** — entries come from an index file. The official index is read
-from your configured upstream:
+**Marketplace** — entries come from index URLs configured in `PLUGIN_INDEXES`:
 
 ```
 https://raw.githubusercontent.com/<UPSTREAM_REPO>/<UPSTREAM_BRANCH>/plugins/index.json
 ```
 
-so a fork with `UPSTREAM_REPO` and `UPSTREAM_BRANCH` set gets its own list
-automatically — you do not need to configure anything. `PLUGIN_INDEXES` is only
-for **extra** indexes; set it to a list of URLs. The exact URL in use is shown on
-the Marketplace page.
+Set it to a list of URLs. The active source count is shown on the Marketplace page.
 
 > `index.schema.json` is the JSON-Schema that *describes* the format.
 > It is **not an index** — do not put it in `PLUGIN_INDEXES`. The bot detects

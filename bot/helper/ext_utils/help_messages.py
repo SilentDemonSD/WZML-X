@@ -490,7 +490,7 @@ def get_bot_commands():
         "Stats": "Bot, OS, Repo & System full Statistics",
         "Rss": "User RSS Management Settings",
         "CancelAll": "Cancel all Tasks on the Bot",
-        "Help": "Detailed help usage of the WZ Bot",
+        "Help": "Detailed help usage of the Borderless",
         "BotSet": "[SUDO] Bot Management Settings",
         "Log": "[SUDO] Get Bot Logs for Internal Working",
         "Memory": "[SUDO] Memory usage, caches and an allocation profiler",

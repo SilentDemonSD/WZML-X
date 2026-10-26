@@ -73,7 +73,7 @@ class TelegraphHelper:
                     nxt_page += 1
             await self.edit_page(
                 path=path[prev_page],
-                title="WZML-X Torrent Search",
+                title="Borderless Torrent Search",
                 content=content,
             )
         return

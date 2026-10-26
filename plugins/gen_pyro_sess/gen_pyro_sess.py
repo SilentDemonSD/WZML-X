@@ -233,14 +233,14 @@ async def gen_pyro_string(_, message):
 
     try:
         pyro_client = Client(
-            f"WZML-X-{user_id}",
+            f"Borderless-{user_id}",
             in_memory=True,
             api_id=api_id,
             api_hash=api_hash,
             workdir="/usr/src/app",
-            app_version=f"@WZML_X {get_version()}",
-            device_model="@WZML_X Bot V3",
-            system_version="@WZML_X WzPyro Server",
+            app_version=f"Borderless {get_version()}",
+            device_model="Borderless Bot",
+            system_version="Borderless Server",
         )
     except Exception as e:
         return await edit_message(
@@ -342,8 +342,8 @@ async def gen_pyro_string(_, message):
             "me",
             f"⌬ <b><u>WZGram Session Generated</u></b>\n\n"
             f"<code>{session_string}</code>\n\n"
-            f"<b>WZGram v{wzgram_version} | WZML-X {get_version()}</b>\n"
-            f"<b>Via <a href='https://github.com/SilentDemonSD/WZML-X'>WZML-X</a> [ @WZML_X ]</b>",
+            f"<b>WZGram v{wzgram_version} | Borderless {get_version()}</b>\n"
+            "<b>Via Borderless</b>",
             link_preview_options=LinkPreviewOptions(is_disabled=True),
         )
         await _safe_disconnect(pyro_client)
@@ -361,7 +361,7 @@ async def gen_pyro_string(_, message):
         )
 
     for ext in ("session", "session-journal"):
-        path = f"WZML-X-{user_id}.{ext}"
+        path = f"Borderless-{user_id}.{ext}"
         if path_exists(path):
             try:
                 await aioremove(path)

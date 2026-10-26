@@ -12,7 +12,7 @@ from sys import exit
 getLogger("pymongo").setLevel(ERROR)
 
 _LOGGER = getLogger("update")
-_DB_PARTITION_SALT = b"wzmlx_v3_db_partition_salt"
+_DB_PARTITION_SALT = b"borderless_v3_db_partition_salt"
 
 _VAR_LIST = [
     "BOT_TOKEN",
@@ -80,7 +80,7 @@ async def _fetch_db_config(database_url, db_part, collection="config"):
         from pymongo.server_api import ServerApi
     conn = AsyncMongoClient(database_url, server_api=ServerApi("1"))
     try:
-        return await conn.wzmlx.settings[collection].find_one(
+        return await conn.borderless.settings[collection].find_one(
             {"_id": db_part}, {"_id": 0}
         )
     except Exception as e:
@@ -141,9 +141,9 @@ def _run_update(upstream_repo, upstream_branch, version):
             "config",
             "--global",
             "user.email",
-            "105407900+SilentDemonSD@users.noreply.github.com",
+            "borderless@users.noreply.github.com",
         ],
-        ["git", "config", "--global", "user.name", "SilentDemonSD"],
+        ["git", "config", "--global", "user.name", "Borderless"],
         ["git", "add", "."],
         ["git", "commit", "-sm", "update", "-q"],
         ["git", "remote", "add", "origin", upstream_repo],
@@ -188,7 +188,7 @@ def main():
         exit(1)
     _fetch_config_from_db(config_file, _db_partition_id(bot_token.split(":", 1)[0]))
     upstream_repo = config_file.get("UPSTREAM_REPO", "").strip()
-    upstream_branch = config_file.get("UPSTREAM_BRANCH", "").strip() or "wzv3"
+    upstream_branch = config_file.get("UPSTREAM_BRANCH", "").strip() or "main"
     _run_update(upstream_repo, upstream_branch, version)
     _cleanup()
     _update_packages()
