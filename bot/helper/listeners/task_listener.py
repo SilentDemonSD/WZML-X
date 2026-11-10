@@ -465,6 +465,11 @@ class TaskListener(TaskConfig):
                     "\n⋗ <i>Nothing could be copied, the source chat "
                     "restricts forwarding</i>"
                 )
+            if getattr(self, "global_log_copy_failed", False):
+                msg += (
+                    "\n\n⚠️ <b>Global log copy failed</b> for one or more messages. "
+                    "Check the bot logs."
+                )
             if stats["restricted"]:
                 runs, total = restricted_runs(stats["restricted"])
                 msg += (

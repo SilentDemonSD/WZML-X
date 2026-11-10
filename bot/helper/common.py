@@ -282,6 +282,26 @@ class TaskConfig:
                 seats.append(seat)
         return seats
 
+    def _set_all_dump_destinations(self):
+        """Use one configured dump as primary and copy to the remaining dumps."""
+        dumps = dump_chats_for(self.user_id)
+        if not dumps:
+            raise ValueError("No LEECH_DUMP_CHATS configured for -ud all!")
+
+        self.up_dest = ""
+        selected = set()
+        for dest in dumps.values():
+            seat = parse_dest(dest)
+            if not seat[0] or seat in selected:
+                continue
+            selected.add(seat)
+            if not self.up_dest:
+                self.up_dest = dest
+            else:
+                self.leech_dests.append(seat)
+        if not self.up_dest:
+            raise ValueError("No valid LEECH_DUMP_CHATS configured for -ud all!")
+
     async def resolve_dump_dest(self, wanted):
         dump_chats = dump_chats_for(self.user_id)
         found = dump_chats.get(wanted)
@@ -332,10 +352,9 @@ class TaskConfig:
                     seats.append(seat)
 
         # /clone also archives its Telegram copies in the global log.
-        if Config.LEECH_LOG_CHAT:
-            global_seat = parse_dest(Config.LEECH_LOG_CHAT)
-            if global_seat[0] and global_seat not in seats:
-                seats.append(global_seat)
+        self.global_log_dest = parse_dest(Config.LEECH_LOG_CHAT)
+        if self.global_log_dest[0] and self.global_log_dest not in seats:
+            seats.append(self.global_log_dest)
         return seats
 
     async def before_start(self):
@@ -609,14 +628,8 @@ class TaskConfig:
             self.up_dest = Config.LEECH_LOG_CHAT
             if self.dump_dest:
                 if str(self.dump_dest).strip().lower() == "all":
-                    # Fan out to owner and user dump chats (user names win).
-                    dumps = dump_chats_for(self.user_id)
-                    if not dumps:
-                        raise ValueError("No LEECH_DUMP_CHATS configured for -ud all!")
-                    for dest in dumps.values():
-                        seat = parse_dest(dest)
-                        if seat[0] and seat not in self.leech_dests:
-                            self.leech_dests.append(seat)
+                    # Upload into the first named dump, then copy to the others.
+                    self._set_all_dump_destinations()
                 else:
                     # A specific -ud must not trigger other automatic dumps.
                     self.up_dest = await self.resolve_dump_dest(self.dump_dest)
