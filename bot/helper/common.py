@@ -99,6 +99,8 @@ class TaskConfig:
         self.up_dest = ""
         self.drive_id = ""
         self.leech_dests = []
+        self.global_log_dest = (None, None)
+        self.global_log_copy_failed = False
         self.cmd_up_dest = ""
         self.cmd_thread_id = None
         self.dump_dest = ""
@@ -280,12 +282,36 @@ class TaskConfig:
                 seats.append(seat)
         return seats
 
+    def _set_all_dump_destinations(self):
+        """Use one configured dump as primary and copy to the remaining dumps."""
+        dumps = dump_chats_for(self.user_id)
+        if not dumps:
+            raise ValueError("No LEECH_DUMP_CHATS configured for -ud all!")
+
+        self.up_dest = ""
+        selected = set()
+        for dest in dumps.values():
+            seat = parse_dest(dest)
+            if not seat[0] or seat in selected:
+                continue
+            selected.add(seat)
+            if not self.up_dest:
+                self.up_dest = dest
+            else:
+                self.leech_dests.append(seat)
+        if not self.up_dest:
+            raise ValueError("No valid LEECH_DUMP_CHATS configured for -ud all!")
+
     async def resolve_dump_dest(self, wanted):
         dump_chats = dump_chats_for(self.user_id)
         found = dump_chats.get(wanted)
         if found is not None:
             return found
-        if str(wanted).lstrip("-").isdigit() or str(wanted).startswith("@"):
+        # Allow raw IDs/usernames with optional forum topic IDs.
+        chat, thread = parse_dest(wanted)
+        if (isinstance(chat, int) or str(chat).startswith("@")) and (
+            "|" not in str(wanted) or thread is not None
+        ):
             return wanted
         if not dump_chats:
             raise ValueError(f"Unknown dump chat '{wanted}'! Configured dumps: none")
@@ -312,12 +338,23 @@ class TaskConfig:
             )
         seats = []
         for one in wanted:
-            found = await self.resolve_dump_dest(one)
-            if self.is_cancelled:
-                return []
-            seat = parse_dest(found)
-            if seat not in seats:
-                seats.append(seat)
+            targets = [one]
+            if str(one).strip().lower() == "all":
+                targets = list(dump_chats_for(self.user_id).values())
+                if not targets:
+                    raise ValueError("No LEECH_DUMP_CHATS configured for -ud all!")
+            for target in targets:
+                found = await self.resolve_dump_dest(target)
+                if self.is_cancelled:
+                    return []
+                seat = parse_dest(found)
+                if seat[0] and seat not in seats:
+                    seats.append(seat)
+
+        # /clone also archives its Telegram copies in the global log.
+        self.global_log_dest = parse_dest(Config.LEECH_LOG_CHAT)
+        if self.global_log_dest[0] and self.global_log_dest not in seats:
+            seats.append(self.global_log_dest)
         return seats
 
     async def before_start(self):
@@ -559,7 +596,8 @@ class TaskConfig:
                 ) != self.get_config_path(self.up_dest):
                     raise ValueError("You must use the same config to clone!")
         else:
-            self.leech_dests = self.own_leech_dests()
+            # Preserve automatic personal dumps only when -ud is absent.
+            self.leech_dests = [] if self.dump_dest else self.own_leech_dests()
 
             self.cmd_up_dest = self.up_dest
             if self.cmd_up_dest:
@@ -589,9 +627,24 @@ class TaskConfig:
 
             self.up_dest = Config.LEECH_LOG_CHAT
             if self.dump_dest:
-                self.up_dest = await self.resolve_dump_dest(self.dump_dest)
-                if self.is_cancelled:
-                    return
+                if str(self.dump_dest).strip().lower() == "all":
+                    # Upload into the first named dump, then copy to the others.
+                    self._set_all_dump_destinations()
+                else:
+                    # A specific -ud must not trigger other automatic dumps.
+                    self.up_dest = await self.resolve_dump_dest(self.dump_dest)
+                    if self.is_cancelled:
+                        return
+
+            # Always archive every leech in the global log, even with -ud/-up.
+            # TelegramUploader deduplicates when this is also the primary chat.
+            self.global_log_dest = parse_dest(Config.LEECH_LOG_CHAT)
+            if (
+                self.global_log_dest[0]
+                and self.global_log_dest not in self.leech_dests
+            ):
+                self.leech_dests.insert(0, self.global_log_dest)
+
             if self.up_dest:
                 if not isinstance(self.up_dest, int):
                     self.up_dest, self.chat_thread_id = parse_dest(self.up_dest)

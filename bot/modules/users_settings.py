@@ -240,11 +240,12 @@ The message is deleted the moment it arrives.</i>
     ),
     "LEECH_DUMP_CHATS": (
         "Name and chat id per line",
-        "Your own leech dump chats. Every leech gets copied to all of them, and "
-        "each is selectable per task by name with -ud. Names are merged over the "
-        "owner's list and yours wins a clash. Independent of the clone "
-        "destinations. Every chat is checked at set time, so the bot must already "
-        "be an admin there.",
+        "Your own automatic leech dump chats, copied to when -ud is absent. "
+        "With -ud name/id only that destination and the global log are used; "
+        "-ud all copies to all named owner/user dump chats and the global log. "
+        "Names are merged over the owner's list and yours wins a clash. "
+        "Independent of clone destinations and -up. Every chat is checked at "
+        "set time, so the bot must already be an admin there.",
         """<i>One per line: <code>Movies -1001234567890</code>
 Add a topic with a pipe: <code>Movies -1001234567890|12</code>
 A dict works too: <code>{'Movies': -1001234567890}</code></i>

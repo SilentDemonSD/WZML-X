@@ -36,6 +36,8 @@ Space separated. Each one is looked up by name in your own Leech Dump Chats
 (Leech Settings) and then the owner's LEECH_DUMP_CHATS, before being treated as a
 raw id, @username, or id|topic_id. Duplicates are dropped.
 With no -ud the clone destinations from your user settings are used.
+-ud all includes all named owner/user leech dump chats.
+The global LEECH_LOG_CHAT also receives every Telegram clone copy when configured.
 
 <b>Content type</b>: -ct doc | med | all
 doc keeps documents only, med keeps video/audio/photo/animation/voice only.
@@ -136,10 +138,15 @@ when you should use b:(leech by bot)? When your default settings is leech by use
 <b>Named dump chats</b>: -ud
 -ud name (picks a chat by name, e.g. -ud A)
 -ud id/@username (raw chat id or username works too)
+-ud id|topic_id (upload to a specific forum topic)
+-ud all (copy to every configured owner/user LEECH_DUMP_CHATS destination)
 Names come from your own Leech Dump Chats in Leech Settings, merged over the owner's
 LEECH_DUMP_CHATS. On a clash your own wins.
-If the name is not configured, buttons are shown to pick one of the configured dumps.
-The chosen chat becomes the upload destination for that task, overriding LEECH_LOG_CHAT.
+With -ud name/id, only that chat and the global LEECH_LOG_CHAT receive the leech
+(not other automatic personal dumps). With -ud all, all configured dumps receive it.
+Without -ud, personal automatic dump copies work as before.
+LEECH_LOG_CHAT always receives every leech, even if -ud or -up is specified.
+-up remains an independent additional destination.
 
 In case you want to specify whether using token.pickle or service accounts you can add tp:gdrive_id (using token.pickle) or sa:gdrive_id (using service accounts) or mtp:gdrive_id (using token.pickle uploaded from usetting).
 DEFAULT_UPLOAD doesn't affect on leech cmds.

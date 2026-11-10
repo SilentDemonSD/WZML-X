@@ -427,7 +427,13 @@ class TelegramUploader:
                     )
                 except Exception as e:
                     if not self._listener.is_cancelled:
-                        LOGGER.error(f"Failed to forward to {dest}: {e}")
+                        if (dest, thread_id) == self._listener.global_log_dest:
+                            self._listener.global_log_copy_failed = True
+                            LOGGER.error(
+                                f"Global leech log copy failed for {dest}: {e}"
+                            )
+                        else:
+                            LOGGER.error(f"Failed to forward to {dest}: {e}")
 
     async def _upload_file_task(self, file_, f_path, dirpath, user_session, seq_idx):
         up_path = None
