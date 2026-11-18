@@ -1,0 +1,28 @@
+name: Upload regression tests
+
+on:
+  push:
+    branches: [wzv3-dev]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run isolated regressions
+        run: python -m unittest discover -s tests -p 'test_*.py' -v
+      - name: Compile modified Python modules
+        run: |
+          python -m py_compile bot/helper/ext_utils/hyperul_utils.py
+          python -m py_compile bot/helper/common.py
+          python -m py_compile bot/modules/mirror_leech.py
+          python -m py_compile bot/helper/mirror_leech_utils/upload_utils/telegram_uploader.py

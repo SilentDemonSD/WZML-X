@@ -45,8 +45,8 @@ def _upload_log_context(
             or getattr(source_chat, "username", None)
         )
     # Keep user-controlled Telegram titles on one log line.
-    destination_name = str(destination_name or "").replace("\\r", " ").replace("\\n", " ")[:80]
-    filename = ospath.basename(str(file_path or "")).replace("\\r", " ").replace("\\n", " ")
+    destination_name = str(destination_name or "").replace("\r", " ").replace("\n", " ")[:80]
+    filename = ospath.basename(str(file_path or "")).replace("\r", " ").replace("\n", " ")
     username = getattr(uploader, "username", None)
     return (
         f"task={getattr(listener, 'mid', None)} "
