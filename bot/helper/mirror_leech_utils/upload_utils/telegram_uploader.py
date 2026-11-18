@@ -427,7 +427,30 @@ class TelegramUploader:
                     )
                 except Exception as e:
                     if not self._listener.is_cancelled:
-                        LOGGER.error(f"Failed to forward to {dest}: {e}")
+                        if (dest, thread_id) == self._listener.global_log_dest:
+                            self._listener.global_log_copy_failed = True
+                            LOGGER.error(
+                                "Global leech log copy failed task=%s "
+                                "request_chat=%s dest_chat=%s thread=%s "
+                                "error_type=%s error=%s",
+                                self._listener.mid,
+                                self._listener.message.chat.id,
+                                dest,
+                                thread_id,
+                                type(e).__name__,
+                                e,
+                            )
+                        else:
+                            LOGGER.error(
+                                "Telegram copy failed task=%s request_chat=%s "
+                                "dest_chat=%s thread=%s error_type=%s error=%s",
+                                self._listener.mid,
+                                self._listener.message.chat.id,
+                                dest,
+                                thread_id,
+                                type(e).__name__,
+                                e,
+                            )
 
     async def _upload_file_task(self, file_, f_path, dirpath, user_session, seq_idx):
         up_path = None
@@ -446,7 +469,16 @@ class TelegramUploader:
         except StopTransmission:
             return None
         except Exception as err:
-            LOGGER.error(f"{err}. Path: {f_path}", exc_info=True)
+            LOGGER.error(
+                "Telegram upload task failed task=%s request_chat=%s "
+                "dest_chat=%s file=%r error_type=%s error=%s",
+                self._listener.mid,
+                self._listener.message.chat.id,
+                self._listener.up_dest,
+                file_,
+                type(err).__name__,
+                err,
+            )
             self._error = str(err)
             self._corrupted += 1
             return None
@@ -638,7 +670,17 @@ class TelegramUploader:
             raise
         except Exception as err:
             err_type = "RPCError: " if isinstance(err, RPCError) else ""
-            LOGGER.error(f"{err_type}{err}. Path: {o_path}", exc_info=True)
+            LOGGER.error(
+                "Telegram upload exception task=%s request_chat=%s "
+                "configured_dest=%s path=%r error=%s%s",
+                self._listener.mid,
+                self._listener.message.chat.id,
+                self._listener.up_dest,
+                o_path,
+                err_type,
+                err,
+                exc_info=True,
+            )
             raise err
 
     @property

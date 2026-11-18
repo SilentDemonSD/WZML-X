@@ -465,6 +465,11 @@ class TaskListener(TaskConfig):
                     "\n⋗ <i>Nothing could be copied, the source chat "
                     "restricts forwarding</i>"
                 )
+            if getattr(self, "global_log_copy_failed", False):
+                msg += (
+                    "\n\n⚠️ <b>Global log copy failed</b> for one or more messages. "
+                    "Check the bot logs."
+                )
             if stats["restricted"]:
                 runs, total = restricted_runs(stats["restricted"])
                 msg += (
@@ -514,6 +519,11 @@ class TaskListener(TaskConfig):
             if mime_type != 0:
                 msg += f"\n┠ <b>Corrupted Files</b> → {mime_type}"
             msg += f"\n┖ <b>Task By</b> → {self.tag}\n\n"
+            if getattr(self, "global_log_copy_failed", False):
+                msg += (
+                    "⚠️ <b>Global log copy failed</b> for one or more files. "
+                    "Check the bot logs.\n\n"
+                )
 
             if self.bot_pm:
                 pmsg = msg

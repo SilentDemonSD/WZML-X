@@ -423,7 +423,18 @@ class Mirror(TaskListener):
         try:
             await self.before_start()
         except Exception as e:
-            await send_message(self.message, e)
+            LOGGER.error(
+                "Pre-upload validation failed task=%s request_chat=%s "
+                "dest_chat=%s mode=%s error_type=%s error=%s",
+                self.mid,
+                self.message.chat.id,
+                self.up_dest if self.is_leech else None,
+                self.transmission_mode,
+                type(e).__name__,
+                e,
+                exc_info=True,
+            )
+            await send_message(self.message, str(e))
             await self.remove_from_same_dir()
             await delete_links(self.message)
             return

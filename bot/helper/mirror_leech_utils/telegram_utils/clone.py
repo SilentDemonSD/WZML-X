@@ -200,6 +200,8 @@ class TelegramClone:
 
     def _kill_dest(self, seat, reason):
         chat_id, _thread = seat
+        if seat == self.listener.global_log_dest:
+            self.listener.global_log_copy_failed = True
         self._dests.remove(seat)
         self.dead_dests.append((chat_id, reason))
         LOGGER.warning(f"clone destination dropped {chat_id}: {reason}")
@@ -221,6 +223,7 @@ class TelegramClone:
 
     async def _fan_out(self, units):
         landed = 0
+        restricted = False
         ids = [one.id for unit in units for one in unit]
         source = units[0][0].chat.id
         for seat in list(self._dests):
@@ -233,8 +236,11 @@ class TelegramClone:
                 else:
                     sent = await self._copier.send(seat[0], units[0], seat[1])
             except CopyRestricted:
-                self.restricted.extend(ids)
-                return False
+                restricted = True
+                if seat == self.listener.global_log_dest:
+                    self.listener.global_log_copy_failed = True
+                LOGGER.warning(f"clone copy restricted at {ids[0]} for {seat[0]}")
+                continue
             except CopyAborted:
                 raise
             except DEST_FATAL as err:
@@ -244,11 +250,15 @@ class TelegramClone:
                 self.failures += 1
                 if len(self.failed) < FAILED_KEEP:
                     self.failed.append((ids[0], str(err)))
-                LOGGER.error(f"clone failed at {ids[0]}: {err}")
-                return False
+                if seat == self.listener.global_log_dest:
+                    self.listener.global_log_copy_failed = True
+                LOGGER.error(f"clone failed at {ids[0]} for {seat[0]}: {err}")
+                continue
             landed += 1
             if not self.first_link:
                 self.first_link = message_link(sent)
+        if restricted and not landed:
+            self.restricted.extend(ids)
         return landed > 0
 
     async def _jobs(self):

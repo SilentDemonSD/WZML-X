@@ -28,6 +28,36 @@ from ..ext_utils.bot_utils import parse_dest
 from ..ext_utils.tmdb_utils import get_auto_thumbnail
 
 
+def _upload_log_context(
+    listener, chat_id, thread_id, client, transport, file_path, client_slot=None
+):
+    """Summarize an upload without logging credentials, URLs, or captions."""
+    message = getattr(listener, "message", None)
+    source_chat = getattr(message, "chat", None)
+    uploader = getattr(client, "me", None)
+    source_id = getattr(source_chat, "id", None)
+    destination_name = ""
+    if chat_id == getattr(listener, "up_dest", None):
+        destination_name = getattr(listener, "up_dest_name", "")
+    elif chat_id == source_id:
+        destination_name = (
+            getattr(source_chat, "title", None)
+            or getattr(source_chat, "username", None)
+        )
+    # Keep user-controlled Telegram titles on one log line.
+    destination_name = str(destination_name or "").replace("\r", " ").replace("\n", " ")[:80]
+    filename = ospath.basename(str(file_path or "")).replace("\r", " ").replace("\n", " ")
+    username = getattr(uploader, "username", None)
+    return (
+        f"task={getattr(listener, 'mid', None)} "
+        f"request_chat={source_id} request_msg={getattr(message, 'id', None)} "
+        f"dest_chat={chat_id} dest_name={destination_name!r} "
+        f"thread={thread_id} transport={transport} client_slot={client_slot} "
+        f"uploader_id={getattr(uploader, 'id', None)} "
+        f"uploader_username={username!r} file={filename!r}"
+    )
+
+
 class HypertgUpload(HypertgTransfer):
     def __init__(self, obj):
         super().__init__(obj)
@@ -202,27 +232,46 @@ class HypertgUpload(HypertgTransfer):
                 )
                 await sleep(f.value + 1)
 
-    async def _try_send(self, key, client, kwargs):
+    async def _try_send(
+        self, key, client, kwargs, transport="direct", client_slot=None
+    ):
+        context = _upload_log_context(
+            self._listener,
+            kwargs.get("chat_id"),
+            kwargs.get("message_thread_id"),
+            client,
+            transport,
+            kwargs.get("progress_args", (None,))[0],
+            client_slot,
+        )
+        LOGGER.info("Telegram upload attempt %s media=%s", context, key)
+        method = {
+            "videos": "send_video",
+            "audios": "send_audio",
+            "photos": "send_photo",
+        }.get(key, "send_document")
+        send_func = getattr(client, method)
         try:
-            if key == "videos":
-                return await self._send_with_retry(client.send_video, **kwargs)
-            elif key == "audios":
-                return await self._send_with_retry(client.send_audio, **kwargs)
-            elif key == "photos":
-                return await self._send_with_retry(client.send_photo, **kwargs)
-            else:
-                return await self._send_with_retry(client.send_document, **kwargs)
-        except PhotoInvalidDimensions:
-            kwargs.pop("thumb", None)
-            kwargs.pop("video_cover", None)
-            if key == "videos":
-                return await self._send_with_retry(client.send_video, **kwargs)
-            elif key == "audios":
-                return await self._send_with_retry(client.send_audio, **kwargs)
-            elif key == "photos":
-                return await self._send_with_retry(client.send_photo, **kwargs)
-            else:
-                return await self._send_with_retry(client.send_document, **kwargs)
+            try:
+                sent = await self._send_with_retry(send_func, **kwargs)
+            except PhotoInvalidDimensions:
+                kwargs.pop("thumb", None)
+                kwargs.pop("video_cover", None)
+                sent = await self._send_with_retry(send_func, **kwargs)
+            LOGGER.info("Telegram upload succeeded %s media=%s", context, key)
+            return sent
+        except Exception as e:
+            LOGGER.error(
+                "Telegram upload failed %s media=%s error_type=%s "
+                "telegram_code=%s telegram_id=%s error=%s",
+                context,
+                key,
+                type(e).__name__,
+                getattr(e, "CODE", getattr(e, "code", None)),
+                getattr(e, "ID", None),
+                e,
+            )
+            raise
 
     async def _hyper_send(
         self,
@@ -298,7 +347,9 @@ class HypertgUpload(HypertgTransfer):
             else:
                 kwargs["document"] = file_path
 
-            sent = await self._try_send(key, client, kwargs)
+            sent = await self._try_send(
+                key, client, kwargs, transport="hyper", client_slot=idx
+            )
             return sent
         finally:
             self.work_loads[idx] -= 1
@@ -366,7 +417,12 @@ class HypertgUpload(HypertgTransfer):
         else:
             kwargs["document"] = file_path
 
-        return await self._try_send(key, client, kwargs)
+        return await self._try_send(
+            key,
+            client,
+            kwargs,
+            transport="direct-user" if client is TgClient.user else "direct-bot",
+        )
 
     async def cancel(self):
         await super().cancel()
