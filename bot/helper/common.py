@@ -700,6 +700,11 @@ class TaskConfig:
                             "Chat not found! Try adding the bot to the chat and try again!"
                         )
                 else:
+                    self.up_dest_name = (
+                        getattr(chat, "title", None)
+                        or getattr(chat, "username", None)
+                        or ""
+                    )
                     uploader_id = self.client.me.id
                     if chat.type in [
                         ChatType.SUPERGROUP,
