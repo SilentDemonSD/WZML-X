@@ -423,7 +423,8 @@ class Mirror(TaskListener):
         try:
             await self.before_start()
         except Exception as e:
-            await send_message(self.message, e)
+            LOGGER.error("Pre-upload validation failed", exc_info=True)
+            await send_message(self.message, str(e))
             await self.remove_from_same_dir()
             await delete_links(self.message)
             return

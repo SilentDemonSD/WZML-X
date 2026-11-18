@@ -70,6 +70,9 @@ async def send_rich(message, rich, buttons=None, block=True):
 
 
 async def send_message(message, text, buttons=None, block=True, photo=None, **kwargs):
+    # Exceptions are plain error text, not Telegram rich-message objects.
+    if isinstance(text, BaseException):
+        text = str(text)
     if not isinstance(text, str):
         return await send_rich(message, text, buttons, block)
     try:

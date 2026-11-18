@@ -10,7 +10,7 @@ from shlex import split
 
 from aiofiles.os import listdir, makedirs, remove, path as aiopath
 from aioshutil import move, rmtree
-from pyrogram.enums import ChatAction, ChatType
+from pyrogram.enums import ChatAction, ChatType, ChatMemberStatus
 
 from .. import (
     DOWNLOAD_DIR,
@@ -72,6 +72,20 @@ from .telegram_helper.message_utils import (
     send_message,
     send_status_message,
 )
+
+
+def _has_upload_permissions(member):
+    """Check the existing uploader rights policy without assuming privileges exist."""
+    if member is None:
+        return False
+    if getattr(member, "status", None) == ChatMemberStatus.OWNER:
+        return True
+    privileges = getattr(member, "privileges", None)
+    return (
+        privileges is not None
+        and bool(getattr(privileges, "can_manage_chat", False))
+        and bool(getattr(privileges, "can_delete_messages", False))
+    )
 
 
 class TaskConfig:
@@ -529,7 +543,10 @@ class TaskConfig:
                     self.up_dest = "Uphoster"
 
             if not self.up_dest:
-                raise ValueError("No Upload Destination!")
+                raise ValueError(
+                    "No Upload Destination! Set DEFAULT_UPLOAD and a valid "
+                    "upload path, or specify -up for this task."
+                )
 
             if self.up_dest in ("gdl", "rcl"):
                 pass
@@ -670,10 +687,7 @@ class TaskConfig:
                                 self.transmission_mode = "bot"
                             else:
                                 member = await chat.get_member(uploader_id)
-                                if (
-                                    not member.privileges.can_manage_chat
-                                    or not member.privileges.can_delete_messages
-                                ):
+                                if not _has_upload_permissions(member):
                                     self.transmission_mode = "bot"
 
                 try:
@@ -694,10 +708,7 @@ class TaskConfig:
                         ChatType.FORUM,
                     ]:
                         member = await chat.get_member(uploader_id)
-                        if (
-                            not member.privileges.can_manage_chat
-                            or not member.privileges.can_delete_messages
-                        ):
+                        if not _has_upload_permissions(member):
                             if self.transmission_mode == "bot":
                                 raise ValueError(
                                     "You don't have enough privileges in this chat!"
