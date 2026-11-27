@@ -54,7 +54,7 @@ class GoogleDriveSearch(GoogleDriveHelper):
                             q=query,
                             spaces="drive",
                             pageSize=150,
-                            fields="files(id, name, mimeType, size, teamDriveId, parents)",
+                            fields="files(id, name, mimeType, size, driveId, parents)",
                             corpora="drive",
                             orderBy="folder, name asc",
                         )

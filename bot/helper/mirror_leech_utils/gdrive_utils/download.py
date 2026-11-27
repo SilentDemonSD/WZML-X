@@ -122,18 +122,14 @@ class GoogleDriveDownload(GoogleDriveHelper):
         fh = FileIO(f"{path}/{filename}", "wb")
         downloader = MediaIoBaseDownload(fh, request, chunksize=100 * 1024 * 1024)
         done = False
-        retries = 0
         while not done:
             if self.listener.is_cancelled:
                 fh.close()
                 break
             try:
-                self.status, done = downloader.next_chunk()
+                self.status, done = downloader.next_chunk(num_retries=5)
             except HttpError as err:
                 LOGGER.error(err)
-                if err.resp.status in [500, 502, 503, 504, 429] and retries < 10:
-                    retries += 1
-                    continue
                 if err.resp.get("content-type", "").startswith("application/json"):
                     reason = (
                         json_loads(err.content)
@@ -175,4 +171,5 @@ class GoogleDriveDownload(GoogleDriveHelper):
                     else:
                         LOGGER.error(f"Got: {reason}")
                         raise err
+                raise err
         self.file_processed_bytes = 0

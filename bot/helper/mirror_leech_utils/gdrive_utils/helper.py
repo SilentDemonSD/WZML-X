@@ -157,12 +157,7 @@ class GoogleDriveHelper:
         retry=retry_if_exception_type(Exception),
     )
     def set_permission(self, file_id):
-        permissions = {
-            "role": "reader",
-            "type": "anyone",
-            "value": None,
-            "withLink": True,
-        }
+        permissions = {"role": "reader", "type": "anyone"}
         return self._execute(
             lambda: self.service.permissions().create(
                 fileId=file_id, body=permissions, supportsAllDrives=True

@@ -177,14 +177,10 @@ class GoogleDriveUpload(GoogleDriveHelper):
             body=file_metadata, media_body=media_body, supportsAllDrives=True
         )
         response = None
-        retries = 0
         while response is None and not self.listener.is_cancelled:
             try:
-                self.status, response = drive_file.next_chunk()
+                self.status, response = drive_file.next_chunk(num_retries=5)
             except HttpError as err:
-                if err.resp.status in [500, 502, 503, 504, 429] and retries < 10:
-                    retries += 1
-                    continue
                 if err.resp.get("content-type", "").startswith("application/json"):
                     reason = (
                         json_loads(err.content)
@@ -221,6 +217,7 @@ class GoogleDriveUpload(GoogleDriveHelper):
                     else:
                         LOGGER.error(f"Got: {reason}")
                         raise err
+                raise err
         if self.listener.is_cancelled:
             return
         try:

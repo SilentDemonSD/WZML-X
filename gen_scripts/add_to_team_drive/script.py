@@ -73,7 +73,7 @@ def authenticate(creds_file, token_path):
                         "https://www.googleapis.com/auth/admin.directory.group.member",
                     ],
                 )
-                creds = flow.run_console()
+                creds = flow.run_local_server(port=0, open_browser=False)
             with open(token_path, "wb") as token_file:
                 pickle_dump(creds, token_file)
         print("[OK] Authentication successful!")
