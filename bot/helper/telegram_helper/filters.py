@@ -33,6 +33,8 @@ class CustomFilters:
     owner = create(owner_filter)
 
     async def authorized_user(self, _, update):
+        if Config.PUBLIC_MODE:
+            return True
         uid = (update.from_user or update.sender_chat).id
         chat_id, thread_id = _chat_context(update)
         return bool(
